@@ -92,11 +92,11 @@ function Home() {
             <span style={{fontSize:'24px'}}>🎯</span>
             <div style={{textAlign:'left'}}>
               <p style={{fontSize:'14px', fontWeight:'700'}}>Code promo de lancement</p>
-              <p style={{fontSize:'13px', color:'#aaa'}}>Utilise le code <strong style={{color:'#4ade80'}}>GAME</strong> pour les prix de lancement</p>
+              <p style={{fontSize:'13px', color:'#aaa'}}>Utilise le code <strong style={{color:'#4ade80'}}>GAMETIMETIME</strong> pour les prix de lancement</p>
             </div>
           </div>
           <div style={{background:'#4ade80', color:'#0a0a0a', fontWeight:'800', fontSize:'18px', padding:'8px 20px', borderRadius:'8px', letterSpacing:'2px'}}>
-            GAME
+            GAMETIMETIME
           </div>
         </div>
 
@@ -113,7 +113,7 @@ function Home() {
               <span style={{background:'#ef444420', color:'#ef4444', fontSize:'11px', padding:'2px 6px', borderRadius:'10px', fontWeight:'600'}}>-15%</span>
             </div>
             <div style={{fontSize:'32px', fontWeight:'700', margin:'0.25rem 0'}}>49,99€ <span style={{fontSize:'16px', color:'#555', fontWeight:'400'}}>/mois</span></div>
-            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAME</p>
+            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIMETIME</p>
             <p style={{fontSize:'13px', color:'#555', marginBottom:'1.5rem'}}>Pour progresser regulierement</p>
             <ul style={{listStyle:'none', display:'flex', flexDirection:'column', gap:'10px', marginBottom:'2rem'}}>
               {["2 analyses video / mois", "Retour vocal de l expert", "Espace client dedie"].map(f => (
@@ -141,7 +141,7 @@ function Home() {
               <span style={{background:'#ef444420', color:'#ef4444', fontSize:'11px', padding:'2px 6px', borderRadius:'10px', fontWeight:'600'}}>-19%</span>
             </div>
             <div style={{fontSize:'32px', fontWeight:'700', margin:'0.25rem 0'}}>79,99€ <span style={{fontSize:'16px', color:'#555', fontWeight:'400'}}>/mois</span></div>
-            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAME</p>
+            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIMETIME</p>
             <p style={{fontSize:'13px', color:'#555', marginBottom:'1.5rem'}}>Pour se faire reperer</p>
             <ul style={{listStyle:'none', display:'flex', flexDirection:'column', gap:'10px', marginBottom:'2rem'}}>
               {["3 analyses video / mois", "Compile personnalisee", "Profil visible recruteurs", "Reseau clubs & agents"].map(f => (
