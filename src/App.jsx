@@ -19,4 +19,5 @@ function App() {
   )
 }
 
-export default App
+export default Appimport Feed from './pages/Feed'
+<Route path="/feed" element={<Feed />} />
