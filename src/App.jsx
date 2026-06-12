@@ -21,3 +21,5 @@ function App() {
 
 export default Appimport Feed from './pages/Feed'
 <Route path="/feed" element={<Feed />} />
+import UploadClip from './pages/UploadClip'
+<Route path="/upload-clip" element={<UploadClip />} />
