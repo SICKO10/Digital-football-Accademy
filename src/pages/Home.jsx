@@ -14,7 +14,7 @@ function Home() {
         <div style={{display:'flex', gap:'2rem'}}>
           <a href="#comment" style={{color:'#aaa', textDecoration:'none', fontSize:'14px'}}>Comment ca marche</a>
           <a href="#offres" style={{color:'#aaa', textDecoration:'none', fontSize:'14px'}}>Offres</a>
-          <a href="#feed" style={{color:'#aaa', textDecoration:'none', fontSize:'14px'}}>Feed</a>
+          <span onClick={() => navigate('/feed')} style={{color:'#aaa', textDecoration:'none', fontSize:'14px', cursor:'pointer'}}>Feed</span>
           <a href="#recruteurs" style={{color:'#aaa', textDecoration:'none', fontSize:'14px'}}>Recruteurs</a>
         </div>
         <div style={{display:'flex', gap:'1rem'}}>
@@ -86,34 +86,29 @@ function Home() {
         <h2 style={{fontSize:'36px', fontWeight:'700', marginBottom:'0.5rem'}}>Choisis ton niveau</h2>
         <p style={{color:'#666', fontSize:'14px', marginBottom:'2rem'}}>Analyses personnalisees par un expert avec retour vocal</p>
 
-        {/* CODE PROMO */}
         <div style={{background:'linear-gradient(135deg, #4ade8020, #4ade8005)', border:'1px solid #4ade8044', borderRadius:'12px', padding:'1rem 1.5rem', maxWidth:'700px', margin:'0 auto 2rem', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'1rem'}}>
           <div style={{display:'flex', alignItems:'center', gap:'1rem'}}>
             <span style={{fontSize:'24px'}}>🎯</span>
             <div style={{textAlign:'left'}}>
               <p style={{fontSize:'14px', fontWeight:'700'}}>Code promo de lancement</p>
-              <p style={{fontSize:'13px', color:'#aaa'}}>Utilise le code <strong style={{color:'#4ade80'}}>GAMETIMETIME</strong> pour les prix de lancement</p>
+              <p style={{fontSize:'13px', color:'#aaa'}}>Utilise le code <strong style={{color:'#4ade80'}}>GAMETIME</strong> pour les prix de lancement</p>
             </div>
           </div>
           <div style={{background:'#4ade80', color:'#0a0a0a', fontWeight:'800', fontSize:'18px', padding:'8px 20px', borderRadius:'8px', letterSpacing:'2px'}}>
-            GAMETIMETIME
+            GAMETIME
           </div>
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'1.5rem', maxWidth:'700px', margin:'0 auto'}}>
-
-          {/* STARTER */}
           <div style={{background:'#111', border:'1px solid #2a2a2a', borderRadius:'12px', padding:'2rem', textAlign:'left', position:'relative'}}>
-            <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>
-              LIMITE
-            </div>
+            <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>LIMITE</div>
             <h3 style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>Starter</h3>
             <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'2px'}}>
               <span style={{fontSize:'14px', color:'#555', textDecoration:'line-through'}}>59€/mois</span>
               <span style={{background:'#ef444420', color:'#ef4444', fontSize:'11px', padding:'2px 6px', borderRadius:'10px', fontWeight:'600'}}>-15%</span>
             </div>
             <div style={{fontSize:'32px', fontWeight:'700', margin:'0.25rem 0'}}>49,99€ <span style={{fontSize:'16px', color:'#555', fontWeight:'400'}}>/mois</span></div>
-            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIMETIME</p>
+            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIME</p>
             <p style={{fontSize:'13px', color:'#555', marginBottom:'1.5rem'}}>Pour progresser regulierement</p>
             <ul style={{listStyle:'none', display:'flex', flexDirection:'column', gap:'10px', marginBottom:'2rem'}}>
               {["2 analyses video / mois", "Retour vocal de l expert", "Espace client dedie"].map(f => (
@@ -127,21 +122,16 @@ function Home() {
             </button>
           </div>
 
-          {/* PRO */}
           <div style={{background:'#111', border:'2px solid #4ade80', borderRadius:'12px', padding:'2rem', textAlign:'left', position:'relative'}}>
-            <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>
-              LIMITE
-            </div>
-            <div style={{display:'inline-block', background:'#4ade8020', color:'#4ade80', fontSize:'11px', padding:'3px 10px', borderRadius:'20px', marginBottom:'0.75rem'}}>
-              Le plus populaire
-            </div>
+            <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>LIMITE</div>
+            <div style={{display:'inline-block', background:'#4ade8020', color:'#4ade80', fontSize:'11px', padding:'3px 10px', borderRadius:'20px', marginBottom:'0.75rem'}}>Le plus populaire</div>
             <h3 style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>Pro</h3>
             <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'2px'}}>
               <span style={{fontSize:'14px', color:'#555', textDecoration:'line-through'}}>99€/mois</span>
               <span style={{background:'#ef444420', color:'#ef4444', fontSize:'11px', padding:'2px 6px', borderRadius:'10px', fontWeight:'600'}}>-19%</span>
             </div>
             <div style={{fontSize:'32px', fontWeight:'700', margin:'0.25rem 0'}}>79,99€ <span style={{fontSize:'16px', color:'#555', fontWeight:'400'}}>/mois</span></div>
-            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIMETIME</p>
+            <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'1rem'}}>Avec le code GAMETIME</p>
             <p style={{fontSize:'13px', color:'#555', marginBottom:'1.5rem'}}>Pour se faire reperer</p>
             <ul style={{listStyle:'none', display:'flex', flexDirection:'column', gap:'10px', marginBottom:'2rem'}}>
               {["3 analyses video / mois", "Compile personnalisee", "Profil visible recruteurs", "Reseau clubs & agents"].map(f => (
@@ -179,21 +169,11 @@ function Home() {
                 <span style={{fontSize:'18px', color:'#555', textDecoration:'line-through'}}>500€/an</span>
                 <div style={{background:'#ef444420', color:'#ef4444', fontSize:'12px', padding:'2px 8px', borderRadius:'20px', fontWeight:'600'}}>Offre de lancement</div>
               </div>
-              <div style={{fontSize:'42px', fontWeight:'700', color:'#4ade80'}}>
-                200€ <span style={{fontSize:'18px', color:'#555', fontWeight:'400'}}>/an</span>
-              </div>
+              <div style={{fontSize:'42px', fontWeight:'700', color:'#4ade80'}}>200€ <span style={{fontSize:'18px', color:'#555', fontWeight:'400'}}>/an</span></div>
               <p style={{fontSize:'13px', color:'#ef4444', marginTop:'4px'}}>Offre limitee — places disponibles</p>
             </div>
             <ul style={{listStyle:'none', display:'flex', flexDirection:'column', gap:'12px', marginBottom:'2rem'}}>
-              {[
-                "Acces complet a la base de joueurs",
-                "Moteur de recherche par profil & poste",
-                "Voir les clips et compilations",
-                "Messagerie directe avec les joueurs",
-                "Filtres avances (age, region, niveau)",
-                "Alertes nouveaux profils",
-                "Support prioritaire"
-              ].map(f => (
+              {["Acces complet a la base de joueurs","Moteur de recherche par profil & poste","Voir les clips et compilations","Messagerie directe avec les joueurs","Filtres avances (age, region, niveau)","Alertes nouveaux profils","Support prioritaire"].map(f => (
                 <li key={f} style={{fontSize:'14px', color:'#aaa', display:'flex', alignItems:'center', gap:'8px'}}>
                   <span style={{color:'#4ade80', fontSize:'16px'}}>✓</span> {f}
                 </li>
@@ -202,15 +182,13 @@ function Home() {
             <button onClick={() => navigate('/register')} style={{width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer'}}>
               Commencer pour 200€/an
             </button>
-            <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
-              Facturation annuelle — Acces immediat
-            </p>
+            <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>Facturation annuelle — Acces immediat</p>
           </div>
         </div>
       </section>
 
       {/* FEED SOCIAL */}
-      <section id="feed" style={{background:'#0a0a0a', padding:'5rem 2rem', textAlign:'center'}}>
+      <section id="feed-section" style={{background:'#0a0a0a', padding:'5rem 2rem', textAlign:'center'}}>
         <p style={{color:'#4ade80', fontSize:'12px', letterSpacing:'2px', marginBottom:'0.5rem'}}>RESEAU SOCIAL</p>
         <h2 style={{fontSize:'36px', fontWeight:'700', marginBottom:'0.5rem'}}>Le Feed des Talents</h2>
         <p style={{color:'#666', fontSize:'14px', maxWidth:'500px', margin:'0 auto 3rem'}}>
@@ -229,18 +207,14 @@ function Home() {
             </div>
           ))}
         </div>
-        <div style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'1.5rem', maxWidth:'400px', margin:'0 auto'}}>
-          <p style={{fontSize:'14px', color:'#aaa', marginBottom:'1rem'}}>Le feed arrive bientot</p>
-          <p style={{fontSize:'13px', color:'#555'}}>Inscris-toi maintenant pour etre parmi les premiers joueurs visibles</p>
-          <button onClick={() => navigate('/register')} style={{marginTop:'1rem', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'10px 24px', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer'}}>
-            Rejoindre la liste d attente
-          </button>
-        </div>
+        <button onClick={() => navigate('/feed')} style={{background:'#4ade80', color:'#0a0a0a', border:'none', padding:'12px 28px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer'}}>
+          Voir le Feed complet
+        </button>
       </section>
 
       {/* FOOTER */}
       <footer style={{borderTop:'1px solid #1a1a1a', padding:'2rem', textAlign:'center', background:'#0a0a0a'}}>
-        <p style={{color:'#444', fontSize:'13px'}}>© 2024 Digital Football — Tous droits reserves</p>
+        <p style={{color:'#444', fontSize:'13px'}}>2024 Digital Football — Tous droits reserves</p>
       </footer>
 
     </div>
