@@ -2,6 +2,12 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { supabase } from '../supabase'
 
+const STRIPE_LINKS = {
+  starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
+  pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
+  recruteur: 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02',
+}
+
 function Register() {
   const navigate = useNavigate()
   const [plan, setPlan] = useState('pro')
@@ -14,18 +20,10 @@ function Register() {
   const [erreur, setErreur] = useState('')
 
   const handleRegister = async () => {
-   setLoading(false)
-if (plan === 'starter') {
-  window.location.href = 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00'
-} else if (plan === 'pro') {
-  window.location.href = 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01'
-} else {
-  window.location.href = 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02'
-}
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    setLoading(true)
+    setErreur('')
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
 
     if (error) {
       setErreur(error.message)
@@ -33,33 +31,24 @@ if (plan === 'starter') {
       return
     }
 
-    const { error: profileError } = await supabase.from('profiles').insert({
-  id: data.user.id,
-  email,
-  prenom,
-  nom,
-  poste,
-  plan,
-  analyses_restantes: plan === 'pro' ? 3 : 2,
-})
+    await supabase.from('profiles').insert({
+      id: data.user.id,
+      email,
+      prenom,
+      nom,
+      poste,
+      plan,
+      analyses_restantes: plan === 'pro' ? 3 : 2,
+    })
 
-console.log('Profile error:', profileError)
-console.log('User ID:', data.user.id)
-
-   setLoading(false)
-if (plan === 'starter') {
-  window.location.href = 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00'
-} else if (plan === 'pro') {
-  window.location.href = 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01'
-} else {
-  window.location.href = 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02'
-}
+    setLoading(false)
+    window.location.href = STRIPE_LINKS[plan]
   }
 
   return (
     <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem'}}>
       <div style={{background:'#111', border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'480px'}}>
-        
+
         <div style={{textAlign:'center', marginBottom:'2rem'}}>
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
             Digital<span style={{color:'#4ade80'}}>Football</span>
@@ -112,8 +101,12 @@ if (plan === 'starter') {
           {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center'}}>{erreur}</p>}
 
           <button onClick={handleRegister} disabled={loading} style={{width:'100%', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'12px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer', marginTop:'0.5rem', opacity: loading ? 0.7 : 1}}>
-            {loading ? 'Creation...' : 'Creer mon compte'}
+            {loading ? 'Creation...' : 'Creer mon compte et payer'}
           </button>
+
+          <p style={{fontSize:'12px', color:'#555', textAlign:'center'}}>
+            Tu seras redirige vers Stripe pour finaliser le paiement
+          </p>
         </div>
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
