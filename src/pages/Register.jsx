@@ -14,9 +14,14 @@ function Register() {
   const [erreur, setErreur] = useState('')
 
   const handleRegister = async () => {
-    setLoading(true)
-    setErreur('')
-
+   setLoading(false)
+if (plan === 'starter') {
+  window.location.href = 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00'
+} else if (plan === 'pro') {
+  window.location.href = 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01'
+} else {
+  window.location.href = 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02'
+}
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
