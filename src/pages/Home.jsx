@@ -1,5 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 
+const STRIPE_LINKS = {
+  starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
+  pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
+  recruteur: 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02',
+}
+
 function Home() {
   const navigate = useNavigate()
 
@@ -100,6 +106,8 @@ function Home() {
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'1.5rem', maxWidth:'700px', margin:'0 auto'}}>
+          
+          {/* STARTER */}
           <div style={{background:'#111', border:'1px solid #2a2a2a', borderRadius:'12px', padding:'2rem', textAlign:'left', position:'relative'}}>
             <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>LIMITE</div>
             <h3 style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>Starter</h3>
@@ -117,11 +125,12 @@ function Home() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => navigate('/register')} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'1px solid #333', background:'transparent', color:'white', fontSize:'14px', cursor:'pointer'}}>
+            <a href={STRIPE_LINKS.starter} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', padding:'12px', borderRadius:'8px', border:'1px solid #333', background:'transparent', color:'white', fontSize:'14px', cursor:'pointer', textAlign:'center', textDecoration:'none'}}>
               Commencer
-            </button>
+            </a>
           </div>
 
+          {/* PRO */}
           <div style={{background:'#111', border:'2px solid #4ade80', borderRadius:'12px', padding:'2rem', textAlign:'left', position:'relative'}}>
             <div style={{position:'absolute', top:'-12px', left:'20px', background:'#ef4444', color:'white', fontSize:'11px', fontWeight:'700', padding:'3px 10px', borderRadius:'20px'}}>LIMITE</div>
             <div style={{display:'inline-block', background:'#4ade8020', color:'#4ade80', fontSize:'11px', padding:'3px 10px', borderRadius:'20px', marginBottom:'0.75rem'}}>Le plus populaire</div>
@@ -140,9 +149,9 @@ function Home() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => navigate('/register')} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'14px', fontWeight:'600', cursor:'pointer'}}>
+            <a href={STRIPE_LINKS.pro} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'14px', fontWeight:'600', cursor:'pointer', textAlign:'center', textDecoration:'none'}}>
               Commencer
-            </button>
+            </a>
           </div>
         </div>
       </section>
@@ -179,9 +188,9 @@ function Home() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => navigate('/register')} style={{width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer'}}>
+            <a href={STRIPE_LINKS.recruteur} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer', textAlign:'center', textDecoration:'none'}}>
               Commencer pour 200€/an
-            </button>
+            </a>
             <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>Facturation annuelle — Acces immediat</p>
           </div>
         </div>
