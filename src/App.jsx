@@ -5,6 +5,8 @@ import Register from './pages/Register'
 import DashboardJoueur from './pages/DashboardJoueur'
 import DashboardCoach from './pages/DashboardCoach'
 import Upload from './pages/Upload'
+import Feed from './pages/Feed'
+import UploadClip from './pages/UploadClip'
 
 function App() {
   return (
@@ -15,11 +17,10 @@ function App() {
       <Route path="/dashboard" element={<DashboardJoueur />} />
       <Route path="/coach" element={<DashboardCoach />} />
       <Route path="/upload" element={<Upload />} />
+      <Route path="/feed" element={<Feed />} />
+      <Route path="/upload-clip" element={<UploadClip />} />
     </Routes>
   )
 }
 
-export default Appimport Feed from './pages/Feed'
-<Route path="/feed" element={<Feed />} />
-import UploadClip from './pages/UploadClip'
-<Route path="/upload-clip" element={<UploadClip />} />
+export default App
