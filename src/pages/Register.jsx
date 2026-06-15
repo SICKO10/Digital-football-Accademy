@@ -31,15 +31,17 @@ function Register() {
       return
     }
 
-    await supabase.from('profiles').insert({
-      id: data.user.id,
-      email,
-      prenom,
-      nom,
-      poste,
-      plan,
-      analyses_restantes: plan === 'pro' ? 3 : 2,
-    })
+         await supabase.from('profiles').insert({
+        id: data.user.id,
+        email,
+        prenom,
+        nom,
+        poste,
+        plan: 'pending',
+        analyses_restantes: 0,
+        abonnement_actif: false,
+      })
+
 
     setLoading(false)
     window.location.href = STRIPE_LINKS[plan]
