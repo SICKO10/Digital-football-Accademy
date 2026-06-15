@@ -86,16 +86,29 @@ function DashboardJoueur() {
           )}
         </div>
 
-        <div style={{background:'#111', border:'1px solid #4ade8033', borderRadius:'12px', padding:'2rem', marginBottom:'1.5rem'}}>
-          <div style={{display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem'}}>
-            <span style={{fontSize:'24px'}}>🎬</span>
-            <h2 style={{fontSize:'18px', fontWeight:'700'}}>Publier un clip sur le feed</h2>
+        {profil?.plan === 'pro' ? (
+          <div style={{background:'#111', border:'1px solid #4ade8033', borderRadius:'12px', padding:'2rem', marginBottom:'1.5rem'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem'}}>
+              <span style={{fontSize:'24px'}}>🎬</span>
+              <h2 style={{fontSize:'18px', fontWeight:'700'}}>Publier un clip sur le feed</h2>
+            </div>
+            <p style={{fontSize:'14px', color:'#666', marginBottom:'1.5rem'}}>Montre ton talent — clubs et agents regardent le feed chaque semaine !</p>
+            <button onClick={() => navigate('/upload-clip')} style={{background:'transparent', color:'#4ade80', border:'1px solid #4ade80', padding:'12px 28px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer'}}>
+              Publier un clip
+            </button>
           </div>
-          <p style={{fontSize:'14px', color:'#666', marginBottom:'1.5rem'}}>Montre ton talent — clubs et agents regardent le feed chaque semaine !</p>
-          <button onClick={() => navigate('/upload-clip')} style={{background:'transparent', color:'#4ade80', border:'1px solid #4ade80', padding:'12px 28px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer'}}>
-            Publier un clip
-          </button>
-        </div>
+        ) : (
+          <div style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'2rem', marginBottom:'1.5rem'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem'}}>
+              <span style={{fontSize:'24px'}}>🔒</span>
+              <h2 style={{fontSize:'18px', fontWeight:'700', color:'#666'}}>Publier un clip sur le feed</h2>
+            </div>
+            <p style={{fontSize:'14px', color:'#666', marginBottom:'1.5rem'}}>Passe au plan Pro pour publier tes clips sur le reseau social et etre vu par les clubs et agents.</p>
+            <button onClick={() => navigate('/offres')} style={{background:'transparent', color:'#4ade80', border:'1px solid #4ade80', padding:'12px 28px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer'}}>
+              Passer au plan Pro
+            </button>
+          </div>
+        )}
 
         <div style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'2rem'}}>
           <h2 style={{fontSize:'18px', fontWeight:'700', marginBottom:'1.5rem'}}>Mes analyses</h2>
