@@ -1,12 +1,4 @@
-import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { supabase } from '../supabase'
 
-const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
-  pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
-  recruteur: 'https://buy.stripe.com/test_3cI5kE7IwfVL1uabms4ko02',
-}
 
 function Register() {
   const navigate = useNavigate()
@@ -44,7 +36,18 @@ function Register() {
 
 
     setLoading(false)
-    window.location.href = STRIPE_LINKS[plan]
+    const response = await fetch('/api/create-checkout', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, plan })
+})
+const data = await response.json()
+if (data.url) {
+  window.location.href = data.url
+} else {
+  setErreur('Erreur lors de la création du paiement')
+  setLoading(false)
+}
   }
 
   return (
