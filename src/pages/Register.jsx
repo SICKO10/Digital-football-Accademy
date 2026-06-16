@@ -1,4 +1,6 @@
-
+import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { supabase } from '../supabase'
 
 function Register() {
   const navigate = useNavigate()
@@ -23,36 +25,39 @@ function Register() {
       return
     }
 
-         await supabase.from('profiles').insert({
-        id: data.user.id,
-        email,
-        prenom,
-        nom,
-        poste,
-        plan: 'pending',
-        analyses_restantes: 0,
-        abonnement_actif: false,
-      })
-
+    await supabase.from('profiles').insert({
+      id: data.user.id,
+      email,
+      prenom,
+      nom,
+      poste,
+      plan: 'pending',
+      analyses_restantes: 0,
+      abonnement_actif: false,
+    })
 
     setLoading(false)
-    const response = await fetch('/api/create-checkout', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, plan })
-})
-const data = await response.json()
-if (data.url) {
-  window.location.href = data.url
-} else {
-  setErreur('Erreur lors de la création du paiement')
-  setLoading(false)
-}
+
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, plan })
+      })
+      const data2 = await response.json()
+      if (data2.url) {
+        window.location.href = data2.url
+      } else {
+        setErreur('Erreur lors de la création du paiement')
+      }
+    } catch (err) {
+      setErreur('Erreur lors de la connexion au service de paiement')
+    }
   }
 
   return (
-    <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem'}}>
-      <div style={{background:'#111', border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'480px'}}>
+    <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      <div style={{background:'#111', border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'460px'}}>
 
         <div style={{textAlign:'center', marginBottom:'2rem'}}>
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
@@ -67,7 +72,7 @@ if (data.url) {
             {id:'starter', nom:'Starter', prix:'49,99€/mois'},
             {id:'pro', nom:'Pro', prix:'79,99€/mois'},
           ].map(p => (
-            <div key={p.id} onClick={() => setPlan(p.id)} style={{border: plan === p.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', textAlign:'center', cursor:'pointer', background: plan === p.id ? '#4ade8010' : 'transparent'}}>
+            <div key={p.id} onClick={() => setPlan(p.id)} style={{border: plan === p.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: plan === p.id ? '#4ade8010' : 'transparent'}}>
               <div style={{fontWeight:'700', fontSize:'15px'}}>{p.nom}</div>
               <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>{p.prix}</div>
             </div>
@@ -78,41 +83,44 @@ if (data.url) {
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
             <div>
               <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Prenom</label>
-              <input value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}/>
+              <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
             <div>
               <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Nom</label>
-              <input value={nom} onChange={e => setNom(e.target.value)} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}/>
+              <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
           </div>
+
           <div>
             <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}/>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
           </div>
+
           <div>
             <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Mot de passe</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="minimum 6 caracteres" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}/>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="minimum 6 caracteres" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
           </div>
+
           <div>
             <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Poste</label>
-            <select value={poste} onChange={e => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}>
+            <select value={poste} onChange={(e) => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}>
               <option>Gardien</option>
               <option>Defenseur</option>
               <option>Milieu</option>
               <option>Attaquant</option>
             </select>
           </div>
-
-          {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center'}}>{erreur}</p>}
-
-          <button onClick={handleRegister} disabled={loading} style={{width:'100%', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'12px', borderRadius:'8px', fontSize:'15px', fontWeight:'600', cursor:'pointer', marginTop:'0.5rem', opacity: loading ? 0.7 : 1}}>
-            {loading ? 'Creation...' : 'Creer mon compte et payer'}
-          </button>
-
-          <p style={{fontSize:'12px', color:'#555', textAlign:'center'}}>
-            Tu seras redirige vers Stripe pour finaliser le paiement
-          </p>
         </div>
+
+        {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
+
+        <button onClick={handleRegister} disabled={loading} style={{width:'100%', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor:'pointer', marginTop:'1.5rem'}}>
+          {loading ? 'Creation...' : 'Creer mon compte et payer'}
+        </button>
+
+        <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
+          Tu seras redirige vers Stripe pour finaliser le paiement
+        </p>
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
           Deja un compte ?{' '}
