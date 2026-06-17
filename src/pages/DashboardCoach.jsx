@@ -9,38 +9,32 @@ function DashboardCoach() {
   const [loomUrls, setLoomUrls] = useState({})
 
   useEffect(() => {
-    const getDemandes = async () => {
-      const { data, error } = await supabase
-        .from('demandes')
-       .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error) setDemandes(data)
-      setLoading(false)
-    }
     getDemandes()
   }, [])
+
+  const getDemandes = async () => {
+    const { data, error } = await supabase
+      .from('demandes')
+      .select('*, profiles(prenom, nom, email, plan)')
+      .order('created_at', { ascending: false })
+    if (!error) setDemandes(data)
+    setLoading(false)
+  }
 
   const envoyerAnalyse = async (demandeId, joueurId) => {
     const loomUrl = loomUrls[demandeId]
     if (!loomUrl) return alert('Colle le lien Loom avant de valider')
-
-    await supabase
-      .from('demandes')
-      .update({ statut: 'analyse', loom_url: loomUrl })
-      .eq('id', demandeId)
-
-    await supabase
-      .from('profiles')
-      .update({ analyses_restantes: supabase.rpc('decrement') })
-      .eq('id', joueurId)
-
-    setDemandes(prev => prev.map(d =>
-      d.id === demandeId ? { ...d, statut: 'analyse', loom_url: loomUrl } : d
-    ))
-
+    await supabase.from('demandes').update({ statut: 'analyse', loom_url: loomUrl }).eq('id', demandeId)
+    setDemandes(prev => prev.map(d => d.id === demandeId ? { ...d, statut: 'analyse', loom_url: loomUrl } : d))
     alert('Analyse envoyee au joueur !')
   }
+
+  const getVideoUrl = (demande) => {
+    return demande.video_url || demande.lien_video || demande.clip_url || null
+  }
+
+  const isVeo = (url) => url && url.includes('veo.co')
+  const isYoutube = (url) => url && (url.includes('youtube.com') || url.includes('youtu.be'))
 
   const getStatutColor = (statut) => {
     if (statut === 'en_attente') return '#f59e0b'
@@ -54,13 +48,11 @@ function DashboardCoach() {
     return statut
   }
 
-  if (loading) {
-    return (
-      <div style={{minHeight:'100vh', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center'}}>
-        <p style={{color:'#4ade80', fontFamily:'sans-serif'}}>Chargement...</p>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{minHeight:'100vh', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      <p style={{color:'#4ade80', fontFamily:'sans-serif'}}>Chargement...</p>
+    </div>
+  )
 
   return (
     <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif'}}>
@@ -93,10 +85,7 @@ function DashboardCoach() {
           </div>
         </div>
 
-        {/* LISTE DES DEMANDES */}
-        <h2 style={{fontSize:'20px', fontWeight:'700', marginBottom:'1.5rem'}}>
-          Demandes d analyse
-        </h2>
+        <h2 style={{fontSize:'20px', fontWeight:'700', marginBottom:'1.5rem'}}>Demandes d analyse</h2>
 
         {demandes.length === 0 ? (
           <div style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'3rem', textAlign:'center'}}>
@@ -105,72 +94,102 @@ function DashboardCoach() {
           </div>
         ) : (
           <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
-            {demandes.map(demande => (
-              <div key={demande.id} style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'1.5rem'}}>
-                
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1rem'}}>
-                  <div>
-                    <h3 style={{fontSize:'16px', fontWeight:'700', marginBottom:'4px'}}>{demande.titre}</h3>
-                    <p style={{fontSize:'13px', color:'#666'}}>
-                      {demande.profiles?.prenom} {demande.profiles?.nom} — {demande.profiles?.email}
-                    </p>
+            {demandes.map(demande => {
+              const videoUrl = getVideoUrl(demande)
+              return (
+                <div key={demande.id} style={{background:'#111', border:'1px solid #222', borderRadius:'12px', padding:'1.5rem'}}>
+
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1rem'}}>
+                    <div>
+                      <h3 style={{fontSize:'16px', fontWeight:'700', marginBottom:'4px'}}>{demande.titre}</h3>
+                      <p style={{fontSize:'13px', color:'#666'}}>
+                        {demande.profiles?.prenom} {demande.profiles?.nom} — {demande.profiles?.email}
+                      </p>
+                    </div>
+                    <span style={{background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize:'12px', padding:'4px 10px', borderRadius:'20px', fontWeight:'600'}}>
+                      {getStatutLabel(demande.statut)}
+                    </span>
                   </div>
-                  <span style={{background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize:'12px', padding:'4px 10px', borderRadius:'20px', fontWeight:'600'}}>
-                    {getStatutLabel(demande.statut)}
-                  </span>
+
+                  <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1rem'}}>
+                    <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
+                      <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Poste</p>
+                      <p style={{fontSize:'13px', fontWeight:'600'}}>{demande.poste}</p>
+                    </div>
+                    <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
+                      <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Plan</p>
+                      <p style={{fontSize:'13px', fontWeight:'600', color:'#4ade80', textTransform:'capitalize'}}>{demande.profiles?.plan}</p>
+                    </div>
+                    <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
+                      <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Date</p>
+                      <p style={{fontSize:'13px', fontWeight:'600'}}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                  </div>
+
+                  {demande.description && (
+                    <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem', marginBottom:'1rem'}}>
+                      <p style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Ce que le joueur veut analyser</p>
+                      <p style={{fontSize:'13px', color:'#aaa'}}>{demande.description}</p>
+                    </div>
+                  )}
+
+                  {/* VIDEO */}
+                  {videoUrl ? (
+                    <div style={{marginBottom:'1rem'}}>
+                      <p style={{fontSize:'11px', color:'#555', marginBottom:'8px'}}>Vidéo du joueur</p>
+                      {isVeo(videoUrl) || isYoutube(videoUrl) ? (
+                        <a href={videoUrl} target="_blank" rel="noreferrer"
+                          style={{display:'inline-flex', alignItems:'center', gap:'8px', background:'#4ade8015', border:'1px solid #4ade8040', color:'#4ade80', padding:'10px 20px', borderRadius:'8px', fontSize:'14px', fontWeight:'600', textDecoration:'none'}}>
+                          🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : isYoutube(videoUrl) ? 'Ouvrir sur YouTube' : 'Voir la vidéo'}
+                        </a>
+                      ) : (
+                        <div>
+                          <video
+                            src={videoUrl}
+                            controls
+                            style={{width:'100%', maxHeight:'300px', borderRadius:'8px', background:'#000', marginBottom:'8px'}}
+                          />
+                          <a href={videoUrl} target="_blank" rel="noreferrer"
+                            style={{display:'inline-block', color:'#4ade80', fontSize:'12px', textDecoration:'none'}}>
+                            🔗 Ouvrir dans un nouvel onglet
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem', marginBottom:'1rem'}}>
+                      <p style={{fontSize:'13px', color:'#555'}}>⚠️ Aucune vidéo fournie par le joueur</p>
+                    </div>
+                  )}
+
+                  {demande.statut === 'en_attente' && (
+                    <div style={{display:'flex', gap:'0.75rem', alignItems:'center'}}>
+                      <input
+                        placeholder="Colle ton lien Loom ici..."
+                        value={loomUrls[demande.id] || ''}
+                        onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
+                        style={{flex:1, background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}
+                      />
+                      <button onClick={() => envoyerAnalyse(demande.id, demande.joueur_id)}
+                        style={{background:'#4ade80', color:'#0a0a0a', border:'none', padding:'10px 20px', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap'}}>
+                        Envoyer analyse
+                      </button>
+                    </div>
+                  )}
+
+                  {demande.statut === 'analyse' && demande.loom_url && (
+                    <div style={{background:'#4ade8010', border:'1px solid #4ade8033', borderRadius:'8px', padding:'0.75rem', marginTop:'1rem'}}>
+                      <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'4px'}}>✅ Analyse envoyee</p>
+                      <a href={demande.loom_url} target="_blank" rel="noreferrer"
+                        style={{fontSize:'13px', color:'#aaa', textDecoration:'none'}}>
+                        🎥 {demande.loom_url}
+                      </a>
+                    </div>
+                  )}
+
                 </div>
-
-                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1rem'}}>
-                  <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
-                    <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Poste</p>
-                    <p style={{fontSize:'13px', fontWeight:'600'}}>{demande.poste}</p>
-                  </div>
-                  <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
-                    <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Plan</p>
-                    <p style={{fontSize:'13px', fontWeight:'600', color:'#4ade80', textTransform:'capitalize'}}>{demande.profiles?.plan}</p>
-                  </div>
-                  <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem'}}>
-                    <p style={{fontSize:'11px', color:'#555', marginBottom:'2px'}}>Date</p>
-                    <p style={{fontSize:'13px', fontWeight:'600'}}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
-                  </div>
-                </div>
-
-                {demande.description && (
-                  <div style={{background:'#1a1a1a', borderRadius:'8px', padding:'0.75rem', marginBottom:'1rem'}}>
-                    <p style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Ce que le joueur veut analyser</p>
-                    <p style={{fontSize:'13px', color:'#aaa'}}>{demande.description}</p>
-                  </div>
-                )}
-
-                <div style={{display:'flex', gap:'0.75rem', alignItems:'center', marginBottom:'1rem'}}>
-                  <a href={demande.video_url} target="_blank" rel="noreferrer" style={{background:'#1a1a1a', color:'#4ade80', border:'1px solid #333', padding:'8px 16px', borderRadius:'8px', fontSize:'13px', textDecoration:'none', cursor:'pointer'}}>
-  🎬 Voir la video
-</a>
-                </div>
-
-                {demande.statut === 'en_attente' && (
-                  <div style={{display:'flex', gap:'0.75rem', alignItems:'center'}}>
-                    <input
-                      placeholder="Colle ton lien Loom ici..."
-                      value={loomUrls[demande.id] || ''}
-                      onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
-                      style={{flex:1, background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 14px', color:'white', fontSize:'14px', outline:'none'}}
-                    />
-                    <button onClick={() => envoyerAnalyse(demande.id, demande.joueur_id)} style={{background:'#4ade80', color:'#0a0a0a', border:'none', padding:'10px 20px', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap'}}>
-                      Envoyer analyse
-                    </button>
-                  </div>
-                )}
-
-                {demande.statut === 'analyse' && demande.loom_url && (
-                  <div style={{background:'#4ade8010', border:'1px solid #4ade8033', borderRadius:'8px', padding:'0.75rem'}}>
-                    <p style={{fontSize:'12px', color:'#4ade80', marginBottom:'4px'}}>Analyse envoyee</p>
-                    <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{fontSize:'13px', color:'#aaa'}}>{demande.loom_url}</a>
-                  </div>
-                )}
-
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
