@@ -21,7 +21,13 @@ export default function DashboardClub() {
   const [conversations, setConversations] = useState([])
   const [userId, setUserId] = useState(null)
 
-  useEffect(() => { checkAuth() }, [])
+ useEffect(() => { checkAuth() }, [])
+
+useEffect(() => {
+  if (!userId) return
+  const interval = setInterval(() => chargerConversations(userId), 4000)
+  return () => clearInterval(interval)
+}, [userId])
 
   async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser()
