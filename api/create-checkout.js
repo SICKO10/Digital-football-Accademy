@@ -8,8 +8,7 @@ const PRICE_IDS = {
   recruteur: 'price_1ThwErJKOH9Bhw9HjhhGauD6',
 }
 
-const SUCCESS_URL = 'https://digital-football-accademy.vercel.app/dashboard'
-const CANCEL_URL = 'https://digital-football-accademy.vercel.app/register'
+const BASE_URL = 'https://digital-football-accademy.vercel.app'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -26,18 +25,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Plan invalide' })
   }
 
+  const successUrl = plan === 'recruteur'
+    ? `${BASE_URL}/club`
+    : `${BASE_URL}/dashboard`
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: email,
-      line_items: [
-        {
-          price: PRICE_IDS[plan],
-          quantity: 1,
-        },
-      ],
-      success_url: SUCCESS_URL,
-      cancel_url: CANCEL_URL,
+      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+      success_url: successUrl,
+      cancel_url: `${BASE_URL}/register`,
     })
 
     return res.status(200).json({ url: session.url })
