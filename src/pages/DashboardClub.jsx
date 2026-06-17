@@ -19,15 +19,16 @@ export default function DashboardClub() {
   const [messageActif, setMessageActif] = useState(null)
   const [newMessage, setNewMessage] = useState('')
   const [conversations, setConversations] = useState([])
+  const [messages, setMessages] = useState([])
   const [userId, setUserId] = useState(null)
 
- useEffect(() => { checkAuth() }, [])
+  useEffect(() => { checkAuth() }, [])
 
-useEffect(() => {
-  if (!userId) return
-  const interval = setInterval(() => chargerConversations(userId), 4000)
-  return () => clearInterval(interval)
-}, [userId])
+  useEffect(() => {
+    if (!userId) return
+    const interval = setInterval(() => chargerConversations(userId), 4000)
+    return () => clearInterval(interval)
+  }, [userId])
 
   async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -50,10 +51,13 @@ useEffect(() => {
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .order('created_at', { ascending: false })
     if (!data) return
+    setMessages(data)
     const map = {}
     data.forEach(msg => {
       const otherId = msg.sender_id === uid ? msg.receiver_id : msg.sender_id
-      const otherName = msg.sender_id === uid ? `${msg.receiver?.prenom} ${msg.receiver?.nom}` : `${msg.sender?.prenom} ${msg.sender?.nom}`
+      const otherName = msg.sender_id === uid
+        ? `${msg.receiver?.prenom} ${msg.receiver?.nom}`
+        : `${msg.sender?.prenom} ${msg.sender?.nom}`
       if (!map[otherId]) map[otherId] = { otherId, otherName, msgs: [] }
       map[otherId].msgs.push(msg)
     })
@@ -87,7 +91,12 @@ useEffect(() => {
 
   async function envoyerMessage() {
     if (!newMessage.trim() || !messageActif || !userId) return
-    await supabase.from('messages').insert({ sender_id: userId, receiver_id: messageActif.id, content: newMessage.trim(), created_at: new Date().toISOString() })
+    await supabase.from('messages').insert({
+      sender_id: userId,
+      receiver_id: messageActif.id,
+      content: newMessage.trim(),
+      created_at: new Date().toISOString()
+    })
     setNewMessage('')
     await chargerConversations(userId)
   }
@@ -131,58 +140,31 @@ useEffect(() => {
       <div style={s.container}>
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>Scout Center <span style={{ color: '#4ade80' }}>🔍</span></h1>
-          <p style={{ color: '#666', marginTop: '6px', fontSize: '14px' }}>{joueurs.length} joueurs PRO disponibles · {selections.length} en shortlist</p>
+          <p style={{ color: '#666', marginTop: '6px', fontSize: '14px' }}>{joueurs.length} joueurs PRO · {selections.length} en shortlist · {conversations.length} conversation{conversations.length > 1 ? 's' : ''}</p>
         </div>
 
         <div style={s.tabs}>
-          {[['recherche', '🔍 Recherche'], ['selections', `📋 Shortlist (${selections.length})`], ['videos', '🎬 Vidéos'], ['messages', '💬 Messages']].map(([id, label]) => (
+          {[['recherche', '🔍 Recherche'], ['selections', `📋 Shortlist (${selections.length})`], ['videos', '🎬 Vidéos'], ['messages', `💬 Messages${conversations.length > 0 ? ` (${conversations.length})` : ''}`]].map(([id, label]) => (
             <button key={id} style={s.tab(onglet === id)} onClick={() => setOnglet(id)}>{label}</button>
           ))}
         </div>
 
-        {/* ═══ RECHERCHE ═══ */}
+        {/* RECHERCHE */}
         {onglet === 'recherche' && (
           <>
             <div style={s.box}>
-              <p style={{ margin: '0 0 1rem', fontWeight: 600, fontSize: '14px', color: '#4ade80' }}>🔍 Filtres de recherche</p>
+              <p style={{ margin: '0 0 1rem', fontWeight: 600, fontSize: '14px', color: '#4ade80' }}>🔍 Filtres</p>
               <div style={s.filtersGrid}>
-                <div>
-                  <label style={s.label}>Recherche libre</label>
-                  <input style={s.input} placeholder="Nom, club..." value={filtres.recherche} onChange={e => setFiltres({ ...filtres, recherche: e.target.value })} />
-                </div>
-                <div>
-                  <label style={s.label}>Poste</label>
-                  <select style={s.select} value={filtres.poste} onChange={e => setFiltres({ ...filtres, poste: e.target.value })}>
-                    {POSTES.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={s.label}>Catégorie d'âge</label>
-                  <select style={s.select} value={filtres.categorie} onChange={e => setFiltres({ ...filtres, categorie: e.target.value })}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={s.label}>Pied fort</label>
-                  <select style={s.select} value={filtres.pied} onChange={e => setFiltres({ ...filtres, pied: e.target.value })}>
-                    {PIEDS.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={s.label}>Niveau</label>
-                  <select style={s.select} value={filtres.niveau} onChange={e => setFiltres({ ...filtres, niveau: e.target.value })}>
-                    {NIVEAUX.map(n => <option key={n}>{n}</option>)}
-                  </select>
-                </div>
+                <div><label style={s.label}>Recherche</label><input style={s.input} placeholder="Nom, club..." value={filtres.recherche} onChange={e => setFiltres({ ...filtres, recherche: e.target.value })} /></div>
+                <div><label style={s.label}>Poste</label><select style={s.select} value={filtres.poste} onChange={e => setFiltres({ ...filtres, poste: e.target.value })}>{POSTES.map(p => <option key={p}>{p}</option>)}</select></div>
+                <div><label style={s.label}>Catégorie</label><select style={s.select} value={filtres.categorie} onChange={e => setFiltres({ ...filtres, categorie: e.target.value })}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
+                <div><label style={s.label}>Pied</label><select style={s.select} value={filtres.pied} onChange={e => setFiltres({ ...filtres, pied: e.target.value })}>{PIEDS.map(p => <option key={p}>{p}</option>)}</select></div>
+                <div><label style={s.label}>Niveau</label><select style={s.select} value={filtres.niveau} onChange={e => setFiltres({ ...filtres, niveau: e.target.value })}>{NIVEAUX.map(n => <option key={n}>{n}</option>)}</select></div>
               </div>
               <p style={{ margin: '1rem 0 0', fontSize: '13px', color: '#555' }}>{joueursFiltres.length} résultat{joueursFiltres.length !== 1 ? 's' : ''}</p>
             </div>
-
             {joueursFiltres.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}>
-                <p style={{ fontSize: '2rem' }}>🔍</p>
-                <p>Aucun joueur trouvé avec ces critères.</p>
-              </div>
+              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '2rem' }}>🔍</p><p>Aucun joueur trouvé.</p></div>
             ) : (
               <div style={s.grid}>
                 {joueursFiltres.map(j => (
@@ -205,13 +187,10 @@ useEffect(() => {
                       <span style={s.stat}>⚽ <span style={s.statVal}>{j.buts_total ?? 0}</span> buts</span>
                       <span style={s.stat}>🎯 <span style={s.statVal}>{j.passes_decisives ?? 0}</span> passes</span>
                       <span style={s.stat}>📋 <span style={s.statVal}>{j.matchs_officiel ?? 0}</span> matchs</span>
-                      <span style={s.stat}>⏱ <span style={s.statVal}>{j.minutes_jouees ?? 0}</span> min</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button style={s.btn('green')} onClick={e => { e.stopPropagation(); setJoueurSelectionne(j) }}>Voir profil</button>
-                      <button style={s.btn(isSelected(j.id) ? 'red' : '')} onClick={e => { e.stopPropagation(); toggleSelection(j) }}>
-                        {isSelected(j.id) ? '− Retirer' : '+ Shortlist'}
-                      </button>
+                      <button style={s.btn(isSelected(j.id) ? 'red' : '')} onClick={e => { e.stopPropagation(); toggleSelection(j) }}>{isSelected(j.id) ? '− Retirer' : '+ Shortlist'}</button>
                       <button style={s.btn()} onClick={e => { e.stopPropagation(); setMessageActif(j); setOnglet('messages') }}>💬</button>
                     </div>
                   </div>
@@ -221,29 +200,22 @@ useEffect(() => {
           </>
         )}
 
-        {/* ═══ SHORTLIST ═══ */}
+        {/* SHORTLIST */}
         {onglet === 'selections' && (
           <div>
             <div style={s.box}>
               <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#4ade80' }}>📋 Ma Shortlist</p>
-              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Joueurs que vous suivez — accès rapide à leur profil et vidéos</p>
+              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Joueurs que vous suivez</p>
             </div>
             {selections.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}>
-                <p style={{ fontSize: '2rem' }}>📋</p>
-                <p>Votre shortlist est vide.</p>
-                <p style={{ fontSize: '13px' }}>Ajoutez des joueurs depuis l'onglet Recherche.</p>
-              </div>
+              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '2rem' }}>📋</p><p>Shortlist vide — ajoutez des joueurs depuis Recherche.</p></div>
             ) : (
               <div style={s.grid}>
                 {selections.map(j => (
                   <div key={j.id} style={s.card(true)}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                       <div style={s.avatar}>{j.prenom?.[0]}{j.nom?.[0]}</div>
-                      <div>
-                        <p style={{ fontWeight: 700, fontSize: '16px', margin: 0 }}>{j.prenom} {j.nom}</p>
-                        <p style={{ color: '#4ade80', fontSize: '13px', margin: '2px 0 0' }}>{j.poste}</p>
-                      </div>
+                      <div><p style={{ fontWeight: 700, fontSize: '16px', margin: 0 }}>{j.prenom} {j.nom}</p><p style={{ color: '#4ade80', fontSize: '13px', margin: '2px 0 0' }}>{j.poste}</p></div>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
                       {j.categorie && <span style={s.stat}>{j.categorie}</span>}
@@ -256,8 +228,8 @@ useEffect(() => {
                       <span style={s.stat}>📋 <span style={s.statVal}>{j.matchs_officiel ?? 0}</span> matchs</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button style={s.btn('green')} onClick={() => setJoueurSelectionne(j)}>Profil complet</button>
-                      <button style={s.btn()} onClick={() => { setOnglet('videos') }}>🎬 Vidéos</button>
+                      <button style={s.btn('green')} onClick={() => setJoueurSelectionne(j)}>Profil</button>
+                      <button style={s.btn()} onClick={() => setOnglet('videos')}>🎬</button>
                       <button style={s.btn()} onClick={() => { setMessageActif(j); setOnglet('messages') }}>💬</button>
                       <button style={s.btn('red')} onClick={() => toggleSelection(j)}>−</button>
                     </div>
@@ -268,55 +240,72 @@ useEffect(() => {
           </div>
         )}
 
-        {/* ═══ VIDÉOS ═══ */}
+        {/* VIDÉOS */}
         {onglet === 'videos' && (
           <div>
             <div style={s.box}>
-              <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#4ade80' }}>🎬 Vidéos de match</p>
-              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Uniquement les joueurs de votre shortlist avec des vidéos disponibles</p>
+              <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#4ade80' }}>🎬 Vidéos</p>
+              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>Vidéos des joueurs de votre shortlist</p>
             </div>
             {selections.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}>
-                <p style={{ fontSize: '2rem' }}>🎬</p>
-                <p>Ajoutez des joueurs à votre shortlist pour accéder à leurs vidéos.</p>
-              </div>
+              <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '2rem' }}>🎬</p><p>Ajoutez des joueurs à votre shortlist.</p></div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-                {selections.filter(j => j.clip_url || j.video_url).map(j => (
+                {selections.filter(j => j.clip_url).map(j => (
                   <div key={j.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
-                    <video src={j.clip_url || j.video_url} controls style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', background: '#000' }} />
+                    <div style={{ background: '#0a0a0a', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px', cursor: 'pointer' }} onClick={() => window.open(j.clip_url, '_blank')}>
+                      <span style={{ fontSize: '2.5rem' }}>▶️</span>
+                      <span style={{ fontSize: '12px', color: '#4ade80' }}>{j.clip_url.includes('veo.co') ? '📹 Vidéo Veo' : '🎬 Voir la vidéo'}</span>
+                    </div>
                     <div style={{ padding: '12px' }}>
                       <p style={{ fontWeight: 700, margin: '0 0 4px', fontSize: '14px' }}>{j.prenom} {j.nom}</p>
                       <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 8px' }}>{j.poste} · {j.categorie}</p>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button style={s.btn('green')} onClick={() => setJoueurSelectionne(j)}>Profil</button>
-                        <button style={s.btn()} onClick={() => { setMessageActif(j); setOnglet('messages') }}>💬 Contacter</button>
+                        <button style={s.btn('green')} onClick={() => window.open(j.clip_url, '_blank')}>🎬 Ouvrir</button>
+                        <button style={s.btn()} onClick={() => { setMessageActif(j); setOnglet('messages') }}>💬</button>
                       </div>
                     </div>
                   </div>
                 ))}
-                {selections.filter(j => j.clip_url || j.video_url).length === 0 && (
-                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: '#555' }}>
-                    <p style={{ fontSize: '2rem' }}>📹</p>
-                    <p>Aucune vidéo disponible pour vos joueurs shortlistés.</p>
-                    <p style={{ fontSize: '13px' }}>Les vidéos apparaîtront ici quand les joueurs les uploadent.</p>
-                  </div>
+                {selections.filter(j => j.clip_url).length === 0 && (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '2rem' }}>📹</p><p>Aucune vidéo disponible.</p></div>
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* ═══ MESSAGES ═══ */}
+        {/* MESSAGES */}
         {onglet === 'messages' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', minHeight: '500px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '16px', minHeight: '500px' }}>
+
+            {/* COLONNE GAUCHE */}
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
               <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
-                <p style={{ margin: 0, fontWeight: 600, color: '#4ade80', fontSize: '14px' }}>💬 Conversations</p>
+                <p style={{ margin: 0, fontWeight: 600, color: '#4ade80', fontSize: '14px' }}>💬 Messages</p>
               </div>
+
+              {/* CONVERSATIONS EXISTANTES */}
+              {conversations.length > 0 && (
+                <div>
+                  <p style={{ margin: '8px 12px 4px', fontSize: '11px', color: '#555' }}>CONVERSATIONS</p>
+                  {conversations.map(conv => (
+                    <div key={conv.otherId}
+                      onClick={() => setMessageActif({ id: conv.otherId, prenom: conv.otherName.split(' ')[0], nom: conv.otherName.split(' ').slice(1).join(' '), poste: '' })}
+                      style={{ padding: '10px 14px', cursor: 'pointer', background: messageActif?.id === conv.otherId ? '#4ade8010' : 'transparent', borderBottom: '1px solid #1a1a1a' }}>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{conv.otherName}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {conv.msgs?.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]?.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* SHORTLIST */}
               {selections.length > 0 && (
-                <div style={{ padding: '8px', borderBottom: '1px solid #1a1a1a' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', padding: '0 4px' }}>SHORTLIST</p>
+                <div style={{ padding: '8px' }}>
+                  <p style={{ margin: '8px 4px 4px', fontSize: '11px', color: '#555' }}>SHORTLIST</p>
                   {selections.map(j => (
                     <div key={j.id} onClick={() => setMessageActif(j)}
                       style={{ padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', background: messageActif?.id === j.id ? '#4ade8010' : 'transparent', marginBottom: '2px' }}>
@@ -326,6 +315,7 @@ useEffect(() => {
                   ))}
                 </div>
               )}
+
               {conversations.length === 0 && selections.length === 0 && (
                 <div style={{ padding: '2rem', textAlign: 'center', color: '#555', fontSize: '13px' }}>
                   <p>Ajoutez des joueurs à votre shortlist pour les contacter.</p>
@@ -333,6 +323,7 @@ useEffect(() => {
               )}
             </div>
 
+            {/* COLONNE DROITE - CHAT */}
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
               {messageActif ? (
                 <>
@@ -340,11 +331,12 @@ useEffect(() => {
                     <div style={{ ...s.avatar, width: '36px', height: '36px', fontSize: '14px' }}>{messageActif.prenom?.[0]}{messageActif.nom?.[0]}</div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '15px' }}>{messageActif.prenom} {messageActif.nom}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#4ade80' }}>{messageActif.poste} · Plan PRO ✓</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#4ade80' }}>{messageActif.poste || 'Joueur PRO'} ✓</p>
                     </div>
                   </div>
                   <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-                    {conversations.find(c => c.otherId === messageActif.id)?.msgs
+                    {messages
+                      .filter(m => m.sender_id === messageActif.id || m.receiver_id === messageActif.id)
                       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
                       .map((m, i) => (
                         <div key={i} style={s.msgBubble(m.sender_id === userId)}>{m.content}</div>
@@ -359,7 +351,7 @@ useEffect(() => {
               ) : (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', flexDirection: 'column', gap: '8px' }}>
                   <p style={{ fontSize: '2rem' }}>💬</p>
-                  <p>Sélectionnez un joueur de votre shortlist pour le contacter</p>
+                  <p>Sélectionnez une conversation ou un joueur</p>
                 </div>
               )}
             </div>
@@ -367,7 +359,7 @@ useEffect(() => {
         )}
       </div>
 
-      {/* MODAL PROFIL */}
+      {/* MODAL */}
       {joueurSelectionne && (
         <div style={s.modal} onClick={() => setJoueurSelectionne(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -381,17 +373,15 @@ useEffect(() => {
               </div>
               <button onClick={() => setJoueurSelectionne(null)} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-              {[['📍 Région', joueurSelectionne.region], ['⚽ Catégorie', joueurSelectionne.categorie], ['🦵 Pied fort', joueurSelectionne.pied], ['🏟️ Niveau', joueurSelectionne.niveau_equipe], ['🏆 Club', joueurSelectionne.club]].filter(([, v]) => v).map(([label, val]) => (
+              {[['📍 Région', joueurSelectionne.region], ['⚽ Catégorie', joueurSelectionne.categorie], ['🦵 Pied', joueurSelectionne.pied], ['🏟️ Niveau', joueurSelectionne.niveau_equipe], ['🏆 Club', joueurSelectionne.club]].filter(([, v]) => v).map(([label, val]) => (
                 <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{label}</p>
                   <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p>
                 </div>
               ))}
             </div>
-
-            <p style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600, marginBottom: '10px' }}>📊 Statistiques</p>
+            <p style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600, marginBottom: '10px' }}>📊 Stats</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '1.5rem' }}>
               {[['Matchs officiels', joueurSelectionne.matchs_officiel ?? 0], ['Matchs amicaux', joueurSelectionne.matchs_amical ?? 0], ['Minutes jouées', joueurSelectionne.minutes_jouees ?? 0], ['Buts total', joueurSelectionne.buts_total ?? 0], ['Passes décisives', joueurSelectionne.passes_decisives ?? 0], ['Clean sheets', joueurSelectionne.cleansheets ?? 0]].map(([label, val]) => (
                 <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
@@ -400,13 +390,20 @@ useEffect(() => {
                 </div>
               ))}
             </div>
-
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '1rem', borderTop: '1px solid #222' }}>
+            {joueurSelectionne.clip_url && (
+              <div style={{ marginBottom: '1rem' }}>
+                <a href={joueurSelectionne.clip_url} target="_blank" rel="noreferrer"
+                  style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, textDecoration: 'none', fontSize: '13px' }}>
+                  🎬 Voir la vidéo {joueurSelectionne.clip_url.includes('veo.co') ? '(Veo)' : ''}
+                </a>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '10px', paddingTop: '1rem', borderTop: '1px solid #222' }}>
               <button style={s.btn(isSelected(joueurSelectionne.id) ? 'red' : 'green')} onClick={() => toggleSelection(joueurSelectionne)}>
                 {isSelected(joueurSelectionne.id) ? '− Retirer de la shortlist' : '+ Ajouter à la shortlist'}
               </button>
               <button style={s.btn()} onClick={() => { setJoueurSelectionne(null); setMessageActif(joueurSelectionne); setOnglet('messages') }}>
-                💬 Envoyer un message
+                💬 Message
               </button>
             </div>
           </div>
