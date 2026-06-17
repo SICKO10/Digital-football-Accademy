@@ -143,9 +143,9 @@ function DashboardCoach() {
                 )}
 
                 <div style={{display:'flex', gap:'0.75rem', alignItems:'center', marginBottom:'1rem'}}>
-                  <a href={`https://ogxladkyvcnhwctyiknu.supabase.co/storage/v1/object/public/videos/${demande.video_url}`} target="_blank" rel="noreferrer" style={{background:'#1a1a1a', color:'#4ade80', border:'1px solid #333', padding:'8px 16px', borderRadius:'8px', fontSize:'13px', textDecoration:'none', cursor:'pointer'}}>
-                    Voir la video
-                  </a>
+                  <a href={demande.video_url} target="_blank" rel="noreferrer" style={{background:'#1a1a1a', color:'#4ade80', border:'1px solid #333', padding:'8px 16px', borderRadius:'8px', fontSize:'13px', textDecoration:'none', cursor:'pointer'}}>
+  🎬 Voir la video
+</a>
                 </div>
 
                 {demande.statut === 'en_attente' && (
