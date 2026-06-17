@@ -188,7 +188,7 @@ function Home() {
                 </li>
               ))}
             </ul>
-            <<button onClick={() => navigate('/register-recruteur')} style={{display:'block', width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer', textAlign:'center'}}>
+            <button onClick={() => navigate('/register-recruteur')} style={{display:'block', width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer', textAlign:'center'}}>
   Commencer pour 200€/an
 </button>
             <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>Facturation annuelle — Acces immediat</p>
