@@ -188,9 +188,9 @@ function Home() {
                 </li>
               ))}
             </ul>
-            <a href={STRIPE_LINKS.recruteur} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer', textAlign:'center', textDecoration:'none'}}>
-              Commencer pour 200€/an
-            </a>
+            <<button onClick={() => navigate('/register-recruteur')} style={{display:'block', width:'100%', padding:'14px', borderRadius:'8px', border:'none', background:'#4ade80', color:'#0a0a0a', fontSize:'15px', fontWeight:'700', cursor:'pointer', textAlign:'center'}}>
+  Commencer pour 200€/an
+</button>
             <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>Facturation annuelle — Acces immediat</p>
           </div>
         </div>
