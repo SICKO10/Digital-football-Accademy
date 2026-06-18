@@ -2,6 +2,127 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
+// ── Détection type de lien ──────────────────────────────────────────────────
+const detectVideoType = (url) => {
+  if (!url) return null
+  if (url.includes('cloudinary.com') || url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm')) return 'mp4'
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+  if (url.includes('veo.co')) return 'veo'
+  if (url.includes('instagram.com')) return 'instagram'
+  if (url.includes('tiktok.com')) return 'tiktok'
+  return 'link'
+}
+
+const getYoutubeId = (url) => {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&?/\s]{11})/)
+  return match ? match[1] : null
+}
+
+const getTikTokId = (url) => {
+  const match = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
+  return match ? match[1] : null
+}
+
+// ── Composant lecteur vidéo universel ──────────────────────────────────────
+function VideoPlayer({ url, style = {} }) {
+  const type = detectVideoType(url)
+
+  const containerStyle = {
+    background: '#000',
+    borderRadius: '0',
+    overflow: 'hidden',
+    aspectRatio: '16/9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...style,
+  }
+
+  if (type === 'mp4') {
+    return (
+      <div style={containerStyle}>
+        <video src={url} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+    )
+  }
+
+  if (type === 'youtube') {
+    const id = getYoutubeId(url)
+    if (!id) return <VideoFallback url={url} label="YouTube" emoji="▶" color="#ff0000" containerStyle={containerStyle} />
+    return (
+      <div style={containerStyle}>
+        <iframe
+          src={`https://www.youtube.com/embed/${id}`}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video"
+        />
+      </div>
+    )
+  }
+
+  if (type === 'tiktok') {
+    const id = getTikTokId(url)
+    if (!id) return <VideoFallback url={url} label="TikTok" emoji="♪" color="#69C9D0" containerStyle={containerStyle} />
+    return (
+      <div style={{ ...containerStyle, aspectRatio: '9/16', maxHeight: '480px' }}>
+        <iframe
+          src={`https://www.tiktok.com/embed/v2/${id}`}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          allow="encrypted-media"
+          allowFullScreen
+          title="TikTok video"
+        />
+      </div>
+    )
+  }
+
+  if (type === 'veo') {
+    return <VideoFallback url={url} label="Veo" emoji="🎥" color="#4ade80" containerStyle={containerStyle} />
+  }
+
+  if (type === 'instagram') {
+    return <VideoFallback url={url} label="Instagram" emoji="📸" color="#E1306C" containerStyle={containerStyle} />
+  }
+
+  return <VideoFallback url={url} label="Voir la vidéo" emoji="▶" color="#4ade80" containerStyle={containerStyle} />
+}
+
+function VideoFallback({ url, label, emoji, color, containerStyle }) {
+  return (
+    <div style={containerStyle}>
+      <a href={url} target="_blank" rel="noreferrer"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: `${color}20`, border: `2px solid ${color}60`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color }}>
+          {emoji}
+        </div>
+        <span style={{ fontSize: '14px', color, fontWeight: 600 }}>Ouvrir sur {label} →</span>
+      </a>
+    </div>
+  )
+}
+
+// ── Badge type vidéo ────────────────────────────────────────────────────────
+function VideoBadge({ url }) {
+  const type = detectVideoType(url)
+  const map = {
+    mp4: { label: 'Vidéo HD', color: '#4ade80' },
+    youtube: { label: 'YouTube', color: '#ff0000' },
+    veo: { label: 'Veo', color: '#60a5fa' },
+    instagram: { label: 'Instagram', color: '#E1306C' },
+    tiktok: { label: 'TikTok', color: '#69C9D0' },
+    link: { label: 'Vidéo', color: '#4ade80' },
+  }
+  const { label, color } = map[type] || map.link
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: `${color}15`, border: `1px solid ${color}40`, color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>
+      🎬 {label}
+    </span>
+  )
+}
+
+// ── Composant principal ─────────────────────────────────────────────────────
 function Feed() {
   const navigate = useNavigate()
   const [joueursPro, setJoueursPro] = useState([])
@@ -22,7 +143,6 @@ function Feed() {
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
-
     if (user) {
       const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfil(p)
@@ -31,15 +151,13 @@ function Feed() {
         if (saved) setSelections(JSON.parse(saved))
       }
     }
-
-    const { data: joueursData } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('plan', 'pro')
       .eq('abonnement_actif', true)
       .order('created_at', { ascending: false })
-
-    setJoueursPro(joueursData || [])
+    setJoueursPro(data || [])
     setLoading(false)
   }
 
@@ -50,20 +168,13 @@ function Feed() {
     setSelections(newSel)
     localStorage.setItem('df_selections_' + user.id, JSON.stringify(newSel))
   }
-
   const isSelected = (id) => selections.some(s => s.id === id)
-
-  const isVeo = (url) => url && url.includes('veo.co')
-  const isYoutube = (url) => url && (url.includes('youtube.com') || url.includes('youtu.be'))
-  const isCloudinary = (url) => url && url.includes('cloudinary.com')
 
   const joueursFiltres = joueursPro.filter(j => {
     if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
     return true
   })
-
-  // Joueurs avec une vidéo pour l'onglet clips
   const joueursAvecClip = joueursPro.filter(j => j.clip_url)
 
   const s = {
@@ -76,14 +187,10 @@ function Feed() {
     stat: { background: '#1a1a1a', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', color: '#ccc', display: 'inline-block', margin: '2px' },
     statVal: { color: '#4ade80', fontWeight: 700 },
     modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' },
-    modalBox: { background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '560px', width: '100%', maxHeight: '85vh', overflowY: 'auto' },
+    modalBox: { background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' },
   }
 
-  if (loading) return (
-    <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80' }}>Chargement...</p>
-    </div>
-  )
+  if (loading) return <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#4ade80' }}>Chargement...</p></div>
 
   const isRecruteur = profil?.plan === 'recruteur'
 
@@ -113,9 +220,7 @@ function Feed() {
           <p style={{ color: '#4ade80', fontSize: '12px', letterSpacing: '2px', marginBottom: '0.5rem' }}>SCOUT CENTER</p>
           <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '0.5rem' }}>Les talents du moment ⚽</h1>
           <p style={{ color: '#666', fontSize: '14px' }}>
-            {isRecruteur
-              ? `${selections.length} joueur${selections.length > 1 ? 's' : ''} dans votre shortlist`
-              : 'Découvrez les joueurs PRO de la plateforme'}
+            {isRecruteur ? `${selections.length} joueur${selections.length > 1 ? 's' : ''} dans votre shortlist` : 'Découvrez les joueurs PRO de la plateforme'}
           </p>
         </div>
 
@@ -138,7 +243,7 @@ function Feed() {
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
           <span style={{ fontSize: '13px', color: '#555' }}>
-            {vue === 'joueurs' ? joueursFiltres.length : joueursAvecClip.length} résultat{(vue === 'joueurs' ? joueursFiltres.length : joueursAvecClip.length) > 1 ? 's' : ''}
+            {(vue === 'joueurs' ? joueursFiltres : joueursAvecClip).length} résultat(s)
           </span>
           {isRecruteur && selections.length > 0 && (
             <button style={{ ...s.btn('green'), marginLeft: 'auto' }} onClick={() => navigate('/club')}>
@@ -152,8 +257,7 @@ function Feed() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
             {joueursFiltres.length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: '#555' }}>
-                <p style={{ fontSize: '2rem' }}>🔍</p>
-                <p>Aucun joueur avec ces critères</p>
+                <p style={{ fontSize: '2rem' }}>🔍</p><p>Aucun joueur avec ces critères</p>
               </div>
             ) : joueursFiltres.map(j => (
               <div key={j.id} style={s.card(isSelected(j.id))}>
@@ -170,29 +274,18 @@ function Feed() {
                       <p style={{ color: '#4ade80', fontSize: '13px', margin: '2px 0 0' }}>{j.poste || 'Poste non renseigné'}</p>
                     </div>
                   </div>
-
                   <div style={{ marginBottom: '10px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                     {j.categorie && <span style={s.stat}>{j.categorie}</span>}
                     {j.pied && <span style={s.stat}>Pied {j.pied?.toLowerCase()}</span>}
-                    {j.niveau_equipe && <span style={s.stat}>{j.niveau_equipe}</span>}
                     {j.club && <span style={s.stat}>{j.club}</span>}
                     {j.region && <span style={s.stat}>{j.region}</span>}
                   </div>
-
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
                     <span style={s.stat}>⚽ <span style={s.statVal}>{j.buts_total ?? 0}</span> buts</span>
                     <span style={s.stat}>🎯 <span style={s.statVal}>{j.passes_decisives ?? 0}</span> passes</span>
                     <span style={s.stat}>📋 <span style={s.statVal}>{j.matchs_officiel ?? 0}</span> matchs</span>
                   </div>
-
-                  {j.clip_url && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade8010', border: '1px solid #4ade8030', color: '#4ade80', padding: '4px 10px', borderRadius: '20px', fontSize: '11px' }}>
-                        🎬 Vidéo disponible
-                      </span>
-                    </div>
-                  )}
-
+                  {j.clip_url && <div style={{ marginBottom: '12px' }}><VideoBadge url={j.clip_url} /></div>}
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button style={s.btn('green')} onClick={() => setJoueurModal(j)}>Voir profil</button>
                     {isRecruteur ? (
@@ -209,61 +302,39 @@ function Feed() {
           </div>
         )}
 
-        {/* VUE CLIPS / VIDÉOS */}
+        {/* VUE CLIPS */}
         {vue === 'clips' && (
           joueursAvecClip.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}>
               <p style={{ fontSize: '3rem' }}>🎬</p>
-              <p style={{ fontSize: '16px', marginBottom: '8px' }}>Aucune vidéo pour le moment</p>
-              <p style={{ fontSize: '13px' }}>Les joueurs PRO partagent leurs clips depuis leur dashboard</p>
+              <p>Aucune vidéo pour le moment</p>
+              <p style={{ fontSize: '13px', marginTop: '8px' }}>Les joueurs PRO partagent leurs clips depuis leur dashboard</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
               {joueursAvecClip.map(j => (
                 <div key={j.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
-
-                  {/* Lecteur vidéo */}
-                  <div style={{ background: '#000', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    {isCloudinary(j.clip_url) ? (
-                      <video
-                        src={j.clip_url}
-                        controls
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <a href={j.clip_url} target="_blank" rel="noreferrer"
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#fff', textDecoration: 'none' }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#4ade8020', border: '2px solid #4ade8060', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                          ▶
-                        </div>
-                        <span style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600 }}>
-                          {isVeo(j.clip_url) ? 'Ouvrir sur Veo' : isYoutube(j.clip_url) ? 'Ouvrir sur YouTube' : 'Voir la vidéo'}
-                        </span>
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Infos joueur */}
+                  <VideoPlayer url={j.clip_url} />
                   <div style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#4ade8015', border: '1px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, color: '#4ade80', flexShrink: 0 }}>
                         {j.prenom?.[0]}{j.nom?.[0]}
                       </div>
                       <div>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{j.prenom} {j.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{j.poste} {j.categorie ? `· ${j.categorie}` : ''}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>
+                          {j.poste}{j.categorie ? ` · ${j.categorie}` : ''}{j.club ? ` · ${j.club}` : ''}
+                        </p>
                       </div>
                     </div>
-
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-                      {j.club && <span style={s.stat}>{j.club}</span>}
-                      {j.region && <span style={s.stat}>{j.region}</span>}
                       <span style={s.stat}>⚽ <span style={s.statVal}>{j.buts_total ?? 0}</span></span>
                       <span style={s.stat}>🎯 <span style={s.statVal}>{j.passes_decisives ?? 0}</span></span>
+                      <span style={s.stat}>📋 <span style={s.statVal}>{j.matchs_officiel ?? 0}</span></span>
+                      {j.region && <span style={s.stat}>{j.region}</span>}
                     </div>
-
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button style={s.btn('green')} onClick={() => setJoueurModal(j)}>Voir profil complet</button>
+                      <button style={s.btn('green')} onClick={() => setJoueurModal(j)}>Voir profil</button>
                       {isRecruteur && (
                         <button style={s.btn(isSelected(j.id) ? 'red' : '')} onClick={() => toggleSelection(j)}>
                           {isSelected(j.id) ? '− Retirer' : '+ Shortlist'}
@@ -306,7 +377,7 @@ function Feed() {
 
             <p style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600, marginBottom: '10px' }}>📊 Stats</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '1.5rem' }}>
-              {[['Matchs officiels', joueurModal.matchs_officiel ?? 0], ['Minutes jouées', joueurModal.minutes_jouees ?? 0], ['Buts total', joueurModal.buts_total ?? 0], ['Passes décisives', joueurModal.passes_decisives ?? 0], ['Matchs amicaux', joueurModal.matchs_amical ?? 0], ['Clean sheets', joueurModal.cleansheets ?? 0]].map(([label, val]) => (
+              {[['Matchs', joueurModal.matchs_officiel ?? 0], ['Minutes', joueurModal.minutes_jouees ?? 0], ['Buts', joueurModal.buts_total ?? 0], ['Passes déc.', joueurModal.passes_decisives ?? 0], ['Amicaux', joueurModal.matchs_amical ?? 0], ['CS', joueurModal.cleansheets ?? 0]].map(([label, val]) => (
                 <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
                   <p style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#4ade80' }}>{val}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#666' }}>{label}</p>
@@ -314,18 +385,14 @@ function Feed() {
               ))}
             </div>
 
-            {/* Vidéo dans la modal */}
             {joueurModal.clip_url && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600, marginBottom: '10px' }}>🎬 Vidéo</p>
-                {isCloudinary(joueurModal.clip_url) ? (
-                  <video src={joueurModal.clip_url} controls style={{ width: '100%', borderRadius: '8px', maxHeight: '240px', background: '#000' }} />
-                ) : (
-                  <a href={joueurModal.clip_url} target="_blank" rel="noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, textDecoration: 'none' }}>
-                    🎬 {isVeo(joueurModal.clip_url) ? 'Voir sur Veo' : isYoutube(joueurModal.clip_url) ? 'Voir sur YouTube' : 'Voir la vidéo'}
-                  </a>
-                )}
+                <p style={{ fontSize: '13px', color: '#4ade80', fontWeight: 600, marginBottom: '10px' }}>
+                  🎬 Vidéo <VideoBadge url={joueurModal.clip_url} />
+                </p>
+                <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <VideoPlayer url={joueurModal.clip_url} />
+                </div>
               </div>
             )}
 
