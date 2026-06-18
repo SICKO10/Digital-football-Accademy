@@ -21,15 +21,29 @@ export default function Upload() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
     const { data: profil } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (!profil || !profil.abonnement_actif || profil.plan === 'recruteur') {
+    if (!profil || !profil.abonnement_actif || profil.plan === 'recruteur' || profil.plan === 'coach') {
       navigate('/dashboard'); return
     }
     setUser(user)
     setProfil(profil)
   }
 
+  async function decrementerAnalyse() {
+    const nouvellValeur = Math.max(0, (profil.analyses_restantes || 0) - 1)
+    await supabase.from('profiles').update({
+      analyses_restantes: nouvellValeur
+    }).eq('id', user.id)
+    setProfil(prev => ({ ...prev, analyses_restantes: nouvellValeur }))
+  }
+
   async function handleSubmitLien() {
     if (!lien.trim() || !user) return
+
+    if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
+      setErreur("Tu as utilisé toutes tes analyses ce mois-ci. Reviens le mois prochain !")
+      return
+    }
+
     setUploading(true)
     setErreur('')
     try {
@@ -48,21 +62,27 @@ export default function Upload() {
       })
       if (e2) throw e2
 
+      await decrementerAnalyse()
       setSuccess(true)
     } catch (e) {
-      setErreur(e.message || 'Erreur lors de l\'envoi')
+      setErreur(e.message || "Erreur lors de l'envoi")
     }
     setUploading(false)
   }
 
   async function handleUploadFichier() {
     if (!file || !user) return
+
+    if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
+      setErreur("Tu as utilisé toutes tes analyses ce mois-ci. Reviens le mois prochain !")
+      return
+    }
+
     setUploading(true)
     setErreur('')
     setProgress(10)
 
     try {
-      // 1. Obtenir la signature Cloudinary
       const sigRes = await fetch('/api/upload-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,7 +97,6 @@ export default function Upload() {
       const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
       setProgress(20)
 
-      // 2. Upload direct vers Cloudinary
       const formData = new FormData()
       formData.append('file', file)
       formData.append('signature', signature)
@@ -99,13 +118,11 @@ export default function Upload() {
           const data = JSON.parse(xhr.responseText)
           const videoUrl = data.secure_url
 
-          // 3. Sauvegarder l'URL dans le profil
           const { error: e1 } = await supabase.from('profiles').update({
             clip_url: videoUrl,
           }).eq('id', user.id)
           if (e1) throw e1
 
-          // 4. Créer la demande d'analyse
           const { error: e2 } = await supabase.from('demandes').insert({
             joueur_id: user.id,
             titre: `Analyse vidéo — ${profil.prenom} ${profil.nom}`,
@@ -116,6 +133,7 @@ export default function Upload() {
           })
           if (e2) throw e2
 
+          await decrementerAnalyse()
           setProgress(100)
           setSuccess(true)
         } else {
@@ -161,6 +179,14 @@ export default function Upload() {
       color: active ? '#4ade80' : '#666',
       fontWeight: 600, cursor: 'pointer', fontSize: '14px',
     }),
+    quotaBadge: (restantes) => ({
+      display: 'inline-flex', alignItems: 'center', gap: '6px',
+      background: restantes > 0 ? '#001a0a' : '#1a0a00',
+      border: `1px solid ${restantes > 0 ? '#4ade8040' : '#f9731640'}`,
+      color: restantes > 0 ? '#4ade80' : '#f97316',
+      padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+      marginBottom: '1.5rem',
+    }),
   }
 
   if (!profil) return (
@@ -168,6 +194,9 @@ export default function Upload() {
       <p style={{ color: '#4ade80' }}>Chargement...</p>
     </div>
   )
+
+  const analysesRestantes = profil.analyses_restantes || 0
+  const peutEnvoyer = analysesRestantes > 0
 
   return (
     <div style={s.page}>
@@ -189,30 +218,51 @@ export default function Upload() {
         <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
           Partage ta vidéo <span style={{ color: '#4ade80' }}>🎬</span>
         </h1>
-        <p style={{ color: '#666', marginBottom: '2rem', fontSize: '14px' }}>
+        <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '14px' }}>
           Ton clip sera visible par les recruteurs et analysé par notre coach
         </p>
+
+        {/* Quota analyses */}
+        <div style={s.quotaBadge(analysesRestantes)}>
+          {peutEnvoyer ? `✅ ${analysesRestantes} analyse${analysesRestantes > 1 ? 's' : ''} restante${analysesRestantes > 1 ? 's' : ''} ce mois` : '❌ Plus d\'analyses disponibles ce mois'}
+        </div>
 
         {success ? (
           <div style={{ ...s.box, border: '2px solid #4ade80', textAlign: 'center', padding: '3rem' }}>
             <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</p>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Vidéo envoyée !</h2>
             <p style={{ color: '#666', marginBottom: '0.5rem', fontSize: '14px' }}>Ton clip est visible par les recruteurs.</p>
-            <p style={{ color: '#4ade80', marginBottom: '2rem', fontSize: '14px' }}>Une demande d'analyse a été créée pour le coach.</p>
+            <p style={{ color: '#4ade80', marginBottom: '0.5rem', fontSize: '14px' }}>Une demande d'analyse a été créée pour le coach.</p>
+            <p style={{ color: '#666', marginBottom: '2rem', fontSize: '13px' }}>
+              Il te reste <strong style={{ color: '#fff' }}>{analysesRestantes}</strong> analyse{analysesRestantes > 1 ? 's' : ''} ce mois.
+            </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => navigate('/dashboard')}
                 style={{ ...s.btn(false), width: 'auto', padding: '10px 24px' }}>
                 Mon dashboard
               </button>
-              <button onClick={() => { setSuccess(false); setFile(null); setLien(''); setProgress(0) }}
-                style={{ background: '#1a1a1a', border: '1px solid #333', color: '#aaa', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                Envoyer un autre
-              </button>
+              {analysesRestantes > 0 && (
+                <button onClick={() => { setSuccess(false); setFile(null); setLien(''); setProgress(0) }}
+                  style={{ background: '#1a1a1a', border: '1px solid #333', color: '#aaa', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  Envoyer un autre
+                </button>
+              )}
             </div>
+          </div>
+        ) : !peutEnvoyer ? (
+          <div style={{ ...s.box, border: '1px solid #f9731640', textAlign: 'center', padding: '3rem' }}>
+            <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</p>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Quota épuisé</h2>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem' }}>
+              Tu as utilisé toutes tes analyses ce mois-ci.<br />Reviens le mois prochain ou passe au plan supérieur.
+            </p>
+            <button onClick={() => navigate('/dashboard')}
+              style={{ ...s.btn(false), width: 'auto', padding: '10px 24px' }}>
+              Retour au dashboard
+            </button>
           </div>
         ) : (
           <>
-            {/* Sélection du mode */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '1.5rem' }}>
               <button style={s.modeBtn(mode === 'lien')} onClick={() => setMode('lien')}>
                 🔗 Lien vidéo (Veo, YouTube...)
@@ -222,7 +272,6 @@ export default function Upload() {
               </button>
             </div>
 
-            {/* Mode lien */}
             {mode === 'lien' && (
               <div style={s.box}>
                 <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
@@ -249,7 +298,6 @@ export default function Upload() {
               </div>
             )}
 
-            {/* Mode fichier MP4 */}
             {mode === 'fichier' && (
               <div style={s.box}>
                 <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
@@ -270,11 +318,9 @@ export default function Upload() {
                     {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'MP4, MOV — max 500MB'}
                   </p>
                 </div>
-                <input
-                  id="video-input" type="file" accept="video/*"
+                <input id="video-input" type="file" accept="video/*"
                   style={{ display: 'none' }}
-                  onChange={e => setFile(e.target.files[0])}
-                />
+                  onChange={e => setFile(e.target.files[0])} />
 
                 {uploading && (
                   <div style={{ marginTop: '1rem' }}>
@@ -290,7 +336,6 @@ export default function Upload() {
               </div>
             )}
 
-            {/* Description */}
             <div style={s.box}>
               <label style={s.label}>Description du clip (optionnel)</label>
               <textarea
