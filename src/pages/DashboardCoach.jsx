@@ -35,6 +35,12 @@ function DashboardCoach() {
 
   const isVeo = (url) => url && url.includes('veo.co')
   const isYoutube = (url) => url && (url.includes('youtube.com') || url.includes('youtu.be'))
+  const isCloudinary = (url) => url && url.includes('cloudinary.com')
+
+const getCloudinaryVideoUrl = (url) => {
+  if (!url) return url
+  return url.replace('/upload/', '/upload/q_auto,f_auto/')
+}
 
   const getStatutColor = (statut) => {
     if (statut === 'en_attente') return '#f59e0b'
@@ -145,7 +151,7 @@ function DashboardCoach() {
                       ) : (
                         <div>
                           <video
-                            src={videoUrl}
+                            src={videoUrl && videoUrl.includes("cloudinary.com") ? videoUrl.replace("/upload/", "/upload/q_auto,f_mp4/") : videoUrl}
                             controls
                             style={{width:'100%', maxHeight:'300px', borderRadius:'8px', background:'#000', marginBottom:'8px'}}
                           />

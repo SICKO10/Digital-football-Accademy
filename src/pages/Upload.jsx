@@ -43,7 +43,7 @@ export default function Upload() {
         description: description.trim() || '',
         video_url: lien.trim(),
         statut: 'en_attente',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString().replace("T", " ").replace("Z", "")
       })
 
       setSuccess(true)
@@ -96,7 +96,7 @@ export default function Upload() {
             description: description.trim() || '',
             video_url: data.secure_url,
             statut: 'en_attente',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString().replace("T", " ").replace("Z", "")
           })
 
           setProgress(100)
