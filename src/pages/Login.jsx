@@ -37,7 +37,7 @@ function Login() {
     if (profil?.plan === 'recruteur') {
       navigate('/club')
     } else {
-      navigate('/dashboard')
+      if (profil?.plan === 'coach') { navigate('/coach') } else { navigate('/dashboard') }
     }
   }
 
