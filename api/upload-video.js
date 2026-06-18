@@ -6,8 +6,8 @@ export default async function handler(req, res) {
 
   const cloudinary = await import('cloudinary')
   cloudinary.v2.config({
-    cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.VITE_CLOUDINARY_API_KEY,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   })
 
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     timestamp,
     folder,
     public_id,
-    cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.VITE_CLOUDINARY_API_KEY,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
   })
 }
