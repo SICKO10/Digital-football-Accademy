@@ -18,10 +18,20 @@ function DashboardJoueur() {
   const [savingStats, setSavingStats] = useState(false)
   const [statsSaved, setStatsSaved] = useState(false)
   const [userId, setUserId] = useState(null)
+
+  // Messagerie recruteurs
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
   const [newMessage, setNewMessage] = useState('')
   const [messages, setMessages] = useState([])
+
+  // Support coach
+  const [coaches, setCoaches] = useState([])
+  const [coachSelectionne, setCoachSelectionne] = useState(null)
+  const [messageCoach, setMessageCoach] = useState('')
+  const [sendingCoach, setSendingCoach] = useState(false)
+  const [coachSent, setCoachSent] = useState(false)
+  const [convCoach, setConvCoach] = useState([])
 
   useEffect(() => { getProfil() }, [])
 
@@ -32,6 +42,7 @@ function DashboardJoueur() {
 
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
+    const { data: coachData } = await supabase.from('profiles').select('*').eq('plan', 'coach')
 
     setProfil(data)
     setStats({
@@ -51,6 +62,8 @@ function DashboardJoueur() {
       cleansheets: data?.cleansheets || 0,
     })
     setDemandes(demandesData || [])
+    setCoaches(coachData || [])
+    if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
     await chargerConversations(user.id)
     setLoading(false)
   }
@@ -62,6 +75,7 @@ function DashboardJoueur() {
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .order('created_at', { ascending: false })
     if (!data) return
+    setMessages(data)
     const map = {}
     data.forEach(msg => {
       const otherId = msg.sender_id === uid ? msg.receiver_id : msg.sender_id
@@ -69,8 +83,12 @@ function DashboardJoueur() {
       if (!map[otherId]) map[otherId] = { otherId, other, msgs: [] }
       map[otherId].msgs.push(msg)
     })
-    setConversations(Object.values(map))
-    setMessages(data)
+    const allConvs = Object.values(map)
+    // Séparer conv recruteurs et conv coach
+    const convCoachList = allConvs.filter(c => c.other?.plan === 'coach')
+    const convRecruteurs = allConvs.filter(c => c.other?.plan !== 'coach')
+    setConversations(convRecruteurs)
+    setConvCoach(convCoachList)
   }
 
   const envoyerMessage = async () => {
@@ -83,6 +101,22 @@ function DashboardJoueur() {
     })
     setNewMessage('')
     await chargerConversations(userId)
+  }
+
+  const envoyerMessageCoach = async () => {
+    if (!messageCoach.trim() || !coachSelectionne || !userId) return
+    setSendingCoach(true)
+    await supabase.from('messages').insert({
+      sender_id: userId,
+      receiver_id: coachSelectionne.id,
+      content: messageCoach.trim(),
+      created_at: new Date().toISOString()
+    })
+    setSendingCoach(false)
+    setCoachSent(true)
+    setMessageCoach('')
+    await chargerConversations(userId)
+    setTimeout(() => setCoachSent(false), 3000)
   }
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
@@ -99,6 +133,8 @@ function DashboardJoueur() {
   const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }
   const labelStyle = { fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }
   const msgBubble = (mine) => ({ maxWidth: '70%', padding: '10px 14px', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: mine ? '#4ade80' : '#1a1a1a', color: mine ? '#000' : '#fff', fontSize: '14px', alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: '8px' })
+
+  const totalNotifs = conversations.length + convCoach.length
 
   if (loading) return <Loader />
 
@@ -130,9 +166,15 @@ function DashboardJoueur() {
       </nav>
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #222', paddingBottom: '1rem' }}>
-          {[['dashboard', 'Accueil'], ['profil', 'Mon Profil & Stats'], ['analyses', 'Mes Analyses'], ['messages', `💬 Messages${conversations.length > 0 ? ` (${conversations.length})` : ''}`]].map(([id, label]) => (
-            <button key={id} onClick={() => setOnglet(id)} style={{ background: 'transparent', border: 'none', color: onglet === id ? '#4ade80' : '#666', fontSize: '15px', fontWeight: onglet === id ? '700' : '400', cursor: 'pointer', paddingBottom: '4px', borderBottom: onglet === id ? '2px solid #4ade80' : '2px solid transparent' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #222', paddingBottom: '1rem', flexWrap: 'wrap' }}>
+          {[
+            ['dashboard', 'Accueil'],
+            ['profil', 'Mon Profil & Stats'],
+            ['analyses', 'Mes Analyses'],
+            ['messages', `💬 Recruteurs${conversations.length > 0 ? ` (${conversations.length})` : ''}`],
+            ['coach', `🎙️ Support Coach${convCoach.length > 0 ? ` (${convCoach.length})` : ''}`],
+          ].map(([id, label]) => (
+            <button key={id} onClick={() => setOnglet(id)} style={{ background: 'transparent', border: 'none', color: onglet === id ? '#4ade80' : '#666', fontSize: '14px', fontWeight: onglet === id ? '700' : '400', cursor: 'pointer', paddingBottom: '4px', borderBottom: onglet === id ? '2px solid #4ade80' : '2px solid transparent', whiteSpace: 'nowrap' }}>
               {label}
             </button>
           ))}
@@ -201,6 +243,7 @@ function DashboardJoueur() {
               </div>
             )}
 
+            {/* Aperçu messages recruteurs */}
             {conversations.length > 0 && (
               <div style={{ background: '#111', border: '2px solid #4ade8033', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#4ade80' }}>💬 Messages de recruteurs</h2>
@@ -210,6 +253,25 @@ function DashboardJoueur() {
                     <div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                       <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>Recruteur</p>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {conv.msgs[0]?.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Aperçu messages coach */}
+            {convCoach.length > 0 && (
+              <div style={{ background: '#111', border: '2px solid #f9731633', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#f97316' }}>🎙️ Réponses du coach</h2>
+                {convCoach.map(conv => (
+                  <div key={conv.otherId} onClick={() => { setOnglet('coach') }}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#1a1a1a', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#f97316' }}>Coach Expert</p>
                     </div>
                     <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {conv.msgs[0]?.content}
@@ -301,7 +363,7 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* MESSAGES */}
+        {/* MESSAGES RECRUTEURS */}
         {onglet === 'messages' && (
           <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '16px', minHeight: '500px' }}>
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
@@ -316,7 +378,7 @@ function DashboardJoueur() {
               ) : (
                 conversations.map(conv => (
                   <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                    style={{ padding: '12px 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8010' : 'transparent' }}>
+                    style={{ padding: '12px 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8010' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                     <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
                     <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
@@ -342,7 +404,12 @@ function DashboardJoueur() {
                       .filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId)
                       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
                       .map((m, i) => (
-                        <div key={i} style={msgBubble(m.sender_id === userId)}>{m.content}</div>
+                        <div key={i} style={msgBubble(m.sender_id === userId)}>
+                          <p style={{ margin: 0 }}>{m.content}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>
+                            {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       ))}
                   </div>
                   <div style={{ padding: '1rem', borderTop: '1px solid #222', display: 'flex', gap: '8px' }}>
@@ -363,6 +430,91 @@ function DashboardJoueur() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* SUPPORT COACH */}
+        {onglet === 'coach' && (
+          <div>
+            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>🎙️ Support Coach</h2>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Pose tes questions directement à notre coach expert — conseils techniques, progression, analyse de tes vidéos.</p>
+            </div>
+
+            {/* Historique avec le coach */}
+            {convCoach.length > 0 && (
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: '#f97316', fontSize: '14px' }}>Historique de la conversation</p>
+                </div>
+                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', maxHeight: '400px', overflowY: 'auto' }}>
+                  {(() => {
+                    const coachIds = coaches.map(c => c.id)
+                    return messages
+                      .filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id))
+                      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                      .map((m, i) => (
+                        <div key={i} style={msgBubble(m.sender_id === userId)}>
+                          <p style={{ margin: 0 }}>{m.content}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>
+                            {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}
+                          </p>
+                        </div>
+                      ))
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Nouveau message coach */}
+            {coaches.length === 0 ? (
+              <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '3rem', textAlign: 'center', color: '#555' }}>
+                <p style={{ fontSize: '2rem' }}>🎙️</p>
+                <p>Aucun coach disponible pour le moment.</p>
+              </div>
+            ) : (
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
+                {coaches.length > 1 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '8px' }}>Coach</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {coaches.map(c => (
+                        <button key={c.id} onClick={() => setCoachSelectionne(c)}
+                          style={{ background: coachSelectionne?.id === c.id ? '#f97316' : 'transparent', color: coachSelectionne?.id === c.id ? '#000' : '#aaa', border: `1px solid ${coachSelectionne?.id === c.id ? '#f97316' : '#333'}`, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400 }}>
+                          {c.prenom} {c.nom}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '8px' }}>
+                  {convCoach.length > 0 ? 'Envoyer un nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach'}`}
+                </label>
+                {coachSent ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#f97316' }}>
+                    <p style={{ fontSize: '2rem' }}>✓</p>
+                    <p style={{ fontWeight: 600 }}>Message envoyé au coach !</p>
+                    <p style={{ fontSize: '13px', color: '#666' }}>Il te répondra bientôt.</p>
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      value={messageCoach}
+                      onChange={e => setMessageCoach(e.target.value)}
+                      placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
+                      style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '12px', fontSize: '14px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    />
+                    <button
+                      onClick={envoyerMessageCoach}
+                      disabled={sendingCoach || !messageCoach.trim()}
+                      style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (sendingCoach || !messageCoach.trim()) ? 0.6 : 1 }}>
+                      {sendingCoach ? 'Envoi...' : `Envoyer au coach ✉️`}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

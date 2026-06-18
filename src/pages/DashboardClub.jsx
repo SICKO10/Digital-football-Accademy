@@ -10,15 +10,26 @@ const REGIONS = ["Toutes", "Île-de-France", "Auvergne-Rhône-Alpes", "Occitanie
 export default function DashboardClub() {
   const navigate = useNavigate();
   const [recruteur, setRecruteur] = useState(null);
+  const [recruteurId, setRecruteurId] = useState(null);
   const [joueurs, setJoueurs] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("joueurs");
   const [selectedJoueur, setSelectedJoueur] = useState(null);
   const [favoris, setFavoris] = useState([]);
+
+  // Messagerie
   const [messageModal, setMessageModal] = useState(null);
   const [messageText, setMessageText] = useState("");
   const [messageSent, setMessageSent] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [convActive, setConvActive] = useState(null);
+  const [convMessages, setConvMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [coaches, setCoaches] = useState([]);
+
+  // Filtres
   const [poste, setPoste] = useState("Tous");
   const [categorie, setCategorie] = useState("Toutes");
   const [pied, setPied] = useState("Tous");
@@ -29,12 +40,16 @@ export default function DashboardClub() {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
+      setRecruteurId(user.id);
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!profile || profile.plan !== "recruteur") { navigate("/"); return; }
       setRecruteur(profile);
       const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "pro").eq("abonnement_actif", true);
+      const { data: coachData } = await supabase.from("profiles").select("*").eq("plan", "coach");
       setJoueurs(joueursData || []);
       setFiltered(joueursData || []);
+      setCoaches(coachData || []);
+      await chargerConversations(user.id);
       setLoading(false);
     };
     checkAuth();
@@ -53,21 +68,83 @@ export default function DashboardClub() {
     setFiltered(result);
   }, [poste, categorie, pied, region, search, joueurs]);
 
+  const chargerConversations = async (uid) => {
+    const { data } = await supabase
+      .from("messages")
+      .select("*, sender:profiles!messages_sender_id_fkey(prenom, nom, plan), receiver:profiles!messages_receiver_id_fkey(prenom, nom, plan)")
+      .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
+      .order("created_at", { ascending: false });
+    if (!data) return;
+    const map = {};
+    data.forEach(msg => {
+      const otherId = msg.sender_id === uid ? msg.receiver_id : msg.sender_id;
+      const other = msg.sender_id === uid ? msg.receiver : msg.sender;
+      if (!map[otherId]) map[otherId] = { otherId, other, msgs: [], allMsgs: data };
+      map[otherId].msgs.push(msg);
+    });
+    setConversations(Object.values(map));
+  };
+
+  const ouvrirConversation = async (conv) => {
+    setConvActive(conv);
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .or(`and(sender_id.eq.${recruteurId},receiver_id.eq.${conv.otherId}),and(sender_id.eq.${conv.otherId},receiver_id.eq.${recruteurId})`)
+      .order("created_at", { ascending: true });
+    setConvMessages(data || []);
+  };
+
+  const envoyerMessage = async () => {
+    if (!newMessage.trim() || !convActive || !recruteurId) return;
+    await supabase.from("messages").insert({
+      sender_id: recruteurId,
+      receiver_id: convActive.otherId,
+      content: newMessage.trim(),
+      created_at: new Date().toISOString()
+    });
+    setNewMessage("");
+    await ouvrirConversation(convActive);
+    await chargerConversations(recruteurId);
+  };
+
   const toggleFavori = (id) => setFavoris(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
 
+  // Envoyer message depuis modal (première prise de contact)
   const handleSendMessage = async () => {
-    if (!messageText.trim()) return;
-    setMessageSent(true);
-    setTimeout(() => { setMessageModal(null); setMessageText(""); setMessageSent(false); }, 2000);
+    if (!messageText.trim() || !messageModal || !recruteurId) return;
+    setSendingMessage(true);
+    const { error } = await supabase.from("messages").insert({
+      sender_id: recruteurId,
+      receiver_id: messageModal.id,
+      content: messageText.trim(),
+      created_at: new Date().toISOString()
+    });
+    setSendingMessage(false);
+    if (!error) {
+      setMessageSent(true);
+      await chargerConversations(recruteurId);
+      setTimeout(() => { setMessageModal(null); setMessageText(""); setMessageSent(false); }, 2000);
+    }
+  };
+
+  // Contacter un coach
+  const contacterCoach = async (coach, message) => {
+    if (!message.trim() || !recruteurId) return;
+    await supabase.from("messages").insert({
+      sender_id: recruteurId,
+      receiver_id: coach.id,
+      content: message.trim(),
+      created_at: new Date().toISOString()
+    });
+    await chargerConversations(recruteurId);
   };
 
   const posteColor = (p) => {
     const map = { "Attaquant": { bg: "#1a0a00", text: "#f97316" }, "Milieu": { bg: "#001a0a", text: "#4ade80" }, "Défenseur": { bg: "#00061a", text: "#60a5fa" }, "Gardien": { bg: "#1a001a", text: "#a855f7" } };
     return map[p] || { bg: "#1a1a1a", text: "#aaa" };
   };
-
   const getInitials = (j) => `${(j.prenom || "?")[0]}${(j.nom || "?")[0]}`.toUpperCase();
-
   const isVeo = (url) => url && url.includes("veo.co");
   const isYoutube = (url) => url && (url.includes("youtube.com") || url.includes("youtu.be"));
   const isCloudinary = (url) => url && url.includes("cloudinary.com");
@@ -78,7 +155,7 @@ export default function DashboardClub() {
     logo: { color: "#4ade80", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
     logoutBtn: { background: "transparent", border: "1px solid #333", color: "#aaa", padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
     content: { padding: "2rem", maxWidth: "1200px", margin: "0 auto" },
-    tabs: { display: "flex", gap: "8px", marginBottom: "2rem" },
+    tabs: { display: "flex", gap: "8px", marginBottom: "2rem", flexWrap: "wrap" },
     tab: (active) => ({ padding: "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#4ade80" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: "14px" }),
     filterBar: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" },
     filterLabel: { fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" },
@@ -105,8 +182,8 @@ export default function DashboardClub() {
     statBoxLabel: { fontSize: "11px", color: "#555", marginTop: "2px" },
     textarea: { width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "120px", boxSizing: "border-box", marginTop: "8px", fontFamily: "inherit" },
     emptyState: { textAlign: "center", padding: "4rem 2rem", color: "#444" },
-    comingSoon: { background: "#111", border: "1px dashed #333", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#555" },
     videoBox: { background: "#1a1a1a", borderRadius: "8px", padding: "1rem", marginTop: "8px" },
+    msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#4ade80" : "#1a1a1a", color: mine ? "#000" : "#fff", fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
   };
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
@@ -161,7 +238,6 @@ export default function DashboardClub() {
             </>
           )}
 
-          {/* ── VIDÉO ── */}
           {videoUrl && (
             <>
               <p style={st.sectionTitle}>Vidéo du joueur</p>
@@ -179,10 +255,7 @@ export default function DashboardClub() {
                     </a>
                   </>
                 ) : (
-                  <a href={videoUrl} target="_blank" rel="noreferrer"
-                    style={{ color: "#4ade80", fontSize: "14px", textDecoration: "none" }}>
-                    🎬 Voir la vidéo →
-                  </a>
+                  <a href={videoUrl} target="_blank" rel="noreferrer" style={{ color: "#4ade80", fontSize: "14px", textDecoration: "none" }}>🎬 Voir la vidéo →</a>
                 )}
               </div>
             </>
@@ -217,11 +290,18 @@ export default function DashboardClub() {
         </div>
 
         <div style={st.tabs}>
-          {[{ id: "joueurs", label: "🔍 Joueurs" }, { id: "favoris", label: `★ Favoris (${favoris.length})` }, { id: "feed", label: "🎬 Vidéos" }, { id: "messages", label: "✉️ Messages" }].map(t => (
+          {[
+            { id: "joueurs", label: "🔍 Joueurs" },
+            { id: "favoris", label: `★ Favoris (${favoris.length})` },
+            { id: "feed", label: "🎬 Vidéos" },
+            { id: "messages", label: `✉️ Messages${conversations.length > 0 ? ` (${conversations.length})` : ""}` },
+            { id: "coach", label: "🎙️ Contacter le coach" },
+          ].map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
           ))}
         </div>
 
+        {/* ── JOUEURS ── */}
         {activeTab === "joueurs" && (
           <>
             <div style={st.filterBar}>
@@ -283,6 +363,7 @@ export default function DashboardClub() {
           </>
         )}
 
+        {/* ── FAVORIS ── */}
         {activeTab === "favoris" && (
           favoris.length === 0 ? (
             <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>☆</p><p>Aucun favori pour l'instant.</p></div>
@@ -308,23 +389,110 @@ export default function DashboardClub() {
           )
         )}
 
+        {/* ── FEED ── */}
         {activeTab === "feed" && (
-          <div style={st.comingSoon}>
+          <div style={{ background: "#111", border: "1px dashed #333", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#555" }}>
             <p style={{ fontSize: "3rem", margin: "0 0 1rem" }}>🎬</p>
             <p style={{ fontSize: "1.1rem", color: "#555", margin: "0 0 8px" }}>Feed vidéo joueurs</p>
-            <p style={{ fontSize: "13px", color: "#444" }}>Les clips des joueurs PRO apparaîtront ici une fois l'upload vidéo activé.</p>
+            <p style={{ fontSize: "13px", color: "#444" }}>Les clips des joueurs PRO apparaîtront ici.</p>
           </div>
         )}
 
+        {/* ── MESSAGES ── */}
         {activeTab === "messages" && (
-          <div style={st.comingSoon}>
-            <p style={{ fontSize: "3rem", margin: "0 0 1rem" }}>✉️</p>
-            <p style={{ fontSize: "1.1rem", color: "#555", margin: "0 0 8px" }}>Messagerie</p>
-            <p style={{ fontSize: "13px", color: "#444" }}>La messagerie complète joueurs ↔ recruteurs sera disponible prochainement.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "16px", minHeight: "500px" }}>
+            {/* Sidebar conversations */}
+            <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", overflow: "hidden" }}>
+              <div style={{ padding: "1rem", borderBottom: "1px solid #222" }}>
+                <p style={{ margin: 0, fontWeight: 600, color: "#4ade80", fontSize: "14px" }}>💬 Conversations</p>
+              </div>
+              {conversations.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "#555", fontSize: "13px" }}>
+                  <p>Aucun message.</p>
+                  <p style={{ marginTop: "8px" }}>Contactez un joueur depuis son profil.</p>
+                </div>
+              ) : (
+                conversations.map(conv => (
+                  <div key={conv.otherId} onClick={() => ouvrirConversation(conv)}
+                    style={{ padding: "12px 1rem", borderBottom: "1px solid #1a1a1a", cursor: "pointer", background: convActive?.otherId === conv.otherId ? "#4ade8010" : "transparent", borderLeft: convActive?.otherId === conv.otherId ? "2px solid #4ade80" : "2px solid transparent" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "11px", flexShrink: 0 }}>
+                        {(conv.other?.prenom || "?")[0]}{(conv.other?.nom || "?")[0]}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                        <p style={{ margin: "1px 0 0", fontSize: "11px", color: conv.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
+                          {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "pro" ? "Joueur PRO" : conv.other?.plan}
+                        </p>
+                      </div>
+                    </div>
+                    <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.msgs[0]?.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Zone de chat */}
+            <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", display: "flex", flexDirection: "column" }}>
+              {convActive ? (
+                <>
+                  <div style={{ padding: "1rem", borderBottom: "1px solid #222", display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "13px" }}>
+                      {(convActive.other?.prenom || "?")[0]}{(convActive.other?.nom || "?")[0]}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{convActive.other?.prenom} {convActive.other?.nom}</p>
+                      <p style={{ margin: 0, fontSize: "12px", color: convActive.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
+                        {convActive.other?.plan === "coach" ? "🎙️ Coach" : "⚽ Joueur PRO"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, padding: "1rem", overflowY: "auto", display: "flex", flexDirection: "column", minHeight: "300px" }}>
+                    {convMessages.length === 0 ? (
+                      <div style={{ margin: "auto", textAlign: "center", color: "#555" }}>
+                        <p>Début de la conversation</p>
+                      </div>
+                    ) : (
+                      convMessages.map((m, i) => (
+                        <div key={i} style={st.msgBubble(m.sender_id === recruteurId)}>
+                          <p style={{ margin: 0 }}>{m.content}</p>
+                          <p style={{ margin: "4px 0 0", fontSize: "10px", opacity: 0.6 }}>
+                            {new Date(m.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div style={{ padding: "1rem", borderTop: "1px solid #222", display: "flex", gap: "8px" }}>
+                    <input
+                      style={{ flex: 1, background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", outline: "none" }}
+                      placeholder="Écrire un message..."
+                      value={newMessage}
+                      onChange={e => setNewMessage(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && envoyerMessage()}
+                    />
+                    <button onClick={envoyerMessage} style={{ background: "#4ade80", color: "#000", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>Envoyer</button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexDirection: "column", gap: "8px" }}>
+                  <p style={{ fontSize: "2rem" }}>💬</p>
+                  <p>Sélectionnez une conversation</p>
+                </div>
+              )}
+            </div>
           </div>
+        )}
+
+        {/* ── CONTACTER LE COACH ── */}
+        {activeTab === "coach" && (
+          <CoachContact coaches={coaches} recruteurId={recruteurId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} ouvrirConversation={ouvrirConversation} conversations={conversations} st={st} />
         )}
       </div>
 
+      {/* Modal message joueur */}
       {messageModal && (
         <div style={st.overlay} onClick={() => setMessageModal(null)}>
           <div style={st.modal} onClick={e => e.stopPropagation()}>
@@ -338,12 +506,104 @@ export default function DashboardClub() {
                 <label style={st.filterLabel}>Votre message</label>
                 <textarea style={st.textarea} placeholder="Bonjour, je suis intéressé par votre profil..." value={messageText} onChange={e => setMessageText(e.target.value)} />
                 <div style={{ display: "flex", gap: "12px", marginTop: "1rem" }}>
-                  <button style={st.btnPrimary} onClick={handleSendMessage}>Envoyer ✉️</button>
+                  <button style={{ ...st.btnPrimary, opacity: sendingMessage ? 0.7 : 1 }} onClick={handleSendMessage} disabled={sendingMessage}>
+                    {sendingMessage ? "Envoi..." : "Envoyer ✉️"}
+                  </button>
                   <button style={st.btnSecondary} onClick={() => setMessageModal(null)}>Annuler</button>
                 </div>
               </>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Composant Contact Coach ─────────────────────────────────────────────────
+function CoachContact({ coaches, recruteurId, contacterCoach, chargerConversations, setActiveTab, ouvrirConversation, conversations, st }) {
+  const [selectedCoach, setSelectedCoach] = useState(null);
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!message.trim() || !selectedCoach) return;
+    setSending(true);
+    await contacterCoach(selectedCoach, message);
+    await chargerConversations(recruteurId);
+    setSending(false);
+    setSent(true);
+    setTimeout(() => {
+      setSent(false);
+      setMessage("");
+      // Ouvrir la conv dans l'onglet messages
+      setActiveTab("messages");
+    }, 1500);
+  };
+
+  if (coaches.length === 0) {
+    return (
+      <div style={{ background: "#111", border: "1px dashed #333", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#555" }}>
+        <p style={{ fontSize: "3rem", margin: "0 0 1rem" }}>🎙️</p>
+        <p style={{ fontSize: "1.1rem", color: "#555" }}>Aucun coach disponible pour l'instant.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: "600px" }}>
+      <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", marginBottom: "1.5rem" }}>
+        <h2 style={{ margin: "0 0 4px", fontSize: "1.1rem", fontWeight: 700 }}>🎙️ Contacter notre coach expert</h2>
+        <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>Posez vos questions sur un joueur ou demandez une collaboration.</p>
+      </div>
+
+      {/* Sélection coach */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "1.5rem" }}>
+        {coaches.map(coach => (
+          <div key={coach.id}
+            onClick={() => setSelectedCoach(coach)}
+            style={{ background: "#111", border: `1px solid ${selectedCoach?.id === coach.id ? "#4ade80" : "#222"}`, borderRadius: "12px", padding: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#1a1a0a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px", flexShrink: 0 }}>
+              {(coach.prenom || "C")[0]}{(coach.nom || "")[0]}
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 600 }}>{coach.prenom} {coach.nom}</p>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f97316" }}>🎙️ Coach Expert</p>
+              {coach.club && <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#666" }}>{coach.club}</p>}
+            </div>
+            {selectedCoach?.id === coach.id && <span style={{ marginLeft: "auto", color: "#4ade80", fontSize: "18px" }}>✓</span>}
+          </div>
+        ))}
+      </div>
+
+      {/* Message */}
+      {selectedCoach && (
+        <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem" }}>
+          <label style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "8px" }}>
+            Votre message à {selectedCoach.prenom}
+          </label>
+          {sent ? (
+            <div style={{ textAlign: "center", padding: "2rem", color: "#4ade80" }}>
+              <p style={{ fontSize: "2rem" }}>✓</p>
+              <p>Message envoyé ! Redirection vers vos messages...</p>
+            </div>
+          ) : (
+            <>
+              <textarea
+                style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "140px", boxSizing: "border-box", fontFamily: "inherit" }}
+                placeholder={`Bonjour ${selectedCoach.prenom}, je souhaitais vous contacter au sujet de...`}
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+              />
+              <button
+                onClick={handleSend}
+                disabled={sending || !message.trim()}
+                style={{ marginTop: "12px", width: "100%", background: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", opacity: (sending || !message.trim()) ? 0.6 : 1 }}>
+                {sending ? "Envoi en cours..." : `Envoyer à ${selectedCoach.prenom} ✉️`}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
