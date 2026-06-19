@@ -9,6 +9,9 @@ import DashboardClub from './pages/DashboardClub'
 import Upload from './pages/Upload'
 import Feed from './pages/Feed'
 import UploadClip from './pages/UploadClip'
+import Reels from './pages/Reels'
+import UploadReel from './pages/UploadReel'
+
 
 function App() {
   return (
@@ -23,7 +26,10 @@ function App() {
       <Route path="/upload" element={<Upload />} />
       <Route path="/feed" element={<Feed />} />
       <Route path="/upload-clip" element={<UploadClip />} />
+      <Route path="/reels" element={<Reels />} />
+<Route path="/upload-reel" element={<UploadReel />} />
     </Routes>
+    
   )
 }
 

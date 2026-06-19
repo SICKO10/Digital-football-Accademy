@@ -229,6 +229,18 @@ function DashboardJoueur() {
                   <span style={{ fontSize: '24px' }}>🎬</span>
                   <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Publier un clip sur le feed</h2>
                 </div>
+                <div style={{ background: '#111', border: '1px solid #4ade8033', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+    <span style={{ fontSize: '24px' }}>🎬</span>
+    <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Publier un Reel court</h2>
+  </div>
+  <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>TikTok, Instagram, MP4 · Max 4 min · Visible par tous</p>
+  <button onClick={() => navigate('/upload-reel')}
+    style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
+    🚀 Publier un Reel
+  </button>
+</div>
+
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Montre ton talent — clubs et agents regardent le feed chaque semaine !</p>
                 <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade80', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Publier un clip</button>
               </div>
