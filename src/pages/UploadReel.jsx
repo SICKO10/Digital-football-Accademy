@@ -67,8 +67,13 @@ export default function UploadReel() {
       if (!user) { setError('Non connecté'); setUploading(false); return }
 
       // Signature Cloudinary
-      const sigRes = await fetch('/api/upload-video')
-      const { signature, timestamp, api_key, cloud_name } = await sigRes.json()
+const { data: { user } } = await supabase.auth.getUser()
+const sigRes = await fetch('/api/upload-video', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ userId: user.id })
+})
+const { signature, timestamp, api_key, cloud_name, folder, public_id } = await sigRes.json()
 
       // Upload Cloudinary
       const formData = new FormData()
