@@ -54,8 +54,11 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
     const { data: lk } = await supabase.from('likes').select('id, user_id').eq('joueur_id', reel.joueur_id)
     setLikeCount(lk?.length || 0)
     if (user) setLiked(lk?.some(l => l.user_id === user.id) || false)
-    const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user?.id || '').eq('joueur_id', reel.joueur_id)
-    setFavori(fav?.length > 0 || false)
+  if (user) {
+      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
+      setFavori(fav?.length > 0 || false)
+    }
+
     const { data: cm } = await supabase.from('comments')
       .select('*, author:profiles!comments_user_id_fkey(prenom, nom)')
       .eq('joueur_id', reel.joueur_id)
