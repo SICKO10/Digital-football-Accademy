@@ -311,7 +311,7 @@ function ProfilModal({ joueur, onClose }) {
 }
 
 // ── Page principale Reels ───────────────────────────────────────────────────
-function Reels() {
+function Jogabonito() {
   const navigate = useNavigate()
   const [reels, setReels] = useState([])
   const [loading, setLoading] = useState(true)
@@ -465,4 +465,4 @@ function Reels() {
   )
 }
 
-export default Reels
+export default Jogabonito
