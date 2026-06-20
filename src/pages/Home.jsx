@@ -14,7 +14,7 @@ function Home() {
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <a href="#comment" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Comment ca marche</a>
           <a href="#offres" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Offres</a>
-          <span onClick={() => navigate('/reels')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Reels</span>
+          <span onClick={() => navigate('/jogabonito')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
           <span onClick={() => navigate('/feed')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Feed</span>
           <a href="#recruteurs" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Recruteurs</a>
         </div>
@@ -30,7 +30,7 @@ function Home() {
         <p style={{ fontSize: '18px', color: '#666', marginBottom: '2.5rem', lineHeight: 1.7 }}>Envoie ta video de match, recois une analyse personnalisee par un expert. Expose ton talent aux clubs et agents.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Envoyer ma video</button>
-          <button onClick={() => navigate('/reels')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>Voir les Reels</button>
+          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>Voir les Jogabonito</button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginTop: '4rem', paddingTop: '3rem', borderTop: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
           {[{ num: '500+', label: 'Joueurs analyses' }, { num: '98%', label: 'Satisfaction' }, { num: '50+', label: 'Clubs partenaires' }].map(s => (
@@ -48,14 +48,14 @@ function Home() {
         <p style={{ fontSize: '16px', color: '#666', maxWidth: '480px', margin: '0 auto 3rem' }}>Clips courts, format vertical. Swipe entre les videos et decouvre les meilleurs talents du moment.</p>
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '2.5rem', alignItems: 'center' }}>
           {[{ nom: 'Karim A.', poste: 'Attaquant', scale: 0.8, opacity: 0.5 }, { nom: 'Lucas M.', poste: 'Milieu', scale: 1, opacity: 1, featured: true }, { nom: 'Yanis B.', poste: 'Defenseur', scale: 0.8, opacity: 0.5 }].map((j, i) => (
-            <div key={i} onClick={() => navigate('/reels')} style={{ width: j.featured ? '160px' : '120px', height: j.featured ? '280px' : '210px', background: '#1a1a1a', border: j.featured ? '2px solid #4ade80' : '1px solid #222', borderRadius: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '12px', position: 'relative', overflow: 'hidden', cursor: 'pointer', opacity: j.opacity, transform: `scale(${j.scale})` }}>
+            <div key={i} onClick={() => navigate('/jogabonito')} style={{ width: j.featured ? '160px' : '120px', height: j.featured ? '280px' : '210px', background: '#1a1a1a', border: j.featured ? '2px solid #4ade80' : '1px solid #222', borderRadius: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '12px', position: 'relative', overflow: 'hidden', cursor: 'pointer', opacity: j.opacity, transform: `scale(${j.scale})` }}>
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)' }} />
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', zIndex: 2 }}>play</div>
               <div style={{ position: 'relative', zIndex: 3 }}><p style={{ margin: 0, fontSize: '12px', fontWeight: 700 }}>{j.nom}</p><p style={{ margin: '2px 0 0', fontSize: '10px', color: '#4ade80' }}>{j.poste}</p></div>
             </div>
           ))}
         </div>
-        <button onClick={() => navigate('/reels')} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Voir les Reels</button>
+        <button onClick={() => navigate('/jogabonito')} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Voir les Jogabonito</button>
       </section>
 
       <section id="comment" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
@@ -95,7 +95,7 @@ function Home() {
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Pro</h3>
             <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>79,99EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>/mois</span></div>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {['3 analyses video / mois', 'Compile personnalisee', 'Profil visible recruteurs', 'Reseau clubs et agents', 'Acces Reels et Feed social'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>OK</span> {f}</li>))}
+              {['3 analyses video / mois', 'Compile personnalisee', 'Profil visible recruteurs', 'Reseau clubs et agents', 'Acces Jogabonito et Feed social'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>OK</span> {f}</li>))}
             </ul>
             <a href={STRIPE_LINKS.pro} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '14px', fontWeight: 700, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Commencer</a>
           </div>
@@ -131,7 +131,7 @@ function Home() {
       <footer style={{ borderTop: '1px solid #1a1a1a', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-          {[['Feed', '/feed'], ['Reels', '/reels'], ['Connexion', '/login'], ['Inscription', '/register']].map(([label, path]) => (<span key={label} onClick={() => navigate(path)} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>{label}</span>))}
+          {[['Feed', '/feed'], ['Jogabonito', '/jogabonito'], ['Connexion', '/login'], ['Inscription', '/register']].map(([label, path]) => (<span key={label} onClick={() => navigate(path)} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>{label}</span>))}
         </div>
         <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>2025 Digital Football</p>
       </footer>

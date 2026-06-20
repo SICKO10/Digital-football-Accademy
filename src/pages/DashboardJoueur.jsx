@@ -175,10 +175,10 @@ function DashboardJoueur() {
             {/* ── RACCOURCIS RAPIDES ── */}
             {profil?.plan === 'pro' ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
-                <button onClick={() => navigate('/reels')}
+                <button onClick={() => navigate('/jogabonito')}
                   style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
                   <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Reels</p>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Jogabonito</p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
                 </button>
                 <button onClick={() => navigate('/feed')}
@@ -196,10 +196,10 @@ function DashboardJoueur() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
-                <button onClick={() => navigate('/reels')}
+                <button onClick={() => navigate('/jogabonito')}
                   style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
                   <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Reels</p>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Jogabonito</p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
                 </button>
                 <button onClick={() => navigate('/upload-reel')}
@@ -258,7 +258,7 @@ function DashboardJoueur() {
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Passe au plan Pro pour publier tes clips et être vu par les clubs et agents.</p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Passer au plan Pro</button>
-                  <button onClick={() => navigate('/reels')} style={{ background: 'transparent', color: '#f97316', border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>🎬 Voir les Reels</button>
+                  <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#f97316', border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>🎬 Voir les Jogabonito</button>
                 </div>
               </div>
             )}
