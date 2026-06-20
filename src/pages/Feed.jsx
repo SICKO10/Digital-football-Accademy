@@ -135,8 +135,11 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
   const handleDeleteVideo = async () => {
     if (!window.confirm('Supprimer ta vidéo du feed ? Elle ne sera plus visible par les recruteurs.')) return
     setDeleting(true)
-    await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', user.id)
     setDeleting(false)
+    if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
+    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
     if (onDeleteVideo) onDeleteVideo()
     else onRefresh()
   }

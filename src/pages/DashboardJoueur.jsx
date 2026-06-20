@@ -110,12 +110,12 @@ function DashboardJoueur() {
   const handleDeleteVideo = async () => {
     if (!window.confirm('Supprimer ta vidéo ? Elle sera retirée du feed et de Jogabonito.')) return
     setDeletingVideo(true)
-    await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
-    // Supprime aussi dans la table reels si une entrée existe
-    await supabase.from('reels').delete().eq('joueur_id', userId)
-    // Mise à jour locale
-    setProfil(prev => ({ ...prev, clip_url: null }))
+    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
+    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', userId)
     setDeletingVideo(false)
+    if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
+    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
+    setProfil(prev => ({ ...prev, clip_url: null }))
   }
 
   const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }

@@ -109,12 +109,12 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   // ── Suppression du reel (propriétaire uniquement) ──
   const handleDelete = async () => {
     setDeleting(true)
-    // Supprime dans la table reels si c'est un vrai reel
-    await supabase.from('reels').delete().eq('id', reel.id)
-    // Supprime aussi clip_url du profil (fallback)
-    await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', user.id)
+    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
     setDeleting(false)
     setShowDeleteConfirm(false)
+    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
+    if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
     if (onDelete) onDelete()
   }
 
