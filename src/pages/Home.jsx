@@ -30,7 +30,7 @@ function Home() {
         <p style={{ fontSize: '18px', color: '#666', marginBottom: '2.5rem', lineHeight: 1.7 }}>Envoie ta video de match, recois une analyse personnalisee par un expert. Expose ton talent aux clubs et agents.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Envoyer ma video</button>
-          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>Voir les Jogabonito</button>
+          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>Voir Jogabonito</button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginTop: '4rem', paddingTop: '3rem', borderTop: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
           {[{ num: '500+', label: 'Joueurs analyses' }, { num: '98%', label: 'Satisfaction' }, { num: '50+', label: 'Clubs partenaires' }].map(s => (
@@ -50,12 +50,12 @@ function Home() {
           {[{ nom: 'Karim A.', poste: 'Attaquant', scale: 0.8, opacity: 0.5 }, { nom: 'Lucas M.', poste: 'Milieu', scale: 1, opacity: 1, featured: true }, { nom: 'Yanis B.', poste: 'Defenseur', scale: 0.8, opacity: 0.5 }].map((j, i) => (
             <div key={i} onClick={() => navigate('/jogabonito')} style={{ width: j.featured ? '160px' : '120px', height: j.featured ? '280px' : '210px', background: '#1a1a1a', border: j.featured ? '2px solid #4ade80' : '1px solid #222', borderRadius: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '12px', position: 'relative', overflow: 'hidden', cursor: 'pointer', opacity: j.opacity, transform: `scale(${j.scale})` }}>
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)' }} />
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', zIndex: 2 }}>play</div>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', zIndex: 2 }}>▶</div>
               <div style={{ position: 'relative', zIndex: 3 }}><p style={{ margin: 0, fontSize: '12px', fontWeight: 700 }}>{j.nom}</p><p style={{ margin: '2px 0 0', fontSize: '10px', color: '#4ade80' }}>{j.poste}</p></div>
             </div>
           ))}
         </div>
-        <button onClick={() => navigate('/jogabonito')} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Voir les Jogabonito</button>
+        <button onClick={() => navigate('/jogabonito')} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Voir Jogabonito</button>
       </section>
 
       <section id="comment" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
@@ -76,26 +76,36 @@ function Home() {
       <section id="offres" style={{ background: '#0f0f0f', padding: '5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>TARIFS JOUEURS</div>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>Choisis ton niveau</h2>
-        <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '12px', padding: '1rem 1.5rem', maxWidth: '680px', margin: '0 auto 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <div><p style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 2px' }}>Code promo lancement</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>Code GAMETIME</p></div>
-          <div style={{ background: '#4ade80', color: '#0a0a0a', fontWeight: 800, fontSize: '16px', padding: '8px 20px', borderRadius: '8px' }}>GAMETIME</div>
-        </div>
+        <p style={{ color: '#666', fontSize: '15px', marginBottom: '2.5rem' }}>Analyses personnalisees par un expert avec retour vocal</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
+
+          {/* STARTER */}
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>LIMITE</div>
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Starter</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>59,99EUR/mois</span>
+              <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '11px', padding: '2px 6px', borderRadius: '10px', fontWeight: 600 }}>-15%</span>
+            </div>
             <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>49,99EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>/mois</span></div>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {['2 analyses video / mois', 'Retour vocal expert', 'Espace client dedie'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>OK</span> {f}</li>))}
+              {['2 analyses video / mois', 'Retour vocal expert', 'Espace client dedie'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>
             <a href={STRIPE_LINKS.starter} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: 'white', fontSize: '14px', fontWeight: 600, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Commencer</a>
           </div>
+
+          {/* PRO */}
           <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>LIMITE</div>
+            <div style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', display: 'inline-block', marginBottom: '8px', fontWeight: 600 }}>Le plus populaire</div>
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Pro</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>99,99EUR/mois</span>
+              <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '11px', padding: '2px 6px', borderRadius: '10px', fontWeight: 600 }}>-19%</span>
+            </div>
             <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>79,99EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>/mois</span></div>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {['3 analyses video / mois', 'Compile personnalisee', 'Profil visible recruteurs', 'Reseau clubs et agents', 'Acces Jogabonito et Feed social'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>OK</span> {f}</li>))}
+              {['3 analyses video / mois', 'Compile personnalisee', 'Profil visible recruteurs', 'Reseau clubs et agents', 'Acces Jogabonito et Feed social'].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>
             <a href={STRIPE_LINKS.pro} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '14px', fontWeight: 700, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Commencer</a>
           </div>
@@ -105,17 +115,27 @@ function Home() {
       <section id="recruteurs" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>RECRUTEURS ET CLUBS</div>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>Acces Professionnel</h2>
-        <div style={{ maxWidth: '520px', margin: '3rem auto 0', position: 'relative' }}>
+        <p style={{ color: '#666', fontSize: '15px', marginBottom: '3rem' }}>Pour les clubs, agents et recruteurs qui cherchent des talents</p>
+        <div style={{ maxWidth: '520px', margin: '0 auto', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: '-14px', right: '20px', background: '#ef4444', color: 'white', fontSize: '12px', fontWeight: 700, padding: '4px 14px', borderRadius: '20px', zIndex: 1 }}>-60% LIMITE</div>
           <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2.5rem', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '40px' }}>🏆</div>
               <div><h3 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Acces Recruteur</h3><p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0' }}>Abonnement annuel</p></div>
             </div>
-            <div style={{ fontSize: '48px', fontWeight: 800, color: '#4ade80', marginBottom: '1.5rem' }}>200EUR<span style={{ fontSize: '18px', color: '#555', fontWeight: 400 }}>/an</span></div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '18px', color: '#555', textDecoration: 'line-through' }}>500EUR/an</span>
+                <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>Offre lancement</span>
+              </div>
+              <div style={{ fontSize: '48px', fontWeight: 800, color: '#4ade80', lineHeight: 1.1 }}>200EUR <span style={{ fontSize: '18px', color: '#555', fontWeight: 400 }}>/an</span></div>
+              <p style={{ fontSize: '13px', color: '#ef4444', marginTop: '4px' }}>Offre limitee - places disponibles</p>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '2rem' }}>
-              {['Base joueurs complete', 'Recherche avancee', 'Clips et compilations', 'Messagerie directe', 'Contact coach', 'Filtres avances', 'Alertes profils', 'Support prioritaire'].map(f => (<div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa' }}><span style={{ color: '#4ade80' }}>OK</span> {f}</div>))}
+              {['Base joueurs complete', 'Recherche avancee', 'Clips et compilations', 'Messagerie directe', 'Contact coach', 'Filtres avances', 'Alertes profils', 'Support prioritaire'].map(f => (<div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</div>))}
             </div>
             <button onClick={() => navigate('/register-recruteur')} style={{ width: '100%', padding: '15px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Commencer pour 200EUR/an</button>
+            <p style={{ fontSize: '12px', color: '#555', textAlign: 'center', marginTop: '10px' }}>Facturation annuelle - Acces immediat</p>
           </div>
         </div>
       </section>
