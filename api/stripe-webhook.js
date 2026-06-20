@@ -37,9 +37,9 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`)
   }
 
+  // ── Premier achat ──────────────────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
-
     const customerEmail = session.customer_details?.email
 
     let plan = 'pro'
@@ -66,16 +66,58 @@ export default async function handler(req, res) {
     if (customerEmail) {
       const { error } = await supabase
         .from('profiles')
+        .update({ plan, analyses_restantes: analyses, abonnement_actif: true })
+        .eq('email', customerEmail)
+      if (error) console.error('Erreur Supabase checkout:', error.message)
+    }
+  }
+
+  // ── Renouvellement mensuel ──────────────────────────────────────────────────
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object
+
+    // Ignorer le premier paiement (déjà géré par checkout.session.completed)
+    if (invoice.billing_reason === 'subscription_create') {
+      return res.status(200).json({ received: true })
+    }
+
+    let customerEmail = invoice.customer_email
+    if (!customerEmail && invoice.customer) {
+      try {
+        const customer = await stripe.customers.retrieve(invoice.customer)
+        customerEmail = customer.email
+      } catch (err) {
+        console.error('Erreur récupération customer:', err.message)
+      }
+    }
+
+    if (!customerEmail) return res.status(200).json({ received: true })
+
+    // Récupérer le profil pour connaître le plan actuel et les analyses restantes
+    const { data: profil, error: profileErr } = await supabase
+      .from('profiles')
+      .select('plan, analyses_restantes')
+      .eq('email', customerEmail)
+      .single()
+
+    if (profileErr || !profil) {
+      console.error('Profil introuvable pour', customerEmail)
+      return res.status(200).json({ received: true })
+    }
+
+    // Analyses à ajouter selon le plan
+    const analysesAdd = profil.plan === 'pro' ? 3 : profil.plan === 'starter' ? 1 : 0
+
+    if (analysesAdd > 0) {
+      const { error } = await supabase
+        .from('profiles')
         .update({
-          plan: plan,
-          analyses_restantes: analyses,
+          analyses_restantes: (profil.analyses_restantes || 0) + analysesAdd,
           abonnement_actif: true,
         })
         .eq('email', customerEmail)
-
-      if (error) {
-        console.error('Erreur mise a jour Supabase:', error.message)
-      }
+      if (error) console.error('Erreur Supabase renouvellement:', error.message)
+      else console.log(`Renouvellement ${customerEmail} : +${analysesAdd} analyses (total: ${(profil.analyses_restantes || 0) + analysesAdd})`)
     }
   }
 
