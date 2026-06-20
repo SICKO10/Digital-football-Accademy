@@ -19,13 +19,11 @@ function DashboardJoueur() {
   const [statsSaved, setStatsSaved] = useState(false)
   const [userId, setUserId] = useState(null)
 
-  // Messagerie recruteurs
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
   const [newMessage, setNewMessage] = useState('')
   const [messages, setMessages] = useState([])
 
-  // Support coach
   const [coaches, setCoaches] = useState([])
   const [coachSelectionne, setCoachSelectionne] = useState(null)
   const [messageCoach, setMessageCoach] = useState('')
@@ -39,27 +37,17 @@ function DashboardJoueur() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
     setUserId(user.id)
-
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
     const { data: coachData } = await supabase.from('profiles').select('*').eq('plan', 'coach')
-
     setProfil(data)
     setStats({
-      club: data?.club || '',
-      niveau_equipe: data?.niveau_equipe || '',
-      categorie: data?.categorie || '',
-      region: data?.region || '',
-      pied: data?.pied || 'droit',
-      matchs_officiel: data?.matchs_officiel || 0,
-      matchs_amical: data?.matchs_amical || 0,
-      minutes_jouees: data?.minutes_jouees || 0,
-      buts_pied_droit: data?.buts_pied_droit || 0,
-      buts_pied_gauche: data?.buts_pied_gauche || 0,
-      buts_tete: data?.buts_tete || 0,
-      buts_total: data?.buts_total || 0,
-      passes_decisives: data?.passes_decisives || 0,
-      cleansheets: data?.cleansheets || 0,
+      club: data?.club || '', niveau_equipe: data?.niveau_equipe || '', categorie: data?.categorie || '',
+      region: data?.region || '', pied: data?.pied || 'droit', matchs_officiel: data?.matchs_officiel || 0,
+      matchs_amical: data?.matchs_amical || 0, minutes_jouees: data?.minutes_jouees || 0,
+      buts_pied_droit: data?.buts_pied_droit || 0, buts_pied_gauche: data?.buts_pied_gauche || 0,
+      buts_tete: data?.buts_tete || 0, buts_total: data?.buts_total || 0,
+      passes_decisives: data?.passes_decisives || 0, cleansheets: data?.cleansheets || 0,
     })
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
@@ -84,21 +72,13 @@ function DashboardJoueur() {
       map[otherId].msgs.push(msg)
     })
     const allConvs = Object.values(map)
-    // Séparer conv recruteurs et conv coach
-    const convCoachList = allConvs.filter(c => c.other?.plan === 'coach')
-    const convRecruteurs = allConvs.filter(c => c.other?.plan !== 'coach')
-    setConversations(convRecruteurs)
-    setConvCoach(convCoachList)
+    setConversations(allConvs.filter(c => c.other?.plan !== 'coach'))
+    setConvCoach(allConvs.filter(c => c.other?.plan === 'coach'))
   }
 
   const envoyerMessage = async () => {
     if (!newMessage.trim() || !messageActif || !userId) return
-    await supabase.from('messages').insert({
-      sender_id: userId,
-      receiver_id: messageActif.otherId,
-      content: newMessage.trim(),
-      created_at: new Date().toISOString()
-    })
+    await supabase.from('messages').insert({ sender_id: userId, receiver_id: messageActif.otherId, content: newMessage.trim(), created_at: new Date().toISOString() })
     setNewMessage('')
     await chargerConversations(userId)
   }
@@ -106,12 +86,7 @@ function DashboardJoueur() {
   const envoyerMessageCoach = async () => {
     if (!messageCoach.trim() || !coachSelectionne || !userId) return
     setSendingCoach(true)
-    await supabase.from('messages').insert({
-      sender_id: userId,
-      receiver_id: coachSelectionne.id,
-      content: messageCoach.trim(),
-      created_at: new Date().toISOString()
-    })
+    await supabase.from('messages').insert({ sender_id: userId, receiver_id: coachSelectionne.id, content: messageCoach.trim(), created_at: new Date().toISOString() })
     setSendingCoach(false)
     setCoachSent(true)
     setMessageCoach('')
@@ -134,8 +109,6 @@ function DashboardJoueur() {
   const labelStyle = { fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }
   const msgBubble = (mine) => ({ maxWidth: '70%', padding: '10px 14px', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: mine ? '#4ade80' : '#1a1a1a', color: mine ? '#000' : '#fff', fontSize: '14px', alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: '8px' })
 
-  const totalNotifs = conversations.length + convCoach.length
-
   if (loading) return <Loader />
 
   if (!profil?.abonnement_actif) {
@@ -144,7 +117,7 @@ function DashboardJoueur() {
         <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '1rem' }}>Abonnement non actif</h1>
-          <p style={{ fontSize: '14px', color: '#888', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore ete confirme. Choisis ton offre pour activer ton compte.</p>
+          <p style={{ fontSize: '14px', color: '#888', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore ete confirme.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem' }}>
             <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #333', padding: '12px 20px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Activer Starter — 49,99€/mois</button>
             <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Activer Pro — 79,99€/mois</button>
@@ -180,10 +153,11 @@ function DashboardJoueur() {
           ))}
         </div>
 
-        {/* ACCUEIL */}
+        {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            {/* Stats rapides */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
                 <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Plan actuel</p>
                 <p style={{ fontSize: '22px', fontWeight: '700', color: '#4ade80', textTransform: 'capitalize' }}>{profil?.plan}</p>
@@ -198,6 +172,46 @@ function DashboardJoueur() {
               </div>
             </div>
 
+            {/* ── RACCOURCIS RAPIDES ── */}
+            {profil?.plan === 'pro' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
+                <button onClick={() => navigate('/reels')}
+                  style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Reels</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
+                </button>
+                <button onClick={() => navigate('/feed')}
+                  style={{ background: '#4ade8015', border: '1px solid #4ade8040', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>⚽</div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Feed</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#4ade80' }}>Talents du moment</p>
+                </button>
+                <button onClick={() => navigate('/upload-reel')}
+                  style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚀</div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Publier</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#60a5fa' }}>Mon Reel</p>
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
+                <button onClick={() => navigate('/reels')}
+                  style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Reels</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
+                </button>
+                <button onClick={() => navigate('/upload-reel')}
+                  style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚀</div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Publier un Reel</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#60a5fa' }}>TikTok · MP4</p>
+                </button>
+              </div>
+            )}
+
+            {/* Envoyer vidéo analyse */}
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>Envoyer une video pour analyse</h2>
               <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Tu as {profil?.analyses_restantes} analyse(s) disponible(s) ce mois</p>
@@ -229,33 +243,26 @@ function DashboardJoueur() {
                   <span style={{ fontSize: '24px' }}>🎬</span>
                   <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Publier un clip sur le feed</h2>
                 </div>
-                <div style={{ background: '#111', border: '1px solid #4ade8033', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-    <span style={{ fontSize: '24px' }}>🎬</span>
-    <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Publier un Reel court</h2>
-  </div>
-  <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>TikTok, Instagram, MP4 · Max 4 min · Visible par tous</p>
-  <button onClick={() => navigate('/upload-reel')}
-    style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
-    🚀 Publier un Reel
-  </button>
-</div>
-
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Montre ton talent — clubs et agents regardent le feed chaque semaine !</p>
-                <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade80', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Publier un clip</button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade80', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Publier un clip</button>
+                  <button onClick={() => navigate('/feed')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>Voir le Feed →</button>
+                </div>
               </div>
             ) : (
               <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                   <span style={{ fontSize: '24px' }}>🔒</span>
-                  <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#666' }}>Publier un clip sur le feed</h2>
+                  <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#666' }}>Feed & visibilité recruteurs</h2>
                 </div>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Passe au plan Pro pour publier tes clips et etre vu par les clubs et agents.</p>
-                <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade80', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Passer au plan Pro</button>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Passe au plan Pro pour publier tes clips et être vu par les clubs et agents.</p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Passer au plan Pro</button>
+                  <button onClick={() => navigate('/reels')} style={{ background: 'transparent', color: '#f97316', border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>🎬 Voir les Reels</button>
+                </div>
               </div>
             )}
 
-            {/* Aperçu messages recruteurs */}
             {conversations.length > 0 && (
               <div style={{ background: '#111', border: '2px solid #4ade8033', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#4ade80' }}>💬 Messages de recruteurs</h2>
@@ -266,28 +273,23 @@ function DashboardJoueur() {
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                       <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>Recruteur</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {conv.msgs[0]?.content}
-                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Aperçu messages coach */}
             {convCoach.length > 0 && (
               <div style={{ background: '#111', border: '2px solid #f9731633', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#f97316' }}>🎙️ Réponses du coach</h2>
                 {convCoach.map(conv => (
-                  <div key={conv.otherId} onClick={() => { setOnglet('coach') }}
+                  <div key={conv.otherId} onClick={() => setOnglet('coach')}
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#1a1a1a', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' }}>
                     <div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                       <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#f97316' }}>Coach Expert</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {conv.msgs[0]?.content}
-                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
                 ))}
               </div>
@@ -295,7 +297,7 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* PROFIL */}
+        {/* ── PROFIL ── */}
         {onglet === 'profil' && (
           <div>
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
@@ -327,7 +329,6 @@ function DashboardJoueur() {
                 </div>
               </div>
             </div>
-
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>⚽ Statistiques</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
@@ -336,14 +337,13 @@ function DashboardJoueur() {
                 ))}
               </div>
             </div>
-
             <button onClick={handleSaveStats} disabled={savingStats} style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '14px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
               {savingStats ? 'Sauvegarde...' : statsSaved ? '✅ Sauvegarde !' : 'Sauvegarder mon profil'}
             </button>
           </div>
         )}
 
-        {/* ANALYSES */}
+        {/* ── ANALYSES ── */}
         {onglet === 'analyses' && (
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem' }}>
             <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>Mes analyses</h2>
@@ -375,7 +375,7 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* MESSAGES RECRUTEURS */}
+        {/* ── MESSAGES RECRUTEURS ── */}
         {onglet === 'messages' && (
           <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '16px', minHeight: '500px' }}>
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
@@ -387,18 +387,15 @@ function DashboardJoueur() {
                   <p>Aucun message.</p>
                   <p style={{ marginTop: '8px' }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
                 </div>
-              ) : (
-                conversations.map(conv => (
-                  <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                    style={{ padding: '12px 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8010' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
-                  </div>
-                ))
-              )}
+              ) : conversations.map(conv => (
+                <div key={conv.otherId} onClick={() => setMessageActif(conv)}
+                  style={{ padding: '12px 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8010' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                </div>
+              ))}
             </div>
-
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
               {messageActif ? (
                 <>
@@ -412,26 +409,15 @@ function DashboardJoueur() {
                     </div>
                   </div>
                   <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-                    {messages
-                      .filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId)
-                      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                      .map((m, i) => (
-                        <div key={i} style={msgBubble(m.sender_id === userId)}>
-                          <p style={{ margin: 0 }}>{m.content}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>
-                            {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      ))}
+                    {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
+                      <div key={i} style={msgBubble(m.sender_id === userId)}>
+                        <p style={{ margin: 0 }}>{m.content}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    ))}
                   </div>
                   <div style={{ padding: '1rem', borderTop: '1px solid #222', display: 'flex', gap: '8px' }}>
-                    <input
-                      style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', outline: 'none' }}
-                      placeholder="Répondre..."
-                      value={newMessage}
-                      onChange={e => setNewMessage(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && envoyerMessage()}
-                    />
+                    <input style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', outline: 'none' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
                     <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Envoyer</button>
                   </div>
                 </>
@@ -445,15 +431,13 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* SUPPORT COACH */}
+        {/* ── SUPPORT COACH ── */}
         {onglet === 'coach' && (
           <div>
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>🎙️ Support Coach</h2>
-              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Pose tes questions directement à notre coach expert — conseils techniques, progression, analyse de tes vidéos.</p>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Pose tes questions directement à notre coach expert.</p>
             </div>
-
-            {/* Historique avec le coach */}
             {convCoach.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', marginBottom: '1.5rem', overflow: 'hidden' }}>
                 <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
@@ -462,23 +446,16 @@ function DashboardJoueur() {
                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', maxHeight: '400px', overflowY: 'auto' }}>
                   {(() => {
                     const coachIds = coaches.map(c => c.id)
-                    return messages
-                      .filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id))
-                      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                      .map((m, i) => (
-                        <div key={i} style={msgBubble(m.sender_id === userId)}>
-                          <p style={{ margin: 0 }}>{m.content}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>
-                            {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}
-                          </p>
-                        </div>
-                      ))
+                    return messages.filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
+                      <div key={i} style={msgBubble(m.sender_id === userId)}>
+                        <p style={{ margin: 0 }}>{m.content}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}</p>
+                      </div>
+                    ))
                   })()}
                 </div>
               </div>
             )}
-
-            {/* Nouveau message coach */}
             {coaches.length === 0 ? (
               <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '3rem', textAlign: 'center', color: '#555' }}>
                 <p style={{ fontSize: '2rem' }}>🎙️</p>
@@ -499,7 +476,6 @@ function DashboardJoueur() {
                     </div>
                   </div>
                 )}
-
                 <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '8px' }}>
                   {convCoach.length > 0 ? 'Envoyer un nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach'}`}
                 </label>
@@ -507,19 +483,12 @@ function DashboardJoueur() {
                   <div style={{ textAlign: 'center', padding: '2rem', color: '#f97316' }}>
                     <p style={{ fontSize: '2rem' }}>✓</p>
                     <p style={{ fontWeight: 600 }}>Message envoyé au coach !</p>
-                    <p style={{ fontSize: '13px', color: '#666' }}>Il te répondra bientôt.</p>
                   </div>
                 ) : (
                   <>
-                    <textarea
-                      value={messageCoach}
-                      onChange={e => setMessageCoach(e.target.value)}
-                      placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
-                      style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '12px', fontSize: '14px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                    />
-                    <button
-                      onClick={envoyerMessageCoach}
-                      disabled={sendingCoach || !messageCoach.trim()}
+                    <textarea value={messageCoach} onChange={e => setMessageCoach(e.target.value)} placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
+                      style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '12px', fontSize: '14px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                    <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
                       style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (sendingCoach || !messageCoach.trim()) ? 0.6 : 1 }}>
                       {sendingCoach ? 'Envoi...' : `Envoyer au coach ✉️`}
                     </button>
