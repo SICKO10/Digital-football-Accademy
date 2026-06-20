@@ -66,11 +66,12 @@ function VideoBadge({ url }) {
   return (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: `${color}15`, border: `1px solid ${color}40`, color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>🎬 {label}</span>)
 }
 
-function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st }) {
+function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st, onDeleteVideo }) {
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const shareRef = useRef(null)
 
   const liked = interactions.likes.includes(j.id)
@@ -80,6 +81,9 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
   const commentCount = interactions.commentCounts[j.id] || 0
   const repostCount = interactions.repostCounts[j.id] || 0
   const comments = interactions.comments[j.id] || []
+
+  // Est-ce que c'est la carte du joueur connecté ?
+  const isOwner = user?.id === j.id
 
   useEffect(() => {
     const handler = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false) }
@@ -127,10 +131,20 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
 
   const handleCopyLink = () => { navigator.clipboard.writeText(`https://digital-football-accademy.vercel.app/feed`); setShareOpen(false) }
 
+  // ── Suppression de la vidéo du feed (joueur propriétaire uniquement) ──
+  const handleDeleteVideo = async () => {
+    if (!window.confirm('Supprimer ta vidéo du feed ? Elle ne sera plus visible par les recruteurs.')) return
+    setDeleting(true)
+    await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    setDeleting(false)
+    if (onDeleteVideo) onDeleteVideo()
+    else onRefresh()
+  }
+
   const actionBtn = (active, color) => ({ background: 'transparent', border: 'none', cursor: user ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: active ? color : '#666', fontWeight: active ? 700 : 400, padding: '6px 8px', borderRadius: '8px' })
 
   return (
-    <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', overflow: 'hidden' }}>
+    <div style={{ background: '#111', border: isOwner ? '1px solid #4ade8040' : '1px solid #222', borderRadius: '16px', overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div onClick={() => onOpenProfile(j)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, color: '#4ade80', flexShrink: 0, cursor: 'pointer' }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
         <div style={{ flex: 1 }}>
@@ -139,6 +153,12 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <VideoBadge url={j.clip_url} />
+          {/* Badge "Ma vidéo" si propriétaire */}
+          {isOwner && (
+            <span style={{ background: '#4ade8020', border: '1px solid #4ade8060', color: '#4ade80', padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>
+              Ma vidéo
+            </span>
+          )}
           <button onClick={() => onOpenProfile(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Profil →</button>
         </div>
       </div>
@@ -149,11 +169,24 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
         <span style={st.stat}>📋 <span style={st.statVal}>{j.matchs_officiel ?? 0}</span> matchs</span>
         {j.region && <span style={st.stat}>{j.region}</span>}
       </div>
-      <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #1a1a1a' }}>
+      <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
         <button style={actionBtn(liked, '#ef4444')} onClick={handleLike}><span style={{ fontSize: '16px' }}>{liked ? '❤️' : '🤍'}</span><span>{likeCount}</span></button>
         <button style={actionBtn(showComments, '#60a5fa')} onClick={() => setShowComments(!showComments)}><span style={{ fontSize: '16px' }}>💬</span><span>{commentCount}</span></button>
         <button style={actionBtn(reposted, '#4ade80')} onClick={handleRepost}><span style={{ fontSize: '16px' }}>{reposted ? '🔁' : '↩️'}</span><span>{repostCount > 0 ? repostCount : ''}</span></button>
         <button style={actionBtn(favori, '#f59e0b')} onClick={handleFavori}><span style={{ fontSize: '16px' }}>{favori ? '⭐' : '☆'}</span></button>
+
+        {/* ── BOUTON SUPPRIMER — visible uniquement par le propriétaire ── */}
+        {isOwner && (
+          <button
+            onClick={handleDeleteVideo}
+            disabled={deleting}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: deleting ? '#555' : '#ef4444', padding: '6px 8px', borderRadius: '8px', fontWeight: 600 }}
+          >
+            <span style={{ fontSize: '16px' }}>🗑️</span>
+            <span>{deleting ? 'Suppression...' : 'Supprimer ma vidéo'}</span>
+          </button>
+        )}
+
         <div style={{ marginLeft: 'auto', position: 'relative' }} ref={shareRef}>
           <button style={actionBtn(false, '#aaa')} onClick={() => setShareOpen(!shareOpen)}><span style={{ fontSize: '16px' }}>📤</span><span style={{ fontSize: '12px' }}>Partager</span></button>
           {shareOpen && (
@@ -204,7 +237,7 @@ function Feed() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [profil, setProfil] = useState(null)
-  const [acces, setAcces] = useState(null) // null=loading, true=ok, false=bloque
+  const [acces, setAcces] = useState(null)
   const [vue, setVue] = useState('videos')
   const [joueurModal, setJoueurModal] = useState(null)
   const [filtrePoste, setFiltrePoste] = useState('Tous')
@@ -226,24 +259,13 @@ function Feed() {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
 
-    // ── CONTROLE D'ACCES ──
-    if (!user) {
-      // Non connecte → redirection login
-      navigate('/login')
-      return
-    }
+    if (!user) { navigate('/login'); return }
 
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfil(p)
 
-    // Starter → acces refuse
-    if (p?.plan === 'starter') {
-      setAcces(false)
-      setLoading(false)
-      return
-    }
+    if (p?.plan === 'starter') { setAcces(false); setLoading(false); return }
 
-    // Pro, recruteur, coach → acces autorise
     setAcces(true)
 
     const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
@@ -277,7 +299,12 @@ function Feed() {
     }
   }
 
-  const refresh = async () => { await chargerInteractions(user, joueursPro) }
+  const refresh = async () => {
+    // Recharge aussi la liste des joueurs pour refléter la suppression de clip_url
+    const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
+    setJoueursPro(data || [])
+    await chargerInteractions(user, data || [])
+  }
 
   const interactions = { likes: likedIds, favoris: favoriIds, reposts: repostIds, likeCounts, commentCounts, repostCounts, comments: allComments }
   const joueursAvecClip = joueursPro.filter(j => j.clip_url)
@@ -301,7 +328,6 @@ function Feed() {
 
   if (loading) return (<div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#4ade80' }}>Chargement...</p></div>)
 
-  // ── PAGE BLOQUEE (Starter) ──
   if (acces === false) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ maxWidth: '480px', width: '100%', background: '#111', border: '1px solid #222', borderRadius: '20px', padding: '3rem', textAlign: 'center', margin: '1rem' }}>
@@ -365,14 +391,38 @@ function Feed() {
         {vue === 'videos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {feedVideos.length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '3rem' }}>🎬</p><p>Aucune video pour le moment</p></div>)
-              : feedVideos.map(j => (<VideoCard key={j.id} j={j} user={user} profil={profil} interactions={interactions} onRefresh={refresh} onOpenProfile={setJoueurModal} st={st} />))}
+              : feedVideos.map(j => (
+                <VideoCard
+                  key={j.id}
+                  j={j}
+                  user={user}
+                  profil={profil}
+                  interactions={interactions}
+                  onRefresh={refresh}
+                  onOpenProfile={setJoueurModal}
+                  onDeleteVideo={refresh}
+                  st={st}
+                />
+              ))}
           </div>
         )}
 
         {vue === 'favoris' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {joueursAvecClip.filter(j => favoriIds.includes(j.id)).length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: '#555' }}><p style={{ fontSize: '3rem' }}>⭐</p><p>Aucun favori</p></div>)
-              : joueursAvecClip.filter(j => favoriIds.includes(j.id)).map(j => (<VideoCard key={j.id} j={j} user={user} profil={profil} interactions={interactions} onRefresh={refresh} onOpenProfile={setJoueurModal} st={st} />))}
+              : joueursAvecClip.filter(j => favoriIds.includes(j.id)).map(j => (
+                <VideoCard
+                  key={j.id}
+                  j={j}
+                  user={user}
+                  profil={profil}
+                  interactions={interactions}
+                  onRefresh={refresh}
+                  onOpenProfile={setJoueurModal}
+                  onDeleteVideo={refresh}
+                  st={st}
+                />
+              ))}
           </div>
         )}
 

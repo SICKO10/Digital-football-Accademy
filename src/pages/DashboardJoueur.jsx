@@ -18,6 +18,7 @@ function DashboardJoueur() {
   const [savingStats, setSavingStats] = useState(false)
   const [statsSaved, setStatsSaved] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [deletingVideo, setDeletingVideo] = useState(false)
 
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
@@ -103,6 +104,18 @@ function DashboardJoueur() {
     setSavingStats(false)
     setStatsSaved(true)
     setTimeout(() => setStatsSaved(false), 3000)
+  }
+
+  // ── Suppression de la vidéo (clip_url → null) ──
+  const handleDeleteVideo = async () => {
+    if (!window.confirm('Supprimer ta vidéo ? Elle sera retirée du feed et de Jogabonito.')) return
+    setDeletingVideo(true)
+    await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
+    // Supprime aussi dans la table reels si une entrée existe
+    await supabase.from('reels').delete().eq('joueur_id', userId)
+    // Mise à jour locale
+    setProfil(prev => ({ ...prev, clip_url: null }))
+    setDeletingVideo(false)
   }
 
   const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }
@@ -224,15 +237,48 @@ function DashboardJoueur() {
               )}
             </div>
 
-            {profil?.clip_url && (
+            {/* ── BLOC VIDÉO PARTAGÉE (avec bouton supprimer) ── */}
+            {profil?.clip_url ? (
               <div style={{ background: '#111', border: '1px solid #4ade8033', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>🎬 Ma vidéo partagée</h2>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>Visible par les recruteurs dans le Scout Center</p>
-                <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none', marginRight: '10px' }}>
-                  🎬 Voir ma vidéo
-                </a>
-                <button onClick={() => navigate('/upload')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                  Changer la vidéo
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>
+                  {profil?.plan === 'pro'
+                    ? 'Visible par les recruteurs dans le Scout Center et dans Jogabonito'
+                    : 'Visible dans Jogabonito'}
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <a href={profil.clip_url} target="_blank" rel="noreferrer"
+                    style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none' }}>
+                    🎬 Voir ma vidéo
+                  </a>
+                  <button onClick={() => navigate('/upload-clip')}
+                    style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    Changer la vidéo
+                  </button>
+                  {/* ── BOUTON SUPPRIMER MA VIDÉO ── */}
+                  <button
+                    onClick={handleDeleteVideo}
+                    disabled={deletingVideo}
+                    style={{ background: 'transparent', color: deletingVideo ? '#555' : '#ef4444', border: '1px solid #ef444440', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer' }}
+                  >
+                    {deletingVideo ? '⏳ Suppression...' : '🗑️ Supprimer ma vidéo'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Pas encore de vidéo → inviter à en publier une
+              <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '40px', marginBottom: '8px' }}>🎬</div>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#aaa' }}>Aucune vidéo publiée</h2>
+                <p style={{ fontSize: '14px', color: '#555', marginBottom: '1.5rem' }}>
+                  {profil?.plan === 'pro'
+                    ? 'Publie un clip pour apparaître dans le Feed et Jogabonito'
+                    : 'Publie un reel pour apparaître dans Jogabonito'}
+                </p>
+                <button
+                  onClick={() => navigate(profil?.plan === 'pro' ? '/upload-clip' : '/upload-reel')}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
+                  {profil?.plan === 'pro' ? 'Publier un clip' : 'Publier un reel'}
                 </button>
               </div>
             )}

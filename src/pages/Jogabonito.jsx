@@ -22,7 +22,7 @@ const getTikTokId = (url) => {
 }
 
 // ── Carte Reel plein écran ──────────────────────────────────────────────────
-function ReelCard({ reel, isActive, user, onOpenProfile }) {
+function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const videoRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -32,7 +32,12 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
   const [muted, setMuted] = useState(true)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const type = detectType(reel.video_url)
+
+  // Est-ce que c'est le reel du joueur connecté ?
+  const isOwner = user?.id === reel.joueur_id
 
   useEffect(() => {
     chargerInteractions()
@@ -54,11 +59,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
     const { data: lk } = await supabase.from('likes').select('id, user_id').eq('joueur_id', reel.joueur_id)
     setLikeCount(lk?.length || 0)
     if (user) setLiked(lk?.some(l => l.user_id === user.id) || false)
-  if (user) {
+    if (user) {
       const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
       setFavori(fav?.length > 0 || false)
     }
-
     const { data: cm } = await supabase.from('comments')
       .select('*, author:profiles!comments_user_id_fkey(prenom, nom)')
       .eq('joueur_id', reel.joueur_id)
@@ -100,6 +104,18 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
     if (!videoRef.current) return
     if (playing) { videoRef.current.pause(); setPlaying(false) }
     else { videoRef.current.play(); setPlaying(true) }
+  }
+
+  // ── Suppression du reel (propriétaire uniquement) ──
+  const handleDelete = async () => {
+    setDeleting(true)
+    // Supprime dans la table reels si c'est un vrai reel
+    await supabase.from('reels').delete().eq('id', reel.id)
+    // Supprime aussi clip_url du profil (fallback)
+    await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    setDeleting(false)
+    setShowDeleteConfirm(false)
+    if (onDelete) onDelete()
   }
 
   const joueur = reel.profiles
@@ -153,6 +169,13 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
       {/* Pause indicator */}
       {type === 'mp4' && !playing && isActive && (
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '64px', opacity: 0.8, pointerEvents: 'none' }}>⏸</div>
+      )}
+
+      {/* Badge "Ma vidéo" si propriétaire */}
+      {isOwner && (
+        <div style={{ position: 'absolute', top: '70px', left: '16px', background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#4ade80', fontWeight: 700 }}>
+          Ma vidéo
+        </div>
       )}
 
       {/* INFO JOUEUR (bas gauche) */}
@@ -216,6 +239,17 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
             <div style={{ fontSize: '24px' }}>{muted ? '🔇' : '🔊'}</div>
           </button>
         )}
+
+        {/* ── SUPPRIMER — visible uniquement par le propriétaire ── */}
+        {isOwner && (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+          >
+            <div style={{ fontSize: '24px' }}>🗑️</div>
+            <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>Suppr.</span>
+          </button>
+        )}
       </div>
 
       {/* Indicateur scroll */}
@@ -223,6 +257,32 @@ function ReelCard({ reel, isActive, user, onOpenProfile }) {
         <div style={{ width: '2px', height: '20px', background: '#fff', borderRadius: '2px', animation: 'bounce 1.5s infinite' }} />
         <span style={{ color: '#fff', fontSize: '10px' }}>Scroll</span>
       </div>
+
+      {/* MODAL CONFIRMATION SUPPRESSION */}
+      {showDeleteConfirm && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: '#111', border: '1px solid #ef444440', borderRadius: '16px', padding: '2rem', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑️</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#fff' }}>Supprimer ce reel ?</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>Il sera retiré de Jogabonito et ne sera plus visible.</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.6 : 1 }}
+              >
+                {deleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DRAWER COMMENTAIRES */}
       {showComments && (
@@ -322,21 +382,21 @@ function Jogabonito() {
   const observerRef = useRef(null)
   const cardRefs = useRef([])
 
-  useEffect(() => {
-    init()
-  }, [])
+  useEffect(() => { init() }, [])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
+    await chargerReels()
+    setLoading(false)
+  }
 
-    // Charger les reels avec infos joueur
+  const chargerReels = async () => {
     const { data } = await supabase
       .from('reels')
       .select('*, profiles(prenom, nom, poste, categorie, club, region, pied, niveau_equipe, buts_total, passes_decisives, matchs_officiel)')
       .order('created_at', { ascending: false })
 
-    // Fallback : si pas de reels, utiliser les clip_url des profils pro
     if (!data || data.length === 0) {
       const { data: joueurs } = await supabase
         .from('profiles')
@@ -358,10 +418,14 @@ function Jogabonito() {
     } else {
       setReels(data)
     }
-    setLoading(false)
   }
 
-  // Intersection Observer pour détecter quelle vidéo est visible
+  // Appelé après une suppression : recharge la liste
+  const handleReelDeleted = async () => {
+    await chargerReels()
+    setActiveIndex(0)
+  }
+
   useEffect(() => {
     if (reels.length === 0) return
     observerRef.current = new IntersectionObserver(
@@ -444,6 +508,7 @@ function Jogabonito() {
                 isActive={idx === activeIndex}
                 user={user}
                 onOpenProfile={setProfilModal}
+                onDelete={handleReelDeleted}
               />
             </div>
           ))}
