@@ -19,22 +19,21 @@ function Register() {
     setErreur('')
 
     const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) { setErreur(error.message); setLoading(false); return }
 
-    if (error) {
-      setErreur(error.message)
+    if (plan === 'fan') {
+      await supabase.from('profiles').insert({
+        id: data.user.id, email, prenom, nom,
+        plan: 'fan', analyses_restantes: 0, abonnement_actif: true,
+      })
       setLoading(false)
+      navigate('/jogabonito')
       return
     }
 
     await supabase.from('profiles').insert({
-      id: data.user.id,
-      email,
-      prenom,
-      nom,
-      poste,
-      plan: 'pending',
-      analyses_restantes: 0,
-      abonnement_actif: false,
+      id: data.user.id, email, prenom, nom, poste,
+      plan: 'pending', analyses_restantes: 0, abonnement_actif: false,
     })
 
     setLoading(false)
@@ -68,7 +67,7 @@ function Register() {
           <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>Commence a progresser aujourd hui</p>
         </div>
 
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'1.5rem'}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'0.75rem'}}>
           {[
             {id:'starter', nom:'Starter', prix:'49,99€/mois'},
             {id:'pro', nom:'Pro', prix:'79,99€/mois'},
@@ -78,6 +77,14 @@ function Register() {
               <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>{p.prix}</div>
             </div>
           ))}
+        </div>
+
+        <div onClick={() => setPlan('fan')} style={{border: plan === 'fan' ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: plan === 'fan' ? '#4ade8010' : 'transparent', marginBottom:'1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontWeight:'700', fontSize:'15px'}}>Compte Fan</div>
+            <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>Like, commente les reels Jogabonito</div>
+          </div>
+          <div style={{background:'#4ade8020', color:'#4ade80', fontSize:'12px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px'}}>GRATUIT</div>
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
@@ -102,15 +109,17 @@ function Register() {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="minimum 6 caracteres" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
           </div>
 
-          <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Poste</label>
-            <select value={poste} onChange={(e) => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}>
-              <option>Gardien</option>
-              <option>Defenseur</option>
-              <option>Milieu</option>
-              <option>Attaquant</option>
-            </select>
-          </div>
+          {plan !== 'fan' && (
+            <div>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Poste</label>
+              <select value={poste} onChange={(e) => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}>
+                <option>Gardien</option>
+                <option>Defenseur</option>
+                <option>Milieu</option>
+                <option>Attaquant</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
@@ -139,12 +148,14 @@ function Register() {
           disabled={loading || !cguAcceptees}
           style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer', marginTop:'1rem'}}
         >
-          {loading ? 'Creation...' : 'Creer mon compte et payer'}
+          {loading ? 'Creation...' : plan === 'fan' ? 'Créer mon compte gratuit' : 'Creer mon compte et payer'}
         </button>
 
-        <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
-          Tu seras redirige vers Stripe pour finaliser le paiement
-        </p>
+        {plan !== 'fan' && (
+          <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
+            Tu seras redirige vers Stripe pour finaliser le paiement
+          </p>
+        )}
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
           Deja un compte ?{' '}

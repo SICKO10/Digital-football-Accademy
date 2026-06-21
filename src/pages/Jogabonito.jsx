@@ -34,6 +34,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const [muted, setMuted] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const type = detectType(reel.video_url)
 
   // Est-ce que c'est le reel du joueur connecté ?
@@ -72,7 +73,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   }
 
   const handleLike = async () => {
-    if (!user) return
+    if (!user) { setShowLoginPrompt(true); return }
     if (liked) {
       await supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', reel.joueur_id)
       setLikeCount(c => c - 1)
@@ -84,7 +85,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   }
 
   const handleFavori = async () => {
-    if (!user) return
+    if (!user) { setShowLoginPrompt(true); return }
     if (favori) {
       await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('clip_id', reel.joueur_id)
     } else {
@@ -215,7 +216,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         </button>
 
         {/* Commentaires */}
-        <button onClick={() => setShowComments(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+        <button onClick={() => user ? setShowComments(true) : setShowLoginPrompt(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px' }}>💬</div>
           <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{comments.length}</span>
         </button>
@@ -257,6 +258,36 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         <div style={{ width: '2px', height: '20px', background: '#fff', borderRadius: '2px', animation: 'bounce 1.5s infinite' }} />
         <span style={{ color: '#fff', fontSize: '10px' }}>Scroll</span>
       </div>
+
+      {/* PROMPT CONNEXION */}
+      {showLoginPrompt && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShowLoginPrompt(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '20px 20px 0 0', padding: '2rem', width: '100%', maxWidth: '480px', textAlign: 'center' }}>
+            <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚽</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700 }}>Rejoins la communauté</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>
+              Crée un compte gratuit pour liker et commenter les reels
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                onClick={() => { window.location.href = '/register' }}
+                style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Créer un compte gratuit
+              </button>
+              <button
+                onClick={() => { window.location.href = '/login' }}
+                style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer' }}
+              >
+                J'ai déjà un compte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL CONFIRMATION SUPPRESSION */}
       {showDeleteConfirm && (
@@ -322,7 +353,13 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
                 </button>
               </div>
             ) : (
-              <p style={{ color: '#555', textAlign: 'center', fontSize: '13px' }}>Connectez-vous pour commenter</p>
+              <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                <p style={{ color: '#666', fontSize: '13px', margin: '0 0 10px' }}>Crée un compte gratuit pour interagir</p>
+                <button onClick={() => { setShowComments(false); setShowLoginPrompt(true) }}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '20px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                  Rejoindre gratuitement
+                </button>
+              </div>
             )}
           </div>
         </div>

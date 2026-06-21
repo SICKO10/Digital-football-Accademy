@@ -187,6 +187,60 @@ function DashboardJoueur() {
     )
   }
 
+  if (profil?.plan === 'fan') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
+          <div style={{ fontSize: '18px', fontWeight: '700' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '14px', color: '#aaa' }}>Bonjour {profil?.prenom} 👋</span>
+            <button onClick={handleLogout} style={{ background: 'transparent', color: '#666', border: '1px solid #333', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</button>
+          </div>
+        </nav>
+
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+          <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⚽</div>
+            <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '6px' }}>Compte Fan</h1>
+            <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>
+              Tu peux liker et commenter tous les reels Jogabonito.
+            </p>
+            <button onClick={() => navigate('/jogabonito')}
+              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
+              Voir Jogabonito →
+            </button>
+          </div>
+
+          <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem' }}>
+            <div style={{ display: 'inline-block', background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', marginBottom: '1rem' }}>PASSE JOUEUR</div>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Expose ton talent aux recruteurs</h2>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+              Avec un abonnement Starter ou Pro, publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+              {[
+                { plan: 'Starter', prix: '49,99€/mois', desc: '2 analyses / mois · Reels Jogabonito' },
+                { plan: 'Pro', prix: '79,99€/mois', desc: '3 analyses / mois · Feed · Visible recruteurs' },
+              ].map(p => (
+                <div key={p.plan} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{p.plan}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{p.desc}</p>
+                  </div>
+                  <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => navigate('/register')}
+              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
+              Devenir joueur →
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!profil?.abonnement_actif) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

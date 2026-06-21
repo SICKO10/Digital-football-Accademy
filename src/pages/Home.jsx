@@ -148,6 +148,29 @@ function Home() {
         </div>
       </section>
 
+      <section style={{ padding: '5rem 2rem', textAlign: 'center', background: '#0a0a0a' }}>
+        <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>GRATUIT</div>
+        <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.75rem' }}>Rejoins la communauté gratuitement</h2>
+        <p style={{ color: '#666', fontSize: '16px', maxWidth: '480px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
+          Suis les meilleurs talents, like leurs reels et commente sans payer. Ton accès à Jogabonito est gratuit.
+        </p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
+          <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
+            Créer un compte Fan — Gratuit
+          </button>
+          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>
+            Voir Jogabonito d'abord
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+          {[['⚽', 'Reels de foot en direct'], ['❤️', 'Like et commente'], ['🔔', 'Suis les talents']].map(([icon, label]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555' }}>
+              <span style={{ fontSize: '20px' }}>{icon}</span> {label}
+            </div>
+          ))}
+        </div>
+      </section>
+
       <footer style={{ borderTop: '1px solid #1a1a1a', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
