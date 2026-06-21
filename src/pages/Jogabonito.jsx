@@ -61,7 +61,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
     setLikeCount(lk?.length || 0)
     if (user) setLiked(lk?.some(l => l.user_id === user.id) || false)
     if (user) {
-      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('clip_id', reel.joueur_id)
+      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
       setFavori(fav?.length > 0 || false)
     }
     const { data: cm } = await supabase.from('comments')
@@ -87,9 +87,9 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const handleFavori = async () => {
     if (!user) { setShowLoginPrompt(true); return }
     if (favori) {
-      await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('clip_id', reel.joueur_id)
+      await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
     } else {
-      await supabase.from('video_favoris').insert({ user_id: user.id, clip_id: reel.joueur_id })
+      await supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: reel.joueur_id })
     }
     setFavori(!favori)
   }
