@@ -149,8 +149,6 @@ export default function DashboardClub() {
     await chargerConversations(recruteurId);
   };
 
-  const toggleFavori = (id) => setFavoris(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
-
   // Envoyer message depuis modal (première prise de contact)
   const handleSendMessage = async () => {
     if (!messageText.trim() || !messageModal || !recruteurId) return;
