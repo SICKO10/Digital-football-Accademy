@@ -11,6 +11,8 @@ import Feed from './pages/Feed'
 import UploadClip from './pages/UploadClip'
 import Jogabonito from './pages/Jogabonito'
 import UploadReel from './pages/UploadReel'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
         <Route path="/upload-clip" element={<UploadClip />} />
         <Route path="/jogabonito" element={<Jogabonito />} />
         <Route path="/upload-reel" element={<UploadReel />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </Router>
   )

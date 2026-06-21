@@ -88,7 +88,13 @@ function Login() {
           {loading ? 'Connexion...' : 'Se connecter'}
         </button>
 
-        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
+        <p style={{textAlign:'center', fontSize:'13px', marginTop:'1rem'}}>
+          <span onClick={() => navigate('/forgot-password')} style={{color:'#666', cursor:'pointer'}}>
+            Mot de passe oublié ?
+          </span>
+        </p>
+
+        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.75rem'}}>
           Pas encore de compte ?{' '}
           <span onClick={() => navigate('/register')} style={{color:'#4ade80', cursor:'pointer'}}>
             S inscrire
