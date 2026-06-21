@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import Loader from '../components/Loader'
+import Avatar from '../components/Avatar'
 
 const STRIPE_LINKS = {
   starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
@@ -26,6 +27,7 @@ function DashboardJoueur() {
   const [fanOnglet, setFanOnglet] = useState('accueil')
   const [fanFavoris, setFanFavoris] = useState([])
   const [loadingFanFavoris, setLoadingFanFavoris] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
@@ -107,6 +109,36 @@ function DashboardJoueur() {
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    setAvatarUploading(true)
+    try {
+      const sigRes = await fetch('/api/upload-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (uploadData.secure_url) {
+        await supabase.from('profiles').update({ avatar_url: uploadData.secure_url }).eq('id', userId)
+        setProfil(prev => ({ ...prev, avatar_url: uploadData.secure_url }))
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err)
+    }
+    setAvatarUploading(false)
+  }
+
   const handleSaveStats = async () => {
     setSavingStats(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -148,7 +180,7 @@ function DashboardJoueur() {
     if (joueurIds.length > 0) {
       const { data: reelsData } = await supabase
         .from('reels')
-        .select('*, profiles(prenom, nom, poste, categorie, club)')
+        .select('*, profiles(prenom, nom, poste, categorie, club, avatar_url)')
         .in('joueur_id', joueurIds)
         .order('created_at', { ascending: false })
       setFanFavoris(reelsData || [])
@@ -275,9 +307,7 @@ function DashboardJoueur() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {fanFavoris.map(reel => (
                     <div key={reel.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1rem', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
-                        {reel.profiles?.prenom?.[0]}{reel.profiles?.nom?.[0]}
-                      </div>
+                      <Avatar person={reel.profiles} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{reel.profiles?.prenom} {reel.profiles?.nom}</p>
                         <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
@@ -574,6 +604,21 @@ function DashboardJoueur() {
         {/* ── PROFIL ── */}
         {onglet === 'profil' && (
           <div>
+            {/* Photo de profil */}
+            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>📸 Photo de profil</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <Avatar person={profil} size={80} border="2px solid #4ade8060" />
+                <div>
+                  <label style={{ display: 'inline-block', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '9px 18px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '14px', color: avatarUploading ? '#555' : '#aaa' }}>
+                    {avatarUploading ? 'Upload en cours...' : 'Choisir une photo'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
+                  </label>
+                  <p style={{ fontSize: '12px', color: '#555', margin: '6px 0 0' }}>JPG, PNG, WEBP · Max 5 MB</p>
+                </div>
+              </div>
+            </div>
+
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>📋 Informations club</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -690,9 +735,7 @@ function DashboardJoueur() {
               {messageActif ? (
                 <>
                   <div style={{ padding: '1rem', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#4ade8015', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>
-                      {messageActif.other?.prenom?.[0]}{messageActif.other?.nom?.[0]}
-                    </div>
+                    <Avatar person={messageActif.other} size={36} />
                     <div>
                       <p style={{ margin: 0, fontWeight: 600 }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
                       <p style={{ margin: 0, fontSize: '12px', color: '#4ade80' }}>Recruteur</p>

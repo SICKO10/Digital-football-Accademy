@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Avatar from '../components/Avatar'
 
 const detectType = (url) => {
   if (!url) return null
@@ -65,7 +66,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
       setFavori(fav?.length > 0 || false)
     }
     const { data: cm } = await supabase.from('comments')
-      .select('*, author:profiles!comments_user_id_fkey(prenom, nom)')
+      .select('*, author:profiles!comments_user_id_fkey(prenom, nom, avatar_url)')
       .eq('joueur_id', reel.joueur_id)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -184,9 +185,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         <div
           onClick={() => onOpenProfile(joueur)}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4ade8030', border: '2px solid #4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#4ade80', fontSize: '14px', flexShrink: 0 }}>
-            {joueur?.prenom?.[0]}{joueur?.nom?.[0]}
-          </div>
+          <Avatar person={joueur} size={40} bg="#4ade8030" border="2px solid #4ade80" />
           <div>
             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
               {joueur?.prenom} {joueur?.nom}
@@ -328,9 +327,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
                 <p style={{ color: '#555', textAlign: 'center', padding: '2rem 0', fontSize: '14px' }}>Aucun commentaire. Soyez le premier !</p>
               ) : comments.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
-                    {c.author?.prenom?.[0]}{c.author?.nom?.[0]}
-                  </div>
+                  <Avatar person={c.author} size={32} bg="#1a2e1a" />
                   <div>
                     <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 600 }}>{c.author?.prenom} {c.author?.nom}</p>
                     <p style={{ margin: 0, fontSize: '14px', color: '#ddd' }}>{c.content}</p>
@@ -378,9 +375,7 @@ function ProfilModal({ joueur, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, color: '#4ade80' }}>
-            {joueur?.prenom?.[0]}{joueur?.nom?.[0]}
-          </div>
+          <Avatar person={joueur} size={60} border="2px solid #4ade80" />
           <div>
             <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueur?.prenom} {joueur?.nom}</h2>
             <p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueur?.poste} {joueur?.categorie ? `· ${joueur.categorie}` : ''}</p>
@@ -431,7 +426,7 @@ function Jogabonito() {
   const chargerReels = async () => {
     const { data } = await supabase
       .from('reels')
-      .select('*, profiles(prenom, nom, poste, categorie, club, region, pied, niveau_equipe, buts_total, passes_decisives, matchs_officiel)')
+      .select('*, profiles(prenom, nom, poste, categorie, club, region, pied, niveau_equipe, buts_total, passes_decisives, matchs_officiel, avatar_url)')
       .order('created_at', { ascending: false })
 
     if (!data || data.length === 0) {

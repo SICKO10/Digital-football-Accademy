@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Avatar from '../components/Avatar'
 
 const detectVideoType = (url) => {
   if (!url) return null
@@ -150,7 +151,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
   return (
     <div style={{ background: '#111', border: isOwner ? '1px solid #4ade8040' : '1px solid #222', borderRadius: '16px', overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div onClick={() => onOpenProfile(j)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, color: '#4ade80', flexShrink: 0, cursor: 'pointer' }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+        <div onClick={() => onOpenProfile(j)} style={{ cursor: 'pointer' }}><Avatar person={j} size={40} /></div>
         <div style={{ flex: 1 }}>
           <p onClick={() => onOpenProfile(j)} style={{ margin: 0, fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>{j.prenom} {j.nom}</p>
           <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ''}{j.club ? ` · ${j.club}` : ''}</p>
@@ -222,7 +223,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', maxHeight: '200px', overflowY: 'auto' }}>
               {comments.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{c.author?.prenom?.[0]}{c.author?.nom?.[0]}</div>
+                  <Avatar person={c.author} size={28} bg="#1a2e1a" />
                   <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', flex: 1 }}>
                     <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 600, color: '#4ade80' }}>{c.author?.prenom} {c.author?.nom}<span style={{ color: '#555', fontWeight: 400, marginLeft: '6px' }}>{new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span></p>
                     <p style={{ margin: 0, fontSize: '13px', color: '#ddd' }}>{c.content}</p>
@@ -293,7 +294,7 @@ function Feed() {
     const lc = {}
     likesData?.forEach(l => { lc[l.clip_id] = (lc[l.clip_id] || 0) + 1 })
     setLikeCounts(lc)
-    const { data: commentsData } = await supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan)').in('joueur_id', ids).order('created_at', { ascending: true })
+    const { data: commentsData } = await supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan, avatar_url)').in('joueur_id', ids).order('created_at', { ascending: true })
     const cc = {}; const ac = {}
     commentsData?.forEach(c => { cc[c.joueur_id] = (cc[c.joueur_id] || 0) + 1; if (!ac[c.joueur_id]) ac[c.joueur_id] = []; ac[c.joueur_id].push(c) })
     setCommentCounts(cc); setAllComments(ac)
@@ -444,7 +445,7 @@ function Feed() {
               : joueursFiltres.map(j => (
                 <div key={j.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer' }} onClick={() => setJoueurModal(j)}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: '#4ade80' }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+                    <Avatar person={j} size={44} />
                     <div><p style={{ fontWeight: 700, fontSize: '15px', margin: 0 }}>{j.prenom} {j.nom}</p><p style={{ color: '#4ade80', fontSize: '12px', margin: '2px 0 0' }}>{j.poste}</p></div>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
@@ -473,7 +474,7 @@ function Feed() {
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8060', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, color: '#4ade80' }}>{joueurModal.prenom?.[0]}{joueurModal.nom?.[0]}</div>
+                <Avatar person={joueurModal} size={56} border="2px solid #4ade8060" />
                 <div><h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueurModal.prenom} {joueurModal.nom}</h2><p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueurModal.poste} {joueurModal.categorie ? `· ${joueurModal.categorie}` : ''}</p></div>
               </div>
               <button onClick={() => setJoueurModal(null)} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer' }}>✕</button>

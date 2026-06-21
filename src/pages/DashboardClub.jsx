@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
+import Avatar from "../components/Avatar";
 
 const POSTES = ["Tous", "Attaquant", "Milieu", "Défenseur", "Gardien"];
 const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
@@ -103,8 +104,8 @@ export default function DashboardClub() {
     const existing = favoris.find(f => f.joueur_id === joueurId);
     if (!existing) return;
     await supabase.from("favoris_recruteur").update({ dossier }).eq("id", existing.id);
-    setFavoris(prev => prev.map(f => f.joueur_id === joueurId ? { ...f, dossier } : f));
     setAssignDossierJoueur(null);
+    await chargerFavoris(recruteurId);
   };
 
   const dossiers = ["Général", ...new Set(favoris.map(f => f.dossier).filter(d => d && d !== "Général"))];
@@ -241,7 +242,7 @@ export default function DashboardClub() {
         </nav>
         <div style={{ ...st.content, maxWidth: "700px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
-            <div style={{ ...st.avatar, width: "64px", height: "64px", fontSize: "22px" }}>{getInitials(j)}</div>
+            <Avatar person={j} size={64} bg="#1a2e1a" />
             <div>
               <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
               <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
@@ -410,7 +411,7 @@ export default function DashboardClub() {
                   <div key={j.id} style={st.card}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <div style={st.avatar}>{getInitials(j)}</div>
+                        <Avatar person={j} size={44} bg="#1a2e1a" />
                         <div>
                           <p style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
                           <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.categorie || "—"} · {j.region || "—"}</p>
@@ -439,21 +440,6 @@ export default function DashboardClub() {
         {/* ── FAVORIS ── */}
         {activeTab === "favoris" && (
           <div>
-            {/* Créer un dossier */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "1rem" }}>
-              <input
-                value={nouveauDossier}
-                onChange={e => setNouveauDossier(e.target.value)}
-                placeholder="Nouveau dossier..."
-                onKeyDown={e => { if (e.key === "Enter" && nouveauDossier.trim()) { setDossierActif(nouveauDossier.trim()); setNouveauDossier(""); } }}
-                style={{ ...st.searchInput, maxWidth: "240px" }}
-              />
-              <button
-                onClick={() => { if (nouveauDossier.trim()) { setDossierActif(nouveauDossier.trim()); setNouveauDossier(""); } }}
-                style={{ ...st.btnSecondary, fontSize: "13px", whiteSpace: "nowrap" }}
-              >+ Créer</button>
-            </div>
-
             {/* Filtres dossiers */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               {["Tous", ...dossiers].map(d => (
@@ -473,7 +459,7 @@ export default function DashboardClub() {
                   return (
                     <div key={j.id} style={{ ...st.card, border: "1px solid #1a3a1a" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-                        <div style={st.avatar}>{getInitials(j)}</div>
+                        <Avatar person={j} size={44} bg="#1a2e1a" />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: "15px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
                           <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
