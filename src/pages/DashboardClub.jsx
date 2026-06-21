@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const POSTES = ["Tous", "Attaquant", "Milieu", "Défenseur", "Gardien"];
 const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
@@ -9,6 +9,7 @@ const REGIONS = ["Toutes", "Île-de-France", "Auvergne-Rhône-Alpes", "Occitanie
 
 export default function DashboardClub() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [recruteur, setRecruteur] = useState(null);
   const [recruteurId, setRecruteurId] = useState(null);
   const [joueurs, setJoueurs] = useState([]);
@@ -54,6 +55,14 @@ export default function DashboardClub() {
     };
     checkAuth();
   }, []);
+
+  // Auto-ouvrir la modal de contact si on arrive depuis le Feed
+  useEffect(() => {
+    if (location.state?.contactJoueur) {
+      setMessageModal(location.state.contactJoueur);
+      setActiveTab("messages");
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let result = [...joueurs];

@@ -67,6 +67,7 @@ function VideoBadge({ url }) {
 }
 
 function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st, onDeleteVideo }) {
+  const navigate = useNavigate()
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
@@ -163,6 +164,14 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
             </span>
           )}
           <button onClick={() => onOpenProfile(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Profil →</button>
+          {profil?.plan === 'recruteur' && !isOwner && (
+            <button
+              onClick={() => navigate('/club', { state: { contactJoueur: j } })}
+              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Contacter →
+            </button>
+          )}
         </div>
       </div>
       <VideoPlayer url={j.clip_url} />

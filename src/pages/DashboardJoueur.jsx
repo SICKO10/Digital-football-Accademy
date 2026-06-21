@@ -586,7 +586,23 @@ function DashboardJoueur() {
         )}
 
         {/* ── MESSAGES RECRUTEURS ── */}
-        {onglet === 'messages' && (
+        {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan') && (
+          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '3rem 2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Visible par les recruteurs — Plan Pro uniquement</h2>
+            <p style={{ fontSize: '14px', color: '#666', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
+              Passe au Plan Pro pour recevoir des messages de recruteurs et clubs, et apparaître dans le Scout Center.
+            </p>
+            <button
+              onClick={() => window.location.href = STRIPE_LINKS.pro}
+              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Passer au Plan Pro — 79,99€/mois
+            </button>
+          </div>
+        )}
+
+        {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (
           <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '16px', minHeight: '500px' }}>
             <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
               <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
