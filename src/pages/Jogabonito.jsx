@@ -28,6 +28,8 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const [playing, setPlaying] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
+  const [reposted, setReposted] = useState(false)
+  const [repostCount, setRepostCount] = useState(0)
   const [favori, setFavori] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState([])
@@ -65,6 +67,9 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
       const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
       setFavori(fav?.length > 0 || false)
     }
+    const { data: rp } = await supabase.from('reposts').select('id, user_id').eq('joueur_id', reel.joueur_id)
+    setRepostCount(rp?.length || 0)
+    if (user) setReposted(rp?.some(r => r.user_id === user.id) || false)
     const { data: cm } = await supabase.from('comments')
       .select('*, author:profiles!comments_user_id_fkey(prenom, nom, avatar_url)')
       .eq('joueur_id', reel.joueur_id)
@@ -93,6 +98,18 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
       await supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: reel.joueur_id })
     }
     setFavori(!favori)
+  }
+
+  const handleRepost = async () => {
+    if (!user) { setShowLoginPrompt(true); return }
+    if (reposted) {
+      await supabase.from('reposts').delete().eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
+      setRepostCount(c => c - 1)
+    } else {
+      await supabase.from('reposts').insert({ user_id: user.id, joueur_id: reel.joueur_id })
+      setRepostCount(c => c + 1)
+    }
+    setReposted(!reposted)
   }
 
   const handleComment = async () => {
@@ -218,6 +235,12 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         <button onClick={() => user ? setShowComments(true) : setShowLoginPrompt(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px' }}>💬</div>
           <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{comments.length}</span>
+        </button>
+
+        {/* Republier */}
+        <button onClick={handleRepost} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <div style={{ fontSize: '28px', filter: reposted ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: reposted ? 'scale(1.15)' : 'scale(1)' }}>🔁</div>
+          <span style={{ color: reposted ? '#4ade80' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : 'Partager'}</span>
         </button>
 
         {/* Favori */}

@@ -78,10 +78,8 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
 
   const liked = interactions.likes.includes(j.id)
   const favori = interactions.favoris.includes(j.id)
-  const reposted = interactions.reposts.includes(j.id)
   const likeCount = interactions.likeCounts[j.id] || 0
   const commentCount = interactions.commentCounts[j.id] || 0
-  const repostCount = interactions.repostCounts[j.id] || 0
   const comments = interactions.comments[j.id] || []
 
   // Est-ce que c'est la carte du joueur connecté ?
@@ -104,13 +102,6 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
     if (!user) return
     if (favori) { await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', j.id) }
     else { await supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: j.id }) }
-    onRefresh()
-  }
-
-  const handleRepost = async () => {
-    if (!user) return
-    if (reposted) { await supabase.from('reposts').delete().eq('user_id', user.id).eq('clip_id', j.id) }
-    else { await supabase.from('reposts').insert({ user_id: user.id, clip_id: j.id }) }
     onRefresh()
   }
 
@@ -185,7 +176,6 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
       <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
         <button style={actionBtn(liked, '#ef4444')} onClick={handleLike}><span style={{ fontSize: '16px' }}>{liked ? '❤️' : '🤍'}</span><span>{likeCount}</span></button>
         <button style={actionBtn(showComments, '#60a5fa')} onClick={() => setShowComments(!showComments)}><span style={{ fontSize: '16px' }}>💬</span><span>{commentCount}</span></button>
-        <button style={actionBtn(reposted, '#4ade80')} onClick={handleRepost}><span style={{ fontSize: '16px' }}>{reposted ? '🔁' : '↩️'}</span><span>{repostCount > 0 ? repostCount : ''}</span></button>
         <button style={actionBtn(favori, '#f59e0b')} onClick={handleFavori}><span style={{ fontSize: '16px' }}>{favori ? '⭐' : '☆'}</span></button>
 
         {/* ── BOUTON SUPPRIMER — visible uniquement par le propriétaire ── */}
@@ -257,10 +247,8 @@ function Feed() {
   const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
   const [likedIds, setLikedIds] = useState([])
   const [favoriIds, setFavoriIds] = useState([])
-  const [repostIds, setRepostIds] = useState([])
   const [likeCounts, setLikeCounts] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
-  const [repostCounts, setRepostCounts] = useState({})
   const [allComments, setAllComments] = useState({})
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
@@ -298,17 +286,11 @@ function Feed() {
     const cc = {}; const ac = {}
     commentsData?.forEach(c => { cc[c.joueur_id] = (cc[c.joueur_id] || 0) + 1; if (!ac[c.joueur_id]) ac[c.joueur_id] = []; ac[c.joueur_id].push(c) })
     setCommentCounts(cc); setAllComments(ac)
-    const { data: repostsData } = await supabase.from('reposts').select('clip_id').in('clip_id', ids)
-    const rc = {}
-    repostsData?.forEach(r => { rc[r.clip_id] = (rc[r.clip_id] || 0) + 1 })
-    setRepostCounts(rc)
     if (u) {
       const { data: myLikes } = await supabase.from('likes').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
       setLikedIds(myLikes?.map(l => l.clip_id) || [])
       const { data: myFavoris } = await supabase.from('video_favoris').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids)
       setFavoriIds(myFavoris?.map(f => f.joueur_id) || [])
-      const { data: myReposts } = await supabase.from('reposts').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
-      setRepostIds(myReposts?.map(r => r.clip_id) || [])
     }
   }
 
@@ -319,7 +301,7 @@ function Feed() {
     await chargerInteractions(user, data || [])
   }
 
-  const interactions = { likes: likedIds, favoris: favoriIds, reposts: repostIds, likeCounts, commentCounts, repostCounts, comments: allComments }
+  const interactions = { likes: likedIds, favoris: favoriIds, likeCounts, commentCounts, comments: allComments }
   const joueursAvecClip = joueursPro.filter(j => j.clip_url)
   const joueursFiltres = joueursPro.filter(j => {
     if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
@@ -331,7 +313,7 @@ function Feed() {
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
     return true
   })
-  const feedVideos = user ? [...joueursAvecClipFiltres.filter(j => repostIds.includes(j.id)), ...joueursAvecClipFiltres.filter(j => !repostIds.includes(j.id))] : joueursAvecClipFiltres
+  const feedVideos = joueursAvecClipFiltres
   const isRecruteur = profil?.plan === 'recruteur'
 
   const st = {
