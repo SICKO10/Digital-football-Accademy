@@ -151,7 +151,7 @@ function Home() {
       <footer style={{ borderTop: '1px solid #1a1a1a', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-          {[['Feed', '/feed'], ['Jogabonito', '/jogabonito'], ['Connexion', '/login'], ['Inscription', '/register']].map(([label, path]) => (<span key={label} onClick={() => navigate(path)} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>{label}</span>))}
+          {[['Feed', '/feed'], ['Jogabonito', '/jogabonito'], ['CGU', '/cgu'], ['Inscription', '/register']].map(([label, path]) => (<span key={label} onClick={() => navigate(path)} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>{label}</span>))}
         </div>
         <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>2025 Digital Football</p>
       </footer>
