@@ -21,6 +21,8 @@ function DashboardJoueur() {
   const [deletingVideo, setDeletingVideo] = useState(false)
   const [reelJogabonito, setReelJogabonito] = useState(null)
   const [deletingReel, setDeletingReel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelDone, setCancelDone] = useState(false)
 
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
@@ -55,7 +57,8 @@ function DashboardJoueur() {
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
-    const { data: reelRows } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).order('created_at', { ascending: false }).limit(1)
+    const { data: reelRows, error: reelErr } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).order('created_at', { ascending: false }).limit(1)
+    console.log('[DashboardJoueur] reelRows:', reelRows, 'error:', reelErr)
     setReelJogabonito(reelRows?.[0] || null)
     await chargerConversations(user.id)
     setLoading(false)
@@ -132,6 +135,24 @@ function DashboardJoueur() {
     if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
     setReelJogabonito(null)
     setProfil(prev => ({ ...prev, clip_url: null }))
+  }
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Résilier ton abonnement ? Tu garderas l\'accès jusqu\'à la fin de la période en cours, puis ton compte passera en Starter.')) return
+    setCancelling(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur résiliation')
+      setCancelDone(true)
+    } catch (e) {
+      alert('Erreur : ' + e.message)
+    }
+    setCancelling(false)
   }
 
   const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }
@@ -379,6 +400,30 @@ function DashboardJoueur() {
                 ))}
               </div>
             )}
+
+            {/* ── GESTION ABONNEMENT ── */}
+            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', marginTop: '1rem' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '0.5rem', color: '#666' }}>Mon abonnement</h2>
+              {cancelDone ? (
+                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 600, margin: '0 0 4px' }}>Résiliation programmée</p>
+                  <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>Tu gardes l'accès jusqu'à la fin de la période. Ton compte passera ensuite en Starter.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>
+                    Plan actif : <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
+                  </p>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={cancelling}
+                    style={{ background: 'transparent', border: '1px solid #ef444440', color: cancelling ? '#555' : '#ef4444', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600 }}
+                  >
+                    {cancelling ? 'En cours...' : 'Résilier mon abonnement'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

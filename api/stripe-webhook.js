@@ -66,9 +66,35 @@ export default async function handler(req, res) {
     if (customerEmail) {
       const { error } = await supabase
         .from('profiles')
-        .update({ plan, analyses_restantes: analyses, abonnement_actif: true })
+        .update({
+          plan,
+          analyses_restantes: analyses,
+          abonnement_actif: true,
+          stripe_customer_id: session.customer || null,
+          stripe_subscription_id: session.subscription || null,
+        })
         .eq('email', customerEmail)
       if (error) console.error('Erreur Supabase checkout:', error.message)
+    }
+  }
+
+  // ── Résiliation effective (fin de période) ─────────────────────────────────
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object
+    const customerId = subscription.customer
+    try {
+      const customer = await stripe.customers.retrieve(customerId)
+      const customerEmail = customer.email
+      if (customerEmail) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ abonnement_actif: false, plan: 'starter', stripe_subscription_id: null })
+          .eq('email', customerEmail)
+        if (error) console.error('Erreur Supabase résiliation:', error.message)
+        else console.log(`Abonnement résilié pour ${customerEmail}`)
+      }
+    } catch (err) {
+      console.error('Erreur récupération customer résiliation:', err.message)
     }
   }
 
