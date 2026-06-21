@@ -265,7 +265,7 @@ function Feed() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfil(p)
 
-    if (p?.plan === 'starter') { setAcces(false); setLoading(false); return }
+    if (p?.plan === 'starter' || p?.plan === 'fan') { setAcces(false); setLoading(false); return }
 
     setAcces(true)
 
