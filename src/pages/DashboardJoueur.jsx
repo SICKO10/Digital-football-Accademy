@@ -55,8 +55,8 @@ function DashboardJoueur() {
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
-    const { data: reelData } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).maybeSingle()
-    setReelJogabonito(reelData || null)
+    const { data: reelRows } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).order('created_at', { ascending: false }).limit(1)
+    setReelJogabonito(reelRows?.[0] || null)
     await chargerConversations(user.id)
     setLoading(false)
   }
