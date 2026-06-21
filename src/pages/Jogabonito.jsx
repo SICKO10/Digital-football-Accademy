@@ -56,11 +56,11 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   }, [isActive])
 
   const chargerInteractions = async () => {
-    const { data: lk } = await supabase.from('likes').select('id, user_id').eq('joueur_id', reel.joueur_id)
+    const { data: lk } = await supabase.from('likes').select('id, user_id').eq('clip_id', reel.joueur_id)
     setLikeCount(lk?.length || 0)
     if (user) setLiked(lk?.some(l => l.user_id === user.id) || false)
     if (user) {
-      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
+      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('clip_id', reel.joueur_id)
       setFavori(fav?.length > 0 || false)
     }
     const { data: cm } = await supabase.from('comments')
@@ -74,10 +74,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const handleLike = async () => {
     if (!user) return
     if (liked) {
-      await supabase.from('likes').delete().eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
+      await supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', reel.joueur_id)
       setLikeCount(c => c - 1)
     } else {
-      await supabase.from('likes').insert({ user_id: user.id, joueur_id: reel.joueur_id })
+      await supabase.from('likes').insert({ user_id: user.id, clip_id: reel.joueur_id })
       setLikeCount(c => c + 1)
     }
     setLiked(!liked)
@@ -86,9 +86,9 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
   const handleFavori = async () => {
     if (!user) return
     if (favori) {
-      await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
+      await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('clip_id', reel.joueur_id)
     } else {
-      await supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: reel.joueur_id })
+      await supabase.from('video_favoris').insert({ user_id: user.id, clip_id: reel.joueur_id })
     }
     setFavori(!favori)
   }

@@ -93,22 +93,22 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
 
   const handleLike = async () => {
     if (!user) return
-    if (liked) { await supabase.from('likes').delete().eq('user_id', user.id).eq('joueur_id', j.id) }
-    else { await supabase.from('likes').insert({ user_id: user.id, joueur_id: j.id }) }
+    if (liked) { await supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', j.id) }
+    else { await supabase.from('likes').insert({ user_id: user.id, clip_id: j.id }) }
     onRefresh()
   }
 
   const handleFavori = async () => {
     if (!user) return
-    if (favori) { await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', j.id) }
-    else { await supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: j.id }) }
+    if (favori) { await supabase.from('video_favoris').delete().eq('user_id', user.id).eq('clip_id', j.id) }
+    else { await supabase.from('video_favoris').insert({ user_id: user.id, clip_id: j.id }) }
     onRefresh()
   }
 
   const handleRepost = async () => {
     if (!user) return
-    if (reposted) { await supabase.from('reposts').delete().eq('user_id', user.id).eq('joueur_id', j.id) }
-    else { await supabase.from('reposts').insert({ user_id: user.id, joueur_id: j.id }) }
+    if (reposted) { await supabase.from('reposts').delete().eq('user_id', user.id).eq('clip_id', j.id) }
+    else { await supabase.from('reposts').insert({ user_id: user.id, clip_id: j.id }) }
     onRefresh()
   }
 
@@ -280,25 +280,25 @@ function Feed() {
   const chargerInteractions = async (u, joueurs) => {
     const ids = joueurs.map(j => j.id)
     if (ids.length === 0) return
-    const { data: likesData } = await supabase.from('likes').select('joueur_id').in('joueur_id', ids)
+    const { data: likesData } = await supabase.from('likes').select('clip_id').in('clip_id', ids)
     const lc = {}
-    likesData?.forEach(l => { lc[l.joueur_id] = (lc[l.joueur_id] || 0) + 1 })
+    likesData?.forEach(l => { lc[l.clip_id] = (lc[l.clip_id] || 0) + 1 })
     setLikeCounts(lc)
     const { data: commentsData } = await supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan)').in('joueur_id', ids).order('created_at', { ascending: true })
     const cc = {}; const ac = {}
     commentsData?.forEach(c => { cc[c.joueur_id] = (cc[c.joueur_id] || 0) + 1; if (!ac[c.joueur_id]) ac[c.joueur_id] = []; ac[c.joueur_id].push(c) })
     setCommentCounts(cc); setAllComments(ac)
-    const { data: repostsData } = await supabase.from('reposts').select('joueur_id').in('joueur_id', ids)
+    const { data: repostsData } = await supabase.from('reposts').select('clip_id').in('clip_id', ids)
     const rc = {}
-    repostsData?.forEach(r => { rc[r.joueur_id] = (rc[r.joueur_id] || 0) + 1 })
+    repostsData?.forEach(r => { rc[r.clip_id] = (rc[r.clip_id] || 0) + 1 })
     setRepostCounts(rc)
     if (u) {
-      const { data: myLikes } = await supabase.from('likes').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids)
-      setLikedIds(myLikes?.map(l => l.joueur_id) || [])
-      const { data: myFavoris } = await supabase.from('video_favoris').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids)
-      setFavoriIds(myFavoris?.map(f => f.joueur_id) || [])
-      const { data: myReposts } = await supabase.from('reposts').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids)
-      setRepostIds(myReposts?.map(r => r.joueur_id) || [])
+      const { data: myLikes } = await supabase.from('likes').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
+      setLikedIds(myLikes?.map(l => l.clip_id) || [])
+      const { data: myFavoris } = await supabase.from('video_favoris').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
+      setFavoriIds(myFavoris?.map(f => f.clip_id) || [])
+      const { data: myReposts } = await supabase.from('reposts').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
+      setRepostIds(myReposts?.map(r => r.clip_id) || [])
     }
   }
 
@@ -488,8 +488,8 @@ function Feed() {
             )}
             {user && (
               <div style={{ display: 'flex', gap: '8px', paddingTop: '1rem', borderTop: '1px solid #222', flexWrap: 'wrap' }}>
-                <button onClick={async () => { await (likedIds.includes(joueurModal.id) ? supabase.from('likes').delete().eq('user_id', user.id).eq('joueur_id', joueurModal.id) : supabase.from('likes').insert({ user_id: user.id, joueur_id: joueurModal.id })); refresh() }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
-                <button onClick={async () => { await (favoriIds.includes(joueurModal.id) ? supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', joueurModal.id) : supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: joueurModal.id })); refresh() }} style={{ background: favoriIds.includes(joueurModal.id) ? '#f59e0b20' : '#1a1a1a', border: `1px solid ${favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#333'}`, color: favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{favoriIds.includes(joueurModal.id) ? '⭐ Favori' : '☆ Favoris'}</button>
+                <button onClick={async () => { await (likedIds.includes(joueurModal.id) ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id) : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id })); refresh() }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
+                <button onClick={async () => { await (favoriIds.includes(joueurModal.id) ? supabase.from('video_favoris').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id) : supabase.from('video_favoris').insert({ user_id: user.id, clip_id: joueurModal.id })); refresh() }} style={{ background: favoriIds.includes(joueurModal.id) ? '#f59e0b20' : '#1a1a1a', border: `1px solid ${favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#333'}`, color: favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{favoriIds.includes(joueurModal.id) ? '⭐ Favori' : '☆ Favoris'}</button>
                 {isRecruteur && (<button onClick={() => navigate('/club')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Scout Center →</button>)}
               </div>
             )}
