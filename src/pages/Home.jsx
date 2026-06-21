@@ -11,7 +11,7 @@ function Home() {
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
         <div style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <a href="#comment" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Comment ca marche</a>
           <a href="#offres" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Offres</a>
           <span onClick={() => navigate('/jogabonito')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
@@ -23,9 +23,10 @@ function Home() {
           <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Commencer</button>
         </div>
       </nav>
+      <style>{`@media (max-width: 768px) { .nav-links { display: none !important; } }`}</style>
 
       <section style={{ padding: '5rem 2rem 3rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>PLATEFORME N1 ANALYSE VIDEO FOOTBALL</div>
+        <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>PLATEFORME N°1 ANALYSE VIDÉO FOOTBALL</div>
         <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>Progresse.<br /><span style={{ color: '#4ade80' }}>Sois vu.</span><br />Signe.</h1>
         <p style={{ fontSize: '18px', color: '#666', marginBottom: '2.5rem', lineHeight: 1.7 }}>Envoie ta video de match, recois une analyse personnalisee par un expert. Expose ton talent aux clubs et agents.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
