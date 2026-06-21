@@ -161,6 +161,32 @@ function DashboardJoueur() {
 
   if (loading) return <Loader />
 
+  if (profil?.banni) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #ef444440', borderRadius: '16px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '1.5rem' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚫</div>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ef4444', marginBottom: '0.75rem' }}>Compte suspendu</h1>
+          <p style={{ fontSize: '14px', color: '#888', marginBottom: '1rem' }}>
+            Ton compte a été suspendu pour violation des CGU et du règlement de la plateforme.
+          </p>
+          {profil?.banni_motif && (
+            <div style={{ background: '#1a1a1a', border: '1px solid #ef444430', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>
+                <strong style={{ color: '#ef4444' }}>Motif :</strong> {profil.banni_motif}
+              </p>
+            </div>
+          )}
+          <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>
+            Conformément aux CGU acceptées lors de ton inscription, aucun remboursement ne sera effectué.
+          </p>
+          <span onClick={handleLogout} style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
+        </div>
+      </div>
+    )
+  }
+
   if (!profil?.abonnement_actif) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

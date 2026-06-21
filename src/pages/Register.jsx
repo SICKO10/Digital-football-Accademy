@@ -12,6 +12,7 @@ function Register() {
   const [poste, setPoste] = useState('Attaquant')
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+  const [cguAcceptees, setCguAcceptees] = useState(false)
 
   const handleRegister = async () => {
     setLoading(true)
@@ -114,7 +115,30 @@ function Register() {
 
         {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
 
-        <button onClick={handleRegister} disabled={loading} style={{width:'100%', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor:'pointer', marginTop:'1.5rem'}}>
+        <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginTop:'1.5rem', cursor:'pointer'}}>
+          <input
+            type="checkbox"
+            checked={cguAcceptees}
+            onChange={(e) => setCguAcceptees(e.target.checked)}
+            style={{marginTop:'2px', accentColor:'#4ade80', width:'16px', height:'16px', flexShrink:0}}
+          />
+          <span style={{fontSize:'13px', color:'#aaa', lineHeight:'1.5'}}>
+            J'ai lu et j'accepte les{' '}
+            <span
+              onClick={(e) => { e.preventDefault(); window.open('/cgu', '_blank') }}
+              style={{color:'#4ade80', cursor:'pointer', textDecoration:'underline'}}
+            >
+              CGU et le règlement
+            </span>
+            , notamment l'absence de remboursement en cas de bannissement.
+          </span>
+        </label>
+
+        <button
+          onClick={handleRegister}
+          disabled={loading || !cguAcceptees}
+          style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer', marginTop:'1rem'}}
+        >
           {loading ? 'Creation...' : 'Creer mon compte et payer'}
         </button>
 

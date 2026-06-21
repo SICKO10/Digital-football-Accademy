@@ -13,6 +13,7 @@ import Jogabonito from './pages/Jogabonito'
 import UploadReel from './pages/UploadReel'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import CGU from './pages/CGU'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/upload-reel" element={<UploadReel />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/cgu" element={<CGU />} />
       </Routes>
     </Router>
   )
