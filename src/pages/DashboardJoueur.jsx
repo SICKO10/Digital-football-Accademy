@@ -19,6 +19,8 @@ function DashboardJoueur() {
   const [statsSaved, setStatsSaved] = useState(false)
   const [userId, setUserId] = useState(null)
   const [deletingVideo, setDeletingVideo] = useState(false)
+  const [reelJogabonito, setReelJogabonito] = useState(null)
+  const [deletingReel, setDeletingReel] = useState(false)
 
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
@@ -53,6 +55,8 @@ function DashboardJoueur() {
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
+    const { data: reelData } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).maybeSingle()
+    setReelJogabonito(reelData || null)
     await chargerConversations(user.id)
     setLoading(false)
   }
@@ -115,6 +119,18 @@ function DashboardJoueur() {
     setDeletingVideo(false)
     if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
     if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
+    setProfil(prev => ({ ...prev, clip_url: null }))
+  }
+
+  const handleDeleteReel = async () => {
+    if (!window.confirm('Supprimer ta vidéo Jogabonito ? Elle ne sera plus visible dans le feed.')) return
+    setDeletingReel(true)
+    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', userId)
+    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
+    setDeletingReel(false)
+    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
+    if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
+    setReelJogabonito(null)
     setProfil(prev => ({ ...prev, clip_url: null }))
   }
 
@@ -262,6 +278,29 @@ function DashboardJoueur() {
                     style={{ background: 'transparent', color: deletingVideo ? '#555' : '#ef4444', border: '1px solid #ef444440', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer' }}
                   >
                     {deletingVideo ? '⏳ Suppression...' : '🗑️ Supprimer ma vidéo'}
+                  </button>
+                </div>
+              </div>
+            ) : reelJogabonito ? (
+              // Reel Jogabonito existant (sans clip_url — typiquement plan Starter)
+              <div style={{ background: '#111', border: '1px solid #f9731633', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>🎬 Ma vidéo Jogabonito</h2>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>Visible dans Jogabonito par tous les joueurs</p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer"
+                    style={{ display: 'inline-block', background: '#f97316', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none' }}>
+                    🎬 Voir ma vidéo
+                  </a>
+                  <button onClick={() => navigate('/upload-reel')}
+                    style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    Changer la vidéo
+                  </button>
+                  <button
+                    onClick={handleDeleteReel}
+                    disabled={deletingReel}
+                    style={{ background: 'transparent', color: deletingReel ? '#555' : '#ef4444', border: '1px solid #ef444440', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer' }}
+                  >
+                    {deletingReel ? '⏳ Suppression...' : '🗑️ Supprimer ma vidéo Jogabonito'}
                   </button>
                 </div>
               </div>
