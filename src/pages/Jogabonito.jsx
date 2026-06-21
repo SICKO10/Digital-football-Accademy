@@ -223,8 +223,8 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
 
         {/* Favori */}
         <button onClick={handleFavori} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px', filter: favori ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s' }}>⭐</div>
-          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>Save</span>
+          <div style={{ fontSize: '28px', filter: favori ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: favori ? 'scale(1.15)' : 'scale(1)' }}>⭐</div>
+          <span style={{ color: favori ? '#f59e0b' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>Save</span>
         </button>
 
         {/* Profil raccourci */}

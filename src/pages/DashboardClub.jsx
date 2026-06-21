@@ -17,7 +17,10 @@ export default function DashboardClub() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("joueurs");
   const [selectedJoueur, setSelectedJoueur] = useState(null);
-  const [favoris, setFavoris] = useState([]);
+  const [favoris, setFavoris] = useState([]); // [{id, user_id, joueur_id, dossier}]
+  const [dossierActif, setDossierActif] = useState("Tous");
+  const [nouveauDossier, setNouveauDossier] = useState("");
+  const [assignDossierJoueur, setAssignDossierJoueur] = useState(null);
 
   // Messagerie
   const [messageModal, setMessageModal] = useState(null);
@@ -51,6 +54,7 @@ export default function DashboardClub() {
       setFiltered(joueursData || []);
       setCoaches(coachData || []);
       await chargerConversations(user.id);
+      await chargerFavoris(user.id);
       setLoading(false);
     };
     checkAuth();
@@ -76,6 +80,34 @@ export default function DashboardClub() {
     }
     setFiltered(result);
   }, [poste, categorie, pied, region, search, joueurs]);
+
+  const chargerFavoris = async (uid) => {
+    const { data } = await supabase.from("favoris_recruteur").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+    setFavoris(data || []);
+  };
+
+  const isFavori = (joueurId) => favoris.some(f => f.joueur_id === joueurId);
+
+  const toggleFavori = async (joueurId) => {
+    const existing = favoris.find(f => f.joueur_id === joueurId);
+    if (existing) {
+      await supabase.from("favoris_recruteur").delete().eq("id", existing.id);
+      setFavoris(prev => prev.filter(f => f.joueur_id !== joueurId));
+    } else {
+      const { data } = await supabase.from("favoris_recruteur").insert({ user_id: recruteurId, joueur_id: joueurId, dossier: "Général" }).select().single();
+      if (data) setFavoris(prev => [...prev, data]);
+    }
+  };
+
+  const assignerDossier = async (joueurId, dossier) => {
+    const existing = favoris.find(f => f.joueur_id === joueurId);
+    if (!existing) return;
+    await supabase.from("favoris_recruteur").update({ dossier }).eq("id", existing.id);
+    setFavoris(prev => prev.map(f => f.joueur_id === joueurId ? { ...f, dossier } : f));
+    setAssignDossierJoueur(null);
+  };
+
+  const dossiers = ["Général", ...new Set(favoris.map(f => f.dossier).filter(d => d && d !== "Général"))];
 
   const chargerConversations = async (uid) => {
     const { data } = await supabase
@@ -272,8 +304,8 @@ export default function DashboardClub() {
 
           <div style={{ marginTop: "2rem", display: "flex", gap: "12px" }}>
             <button style={st.btnPrimary} onClick={() => setMessageModal(j)}>✉️ Contacter ce joueur</button>
-            <button style={favoris.includes(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>
-              {favoris.includes(j.id) ? "★ Favori" : "☆ Ajouter aux favoris"}
+            <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>
+              {isFavori(j.id) ? "★ Favori" : "☆ Ajouter aux favoris"}
             </button>
           </div>
         </div>
@@ -300,15 +332,49 @@ export default function DashboardClub() {
 
         <div style={st.tabs}>
           {[
+            { id: "accueil", label: "🏠 Accueil" },
             { id: "joueurs", label: "🔍 Joueurs" },
             { id: "favoris", label: `★ Favoris (${favoris.length})` },
             { id: "feed", label: "🎬 Vidéos" },
             { id: "messages", label: `✉️ Messages${conversations.length > 0 ? ` (${conversations.length})` : ""}` },
-            { id: "coach", label: "🎙️ Contacter le coach" },
+            { id: "coach", label: "🎙️ Coach" },
           ].map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
           ))}
         </div>
+
+        {/* ── ACCUEIL ── */}
+        {activeTab === "accueil" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "2rem" }}>
+              {[
+                { label: "Joueurs Pro", val: joueurs.length, sub: "profils actifs" },
+                { label: "Favoris", val: favoris.length, sub: "joueurs suivis" },
+                { label: "Messages", val: conversations.length, sub: "conversations" },
+              ].map(s => (
+                <div key={s.label} style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", textAlign: "center" }}>
+                  <p style={{ fontSize: "32px", fontWeight: 800, color: "#4ade80", margin: "0 0 4px" }}>{s.val}</p>
+                  <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{s.label}</p>
+                  <p style={{ fontSize: "12px", color: "#555", margin: "2px 0 0" }}>{s.sub}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <button onClick={() => navigate("/jogabonito")}
+                style={{ background: "#111", border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
+                <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>🎬</p>
+                <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Jogabonito</p>
+                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Reels courts des joueurs</p>
+              </button>
+              <button onClick={() => navigate("/feed")}
+                style={{ background: "#111", border: "1px solid #4ade8040", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
+                <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>📋</p>
+                <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Feed Scout</p>
+                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Clips + stats des joueurs Pro</p>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── JOUEURS ── */}
         {activeTab === "joueurs" && (
@@ -362,7 +428,7 @@ export default function DashboardClub() {
                     {j.clip_url && <p style={{ fontSize: "11px", color: "#4ade80", marginTop: "8px", marginBottom: 0 }}>🎬 Vidéo disponible</p>}
                     <div style={st.cardActions}>
                       <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Voir le profil</button>
-                      <button style={favoris.includes(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{favoris.includes(j.id) ? "★" : "☆"}</button>
+                      <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{isFavori(j.id) ? "★" : "☆"}</button>
                       <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
                     </div>
                   </div>
@@ -374,28 +440,77 @@ export default function DashboardClub() {
 
         {/* ── FAVORIS ── */}
         {activeTab === "favoris" && (
-          favoris.length === 0 ? (
-            <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>☆</p><p>Aucun favori pour l'instant.</p></div>
-          ) : (
-            <div style={st.grid}>
-              {joueurs.filter(j => favoris.includes(j.id)).map(j => (
-                <div key={j.id} style={{ ...st.card, borderColor: "#1a3a1a" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                    <div style={st.avatar}>{getInitials(j)}</div>
-                    <div>
-                      <p style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
-                      <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.poste} · {j.categorie}</p>
-                    </div>
-                    <span style={{ color: "#4ade80", marginLeft: "auto" }}>★</span>
-                  </div>
-                  <div style={st.cardActions}>
-                    <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Voir le profil</button>
-                    <button style={st.btnSecondary} onClick={() => toggleFavori(j.id)}>Retirer</button>
-                  </div>
-                </div>
+          <div>
+            {/* Créer un dossier */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "1rem" }}>
+              <input
+                value={nouveauDossier}
+                onChange={e => setNouveauDossier(e.target.value)}
+                placeholder="Nouveau dossier..."
+                onKeyDown={e => { if (e.key === "Enter" && nouveauDossier.trim()) { setDossierActif(nouveauDossier.trim()); setNouveauDossier(""); } }}
+                style={{ ...st.searchInput, maxWidth: "240px" }}
+              />
+              <button
+                onClick={() => { if (nouveauDossier.trim()) { setDossierActif(nouveauDossier.trim()); setNouveauDossier(""); } }}
+                style={{ ...st.btnSecondary, fontSize: "13px", whiteSpace: "nowrap" }}
+              >+ Créer</button>
+            </div>
+
+            {/* Filtres dossiers */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+              {["Tous", ...dossiers].map(d => (
+                <button key={d} onClick={() => setDossierActif(d)}
+                  style={{ padding: "6px 14px", borderRadius: "20px", border: dossierActif === d ? "none" : "1px solid #333", background: dossierActif === d ? "#4ade80" : "transparent", color: dossierActif === d ? "#000" : "#aaa", fontWeight: dossierActif === d ? 600 : 400, cursor: "pointer", fontSize: "13px" }}>
+                  {d} {d !== "Tous" ? `(${favoris.filter(f => f.dossier === d).length})` : `(${favoris.length})`}
+                </button>
               ))}
             </div>
-          )
+
+            {favoris.length === 0 ? (
+              <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>☆</p><p>Aucun favori pour l'instant.<br /><span style={{ fontSize: "13px", color: "#444" }}>Cliquez sur ☆ depuis la liste des joueurs.</span></p></div>
+            ) : (
+              <div style={st.grid}>
+                {joueurs.filter(j => isFavori(j.id) && (dossierActif === "Tous" || favoris.find(f => f.joueur_id === j.id)?.dossier === dossierActif)).map(j => {
+                  const fav = favoris.find(f => f.joueur_id === j.id);
+                  return (
+                    <div key={j.id} style={{ ...st.card, border: "1px solid #1a3a1a" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+                        <div style={st.avatar}>{getInitials(j)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "15px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
+                          <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
+                        </div>
+                        <span style={{ background: "#4ade8020", color: "#4ade80", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", flexShrink: 0 }}>{fav?.dossier || "Général"}</span>
+                      </div>
+
+                      {/* Déplacer vers un dossier */}
+                      {assignDossierJoueur === j.id ? (
+                        <div style={{ marginBottom: "10px" }}>
+                          <select onChange={e => { if (e.target.value) assignerDossier(j.id, e.target.value) }} defaultValue=""
+                            style={{ ...st.select, width: "100%", marginBottom: "6px" }}>
+                            <option value="" disabled>Choisir un dossier...</option>
+                            {dossiers.map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <input placeholder="Nouveau dossier..." style={{ ...st.searchInput, flex: 1, fontSize: "12px" }}
+                              onKeyDown={e => { if (e.key === "Enter" && e.target.value.trim()) assignerDossier(j.id, e.target.value.trim()) }} />
+                            <button onClick={() => setAssignDossierJoueur(null)} style={{ ...st.btnSecondary, fontSize: "12px" }}>✕</button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div style={st.cardActions}>
+                        <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil</button>
+                        <button style={st.btnSecondary} onClick={() => setAssignDossierJoueur(assignDossierJoueur === j.id ? null : j.id)}>📁 Dossier</button>
+                        <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
+                        <button style={{ ...st.btnSecondary, color: "#ef4444", borderColor: "#ef444440" }} onClick={() => toggleFavori(j.id)}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ── FEED ── */}

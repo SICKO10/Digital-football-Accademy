@@ -23,6 +23,9 @@ function DashboardJoueur() {
   const [deletingReel, setDeletingReel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelDone, setCancelDone] = useState(false)
+  const [fanOnglet, setFanOnglet] = useState('accueil')
+  const [fanFavoris, setFanFavoris] = useState([])
+  const [loadingFanFavoris, setLoadingFanFavoris] = useState(false)
 
   const [conversations, setConversations] = useState([])
   const [messageActif, setMessageActif] = useState(null)
@@ -137,6 +140,24 @@ function DashboardJoueur() {
     setProfil(prev => ({ ...prev, clip_url: null }))
   }
 
+  const chargerFanFavoris = async () => {
+    if (!userId) return
+    setLoadingFanFavoris(true)
+    const { data: favData } = await supabase.from('video_favoris').select('joueur_id').eq('user_id', userId)
+    const joueurIds = favData?.map(f => f.joueur_id) || []
+    if (joueurIds.length > 0) {
+      const { data: reelsData } = await supabase
+        .from('reels')
+        .select('*, profiles(prenom, nom, poste, categorie, club)')
+        .in('joueur_id', joueurIds)
+        .order('created_at', { ascending: false })
+      setFanFavoris(reelsData || [])
+    } else {
+      setFanFavoris([])
+    }
+    setLoadingFanFavoris(false)
+  }
+
   const handleCancelSubscription = async () => {
     if (!window.confirm('Résilier ton abonnement ? Tu garderas l\'accès jusqu\'à la fin de la période en cours, puis ton compte passera en Starter.')) return
     setCancelling(true)
@@ -198,44 +219,87 @@ function DashboardJoueur() {
           </div>
         </nav>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
-          <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⚽</div>
-            <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '6px' }}>Compte Fan</h1>
-            <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>
-              Tu peux liker et commenter tous les reels Jogabonito.
-            </p>
-            <button onClick={() => navigate('/jogabonito')}
-              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
-              Voir Jogabonito →
-            </button>
+        <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+          {/* Onglets fan */}
+          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #222', marginBottom: '2rem', paddingBottom: '1rem' }}>
+            {[['accueil', 'Accueil'], ['favoris', '⭐ Mes Favoris'], ['messages', '🔒 Messages']].map(([id, label]) => (
+              <button key={id} onClick={() => { setFanOnglet(id); if (id === 'favoris') chargerFanFavoris() }}
+                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? '#4ade80' : '#666', fontSize: '14px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', paddingBottom: '4px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent' }}>
+                {label}
+              </button>
+            ))}
           </div>
 
-          <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem' }}>
-            <div style={{ display: 'inline-block', background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', marginBottom: '1rem' }}>PASSE JOUEUR</div>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Expose ton talent aux recruteurs</h2>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-              Avec un abonnement Starter ou Pro, publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-              {[
-                { plan: 'Starter', prix: '49,99€/mois', desc: '2 analyses / mois · Reels Jogabonito' },
-                { plan: 'Pro', prix: '79,99€/mois', desc: '3 analyses / mois · Feed · Visible recruteurs' },
-              ].map(p => (
-                <div key={p.plan} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{p.plan}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{p.desc}</p>
-                  </div>
-                  <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
+          {/* Accueil */}
+          {fanOnglet === 'accueil' && (
+            <>
+              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⚽</div>
+                <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '6px' }}>Compte Fan</h1>
+                <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
+                <button onClick={() => navigate('/jogabonito')}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
+                  Voir Jogabonito →
+                </button>
+              </div>
+              <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem' }}>
+                <div style={{ display: 'inline-block', background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', marginBottom: '1rem' }}>PASSE JOUEUR</div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Expose ton talent aux recruteurs</h2>
+                <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+                  {[{ plan: 'Starter', prix: '49,99€/mois', desc: '2 analyses / mois · Reels Jogabonito' }, { plan: 'Pro', prix: '79,99€/mois', desc: '3 analyses / mois · Feed · Visible recruteurs' }].map(p => (
+                    <div key={p.plan} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div><p style={{ margin: 0, fontWeight: 700 }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{p.desc}</p></div>
+                      <span style={{ color: '#4ade80', fontWeight: 700 }}>{p.prix}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <button onClick={() => navigate('/register')} style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Devenir joueur →</button>
+              </div>
+            </>
+          )}
+
+          {/* Mes Favoris */}
+          {fanOnglet === 'favoris' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '1.5rem' }}>⭐ Mes reels sauvegardés</h2>
+              {loadingFanFavoris ? (
+                <p style={{ color: '#4ade80', textAlign: 'center' }}>Chargement...</p>
+              ) : fanFavoris.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '2.5rem', margin: '0 0 12px' }}>⭐</p>
+                  <p style={{ color: '#666', fontSize: '14px' }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape ⭐ Save pour les retrouver ici.</p>
+                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}>Aller sur Jogabonito →</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {fanFavoris.map(reel => (
+                    <div key={reel.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1rem', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8015', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
+                        {reel.profiles?.prenom?.[0]}{reel.profiles?.nom?.[0]}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{reel.profiles?.prenom} {reel.profiles?.nom}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
+                        {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
+                      </div>
+                      <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Voir →</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <button onClick={() => navigate('/register')}
-              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
-              Devenir joueur →
-            </button>
-          </div>
+          )}
+
+          {/* Messages (lock Pro) */}
+          {fanOnglet === 'messages' && (
+            <div style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '3rem 2rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Visible par les recruteurs — Plan Pro uniquement</h2>
+              <p style={{ fontSize: '14px', color: '#666', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
+              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Passer au Plan Pro — 79,99€/mois</button>
+            </div>
+          )}
         </div>
       </div>
     )
