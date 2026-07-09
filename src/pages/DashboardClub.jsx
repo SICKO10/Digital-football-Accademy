@@ -3,9 +3,62 @@ import { supabase } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
 
-const POSTES = ["Tous", "Attaquant", "Milieu", "Défenseur", "Gardien"];
 const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
+const POSTE_PILLS = [
+  { val: "Tous",      label: "Tous",  icon: "⚽" },
+  { val: "Attaquant", label: "ATT",   icon: "⚡" },
+  { val: "Milieu",    label: "MIL",   icon: "🔵" },
+  { val: "Défenseur", label: "DEF",   icon: "🛡️" },
+  { val: "Gardien",   label: "GDN",   icon: "🧤" },
+];
+
+// Génère le thumbnail Cloudinary depuis l'URL vidéo
+const getCloudinaryThumb = (url) => {
+  if (!url || !url.includes("cloudinary.com")) return null;
+  return url
+    .replace("/video/upload/", "/video/upload/f_jpg,q_auto,w_400,so_1/")
+    .replace(/\.(mp4|mov|webm)(\?.*)?$/, ".jpg");
+};
+
+// Radar chart SVG (pentagon)
+function RadarChart({ j, size = 180 }) {
+  const stats = [
+    { label: "Buts",    value: Math.min((j.buts_total || 0) / 20, 1) },
+    { label: "Passes",  value: Math.min((j.passes_decisives || 0) / 15, 1) },
+    { label: "Matchs",  value: Math.min((j.matchs_officiel || 0) / 30, 1) },
+    { label: "Minutes", value: Math.min((j.minutes_jouees || 0) / 2500, 1) },
+    { label: "CS",      value: Math.min((j.cleansheets || 0) / 10, 1) },
+  ];
+  const n = stats.length;
+  const cx = size / 2, cy = size / 2, r = size * 0.36;
+  const pt = (i, scale) => {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2;
+    return { x: cx + r * scale * Math.cos(a), y: cy + r * scale * Math.sin(a) };
+  };
+  const poly = (scale) => stats.map((_, i) => { const p = pt(i, scale); return `${p.x},${p.y}`; }).join(" ");
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {[0.25, 0.5, 0.75, 1].map(l => (
+        <polygon key={l} points={poly(l)} fill="none" stroke={l === 1 ? "#333" : "#1e1e1e"} strokeWidth={l === 1 ? 1 : 0.5} />
+      ))}
+      {stats.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#2a2a2a" strokeWidth="1" />; })}
+      <polygon points={stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return `${p.x},${p.y}`; }).join(" ")} fill="#4ade8025" stroke="#4ade80" strokeWidth="1.5" />
+      {stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#4ade80" />; })}
+      {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill="#666" fontSize="9" fontFamily="Inter,sans-serif">{s.label}</text>; })}
+    </svg>
+  );
+}
+
+// Toast notification
+function Toast({ message, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{ position: "fixed", bottom: "2rem", right: "2rem", background: "#4ade80", color: "#000", padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "14px", zIndex: 9999, boxShadow: "0 4px 24px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: "8px", animation: "slideIn 0.3s ease" }}>
+      ✓ {message}
+    </div>
+  );
+}
 
 export default function DashboardClub() {
   const navigate = useNavigate();
@@ -40,6 +93,9 @@ export default function DashboardClub() {
   const [region, setRegion] = useState("Toutes");
   const [ville, setVille] = useState("");
   const [search, setSearch] = useState("");
+  const [tri, setTri] = useState("recent");
+  const [modeAffichage, setModeAffichage] = useState("grille");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -92,8 +148,11 @@ export default function DashboardClub() {
         (j.region && j.region.toLowerCase().includes(s))
       );
     }
+    if (tri === "recent") result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    else if (tri === "buts") result.sort((a, b) => (b.buts_total || 0) - (a.buts_total || 0));
+    else if (tri === "matchs") result.sort((a, b) => (b.matchs_officiel || 0) - (a.matchs_officiel || 0));
     setFiltered(result);
-  }, [poste, categorie, pied, region, ville, search, joueurs]);
+  }, [poste, categorie, pied, region, ville, search, tri, joueurs]);
 
   const chargerFavoris = async (uid) => {
     const { data } = await supabase.from("favoris_recruteur").select("*").eq("user_id", uid).order("created_at", { ascending: false });
@@ -122,6 +181,15 @@ export default function DashboardClub() {
   };
 
   const dossiers = ["Général", ...new Set(favoris.map(f => f.dossier).filter(d => d && d !== "Général"))];
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const isNouveau = (j) => j.created_at && new Date(j.created_at) > sevenDaysAgo;
+  const aEteContacte = (joueurId) => conversations.some(c => c.otherId === joueurId);
+  const nbNouveaux = joueurs.filter(isNouveau).length;
+  const maxButs = Math.max(...joueurs.map(j => j.buts_total || 0), 1);
+  const maxMatchs = Math.max(...joueurs.map(j => j.matchs_officiel || 0), 1);
+  const maxPasses = Math.max(...joueurs.map(j => j.passes_decisives || 0), 1);
+  const showToast = (msg) => { setToast(msg); };
 
   const chargerConversations = async (uid) => {
     const { data } = await supabase
@@ -254,16 +322,45 @@ export default function DashboardClub() {
           <button style={st.btnSecondary} onClick={() => setSelectedJoueur(null)}>← Retour</button>
         </nav>
         <div style={{ ...st.content, maxWidth: "700px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
-            <Avatar person={j} size={64} bg="#1a2e1a" />
-            <div>
-              <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
-              <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+            <Avatar person={j} size={72} bg="#1a2e1a" border="2px solid #4ade8060" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
+                <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
+                <span style={{ background: "#4ade8020", color: "#4ade80", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>PRO</span>
+                {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>NEW</span>}
+                {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓ Contacté</span>}
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                 {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
                 {j.categorie && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>{j.categorie}</span>}
                 {j.pied && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>Pied {j.pied.toLowerCase()}</span>}
                 {j.region && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>{j.region}</span>}
               </div>
+            </div>
+          </div>
+
+          {/* Radar chart */}
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "1.5rem", background: "#111", border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.5rem", flexWrap: "wrap" }}>
+            <RadarChart j={j} size={180} />
+            <div style={{ flex: 1, minWidth: "160px" }}>
+              <p style={{ ...st.sectionTitle, margin: "0 0 1rem" }}>Performance globale</p>
+              {[
+                { label: "Buts", val: j.buts_total || 0, max: 20, color: "#f97316" },
+                { label: "Passes déc.", val: j.passes_decisives || 0, max: 15, color: "#4ade80" },
+                { label: "Matchs officiels", val: j.matchs_officiel || 0, max: 30, color: "#60a5fa" },
+                { label: "Minutes jouées", val: j.minutes_jouees || 0, max: 2500, color: "#a855f7" },
+              ].map(s => (
+                <div key={s.label} style={{ marginBottom: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                    <span style={{ fontSize: "12px", color: "#666" }}>{s.label}</span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: s.color }}>{s.val}</span>
+                  </div>
+                  <div style={{ background: "#1a1a1a", borderRadius: "4px", height: "5px" }}>
+                    <div style={{ background: s.color, width: `${Math.min((s.val / s.max) * 100, 100)}%`, height: "100%", borderRadius: "4px" }} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -328,18 +425,32 @@ export default function DashboardClub() {
   // ── Dashboard principal ────────────────────────────────────────────────────
   return (
     <div style={st.page}>
+      <style>{`@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
       <nav style={st.navbar}>
-        <span style={st.logo}>⬡ DIGITAL FOOTBALL</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "32px", height: "32px", background: "#4ade80", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
+          <div>
+            <div style={{ ...st.logo, fontSize: "1rem", letterSpacing: "2px" }}>DIGITAL FOOTBALL</div>
+            <div style={{ fontSize: "10px", color: "#555", letterSpacing: "1px", textTransform: "uppercase" }}>Scout Center</div>
+          </div>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontSize: "13px", color: "#666" }}>{recruteur?.prenom} {recruteur?.nom} — {recruteur?.club || "Recruteur"}</span>
+          {/* Cloche notifications */}
+          <button onClick={() => setActiveTab("joueurs")} style={{ position: "relative", background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", padding: "4px 8px" }} title={`${nbNouveaux} nouveau${nbNouveaux > 1 ? "x" : ""} joueur${nbNouveaux > 1 ? "s" : ""} cette semaine`}>
+            🔔
+            {nbNouveaux > 0 && (
+              <span style={{ position: "absolute", top: "0", right: "0", background: "#ef4444", color: "#fff", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{nbNouveaux}</span>
+            )}
+          </button>
+          <span style={{ fontSize: "13px", color: "#666" }}>{recruteur?.prenom} {recruteur?.nom}{recruteur?.club ? ` · ${recruteur.club}` : ""}</span>
           <button style={st.logoutBtn} onClick={handleLogout}>Déconnexion</button>
         </div>
       </nav>
 
       <div style={st.content}>
         <div style={{ marginBottom: "1.5rem" }}>
-          <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem" }}>Espace Recruteur</h1>
-          <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>Accédez aux profils des joueurs PRO actifs</p>
+          <h1 style={{ margin: "0 0 4px", fontSize: "1.4rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Scout Center</h1>
+          <p style={{ margin: 0, color: "#555", fontSize: "13px" }}>{joueurs.length} joueur{joueurs.length !== 1 ? "s" : ""} Pro actif{joueurs.length !== 1 ? "s" : ""}{nbNouveaux > 0 ? ` · ${nbNouveaux} nouveau${nbNouveaux > 1 ? "x" : ""} cette semaine` : ""}</p>
         </div>
 
         <div style={st.tabs}>
@@ -391,14 +502,20 @@ export default function DashboardClub() {
         {/* ── JOUEURS ── */}
         {activeTab === "joueurs" && (
           <>
+            {/* Filtre poste — pills avec icônes */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "1rem", flexWrap: "wrap" }}>
+              {POSTE_PILLS.map(p => (
+                <button key={p.val} onClick={() => setPoste(p.val)}
+                  style={{ padding: "7px 14px", borderRadius: "20px", border: poste === p.val ? "none" : "1px solid #333", background: poste === p.val ? posteColor(p.val === "Tous" ? "" : p.val).text : "transparent", color: poste === p.val ? "#000" : "#aaa", fontWeight: poste === p.val ? 700 : 400, cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span>{p.icon}</span> {p.label}
+                </button>
+              ))}
+            </div>
+
             <div style={st.filterBar}>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Recherche</label>
                 <input type="text" placeholder="Nom, club, ville..." value={search} onChange={e => setSearch(e.target.value)} style={st.searchInput} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={st.filterLabel}>Poste</label>
-                <select value={poste} onChange={e => setPoste(e.target.value)} style={st.select}>{POSTES.map(p => <option key={p}>{p}</option>)}</select>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Catégorie</label>
@@ -418,40 +535,112 @@ export default function DashboardClub() {
                 <label style={st.filterLabel}>Ville</label>
                 <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={st.searchInput} />
               </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={st.filterLabel}>Trier par</label>
+                <select value={tri} onChange={e => setTri(e.target.value)} style={st.select}>
+                  <option value="recent">Plus récent</option>
+                  <option value="buts">Buts ↓</option>
+                  <option value="matchs">Matchs ↓</option>
+                </select>
+              </div>
             </div>
-            {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || ville || search) && (
-              <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setVille(""); setSearch(""); }}
-                style={{ background: "transparent", border: "1px solid #333", color: "#aaa", padding: "5px 14px", borderRadius: "8px", fontSize: "12px", cursor: "pointer", marginBottom: "1rem" }}>
-                ✕ Réinitialiser les filtres
-              </button>
-            )}
 
-            <p style={{ fontSize: "13px", color: "#666", marginBottom: "1rem" }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}</p>
+            {/* Barre résultats + toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""}</p>
+                {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || ville || search) && (
+                  <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setVille(""); setSearch(""); }}
+                    style={{ background: "transparent", border: "1px solid #333", color: "#aaa", padding: "3px 10px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>
+                    ✕ Réinitialiser
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "4px" }}>
+                {["grille", "liste"].map(m => (
+                  <button key={m} onClick={() => setModeAffichage(m)}
+                    style={{ background: modeAffichage === m ? "#4ade80" : "transparent", border: "1px solid #333", color: modeAffichage === m ? "#000" : "#666", padding: "5px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
+                    {m === "grille" ? "⊞" : "☰"}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {filtered.length === 0 ? (
               <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>⚽</p><p>Aucun joueur ne correspond à vos filtres.</p></div>
-            ) : (
+            ) : modeAffichage === "grille" ? (
               <div style={st.grid}>
                 {filtered.map(j => (
                   <div key={j.id} style={st.card}>
+                    {/* Badges en-tête */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <Avatar person={j} size={44} bg="#1a2e1a" />
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <Avatar person={j} size={52} bg="#1a2e1a" />
                         <div>
-                          <p style={{ fontSize: "16px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
-                          <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.categorie || "—"} · {j.region || "—"}</p>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <p style={{ fontSize: "15px", fontWeight: 700, margin: 0 }}>{j.prenom} {j.nom}</p>
+                            {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
+                            {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "10px", padding: "1px 6px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>Contacté</span>}
+                          </div>
+                          <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0" }}>{j.categorie || "—"} · {j.region || "—"}</p>
                         </div>
                       </div>
                       {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
                     </div>
-                    <div style={st.statsRow}>
-                      <div style={st.stat}><div style={st.statVal}>{j.buts_total || 0}</div><div style={st.statLabel}>Buts</div></div>
-                      <div style={st.stat}><div style={st.statVal}>{j.passes_decisives || 0}</div><div style={st.statLabel}>Passes déc.</div></div>
-                      <div style={st.stat}><div style={st.statVal}>{j.matchs_officiel || 0}</div><div style={st.statLabel}>Matchs</div></div>
+
+                    {/* Stats + barres de progression */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                      {[
+                        { label: "Buts", val: j.buts_total || 0, max: maxButs, color: "#f97316" },
+                        { label: "Passes déc.", val: j.passes_decisives || 0, max: maxPasses, color: "#4ade80" },
+                        { label: "Matchs", val: j.matchs_officiel || 0, max: maxMatchs, color: "#60a5fa" },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                            <span style={{ fontSize: "11px", color: "#555" }}>{s.label}</span>
+                            <span style={{ fontSize: "11px", fontWeight: 700, color: s.color }}>{s.val}</span>
+                          </div>
+                          <div style={{ background: "#1a1a1a", borderRadius: "4px", height: "4px" }}>
+                            <div style={{ background: s.color, width: `${Math.min((s.val / s.max) * 100, 100)}%`, height: "100%", borderRadius: "4px", transition: "width 0.4s ease" }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    {j.clip_url && <p style={{ fontSize: "11px", color: "#4ade80", marginTop: "8px", marginBottom: 0 }}>🎬 Vidéo disponible</p>}
+
+                    {j.clip_url && <p style={{ fontSize: "11px", color: "#4ade80", margin: "0 0 10px" }}>🎬 Vidéo disponible</p>}
                     <div style={st.cardActions}>
-                      <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Voir le profil</button>
+                      <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil</button>
+                      <button
+                        style={isFavori(j.id) ? { ...st.favoriBtnActive, background: "#4ade8015" } : st.btnSecondary}
+                        onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}>
+                        {isFavori(j.id) ? "★ Favori" : "☆ Favori"}
+                      </button>
+                      <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Mode liste */
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {filtered.map(j => (
+                  <div key={j.id} style={{ ...st.card, padding: "12px 16px", display: "flex", alignItems: "center", gap: "14px" }}>
+                    <Avatar person={j} size={40} bg="#1a2e1a" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: "14px" }}>{j.prenom} {j.nom}</p>
+                        {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "20px" }}>NEW</span>}
+                        {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "9px", padding: "1px 5px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓</span>}
+                      </div>
+                      <p style={{ margin: "1px 0 0", fontSize: "11px", color: "#555" }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
+                    </div>
+                    <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: "#666" }}>
+                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.buts_total || 0} <span style={{ color: "#555", fontWeight: 400 }}>buts</span></span>
+                      <span style={{ color: "#4ade80", fontWeight: 700 }}>{j.passes_decisives || 0} <span style={{ color: "#555", fontWeight: 400 }}>passes</span></span>
+                      <span style={{ color: "#60a5fa", fontWeight: 700 }}>{j.matchs_officiel || 0} <span style={{ color: "#555", fontWeight: 400 }}>matchs</span></span>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button style={{ ...st.btnPrimary, flex: "none", padding: "6px 14px" }} onClick={() => setSelectedJoueur(j)}>Profil</button>
                       <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{isFavori(j.id) ? "★" : "☆"}</button>
                       <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
                     </div>
@@ -523,13 +712,62 @@ export default function DashboardClub() {
         )}
 
         {/* ── FEED ── */}
-        {activeTab === "feed" && (
-          <div style={{ background: "#111", border: "1px dashed #333", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#555" }}>
-            <p style={{ fontSize: "3rem", margin: "0 0 1rem" }}>🎬</p>
-            <p style={{ fontSize: "1.1rem", color: "#555", margin: "0 0 8px" }}>Feed vidéo joueurs</p>
-            <p style={{ fontSize: "13px", color: "#444" }}>Les clips des joueurs PRO apparaîtront ici.</p>
-          </div>
-        )}
+        {activeTab === "feed" && (() => {
+          const avecVideo = joueurs.filter(j => j.clip_url);
+          return (
+            <div>
+              <p style={{ fontSize: "13px", color: "#555", marginBottom: "1.5rem" }}>{avecVideo.length} vidéo{avecVideo.length !== 1 ? "s" : ""} disponible{avecVideo.length !== 1 ? "s" : ""}</p>
+              {avecVideo.length === 0 ? (
+                <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>🎬</p><p>Aucune vidéo pour l'instant.</p></div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+                  {avecVideo.map(j => {
+                    const thumb = getCloudinaryThumb(j.clip_url);
+                    const isVeoUrl = j.clip_url.includes("veo.co");
+                    const isYtUrl = j.clip_url.includes("youtube.com") || j.clip_url.includes("youtu.be");
+                    return (
+                      <div key={j.id} style={st.card}>
+                        {/* Thumbnail */}
+                        <div onClick={() => setSelectedJoueur(j)} style={{ borderRadius: "8px", overflow: "hidden", marginBottom: "12px", cursor: "pointer", position: "relative", aspectRatio: "16/9", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {thumb ? (
+                            <img src={thumb} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} onError={e => { e.target.style.display = "none"; }} />
+                          ) : isVeoUrl ? (
+                            <div style={{ textAlign: "center" }}>
+                              <p style={{ margin: "0 0 4px", fontSize: "1.8rem" }}>🎥</p>
+                              <p style={{ margin: 0, fontSize: "11px", color: "#4ade80", fontWeight: 700, letterSpacing: "1px" }}>VEO</p>
+                            </div>
+                          ) : isYtUrl ? (
+                            <div style={{ textAlign: "center" }}>
+                              <p style={{ margin: "0 0 4px", fontSize: "1.8rem" }}>▶️</p>
+                              <p style={{ margin: 0, fontSize: "11px", color: "#ef4444", fontWeight: 700 }}>YouTube</p>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: "2rem", margin: 0 }}>🎬</p>
+                          )}
+                          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>▶</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <Avatar person={j} size={36} bg="#1a2e1a" />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: "14px" }}>{j.prenom} {j.nom}</p>
+                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#555" }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
+                          </div>
+                          <span style={st.posteBadge(j.poste)}>{j.poste}</span>
+                        </div>
+                        <div style={{ ...st.cardActions, marginTop: "10px" }}>
+                          <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil & Vidéo</button>
+                          <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{isFavori(j.id) ? "★" : "☆"}</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── MESSAGES ── */}
         {activeTab === "messages" && (
@@ -624,6 +862,8 @@ export default function DashboardClub() {
           <CoachContact coaches={coaches} recruteurId={recruteurId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} ouvrirConversation={ouvrirConversation} conversations={conversations} st={st} />
         )}
       </div>
+
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
       {/* Modal message joueur */}
       {messageModal && (
