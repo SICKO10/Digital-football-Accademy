@@ -6,7 +6,6 @@ import Avatar from "../components/Avatar";
 const POSTES = ["Tous", "Attaquant", "Milieu", "Défenseur", "Gardien"];
 const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
-const REGIONS = ["Toutes", "Île-de-France", "Auvergne-Rhône-Alpes", "Occitanie", "Provence-Alpes-Côte d'Azur", "Nouvelle-Aquitaine", "Hauts-de-France", "Grand Est", "Bretagne", "Normandie", "Pays de la Loire", "Bourgogne-Franche-Comté", "Centre-Val de Loire", "Corse", "Martinique", "Guadeloupe", "La Réunion"];
 
 export default function DashboardClub() {
   const navigate = useNavigate();
@@ -39,6 +38,7 @@ export default function DashboardClub() {
   const [categorie, setCategorie] = useState("Toutes");
   const [pied, setPied] = useState("Tous");
   const [region, setRegion] = useState("Toutes");
+  const [ville, setVille] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -69,18 +69,31 @@ export default function DashboardClub() {
     }
   }, [location.state]);
 
+  // Régions disponibles dérivées des joueurs chargés (dynamique)
+  const regionsDisponibles = ["Toutes", ...Array.from(new Set(joueurs.map(j => j.region).filter(Boolean))).sort()];
+
   useEffect(() => {
     let result = [...joueurs];
     if (poste !== "Tous") result = result.filter(j => j.poste === poste);
     if (categorie !== "Toutes") result = result.filter(j => j.categorie === categorie);
     if (pied !== "Tous") result = result.filter(j => j.pied === pied);
     if (region !== "Toutes") result = result.filter(j => j.region === region);
+    if (ville) {
+      const v = ville.toLowerCase();
+      result = result.filter(j => (j.ville && j.ville.toLowerCase().includes(v)) || (j.club && j.club.toLowerCase().includes(v)));
+    }
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(j => `${j.prenom} ${j.nom}`.toLowerCase().includes(s) || (j.poste && j.poste.toLowerCase().includes(s)));
+      result = result.filter(j =>
+        `${j.prenom} ${j.nom}`.toLowerCase().includes(s) ||
+        (j.poste && j.poste.toLowerCase().includes(s)) ||
+        (j.club && j.club.toLowerCase().includes(s)) ||
+        (j.ville && j.ville.toLowerCase().includes(s)) ||
+        (j.region && j.region.toLowerCase().includes(s))
+      );
     }
     setFiltered(result);
-  }, [poste, categorie, pied, region, search, joueurs]);
+  }, [poste, categorie, pied, region, ville, search, joueurs]);
 
   const chargerFavoris = async (uid) => {
     const { data } = await supabase.from("favoris_recruteur").select("*").eq("user_id", uid).order("created_at", { ascending: false });
@@ -381,7 +394,7 @@ export default function DashboardClub() {
             <div style={st.filterBar}>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Recherche</label>
-                <input type="text" placeholder="Nom, prénom..." value={search} onChange={e => setSearch(e.target.value)} style={st.searchInput} />
+                <input type="text" placeholder="Nom, club, ville..." value={search} onChange={e => setSearch(e.target.value)} style={st.searchInput} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Poste</label>
@@ -397,9 +410,21 @@ export default function DashboardClub() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Région</label>
-                <select value={region} onChange={e => setRegion(e.target.value)} style={st.select}>{REGIONS.map(r => <option key={r}>{r}</option>)}</select>
+                <select value={region} onChange={e => setRegion(e.target.value)} style={st.select}>
+                  {regionsDisponibles.map(r => <option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={st.filterLabel}>Ville</label>
+                <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={st.searchInput} />
               </div>
             </div>
+            {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || ville || search) && (
+              <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setVille(""); setSearch(""); }}
+                style={{ background: "transparent", border: "1px solid #333", color: "#aaa", padding: "5px 14px", borderRadius: "8px", fontSize: "12px", cursor: "pointer", marginBottom: "1rem" }}>
+                ✕ Réinitialiser les filtres
+              </button>
+            )}
 
             <p style={{ fontSize: "13px", color: "#666", marginBottom: "1rem" }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}</p>
 
