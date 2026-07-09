@@ -9,6 +9,60 @@ const STRIPE_LINKS = {
   pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
 }
 
+const IconHome = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+)
+const IconUser = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const IconChart = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+)
+const IconMessage = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+const IconMic = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+  </svg>
+)
+const IconPlay = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+)
+const IconGlobe = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+)
+const IconUpload = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+  </svg>
+)
+const IconVideoOff = () => (
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+  </svg>
+)
+const IconLock = () => (
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+)
+const IconSearch = () => (
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+)
+
 function DashboardJoueur() {
   const navigate = useNavigate()
   const [profil, setProfil] = useState(null)
@@ -148,7 +202,6 @@ function DashboardJoueur() {
     setTimeout(() => setStatsSaved(false), 3000)
   }
 
-  // ── Suppression de la vidéo (clip_url → null) ──
   const handleDeleteVideo = async () => {
     if (!window.confirm('Supprimer ta vidéo ? Elle sera retirée du feed et de Jogabonito.')) return
     setDeletingVideo(true)
@@ -208,112 +261,129 @@ function DashboardJoueur() {
     setCancelling(false)
   }
 
-  const inputStyle = { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }
-  const labelStyle = { fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }
-  const msgBubble = (mine) => ({ maxWidth: '70%', padding: '10px 14px', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: mine ? '#4ade80' : '#1a1a1a', color: mine ? '#000' : '#fff', fontSize: '14px', alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: '8px' })
+  const inputStyle = {
+    width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px',
+    padding: '11px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box',
+    fontFamily: 'Inter, sans-serif', outline: 'none',
+  }
+  const labelStyle = {
+    fontSize: '11px', color: '#555', display: 'block', marginBottom: '7px',
+    fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase',
+  }
+  const msgBubble = (mine) => ({
+    maxWidth: '70%', padding: '10px 14px',
+    borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+    background: mine ? '#4ade80' : '#1a1a1a', color: mine ? '#000' : '#fff',
+    fontSize: '14px', alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: '8px',
+  })
 
   if (loading) return <Loader />
 
+  // ── BANNI ──
   if (profil?.banni) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #ef444440', borderRadius: '16px', padding: '2.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '1.5rem' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚫</div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ef4444', marginBottom: '0.75rem' }}>Compte suspendu</h1>
-          <p style={{ fontSize: '14px', color: '#888', marginBottom: '1rem' }}>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #ef444430', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <div style={{ color: '#ef4444', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#ef4444', marginBottom: '0.75rem' }}>Compte suspendu</h1>
+          <p style={{ fontSize: '14px', color: '#555', marginBottom: '1rem', lineHeight: 1.6 }}>
             Ton compte a été suspendu pour violation des CGU et du règlement de la plateforme.
           </p>
           {profil?.banni_motif && (
-            <div style={{ background: '#1a1a1a', border: '1px solid #ef444430', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
-              <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>
+            <div style={{ background: '#1a1a1a', border: '1px solid #ef444420', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
                 <strong style={{ color: '#ef4444' }}>Motif :</strong> {profil.banni_motif}
               </p>
             </div>
           )}
-          <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '12px', color: '#444', marginBottom: '1.5rem' }}>
             Conformément aux CGU acceptées lors de ton inscription, aucun remboursement ne sera effectué.
           </p>
-          <span onClick={handleLogout} style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
+          <span onClick={handleLogout} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
       </div>
     )
   }
 
+  // ── FAN ──
   if (profil?.plan === 'fan') {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
-          <div style={{ fontSize: '18px', fontWeight: '700' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '14px', color: '#aaa' }}>Bonjour {profil?.prenom} 👋</span>
-            <button onClick={handleLogout} style={{ background: 'transparent', color: '#666', border: '1px solid #333', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</button>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; }`}</style>
+        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #141414' }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', color: '#555' }}>Bonjour {profil?.prenom}</span>
+            <button onClick={handleLogout} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
           </div>
         </nav>
 
-        <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-          {/* Onglets fan */}
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #222', marginBottom: '2rem', paddingBottom: '1rem' }}>
-            {[['accueil', 'Accueil'], ['favoris', '⭐ Mes Favoris'], ['messages', '🔒 Messages']].map(([id, label]) => (
+        <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+          <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #141414', marginBottom: '2rem', paddingBottom: '0' }}>
+            {[['accueil', 'Accueil'], ['favoris', 'Mes Favoris'], ['messages', 'Messages']].map(([id, label]) => (
               <button key={id} onClick={() => { setFanOnglet(id); if (id === 'favoris') chargerFanFavoris() }}
-                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? '#4ade80' : '#666', fontSize: '14px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', paddingBottom: '4px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent' }}>
+                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? '#4ade80' : '#555', fontSize: '13px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', padding: '10px 16px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent', fontFamily: 'Inter, sans-serif', marginBottom: '-1px' }}>
                 {label}
               </button>
             ))}
           </div>
 
-          {/* Accueil */}
           {fanOnglet === 'accueil' && (
             <>
-              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⚽</div>
-                <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '6px' }}>Compte Fan</h1>
-                <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
-                <button onClick={() => navigate('/jogabonito')}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
-                  Voir Jogabonito →
+              <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '20px', padding: '2.5rem', marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ width: '64px', height: '64px', background: '#4ade8010', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#4ade80' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                </div>
+                <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Compte Fan</h1>
+                <p style={{ color: '#555', fontSize: '14px', margin: '0 0 1.5rem', lineHeight: 1.6 }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
+                <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Voir Jogabonito
                 </button>
               </div>
-              <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem' }}>
-                <div style={{ display: 'inline-block', background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', marginBottom: '1rem' }}>PASSE JOUEUR</div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Expose ton talent aux recruteurs</h2>
-                <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '20px', padding: '2rem' }}>
+                <div style={{ display: 'inline-block', background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '20px', marginBottom: '14px', letterSpacing: '1px' }}>PASSE JOUEUR</div>
+                <h2 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Expose ton talent aux recruteurs</h2>
+                <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
                   {[{ plan: 'Starter', prix: '49,99€/mois', desc: '2 analyses / mois · Reels Jogabonito' }, { plan: 'Pro', prix: '79,99€/mois', desc: '3 analyses / mois · Feed · Visible recruteurs' }].map(p => (
-                    <div key={p.plan} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div><p style={{ margin: 0, fontWeight: 700 }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{p.desc}</p></div>
-                      <span style={{ color: '#4ade80', fontWeight: 700 }}>{p.prix}</span>
+                    <div key={p.plan} style={{ background: '#141414', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div><p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '11px', color: '#444' }}>{p.desc}</p></div>
+                      <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => navigate('/register')} style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Devenir joueur →</button>
+                <button onClick={() => navigate('/register')} style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Devenir joueur</button>
               </div>
             </>
           )}
 
-          {/* Mes Favoris */}
           {fanOnglet === 'favoris' && (
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '1.5rem' }}>⭐ Mes reels sauvegardés</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.3px' }}>Reels sauvegardés</h2>
               {loadingFanFavoris ? (
-                <p style={{ color: '#4ade80', textAlign: 'center' }}>Chargement...</p>
+                <p style={{ color: '#4ade80', textAlign: 'center', fontSize: '14px' }}>Chargement...</p>
               ) : fanFavoris.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '2.5rem', margin: '0 0 12px' }}>⭐</p>
-                  <p style={{ color: '#666', fontSize: '14px' }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape ⭐ Save pour les retrouver ici.</p>
-                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}>Aller sur Jogabonito →</button>
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ color: '#333', margin: '0 0 12px', display: 'flex', justifyContent: 'center' }}>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  </p>
+                  <p style={{ color: '#555', fontSize: '14px', lineHeight: 1.6 }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape Save pour les retrouver ici.</p>
+                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Aller sur Jogabonito</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {fanFavoris.map(reel => (
-                    <div key={reel.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1rem', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div key={reel.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <Avatar person={reel.profiles} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{reel.profiles?.prenom} {reel.profiles?.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
-                        {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{reel.profiles?.prenom} {reel.profiles?.nom}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
+                        {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
                       </div>
-                      <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Voir →</button>
+                      <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade8010', border: '1px solid #4ade8030', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>Voir</button>
                     </div>
                   ))}
                 </div>
@@ -321,13 +391,12 @@ function DashboardJoueur() {
             </div>
           )}
 
-          {/* Messages (lock Pro) */}
           {fanOnglet === 'messages' && (
-            <div style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '3rem 2rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
-              <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Visible par les recruteurs — Plan Pro uniquement</h2>
-              <p style={{ fontSize: '14px', color: '#666', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
-              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>Passer au Plan Pro — 79,99€/mois</button>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center' }}>
+              <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Plan Pro requis</h2>
+              <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
+              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Plan Pro — 79,99€/mois</button>
             </div>
           )}
         </div>
@@ -335,265 +404,311 @@ function DashboardJoueur() {
     )
   }
 
+  // ── PAS ABONNÉ ──
   if (!profil?.abonnement_actif) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '1rem' }}>Abonnement non actif</h1>
-          <p style={{ fontSize: '14px', color: '#888', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore ete confirme.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #333', padding: '12px 20px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Activer Starter — 49,99€/mois</button>
-            <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Activer Pro — 79,99€/mois</button>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
+        <div style={{ maxWidth: '400px', width: '100%', background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
+          <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+            <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer Starter — 49,99€/mois</button>
+            <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer Pro — 79,99€/mois</button>
           </div>
-          <span onClick={handleLogout} style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>Deconnexion</span>
+          <span onClick={handleLogout} style={{ color: '#444', fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
       </div>
     )
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
-        <div style={{ fontSize: '18px', fontWeight: '700' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '14px', color: '#aaa' }}>Bonjour {profil?.prenom} 👋</span>
-          <button onClick={handleLogout} style={{ background: 'transparent', color: '#666', border: '1px solid #333', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>Deconnexion</button>
-        </div>
-      </nav>
+  // ── DASHBOARD PRINCIPAL ──
+  const maxAnalyses = profil?.plan === 'pro' ? 3 : 2
+  const isPro = profil?.plan === 'pro'
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #222', paddingBottom: '1rem', flexWrap: 'wrap' }}>
-          {[
-            ['dashboard', 'Accueil'],
-            ['profil', 'Mon Profil & Stats'],
-            ['analyses', 'Mes Analyses'],
-            ['messages', `💬 Recruteurs${conversations.length > 0 ? ` (${conversations.length})` : ''}`],
-            ['coach', `🎙️ Support Coach${convCoach.length > 0 ? ` (${convCoach.length})` : ''}`],
-          ].map(([id, label]) => (
-            <button key={id} onClick={() => setOnglet(id)} style={{ background: 'transparent', border: 'none', color: onglet === id ? '#4ade80' : '#666', fontSize: '14px', fontWeight: onglet === id ? '700' : '400', cursor: 'pointer', paddingBottom: '4px', borderBottom: onglet === id ? '2px solid #4ade80' : '2px solid transparent', whiteSpace: 'nowrap' }}>
-              {label}
+  const navItems = [
+    { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
+    { id: 'profil', label: 'Mon Profil', icon: <IconUser /> },
+    { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
+    { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
+    { id: 'coach', label: 'Coach', icon: <IconMic />, badge: convCoach.length },
+  ]
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+        input:focus, select:focus, textarea:focus { border-color: #4ade8060 !important; box-shadow: 0 0 0 3px #4ade8008; }
+        .dj-nav-btn:hover { background: #141414 !important; color: #ccc !important; }
+        .dj-action-card:hover { transform: translateY(-2px); border-color: #2a2a2a !important; }
+        .dj-btn-green:hover { background: #22c55e !important; }
+      `}</style>
+
+      {/* ── SIDEBAR ── */}
+      <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414' }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+            Digital<span style={{ color: '#4ade80' }}>Football</span>
+          </div>
+        </div>
+
+        <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {navItems.map(item => (
+            <button key={item.id} className="dj-nav-btn" onClick={() => setOnglet(item.id)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+              <span style={{ flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
+                  {item.badge}
+                </span>
+              )}
+              {onglet === item.id && (
+                <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
+              )}
             </button>
           ))}
+        </nav>
+
+        <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '8px' }}>
+            <Avatar person={profil} size={32} border="1.5px solid #4ade8040" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profil?.prenom} {profil?.nom}</p>
+              <p style={{ margin: '1px 0 0', fontSize: '10px', color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{profil?.plan}</p>
+            </div>
+          </div>
+          <button onClick={handleLogout} style={{ width: '100%', background: 'transparent', border: '1px solid #1a1a1a', color: '#444', padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            Déconnexion
+          </button>
         </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh' }}>
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
-          <div>
-            {/* Stats rapides */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Plan actuel</p>
-                <p style={{ fontSize: '22px', fontWeight: '700', color: '#4ade80', textTransform: 'capitalize' }}>{profil?.plan}</p>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+
+            {/* HERO CARD */}
+            <div style={{ background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <Avatar person={profil} size={80} border="2.5px solid #4ade80" />
+                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
+                </label>
               </div>
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Analyses restantes</p>
-                <p style={{ fontSize: '22px', fontWeight: '700' }}>{profil?.analyses_restantes} <span style={{ fontSize: '14px', color: '#666' }}>ce mois</span></p>
-              </div>
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Mon poste</p>
-                <p style={{ fontSize: '22px', fontWeight: '700' }}>{profil?.poste}</p>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
+                  <span style={{ background: isPro ? '#4ade80' : '#3b82f6', color: '#000', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
+                    {profil?.plan}
+                  </span>
+                </div>
+                <p style={{ color: '#555', fontSize: '13px', marginBottom: '20px' }}>
+                  {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
+                </p>
+                <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap' }}>
+                  {[
+                    { val: profil?.analyses_restantes ?? '—', label: 'Analyses' },
+                    { val: demandes.length, label: 'Demandes' },
+                    { val: profil?.categorie || '—', label: 'Catégorie' },
+                  ].map((s, i, arr) => (
+                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+                      <div>
+                        <p style={{ fontSize: '22px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
+                        <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '3px' }}>{s.label}</p>
+                      </div>
+                      {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', background: '#1f1f1f' }} />}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* ── RACCOURCIS RAPIDES ── */}
-            {profil?.plan === 'pro' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
-                <button onClick={() => navigate('/jogabonito')}
-                  style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Jogabonito</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
-                </button>
-                <button onClick={() => navigate('/feed')}
-                  style={{ background: '#4ade8015', border: '1px solid #4ade8040', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>⚽</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Feed</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#4ade80' }}>Talents du moment</p>
-                </button>
-                <button onClick={() => navigate('/upload-reel')}
-                  style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚀</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Publier</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#60a5fa' }}>Mon Reel</p>
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
-                <button onClick={() => navigate('/jogabonito')}
-                  style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎬</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Jogabonito</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#f97316' }}>Feed vertical</p>
-                </button>
-                <button onClick={() => navigate('/upload-reel')}
-                  style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', textAlign: 'center', color: '#fff' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🚀</div>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Publier un Reel</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#60a5fa' }}>TikTok · MP4</p>
-                </button>
-              </div>
-            )}
-
-            {/* Envoyer vidéo analyse */}
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>Envoyer une video pour analyse</h2>
-              <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Tu as {profil?.analyses_restantes} analyse(s) disponible(s) ce mois</p>
-              {profil?.analyses_restantes > 0 ? (
-                <button onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Envoyer ma video</button>
-              ) : (
-                <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '1rem' }}>
-                  <p style={{ fontSize: '14px', color: '#666' }}>Tu as utilise toutes tes analyses ce mois.</p>
+            {/* QUOTA ANALYSES */}
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>Quota analyses</p>
+                  <p style={{ fontSize: '11px', color: '#444' }}>Réinitialisé automatiquement chaque mois</p>
                 </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
+                    {profil?.analyses_restantes ?? 0}
+                  </span>
+                  <span style={{ fontSize: '14px', color: '#333', fontWeight: 400 }}>/{maxAnalyses}</span>
+                </div>
+              </div>
+              <div style={{ background: '#1a1a1a', borderRadius: '99px', height: '5px', overflow: 'hidden', marginBottom: '16px' }}>
+                <div style={{ height: '100%', width: `${((profil?.analyses_restantes || 0) / maxAnalyses) * 100}%`, background: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', borderRadius: '99px', transition: 'width 0.6s ease' }} />
+              </div>
+              {(profil?.analyses_restantes || 0) > 0 ? (
+                <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
+                  Envoyer une vidéo pour analyse
+                </button>
+              ) : (
+                <p style={{ fontSize: '12px', color: '#444' }}>Quota épuisé ce mois — renouvellement automatique.</p>
               )}
             </div>
 
-            {/* ── BLOC VIDÉO PARTAGÉE (avec bouton supprimer) ── */}
+            {/* ACTION CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: isPro ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+              <button className="dj-action-card" onClick={() => navigate('/jogabonito')}
+                style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#f97316' }}>
+                  <IconPlay />
+                </div>
+                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Jogabonito</p>
+                <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Feed vertical · Reels des talents</p>
+              </button>
+
+              {isPro && (
+                <button className="dj-action-card" onClick={() => navigate('/feed')}
+                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#4ade80' }}>
+                    <IconGlobe />
+                  </div>
+                  <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Feed</p>
+                  <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Talents · Visible recruteurs</p>
+                </button>
+              )}
+
+              <button className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
+                style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#60a5fa' }}>
+                  <IconUpload />
+                </div>
+                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Publier</p>
+                <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{isPro ? 'Clip Feed · Visible agents & clubs' : 'Reel Jogabonito · MP4 · TikTok'}</p>
+              </button>
+            </div>
+
+            {/* VIDÉO */}
             {profil?.clip_url ? (
-              <div style={{ background: '#111', border: '1px solid #4ade8033', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>🎬 Ma vidéo partagée</h2>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>
-                  {profil?.plan === 'pro'
-                    ? 'Visible par les recruteurs dans le Scout Center et dans Jogabonito'
-                    : 'Visible dans Jogabonito'}
-                </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <a href={profil.clip_url} target="_blank" rel="noreferrer"
-                    style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none' }}>
-                    🎬 Voir ma vidéo
+              <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>Vidéo partagée</p>
+                    <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? 'Scout Center · Jogabonito · Feed' : 'Jogabonito uniquement'}</p>
+                  </div>
+                  <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade80', color: '#000', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                    Voir ma vidéo
                   </a>
-                  <button onClick={() => navigate('/upload-clip')}
-                    style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                    Changer la vidéo
-                  </button>
-                  {/* ── BOUTON SUPPRIMER MA VIDÉO ── */}
-                  <button
-                    onClick={handleDeleteVideo}
-                    disabled={deletingVideo}
-                    style={{ background: 'transparent', color: deletingVideo ? '#555' : '#ef4444', border: '1px solid #ef444440', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer' }}
-                  >
-                    {deletingVideo ? '⏳ Suppression...' : '🗑️ Supprimer ma vidéo'}
+                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Changer</button>
+                  <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {deletingVideo ? 'Suppression...' : 'Supprimer'}
                   </button>
                 </div>
               </div>
             ) : reelJogabonito ? (
-              // Reel Jogabonito existant (sans clip_url — typiquement plan Starter)
-              <div style={{ background: '#111', border: '1px solid #f9731633', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.5rem' }}>🎬 Ma vidéo Jogabonito</h2>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>Visible dans Jogabonito par tous les joueurs</p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer"
-                    style={{ display: 'inline-block', background: '#f97316', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none' }}>
-                    🎬 Voir ma vidéo
+              <div style={{ background: '#111', border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>Vidéo Jogabonito</p>
+                    <p style={{ fontSize: '11px', color: '#444' }}>Visible dans Jogabonito</p>
+                  </div>
+                  <span style={{ background: '#f9731615', color: '#f97316', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f97316', color: '#fff', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                    Voir ma vidéo
                   </a>
-                  <button onClick={() => navigate('/upload-reel')}
-                    style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                    Changer la vidéo
-                  </button>
-                  <button
-                    onClick={handleDeleteReel}
-                    disabled={deletingReel}
-                    style={{ background: 'transparent', color: deletingReel ? '#555' : '#ef4444', border: '1px solid #ef444440', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer' }}
-                  >
-                    {deletingReel ? '⏳ Suppression...' : '🗑️ Supprimer ma vidéo Jogabonito'}
+                  <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Changer</button>
+                  <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {deletingReel ? 'Suppression...' : 'Supprimer'}
                   </button>
                 </div>
               </div>
             ) : (
-              // Pas encore de vidéo → inviter à en publier une
-              <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '40px', marginBottom: '8px' }}>🎬</div>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#aaa' }}>Aucune vidéo publiée</h2>
-                <p style={{ fontSize: '14px', color: '#555', marginBottom: '1.5rem' }}>
-                  {profil?.plan === 'pro'
-                    ? 'Publie un clip pour apparaître dans le Feed et Jogabonito'
-                    : 'Publie un reel pour apparaître dans Jogabonito'}
+              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
+                <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>Aucune vidéo publiée</p>
+                <p style={{ fontSize: '12px', color: '#333', marginBottom: '20px', lineHeight: 1.6 }}>
+                  {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
                 </p>
-                <button
-                  onClick={() => navigate(profil?.plan === 'pro' ? '/upload-clip' : '/upload-reel')}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
-                  {profil?.plan === 'pro' ? 'Publier un clip' : 'Publier un reel'}
+                <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {isPro ? 'Publier un clip' : 'Publier un reel'}
                 </button>
               </div>
             )}
 
-            {profil?.plan === 'pro' ? (
-              <div style={{ background: '#111', border: '1px solid #4ade8033', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '24px' }}>🎬</span>
-                  <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Publier un clip sur le feed</h2>
-                </div>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Montre ton talent — clubs et agents regardent le feed chaque semaine !</p>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade80', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Publier un clip</button>
-                  <button onClick={() => navigate('/feed')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>Voir le Feed →</button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '24px' }}>🔒</span>
-                  <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#666' }}>Feed & visibilité recruteurs</h2>
-                </div>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1.5rem' }}>Passe au plan Pro pour publier tes clips et être vu par les clubs et agents.</p>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Passer au plan Pro</button>
-                  <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: '#f97316', border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>🎬 Voir les Jogabonito</button>
-                </div>
-              </div>
-            )}
-
+            {/* MESSAGES PREVIEW */}
             {conversations.length > 0 && (
-              <div style={{ background: '#111', border: '2px solid #4ade8033', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#4ade80' }}>💬 Messages de recruteurs</h2>
-                {conversations.map(conv => (
-                  <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#1a1a1a', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' }}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>Recruteur</p>
+              <div style={{ background: '#111', border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>Messages recruteurs</p>
+                  <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+                </div>
+                {conversations.slice(0, 2).map(conv => (
+                  <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
+                    <Avatar person={conv.other} size={32} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                      <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                    <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
                 ))}
               </div>
             )}
 
             {convCoach.length > 0 && (
-              <div style={{ background: '#111', border: '2px solid #f9731633', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '1rem', color: '#f97316' }}>🎙️ Réponses du coach</h2>
-                {convCoach.map(conv => (
-                  <div key={conv.otherId} onClick={() => setOnglet('coach')}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#1a1a1a', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px' }}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#f97316' }}>Coach Expert</p>
+              <div style={{ background: '#111', border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>Réponses coach</p>
+                  <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+                </div>
+                {convCoach.slice(0, 1).map(conv => (
+                  <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
+                    <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                      <p style={{ fontSize: '11px', color: '#f97316' }}>Coach Expert</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#555', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                    <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* ── GESTION ABONNEMENT ── */}
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', marginTop: '1rem' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '0.5rem', color: '#666' }}>Mon abonnement</h2>
+            {/* UPSELL PRO */}
+            {!isPro && (
+              <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>Feed & visibilité recruteurs</p>
+                  <p style={{ fontSize: '12px', color: '#555' }}>Passe au Plan Pro pour être visible des clubs et agents.</p>
+                </div>
+                <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                  Plan Pro — 79,99€/mois
+                </button>
+              </div>
+            )}
+
+            {/* ABONNEMENT */}
+            <div style={{ background: '#111', border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
               {cancelDone ? (
-                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '14px', color: '#f97316', fontWeight: 600, margin: '0 0 4px' }}>Résiliation programmée</p>
-                  <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>Tu gardes l'accès jusqu'à la fin de la période. Ton compte passera ensuite en Starter.</p>
+                <div>
+                  <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>Résiliation programmée</p>
+                  <p style={{ fontSize: '12px', color: '#444' }}>Accès conservé jusqu'à la fin de la période en cours.</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                  <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>
+                  <p style={{ fontSize: '12px', color: '#444' }}>
                     Plan actif : <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
                   </p>
-                  <button
-                    onClick={handleCancelSubscription}
-                    disabled={cancelling}
-                    style={{ background: 'transparent', border: '1px solid #ef444440', color: cancelling ? '#555' : '#ef4444', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600 }}
-                  >
-                    {cancelling ? 'En cours...' : 'Résilier mon abonnement'}
+                  <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? '#444' : '#ef4444', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                    {cancelling ? 'En cours...' : 'Résilier'}
                   </button>
                 </div>
               )}
@@ -601,43 +716,44 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* ── PROFIL ── */}
+        {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
-          <div>
-            {/* Photo de profil */}
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>📸 Photo de profil</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <Avatar person={profil} size={80} border="2px solid #4ade8060" />
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon profil</h1>
+
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
+              <p style={labelStyle}>Photo de profil</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
+                <Avatar person={profil} size={80} border="2px solid #4ade8050" />
                 <div>
-                  <label style={{ display: 'inline-block', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '9px 18px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '14px', color: avatarUploading ? '#555' : '#aaa' }}>
+                  <label style={{ display: 'inline-block', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? '#444' : '#aaa', fontFamily: 'Inter, sans-serif' }}>
                     {avatarUploading ? 'Upload en cours...' : 'Choisir une photo'}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                   </label>
-                  <p style={{ fontSize: '12px', color: '#555', margin: '6px 0 0' }}>JPG, PNG, WEBP · Max 5 MB</p>
+                  <p style={{ fontSize: '11px', color: '#444', marginTop: '8px' }}>JPG, PNG, WEBP · Max 5 MB</p>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>📋 Informations club</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div><label style={labelStyle}>Club actuel</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="Ex: AS Saint-Etienne" style={inputStyle} /></div>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>Informations club</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div><label style={labelStyle}>Club actuel</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} /></div>
                 <div>
-                  <label style={labelStyle}>Niveau de l'equipe</label>
+                  <label style={labelStyle}>Niveau de l'équipe</label>
                   <select value={stats.niveau_equipe} onChange={e => setStats({ ...stats, niveau_equipe: e.target.value })} style={inputStyle}>
-                    <option value="">-- Choisir --</option>
+                    <option value="">— Choisir —</option>
                     {['Ligue 1', 'Ligue 2', 'National', 'Regional 1', 'Regional 2', 'Regional 3', 'Departemental', 'Amateur'].map(n => <option key={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Categorie</label>
+                  <label style={labelStyle}>Catégorie</label>
                   <select value={stats.categorie} onChange={e => setStats({ ...stats, categorie: e.target.value })} style={inputStyle}>
-                    <option value="">-- Choisir --</option>
+                    <option value="">— Choisir —</option>
                     {['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21', 'Senior', 'Veteran'].map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div><label style={labelStyle}>Region</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ex: Ile-de-France" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Région</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ile-de-France" style={inputStyle} /></div>
                 <div>
                   <label style={labelStyle}>Pied fort</label>
                   <select value={stats.pied} onChange={e => setStats({ ...stats, pied: e.target.value })} style={inputStyle}>
@@ -648,43 +764,53 @@ function DashboardJoueur() {
                 </div>
               </div>
             </div>
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>⚽ Statistiques</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                {[['matchs_officiel', 'Matchs officiels'], ['matchs_amical', 'Matchs amicaux'], ['minutes_jouees', 'Minutes jouees'], ['buts_pied_droit', 'Buts pied droit'], ['buts_pied_gauche', 'Buts pied gauche'], ['buts_tete', 'Buts de la tete'], ['buts_total', 'Buts total'], ['passes_decisives', 'Passes decisives'], ['cleansheets', 'Cleansheets']].map(([key, label]) => (
+
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>Statistiques</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                {[['matchs_officiel', 'Matchs officiels'], ['matchs_amical', 'Matchs amicaux'], ['minutes_jouees', 'Minutes jouées'], ['buts_pied_droit', 'Buts pied droit'], ['buts_pied_gauche', 'Buts pied gauche'], ['buts_tete', 'Buts de la tête'], ['buts_total', 'Buts total'], ['passes_decisives', 'Passes décisives'], ['cleansheets', 'Cleansheets']].map(([key, label]) => (
                   <div key={key}><label style={labelStyle}>{label}</label><input type="number" min="0" value={stats[key]} onChange={e => setStats({ ...stats, [key]: parseInt(e.target.value) || 0 })} style={inputStyle} /></div>
                 ))}
               </div>
             </div>
-            <button onClick={handleSaveStats} disabled={savingStats} style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '14px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
-              {savingStats ? 'Sauvegarde...' : statsSaved ? '✅ Sauvegarde !' : 'Sauvegarder mon profil'}
+
+            <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
+              style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
+              {savingStats ? 'Sauvegarde...' : statsSaved ? 'Profil sauvegardé' : 'Sauvegarder le profil'}
             </button>
           </div>
         )}
 
         {/* ── ANALYSES ── */}
         {onglet === 'analyses' && (
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '2rem' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '1.5rem' }}>Mes analyses</h2>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>Mes analyses</h1>
+              {(profil?.analyses_restantes || 0) > 0 && (
+                <button onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Nouvelle analyse
+                </button>
+              )}
+            </div>
             {demandes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🎬</p>
-                <p style={{ color: '#666', fontSize: '14px' }}>Aucune analyse pour le moment</p>
+              <div style={{ textAlign: 'center', padding: '80px 0' }}>
+                <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconSearch /></div>
+                <p style={{ color: '#444', fontSize: '14px' }}>Aucune analyse pour le moment</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {demandes.map(demande => (
-                  <div key={demande.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '1.25rem' }}>
+                  <div key={demande.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '15px', fontWeight: '600' }}>{demande.titre}</h3>
-                      <span style={{ background: demande.statut === 'analyse' ? '#4ade8020' : '#f59e0b20', color: demande.statut === 'analyse' ? '#4ade80' : '#f59e0b', fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600' }}>
-                        {demande.statut === 'analyse' ? 'Analyse recue' : 'En attente'}
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.2px' }}>{demande.titre}</h3>
+                      <span style={{ background: demande.statut === 'analyse' ? '#4ade8012' : '#f59e0b12', color: demande.statut === 'analyse' ? '#4ade80' : '#f59e0b', fontSize: '10px', padding: '3px 10px', borderRadius: '20px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
+                        {demande.statut === 'analyse' ? 'Reçue' : 'En attente'}
                       </span>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>{demande.poste} — {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p style={{ fontSize: '12px', color: '#444', marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
                     {demande.loom_url && (
-                      <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#0a0a0a', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', marginTop: '8px' }}>
-                        Voir mon analyse
+                      <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+                        Voir l'analyse
                       </a>
                     )}
                   </div>
@@ -694,95 +820,102 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {/* ── MESSAGES RECRUTEURS ── */}
+        {/* ── MESSAGES ── */}
         {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan') && (
-          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '3rem 2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Visible par les recruteurs — Plan Pro uniquement</h2>
-            <p style={{ fontSize: '14px', color: '#666', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
-              Passe au Plan Pro pour recevoir des messages de recruteurs et clubs, et apparaître dans le Scout Center.
-            </p>
-            <button
-              onClick={() => window.location.href = STRIPE_LINKS.pro}
-              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              Passer au Plan Pro — 79,99€/mois
-            </button>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
+              <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Messages recruteurs — Plan Pro</h2>
+              <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
+                Passe au Plan Pro pour recevoir des messages de recruteurs et clubs, et apparaître dans le Scout Center.
+              </p>
+              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Plan Pro — 79,99€/mois
+              </button>
+            </div>
           </div>
         )}
 
         {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '16px', minHeight: '500px' }}>
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
-              <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
-                <p style={{ margin: 0, fontWeight: 600, color: '#4ade80', fontSize: '14px' }}>💬 Recruteurs</p>
-              </div>
-              {conversations.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#555', fontSize: '13px' }}>
-                  <p>Aucun message.</p>
-                  <p style={{ marginTop: '8px' }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
+          <div style={{ padding: '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #141414' }}>
+                  <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Conversations</p>
                 </div>
-              ) : conversations.map(conv => (
-                <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                  style={{ padding: '12px 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8010' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
-                </div>
-              ))}
-            </div>
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-              {messageActif ? (
-                <>
-                  <div style={{ padding: '1rem', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Avatar person={messageActif.other} size={36} />
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600 }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#4ade80' }}>Recruteur</p>
-                    </div>
+                {conversations.length === 0 ? (
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                    <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Aucun message.</p>
+                    <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
                   </div>
-                  <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-                    {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
-                      <div key={i} style={msgBubble(m.sender_id === userId)}>
-                        <p style={{ margin: 0 }}>{m.content}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                ) : conversations.map(conv => (
+                  <div key={conv.otherId} onClick={() => setMessageActif(conv)}
+                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8008' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <Avatar person={conv.other} size={30} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                        <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>Recruteur</p>
                       </div>
-                    ))}
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
-                  <div style={{ padding: '1rem', borderTop: '1px solid #222', display: 'flex', gap: '8px' }}>
-                    <input style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', outline: 'none' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
-                    <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Envoyer</button>
+                ))}
+              </div>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {messageActif ? (
+                  <>
+                    <div style={{ padding: '14px 18px', borderBottom: '1px solid #141414', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Avatar person={messageActif.other} size={36} />
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
+                        <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                      {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
+                        <div key={i} style={msgBubble(m.sender_id === userId)}>
+                          <p style={{ margin: 0 }}>{m.content}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
+                      <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
+                      <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>Envoyer</button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: '#2a2a2a' }}>
+                    <IconMessage />
+                    <p style={{ fontSize: '13px', color: '#333' }}>Sélectionnez une conversation</p>
                   </div>
-                </>
-              ) : (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ fontSize: '2rem' }}>💬</p>
-                  <p>Sélectionnez une conversation</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* ── SUPPORT COACH ── */}
+        {/* ── COACH ── */}
         {onglet === 'coach' && (
-          <div>
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>🎙️ Support Coach</h2>
-              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Pose tes questions directement à notre coach expert.</p>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Support Coach</h2>
+              <p style={{ fontSize: '13px', color: '#555' }}>Pose tes questions directement à notre coach expert.</p>
             </div>
             {convCoach.length > 0 && (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', marginBottom: '1.5rem', overflow: 'hidden' }}>
-                <div style={{ padding: '1rem', borderBottom: '1px solid #222' }}>
-                  <p style={{ margin: 0, fontWeight: 600, color: '#f97316', fontSize: '14px' }}>Historique de la conversation</p>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid #141414' }}>
+                  <p style={{ fontWeight: 700, color: '#f97316', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Historique</p>
                 </div>
-                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', maxHeight: '400px', overflowY: 'auto' }}>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', maxHeight: '380px', overflowY: 'auto' }}>
                   {(() => {
                     const coachIds = coaches.map(c => c.id)
                     return messages.filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
                       <div key={i} style={msgBubble(m.sender_id === userId)}>
                         <p style={{ margin: 0 }}>{m.content}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.6 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}</p>
                       </div>
                     ))
                   })()}
@@ -790,40 +923,41 @@ function DashboardJoueur() {
               </div>
             )}
             {coaches.length === 0 ? (
-              <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '3rem', textAlign: 'center', color: '#555' }}>
-                <p style={{ fontSize: '2rem' }}>🎙️</p>
-                <p>Aucun coach disponible pour le moment.</p>
+              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center', color: '#2a2a2a' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconMic /></div>
+                <p style={{ fontSize: '13px', color: '#444' }}>Aucun coach disponible pour le moment.</p>
               </div>
             ) : (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                 {coaches.length > 1 && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '8px' }}>Coach</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={labelStyle}>Coach</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                       {coaches.map(c => (
                         <button key={c.id} onClick={() => setCoachSelectionne(c)}
-                          style={{ background: coachSelectionne?.id === c.id ? '#f97316' : 'transparent', color: coachSelectionne?.id === c.id ? '#000' : '#aaa', border: `1px solid ${coachSelectionne?.id === c.id ? '#f97316' : '#333'}`, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400 }}>
+                          style={{ background: coachSelectionne?.id === c.id ? '#f97316' : 'transparent', color: coachSelectionne?.id === c.id ? '#000' : '#555', border: `1px solid ${coachSelectionne?.id === c.id ? '#f97316' : '#2a2a2a'}`, padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
                           {c.prenom} {c.nom}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '8px' }}>
-                  {convCoach.length > 0 ? 'Envoyer un nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach'}`}
+                <label style={{ ...labelStyle, marginBottom: '10px', display: 'block' }}>
+                  {convCoach.length > 0 ? 'Nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach'}`}
                 </label>
                 {coachSent ? (
-                  <div style={{ textAlign: 'center', padding: '2rem', color: '#f97316' }}>
-                    <p style={{ fontSize: '2rem' }}>✓</p>
-                    <p style={{ fontWeight: 600 }}>Message envoyé au coach !</p>
+                  <div style={{ textAlign: 'center', padding: '36px 0', color: '#f97316' }}>
+                    <p style={{ fontSize: '28px', marginBottom: '8px' }}>✓</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px' }}>Message envoyé au coach</p>
                   </div>
                 ) : (
                   <>
-                    <textarea value={messageCoach} onChange={e => setMessageCoach(e.target.value)} placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
-                      style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '12px', fontSize: '14px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                    <textarea value={messageCoach} onChange={e => setMessageCoach(e.target.value)}
+                      placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
+                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                     <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
-                      style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (sendingCoach || !messageCoach.trim()) ? 0.6 : 1 }}>
-                      {sendingCoach ? 'Envoi...' : `Envoyer au coach ✉️`}
+                      style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                      {sendingCoach ? 'Envoi...' : 'Envoyer au coach'}
                     </button>
                   </>
                 )}
@@ -831,7 +965,7 @@ function DashboardJoueur() {
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
