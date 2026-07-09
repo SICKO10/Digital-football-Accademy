@@ -245,6 +245,7 @@ function Feed() {
   const [joueurModal, setJoueurModal] = useState(null)
   const [filtrePoste, setFiltrePoste] = useState('Tous')
   const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
+  const [filtreRegion, setFiltreRegion] = useState('Toutes')
   const [likedIds, setLikedIds] = useState([])
   const [favoriIds, setFavoriIds] = useState([])
   const [likeCounts, setLikeCounts] = useState({})
@@ -303,16 +304,15 @@ function Feed() {
 
   const interactions = { likes: likedIds, favoris: favoriIds, likeCounts, commentCounts, comments: allComments }
   const joueursAvecClip = joueursPro.filter(j => j.clip_url)
-  const joueursFiltres = joueursPro.filter(j => {
+  const regionsDisponibles = ['Toutes', ...Array.from(new Set(joueursPro.map(j => j.region).filter(Boolean))).sort()]
+  const appliquerFiltres = (j) => {
     if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
+    if (filtreRegion !== 'Toutes' && j.region !== filtreRegion) return false
     return true
-  })
-  const joueursAvecClipFiltres = joueursAvecClip.filter(j => {
-    if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
-    if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
-    return true
-  })
+  }
+  const joueursFiltres = joueursPro.filter(appliquerFiltres)
+  const joueursAvecClipFiltres = joueursAvecClip.filter(appliquerFiltres)
   const feedVideos = joueursAvecClipFiltres
   const isRecruteur = profil?.plan === 'recruteur'
 
@@ -378,9 +378,15 @@ function Feed() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <select value={filtrePoste} onChange={e => setFiltrePoste(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>{POSTES.map(p => <option key={p}>{p}</option>)}</select>
           <select value={filtreCategorie} onChange={e => setFiltreCategorie(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
+          <select value={filtreRegion} onChange={e => setFiltreRegion(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
+            {regionsDisponibles.map(r => <option key={r}>{r}</option>)}
+          </select>
+          {(filtrePoste !== 'Tous' || filtreCategorie !== 'Toutes' || filtreRegion !== 'Toutes') && (
+            <button onClick={() => { setFiltrePoste('Tous'); setFiltreCategorie('Toutes'); setFiltreRegion('Toutes'); }} style={{ background: 'transparent', border: '1px solid #333', color: '#666', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>✕ Réinitialiser</button>
+          )}
         </div>
 
         {vue === 'videos' && (
