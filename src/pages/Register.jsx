@@ -17,10 +17,10 @@ function Register() {
   const [cguAcceptees, setCguAcceptees] = useState(false)
 
   const caracteristiquesParPoste = {
-    Gardien: ['Réflexes', 'Jeu au pied', 'Placement', 'Commandement', 'Relance longue', 'Détente', 'Sang-froid'],
-    Defenseur: ['Tacle', 'Placement', 'Relance courte', 'Relance longue', 'Jeu aérien', 'Leadership', 'Vitesse', 'Marquage'],
-    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance'],
-    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing'],
+    Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu'],
+    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1'],
+    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin'],
   }
 
   const toggleCaracteristique = (liste, setListe, valeur) => {
