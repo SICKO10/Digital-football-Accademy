@@ -10,9 +10,26 @@ function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [poste, setPoste] = useState('Attaquant')
+  const [pointsForts, setPointsForts] = useState([])
+  const [aAmeliorer, setAAmeliorer] = useState([])
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
   const [cguAcceptees, setCguAcceptees] = useState(false)
+
+  const caracteristiquesParPoste = {
+    Gardien: ['Réflexes', 'Jeu au pied', 'Placement', 'Commandement', 'Relance longue', 'Détente', 'Sang-froid'],
+    Defenseur: ['Tacle', 'Placement', 'Relance courte', 'Relance longue', 'Jeu aérien', 'Leadership', 'Vitesse', 'Marquage'],
+    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing'],
+  }
+
+  const toggleCaracteristique = (liste, setListe, valeur) => {
+    if (liste.includes(valeur)) {
+      setListe(liste.filter(v => v !== valeur))
+    } else if (liste.length < 2) {
+      setListe([...liste, valeur])
+    }
+  }
 
   const handleRegister = async () => {
     setLoading(true)
@@ -33,6 +50,7 @@ function Register() {
 
     await supabase.from('profiles').insert({
       id: data.user.id, email, prenom, nom, poste,
+      points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', '),
       plan: 'pending', analyses_restantes: 0, abonnement_actif: false,
     })
 
@@ -118,6 +136,62 @@ function Register() {
                 <option>Milieu</option>
                 <option>Attaquant</option>
               </select>
+            </div>
+          )}
+
+          {plan !== 'fan' && (
+            <div>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Mes points forts (max 2)</label>
+              <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
+                {caracteristiquesParPoste[poste].map(c => {
+                  const selected = pointsForts.includes(c)
+                  const disabled = !selected && pointsForts.length >= 2
+                  return (
+                    <div
+                      key={c}
+                      onClick={() => !disabled && toggleCaracteristique(pointsForts, setPointsForts, c)}
+                      style={{
+                        padding:'6px 12px', borderRadius:'20px', fontSize:'13px',
+                        background: selected ? '#4ade8020' : '#1a1a1a',
+                        border: selected ? '1px solid #4ade80' : '1px solid #333',
+                        color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        opacity: disabled ? 0.5 : 1,
+                      }}
+                    >
+                      {c}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {plan !== 'fan' && (
+            <div>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Ce que je veux améliorer (max 2)</label>
+              <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
+                {caracteristiquesParPoste[poste].map(c => {
+                  const selected = aAmeliorer.includes(c)
+                  const disabled = !selected && aAmeliorer.length >= 2
+                  return (
+                    <div
+                      key={c}
+                      onClick={() => !disabled && toggleCaracteristique(aAmeliorer, setAAmeliorer, c)}
+                      style={{
+                        padding:'6px 12px', borderRadius:'20px', fontSize:'13px',
+                        background: selected ? '#4ade8020' : '#1a1a1a',
+                        border: selected ? '1px solid #4ade80' : '1px solid #333',
+                        color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        opacity: disabled ? 0.5 : 1,
+                      }}
+                    >
+                      {c}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
