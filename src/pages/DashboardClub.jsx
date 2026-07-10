@@ -447,7 +447,15 @@ export default function DashboardClub() {
                       }
                       <div>
                         <p style={{ fontWeight: 700, fontSize: "14px", margin: 0 }}>{p.club}</p>
-                        <p style={{ fontSize: "11px", color: "#555", margin: "2px 0 0" }}>{[p.saison, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
+                        <p style={{ fontSize: "11px", color: "#555", margin: "2px 0 4px" }}>{[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
+                        {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
+                          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                            {p.matchs_joues > 0 && <span style={{ fontSize: "11px", color: "#4ade80" }}>⚽ {p.matchs_joues} matchs</span>}
+                            {p.buts > 0 && <span style={{ fontSize: "11px", color: "#f97316" }}>🥅 {p.buts} buts</span>}
+                            {p.passes_decisives > 0 && <span style={{ fontSize: "11px", color: "#60a5fa" }}>🎯 {p.passes_decisives} passes</span>}
+                            {p.cleansheets > 0 && <span style={{ fontSize: "11px", color: "#a855f7" }}>🧤 {p.cleansheets} CS</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -92,7 +92,7 @@ function DashboardJoueur() {
   const [aAmeliorer, setAAmeliorer] = useState([])
 
   const [parcours, setParcours] = useState([])
-  const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '' })
+  const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
   const [savingParcours, setSavingParcours] = useState(false)
   const [clubSuggestions, setClubSuggestions] = useState([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
@@ -291,7 +291,7 @@ function DashboardJoueur() {
     const { data, error: fetchError } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
     if (fetchError) console.error('Erreur chargement parcours :', fetchError.message)
     setParcours(data || [])
-    setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '' })
+    setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
     setClubSuggestions([])
     setShowSuggestions(false)
     setSavingParcours(false)
@@ -972,9 +972,17 @@ function DashboardJoueur() {
                           }
                           <div>
                             <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
-                            <p style={{ fontSize: '11px', color: '#555' }}>
-                              {[p.saison, p.categorie, p.poste].filter(Boolean).join(' · ')}
+                            <p style={{ fontSize: '11px', color: '#555', marginBottom: '4px' }}>
+                              {[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(' · ')}
                             </p>
+                            {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
+                              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: '#4ade80' }}>⚽ {p.matchs_joues} matchs</span>}
+                                {p.buts > 0 && <span style={{ fontSize: '11px', color: '#f97316' }}>🥅 {p.buts} buts</span>}
+                                {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: '#60a5fa' }}>🎯 {p.passes_decisives} passes</span>}
+                                {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: '#a855f7' }}>🧤 {p.cleansheets} CS</span>}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <button onClick={() => supprimerClub(p.id)} style={{ background: 'transparent', border: 'none', color: '#ef444480', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
@@ -1052,6 +1060,34 @@ function DashboardJoueur() {
                     <option>Attaquant</option>
                   </select>
                 </div>
+                <div>
+                  <label style={labelStyle}>Niveau championnat</label>
+                  <select value={nouveauClub.niveau_championnat} onChange={e => setNouveauClub({ ...nouveauClub, niveau_championnat: e.target.value })} style={inputStyle}>
+                    <option value="">— Choisir —</option>
+                    {['Ligue 1','Ligue 2','National 1','National 2','National 3','R1','R2','R3','D1','D2','Futsal'].map(n => <option key={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Matchs joués</label>
+                  <input type="number" min="0" value={nouveauClub.matchs_joues} onChange={e => setNouveauClub({ ...nouveauClub, matchs_joues: e.target.value })} placeholder="0" style={inputStyle} />
+                </div>
+                {nouveauClub.poste === 'Gardien' ? (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>Clean sheets</label>
+                    <input type="number" min="0" value={nouveauClub.cleansheets} onChange={e => setNouveauClub({ ...nouveauClub, cleansheets: e.target.value })} placeholder="0" style={inputStyle} />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label style={labelStyle}>Buts</label>
+                      <input type="number" min="0" value={nouveauClub.buts} onChange={e => setNouveauClub({ ...nouveauClub, buts: e.target.value })} placeholder="0" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Passes décisives</label>
+                      <input type="number" min="0" value={nouveauClub.passes_decisives} onChange={e => setNouveauClub({ ...nouveauClub, passes_decisives: e.target.value })} placeholder="0" style={inputStyle} />
+                    </div>
+                  </>
+                )}
               </div>
 
               <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
