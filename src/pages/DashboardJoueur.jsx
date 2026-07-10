@@ -215,16 +215,16 @@ function DashboardJoueur() {
   }
 
   const caracteristiquesParPoste = {
-    Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu'],
-    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1'],
-    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre'],
-    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin'],
+    Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu', 'Anticipation', 'Relance longue', 'Commandement défensif', 'Détente', 'Sang-froid'],
+    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
+    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
   }
 
   const toggleCaracteristique = (liste, setListe, valeur) => {
     if (liste.includes(valeur)) {
       setListe(liste.filter(v => v !== valeur))
-    } else if (liste.length < 2) {
+    } else if (liste.length < 4) {
       setListe([...liste, valeur])
     }
   }
@@ -825,11 +825,11 @@ function DashboardJoueur() {
                 <p style={{ ...labelStyle, marginBottom: '20px' }}>Style de jeu</p>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>Mes points forts (max 2)</label>
+                  <label style={labelStyle}>Mes points forts (max 4)</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                     {caracteristiquesParPoste[profil.poste].map(c => {
                       const selected = pointsForts.includes(c)
-                      const disabled = !selected && pointsForts.length >= 2
+                      const disabled = !selected && pointsForts.length >= 4
                       return (
                         <div
                           key={c}
@@ -851,11 +851,11 @@ function DashboardJoueur() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Ce que je veux améliorer (max 2)</label>
+                  <label style={labelStyle}>Ce que je veux améliorer (max 4)</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                     {caracteristiquesParPoste[profil.poste].map(c => {
                       const selected = aAmeliorer.includes(c)
-                      const disabled = !selected && aAmeliorer.length >= 2
+                      const disabled = !selected && aAmeliorer.length >= 4
                       return (
                         <div
                           key={c}
