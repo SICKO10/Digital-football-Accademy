@@ -323,7 +323,7 @@ export default function DashboardClub() {
   }
 
   const ouvrirProfilJoueur = async (j) => {
-    ouvrirProfilJoueur(j)
+    setSelectedJoueur(j)
     setJoueurParcours([])
     const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false })
     setJoueurParcours(data || [])
