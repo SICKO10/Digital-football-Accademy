@@ -88,6 +88,9 @@ function DashboardJoueur() {
   const [newMessage, setNewMessage] = useState('')
   const [messages, setMessages] = useState([])
 
+  const [pointsForts, setPointsForts] = useState([])
+  const [aAmeliorer, setAAmeliorer] = useState([])
+
   const [coaches, setCoaches] = useState([])
   const [coachSelectionne, setCoachSelectionne] = useState(null)
   const [messageCoach, setMessageCoach] = useState('')
@@ -120,6 +123,8 @@ function DashboardJoueur() {
       buts_tete: data?.buts_tete || 0, buts_total: data?.buts_total || 0,
       passes_decisives: data?.passes_decisives || 0, cleansheets: data?.cleansheets || 0,
     })
+    setPointsForts(data?.points_forts ? data.points_forts.split(', ').filter(Boolean) : [])
+    setAAmeliorer(data?.a_ameliorer ? data.a_ameliorer.split(', ').filter(Boolean) : [])
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
@@ -203,10 +208,25 @@ function DashboardJoueur() {
   const handleSaveStats = async () => {
     setSavingStats(true)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('profiles').update(stats).eq('id', user.id)
+    await supabase.from('profiles').update({ ...stats, points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', ') }).eq('id', user.id)
     setSavingStats(false)
     setStatsSaved(true)
     setTimeout(() => setStatsSaved(false), 3000)
+  }
+
+  const caracteristiquesParPoste = {
+    Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu'],
+    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1'],
+    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin'],
+  }
+
+  const toggleCaracteristique = (liste, setListe, valeur) => {
+    if (liste.includes(valeur)) {
+      setListe(liste.filter(v => v !== valeur))
+    } else if (liste.length < 2) {
+      setListe([...liste, valeur])
+    }
   }
 
   const handleDeleteVideo = async () => {
@@ -799,6 +819,64 @@ function DashboardJoueur() {
                 ))}
               </div>
             </div>
+
+            {caracteristiquesParPoste[profil?.poste] && (
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+                <p style={{ ...labelStyle, marginBottom: '20px' }}>Style de jeu</p>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={labelStyle}>Mes points forts (max 2)</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                    {caracteristiquesParPoste[profil.poste].map(c => {
+                      const selected = pointsForts.includes(c)
+                      const disabled = !selected && pointsForts.length >= 2
+                      return (
+                        <div
+                          key={c}
+                          onClick={() => !disabled && toggleCaracteristique(pointsForts, setPointsForts, c)}
+                          style={{
+                            padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
+                            background: selected ? '#4ade8020' : '#1a1a1a',
+                            border: selected ? '1px solid #4ade80' : '1px solid #333',
+                            color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            opacity: disabled ? 0.5 : 1,
+                          }}
+                        >
+                          {c}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Ce que je veux améliorer (max 2)</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                    {caracteristiquesParPoste[profil.poste].map(c => {
+                      const selected = aAmeliorer.includes(c)
+                      const disabled = !selected && aAmeliorer.length >= 2
+                      return (
+                        <div
+                          key={c}
+                          onClick={() => !disabled && toggleCaracteristique(aAmeliorer, setAAmeliorer, c)}
+                          style={{
+                            padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
+                            background: selected ? '#4ade8020' : '#1a1a1a',
+                            border: selected ? '1px solid #4ade80' : '1px solid #333',
+                            color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            opacity: disabled ? 0.5 : 1,
+                          }}
+                        >
+                          {c}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
