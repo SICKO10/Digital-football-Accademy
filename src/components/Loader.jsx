@@ -33,21 +33,25 @@ function Loader() {
         {/* Ballon */}
         <div style={{ animation: 'glowPulse 1.8s ease-in-out infinite' }}>
           <div style={{ animation: 'ballBounce 0.85s ease-in-out infinite' }}>
-            {/* Ballon SVG — inspiré Adidas Trionda (Coupe du Monde 2026) */}
+            {/* Ballon SVG — pattern Telstar (Coupe du Monde) */}
             <svg width="90" height="90" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <radialGradient id="ballBase" cx="34%" cy="27%" r="72%">
+                <radialGradient id="ballBase" cx="36%" cy="28%" r="72%">
                   <stop offset="0%"   stopColor="#ffffff" />
-                  <stop offset="35%"  stopColor="#f6f6f6" />
-                  <stop offset="72%"  stopColor="#e2e2e2" />
-                  <stop offset="100%" stopColor="#b2b2b2" />
+                  <stop offset="25%"  stopColor="#f8f8f8" />
+                  <stop offset="65%"  stopColor="#e0e0e0" />
+                  <stop offset="100%" stopColor="#a0a0a0" />
                 </radialGradient>
-                <radialGradient id="ballShadow" cx="60%" cy="70%" r="52%">
-                  <stop offset="0%"   stopColor="#000000" stopOpacity="0.24" />
+                <radialGradient id="ballShadow" cx="60%" cy="70%" r="60%">
+                  <stop offset="0%"   stopColor="#000000" stopOpacity="0.28" />
                   <stop offset="100%" stopColor="#000000" stopOpacity="0" />
                 </radialGradient>
-                <radialGradient id="specMain" cx="27%" cy="19%" r="30%">
+                <radialGradient id="specMain" cx="30%" cy="22%" r="32%">
                   <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="specSec" cx="72%" cy="78%" r="18%">
+                  <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.35" />
                   <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                 </radialGradient>
                 <clipPath id="ballMask">
@@ -58,31 +62,26 @@ function Loader() {
               {/* Sphère de base */}
               <circle cx="100" cy="100" r="92" fill="url(#ballBase)" />
 
-              {/* Panneaux colorés — Trionda 2026 */}
-              <g clipPath="url(#ballMask)">
-                {/* Panneau bleu — droite, large */}
-                <path fill="#1e40c8" d="M 112,8 C 145,12 172,34 188,64 C 202,92 200,126 186,152 C 174,172 156,184 136,188 C 122,191 110,188 104,180 C 120,164 132,142 132,116 C 132,90 120,68 104,54 C 108,38 110,22 112,8 Z" />
-                <path fill="#142ea0" opacity="0.55" d="M 155,14 C 178,28 196,58 200,90 C 204,122 194,154 178,170 C 176,148 180,122 176,98 C 172,72 163,44 155,14 Z" />
-                {/* Panneau rouge — gauche */}
-                <path fill="#c01828" d="M 56,10 C 36,22 18,44 10,70 C 2,96 4,126 16,150 C 26,170 42,183 60,188 C 74,192 88,190 96,182 C 80,166 70,144 70,118 C 70,92 82,70 98,56 C 86,40 70,22 56,10 Z" />
-                <path fill="#880e18" opacity="0.45" d="M 20,38 C 8,58 4,82 6,108 C 8,132 16,156 28,172 C 16,152 12,126 12,100 C 12,74 15,54 20,38 Z" />
-                {/* Panneau vert — bas */}
-                <path fill="#189932" d="M 46,184 C 62,194 84,200 108,200 C 134,200 158,194 174,182 C 156,170 136,164 114,166 C 92,168 68,174 46,184 Z" />
-                <path fill="#0e6820" opacity="0.5" d="M 68,194 C 84,200 108,202 130,200 C 150,198 168,192 178,184 C 160,180 140,178 120,180 C 100,182 82,186 68,194 Z" />
-                {/* Canaux blancs */}
-                <path fill="#f8f8f8" d="M 76,10 C 90,6 104,8 116,14 C 108,28 102,44 102,62 C 90,56 78,44 70,30 C 71,20 73,14 76,10 Z" />
-                <path fill="#f8f8f8" d="M 22,156 C 30,170 42,180 56,186 C 60,174 66,162 68,148 C 56,142 44,132 34,120 C 26,132 22,144 22,156 Z" />
-                <path fill="#f8f8f8" d="M 148,178 C 160,168 168,152 168,136 C 155,132 140,132 128,138 C 126,150 124,164 122,176 C 132,178 142,179 148,178 Z" />
+              {/* Panneaux noirs — pattern Telstar (Coupe du Monde) */}
+              <g clipPath="url(#ballMask)" fill="#111111">
+                <polygon points="100,58 132,80 120,118 80,118 68,80" />
+                <polygon points="100,10 126,26 132,58 100,58 68,58 74,26" />
+                <polygon points="174,44 184,76 158,96 132,80 132,58 152,38" />
+                <polygon points="168,154 140,176 116,162 120,118 158,96 178,116" />
+                <polygon points="100,190 68,172 68,148 80,118 120,118 132,148 132,172" />
+                <polygon points="32,154 22,116 42,96 80,118 84,162 60,176" />
+                <polygon points="26,44 48,38 68,58 68,80 42,96 16,76" />
               </g>
 
               {/* Ombre (hémisphère bas) */}
               <circle cx="100" cy="100" r="92" fill="url(#ballShadow)" clipPath="url(#ballMask)" />
 
               {/* Contour du ballon */}
-              <circle cx="100" cy="100" r="92" fill="none" stroke="#c0c0c0" strokeWidth="1.5" />
+              <circle cx="100" cy="100" r="92" fill="none" stroke="#bbbbbb" strokeWidth="2" />
 
-              {/* Reflet principal */}
+              {/* Reflets */}
               <circle cx="100" cy="100" r="92" fill="url(#specMain)" />
+              <circle cx="100" cy="100" r="92" fill="url(#specSec)" />
             </svg>
           </div>
         </div>
