@@ -520,7 +520,7 @@ function DashboardJoueur() {
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
 
             {/* HERO CARD */}
             <div style={{ background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -744,7 +744,7 @@ function DashboardJoueur() {
 
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon profil</h1>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
@@ -809,7 +809,7 @@ function DashboardJoueur() {
 
         {/* ── ANALYSES ── */}
         {onglet === 'analyses' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>Mes analyses</h1>
               {(profil?.analyses_restantes || 0) > 0 && (
@@ -848,7 +848,7 @@ function DashboardJoueur() {
 
         {/* ── MESSAGES ── */}
         {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan') && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
               <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Messages recruteurs — Plan Pro</h2>
@@ -863,7 +863,7 @@ function DashboardJoueur() {
         )}
 
         {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (
-          <div style={{ padding: '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: isMobile ? '12px' : '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -925,7 +925,7 @@ function DashboardJoueur() {
 
         {/* ── COACH ── */}
         {onglet === 'coach' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Support Coach</h2>
               <p style={{ fontSize: '13px', color: '#555' }}>Pose tes questions directement à notre coach expert.</p>
