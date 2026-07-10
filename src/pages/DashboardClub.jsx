@@ -70,6 +70,7 @@ export default function DashboardClub() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("joueurs");
   const [selectedJoueur, setSelectedJoueur] = useState(null);
+  const [joueurParcours, setJoueurParcours] = useState([]);
   const [favoris, setFavoris] = useState([]); // [{id, user_id, joueur_id, dossier}]
   const [dossierActif, setDossierActif] = useState("Tous");
   const [nouveauDossier, setNouveauDossier] = useState("");
@@ -309,6 +310,25 @@ export default function DashboardClub() {
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
 
+  const getClubInitials = (name) => {
+    const words = (name || '').trim().split(/\s+/).filter(w => !['AS','FC','OC','US','SC','AC','RC','ES','OGC','SM','EA'].includes(w))
+    if (words.length === 0) return (name || '?').slice(0, 2).toUpperCase()
+    return words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : words[0].slice(0, 2).toUpperCase()
+  }
+  const getClubColor = (name) => {
+    const colors = ['#3b82f6','#8b5cf6','#f59e0b','#ef4444','#10b981','#f97316','#06b6d4','#ec4899']
+    let hash = 0
+    for (let i = 0; i < (name || '').length; i++) hash = (name || '').charCodeAt(i) + ((hash << 5) - hash)
+    return colors[Math.abs(hash) % colors.length]
+  }
+
+  const ouvrirProfilJoueur = async (j) => {
+    ouvrirProfilJoueur(j)
+    setJoueurParcours([])
+    const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false })
+    setJoueurParcours(data || [])
+  }
+
   if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#4ade80" }}>Chargement...</div></div>;
 
   // ── Profil joueur ──────────────────────────────────────────────────────────
@@ -384,6 +404,54 @@ export default function DashboardClub() {
               <div style={{ background: "#1a1a1a", borderRadius: "8px", padding: "1rem" }}>
                 <p style={{ margin: 0, fontWeight: 500 }}>{j.club || "Non renseigné"}</p>
                 <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#666" }}>{j.niveau_equipe}</p>
+              </div>
+            </>
+          )}
+
+          {j.points_forts && (
+            <>
+              <p style={st.sectionTitle}>Points forts</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                {j.points_forts.split(", ").filter(Boolean).map(tag => (
+                  <span key={tag} style={{ background: "#4ade8020", color: "#4ade80", border: "1px solid #4ade8040", fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "20px" }}>{tag}</span>
+                ))}
+              </div>
+            </>
+          )}
+
+          {j.a_ameliorer && (
+            <>
+              <p style={st.sectionTitle}>Axes de progression</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                {j.a_ameliorer.split(", ").filter(Boolean).map(tag => (
+                  <span key={tag} style={{ background: "#f59e0b15", color: "#f59e0b", border: "1px solid #f59e0b40", fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "20px" }}>{tag}</span>
+                ))}
+              </div>
+            </>
+          )}
+
+          {joueurParcours.length > 0 && (
+            <>
+              <p style={st.sectionTitle}>Parcours footballistique</p>
+              <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.25rem" }}>
+                {joueurParcours.map((p, i) => (
+                  <div key={p.id} style={{ display: "flex", gap: "14px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                      <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#4ade80", marginTop: "5px", flexShrink: 0 }} />
+                      {i < joueurParcours.length - 1 && <div style={{ width: "1px", flex: 1, background: "#222", marginTop: "2px" }} />}
+                    </div>
+                    <div style={{ flex: 1, paddingBottom: i < joueurParcours.length - 1 ? "18px" : 0, display: "flex", alignItems: "center", gap: "10px" }}>
+                      {p.logo_url
+                        ? <img src={p.logo_url} alt={p.club} style={{ width: "26px", height: "26px", objectFit: "contain", flexShrink: 0 }} />
+                        : <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: getClubColor(p.club), display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 800, color: "#fff", flexShrink: 0 }}>{getClubInitials(p.club)}</div>
+                      }
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: "14px", margin: 0 }}>{p.club}</p>
+                        <p style={{ fontSize: "11px", color: "#555", margin: "2px 0 0" }}>{[p.saison, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -609,7 +677,7 @@ export default function DashboardClub() {
 
                     {j.clip_url && <p style={{ fontSize: "11px", color: "#4ade80", margin: "0 0 10px" }}>🎬 Vidéo disponible</p>}
                     <div style={st.cardActions}>
-                      <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil</button>
+                      <button style={st.btnPrimary} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
                       <button
                         style={isFavori(j.id) ? { ...st.favoriBtnActive, background: "#4ade8015" } : st.btnSecondary}
                         onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}>
@@ -640,7 +708,7 @@ export default function DashboardClub() {
                       <span style={{ color: "#60a5fa", fontWeight: 700 }}>{j.matchs_officiel || 0} <span style={{ color: "#555", fontWeight: 400 }}>matchs</span></span>
                     </div>
                     <div style={{ display: "flex", gap: "6px" }}>
-                      <button style={{ ...st.btnPrimary, flex: "none", padding: "6px 14px" }} onClick={() => setSelectedJoueur(j)}>Profil</button>
+                      <button style={{ ...st.btnPrimary, flex: "none", padding: "6px 14px" }} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
                       <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{isFavori(j.id) ? "★" : "☆"}</button>
                       <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
                     </div>
@@ -698,7 +766,7 @@ export default function DashboardClub() {
                       ) : null}
 
                       <div style={st.cardActions}>
-                        <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil</button>
+                        <button style={st.btnPrimary} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
                         <button style={st.btnSecondary} onClick={() => setAssignDossierJoueur(assignDossierJoueur === j.id ? null : j.id)}>📁 Dossier</button>
                         <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
                         <button style={{ ...st.btnSecondary, color: "#ef4444", borderColor: "#ef444440" }} onClick={() => toggleFavori(j.id)}>✕</button>
@@ -728,7 +796,7 @@ export default function DashboardClub() {
                     return (
                       <div key={j.id} style={st.card}>
                         {/* Thumbnail */}
-                        <div onClick={() => setSelectedJoueur(j)} style={{ borderRadius: "8px", overflow: "hidden", marginBottom: "12px", cursor: "pointer", position: "relative", aspectRatio: "16/9", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div onClick={() => ouvrirProfilJoueur(j)} style={{ borderRadius: "8px", overflow: "hidden", marginBottom: "12px", cursor: "pointer", position: "relative", aspectRatio: "16/9", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {thumb ? (
                             <img src={thumb} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} onError={e => { e.target.style.display = "none"; }} />
                           ) : isVeoUrl ? (
@@ -757,7 +825,7 @@ export default function DashboardClub() {
                           <span style={st.posteBadge(j.poste)}>{j.poste}</span>
                         </div>
                         <div style={{ ...st.cardActions, marginTop: "10px" }}>
-                          <button style={st.btnPrimary} onClick={() => setSelectedJoueur(j)}>Profil & Vidéo</button>
+                          <button style={st.btnPrimary} onClick={() => ouvrirProfilJoueur(j)}>Profil & Vidéo</button>
                           <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>{isFavori(j.id) ? "★" : "☆"}</button>
                         </div>
                       </div>

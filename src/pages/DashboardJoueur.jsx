@@ -238,6 +238,19 @@ function DashboardJoueur() {
     }
   }
 
+  const getClubInitials = (name) => {
+    const words = name.trim().split(/\s+/).filter(w => !['AS', 'FC', 'OC', 'US', 'SC', 'AC', 'RC', 'ES', 'OGC', 'SM', 'EA', 'En'].includes(w))
+    if (words.length === 0) return name.slice(0, 2).toUpperCase()
+    return words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : words[0].slice(0, 2).toUpperCase()
+  }
+
+  const getClubColor = (name) => {
+    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981', '#f97316', '#06b6d4', '#ec4899']
+    let hash = 0
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    return colors[Math.abs(hash) % colors.length]
+  }
+
   const searchClubDebounceRef = useRef(null)
 
   const searchClubs = useCallback((query) => {
@@ -246,7 +259,7 @@ function DashboardJoueur() {
     searchClubDebounceRef.current = setTimeout(async () => {
       setLoadingSuggestions(true)
       try {
-        const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`)
+        const res = await fetch(`https://www.thesportsdb.com/api/v1/json/1/searchteams.php?t=${encodeURIComponent(query)}`)
         const json = await res.json()
         const teams = (json.teams || []).filter(t => t.strSport === 'Soccer' && t.strTeamBadge)
         setClubSuggestions(teams.slice(0, 6))
@@ -953,9 +966,10 @@ function DashboardJoueur() {
                       </div>
                       <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {p.logo_url && (
-                            <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
-                          )}
+                          {p.logo_url
+                            ? <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
+                            : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getClubColor(p.club || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: '#fff', flexShrink: 0 }}>{getClubInitials(p.club || '?')}</div>
+                          }
                           <div>
                             <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
                             <p style={{ fontSize: '11px', color: '#555' }}>
@@ -976,8 +990,10 @@ function DashboardJoueur() {
                 <div style={{ position: 'relative' }}>
                   <label style={labelStyle}>Club</label>
                   <div style={{ position: 'relative' }}>
-                    {nouveauClub.logo_url && (
-                      <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
+                    {nouveauClub.club.trim() && (
+                      nouveauClub.logo_url
+                        ? <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
+                        : <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: getClubColor(nouveauClub.club), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: '#fff', zIndex: 1 }}>{getClubInitials(nouveauClub.club)}</div>
                     )}
                     <input
                       value={nouveauClub.club}
@@ -989,7 +1005,7 @@ function DashboardJoueur() {
                       onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                       onFocus={() => clubSuggestions.length > 0 && setShowSuggestions(true)}
                       placeholder="AS Saint-Etienne"
-                      style={{ ...inputStyle, paddingLeft: nouveauClub.logo_url ? '36px' : '14px' }}
+                      style={{ ...inputStyle, paddingLeft: nouveauClub.club.trim() ? '36px' : '14px' }}
                     />
                     {loadingSuggestions && (
                       <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#555' }}>…</span>
