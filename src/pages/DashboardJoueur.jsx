@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
@@ -92,8 +92,11 @@ function DashboardJoueur() {
   const [aAmeliorer, setAAmeliorer] = useState([])
 
   const [parcours, setParcours] = useState([])
-  const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '' })
+  const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '' })
   const [savingParcours, setSavingParcours] = useState(false)
+  const [clubSuggestions, setClubSuggestions] = useState([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const [coaches, setCoaches] = useState([])
   const [coachSelectionne, setCoachSelectionne] = useState(null)
@@ -235,18 +238,56 @@ function DashboardJoueur() {
     }
   }
 
+  const searchClubDebounceRef = useRef(null)
+
+  const searchClubs = useCallback((query) => {
+    if (searchClubDebounceRef.current) clearTimeout(searchClubDebounceRef.current)
+    if (!query || query.length < 2) { setClubSuggestions([]); setShowSuggestions(false); return }
+    searchClubDebounceRef.current = setTimeout(async () => {
+      setLoadingSuggestions(true)
+      try {
+        const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`)
+        const json = await res.json()
+        const teams = (json.teams || []).filter(t => t.strSport === 'Soccer' && t.strTeamBadge)
+        setClubSuggestions(teams.slice(0, 6))
+        setShowSuggestions(teams.length > 0)
+      } catch {
+        setClubSuggestions([])
+        setShowSuggestions(false)
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }, 350)
+  }, [])
+
+  const selectClubSuggestion = (team) => {
+    setNouveauClub(prev => ({ ...prev, club: team.strTeam, logo_url: team.strTeamBadge || '' }))
+    setClubSuggestions([])
+    setShowSuggestions(false)
+  }
+
   const ajouterClub = async () => {
     if (!nouveauClub.club.trim() || !userId) return
     setSavingParcours(true)
-    await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
-    const { data } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
+    const { error: insertError } = await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
+    if (insertError) {
+      alert('Erreur ajout parcours : ' + insertError.message)
+      setSavingParcours(false)
+      return
+    }
+    const { data, error: fetchError } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
+    if (fetchError) console.error('Erreur chargement parcours :', fetchError.message)
     setParcours(data || [])
-    setNouveauClub({ club: '', saison: '', categorie: '', poste: '' })
+    setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '' })
+    setClubSuggestions([])
+    setShowSuggestions(false)
     setSavingParcours(false)
   }
 
   const supprimerClub = async (id) => {
-    await supabase.from('parcours').delete().eq('id', id)
+    if (!window.confirm('Supprimer cette entrée du parcours ?')) return
+    const { error } = await supabase.from('parcours').delete().eq('id', id)
+    if (error) { alert('Erreur suppression : ' + error.message); return }
     setParcours(prev => prev.filter(p => p.id !== id))
   }
 
@@ -911,11 +952,16 @@ function DashboardJoueur() {
                         {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: '#1f1f1f', marginTop: '2px' }} />}
                       </div>
                       <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                        <div>
-                          <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
-                          <p style={{ fontSize: '11px', color: '#555' }}>
-                            {[p.saison, p.categorie, p.poste].filter(Boolean).join(' · ')}
-                          </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {p.logo_url && (
+                            <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
+                          )}
+                          <div>
+                            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
+                            <p style={{ fontSize: '11px', color: '#555' }}>
+                              {[p.saison, p.categorie, p.poste].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
                         </div>
                         <button onClick={() => supprimerClub(p.id)} style={{ background: 'transparent', border: 'none', color: '#ef444480', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
                           Supprimer
@@ -927,9 +973,47 @@ function DashboardJoueur() {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label style={labelStyle}>Club</label>
-                  <input value={nouveauClub.club} onChange={e => setNouveauClub({ ...nouveauClub, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} />
+                  <div style={{ position: 'relative' }}>
+                    {nouveauClub.logo_url && (
+                      <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
+                    )}
+                    <input
+                      value={nouveauClub.club}
+                      onChange={e => {
+                        const val = e.target.value
+                        setNouveauClub(prev => ({ ...prev, club: val, logo_url: '' }))
+                        searchClubs(val)
+                      }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      onFocus={() => clubSuggestions.length > 0 && setShowSuggestions(true)}
+                      placeholder="AS Saint-Etienne"
+                      style={{ ...inputStyle, paddingLeft: nouveauClub.logo_url ? '36px' : '14px' }}
+                    />
+                    {loadingSuggestions && (
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#555' }}>…</span>
+                    )}
+                  </div>
+                  {showSuggestions && clubSuggestions.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, overflow: 'hidden', marginTop: '4px' }}>
+                      {clubSuggestions.map(team => (
+                        <div
+                          key={team.idTeam}
+                          onMouseDown={() => selectClubSuggestion(team)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #222' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          {team.strTeamBadge && <img src={team.strTeamBadge} alt="" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}
+                          <div>
+                            <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>{team.strTeam}</p>
+                            {team.strCountry && <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{team.strCountry}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={labelStyle}>Saison</label>
