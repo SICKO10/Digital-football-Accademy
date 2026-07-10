@@ -94,6 +94,7 @@ function DashboardJoueur() {
   const [parcours, setParcours] = useState([])
   const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
   const [savingParcours, setSavingParcours] = useState(false)
+  const [editingParcoursId, setEditingParcoursId] = useState(null)
   const [clubSuggestions, setClubSuggestions] = useState([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -282,11 +283,13 @@ function DashboardJoueur() {
   const ajouterClub = async () => {
     if (!nouveauClub.club.trim() || !userId) return
     setSavingParcours(true)
-    const { error: insertError } = await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
-    if (insertError) {
-      alert('Erreur ajout parcours : ' + insertError.message)
-      setSavingParcours(false)
-      return
+    if (editingParcoursId) {
+      const { error } = await supabase.from('parcours').update({ ...nouveauClub }).eq('id', editingParcoursId)
+      if (error) { alert('Erreur modification : ' + error.message); setSavingParcours(false); return }
+      setEditingParcoursId(null)
+    } else {
+      const { error: insertError } = await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
+      if (insertError) { alert('Erreur ajout parcours : ' + insertError.message); setSavingParcours(false); return }
     }
     const { data, error: fetchError } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
     if (fetchError) console.error('Erreur chargement parcours :', fetchError.message)
@@ -297,10 +300,19 @@ function DashboardJoueur() {
     setSavingParcours(false)
   }
 
+  const modifierClub = (p) => {
+    setEditingParcoursId(p.id)
+    setNouveauClub({ club: p.club || '', saison: p.saison || '', categorie: p.categorie || '', poste: p.poste || '', logo_url: p.logo_url || '', niveau_championnat: p.niveau_championnat || '', matchs_joues: p.matchs_joues || '', buts: p.buts || '', passes_decisives: p.passes_decisives || '', cleansheets: p.cleansheets || '' })
+    setClubSuggestions([])
+    setShowSuggestions(false)
+    setTimeout(() => document.getElementById('parcours-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
   const supprimerClub = async (id) => {
     if (!window.confirm('Supprimer cette entrée du parcours ?')) return
     const { error } = await supabase.from('parcours').delete().eq('id', id)
     if (error) { alert('Erreur suppression : ' + error.message); return }
+    if (editingParcoursId === id) { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }
     setParcours(prev => prev.filter(p => p.id !== id))
   }
 
@@ -985,16 +997,21 @@ function DashboardJoueur() {
                             )}
                           </div>
                         </div>
-                        <button onClick={() => supprimerClub(p.id)} style={{ background: 'transparent', border: 'none', color: '#ef444480', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
-                          Supprimer
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                          <button onClick={() => modifierClub(p)} title="Modifier" style={{ background: 'transparent', border: 'none', color: '#4ade8080', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button onClick={() => supprimerClub(p.id)} title="Supprimer" style={{ background: 'transparent', border: 'none', color: '#ef444480', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div id="parcours-form" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div style={{ position: 'relative' }}>
                   <label style={labelStyle}>Club</label>
                   <div style={{ position: 'relative' }}>
@@ -1090,10 +1107,18 @@ function DashboardJoueur() {
                 )}
               </div>
 
-              <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
-                style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
-                {savingParcours ? 'Ajout...' : 'Ajouter ce club'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
+                  {savingParcours ? (editingParcoursId ? 'Modification...' : 'Ajout...') : (editingParcoursId ? '✓ Enregistrer la modification' : 'Ajouter ce club')}
+                </button>
+                {editingParcoursId && (
+                  <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
+                    style={{ background: 'transparent', border: '1px solid #333', color: '#555', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Annuler
+                  </button>
+                )}
+              </div>
             </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
