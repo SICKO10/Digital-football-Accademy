@@ -91,6 +91,10 @@ function DashboardJoueur() {
   const [pointsForts, setPointsForts] = useState([])
   const [aAmeliorer, setAAmeliorer] = useState([])
 
+  const [parcours, setParcours] = useState([])
+  const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '' })
+  const [savingParcours, setSavingParcours] = useState(false)
+
   const [coaches, setCoaches] = useState([])
   const [coachSelectionne, setCoachSelectionne] = useState(null)
   const [messageCoach, setMessageCoach] = useState('')
@@ -125,6 +129,8 @@ function DashboardJoueur() {
     })
     setPointsForts(data?.points_forts ? data.points_forts.split(', ').filter(Boolean) : [])
     setAAmeliorer(data?.a_ameliorer ? data.a_ameliorer.split(', ').filter(Boolean) : [])
+    const { data: parcoursData } = await supabase.from('parcours').select('*').eq('joueur_id', user.id).order('saison', { ascending: false })
+    setParcours(parcoursData || [])
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
@@ -227,6 +233,21 @@ function DashboardJoueur() {
     } else if (liste.length < 4) {
       setListe([...liste, valeur])
     }
+  }
+
+  const ajouterClub = async () => {
+    if (!nouveauClub.club.trim() || !userId) return
+    setSavingParcours(true)
+    await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
+    const { data } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
+    setParcours(data || [])
+    setNouveauClub({ club: '', saison: '', categorie: '', poste: '' })
+    setSavingParcours(false)
+  }
+
+  const supprimerClub = async (id) => {
+    await supabase.from('parcours').delete().eq('id', id)
+    setParcours(prev => prev.filter(p => p.id !== id))
   }
 
   const handleDeleteVideo = async () => {
@@ -877,6 +898,67 @@ function DashboardJoueur() {
                 </div>
               </div>
             )}
+
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>Parcours footballistique</p>
+
+              {parcours.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  {parcours.map((p, i) => (
+                    <div key={p.id} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#4ade80', marginTop: '4px', flexShrink: 0 }} />
+                        {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: '#1f1f1f', marginTop: '2px' }} />}
+                      </div>
+                      <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                        <div>
+                          <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
+                          <p style={{ fontSize: '11px', color: '#555' }}>
+                            {[p.saison, p.categorie, p.poste].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <button onClick={() => supprimerClub(p.id)} style={{ background: 'transparent', border: 'none', color: '#ef444480', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Club</label>
+                  <input value={nouveauClub.club} onChange={e => setNouveauClub({ ...nouveauClub, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Saison</label>
+                  <input value={nouveauClub.saison} onChange={e => setNouveauClub({ ...nouveauClub, saison: e.target.value })} placeholder="2023-2024" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Catégorie</label>
+                  <select value={nouveauClub.categorie} onChange={e => setNouveauClub({ ...nouveauClub, categorie: e.target.value })} style={inputStyle}>
+                    <option value="">— Choisir —</option>
+                    {['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21', 'Senior'].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Poste</label>
+                  <select value={nouveauClub.poste} onChange={e => setNouveauClub({ ...nouveauClub, poste: e.target.value })} style={inputStyle}>
+                    <option value="">— Choisir —</option>
+                    <option>Gardien</option>
+                    <option>Defenseur</option>
+                    <option>Milieu</option>
+                    <option>Attaquant</option>
+                  </select>
+                </div>
+              </div>
+
+              <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
+                style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
+                {savingParcours ? 'Ajout...' : 'Ajouter ce club'}
+              </button>
+            </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
