@@ -94,8 +94,15 @@ function DashboardJoueur() {
   const [sendingCoach, setSendingCoach] = useState(false)
   const [coachSent, setCoachSent] = useState(false)
   const [convCoach, setConvCoach] = useState([])
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const getProfil = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -447,10 +454,11 @@ function DashboardJoueur() {
         .dj-nav-btn:hover { background: #141414 !important; color: #ccc !important; }
         .dj-action-card:hover { transform: translateY(-2px); border-color: #2a2a2a !important; }
         .dj-btn-green:hover { background: #22c55e !important; }
+        .dj-bottom-nav-btn:hover { color: #ccc !important; }
       `}</style>
 
-      {/* ── SIDEBAR ── */}
-      <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+      {/* ── SIDEBAR (desktop only) ── */}
+      {!isMobile && <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
@@ -487,10 +495,28 @@ function DashboardJoueur() {
             Déconnexion
           </button>
         </div>
-      </aside>
+      </aside>}
+
+      {/* ── BOTTOM NAV (mobile only) ── */}
+      {isMobile && (
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', borderTop: '1px solid #222', display: 'flex', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          {navItems.map(item => (
+            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => setOnglet(item.id)}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '10px 4px 8px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#555', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.15s', position: 'relative' }}>
+              {item.badge > 0 && (
+                <span style={{ position: 'absolute', top: '6px', right: 'calc(50% - 18px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.badge}
+                </span>
+              )}
+              {item.icon}
+              <span style={{ fontSize: '10px', fontWeight: onglet === item.id ? 700 : 400, letterSpacing: '0.2px' }}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh' }}>
+      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh', paddingBottom: isMobile ? '80px' : 0 }}>
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
