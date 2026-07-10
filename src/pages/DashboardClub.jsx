@@ -464,6 +464,19 @@ export default function DashboardClub() {
             </>
           )}
 
+          {j.carte_fifa_url && (
+            <>
+              <p style={st.sectionTitle}>Carte FIFA</p>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
+                <img
+                  src={j.carte_fifa_url}
+                  alt={`Carte FIFA ${j.prenom} ${j.nom}`}
+                  style={{ width: "180px", height: "252px", objectFit: "contain", borderRadius: "10px", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                />
+              </div>
+            </>
+          )}
+
           {videoUrl && (
             <>
               <p style={st.sectionTitle}>Vidéo du joueur</p>

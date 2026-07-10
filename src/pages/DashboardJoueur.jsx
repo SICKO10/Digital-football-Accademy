@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
+import { FifaCardGenerator } from '../components/FifaCard'
 
 const STRIPE_LINKS = {
   starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
@@ -60,6 +61,11 @@ const IconLock = () => (
 const IconSearch = () => (
   <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+)
+const IconCard = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="3"/><path d="M7 15h4M15 15h2M7 11h2"/>
   </svg>
 )
 
@@ -184,6 +190,34 @@ function DashboardJoueur() {
   }
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
+
+  const handleFifaCardSave = async (blob) => {
+    if (!userId) return
+    try {
+      const file = new File([blob], 'carte-fifa.png', { type: 'image/png' })
+      const sigRes = await fetch('/api/upload-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id + '_carte_fifa')
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (uploadData.secure_url) {
+        await supabase.from('profiles').update({ carte_fifa_url: uploadData.secure_url }).eq('id', userId)
+        setProfil(prev => ({ ...prev, carte_fifa_url: uploadData.secure_url }))
+      }
+    } catch (err) {
+      console.error('Carte FIFA upload error:', err)
+    }
+  }
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -544,6 +578,7 @@ function DashboardJoueur() {
   const navItems = [
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
     { id: 'profil', label: 'Mon Profil', icon: <IconUser /> },
+    { id: 'carte', label: 'Carte FIFA', icon: <IconCard /> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach', icon: <IconMic />, badge: convCoach.length },
@@ -1245,6 +1280,54 @@ function DashboardJoueur() {
         )}
 
         {/* ── COACH ── */}
+        {onglet === 'carte' && (
+          <div style={{ maxWidth: '520px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
+                Ma Carte FIFA
+                <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                  background: profil?.plan === 'pro' ? '#f0c03020' : '#c8c8c820',
+                  color: profil?.plan === 'pro' ? '#f0c030' : '#c8c8c8',
+                  border: `1px solid ${profil?.plan === 'pro' ? '#f0c03040' : '#c8c8c840'}`,
+                  verticalAlign: 'middle',
+                }}>
+                  {profil?.plan === 'pro' ? '⭐ PRO' : 'STARTER'}
+                </span>
+              </h2>
+              <p style={{ fontSize: '13px', color: '#555' }}>
+                Personnalise ta carte et utilise-la comme photo de profil.
+              </p>
+            </div>
+
+            {(!profil?.plan || profil.plan === 'fan') ? (
+              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎮</div>
+                <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>Fonctionnalité Starter / Pro</p>
+                <p style={{ fontSize: '13px', color: '#555' }}>Abonne-toi pour générer ta carte FIFA personnalisée.</p>
+              </div>
+            ) : (
+              <>
+                {profil?.carte_fifa_url && (
+                  <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <img src={profil.carte_fifa_url} alt="Ma carte FIFA" style={{ width: '72px', height: '100px', objectFit: 'contain', borderRadius: '6px' }} />
+                    <div>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#4ade80', marginBottom: '4px' }}>✓ Carte sauvegardée</p>
+                      <p style={{ fontSize: '12px', color: '#555' }}>Visible dans ton profil recruteur.</p>
+                    </div>
+                  </div>
+                )}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
+                  <FifaCardGenerator
+                    plan={profil.plan === 'pro' ? 'pro' : 'starter'}
+                    profil={profil}
+                    onSave={handleFifaCardSave}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {onglet === 'coach' && (
           <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
