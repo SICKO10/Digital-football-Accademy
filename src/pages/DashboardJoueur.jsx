@@ -125,6 +125,7 @@ function DashboardJoueur() {
   const [sendingCoach, setSendingCoach] = useState(false)
   const [coachSent, setCoachSent] = useState(false)
   const [convCoach, setConvCoach] = useState([])
+  const [coachUnread, setCoachUnread] = useState(0)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
@@ -134,6 +135,13 @@ function DashboardJoueur() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  useEffect(() => {
+    if (onglet === 'coach' && userId) {
+      localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
+      setCoachUnread(0)
+    }
+  }, [onglet, userId])
 
   const getProfil = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -186,6 +194,14 @@ function DashboardJoueur() {
     const allConvs = Object.values(map)
     setConversations(allConvs.filter(c => c.other?.plan !== 'coach'))
     setConvCoach(allConvs.filter(c => c.other?.plan === 'coach'))
+    // Compter messages coach non lus (reçus après la dernière visite de l'onglet)
+    const lastRead = localStorage.getItem(`coach_read_${uid}`) || '1970-01-01'
+    const nonLus = data.filter(msg =>
+      msg.sender?.plan === 'coach' &&
+      msg.receiver_id === uid &&
+      new Date(msg.created_at) > new Date(lastRead)
+    )
+    setCoachUnread(nonLus.length)
   }
 
   const envoyerMessage = async () => {
@@ -652,7 +668,7 @@ function DashboardJoueur() {
     { id: 'certif', label: 'Certification', icon: <IconBadge /> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
-    { id: 'coach', label: 'Coach', icon: <IconMic />, badge: convCoach.length },
+    { id: 'coach', label: 'Coach', icon: <IconMic />, badge: coachUnread },
   ]
 
   return (
