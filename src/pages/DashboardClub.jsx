@@ -100,6 +100,11 @@ export default function DashboardClub() {
   const [toast, setToast] = useState(null);
   const [certifications, setCertifications] = useState({}); // { joueur_id: { niveau, saison, statut } }
 
+  // Profil recruteur
+  const [profilEdit, setProfilEdit] = useState({ prenom: '', nom: '', club: '', region: '', type_recruteur: '', description: '', recherche_profil: '' });
+  const [savingProfil, setSavingProfil] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,6 +113,7 @@ export default function DashboardClub() {
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (!profile || profile.plan !== "recruteur") { navigate("/"); return; }
       setRecruteur(profile);
+      setProfilEdit({ prenom: profile.prenom || '', nom: profile.nom || '', club: profile.club || '', region: profile.region || '', type_recruteur: profile.type_recruteur || '', description: profile.description || '', recherche_profil: profile.recherche_profil || '' });
       const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "pro").eq("abonnement_actif", true);
       const { data: coachData } = await supabase.from("profiles").select("*").eq("plan", "coach");
       setJoueurs(joueursData || []);
@@ -226,6 +232,48 @@ export default function DashboardClub() {
       map[otherId].msgs.push(msg);
     });
     setConversations(Object.values(map));
+  };
+
+  const handleSaveProfil = async () => {
+    if (!recruteurId) return;
+    setSavingProfil(true);
+    const { error } = await supabase.from('profiles').update({
+      prenom: profilEdit.prenom,
+      nom: profilEdit.nom,
+      club: profilEdit.club,
+      region: profilEdit.region,
+      type_recruteur: profilEdit.type_recruteur,
+      description: profilEdit.description,
+      recherche_profil: profilEdit.recherche_profil,
+    }).eq('id', recruteurId);
+    if (!error) {
+      setRecruteur(prev => ({ ...prev, ...profilEdit }));
+      setToast('Profil mis à jour !');
+    }
+    setSavingProfil(false);
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !recruteurId) return;
+    setAvatarUploading(true);
+    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: recruteurId }) });
+    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('signature', signature);
+    formData.append('timestamp', timestamp);
+    formData.append('folder', folder);
+    formData.append('public_id', public_id);
+    formData.append('api_key', api_key);
+    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+    if (uploadData.secure_url) {
+      await supabase.from('profiles').update({ avatar_url: uploadData.secure_url }).eq('id', recruteurId);
+      setRecruteur(prev => ({ ...prev, avatar_url: uploadData.secure_url }));
+      setToast('Photo mise à jour !');
+    }
+    setAvatarUploading(false);
   };
 
   const ouvrirConversation = async (conv) => {
@@ -570,6 +618,7 @@ export default function DashboardClub() {
             { id: "feed", label: "🎬 Vidéos" },
             { id: "messages", label: `✉️ Messages${conversations.length > 0 ? ` (${conversations.length})` : ""}` },
             { id: "coach", label: "🎙️ Coach" },
+            { id: "profil", label: "👤 Mon Profil" },
           ].map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
           ))}
@@ -979,6 +1028,81 @@ export default function DashboardClub() {
         {/* ── CONTACTER LE COACH ── */}
         {activeTab === "coach" && (
           <CoachContact coaches={coaches} recruteurId={recruteurId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} ouvrirConversation={ouvrirConversation} conversations={conversations} st={st} />
+        )}
+
+        {activeTab === "profil" && (
+          <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "6px" }}>Mon Profil</h2>
+            <p style={{ fontSize: "13px", color: "#555", marginBottom: "2rem" }}>Ces informations sont visibles par les joueurs Pro qui reçoivent vos messages.</p>
+
+            {/* Avatar */}
+            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "20px" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                {recruteur?.avatar_url
+                  ? <img src={recruteur.avatar_url} alt="" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade8040" }} />
+                  : <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 800, color: "#4ade80" }}>
+                      {(profilEdit.prenom || "?")[0]}{(profilEdit.nom || "?")[0]}
+                    </div>
+                }
+                <label style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", background: "#4ade80", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: avatarUploading ? "wait" : "pointer", border: "2px solid #0a0a0a", fontSize: "11px" }}>
+                  {avatarUploading ? "…" : "✎"}
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} disabled={avatarUploading} />
+                </label>
+              </div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>{profilEdit.prenom} {profilEdit.nom}</p>
+                <p style={{ fontSize: "13px", color: "#4ade80", margin: 0 }}>{profilEdit.type_recruteur || "Recruteur"} · {profilEdit.club || profilEdit.region || "—"}</p>
+              </div>
+            </div>
+
+            {/* Formulaire */}
+            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Prénom</label>
+                  <input value={profilEdit.prenom} onChange={e => setProfilEdit(p => ({ ...p, prenom: e.target.value }))} style={st.searchInput} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Nom</label>
+                  <input value={profilEdit.nom} onChange={e => setProfilEdit(p => ({ ...p, nom: e.target.value }))} style={st.searchInput} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Type de recruteur</label>
+                <select value={profilEdit.type_recruteur} onChange={e => setProfilEdit(p => ({ ...p, type_recruteur: e.target.value }))} style={st.select}>
+                  <option value="">— Choisir —</option>
+                  {["Club professionnel", "Club amateur", "Agent FIFA", "Scout indépendant", "Détecteur", "Centre de formation"].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Club / Agence</label>
+                  <input value={profilEdit.club} onChange={e => setProfilEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex : AS Monaco, SL Benfica..." style={st.searchInput} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Région</label>
+                  <input value={profilEdit.region} onChange={e => setProfilEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex : Île-de-France..." style={st.searchInput} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Présentation</label>
+                <textarea value={profilEdit.description} onChange={e => setProfilEdit(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Qui êtes-vous ? Depuis combien de temps dans le recrutement..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
+              </div>
+
+              <div>
+                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Ce que je recherche</label>
+                <textarea value={profilEdit.recherche_profil} onChange={e => setProfilEdit(p => ({ ...p, recherche_profil: e.target.value }))} rows={3} placeholder="Ex : Milieu U20 évoluant en Régional 1, capable de jouer en profondeur..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
+              </div>
+
+              <button onClick={handleSaveProfil} disabled={savingProfil}
+                style={{ background: savingProfil ? "#333" : "#4ade80", color: savingProfil ? "#666" : "#000", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: savingProfil ? "not-allowed" : "pointer", alignSelf: "flex-start" }}>
+                {savingProfil ? "Enregistrement..." : "✓ Sauvegarder"}
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

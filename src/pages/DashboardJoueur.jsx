@@ -126,6 +126,7 @@ function DashboardJoueur() {
   const [coachSent, setCoachSent] = useState(false)
   const [convCoach, setConvCoach] = useState([])
   const [coachUnread, setCoachUnread] = useState(0)
+  const [recruteurModal, setRecruteurModal] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
@@ -1354,10 +1355,16 @@ function DashboardJoueur() {
                   <>
                     <div style={{ padding: '14px 18px', borderBottom: '1px solid #141414', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <Avatar person={messageActif.other} size={36} />
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
                         <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
                       </div>
+                      <button onClick={async () => {
+                        const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).single()
+                        if (data) setRecruteurModal(data)
+                      }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        👤 Voir le profil
+                      </button>
                     </div>
                     <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                       {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
@@ -1595,6 +1602,52 @@ function DashboardJoueur() {
           </div>
         )}
       </main>
+
+      {/* Modal profil recruteur */}
+      {recruteurModal && (
+        <div onClick={() => setRecruteurModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #222', borderRadius: '20px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                {recruteurModal.avatar_url
+                  ? <img src={recruteurModal.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
+                  : <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80' }}>
+                      {(recruteurModal.prenom || '?')[0]}{(recruteurModal.nom || '?')[0]}
+                    </div>
+                }
+                <div>
+                  <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
+                  {recruteurModal.type_recruteur && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{recruteurModal.type_recruteur}</span>}
+                </div>
+              </div>
+              <button onClick={() => setRecruteurModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
+              {recruteurModal.club && <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: '#555' }}>🏟️ Club / Agence</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.club}</p></div>}
+              {recruteurModal.region && <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: '#555' }}>📍 Région</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.region}</p></div>}
+            </div>
+
+            {recruteurModal.description && (
+              <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
+                <p style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>Présentation</p>
+                <p style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6, margin: 0 }}>{recruteurModal.description}</p>
+              </div>
+            )}
+
+            {recruteurModal.recherche_profil && (
+              <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '14px' }}>
+                <p style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🔍 Ce qu'il recherche</p>
+                <p style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6, margin: 0 }}>{recruteurModal.recherche_profil}</p>
+              </div>
+            )}
+
+            {!recruteurModal.description && !recruteurModal.recherche_profil && (
+              <p style={{ fontSize: '13px', color: '#444', textAlign: 'center', padding: '1rem 0' }}>Ce recruteur n'a pas encore complété son profil.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
