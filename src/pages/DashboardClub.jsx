@@ -92,11 +92,13 @@ export default function DashboardClub() {
   const [categorie, setCategorie] = useState("Toutes");
   const [pied, setPied] = useState("Tous");
   const [region, setRegion] = useState("Toutes");
+  const [styleDeJeu, setStyleDeJeu] = useState("Tous");
   const [ville, setVille] = useState("");
   const [search, setSearch] = useState("");
   const [tri, setTri] = useState("recent");
   const [modeAffichage, setModeAffichage] = useState("grille");
   const [toast, setToast] = useState(null);
+  const [certifications, setCertifications] = useState({}); // { joueur_id: { niveau, saison, statut } }
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -111,6 +113,11 @@ export default function DashboardClub() {
       setJoueurs(joueursData || []);
       setFiltered(joueursData || []);
       setCoaches(coachData || []);
+      // Charger les certifications validées
+      const { data: certifData } = await supabase.from("certifications").select("joueur_id, niveau, saison, statut").eq("statut", "validé");
+      const certifMap = {};
+      (certifData || []).forEach(c => { certifMap[c.joueur_id] = c; });
+      setCertifications(certifMap);
       await chargerConversations(user.id);
       await chargerFavoris(user.id);
       setLoading(false);
@@ -135,6 +142,7 @@ export default function DashboardClub() {
     if (categorie !== "Toutes") result = result.filter(j => j.categorie === categorie);
     if (pied !== "Tous") result = result.filter(j => j.pied === pied);
     if (region !== "Toutes") result = result.filter(j => j.region === region);
+    if (styleDeJeu !== "Tous") result = result.filter(j => j.style_de_jeu === styleDeJeu);
     if (ville) {
       const v = ville.toLowerCase();
       result = result.filter(j => (j.ville && j.ville.toLowerCase().includes(v)) || (j.club && j.club.toLowerCase().includes(v)));
@@ -153,7 +161,7 @@ export default function DashboardClub() {
     else if (tri === "buts") result.sort((a, b) => (b.buts_total || 0) - (a.buts_total || 0));
     else if (tri === "matchs") result.sort((a, b) => (b.matchs_officiel || 0) - (a.matchs_officiel || 0));
     setFiltered(result);
-  }, [poste, categorie, pied, region, ville, search, tri, joueurs]);
+  }, [poste, categorie, pied, region, styleDeJeu, ville, search, tri, joueurs]);
 
   const chargerFavoris = async (uid) => {
     const { data } = await supabase.from("favoris_recruteur").select("*").eq("user_id", uid).order("created_at", { ascending: false });
@@ -348,6 +356,7 @@ export default function DashboardClub() {
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
                 <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
                 <span style={{ background: "#4ade8020", color: "#4ade80", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>PRO</span>
+                {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "11px", fontWeight: 700, padding: "2px 10px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau} {certifications[j.id].saison}</span>}
                 {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>NEW</span>}
                 {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓ Contacté</span>}
               </div>
@@ -621,6 +630,12 @@ export default function DashboardClub() {
                 </select>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={st.filterLabel}>Style de jeu</label>
+                <select value={styleDeJeu} onChange={e => setStyleDeJeu(e.target.value)} style={st.select}>
+                  {["Tous", "Dos au jeu", "Technique / Dribbleur", "Physique / Aérien", "Vitesse / Percussion", "Créateur / Vision", "Box-to-box", "Renard des surfaces", "Défensif / Récupérateur", "Meneur / Leadership", "Polyvalent"].map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Ville</label>
                 <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={st.searchInput} />
               </div>
@@ -638,8 +653,8 @@ export default function DashboardClub() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""}</p>
-                {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || ville || search) && (
-                  <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setVille(""); setSearch(""); }}
+                {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || styleDeJeu !== "Tous" || ville || search) && (
+                  <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setStyleDeJeu("Tous"); setVille(""); setSearch(""); }}
                     style={{ background: "transparent", border: "1px solid #333", color: "#aaa", padding: "3px 10px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>
                     ✕ Réinitialiser
                   </button>
@@ -670,8 +685,10 @@ export default function DashboardClub() {
                             <p style={{ fontSize: "15px", fontWeight: 700, margin: 0 }}>{j.prenom} {j.nom}</p>
                             {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
                             {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "10px", padding: "1px 6px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>Contacté</span>}
+                            {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "10px", fontWeight: 700, padding: "1px 7px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau}</span>}
                           </div>
                           <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0" }}>{j.categorie || "—"} · {j.region || "—"}</p>
+                          {j.style_de_jeu && <span style={{ fontSize: "10px", color: "#60a5fa", background: "#60a5fa10", border: "1px solid #60a5fa30", padding: "1px 7px", borderRadius: "20px", display: "inline-block", marginTop: "3px" }}>⚡ {j.style_de_jeu}</span>}
                         </div>
                       </div>
                       {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}

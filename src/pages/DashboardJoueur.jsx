@@ -68,6 +68,11 @@ const IconCard = () => (
     <rect x="2" y="4" width="20" height="16" rx="3"/><path d="M7 15h4M15 15h2M7 11h2"/>
   </svg>
 )
+const IconBadge = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+  </svg>
+)
 
 function DashboardJoueur() {
   const navigate = useNavigate()
@@ -96,6 +101,15 @@ function DashboardJoueur() {
 
   const [pointsForts, setPointsForts] = useState([])
   const [aAmeliorer, setAAmeliorer] = useState([])
+  const [styleDeJeu, setStyleDeJeu] = useState('')
+
+  // Certification
+  const [certifications, setCertifications] = useState([])
+  const [nouvelleCertif, setNouvelleCertif] = useState({ niveau: '', saison: '' })
+  const [certifDocs, setCertifDocs] = useState([])
+  const [uploadingCertif, setUploadingCertif] = useState(false)
+  const [submittingCertif, setSubmittingCertif] = useState(false)
+  const [certifSent, setCertifSent] = useState(false)
 
   const [parcours, setParcours] = useState([])
   const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
@@ -139,8 +153,11 @@ function DashboardJoueur() {
     })
     setPointsForts(data?.points_forts ? data.points_forts.split(', ').filter(Boolean) : [])
     setAAmeliorer(data?.a_ameliorer ? data.a_ameliorer.split(', ').filter(Boolean) : [])
+    setStyleDeJeu(data?.style_de_jeu || '')
     const { data: parcoursData } = await supabase.from('parcours').select('*').eq('joueur_id', user.id).order('saison', { ascending: false })
     setParcours(parcoursData || [])
+    const { data: certifData } = await supabase.from('certifications').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
+    setCertifications(certifData || [])
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
@@ -190,6 +207,55 @@ function DashboardJoueur() {
   }
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
+
+  const handleCertifDocUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length || !userId) return
+    setUploadingCertif(true)
+    const uploaded = []
+    for (const file of files) {
+      try {
+        const sigRes = await fetch('/api/upload-video', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+        const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('signature', signature)
+        formData.append('timestamp', timestamp)
+        formData.append('folder', folder)
+        formData.append('public_id', public_id + '_certif_' + Date.now())
+        formData.append('api_key', api_key)
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+        const uploadData = await uploadRes.json()
+        if (uploadData.secure_url) uploaded.push(uploadData.secure_url)
+      } catch (err) { console.error('Upload certif error:', err) }
+    }
+    setCertifDocs(prev => [...prev, ...uploaded])
+    setUploadingCertif(false)
+  }
+
+  const soumettreDemandesCertification = async () => {
+    if (!nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5 || !userId) return
+    setSubmittingCertif(true)
+    const { error } = await supabase.from('certifications').insert({
+      joueur_id: userId,
+      niveau: nouvelleCertif.niveau,
+      saison: nouvelleCertif.saison,
+      documents: certifDocs,
+      statut: 'en_attente',
+    })
+    if (!error) {
+      const { data } = await supabase.from('certifications').select('*').eq('joueur_id', userId).order('created_at', { ascending: false })
+      setCertifications(data || [])
+      setNouvelleCertif({ niveau: '', saison: '' })
+      setCertifDocs([])
+      setCertifSent(true)
+      setTimeout(() => setCertifSent(false), 4000)
+    }
+    setSubmittingCertif(false)
+  }
 
   const handleFifaCardSave = async (blob) => {
     if (!userId) return
@@ -252,7 +318,7 @@ function DashboardJoueur() {
   const handleSaveStats = async () => {
     setSavingStats(true)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('profiles').update({ ...stats, points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', ') }).eq('id', user.id)
+    await supabase.from('profiles').update({ ...stats, points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', '), style_de_jeu: styleDeJeu }).eq('id', user.id)
     setSavingStats(false)
     setStatsSaved(true)
     setTimeout(() => setStatsSaved(false), 3000)
@@ -579,6 +645,7 @@ function DashboardJoueur() {
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
     { id: 'profil', label: 'Mon Profil', icon: <IconUser /> },
     { id: 'carte', label: 'Carte FIFA', icon: <IconCard /> },
+    { id: 'certif', label: 'Certification', icon: <IconBadge /> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach', icon: <IconMic />, badge: convCoach.length },
@@ -945,6 +1012,23 @@ function DashboardJoueur() {
             {caracteristiquesParPoste[profil?.poste] && (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
                 <p style={{ ...labelStyle, marginBottom: '20px' }}>Style de jeu</p>
+
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={labelStyle}>Mon style de jeu</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                    {['Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Polyvalent'].map(s => (
+                      <div key={s} onClick={() => setStyleDeJeu(styleDeJeu === s ? '' : s)}
+                        style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
+                          background: styleDeJeu === s ? '#60a5fa20' : '#1a1a1a',
+                          border: styleDeJeu === s ? '1px solid #60a5fa' : '1px solid #333',
+                          color: styleDeJeu === s ? '#60a5fa' : '#aaa',
+                          fontWeight: styleDeJeu === s ? 700 : 400,
+                        }}>
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={labelStyle}>Mes points forts (max 4)</label>
@@ -1324,6 +1408,101 @@ function DashboardJoueur() {
                   />
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {onglet === 'certif' && (
+          <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
+                Badge Certifié
+                <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#f0c03020', color: '#f0c030', border: '1px solid #f0c03040', verticalAlign: 'middle' }}>⭐ Officiel</span>
+              </h2>
+              <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.6 }}>
+                Envoie 5 feuilles de match minimum pour valider ton niveau. Notre équipe vérifie les documents et active ton badge certifié sous 48h. Le badge doit être renouvelé chaque saison.
+              </p>
+            </div>
+
+            {/* Certifications existantes */}
+            {certifications.length > 0 && (
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '14px' }}>Mes demandes</p>
+                {certifications.map(c => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 2px' }}>{c.niveau} — {c.saison}</p>
+                      <p style={{ fontSize: '12px', color: '#555', margin: 0 }}>{c.documents?.length || 0} feuille{(c.documents?.length || 0) > 1 ? 's' : ''} envoyée{(c.documents?.length || 0) > 1 ? 's' : ''}</p>
+                      {c.commentaire_admin && <p style={{ fontSize: '12px', color: '#f97316', margin: '4px 0 0' }}>💬 {c.commentaire_admin}</p>}
+                    </div>
+                    <span style={{
+                      fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px',
+                      background: c.statut === 'validé' ? '#4ade8020' : c.statut === 'rejeté' ? '#ef444420' : '#f0c03020',
+                      color: c.statut === 'validé' ? '#4ade80' : c.statut === 'rejeté' ? '#ef4444' : '#f0c030',
+                      border: `1px solid ${c.statut === 'validé' ? '#4ade8040' : c.statut === 'rejeté' ? '#ef444440' : '#f0c03040'}`,
+                    }}>
+                      {c.statut === 'validé' ? '✓ Validé' : c.statut === 'rejeté' ? '✕ Rejeté' : '⏳ En attente'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Nouvelle demande */}
+            {certifSent ? (
+              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
+                <p style={{ fontSize: '32px', marginBottom: '12px' }}>✅</p>
+                <p style={{ fontWeight: 800, fontSize: '16px', color: '#4ade80', marginBottom: '6px' }}>Demande envoyée !</p>
+                <p style={{ fontSize: '13px', color: '#555' }}>Notre équipe vérifie tes documents sous 48h.</p>
+              </div>
+            ) : (
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Nouvelle demande</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+                  <div>
+                    <label style={labelStyle}>Niveau à certifier</label>
+                    <select value={nouvelleCertif.niveau} onChange={e => setNouvelleCertif({ ...nouvelleCertif, niveau: e.target.value })} style={inputStyle}>
+                      <option value="">— Choisir —</option>
+                      {['Ligue 1', 'Ligue 2', 'National 1', 'National 2', 'National 3', 'R1', 'R2', 'R3', 'D1', 'D2', 'Futsal'].map(n => <option key={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Saison</label>
+                    <select value={nouvelleCertif.saison} onChange={e => setNouvelleCertif({ ...nouvelleCertif, saison: e.target.value })} style={inputStyle}>
+                      <option value="">— Choisir —</option>
+                      {['2024/2025', '2025/2026', '2026/2027'].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={labelStyle}>Feuilles de match ({certifDocs.length}/5 minimum)</label>
+                  <p style={{ fontSize: '12px', color: '#555', marginBottom: '10px' }}>PDF ou image (JPG, PNG). Au moins 5 feuilles requises.</p>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#141414', border: '1px dashed #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    {uploadingCertif ? 'Upload en cours...' : 'Sélectionner des fichiers'}
+                    <input type="file" accept="image/*,.pdf" multiple onChange={handleCertifDocUpload} style={{ display: 'none' }} disabled={uploadingCertif} />
+                  </label>
+                  {certifDocs.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                      {certifDocs.map((url, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#4ade8015', border: '1px solid #4ade8030', borderRadius: '8px', padding: '4px 10px' }}>
+                          <span style={{ fontSize: '11px', color: '#4ade80' }}>✓ Feuille {i + 1}</span>
+                          <button onClick={() => setCertifDocs(prev => prev.filter((_, j) => j !== i))}
+                            style={{ background: 'none', border: 'none', color: '#4ade8080', cursor: 'pointer', fontSize: '12px', padding: '0 2px' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={soumettreDemandesCertification}
+                  disabled={submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5}
+                  style={{ width: '100%', background: '#f0c030', color: '#1a0800', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                  {submittingCertif ? 'Envoi...' : `⭐ Soumettre la demande (${certifDocs.length}/5 feuilles)`}
+                </button>
+              </div>
             )}
           </div>
         )}
