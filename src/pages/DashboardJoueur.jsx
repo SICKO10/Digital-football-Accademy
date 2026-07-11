@@ -1036,7 +1036,7 @@ function DashboardJoueur() {
                 <div style={{ marginBottom: '24px' }}>
                   <label style={labelStyle}>Mon style de jeu</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                    {['Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Polyvalent'].map(s => (
+                    {['Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent'].map(s => (
                       <div key={s} onClick={() => setStyleDeJeu(styleDeJeu === s ? '' : s)}
                         style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
                           background: styleDeJeu === s ? '#60a5fa20' : '#1a1a1a',

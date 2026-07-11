@@ -259,7 +259,7 @@ function Feed() {
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
   const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
-  const STYLES = ['Tous', 'Dos au jeu', 'Technique / Dribbleur', 'Rapide / Explosif', 'Jeu de tête', 'Milieu box-to-box', 'Meneur de jeu', 'Défenseur relanceur', 'Pressing intense', 'Buteur / Finisseur', 'Ailier percutant']
+  const STYLES = ['Tous', 'Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent']
 
   useEffect(() => { init() }, [])
 
