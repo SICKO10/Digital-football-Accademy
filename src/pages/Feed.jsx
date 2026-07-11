@@ -249,6 +249,7 @@ function Feed() {
   const [filtrePoste, setFiltrePoste] = useState('Tous')
   const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
   const [filtreRegion, setFiltreRegion] = useState('Toutes')
+  const [filtreStyle, setFiltreStyle] = useState('Tous')
   const [likedIds, setLikedIds] = useState([])
   const [favoriIds, setFavoriIds] = useState([])
   const [likeCounts, setLikeCounts] = useState({})
@@ -258,6 +259,7 @@ function Feed() {
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
   const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
+  const STYLES = ['Tous', 'Dos au jeu', 'Technique / Dribbleur', 'Rapide / Explosif', 'Jeu de tête', 'Milieu box-to-box', 'Meneur de jeu', 'Défenseur relanceur', 'Pressing intense', 'Buteur / Finisseur', 'Ailier percutant']
 
   useEffect(() => { init() }, [])
 
@@ -321,6 +323,7 @@ function Feed() {
     if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
     if (filtreRegion !== 'Toutes' && j.region !== filtreRegion) return false
+    if (filtreStyle !== 'Tous' && j.style_de_jeu !== filtreStyle) return false
     return true
   }
   const joueursFiltres = joueursPro.filter(appliquerFiltres)
@@ -396,8 +399,11 @@ function Feed() {
           <select value={filtreRegion} onChange={e => setFiltreRegion(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
             {regionsDisponibles.map(r => <option key={r}>{r}</option>)}
           </select>
-          {(filtrePoste !== 'Tous' || filtreCategorie !== 'Toutes' || filtreRegion !== 'Toutes') && (
-            <button onClick={() => { setFiltrePoste('Tous'); setFiltreCategorie('Toutes'); setFiltreRegion('Toutes'); }} style={{ background: 'transparent', border: '1px solid #333', color: '#666', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>✕ Réinitialiser</button>
+          <select value={filtreStyle} onChange={e => setFiltreStyle(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
+            {STYLES.map(s => <option key={s}>{s}</option>)}
+          </select>
+          {(filtrePoste !== 'Tous' || filtreCategorie !== 'Toutes' || filtreRegion !== 'Toutes' || filtreStyle !== 'Tous') && (
+            <button onClick={() => { setFiltrePoste('Tous'); setFiltreCategorie('Toutes'); setFiltreRegion('Toutes'); setFiltreStyle('Tous') }} style={{ background: 'transparent', border: '1px solid #333', color: '#666', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>✕ Réinitialiser</button>
           )}
         </div>
 
