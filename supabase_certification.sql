@@ -26,6 +26,10 @@ CREATE POLICY "joueur_insert_own" ON certifications
 CREATE POLICY "authenticated_read" ON certifications
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Les authentifiés peuvent mettre à jour le statut (coach/admin)
+CREATE POLICY "authenticated_update" ON certifications
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
 -- Colonne style_de_jeu sur profiles (si pas déjà créée)
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS style_de_jeu TEXT;
 
