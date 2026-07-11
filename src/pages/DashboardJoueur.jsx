@@ -225,7 +225,7 @@ function DashboardJoueur() {
         formData.append('signature', signature)
         formData.append('timestamp', timestamp)
         formData.append('folder', folder)
-        formData.append('public_id', public_id + '_certif_' + Date.now())
+        formData.append('public_id', public_id)
         formData.append('api_key', api_key)
         const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
         const uploadData = await uploadRes.json()
