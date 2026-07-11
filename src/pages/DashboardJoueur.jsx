@@ -215,7 +215,7 @@ function DashboardJoueur() {
     const uploaded = []
     for (const file of files) {
       try {
-        const sigRes = await fetch('/api/upload-video', {
+        const sigRes = await fetch('/api/upload-image', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId })
         })
@@ -229,7 +229,11 @@ function DashboardJoueur() {
         formData.append('api_key', api_key)
         const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
         const uploadData = await uploadRes.json()
-        if (uploadData.secure_url) uploaded.push(uploadData.secure_url)
+        if (uploadData.secure_url) {
+          uploaded.push(uploadData.secure_url)
+        } else {
+          console.error('Cloudinary upload failed:', uploadData)
+        }
       } catch (err) { console.error('Upload certif error:', err) }
     }
     setCertifDocs(prev => [...prev, ...uploaded])
