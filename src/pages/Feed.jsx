@@ -261,6 +261,24 @@ function Feed() {
   const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
   const STYLES = ['Tous', 'Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent']
 
+  // Correspondances entre les filtres et les mots-clés dans points_forts
+  const STYLE_ALIASES = {
+    'Dos au jeu':              ['Dos au jeu', 'Jeu dos au but'],
+    'Technique / Dribbleur':   ['Technique / Dribbleur', 'Dribble', 'Technique'],
+    'Physique / Aérien':       ['Physique / Aérien', 'Impact physique', 'Jeu aérien', 'Sortie aérienne', 'Combativité'],
+    'Vitesse / Percussion':    ['Vitesse / Percussion', 'Vitesse'],
+    'Créateur / Vision':       ['Créateur / Vision', 'Vision du jeu', 'Créativité', 'Jeu entre les lignes', 'Passes longues', 'Passes courtes'],
+    'Box-to-box':              ['Box-to-box'],
+    'Renard des surfaces':     ['Renard des surfaces', 'Finition', 'Appels de balle', 'Mouvement sans ballon'],
+    'Défensif / Récupérateur': ['Défensif / Récupérateur', 'Récupération', 'Récupération de balle', 'Marquage', 'Placement', 'Anticipation'],
+    'Meneur / Leadership':     ['Meneur / Leadership', 'Leadership', 'Leadership offensif', 'Commandement défensif'],
+    'Centreur':                ['Centreur', 'Centre', 'Corner', 'CPA'],
+    'Buteur / Finisseur':      ['Buteur / Finisseur', 'Finition', 'Frappe de loin', 'Renard des surfaces'],
+    'Pressing intense':        ['Pressing intense', 'Pressing'],
+    'Ailier percutant':        ['Ailier percutant', 'Duel 1 contre 1', 'Profondeur', 'Décalage'],
+    'Polyvalent':              ['Polyvalent'],
+  }
+
   useEffect(() => { init() }, [])
 
   const init = async () => {
@@ -323,7 +341,13 @@ function Feed() {
     if (filtrePoste !== 'Tous' && j.poste !== filtrePoste) return false
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
     if (filtreRegion !== 'Toutes' && j.region !== filtreRegion) return false
-    if (filtreStyle !== 'Tous' && j.style_de_jeu !== filtreStyle) return false
+    if (filtreStyle !== 'Tous') {
+      const styleMatch = j.style_de_jeu === filtreStyle
+      const aliases = STYLE_ALIASES[filtreStyle] || [filtreStyle]
+      const pf = j.points_forts || ''
+      const pointsFortsMatch = aliases.some(alias => pf.toLowerCase().includes(alias.toLowerCase()))
+      if (!styleMatch && !pointsFortsMatch) return false
+    }
     return true
   }
   const joueursFiltres = joueursPro.filter(appliquerFiltres)
