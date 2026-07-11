@@ -67,7 +67,7 @@ function VideoBadge({ url }) {
   return (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: `${color}15`, border: `1px solid ${color}40`, color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>🎬 {label}</span>)
 }
 
-function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st, onDeleteVideo }) {
+function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st, onDeleteVideo, certif }) {
   const navigate = useNavigate()
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState('')
@@ -144,7 +144,10 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div onClick={() => onOpenProfile(j)} style={{ cursor: 'pointer' }}><Avatar person={j} size={40} /></div>
         <div style={{ flex: 1 }}>
-          <p onClick={() => onOpenProfile(j)} style={{ margin: 0, fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>{j.prenom} {j.nom}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <p onClick={() => onOpenProfile(j)} style={{ margin: 0, fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>{j.prenom} {j.nom}</p>
+            {certif && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>⭐ Certifié {certif.niveau}</span>}
+          </div>
           <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ''}{j.club ? ` · ${j.club}` : ''}</p>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -251,6 +254,7 @@ function Feed() {
   const [likeCounts, setLikeCounts] = useState({})
   const [commentCounts, setCommentCounts] = useState({})
   const [allComments, setAllComments] = useState({})
+  const [certifMap, setCertifMap] = useState({})
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
   const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
@@ -272,8 +276,17 @@ function Feed() {
 
     const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
-    await chargerInteractions(user, data || [])
+    await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
     setLoading(false)
+  }
+
+  const chargerCertifs = async (joueurs) => {
+    if (!joueurs.length) return
+    const ids = joueurs.map(j => j.id)
+    const { data } = await supabase.from('certifications').select('joueur_id, niveau, saison').eq('statut', 'validé').in('joueur_id', ids)
+    const map = {}
+    data?.forEach(c => { map[c.joueur_id] = c })
+    setCertifMap(map)
   }
 
   const chargerInteractions = async (u, joueurs) => {
@@ -296,10 +309,9 @@ function Feed() {
   }
 
   const refresh = async () => {
-    // Recharge aussi la liste des joueurs pour refléter la suppression de clip_url
     const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
-    await chargerInteractions(user, data || [])
+    await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
   }
 
   const interactions = { likes: likedIds, favoris: favoriIds, likeCounts, commentCounts, comments: allComments }
@@ -403,6 +415,7 @@ function Feed() {
                   onOpenProfile={setJoueurModal}
                   onDeleteVideo={refresh}
                   st={st}
+                  certif={certifMap[j.id] || null}
                 />
               ))}
           </div>
@@ -422,6 +435,7 @@ function Feed() {
                   onOpenProfile={setJoueurModal}
                   onDeleteVideo={refresh}
                   st={st}
+                  certif={certifMap[j.id] || null}
                 />
               ))}
           </div>
@@ -434,7 +448,13 @@ function Feed() {
                 <div key={j.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer' }} onClick={() => setJoueurModal(j)}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                     <Avatar person={j} size={44} />
-                    <div><p style={{ fontWeight: 700, fontSize: '15px', margin: 0 }}>{j.prenom} {j.nom}</p><p style={{ color: '#4ade80', fontSize: '12px', margin: '2px 0 0' }}>{j.poste}</p></div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <p style={{ fontWeight: 700, fontSize: '15px', margin: 0 }}>{j.prenom} {j.nom}</p>
+                        {certifMap[j.id] && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>⭐ Certifié {certifMap[j.id].niveau}</span>}
+                      </div>
+                      <p style={{ color: '#4ade80', fontSize: '12px', margin: '2px 0 0' }}>{j.poste}</p>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
                     {j.categorie && <span style={st.stat}>{j.categorie}</span>}
@@ -463,7 +483,13 @@ function Feed() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <Avatar person={joueurModal} size={56} border="2px solid #4ade8060" />
-                <div><h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueurModal.prenom} {joueurModal.nom}</h2><p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueurModal.poste} {joueurModal.categorie ? `· ${joueurModal.categorie}` : ''}</p></div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueurModal.prenom} {joueurModal.nom}</h2>
+                    {certifMap[joueurModal.id] && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>⭐ Certifié {certifMap[joueurModal.id].niveau} {certifMap[joueurModal.id].saison}</span>}
+                  </div>
+                  <p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueurModal.poste} {joueurModal.categorie ? `· ${joueurModal.categorie}` : ''}</p>
+                </div>
               </div>
               <button onClick={() => setJoueurModal(null)} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
