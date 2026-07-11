@@ -136,13 +136,24 @@ export default function DashboardClub() {
   // Régions disponibles dérivées des joueurs chargés (dynamique)
   const regionsDisponibles = ["Toutes", ...Array.from(new Set(joueurs.map(j => j.region).filter(Boolean))).sort()];
 
+  const CARACTERISTIQUES_PAR_POSTE = {
+    Gardien:   ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu', 'Anticipation', 'Relance longue', 'Commandement défensif', 'Détente', 'Sang-froid'],
+    Défenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
+    Milieu:    ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
+  };
+
+  const stylesDisponibles = poste !== "Tous" && CARACTERISTIQUES_PAR_POSTE[poste]
+    ? ["Tous", ...CARACTERISTIQUES_PAR_POSTE[poste]]
+    : ["Tous"];
+
   useEffect(() => {
     let result = [...joueurs];
     if (poste !== "Tous") result = result.filter(j => j.poste === poste);
     if (categorie !== "Toutes") result = result.filter(j => j.categorie === categorie);
     if (pied !== "Tous") result = result.filter(j => j.pied === pied);
     if (region !== "Toutes") result = result.filter(j => j.region === region);
-    if (styleDeJeu !== "Tous") result = result.filter(j => j.style_de_jeu === styleDeJeu);
+    if (styleDeJeu !== "Tous") result = result.filter(j => (j.points_forts || '').toLowerCase().includes(styleDeJeu.toLowerCase()));
     if (ville) {
       const v = ville.toLowerCase();
       result = result.filter(j => (j.ville && j.ville.toLowerCase().includes(v)) || (j.club && j.club.toLowerCase().includes(v)));
@@ -603,7 +614,7 @@ export default function DashboardClub() {
             {/* Filtre poste — pills avec icônes */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "1rem", flexWrap: "wrap" }}>
               {POSTE_PILLS.map(p => (
-                <button key={p.val} onClick={() => setPoste(p.val)}
+                <button key={p.val} onClick={() => { setPoste(p.val); setStyleDeJeu("Tous"); }}
                   style={{ padding: "7px 14px", borderRadius: "20px", border: poste === p.val ? "none" : "1px solid #333", background: poste === p.val ? posteColor(p.val === "Tous" ? "" : p.val).text : "transparent", color: poste === p.val ? "#000" : "#aaa", fontWeight: poste === p.val ? 700 : 400, cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "5px" }}>
                   <span>{p.icon}</span> {p.label}
                 </button>
@@ -629,12 +640,14 @@ export default function DashboardClub() {
                   {regionsDisponibles.map(r => <option key={r}>{r}</option>)}
                 </select>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={st.filterLabel}>Style de jeu</label>
-                <select value={styleDeJeu} onChange={e => setStyleDeJeu(e.target.value)} style={st.select}>
-                  {["Tous", "Dos au jeu", "Technique / Dribbleur", "Physique / Aérien", "Vitesse / Percussion", "Créateur / Vision", "Box-to-box", "Renard des surfaces", "Défensif / Récupérateur", "Meneur / Leadership", "Polyvalent"].map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
+              {poste !== "Tous" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={st.filterLabel}>Style de jeu</label>
+                  <select value={styleDeJeu} onChange={e => setStyleDeJeu(e.target.value)} style={st.select}>
+                    {stylesDisponibles.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Ville</label>
                 <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={st.searchInput} />
