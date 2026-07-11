@@ -17,6 +17,10 @@ function DashboardCoach() {
   const [commentaires, setCommentaires] = useState({})
   const [validating, setValidating] = useState({})
 
+  // Clubs / Agents
+  const [recruteurs, setRecruteurs] = useState([])
+  const [recruteurModal, setRecruteurModal] = useState(null)
+
   useEffect(() => {
     init()
   }, [])
@@ -24,7 +28,7 @@ function DashboardCoach() {
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) setCoachId(user.id)
-    await Promise.all([getDemandes(), getCertifications()])
+    await Promise.all([getDemandes(), getCertifications(), getRecruteurs()])
   }
 
   const getDemandes = async () => {
@@ -34,6 +38,15 @@ function DashboardCoach() {
       .order('created_at', { ascending: false })
     if (!error) setDemandes(data)
     setLoading(false)
+  }
+
+  const getRecruteurs = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, prenom, nom, email, club, region, type_recruteur, description, recherche_profil, avatar_url, plan')
+      .eq('plan', 'recruteur')
+      .order('created_at', { ascending: false })
+    if (data) setRecruteurs(data)
   }
 
   const getCertifications = async () => {
@@ -142,6 +155,23 @@ function DashboardCoach() {
   const enAttente = demandes.filter(d => d.statut === 'en_attente')
   const analysees = demandes.filter(d => d.statut === 'analyse')
 
+  // Grouper les demandes par joueur
+  const demandesParJoueur = demandes.reduce((acc, d) => {
+    const id = d.profiles?.id || 'inconnu'
+    if (!acc[id]) acc[id] = { profil: d.profiles, demandes: [] }
+    acc[id].demandes.push(d)
+    return acc
+  }, {})
+  const joueursAvecDemandes = Object.values(demandesParJoueur)
+    .sort((a, b) => {
+      const aEnAttente = a.demandes.filter(d => d.statut === 'en_attente').length
+      const bEnAttente = b.demandes.filter(d => d.statut === 'en_attente').length
+      return bEnAttente - aEnAttente // Priorité aux joueurs avec des demandes en attente
+    })
+
+  const [joueursOuverts, setJoueursOuverts] = useState({})
+  const toggleJoueur = (id) => setJoueursOuverts(prev => ({ ...prev, [id]: !prev[id] }))
+
   if (loading && certifLoading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#4ade80', fontFamily: 'sans-serif' }}>Chargement...</p>
@@ -208,6 +238,7 @@ function DashboardCoach() {
           {[
             { key: 'analyses', label: '🎬 Demandes d\'analyse', count: enAttente.length },
             { key: 'certifications', label: '⭐ Certifications', count: certifsEnAttente.length },
+            { key: 'recruteurs', label: '🏢 Clubs / Agents', count: 0 },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveSection(tab.key)}
               style={{
@@ -239,79 +270,91 @@ function DashboardCoach() {
                 <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {demandes.map(demande => {
-                  const videoUrl = getVideoUrl(demande)
-                  const isSending = sending[demande.id]
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {joueursAvecDemandes.map(({ profil, demandes: demandesJoueur }) => {
+                  const joueurId = profil?.id || 'inconnu'
+                  const ouvert = joueursOuverts[joueurId]
+                  const nbAttente = demandesJoueur.filter(d => d.statut === 'en_attente').length
+                  const nbAnalysees = demandesJoueur.filter(d => d.statut === 'analyse').length
+                  const initiales = `${(profil?.prenom || '?')[0]}${(profil?.nom || '?')[0]}`
                   return (
-                    <div key={demande.id} style={{ background: '#111', border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b30' : '#222'}`, borderRadius: '12px', padding: '1.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                        <div>
-                          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px', margin: 0 }}>{demande.titre}</h3>
-                          <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0' }}>
-                            {demande.profiles?.prenom} {demande.profiles?.nom}
-                            <span style={{ color: '#555', marginLeft: '6px' }}>— {demande.profiles?.email}</span>
-                          </p>
+                    <div key={joueurId} style={{ background: '#111', border: `1px solid ${nbAttente > 0 ? '#f59e0b30' : '#222'}`, borderRadius: '14px', overflow: 'hidden' }}>
+                      {/* En-tête joueur (toujours visible) */}
+                      <div onClick={() => toggleJoueur(joueurId)}
+                        style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', userSelect: 'none' }}>
+                        <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+                          {initiales}
                         </div>
-                        <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '12px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                          {getStatutLabel(demande.statut)}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', marginBottom: '2px', margin: 0 }}>Poste</p>
-                          <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{demande.poste}</p>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{profil?.prenom} {profil?.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profil?.email}</p>
                         </div>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', marginBottom: '2px', margin: 0 }}>Plan</p>
-                          <p style={{ fontSize: '13px', fontWeight: '600', color: '#4ade80', textTransform: 'capitalize', margin: '4px 0 0' }}>{demande.profiles?.plan}</p>
-                        </div>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', marginBottom: '2px', margin: 0 }}>Date</p>
-                          <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {nbAttente > 0 && <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>⏳ {nbAttente} en attente</span>}
+                          {nbAnalysees > 0 && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</span>}
+                          <span style={{ color: '#444', fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
                         </div>
                       </div>
 
-                      {demande.description && (
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', marginBottom: '4px', margin: 0 }}>Ce que le joueur veut analyser</p>
-                          <p style={{ fontSize: '13px', color: '#aaa', margin: '4px 0 0' }}>{demande.description}</p>
-                        </div>
-                      )}
+                      {/* Demandes du joueur (dépliable) */}
+                      {ouvert && (
+                        <div style={{ borderTop: '1px solid #1a1a1a', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {demandesJoueur.map(demande => {
+                            const videoUrl = getVideoUrl(demande)
+                            const isSending = sending[demande.id]
+                            return (
+                              <div key={demande.id} style={{ background: '#0d0d0d', border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b20' : '#1a1a1a'}`, borderRadius: '10px', padding: '1.25rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                  <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{demande.titre}</h3>
+                                  <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                                    {getStatutLabel(demande.statut)}
+                                  </span>
+                                </div>
 
-                      {videoUrl ? (
-                        <div style={{ marginBottom: '1rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', marginBottom: '8px', margin: '0 0 8px' }}>Vidéo du joueur</p>
-                          {isVeo(videoUrl) || isYoutube(videoUrl) ? (
-                            <a href={videoUrl} target="_blank" rel="noreferrer"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
-                              🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
-                            </a>
-                          ) : (
-                            <div>
-                              <video
-                                src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl}
-                                controls
-                                style={{ width: '100%', maxHeight: '300px', borderRadius: '8px', background: '#000', marginBottom: '8px' }}
-                              />
-                              <a href={videoUrl} target="_blank" rel="noreferrer"
-                                style={{ display: 'inline-block', color: '#4ade80', fontSize: '12px', textDecoration: 'none' }}>
-                                🔗 Ouvrir dans un nouvel onglet
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                          <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucune vidéo fournie par le joueur</p>
-                        </div>
-                      )}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Poste</p>
+                                    <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{demande.poste}</p>
+                                  </div>
+                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Plan</p>
+                                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#4ade80', textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
+                                  </div>
+                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Date</p>
+                                    <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                                  </div>
+                                </div>
 
-                      {demande.statut === 'en_attente' && (
-                        <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem', marginTop: '4px' }}>
-                          <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px', margin: '0 0 10px' }}>
-                            📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
+                                {demande.description && (
+                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Ce que le joueur veut analyser</p>
+                                    <p style={{ fontSize: '13px', color: '#aaa', margin: '4px 0 0' }}>{demande.description}</p>
+                                  </div>
+                                )}
+
+                                {videoUrl ? (
+                                  <div style={{ marginBottom: '1rem' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Vidéo</p>
+                                    {isVeo(videoUrl) || isYoutube(videoUrl) ? (
+                                      <a href={videoUrl} target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
+                                        🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
+                                      </a>
+                                    ) : (
+                                      <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: '#000' }} />
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                    <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucune vidéo fournie</p>
+                                  </div>
+                                )}
+
+                                {demande.statut === 'en_attente' && (
+                                  <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
+                                    <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+                                      📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
                           </p>
                           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                             <input
@@ -339,6 +382,11 @@ function DashboardCoach() {
                           </a>
                         </div>
                       )}
+                    </div>
+                              )
+                            })}
+                          </div>
+                        )}
                     </div>
                   )
                 })}
@@ -495,7 +543,111 @@ function DashboardCoach() {
             )}
           </>
         )}
+
+        {/* ===== SECTION CLUBS / AGENTS ===== */}
+        {activeSection === 'recruteurs' && (
+          <>
+            {recruteurs.length === 0 ? (
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏢</p>
+                <p style={{ color: '#666' }}>Aucun recruteur inscrit pour le moment</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {recruteurs.map(r => {
+                  const initiales = `${(r.prenom || '?')[0]}${(r.nom || '?')[0]}`
+                  return (
+                    <div key={r.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {/* Avatar */}
+                      {r.avatar_url ? (
+                        <img src={r.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>
+                          {initiales}
+                        </div>
+                      )}
+                      {/* Infos */}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{r.prenom} {r.nom}</p>
+                        <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
+                          {r.type_recruteur || 'Recruteur'}{r.club ? ` — ${r.club}` : ''}{r.region ? ` · ${r.region}` : ''}
+                        </p>
+                      </div>
+                      {/* Bouton profil */}
+                      <button onClick={() => setRecruteurModal(r)}
+                        style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        👤 Voir le profil
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
+
+      {/* MODAL PROFIL RECRUTEUR */}
+      {recruteurModal && (
+        <div onClick={() => setRecruteurModal(null)} style={{ position: 'fixed', inset: 0, background: '#000000bb', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
+              {recruteurModal.avatar_url ? (
+                <img src={recruteurModal.avatar_url} alt="" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '20px' }}>
+                  {`${(recruteurModal.prenom || '?')[0]}${(recruteurModal.nom || '?')[0]}`}
+                </div>
+              )}
+              <div>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#60a5fa', fontWeight: 600 }}>{recruteurModal.type_recruteur || 'Recruteur'}</p>
+              </div>
+            </div>
+
+            {/* Infos */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1rem' }}>
+              {recruteurModal.club && (
+                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Club / Structure</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.club}</p>
+                </div>
+              )}
+              {recruteurModal.region && (
+                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Région</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.region}</p>
+                </div>
+              )}
+            </div>
+
+            {recruteurModal.description && (
+              <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '11px', color: '#555', margin: '0 0 6px' }}>À propos</p>
+                <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.description}</p>
+              </div>
+            )}
+
+            {recruteurModal.recherche_profil && (
+              <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa30', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '11px', color: '#60a5fa', margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
+                <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.recherche_profil}</p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '1rem' }}>
+              <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>📧 {recruteurModal.email}</p>
+            </div>
+
+            <button onClick={() => setRecruteurModal(null)}
+              style={{ width: '100%', marginTop: '1.5rem', background: '#1a1a1a', color: '#aaa', border: '1px solid #333', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
