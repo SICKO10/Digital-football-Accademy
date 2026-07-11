@@ -259,25 +259,17 @@ function Feed() {
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
   const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
-  const STYLES = ['Tous', 'Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent']
 
-  // Correspondances entre les filtres et les mots-clés dans points_forts
-  const STYLE_ALIASES = {
-    'Dos au jeu':              ['Dos au jeu', 'Jeu dos au but'],
-    'Technique / Dribbleur':   ['Technique / Dribbleur', 'Dribble', 'Technique', 'Jeu au pied', 'Jeu propre'],
-    'Physique / Aérien':       ['Physique / Aérien', 'Impact physique', 'Jeu aérien', 'Sortie aérienne', 'Combativité', 'Détente'],
-    'Vitesse / Percussion':    ['Vitesse / Percussion', 'Vitesse'],
-    'Créateur / Vision':       ['Créateur / Vision', 'Vision du jeu', 'Créativité', 'Jeu entre les lignes', 'Passes longues', 'Passes courtes', 'Relance longue', 'Relance courte', 'Lecture du jeu', 'Anticipation'],
-    'Box-to-box':              ['Box-to-box'],
-    'Renard des surfaces':     ['Renard des surfaces', 'Finition', 'Appels de balle', 'Mouvement sans ballon'],
-    'Défensif / Récupérateur': ['Défensif / Récupérateur', 'Récupération', 'Récupération de balle', 'Marquage', 'Placement', 'Anticipation', '1 contre 1', 'Sur sa ligne', 'Sang-froid', 'Gestion infériorité'],
-    'Meneur / Leadership':     ['Meneur / Leadership', 'Leadership', 'Leadership offensif', 'Commandement défensif'],
-    'Centreur':                ['Centreur', 'Centre', 'Corner', 'CPA'],
-    'Buteur / Finisseur':      ['Buteur / Finisseur', 'Finition', 'Frappe de loin', 'Renard des surfaces', 'Penalties'],
-    'Pressing intense':        ['Pressing intense', 'Pressing'],
-    'Ailier percutant':        ['Ailier percutant', 'Duel 1 contre 1', 'Profondeur', 'Décalage'],
-    'Polyvalent':              ['Polyvalent'],
+  const CARACTERISTIQUES_PAR_POSTE = {
+    Gardien:   ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu', 'Anticipation', 'Relance longue', 'Commandement défensif', 'Détente', 'Sang-froid'],
+    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
+    Milieu:    ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
   }
+
+  const stylesDisponibles = filtrePoste !== 'Tous' && CARACTERISTIQUES_PAR_POSTE[filtrePoste]
+    ? ['Tous', ...CARACTERISTIQUES_PAR_POSTE[filtrePoste]]
+    : ['Tous']
 
   useEffect(() => { init() }, [])
 
@@ -342,11 +334,8 @@ function Feed() {
     if (filtreCategorie !== 'Toutes' && j.categorie !== filtreCategorie) return false
     if (filtreRegion !== 'Toutes' && j.region !== filtreRegion) return false
     if (filtreStyle !== 'Tous') {
-      const styleMatch = j.style_de_jeu === filtreStyle
-      const aliases = STYLE_ALIASES[filtreStyle] || [filtreStyle]
       const pf = j.points_forts || ''
-      const pointsFortsMatch = aliases.some(alias => pf.toLowerCase().includes(alias.toLowerCase()))
-      if (!styleMatch && !pointsFortsMatch) return false
+      if (!pf.toLowerCase().includes(filtreStyle.toLowerCase())) return false
     }
     return true
   }
@@ -418,14 +407,16 @@ function Feed() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={filtrePoste} onChange={e => setFiltrePoste(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>{POSTES.map(p => <option key={p}>{p}</option>)}</select>
+          <select value={filtrePoste} onChange={e => { setFiltrePoste(e.target.value); setFiltreStyle('Tous') }} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>{POSTES.map(p => <option key={p}>{p}</option>)}</select>
           <select value={filtreCategorie} onChange={e => setFiltreCategorie(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
           <select value={filtreRegion} onChange={e => setFiltreRegion(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
             {regionsDisponibles.map(r => <option key={r}>{r}</option>)}
           </select>
-          <select value={filtreStyle} onChange={e => setFiltreStyle(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
-            {STYLES.map(s => <option key={s}>{s}</option>)}
-          </select>
+          {filtrePoste !== 'Tous' && (
+            <select value={filtreStyle} onChange={e => setFiltreStyle(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 12px', fontSize: '13px' }}>
+              {stylesDisponibles.map(s => <option key={s}>{s}</option>)}
+            </select>
+          )}
           {(filtrePoste !== 'Tous' || filtreCategorie !== 'Toutes' || filtreRegion !== 'Toutes' || filtreStyle !== 'Tous') && (
             <button onClick={() => { setFiltrePoste('Tous'); setFiltreCategorie('Toutes'); setFiltreRegion('Toutes'); setFiltreStyle('Tous') }} style={{ background: 'transparent', border: '1px solid #333', color: '#666', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>✕ Réinitialiser</button>
           )}
