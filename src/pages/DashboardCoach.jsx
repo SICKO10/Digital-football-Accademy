@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { ModalNotation, BadgeNote } from '../components/Notation'
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -20,6 +21,9 @@ function DashboardCoach() {
   // Clubs / Agents
   const [recruteurs, setRecruteurs] = useState([])
   const [recruteurModal, setRecruteurModal] = useState(null)
+
+  // Notation
+  const [notationCible, setNotationCible] = useState(null)
 
   useEffect(() => {
     init()
@@ -101,7 +105,7 @@ function DashboardCoach() {
 
   const envoyerAnalyse = async (demandeId, joueurId) => {
     const loomUrl = loomUrls[demandeId]
-    if (!loomUrl) return alert('Colle le lien Loom avant de valider')
+    if (!loomUrl) return alert('Colle le lien vidéo avant de valider')
 
     setSending(prev => ({ ...prev, [demandeId]: true }))
 
@@ -358,7 +362,7 @@ function DashboardCoach() {
                           </p>
                           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                             <input
-                              placeholder="Colle ton lien Loom ici..."
+                              placeholder="Colle ton lien YouTube ou Loom ici..."
                               value={loomUrls[demande.id] || ''}
                               onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
                               style={{ flex: 1, background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}
@@ -376,10 +380,16 @@ function DashboardCoach() {
                       {demande.statut === 'analyse' && demande.loom_url && (
                         <div style={{ background: '#4ade8010', border: '1px solid #4ade8033', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
                           <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
-                          <a href={demande.loom_url} target="_blank" rel="noreferrer"
-                            style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            🎥 <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
-                          </a>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <a href={demande.loom_url} target="_blank" rel="noreferrer"
+                              style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
+                            </a>
+                            <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
+                              style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                              ⭐ Noter {profil?.prenom || 'le joueur'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -647,6 +657,15 @@ function DashboardCoach() {
             </button>
           </div>
         </div>
+      )}
+
+      {notationCible && (
+        <ModalNotation
+          auteurId={coachId}
+          cible={notationCible}
+          onClose={() => setNotationCible(null)}
+          onDone={() => setNotationCible(null)}
+        />
       )}
     </div>
   )

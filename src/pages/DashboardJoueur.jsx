@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { FifaCardGenerator } from '../components/FifaCard'
+import { ModalNotation, BadgeNote } from '../components/Notation'
 
 const STRIPE_LINKS = {
   starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
@@ -127,6 +128,7 @@ function DashboardJoueur() {
   const [convCoach, setConvCoach] = useState([])
   const [coachUnread, setCoachUnread] = useState(0)
   const [recruteurModal, setRecruteurModal] = useState(null)
+  const [notationCible, setNotationCible] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
@@ -1304,11 +1306,19 @@ function DashboardJoueur() {
                       </span>
                     </div>
                     <p style={{ fontSize: '12px', color: '#444', marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
-                    {demande.loom_url && (
-                      <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                        Voir l'analyse
-                      </a>
-                    )}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {demande.loom_url && (
+                        <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+                          Voir l'analyse
+                        </a>
+                      )}
+                      {demande.statut === 'analyse' && (
+                        <button onClick={() => setNotationCible({ id: demande.coach_id || coaches[0]?.id, prenom: 'Coach', nom: '', plan: 'coach' })}
+                          style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                          ⭐ Noter le coach
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1626,7 +1636,10 @@ function DashboardJoueur() {
                 }
                 <div>
                   <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
-                  {recruteurModal.type_recruteur && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{recruteurModal.type_recruteur}</span>}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {recruteurModal.type_recruteur && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{recruteurModal.type_recruteur}</span>}
+                    <BadgeNote cibleId={recruteurModal.id} />
+                  </div>
                 </div>
               </div>
               <button onClick={() => setRecruteurModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -1654,8 +1667,24 @@ function DashboardJoueur() {
             {!recruteurModal.description && !recruteurModal.recherche_profil && (
               <p style={{ fontSize: '13px', color: '#444', textAlign: 'center', padding: '1rem 0' }}>Ce recruteur n'a pas encore complété son profil.</p>
             )}
+
+            <button
+              onClick={() => { setNotationCible(recruteurModal); setRecruteurModal(null) }}
+              style={{ width: '100%', marginTop: '1rem', background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              ⭐ Noter ce recruteur
+            </button>
           </div>
         </div>
+      )}
+
+      {/* Modal notation */}
+      {notationCible && (
+        <ModalNotation
+          auteurId={userId}
+          cible={notationCible}
+          onClose={() => setNotationCible(null)}
+          onDone={() => setNotationCible(null)}
+        />
       )}
     </div>
   )

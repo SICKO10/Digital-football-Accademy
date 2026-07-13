@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
+import { ModalNotation, BadgeNote } from '../components/Notation'
 
 const detectVideoType = (url) => {
   if (!url) return null
@@ -247,6 +248,7 @@ function Feed() {
   const [acces, setAcces] = useState(null)
   const [vue, setVue] = useState('videos')
   const [joueurModal, setJoueurModal] = useState(null)
+  const [notationCible, setNotationCible] = useState(null)
   const [filtrePoste, setFiltrePoste] = useState('Tous')
   const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
   const [filtreRegion, setFiltreRegion] = useState('Toutes')
@@ -541,10 +543,21 @@ function Feed() {
                 <button onClick={async () => { await (likedIds.includes(joueurModal.id) ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id) : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id })); refresh() }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
                 <button onClick={async () => { await (favoriIds.includes(joueurModal.id) ? supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', joueurModal.id) : supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: joueurModal.id })); refresh() }} style={{ background: favoriIds.includes(joueurModal.id) ? '#f59e0b20' : '#1a1a1a', border: `1px solid ${favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#333'}`, color: favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{favoriIds.includes(joueurModal.id) ? '⭐ Favori' : '☆ Favoris'}</button>
                 {isRecruteur && (<button onClick={() => navigate('/club')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Scout Center →</button>)}
+                <button onClick={() => { setNotationCible(joueurModal); setJoueurModal(null) }} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>⭐ Noter</button>
               </div>
             )}
+            <div style={{ marginTop: '12px' }}><BadgeNote cibleId={joueurModal?.id} /></div>
           </div>
         </div>
+      )}
+
+      {notationCible && (
+        <ModalNotation
+          auteurId={user?.id}
+          cible={notationCible}
+          onClose={() => setNotationCible(null)}
+          onDone={() => setNotationCible(null)}
+        />
       )}
 
       <footer style={{ borderTop: '1px solid #1a1a1a', padding: '2rem', textAlign: 'center', marginTop: '3rem' }}>
