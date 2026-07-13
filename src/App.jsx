@@ -6,6 +6,7 @@ import RegisterRecruteur from './pages/RegisterRecruteur'
 import DashboardJoueur from './pages/DashboardJoueur'
 import DashboardCoach from './pages/DashboardCoach'
 import DashboardClub from './pages/DashboardClub'
+import DashboardEducateur from './pages/DashboardEducateur'
 import Upload from './pages/Upload'
 import Feed from './pages/Feed'
 import UploadClip from './pages/UploadClip'
@@ -26,6 +27,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardJoueur />} />
         <Route path="/coach" element={<DashboardCoach />} />
         <Route path="/club" element={<DashboardClub />} />
+        <Route path="/educateur" element={<DashboardEducateur />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/upload-clip" element={<UploadClip />} />
