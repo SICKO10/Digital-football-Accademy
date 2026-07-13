@@ -147,6 +147,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <p onClick={() => onOpenProfile(j)} style={{ margin: 0, fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>{j.prenom} {j.nom}</p>
             {certif && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>⭐ Certifié {certif.niveau}</span>}
+            {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>🪪 FFF</span>}
           </div>
           <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ''}{j.club ? ` · ${j.club}` : ''}</p>
         </div>
@@ -473,6 +474,7 @@ function Feed() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <p style={{ fontWeight: 700, fontSize: '15px', margin: 0 }}>{j.prenom} {j.nom}</p>
                         {certifMap[j.id] && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>⭐ Certifié {certifMap[j.id].niveau}</span>}
+                        {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>🪪 FFF</span>}
                       </div>
                       <p style={{ color: '#4ade80', fontSize: '12px', margin: '2px 0 0' }}>{j.poste}</p>
                     </div>
@@ -507,7 +509,10 @@ function Feed() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueurModal.prenom} {joueurModal.nom}</h2>
-                    {certifMap[joueurModal.id] && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>⭐ Certifié {certifMap[joueurModal.id].niveau} {certifMap[joueurModal.id].saison}</span>}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                      {certifMap[joueurModal.id] && <span style={{ background: '#fbbf2420', border: '1px solid #fbbf2460', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>⭐ Certifié {certifMap[joueurModal.id].niveau} {certifMap[joueurModal.id].saison}</span>}
+                      {joueurModal.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>🪪 Licencié FFF · {joueurModal.numero_licence}</span>}
+                    </div>
                   </div>
                   <p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueurModal.poste} {joueurModal.categorie ? `· ${joueurModal.categorie}` : ''}</p>
                 </div>

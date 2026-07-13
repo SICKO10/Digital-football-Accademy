@@ -154,7 +154,7 @@ function DashboardJoueur() {
     setProfil(data)
     setStats({
       club: data?.club || '', niveau_equipe: data?.niveau_equipe || '', categorie: data?.categorie || '',
-      region: data?.region || '', pied: data?.pied || 'droit', matchs_officiel: data?.matchs_officiel || 0,
+      region: data?.region || '', numero_licence: data?.numero_licence || '', pied: data?.pied || 'droit', matchs_officiel: data?.matchs_officiel || 0,
       matchs_amical: data?.matchs_amical || 0, minutes_jouees: data?.minutes_jouees || 0,
       buts_pied_droit: data?.buts_pied_droit || 0, buts_pied_gauche: data?.buts_pied_gauche || 0,
       buts_tete: data?.buts_tete || 0, buts_total: data?.buts_total || 0,
@@ -767,6 +767,11 @@ function DashboardJoueur() {
                   <span style={{ background: isPro ? '#4ade80' : '#3b82f6', color: '#000', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
                     {profil?.plan}
                   </span>
+                  {profil?.numero_licence && (
+                    <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px', flexShrink: 0 }}>
+                      🪪 Licencié FFF
+                    </span>
+                  )}
                 </div>
                 <p style={{ color: '#555', fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
@@ -1010,6 +1015,10 @@ function DashboardJoueur() {
                   </select>
                 </div>
                 <div><label style={labelStyle}>Région</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ile-de-France" style={inputStyle} /></div>
+                <div>
+                  <label style={labelStyle}>Numéro de licence FFF</label>
+                  <input value={stats.numero_licence || ''} onChange={e => setStats({ ...stats, numero_licence: e.target.value })} placeholder="Ex: 123456789" style={inputStyle} />
+                </div>
                 <div>
                   <label style={labelStyle}>Pied fort</label>
                   <select value={stats.pied} onChange={e => setStats({ ...stats, pied: e.target.value })} style={inputStyle}>
