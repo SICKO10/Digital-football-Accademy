@@ -14,6 +14,10 @@ export default function Upload() {
   const [success, setSuccess] = useState(false)
   const [erreur, setErreur] = useState('')
   const [description, setDescription] = useState('')
+  const [numeroMaillot, setNumeroMaillot] = useState('')
+  const [couleurMaillot, setCouleurMaillot] = useState('')
+  const [tempsJeu, setTempsJeu] = useState('')
+  const [posteMatch, setPosteMatch] = useState('')
 
   useEffect(() => { checkAuth() }, [])
 
@@ -52,11 +56,18 @@ export default function Upload() {
       }).eq('id', user.id)
       if (e1) throw e1
 
+      const descriptionComplete = [
+        numeroMaillot ? `🎽 Maillot n°${numeroMaillot}${couleurMaillot ? ` (${couleurMaillot})` : ''}` : '',
+        tempsJeu ? `⏱ Temps de jeu : ${tempsJeu}` : '',
+        posteMatch ? `⚽ Poste joué : ${posteMatch}` : '',
+        description.trim() ? `📝 ${description.trim()}` : '',
+      ].filter(Boolean).join('\n')
+
       const { error: e2 } = await supabase.from('demandes').insert({
         joueur_id: user.id,
         titre: `Analyse vidéo — ${profil.prenom} ${profil.nom}`,
         poste: profil.poste || '',
-        description: description.trim() || '',
+        description: descriptionComplete,
         video_url: lien.trim(),
         statut: 'en_attente',
       })
@@ -123,11 +134,17 @@ export default function Upload() {
           }).eq('id', user.id)
           if (e1) throw e1
 
+          const descriptionComplete = [
+            numeroMaillot ? `🎽 Maillot n°${numeroMaillot}${couleurMaillot ? ` (${couleurMaillot})` : ''}` : '',
+            posteMatch ? `⚽ Poste joué : ${posteMatch}` : '',
+            description.trim() ? `📝 ${description.trim()}` : '',
+          ].filter(Boolean).join('\n')
+
           const { error: e2 } = await supabase.from('demandes').insert({
             joueur_id: user.id,
             titre: `Analyse vidéo — ${profil.prenom} ${profil.nom}`,
             poste: profil.poste || '',
-            description: description.trim() || '',
+            description: descriptionComplete,
             video_url: videoUrl,
             statut: 'en_attente',
           })
@@ -337,12 +354,57 @@ export default function Upload() {
             )}
 
             <div style={s.box}>
-              <label style={s.label}>Description du clip (optionnel)</label>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', margin: '0 0 14px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                🎽 Aide le coach à te retrouver dans la vidéo
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={s.label}>Numéro de maillot *</label>
+                  <input
+                    style={s.input}
+                    placeholder="Ex: 10"
+                    type="number"
+                    min="1" max="99"
+                    value={numeroMaillot}
+                    onChange={e => setNumeroMaillot(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={s.label}>Couleur du maillot *</label>
+                  <input
+                    style={s.input}
+                    placeholder="Ex: Rouge, Blanc..."
+                    value={couleurMaillot}
+                    onChange={e => setCouleurMaillot(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={s.label}>Temps de jeu *</label>
+                  <input
+                    style={s.input}
+                    placeholder="Ex: Titulaire, sorti 65ème"
+                    value={tempsJeu}
+                    onChange={e => setTempsJeu(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={s.label}>Poste joué *</label>
+                  <select value={posteMatch} onChange={e => setPosteMatch(e.target.value)} style={s.input}>
+                    <option value="">— Poste —</option>
+                    {['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <label style={s.label}>Notes pour le coach (optionnel)</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Ex: Match contre Lyon U18, je joue milieu offensif. Regardez mon appel de balle à la 3ème minute..."
-                style={{ ...s.input, minHeight: '100px', resize: 'vertical', fontFamily: 'inherit' }}
+                placeholder="Ex: Match contre Lyon U18. Regardez mon appel de balle à la 12ème minute et mon pressing à la 34ème..."
+                style={{ ...s.input, minHeight: '90px', resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
 
@@ -353,8 +415,8 @@ export default function Upload() {
             )}
 
             <button
-              style={s.btn(mode === 'lien' ? !lien.trim() || uploading : !file || uploading)}
-              disabled={mode === 'lien' ? !lien.trim() || uploading : !file || uploading}
+              style={s.btn(mode === 'lien' ? !lien.trim() || uploading || !numeroMaillot || !couleurMaillot || !tempsJeu || !posteMatch : !file || uploading || !numeroMaillot || !couleurMaillot || !tempsJeu || !posteMatch)}
+              disabled={mode === 'lien' ? !lien.trim() || uploading || !numeroMaillot || !couleurMaillot || !tempsJeu || !posteMatch : !file || uploading || !numeroMaillot || !couleurMaillot || !tempsJeu || !posteMatch}
               onClick={mode === 'lien' ? handleSubmitLien : handleUploadFichier}
             >
               {uploading
