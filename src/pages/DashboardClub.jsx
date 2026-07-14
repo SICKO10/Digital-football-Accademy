@@ -111,6 +111,7 @@ export default function DashboardClub() {
   const [valSending, setValSending] = useState(false)
   const [valLicenceUrl, setValLicenceUrl] = useState('')
   const [valLicenceUploading, setValLicenceUploading] = useState(false)
+  const [valFeuillesUploading, setValFeuillesUploading] = useState([false, false, false, false, false])
 
   // Profil recruteur
   const [profilEdit, setProfilEdit] = useState({ prenom: '', nom: '', club: '', region: '', type_recruteur: '', description: '', recherche_profil: '' });
@@ -226,7 +227,7 @@ export default function DashboardClub() {
     await chargerValidations(selectedJoueur.id);
     setValSending(false);
     setShowValidationModal(false);
-    setValNote(0); setValLicence(''); setValFeuilles(['', '', '', '', '']); setValJustif('feuilles'); setValLicenceUrl('');
+    setValNote(0); setValLicence(''); setValFeuilles(['', '', '', '', '']); setValJustif('feuilles'); setValLicenceUrl(''); setValFeuillesUploading([false,false,false,false,false]);
     setToast("Note de saison validée !");
   };
 
@@ -248,6 +249,28 @@ export default function DashboardClub() {
       if (uploadData.secure_url) setValLicenceUrl(uploadData.secure_url);
     } catch (e) { console.error(e); }
     setValLicenceUploading(false);
+  };
+
+  const uploadFeuille = async (file, index) => {
+    if (!file || !recruteurId) return;
+    setValFeuillesUploading(prev => { const a = [...prev]; a[index] = true; return a; });
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: recruteurId }) });
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      formData.append('folder', folder);
+      formData.append('public_id', public_id);
+      formData.append('api_key', api_key);
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.secure_url) {
+        setValFeuilles(prev => { const a = [...prev]; a[index] = uploadData.secure_url; return a; });
+      }
+    } catch (e) { console.error(e); }
+    setValFeuillesUploading(prev => { const a = [...prev]; a[index] = false; return a; });
   };
 
   const isFavori = (joueurId) => favoris.some(f => f.joueur_id === joueurId);
@@ -717,21 +740,37 @@ export default function DashboardClub() {
                 </div>
 
                 {valJustif === 'feuilles' && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "1.25rem" }}>
-                    <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#666" }}>Collez les liens vers vos 5 feuilles de match (Google Drive, Dropbox, etc.)</p>
-                    {valFeuilles.map((url, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "12px", color: "#555", width: "20px", flexShrink: 0 }}>#{i+1}</span>
-                        <input
-                          value={url}
-                          onChange={e => { const arr = [...valFeuilles]; arr[i] = e.target.value; setValFeuilles(arr); }}
-                          placeholder="https://..."
-                          style={{ flex: 1, background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 10px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                        />
-                      </div>
-                    ))}
+                  <div style={{ marginBottom: "1.25rem" }}>
+                    <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#666" }}>Upload tes 5 feuilles de match (photo ou PDF)</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      {valFeuilles.map((url, i) => (
+                        <label key={i} style={{ cursor: "pointer", gridColumn: i === 4 ? "1 / -1" : "auto" }}>
+                          <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#4ade8008" : "#1a1a1a", borderColor: url ? "#4ade8060" : "#2a2a2a", transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                            {valFeuillesUploading[i] ? (
+                              <p style={{ margin: 0, fontSize: "12px", color: "#4ade80" }}>⏳ Upload...</p>
+                            ) : url ? (
+                              <div style={{ width: "100%" }}>
+                                {url.match(/\.(jpg|jpeg|png|webp)$/i)
+                                  ? <img src={url} alt="" style={{ maxHeight: "70px", maxWidth: "100%", borderRadius: "6px", objectFit: "cover" }} />
+                                  : <p style={{ margin: "0 0 4px", fontSize: "20px" }}>📄</p>
+                                }
+                                <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#4ade80", fontWeight: 700 }}>✓ Feuille #{i+1}</p>
+                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#444" }}>Changer</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p style={{ margin: "0 0 4px", fontSize: "20px" }}>📋</p>
+                                <p style={{ margin: 0, fontSize: "11px", color: "#444", fontWeight: 600 }}>Feuille #{i+1}</p>
+                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#333" }}>JPG · PNG · PDF</p>
+                              </div>
+                            )}
+                          </div>
+                          <input type="file" accept="image/*,.pdf" onChange={e => e.target.files[0] && uploadFeuille(e.target.files[0], i)} style={{ display: "none" }} />
+                        </label>
+                      ))}
+                    </div>
                     {valFeuilles.filter(f => f.trim()).length < 5 && (
-                      <p style={{ margin: 0, fontSize: "11px", color: "#f59e0b" }}>⚠️ {5 - valFeuilles.filter(f => f.trim()).length} lien(s) manquant(s)</p>
+                      <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#f59e0b" }}>⚠️ {5 - valFeuilles.filter(f => f.trim()).length} feuille(s) manquante(s)</p>
                     )}
                   </div>
                 )}
@@ -782,8 +821,8 @@ export default function DashboardClub() {
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button
                     onClick={soumettreValidation}
-                    disabled={valSending || valLicenceUploading || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)}
-                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
+                    disabled={valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)}
+                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
                   >{valSending ? "Validation..." : "✅ Valider cette note"}</button>
                   <button onClick={() => setShowValidationModal(false)} style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
                 </div>
