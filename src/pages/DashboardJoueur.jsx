@@ -74,6 +74,11 @@ const IconBadge = () => (
     <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
   </svg>
 )
+const IconBuilding = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/>
+  </svg>
+)
 
 function DashboardJoueur() {
   const navigate = useNavigate()
@@ -129,6 +134,10 @@ function DashboardJoueur() {
   const [coachUnread, setCoachUnread] = useState(0)
   const [recruteurModal, setRecruteurModal] = useState(null)
   const [notationCible, setNotationCible] = useState(null)
+
+  // Clubs
+  const [clubsListe, setClubsListe] = useState([])
+  const [clubsLoading, setClubsLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
@@ -143,6 +152,11 @@ function DashboardJoueur() {
     if (onglet === 'coach' && userId) {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
       setCoachUnread(0)
+    }
+    if (onglet === 'clubs' && clubsListe.length === 0) {
+      setClubsLoading(true)
+      supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur')
+        .then(({ data }) => { setClubsListe(data || []); setClubsLoading(false) })
     }
   }, [onglet, userId])
 
@@ -672,6 +686,7 @@ function DashboardJoueur() {
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach', icon: <IconMic />, badge: coachUnread },
+    { id: 'clubs', label: 'Clubs', icon: <IconBuilding /> },
   ]
 
   return (
@@ -1620,6 +1635,47 @@ function DashboardJoueur() {
             )}
           </div>
         )}
+        {/* ── CLUBS ── */}
+        {onglet === 'clubs' && (
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '6px' }}>🏟️ Clubs & Éducateurs</h1>
+            <p style={{ fontSize: '13px', color: '#555', marginBottom: '24px' }}>Retrouve les clubs, leurs équipes, résultats et classements. Valide ta participation pour noter.</p>
+
+            {clubsLoading && <p style={{ color: '#444', textAlign: 'center' }}>Chargement...</p>}
+
+            {!clubsLoading && clubsListe.length === 0 && (
+              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
+                <p style={{ fontSize: '32px', marginBottom: '8px' }}>🏟️</p>
+                <p style={{ fontSize: '14px', color: '#444' }}>Aucun club référencé pour le moment.</p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {clubsListe.map(edu => (
+                <div key={edu.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                  onClick={() => navigate(`/clubs/${edu.id}`)}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#4ade8040'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+                  {edu.avatar_url
+                    ? <img src={edu.avatar_url} alt="" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
+                    : <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
+                        {(edu.club || edu.prenom || '?')[0].toUpperCase()}
+                      </div>
+                  }
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>
+                      {[edu.niveau_equipe, edu.region].filter(Boolean).join(' · ')}
+                    </p>
+                    {edu.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
+                  </div>
+                  <span style={{ color: '#4ade80', fontSize: '18px', flexShrink: 0 }}>→</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* Modal profil recruteur */}

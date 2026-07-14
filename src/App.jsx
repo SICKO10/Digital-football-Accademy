@@ -15,6 +15,7 @@ import UploadReel from './pages/UploadReel'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import CGU from './pages/CGU'
+import ClubPublic from './pages/ClubPublic'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/cgu" element={<CGU />} />
+        <Route path="/clubs/:id" element={<ClubPublic />} />
       </Routes>
     </Router>
   )

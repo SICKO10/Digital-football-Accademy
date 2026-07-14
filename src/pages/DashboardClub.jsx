@@ -24,11 +24,10 @@ const getCloudinaryThumb = (url) => {
 // Radar chart SVG (pentagon)
 function RadarChart({ j, size = 180 }) {
   const stats = [
-    { label: "Buts",    value: Math.min((j.buts_total || 0) / 20, 1) },
-    { label: "Passes",  value: Math.min((j.passes_decisives || 0) / 15, 1) },
-    { label: "Matchs",  value: Math.min((j.matchs_officiel || 0) / 30, 1) },
-    { label: "Minutes", value: Math.min((j.minutes_jouees || 0) / 2500, 1) },
-    { label: "CS",      value: Math.min((j.cleansheets || 0) / 10, 1) },
+    { label: "Buts",       value: Math.min((j.buts_total || 0) / 20, 1) },
+    { label: "Passes",    value: Math.min((j.passes_decisives || 0) / 15, 1) },
+    { label: "Matchs",   value: Math.min((j.matchs_officiel || 0) / 30, 1) },
+    { label: "Clean Sheet", value: Math.min((j.cleansheets || 0) / 10, 1) },
   ];
   const n = stats.length;
   const cx = size / 2, cy = size / 2, r = size * 0.36;
@@ -99,6 +98,17 @@ export default function DashboardClub() {
   const [modeAffichage, setModeAffichage] = useState("grille");
   const [toast, setToast] = useState(null);
   const [certifications, setCertifications] = useState({}); // { joueur_id: { niveau, saison, statut } }
+
+  // Validation note de saison par le club
+  const [validationsClub, setValidationsClub] = useState([])
+  const [showValidationModal, setShowValidationModal] = useState(false)
+  const [valSaison, setValSaison] = useState('2024-2025')
+  const [valNote, setValNote] = useState(0)
+  const [valHover, setValHover] = useState(0)
+  const [valJustif, setValJustif] = useState('feuilles') // 'feuilles' | 'licence'
+  const [valLicence, setValLicence] = useState('')
+  const [valFeuilles, setValFeuilles] = useState(['', '', '', '', ''])
+  const [valSending, setValSending] = useState(false)
 
   // Profil recruteur
   const [profilEdit, setProfilEdit] = useState({ prenom: '', nom: '', club: '', region: '', type_recruteur: '', description: '', recherche_profil: '' });
@@ -183,6 +193,38 @@ export default function DashboardClub() {
   const chargerFavoris = async (uid) => {
     const { data } = await supabase.from("favoris_recruteur").select("*").eq("user_id", uid).order("created_at", { ascending: false });
     setFavoris(data || []);
+  };
+
+  const chargerValidations = async (joueurId) => {
+    const { data } = await supabase.from("validations_club")
+      .select("*")
+      .eq("joueur_id", joueurId)
+      .eq("club_id", recruteurId)
+      .order("created_at", { ascending: false });
+    setValidationsClub(data || []);
+  };
+
+  const soumettreValidation = async () => {
+    if (!valNote || !valSaison) return;
+    const feuillesRemplies = valFeuilles.filter(f => f.trim() !== '');
+    if (valJustif === 'feuilles' && feuillesRemplies.length < 5) return;
+    if (valJustif === 'licence' && !valLicence.trim()) return;
+    setValSending(true);
+    const payload = {
+      club_id: recruteurId,
+      joueur_id: selectedJoueur.id,
+      saison: valSaison,
+      note: valNote,
+      justif_type: valJustif,
+      numero_licence_justif: valJustif === 'licence' ? valLicence.trim() : null,
+      feuilles_match: valJustif === 'feuilles' ? feuillesRemplies : null,
+    };
+    await supabase.from("validations_club").upsert(payload, { onConflict: 'club_id,joueur_id,saison' });
+    await chargerValidations(selectedJoueur.id);
+    setValSending(false);
+    setShowValidationModal(false);
+    setValNote(0); setValLicence(''); setValFeuilles(['', '', '', '', '']); setValJustif('feuilles');
+    setToast("Note de saison validée !");
   };
 
   const isFavori = (joueurId) => favoris.some(f => f.joueur_id === joueurId);
@@ -392,8 +434,10 @@ export default function DashboardClub() {
   const ouvrirProfilJoueur = async (j) => {
     setSelectedJoueur(j)
     setJoueurParcours([])
+    setValidationsClub([])
     const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false })
     setJoueurParcours(data || [])
+    if (recruteurId) await chargerValidations(j.id)
   }
 
   if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#4ade80" }}>Chargement...</div></div>;
@@ -568,12 +612,131 @@ export default function DashboardClub() {
             </>
           )}
 
-          <div style={{ marginTop: "2rem", display: "flex", gap: "12px" }}>
+          {/* ── Validation note de saison ─────────────────────────────────── */}
+          <div style={{ marginTop: "2rem", background: "#0d1a0d", border: "1px solid #1e3a1e", borderRadius: "14px", padding: "1.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: "#4ade80" }}>✅ Notes de saison validées par votre club</p>
+                <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#555" }}>Prouvez que le joueur a joué pour vous (5 feuilles de match ou numéro de licence)</p>
+              </div>
+              <button
+                onClick={() => { setValSaison('2024-2025'); setValNote(0); setValJustif('feuilles'); setValLicence(''); setValFeuilles(['','','','','']); setShowValidationModal(true); }}
+                style={{ background: "#4ade80", color: "#000", border: "none", padding: "10px 18px", borderRadius: "10px", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+              >+ Valider une note</button>
+            </div>
+
+            {validationsClub.length === 0 ? (
+              <p style={{ margin: "1rem 0 0", fontSize: "13px", color: "#444", textAlign: "center" }}>Aucune note validée pour ce joueur</p>
+            ) : (
+              <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {validationsClub.map(v => (
+                  <div key={v.id} style={{ background: "#111", border: "1px solid #1e2e1e", borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: "14px" }}>Saison {v.saison}</span>
+                      <span style={{ marginLeft: "10px", fontSize: "12px", color: "#555" }}>
+                        {v.justif_type === 'licence' ? `🪪 Licence · ${v.numero_licence_justif}` : `📄 ${(v.feuilles_match || []).length} feuilles`}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "3px" }}>
+                      {[1,2,3,4,5].map(n => (
+                        <span key={n} style={{ fontSize: "18px", opacity: v.note >= n ? 1 : 0.15 }}>⭐</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: "1.5rem", display: "flex", gap: "12px" }}>
             <button style={st.btnPrimary} onClick={() => setMessageModal(j)}>✉️ Contacter ce joueur</button>
             <button style={isFavori(j.id) ? st.favoriBtnActive : st.btnSecondary} onClick={() => toggleFavori(j.id)}>
               {isFavori(j.id) ? "★ Favori" : "☆ Ajouter aux favoris"}
             </button>
           </div>
+
+          {/* ── Modal validation ──────────────────────────────────────────── */}
+          {showValidationModal && (
+            <div onClick={() => setShowValidationModal(false)} style={{ position: "fixed", inset: 0, background: "#000000bb", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: "16px", padding: "2rem", maxWidth: "480px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+                <h3 style={{ margin: "0 0 4px", fontSize: "18px", fontWeight: 800 }}>Valider une note de saison</h3>
+                <p style={{ margin: "0 0 1.5rem", fontSize: "13px", color: "#666" }}>{j.prenom} {j.nom}</p>
+
+                {/* Saison */}
+                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "6px" }}>Saison</label>
+                <select value={valSaison} onChange={e => setValSaison(e.target.value)} style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", marginBottom: "1.25rem", boxSizing: "border-box" }}>
+                  {["2024-2025","2023-2024","2022-2023","2021-2022","2020-2021"].map(s => <option key={s}>{s}</option>)}
+                </select>
+
+                {/* Note */}
+                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Note pour cette saison</label>
+                <div style={{ display: "flex", gap: "6px", marginBottom: "1.25rem" }}>
+                  {[1,2,3,4,5].map(n => (
+                    <span
+                      key={n}
+                      onClick={() => setValNote(n)}
+                      onMouseEnter={() => setValHover(n)}
+                      onMouseLeave={() => setValHover(0)}
+                      style={{ fontSize: "30px", cursor: "pointer", opacity: (valHover || valNote) >= n ? 1 : 0.2, transition: "opacity 0.1s" }}
+                    >⭐</span>
+                  ))}
+                </div>
+                {valNote > 0 && <p style={{ margin: "-0.75rem 0 1.25rem", fontSize: "13px", color: "#666" }}>{['','Très insuffisant','Insuffisant','Bien','Très bien','Excellent'][valNote]}</p>}
+
+                {/* Justification */}
+                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Justification</label>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem" }}>
+                  {[{ val: 'feuilles', label: '📄 5 feuilles de match' }, { val: 'licence', label: '🪪 Numéro de licence' }].map(opt => (
+                    <button key={opt.val} onClick={() => setValJustif(opt.val)} style={{ flex: 1, background: valJustif === opt.val ? "#4ade8015" : "#1a1a1a", border: `1px solid ${valJustif === opt.val ? "#4ade80" : "#333"}`, color: valJustif === opt.val ? "#4ade80" : "#aaa", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {valJustif === 'feuilles' && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "1.25rem" }}>
+                    <p style={{ margin: "0 0 6px", fontSize: "12px", color: "#666" }}>Collez les liens vers vos 5 feuilles de match (Google Drive, Dropbox, etc.)</p>
+                    {valFeuilles.map((url, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "#555", width: "20px", flexShrink: 0 }}>#{i+1}</span>
+                        <input
+                          value={url}
+                          onChange={e => { const arr = [...valFeuilles]; arr[i] = e.target.value; setValFeuilles(arr); }}
+                          placeholder="https://..."
+                          style={{ flex: 1, background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 10px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                        />
+                      </div>
+                    ))}
+                    {valFeuilles.filter(f => f.trim()).length < 5 && (
+                      <p style={{ margin: 0, fontSize: "11px", color: "#f59e0b" }}>⚠️ {5 - valFeuilles.filter(f => f.trim()).length} lien(s) manquant(s)</p>
+                    )}
+                  </div>
+                )}
+
+                {valJustif === 'licence' && (
+                  <div style={{ marginBottom: "1.25rem" }}>
+                    <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "6px" }}>Numéro de licence FFF du joueur</label>
+                    <input
+                      value={valLicence}
+                      onChange={e => setValLicence(e.target.value)}
+                      placeholder="Ex: 123456789"
+                      style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                    />
+                    <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#555" }}>Ce numéro doit correspondre à la licence du joueur dans votre club pour la saison sélectionnée.</p>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    onClick={soumettreValidation}
+                    disabled={valSending || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim())}
+                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim())) ? 0.4 : 1 }}
+                  >{valSending ? "Validation..." : "✅ Valider cette note"}</button>
+                  <button onClick={() => setShowValidationModal(false)} style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
