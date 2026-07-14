@@ -398,9 +398,10 @@ export default function DashboardEducateur() {
   }
 
   const tauxPresence = (joueurId) => {
-    // Seulement les séances où la présence a été effectivement saisie (row existe)
+    // Seulement les séances où la présence a été effectivement saisie
+    // (row existe ET a un statut intentionnel, pas juste la valeur par défaut vide)
     const saisies = entrainements.filter(e =>
-      (e.presences_entrainement || []).some(p => p.joueur_id === joueurId)
+      (e.presences_entrainement || []).some(p => p.joueur_id === joueurId && (p.statut || p.present))
     )
     if (!saisies.length) return null
     const getStatut = (e) => {
@@ -1182,7 +1183,7 @@ export default function DashboardEducateur() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '7px' }}>
                               {joueurs.map(j => {
                                 const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
-                                const nonSaisi = !p
+                                const nonSaisi = !p || (!p.statut && !p.present)
                                 const statut = p?.statut || (p?.present ? 'present' : 'absent')
                                 const cfg = nonSaisi
                                   ? { emoji: '⬜', label: 'Non saisi', bg: '#ffffff05', border: '#2a2a2a', color: '#444' }
