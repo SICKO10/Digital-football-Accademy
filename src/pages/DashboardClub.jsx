@@ -481,7 +481,7 @@ export default function DashboardClub() {
                 { label: "Buts", val: j.buts_total || 0, max: 20, color: "#f97316" },
                 { label: "Passes déc.", val: j.passes_decisives || 0, max: 15, color: "#4ade80" },
                 { label: "Matchs officiels", val: j.matchs_officiel || 0, max: 30, color: "#60a5fa" },
-                { label: "Minutes jouées", val: j.minutes_jouees || 0, max: 2500, color: "#a855f7" },
+                { label: "Clean sheets", val: j.cleansheets || 0, max: 10, color: "#a855f7" },
               ].map(s => (
                 <div key={s.label} style={{ marginBottom: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
