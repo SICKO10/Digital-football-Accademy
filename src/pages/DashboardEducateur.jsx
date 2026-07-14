@@ -493,7 +493,7 @@ export default function DashboardEducateur() {
                     <div key={j.id} style={{ ...st.card, cursor: 'pointer', transition: 'border-color 0.2s', borderColor: joueurActif?.id === j.id ? '#4ade8040' : '#1a1a1a' }} onClick={() => setJoueurActif(joueurActif?.id === j.id ? null : j)}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
-                          {j.numero_maillot || `${j.prenom[0]}${j.nom[0]}`}
+                          {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
@@ -607,7 +607,7 @@ export default function DashboardEducateur() {
                             return (
                               <div key={j.id} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <div style={{ fontSize: '22px', marginBottom: '6px' }}>{medals[rank]}</div>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: triActif.color + '20', border: `2px solid ${triActif.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: triActif.color, fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>{j.prenom[0]}{j.nom[0]}</div>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: triActif.color + '20', border: `2px solid ${triActif.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: triActif.color, fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>{j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}</div>
                                 <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700 }}>{j.prenom}</p>
                                 <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>{j.nom}</p>
                                 <div style={{ background: triActif.color + '20', border: `1px solid ${triActif.color}40`, borderRadius: '8px', width: '70px', height: `${heights[rank]}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
@@ -653,7 +653,7 @@ export default function DashboardEducateur() {
 
                 {/* ─ Graphiques ─ */}
                 {statsSubTab === 'graphiques' && (() => {
-                  const withStats = joueurs.map(j => ({ label: `${j.prenom} ${j.nom[0]}.`, ...statsGlobalesJoueur(j.id) }))
+                  const withStats = joueurs.map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, ...statsGlobalesJoueur(j.id) }))
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                       {[
@@ -726,7 +726,7 @@ export default function DashboardEducateur() {
                       <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Taux de présence par joueur</p>
                       <BarChart
                         data={[...joueurs]
-                          .map(j => ({ label: `${j.prenom} ${j.nom[0]}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
+                          .map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
                           .sort((a, b) => b.value - a.value)}
                         color="#4ade80"
                         unit="%"
@@ -813,7 +813,7 @@ export default function DashboardEducateur() {
                                 const val = (field) => s[field] !== undefined ? s[field] : (existingStat[field] ?? '')
                                 return (
                                   <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '120px 50px 50px 50px 50px 30px 30px', gap: '6px', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom[0]}.</span>
+                                    <span style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
                                     <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), minutes: parseInt(e.target.value) || 0 } } }))}
                                       style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
@@ -984,7 +984,7 @@ export default function DashboardEducateur() {
                     <div key={j.id} style={st.card}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '13px' }}>
-                          {j.prenom[0]}{j.nom[0]}
+                          {j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
