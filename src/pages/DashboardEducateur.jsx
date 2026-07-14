@@ -2,12 +2,49 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
+// ── Bar chart horizontal SVG ──────────────────────────────────────────────────
+function BarChart({ data, color = '#4ade80', unit = '', max: forceMax }) {
+  if (!data.length) return null
+  const max = forceMax ?? Math.max(...data.map(d => d.value), 1)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '110px', fontSize: '12px', color: '#aaa', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
+          <div style={{ flex: 1, background: '#1a1a1a', borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${max > 0 ? (d.value / max) * 100 : 0}%`, background: color + '99', borderRadius: '4px', transition: 'width 0.4s ease', minWidth: d.value > 0 ? '4px' : '0' }} />
+          </div>
+          <div style={{ width: '40px', fontSize: '12px', fontWeight: 700, color, textAlign: 'right', flexShrink: 0 }}>{d.value}{unit}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Mini donut présence ───────────────────────────────────────────────────────
+function DonutPresence({ taux }) {
+  const r = 16, circ = 2 * Math.PI * r
+  const dash = (taux / 100) * circ
+  const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r={r} fill="none" stroke="#1a1a1a" strokeWidth="5" />
+      <circle cx="21" cy="21" r={r} fill="none" stroke={color} strokeWidth="5"
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform="rotate(-90 21 21)" />
+      <text x="21" y="25" textAnchor="middle" fontSize="9" fontWeight="700" fill={color} fontFamily="Inter,sans-serif">{taux}%</text>
+    </svg>
+  )
+}
+
 export default function DashboardEducateur() {
   const navigate = useNavigate()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [activeSection, setActiveSection] = useState('equipe')
   const [loading, setLoading] = useState(true)
+  const [statsSubTab, setStatsSubTab] = useState('tableau')
+  const [statsTri, setStatsTri] = useState('buts') // pour classement
 
   // Équipe
   const [joueurs, setJoueurs] = useState([])
@@ -332,50 +369,226 @@ export default function DashboardEducateur() {
         {/* ===== STATS JOUEURS ===== */}
         {activeSection === 'stats' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '1.5rem' }}>Stats joueurs — Saison</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Stats joueurs</h1>
+            </div>
+
+            {/* Sous-onglets */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0' }}>
+              {[['tableau','📋 Tableau'],['classement','🏆 Classement'],['graphiques','📈 Graphiques'],['presence','🏃 Présences']].map(([k, label]) => (
+                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #4ade80' : '2px solid transparent', color: statsSubTab === k ? '#4ade80' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{label}</button>
+              ))}
+            </div>
+
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
                 <p style={{ color: '#555' }}>Ajoute d'abord des joueurs dans "Mon équipe"</p>
               </div>
             ) : (
-              <div style={{ ...st.card, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                      {['Joueur', 'Poste', 'MJ', 'Min', 'Buts', 'Passes D.', 'CS', '🟨', '🟥', 'Présence'].map(h => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {joueurs.map(j => {
-                      const s = statsGlobalesJoueur(j.id)
-                      const tx = tauxPresence(j.id)
-                      return (
-                        <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
-                          <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                          <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{j.poste || '—'}</td>
-                          <td style={{ padding: '10px 12px', color: s.matchs > 0 ? '#fff' : '#333' }}>{s.matchs}</td>
-                          <td style={{ padding: '10px 12px', color: s.minutes > 0 ? '#fff' : '#333' }}>{s.minutes}'</td>
-                          <td style={{ padding: '10px 12px', color: s.buts > 0 ? '#4ade80' : '#333', fontWeight: s.buts > 0 ? 700 : 400 }}>{s.buts}</td>
-                          <td style={{ padding: '10px 12px', color: s.passes_dec > 0 ? '#60a5fa' : '#333', fontWeight: s.passes_dec > 0 ? 700 : 400 }}>{s.passes_dec}</td>
-                          <td style={{ padding: '10px 12px', color: s.clean_sheets > 0 ? '#4ade80' : '#333' }}>{s.clean_sheets}</td>
-                          <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : '#333' }}>{s.cartons_j}</td>
-                          <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : '#333' }}>{s.cartons_r}</td>
-                          <td style={{ padding: '10px 12px' }}>
-                            {tx !== null ? (
-                              <div>
-                                <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
-                                <span style={{ fontSize: '10px', color: '#555', marginLeft: '4px' }}>✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>
-                              </div>
-                            ) : <span style={{ color: '#333' }}>—</span>}
-                          </td>
+              <>
+                {/* ─ Tableau ─ */}
+                {statsSubTab === 'tableau' && (
+                  <div style={{ ...st.card, overflow: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                          {['Joueur', 'Poste', 'MJ', 'Min', 'Buts', 'Passes D.', 'CS', '🟨', '🟥', 'Présence'].map(h => (
+                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
                         </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {joueurs.map(j => {
+                          const s = statsGlobalesJoueur(j.id)
+                          const tx = tauxPresence(j.id)
+                          return (
+                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                              <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{j.poste || '—'}</td>
+                              <td style={{ padding: '10px 12px', color: s.matchs > 0 ? '#fff' : '#333' }}>{s.matchs}</td>
+                              <td style={{ padding: '10px 12px', color: s.minutes > 0 ? '#fff' : '#333' }}>{s.minutes}'</td>
+                              <td style={{ padding: '10px 12px', color: s.buts > 0 ? '#4ade80' : '#333', fontWeight: s.buts > 0 ? 700 : 400 }}>{s.buts}</td>
+                              <td style={{ padding: '10px 12px', color: s.passes_dec > 0 ? '#60a5fa' : '#333', fontWeight: s.passes_dec > 0 ? 700 : 400 }}>{s.passes_dec}</td>
+                              <td style={{ padding: '10px 12px', color: s.clean_sheets > 0 ? '#4ade80' : '#333' }}>{s.clean_sheets}</td>
+                              <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : '#333' }}>{s.cartons_j}</td>
+                              <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : '#333' }}>{s.cartons_r}</td>
+                              <td style={{ padding: '10px 12px' }}>
+                                {tx !== null ? (
+                                  <div>
+                                    <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
+                                    <span style={{ fontSize: '10px', color: '#555', marginLeft: '4px' }}>✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>
+                                  </div>
+                                ) : <span style={{ color: '#333' }}>—</span>}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ─ Classement ─ */}
+                {statsSubTab === 'classement' && (() => {
+                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: notes[j.id] }))
+                  const TRIS = [
+                    { key: 'buts', label: '⚽ Buteurs', get: j => j.s.buts, color: '#4ade80', unit: 'but' },
+                    { key: 'passes_dec', label: '🎯 Passeurs', get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
+                    { key: 'matchs', label: '📅 Temps de jeu', get: j => j.s.matchs, color: '#a78bfa', unit: 'match' },
+                    { key: 'presence', label: '🏃 Présence', get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
+                    { key: 'note', label: '⭐ Note éducateur', get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
+                  ]
+                  const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
+                  const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
+                  return (
+                    <div>
+                      {/* Sélecteur de critère */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                        {TRIS.map(t => (
+                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ background: statsTri === t.key ? t.color + '20' : '#111', border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
+                        ))}
+                      </div>
+                      {/* Podium top 3 */}
+                      {sorted.length >= 3 && (
+                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', marginBottom: '2rem' }}>
+                          {[1, 0, 2].map(rank => {
+                            const j = sorted[rank]
+                            if (!j) return null
+                            const heights = [100, 130, 80]
+                            const medals = ['🥇','🥈','🥉']
+                            const val = triActif.get(j)
+                            return (
+                              <div key={j.id} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{medals[rank]}</div>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: triActif.color + '20', border: `2px solid ${triActif.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: triActif.color, fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>{j.prenom[0]}{j.nom[0]}</div>
+                                <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700 }}>{j.prenom}</p>
+                                <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>{j.nom}</p>
+                                <div style={{ background: triActif.color + '20', border: `1px solid ${triActif.color}40`, borderRadius: '8px', width: '70px', height: `${heights[rank]}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                                  <span style={{ color: triActif.color, fontWeight: 800, fontSize: '18px' }}>{typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}</span>
+                                  <span style={{ color: triActif.color + 'aa', fontSize: '9px' }}>{triActif.unit}</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {/* Liste complète */}
+                      <div style={{ ...st.card, overflow: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
+                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>Joueur</th>
+                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>Poste</th>
+                              <th style={{ padding: '8px 12px', color: triActif.color, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{triActif.label}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sorted.map((j, i) => {
+                              const val = triActif.get(j)
+                              return (
+                                <tr key={j.id} style={{ borderBottom: '1px solid #141414', background: i === 0 ? triActif.color + '08' : 'transparent' }}>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : '#444', fontSize: i === 0 ? '15px' : '13px' }}>{i + 1}</td>
+                                  <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                                  <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{j.poste || '—'}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color, fontSize: '15px' }}>
+                                    {typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}{triActif.unit === '%' ? '%' : ''}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* ─ Graphiques ─ */}
+                {statsSubTab === 'graphiques' && (() => {
+                  const withStats = joueurs.map(j => ({ label: `${j.prenom} ${j.nom[0]}.`, ...statsGlobalesJoueur(j.id) }))
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                      {[
+                        { title: '⚽ Buteurs', key: 'buts', color: '#4ade80' },
+                        { title: '🎯 Passes décisives', key: 'passes_dec', color: '#60a5fa' },
+                        { title: '⏱️ Minutes jouées', key: 'minutes', color: '#a78bfa', unit: "'" },
+                        { title: '📅 Matchs joués', key: 'matchs', color: '#f59e0b' },
+                        { title: '🟨 Cartons jaunes', key: 'cartons_j', color: '#fbbf24' },
+                        { title: '🟥 Cartons rouges', key: 'cartons_r', color: '#f87171' },
+                      ].map(({ title, key, color, unit = '' }) => {
+                        const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
+                        return (
+                          <div key={key} style={st.card}>
+                            <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>{title}</p>
+                            {data.length === 0
+                              ? <p style={{ color: '#333', fontSize: '13px' }}>Aucune donnée</p>
+                              : <BarChart data={data.map(d => ({ label: d.label, value: d[key] }))} color={color} unit={unit} />
+                            }
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+
+                {/* ─ Présences ─ */}
+                {statsSubTab === 'presence' && (
+                  <div>
+                    {/* Résumé global */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
+                      {[
+                        { label: 'Séances', val: entrainements.length, color: '#fff' },
+                        { label: 'Taux moyen', val: (() => { const tx = joueurs.map(j => tauxPresence(j.id)?.taux ?? 0); return tx.length ? Math.round(tx.reduce((a,b)=>a+b,0)/tx.length) : 0 })() + '%', color: '#4ade80' },
+                      ].map(c => (
+                        <div key={c.label} style={{ ...st.card, textAlign: 'center', padding: '1rem' }}>
+                          <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: c.color }}>{c.val}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Cards joueurs avec donut */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
+                      {[...joueurs]
+                        .sort((a, b) => (tauxPresence(b.id)?.taux ?? 0) - (tauxPresence(a.id)?.taux ?? 0))
+                        .map(j => {
+                          const tx = tauxPresence(j.id)
+                          if (!tx) return null
+                          return (
+                            <div key={j.id} style={st.card}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <DonutPresence taux={tx.taux} />
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}</p>
+                                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '11px', color: '#4ade80' }}>✅ {tx.presents} présent{tx.presents > 1 ? 's' : ''}</span>
+                                    <span style={{ fontSize: '11px', color: '#ef4444' }}>❌ {tx.absents}</span>
+                                    <span style={{ fontSize: '11px', color: '#f97316' }}>🤕 {tx.blesses}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                    </div>
+
+                    {/* Bar chart présence */}
+                    <div style={st.card}>
+                      <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Taux de présence par joueur</p>
+                      <BarChart
+                        data={[...joueurs]
+                          .map(j => ({ label: `${j.prenom} ${j.nom[0]}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
+                          .sort((a, b) => b.value - a.value)}
+                        color="#4ade80"
+                        unit="%"
+                        max={100}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -608,15 +821,15 @@ export default function DashboardEducateur() {
         {/* ===== CARNET DE NOTES ===== */}
         {activeSection === 'notes' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '1.5rem' }}>Carnet de notes</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem', marginTop: '-1rem' }}>Notes privées — visibles uniquement par vous</p>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Carnet de notes</h1>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Note + commentaire partageable avec le joueur via le toggle ci-dessous</p>
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>Ajoute d'abord des joueurs dans "Mon équipe"</p></div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {joueurs.map(j => {
                   const note = notes[j.id] || {}
-                  const [localNote, setLocalNote] = useState({ technique: note.technique || 0, physique: note.physique || 0, mental: note.mental || 0, tactique: note.tactique || 0, commentaire: note.commentaire || '' })
+                  const [localNote, setLocalNote] = useState({ technique: note.technique || 0, physique: note.physique || 0, mental: note.mental || 0, tactique: note.tactique || 0, commentaire: note.commentaire || '', visible_joueur: note.visible_joueur || false })
                   const noteGlobale = localNote.technique || localNote.physique || localNote.mental || localNote.tactique
                     ? ((localNote.technique + localNote.physique + localNote.mental + localNote.tactique) / 4).toFixed(1)
                     : null
@@ -645,8 +858,23 @@ export default function DashboardEducateur() {
                           </div>
                         ))}
                       </div>
+                      {/* Toggle visible par le joueur */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: localNote.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${localNote.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setLocalNote(prev => ({ ...prev, visible_joueur: !prev.visible_joueur }))}>
+                        <div style={{ width: '36px', height: '20px', background: localNote.visible_joueur ? '#4ade80' : '#333', borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                          <div style={{ position: 'absolute', top: '3px', left: localNote.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: localNote.visible_joueur ? '#4ade80' : '#aaa' }}>
+                            {localNote.visible_joueur ? '👁️ Visible par le joueur' : '🔒 Privé (non visible)'}
+                          </p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                            {localNote.visible_joueur ? 'Le joueur peut voir cette note et ce commentaire dans son dashboard' : 'Seul vous voyez cette note'}
+                          </p>
+                        </div>
+                      </div>
+
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={st.label}>Commentaire privé</label>
+                        <label style={st.label}>{localNote.visible_joueur ? '💬 Commentaire (visible par le joueur)' : '💬 Commentaire (privé)'}</label>
                         <textarea value={localNote.commentaire} onChange={e => setLocalNote(prev => ({ ...prev, commentaire: e.target.value }))}
                           placeholder="Points forts, axes de progression, comportement..."
                           style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
