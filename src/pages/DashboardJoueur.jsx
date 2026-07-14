@@ -135,9 +135,11 @@ function DashboardJoueur() {
   const [recruteurModal, setRecruteurModal] = useState(null)
   const [notationCible, setNotationCible] = useState(null)
 
-  // Clubs
+  // Explorer (clubs + recruteurs)
   const [clubsListe, setClubsListe] = useState([])
+  const [recruteursList, setRecruteursList] = useState([])
   const [clubsLoading, setClubsLoading] = useState(false)
+  const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => { getProfil() }, [])
@@ -153,10 +155,16 @@ function DashboardJoueur() {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
       setCoachUnread(0)
     }
-    if (onglet === 'clubs' && clubsListe.length === 0) {
+    if (onglet === 'clubs' && clubsListe.length === 0 && recruteursList.length === 0) {
       setClubsLoading(true)
-      supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur')
-        .then(({ data }) => { setClubsListe(data || []); setClubsLoading(false) })
+      Promise.all([
+        supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur'),
+        supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'recruteur'),
+      ]).then(([{ data: edu }, { data: rec }]) => {
+        setClubsListe(edu || [])
+        setRecruteursList(rec || [])
+        setClubsLoading(false)
+      })
     }
   }, [onglet, userId])
 
@@ -686,7 +694,7 @@ function DashboardJoueur() {
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach', icon: <IconMic />, badge: coachUnread },
-    { id: 'clubs', label: 'Clubs', icon: <IconBuilding /> },
+    { id: 'clubs', label: 'Explorer', icon: <IconBuilding /> },
   ]
 
   return (
@@ -1327,12 +1335,6 @@ function DashboardJoueur() {
                           Voir l'analyse
                         </a>
                       )}
-                      {demande.statut === 'analyse' && (
-                        <button onClick={() => setNotationCible({ id: demande.coach_id || coaches[0]?.id, prenom: 'Coach', nom: '', plan: 'coach' })}
-                          style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                          ⭐ Noter le coach
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -1635,43 +1637,91 @@ function DashboardJoueur() {
             )}
           </div>
         )}
-        {/* ── CLUBS ── */}
+        {/* ── EXPLORER ── */}
         {onglet === 'clubs' && (
           <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '6px' }}>🏟️ Clubs & Éducateurs</h1>
-            <p style={{ fontSize: '13px', color: '#555', marginBottom: '24px' }}>Retrouve les clubs, leurs équipes, résultats et classements. Valide ta participation pour noter.</p>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>🌐 Explorer</h1>
+            <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Découvre les clubs, éducateurs et recruteurs. Note ceux avec qui tu as travaillé.</p>
+
+            {/* Filtres */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'tous', label: `Tous (${clubsListe.length + recruteursList.length})` },
+                { id: 'clubs', label: `🏟️ Clubs / Éducateurs (${clubsListe.length})` },
+                { id: 'recruteurs', label: `🔍 Recruteurs (${recruteursList.length})` },
+              ].map(f => (
+                <button key={f.id} onClick={() => setExplorerFiltre(f.id)}
+                  style={{ padding: '7px 16px', borderRadius: '20px', border: `1px solid ${explorerFiltre === f.id ? '#4ade80' : '#2a2a2a'}`, background: explorerFiltre === f.id ? '#4ade8015' : 'transparent', color: explorerFiltre === f.id ? '#4ade80' : '#555', fontSize: '12px', fontWeight: explorerFiltre === f.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
             {clubsLoading && <p style={{ color: '#444', textAlign: 'center' }}>Chargement...</p>}
 
-            {!clubsLoading && clubsListe.length === 0 && (
-              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
-                <p style={{ fontSize: '32px', marginBottom: '8px' }}>🏟️</p>
-                <p style={{ fontSize: '14px', color: '#444' }}>Aucun club référencé pour le moment.</p>
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {clubsListe.map(edu => (
-                <div key={edu.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+              {/* Clubs / Éducateurs */}
+              {(explorerFiltre === 'tous' || explorerFiltre === 'clubs') && clubsListe.map(edu => (
+                <div key={`edu-${edu.id}`}
+                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
                   onClick={() => navigate(`/clubs/${edu.id}`)}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#4ade8040'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
                   {edu.avatar_url
-                    ? <img src={edu.avatar_url} alt="" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
-                    : <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
+                    ? <img src={edu.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
+                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
                         {(edu.club || edu.prenom || '?')[0].toUpperCase()}
                       </div>
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
+                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>🏟️ Club</span>
+                      <BadgeNote cibleId={edu.id} />
+                    </div>
+                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
                       {[edu.niveau_equipe, edu.region].filter(Boolean).join(' · ')}
                     </p>
-                    {edu.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
+                    {edu.description && <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
                   </div>
-                  <span style={{ color: '#4ade80', fontSize: '18px', flexShrink: 0 }}>→</span>
+                  <span style={{ color: '#4ade80', fontSize: '16px', flexShrink: 0 }}>→</span>
                 </div>
               ))}
+
+              {/* Recruteurs */}
+              {(explorerFiltre === 'tous' || explorerFiltre === 'recruteurs') && recruteursList.map(rec => (
+                <div key={`rec-${rec.id}`}
+                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+                  onClick={() => setRecruteurModal(rec)}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+                  {rec.avatar_url
+                    ? <img src={rec.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #60a5fa30', flexShrink: 0 }} />
+                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d0d1a', border: '2px solid #60a5fa20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#60a5fa', flexShrink: 0 }}>
+                        {(rec.prenom || '?')[0]}{(rec.nom || '')[0]}
+                      </div>
+                  }
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{rec.prenom} {rec.nom}</p>
+                      <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>🔍 Recruteur</span>
+                      <BadgeNote cibleId={rec.id} />
+                    </div>
+                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
+                      {[rec.type_recruteur, rec.club, rec.region].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  <span style={{ color: '#60a5fa', fontSize: '16px', flexShrink: 0 }}>⭐</span>
+                </div>
+              ))}
+
+              {!clubsLoading && (explorerFiltre === 'tous' ? clubsListe.length + recruteursList.length : explorerFiltre === 'clubs' ? clubsListe.length : recruteursList.length) === 0 && (
+                <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
+                  <p style={{ fontSize: '14px', color: '#444' }}>Aucun profil trouvé.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
