@@ -36,7 +36,7 @@ function parseRows(raw) {
       }
       return j
     })
-    .filter(j => j.prenom && j.nom)
+    .filter(j => j.prenom)
 }
 
 // ── Bar chart horizontal SVG ──────────────────────────────────────────────────
