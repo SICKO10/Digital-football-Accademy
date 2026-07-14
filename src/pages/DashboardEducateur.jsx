@@ -168,7 +168,7 @@ export default function DashboardEducateur() {
 
   const telechargerTemplate = () => {
     const csv = 'Prenom,Nom,Poste,Categorie,Numero Maillot,Date Naissance,Numero Licence\nJean,Dupont,Attaquant,U17,9,2007-03-15,123456\nMarie,Martin,Gardien,U15,1,2009-06-20,'
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = 'template_effectif.csv'
@@ -182,7 +182,7 @@ export default function DashboardEducateur() {
     try {
       const XLSX = await loadSheetJS()
       const buffer = await file.arrayBuffer()
-      const wb = XLSX.read(buffer, { type: 'array', cellDates: true })
+      const wb = XLSX.read(buffer, { type: 'array', cellDates: true, codepage: 65001 })
       const ws = wb.Sheets[wb.SheetNames[0]]
       const raw = XLSX.utils.sheet_to_json(ws, { defval: '' })
       const rows = parseRows(raw)
