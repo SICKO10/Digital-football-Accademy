@@ -59,7 +59,7 @@ function Toast({ message, onClose }) {
   );
 }
 
-export default function DashboardClub() {
+export default function DashboardRecruteur() {
   const navigate = useNavigate();
   const location = useLocation();
   const [recruteur, setRecruteur] = useState(null);
@@ -124,7 +124,7 @@ export default function DashboardClub() {
       if (!user) { navigate("/login"); return; }
       setRecruteurId(user.id);
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      if (!profile || profile.plan !== "club") { navigate("/"); return; }
+      if (!profile || profile.plan !== "recruteur") { navigate("/"); return; }
       setRecruteur(profile);
       setProfilEdit({ prenom: profile.prenom || '', nom: profile.nom || '', club: profile.club || '', region: profile.region || '', type_recruteur: profile.type_recruteur || '', description: profile.description || '', recherche_profil: profile.recherche_profil || '' });
       const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "pro").eq("abonnement_actif", true);

@@ -45,22 +45,26 @@ export default async function handler(req, res) {
     let plan = 'pro'
     let analyses = 3
 
-    try {
-      const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
-      const productName = lineItems.data[0]?.description?.toLowerCase() || ''
-
-      if (productName.includes('starter')) {
-        plan = 'starter'
-        analyses = 2
-      } else if (productName.includes('recruteur')) {
-        plan = 'recruteur'
-        analyses = 0
-      } else {
-        plan = 'pro'
-        analyses = 3
+    // Priorité 1 : metadata passées lors du checkout (recruteur, club, educateur, starter, pro)
+    const metaPlan = session.metadata?.plan
+    if (metaPlan && ['starter','pro','recruteur','club','educateur'].includes(metaPlan)) {
+      plan = metaPlan
+      analyses = ['starter'].includes(plan) ? 2 : ['pro'].includes(plan) ? 3 : 0
+    } else {
+      // Priorité 2 : fallback sur le nom du produit (ancienne logique)
+      try {
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
+        const productName = lineItems.data[0]?.description?.toLowerCase() || ''
+        if (productName.includes('starter')) {
+          plan = 'starter'; analyses = 2
+        } else if (productName.includes('recruteur') || productName.includes('club') || productName.includes('educateur')) {
+          plan = metaPlan || 'recruteur'; analyses = 0
+        } else {
+          plan = 'pro'; analyses = 3
+        }
+      } catch (err) {
+        console.error('Erreur recuperation line items:', err.message)
       }
-    } catch (err) {
-      console.error('Erreur recuperation line items:', err.message)
     }
 
     if (customerEmail) {

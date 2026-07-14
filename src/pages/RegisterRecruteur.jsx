@@ -7,7 +7,7 @@ function RegisterRecruteur() {
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [club, setClub] = useState('')
-  const [typeCompte, setTypeCompte] = useState('club')
+  const [typeCompte, setTypeCompte] = useState('recruteur')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,7 +38,7 @@ function RegisterRecruteur() {
       prenom,
       nom,
       poste: typeCompte,
-      plan: 'pending',
+      plan: 'pending', // sera mis à jour par Stripe webhook (recruteur, club, ou educateur)
       analyses_restantes: 0,
       abonnement_actif: false,
       club,
@@ -50,7 +50,7 @@ function RegisterRecruteur() {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan: 'recruteur' })
+        body: JSON.stringify({ email, plan: typeCompte })
       })
       const data2 = await response.json()
       if (data2.url) {
@@ -75,13 +75,15 @@ function RegisterRecruteur() {
           <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>Acces a la base de joueurs et aux profils</p>
         </div>
 
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'1.5rem'}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1.5rem'}}>
           {[
-            {id:'club', label:'🏟️ Club'},
-            {id:'agent', label:'🤝 Agent'},
+            {id:'recruteur', label:'🔍 Scout / Agent', desc:'Recherche de joueurs'},
+            {id:'club',      label:'🏟️ Club',          desc:'Gestion du club'},
+            {id:'educateur', label:'🎓 Éducateur',      desc:'Suivi de l\'effectif'},
           ].map(t => (
-            <div key={t.id} onClick={() => setTypeCompte(t.id)} style={{border: typeCompte === t.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: typeCompte === t.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
-              <div style={{fontWeight:'700', fontSize:'15px'}}>{t.label}</div>
+            <div key={t.id} onClick={() => setTypeCompte(t.id)} style={{border: typeCompte === t.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === t.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
+              <div style={{fontWeight:'700', fontSize:'13px'}}>{t.label}</div>
+              <div style={{color:'#666', fontSize:'11px', marginTop:'4px'}}>{t.desc}</div>
             </div>
           ))}
         </div>
@@ -110,12 +112,12 @@ function RegisterRecruteur() {
 
           <div>
             <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>
-              {typeCompte === 'club' ? 'Nom du club' : 'Nom de l agence'}
+              {typeCompte === 'club' ? 'Nom du club' : typeCompte === 'educateur' ? 'Nom du club / structure' : 'Nom de l agence'}
             </label>
             <input
               value={club}
               onChange={(e) => setClub(e.target.value)}
-              placeholder={typeCompte === 'club' ? 'Ex: AS Monaco' : 'Ex: Sport Management'}
+              placeholder={typeCompte === 'club' ? 'Ex: AS Monaco' : typeCompte === 'educateur' ? 'Ex: AS Bondy' : 'Ex: Sport Management'}
               style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
             />
           </div>
