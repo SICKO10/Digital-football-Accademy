@@ -58,7 +58,7 @@ function BarChart({ data, color = '#4ade80', unit = '', max: forceMax }) {
   )
 }
 
-// ── Mini donut présence ───────────────────────────────────────────────────────
+// ── Mini donut présence (anneau simple) ──────────────────────────────────────
 function DonutPresence({ taux }) {
   const r = 16, circ = 2 * Math.PI * r
   const dash = (taux / 100) * circ
@@ -71,6 +71,37 @@ function DonutPresence({ taux }) {
         transform="rotate(-90 21 21)" />
       <text x="21" y="25" textAnchor="middle" fontSize="9" fontWeight="700" fill={color} fontFamily="Inter,sans-serif">{taux}%</text>
     </svg>
+  )
+}
+
+// ── Camembert multi-segment (présence / absence / blessure / maladie / convoc) ─
+function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
+  const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
+  const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
+  const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
+  if (!total) return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ color: '#333', fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
+    </div>
+  )
+  const p = (presents || 0) / total * 100
+  const c = (convoque || 0) / total * 100
+  const a = (absents || 0) / total * 100
+  const b = (blesses || 0) / total * 100
+  // m takes the rest
+  const pEnd = p + c
+  const aEnd = pEnd + a
+  const bEnd = aEnd + b
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: `conic-gradient(#4ade80 0% ${p}%, #60a5fa ${p}% ${pEnd}%, #ef4444 ${pEnd}% ${aEnd}%, #f97316 ${aEnd}% ${bEnd}%, #a855f7 ${bEnd}% 100%)`
+      }} />
+      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+        <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
+      </div>
+    </div>
   )
 }
 
@@ -249,11 +280,7 @@ export default function DashboardEducateur() {
 
   const ajouterEntrainement = async () => {
     if (!newEntrainement.date) return
-    const { data } = await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId }).select().single()
-    if (data) {
-      const presRows = joueurs.map(j => ({ entrainement_id: data.id, joueur_id: j.id, educateur_id: userId, present: false }))
-      if (presRows.length) await supabase.from('presences_entrainement').insert(presRows)
-    }
+    await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId })
     await chargerEntrainements(userId)
     setNewEntrainement({ date: '', description: '' })
     setShowAddEntrainement(false)
@@ -289,10 +316,7 @@ export default function DashboardEducateur() {
         description: planSaison.theme || '',
         educateur_id: userId
       }).select().single()
-      if (data && joueurs.length) {
-        const presRows = joueurs.map(j => ({ entrainement_id: data.id, joueur_id: j.id, educateur_id: userId, present: false }))
-        await supabase.from('presences_entrainement').insert(presRows)
-      }
+      // Pas de lignes pré-créées : la présence est saisie au clic (evite les faux "absents")
       setPlanProgress({ done: i + 1, total: newDates.length })
     }
     await chargerEntrainements(userId)
@@ -374,22 +398,22 @@ export default function DashboardEducateur() {
   }
 
   const tauxPresence = (joueurId) => {
-    if (!entrainements.length) return null
-    const total = entrainements.length
-    const presents = entrainements.reduce((acc, e) => {
+    // Seulement les séances où la présence a été effectivement saisie (row existe)
+    const saisies = entrainements.filter(e =>
+      (e.presences_entrainement || []).some(p => p.joueur_id === joueurId)
+    )
+    if (!saisies.length) return null
+    const getStatut = (e) => {
       const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      const s = p?.statut || (p?.present ? 'present' : 'absent')
-      return acc + (['present', 'convoque'].includes(s) ? 1 : 0)
-    }, 0)
-    const absents = entrainements.reduce((acc, e) => {
-      const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      return acc + (p?.statut === 'absent' || (!p?.statut && !p?.present) ? 1 : 0)
-    }, 0)
-    const blesses = entrainements.reduce((acc, e) => {
-      const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      return acc + (['blesse', 'malade'].includes(p?.statut) ? 1 : 0)
-    }, 0)
-    return { taux: Math.round((presents / total) * 100), presents, absents, blesses, total }
+      return p?.statut || (p?.present ? 'present' : 'absent')
+    }
+    const presents  = saisies.filter(e => getStatut(e) === 'present').length
+    const convoque  = saisies.filter(e => getStatut(e) === 'convoque').length
+    const absents   = saisies.filter(e => getStatut(e) === 'absent').length
+    const blesses   = saisies.filter(e => getStatut(e) === 'blesse').length
+    const malade    = saisies.filter(e => getStatut(e) === 'malade').length
+    const total     = saisies.length
+    return { taux: Math.round(((presents + convoque) / total) * 100), presents, convoque, absents, blesses, malade, total }
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
@@ -569,7 +593,7 @@ export default function DashboardEducateur() {
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
-                        {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}% · ✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>}
+                        {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}%</span>}
                       </div>
                     </div>
                   )
@@ -626,12 +650,9 @@ export default function DashboardEducateur() {
                               <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : '#333' }}>{s.cartons_j}</td>
                               <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : '#333' }}>{s.cartons_r}</td>
                               <td style={{ padding: '10px 12px' }}>
-                                {tx !== null ? (
-                                  <div>
-                                    <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
-                                    <span style={{ fontSize: '10px', color: '#555', marginLeft: '4px' }}>✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>
-                                  </div>
-                                ) : <span style={{ color: '#333' }}>—</span>}
+                                {tx !== null
+                                  ? <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
+                                  : <span style={{ color: '#333' }}>—</span>}
                               </td>
                             </tr>
                           )
@@ -746,61 +767,114 @@ export default function DashboardEducateur() {
                 })()}
 
                 {/* ─ Présences ─ */}
-                {statsSubTab === 'presence' && (
-                  <div>
-                    {/* Résumé global */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
-                      {[
-                        { label: 'Séances', val: entrainements.length, color: '#fff' },
-                        { label: 'Taux moyen', val: (() => { const tx = joueurs.map(j => tauxPresence(j.id)?.taux ?? 0); return tx.length ? Math.round(tx.reduce((a,b)=>a+b,0)/tx.length) : 0 })() + '%', color: '#4ade80' },
-                      ].map(c => (
-                        <div key={c.label} style={{ ...st.card, textAlign: 'center', padding: '1rem' }}>
-                          <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: c.color }}>{c.val}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.label}</p>
+                {statsSubTab === 'presence' && (() => {
+                  const allTx = joueurs.map(j => tauxPresence(j.id)).filter(Boolean)
+                  const totalPresents  = allTx.reduce((s, t) => s + t.presents, 0)
+                  const totalConvoques = allTx.reduce((s, t) => s + t.convoque, 0)
+                  const totalAbsents   = allTx.reduce((s, t) => s + t.absents, 0)
+                  const totalBlesses   = allTx.reduce((s, t) => s + t.blesses, 0)
+                  const totalMalades   = allTx.reduce((s, t) => s + t.malade, 0)
+                  const tauxMoyen      = allTx.length ? Math.round(allTx.reduce((s, t) => s + t.taux, 0) / allTx.length) : 0
+                  const seancesSaisies = allTx.length ? allTx[0].total : 0
+                  return (
+                    <div>
+                      {/* ── Résumé global équipe ── */}
+                      <div style={{ ...st.card, marginBottom: '1.5rem', border: '1px solid #1a2e1a' }}>
+                        <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '15px' }}>📊 Stats globales équipe</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                          <DonutMulti presents={totalPresents} absents={totalAbsents} blesses={totalBlesses} malade={totalMalades} convoque={totalConvoques} size={100} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
+                              {[
+                                { label: 'Séances saisies', val: seancesSaisies, color: '#fff' },
+                                { label: 'Taux moyen', val: tauxMoyen + '%', color: tauxMoyen >= 80 ? '#4ade80' : tauxMoyen >= 50 ? '#f59e0b' : '#f87171' },
+                                { label: 'Présents', val: totalPresents, color: '#4ade80' },
+                                { label: 'Convoqués', val: totalConvoques, color: '#60a5fa' },
+                                { label: 'Absents', val: totalAbsents, color: '#ef4444' },
+                                { label: 'Blessés', val: totalBlesses, color: '#f97316' },
+                                { label: 'Malades', val: totalMalades, color: '#a855f7' },
+                              ].map(c => (
+                                <div key={c.label} style={{ textAlign: 'center', background: '#0a0a0a', borderRadius: '10px', padding: '10px 6px' }}>
+                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
+                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{c.label}</p>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Légende camembert */}
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '12px' }}>
+                              {[['#4ade80','Présent'],['#60a5fa','Convoqué'],['#ef4444','Absent'],['#f97316','Blessé'],['#a855f7','Malade']].map(([color, label]) => (
+                                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#aaa' }}>
+                                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />{label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
 
-                    {/* Cards joueurs avec donut */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
-                      {[...joueurs]
-                        .sort((a, b) => (tauxPresence(b.id)?.taux ?? 0) - (tauxPresence(a.id)?.taux ?? 0))
-                        .map(j => {
-                          const tx = tauxPresence(j.id)
-                          if (!tx) return null
-                          return (
-                            <div key={j.id} style={st.card}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <DonutPresence taux={tx.taux} />
-                                <div style={{ flex: 1 }}>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}</p>
-                                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '11px', color: '#4ade80' }}>✅ {tx.presents} présent{tx.presents > 1 ? 's' : ''}</span>
-                                    <span style={{ fontSize: '11px', color: '#ef4444' }}>❌ {tx.absents}</span>
-                                    <span style={{ fontSize: '11px', color: '#f97316' }}>🤕 {tx.blesses}</span>
+                      {/* ── Cards joueurs avec camembert ── */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
+                        {[...joueurs]
+                          .sort((a, b) => (tauxPresence(b.id)?.taux ?? -1) - (tauxPresence(a.id)?.taux ?? -1))
+                          .map(j => {
+                            const tx = tauxPresence(j.id)
+                            return (
+                              <div key={j.id} style={st.card}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                  <DonutMulti
+                                    presents={tx?.presents || 0}
+                                    absents={tx?.absents || 0}
+                                    blesses={tx?.blesses || 0}
+                                    malade={tx?.malade || 0}
+                                    convoque={tx?.convoque || 0}
+                                    size={72}
+                                  />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                    <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} séance${tx.total > 1 ? 's' : ''}` : ''}</p>
+                                    {tx ? (
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+                                        {[
+                                          { emoji: '✅', label: 'Présent', val: tx.presents, color: '#4ade80' },
+                                          { emoji: '🏆', label: 'Convoqué', val: tx.convoque, color: '#60a5fa' },
+                                          { emoji: '❌', label: 'Absent', val: tx.absents, color: '#ef4444' },
+                                          { emoji: '🤕', label: 'Blessé', val: tx.blesses, color: '#f97316' },
+                                          { emoji: '🤒', label: 'Malade', val: tx.malade, color: '#a855f7' },
+                                        ].filter(s => s.val > 0).map(s => (
+                                          <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
+                                            {s.emoji} {s.val} {s.label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span style={{ fontSize: '11px', color: '#333' }}>Aucune présence saisie</span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )
-                        })}
-                    </div>
+                            )
+                          })}
+                      </div>
 
-                    {/* Bar chart présence */}
-                    <div style={st.card}>
-                      <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Taux de présence par joueur</p>
-                      <BarChart
-                        data={[...joueurs]
-                          .map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
-                          .sort((a, b) => b.value - a.value)}
-                        color="#4ade80"
-                        unit="%"
-                        max={100}
-                      />
+                      {/* ── Bar chart classement présence ── */}
+                      <div style={st.card}>
+                        <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>🏃 Classement par taux de présence</p>
+                        <BarChart
+                          data={[...joueurs]
+                            .map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
+                            .filter(d => d.value > 0)
+                            .sort((a, b) => b.value - a.value)}
+                          color="#4ade80"
+                          unit="%"
+                          max={100}
+                        />
+                        {joueurs.every(j => !tauxPresence(j.id)) && (
+                          <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
               </>
             )}
           </>
@@ -1108,10 +1182,13 @@ export default function DashboardEducateur() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '7px' }}>
                               {joueurs.map(j => {
                                 const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
+                                const nonSaisi = !p
                                 const statut = p?.statut || (p?.present ? 'present' : 'absent')
-                                const cfg = STATUT_CONFIG[statut] || STATUT_CONFIG.absent
+                                const cfg = nonSaisi
+                                  ? { emoji: '⬜', label: 'Non saisi', bg: '#ffffff05', border: '#2a2a2a', color: '#444' }
+                                  : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
                                 return (
-                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, statut)}
+                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'absent' : statut)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
                                     <span style={{ fontSize: '15px', flexShrink: 0 }}>{cfg.emoji}</span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
