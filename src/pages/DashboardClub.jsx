@@ -711,7 +711,7 @@ export default function DashboardClub() {
                 {/* Saison */}
                 <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "6px" }}>Saison</label>
                 <select value={valSaison} onChange={e => setValSaison(e.target.value)} style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", marginBottom: "1.25rem", boxSizing: "border-box" }}>
-                  {["2024-2025","2023-2024","2022-2023","2021-2022","2020-2021"].map(s => <option key={s}>{s}</option>)}
+                  {["2025-2026","2024-2025","2023-2024","2022-2023","2021-2022","2020-2021"].map(s => <option key={s}>{s}</option>)}
                 </select>
 
                 {/* Note */}
