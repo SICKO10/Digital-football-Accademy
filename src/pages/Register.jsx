@@ -141,11 +141,11 @@ function Register() {
 
           {plan !== 'fan' && (
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Mes points forts (max 2)</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Mes points forts (max 4)</label>
               <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
                 {caracteristiquesParPoste[poste].map(c => {
                   const selected = pointsForts.includes(c)
-                  const disabled = !selected && pointsForts.length >= 2
+                  const disabled = !selected && pointsForts.length >= 4
                   return (
                     <div
                       key={c}
@@ -169,11 +169,11 @@ function Register() {
 
           {plan !== 'fan' && (
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Ce que je veux améliorer (max 2)</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Ce que je veux améliorer (max 4)</label>
               <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
                 {caracteristiquesParPoste[poste].map(c => {
                   const selected = aAmeliorer.includes(c)
-                  const disabled = !selected && aAmeliorer.length >= 2
+                  const disabled = !selected && aAmeliorer.length >= 4
                   return (
                     <div
                       key={c}
