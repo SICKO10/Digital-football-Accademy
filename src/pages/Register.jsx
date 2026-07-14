@@ -109,11 +109,11 @@ function Register() {
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
             <div>
               <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Prenom</label>
-              <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
+              <input value={prenom} onChange={(e) => setPrenom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
             <div>
               <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Nom</label>
-              <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
+              <input value={nom} onChange={(e) => setNom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
           </div>
 
