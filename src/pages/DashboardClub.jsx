@@ -109,6 +109,8 @@ export default function DashboardClub() {
   const [valLicence, setValLicence] = useState('')
   const [valFeuilles, setValFeuilles] = useState(['', '', '', '', ''])
   const [valSending, setValSending] = useState(false)
+  const [valLicenceUrl, setValLicenceUrl] = useState('')
+  const [valLicenceUploading, setValLicenceUploading] = useState(false)
 
   // Profil recruteur
   const [profilEdit, setProfilEdit] = useState({ prenom: '', nom: '', club: '', region: '', type_recruteur: '', description: '', recherche_profil: '' });
@@ -208,7 +210,7 @@ export default function DashboardClub() {
     if (!valNote || !valSaison) return;
     const feuillesRemplies = valFeuilles.filter(f => f.trim() !== '');
     if (valJustif === 'feuilles' && feuillesRemplies.length < 5) return;
-    if (valJustif === 'licence' && !valLicence.trim()) return;
+    if (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl) return;
     setValSending(true);
     const payload = {
       club_id: recruteurId,
@@ -216,15 +218,36 @@ export default function DashboardClub() {
       saison: valSaison,
       note: valNote,
       justif_type: valJustif,
-      numero_licence_justif: valJustif === 'licence' ? valLicence.trim() : null,
+      numero_licence_justif: valJustif === 'licence' ? (valLicence.trim() || null) : null,
+      licence_doc_url: valJustif === 'licence' ? (valLicenceUrl || null) : null,
       feuilles_match: valJustif === 'feuilles' ? feuillesRemplies : null,
     };
     await supabase.from("validations_club").upsert(payload, { onConflict: 'club_id,joueur_id,saison' });
     await chargerValidations(selectedJoueur.id);
     setValSending(false);
     setShowValidationModal(false);
-    setValNote(0); setValLicence(''); setValFeuilles(['', '', '', '', '']); setValJustif('feuilles');
+    setValNote(0); setValLicence(''); setValFeuilles(['', '', '', '', '']); setValJustif('feuilles'); setValLicenceUrl('');
     setToast("Note de saison validée !");
+  };
+
+  const uploadLicenceDoc = async (file) => {
+    if (!file || !recruteurId) return;
+    setValLicenceUploading(true);
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: recruteurId }) });
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      formData.append('folder', folder);
+      formData.append('public_id', public_id);
+      formData.append('api_key', api_key);
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.secure_url) setValLicenceUrl(uploadData.secure_url);
+    } catch (e) { console.error(e); }
+    setValLicenceUploading(false);
   };
 
   const isFavori = (joueurId) => favoris.some(f => f.joueur_id === joueurId);
@@ -715,22 +738,52 @@ export default function DashboardClub() {
 
                 {valJustif === 'licence' && (
                   <div style={{ marginBottom: "1.25rem" }}>
-                    <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "6px" }}>Numéro de licence FFF du joueur</label>
+                    <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Document de licence (photo ou PDF)</label>
+
+                    {/* Zone upload */}
+                    <label style={{ display: "block", cursor: "pointer" }}>
+                      <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "20px", textAlign: "center", background: valLicenceUrl ? "#4ade8008" : "#1a1a1a", borderColor: valLicenceUrl ? "#4ade8060" : "#2a2a2a", transition: "all 0.2s" }}>
+                        {valLicenceUploading ? (
+                          <p style={{ margin: 0, fontSize: "13px", color: "#4ade80" }}>⏳ Upload en cours...</p>
+                        ) : valLicenceUrl ? (
+                          <div>
+                            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#4ade80", fontWeight: 700 }}>✓ Document uploadé</p>
+                            {valLicenceUrl.match(/\.(jpg|jpeg|png|webp)$/i) && (
+                              <img src={valLicenceUrl} alt="licence" style={{ maxHeight: "120px", maxWidth: "100%", borderRadius: "8px", marginTop: "6px" }} />
+                            )}
+                            <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#555" }}>Clique pour changer</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p style={{ margin: "0 0 4px", fontSize: "22px" }}>📄</p>
+                            <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>Clique pour uploader la licence</p>
+                            <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#333" }}>JPG, PNG, PDF acceptés</p>
+                          </div>
+                        )}
+                      </div>
+                      <input type="file" accept="image/*,.pdf" onChange={e => e.target.files[0] && uploadLicenceDoc(e.target.files[0])} style={{ display: "none" }} />
+                    </label>
+
+                    <div style={{ margin: "12px 0 4px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ flex: 1, height: "1px", background: "#2a2a2a" }} />
+                      <span style={{ fontSize: "11px", color: "#444" }}>ou renseigne le numéro</span>
+                      <div style={{ flex: 1, height: "1px", background: "#2a2a2a" }} />
+                    </div>
+
                     <input
                       value={valLicence}
                       onChange={e => setValLicence(e.target.value)}
-                      placeholder="Ex: 123456789"
-                      style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                      placeholder="Numéro de licence FFF (ex: 123456789)"
+                      style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "13px", outline: "none", boxSizing: "border-box", marginTop: "4px" }}
                     />
-                    <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#555" }}>Ce numéro doit correspondre à la licence du joueur dans votre club pour la saison sélectionnée.</p>
                   </div>
                 )}
 
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button
                     onClick={soumettreValidation}
-                    disabled={valSending || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim())}
-                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim())) ? 0.4 : 1 }}
+                    disabled={valSending || valLicenceUploading || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)}
+                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
                   >{valSending ? "Validation..." : "✅ Valider cette note"}</button>
                   <button onClick={() => setShowValidationModal(false)} style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
                 </div>
