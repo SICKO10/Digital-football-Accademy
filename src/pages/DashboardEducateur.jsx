@@ -107,6 +107,10 @@ export default function DashboardEducateur() {
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '' })
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
+  const [showPlanificateur, setShowPlanificateur] = useState(false)
+  const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
+  const [generatingPlan, setGeneratingPlan] = useState(false)
+  const [planProgress, setPlanProgress] = useState({ done: 0, total: 0 })
 
   // Notes / Évaluations
   const [notes, setNotes] = useState({})
@@ -247,13 +251,63 @@ export default function DashboardEducateur() {
     if (!newEntrainement.date) return
     const { data } = await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId }).select().single()
     if (data) {
-      // Initialiser présences à false pour tous les joueurs
       const presRows = joueurs.map(j => ({ entrainement_id: data.id, joueur_id: j.id, educateur_id: userId, present: false }))
       if (presRows.length) await supabase.from('presences_entrainement').insert(presRows)
     }
     await chargerEntrainements(userId)
     setNewEntrainement({ date: '', description: '' })
     setShowAddEntrainement(false)
+  }
+
+  const supprimerEntrainement = async (id) => {
+    if (!confirm('Supprimer cette séance et toutes ses présences ?')) return
+    await supabase.from('presences_entrainement').delete().eq('entrainement_id', id)
+    await supabase.from('entrainements').delete().eq('id', id)
+    setEntrainements(prev => prev.filter(e => e.id !== id))
+  }
+
+  const genererSaison = async () => {
+    if (!planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) return
+    setGeneratingPlan(true)
+    // Construire la liste de toutes les dates correspondantes
+    const dates = []
+    const cur = new Date(planSaison.dateDebut)
+    const end = new Date(planSaison.dateFin)
+    while (cur <= end) {
+      if (planSaison.joursActifs.includes(cur.getDay())) {
+        dates.push(cur.toISOString().split('T')[0])
+      }
+      cur.setDate(cur.getDate() + 1)
+    }
+    // Ne créer que les dates qui n'existent pas déjà
+    const existingDates = new Set(entrainements.map(e => e.date?.substring(0, 10)))
+    const newDates = dates.filter(d => !existingDates.has(d))
+    setPlanProgress({ done: 0, total: newDates.length })
+    for (let i = 0; i < newDates.length; i++) {
+      const { data } = await supabase.from('entrainements').insert({
+        date: newDates[i],
+        description: planSaison.theme || '',
+        educateur_id: userId
+      }).select().single()
+      if (data && joueurs.length) {
+        const presRows = joueurs.map(j => ({ entrainement_id: data.id, joueur_id: j.id, educateur_id: userId, present: false }))
+        await supabase.from('presences_entrainement').insert(presRows)
+      }
+      setPlanProgress({ done: i + 1, total: newDates.length })
+    }
+    await chargerEntrainements(userId)
+    setGeneratingPlan(false)
+    setShowPlanificateur(false)
+    setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
+  }
+
+  const toggleJourPlan = (jour) => {
+    setPlanSaison(prev => ({
+      ...prev,
+      joursActifs: prev.joursActifs.includes(jour)
+        ? prev.joursActifs.filter(j => j !== jour)
+        : [...prev.joursActifs, jour]
+    }))
   }
 
   // Statuts disponibles (cycle au clic)
@@ -903,13 +957,21 @@ export default function DashboardEducateur() {
         {/* ===== ENTRAÎNEMENTS ===== */}
         {activeSection === 'entrainements' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Entraînements</h1>
-              <button onClick={() => setShowAddEntrainement(true)} style={st.btnSolid}>+ Séance</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Entraînements</h1>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{entrainements.length} séance{entrainements.length !== 1 ? 's' : ''} · Clique sur une séance pour saisir les présences</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn('#60a5fa')}>📅 Planifier la saison</button>
+                <button onClick={() => { setShowAddEntrainement(true); setShowPlanificateur(false) }} style={st.btnSolid}>+ Séance</button>
+              </div>
             </div>
 
+            {/* ── Ajout séance unique ── */}
             {showAddEntrainement && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ Nouvelle séance</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div><label style={st.label}>Date</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
                   <div><label style={st.label}>Thème (optionnel)</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
@@ -921,58 +983,158 @@ export default function DashboardEducateur() {
               </div>
             )}
 
+            {/* ── Planificateur récurrent ── */}
+            {showPlanificateur && (
+              <div style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#60a5fa' }}>📅 Planifier la saison</p>
+                <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#555' }}>Choisis les jours récurrents et la période — toutes les séances seront créées automatiquement.</p>
+
+                {/* Jours de la semaine */}
+                <label style={st.label}>Jours d'entraînement</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {[['Lun',1],['Mar',2],['Mer',3],['Jeu',4],['Ven',5],['Sam',6],['Dim',0]].map(([label, num]) => {
+                    const actif = planSaison.joursActifs.includes(num)
+                    return (
+                      <button key={num} onClick={() => toggleJourPlan(num)}
+                        style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? '#60a5fa' : '#2a2a2a'}`, background: actif ? '#60a5fa20' : '#1a1a1a', color: actif ? '#60a5fa' : '#666', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Dates + thème */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
+                  <div><label style={st.label}>Début de saison</label><input style={st.input} type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} /></div>
+                  <div><label style={st.label}>Fin de saison</label><input style={st.input} type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} /></div>
+                  <div><label style={st.label}>Thème par défaut (optionnel)</label><input style={st.input} placeholder="Ex: Entraînement, Préparation physique..." value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} /></div>
+                </div>
+
+                {/* Aperçu du nombre de séances */}
+                {planSaison.dateDebut && planSaison.dateFin && planSaison.joursActifs.length > 0 && (() => {
+                  let count = 0
+                  const cur = new Date(planSaison.dateDebut)
+                  const end = new Date(planSaison.dateFin)
+                  while (cur <= end) { if (planSaison.joursActifs.includes(cur.getDay())) count++; cur.setDate(cur.getDate() + 1) }
+                  const existingDates = new Set(entrainements.map(e => e.date?.substring(0, 10)))
+                  let newCount = 0
+                  const cur2 = new Date(planSaison.dateDebut)
+                  while (cur2 <= end) { if (planSaison.joursActifs.includes(cur2.getDay()) && !existingDates.has(cur2.toISOString().split('T')[0])) newCount++; cur2.setDate(cur2.getDate() + 1) }
+                  return (
+                    <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa20', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: '#60a5fa' }}>
+                      📊 <strong>{count}</strong> séances au total · <strong>{newCount}</strong> nouvelles à créer ({count - newCount} déjà existantes)
+                    </div>
+                  )
+                })()}
+
+                {/* Progression */}
+                {generatingPlan && (
+                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#60a5fa' }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
+                    <div style={{ background: '#222', borderRadius: '4px', height: '6px' }}>
+                      <div style={{ background: '#60a5fa', borderRadius: '4px', height: '6px', width: `${planProgress.total > 0 ? (planProgress.done / planProgress.total) * 100 : 0}%`, transition: 'width 0.2s' }} />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={genererSaison} disabled={generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length}
+                    style={{ ...st.btnSolid, background: '#60a5fa', opacity: (generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) ? 0.5 : 1 }}>
+                    {generatingPlan ? 'Génération...' : '🚀 Générer les séances'}
+                  </button>
+                  <button onClick={() => setShowPlanificateur(false)} style={st.btn('#666')}>Annuler</button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Liste des séances ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {entrainements.map(e => {
+              {[...entrainements].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
                 const nbPresents = (e.presences_entrainement || []).filter(p => p.statut === 'present' || p.statut === 'convoque' || (!p.statut && p.present)).length
+                const nbBlesses = (e.presences_entrainement || []).filter(p => p.statut === 'blesse').length
+                const nbMalades = (e.presences_entrainement || []).filter(p => p.statut === 'malade').length
+                const nbConvoques = (e.presences_entrainement || []).filter(p => p.statut === 'convoque').length
                 const total = joueurs.length
+                const dateObj = new Date(e.date + 'T12:00:00')
+                const estFuture = dateObj > new Date()
                 return (
-                  <div key={e.id} style={st.card}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontWeight: 700 }}>{new Date(e.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-                        {e.description && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{e.description}</p>}
+                  <div key={e.id} style={{ ...st.card, borderLeft: `3px solid ${estFuture ? '#60a5fa40' : '#4ade8030'}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {/* Indicateur passé/futur */}
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: estFuture ? '#60a5fa15' : '#4ade8015', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+                        {estFuture ? '📅' : '✅'}
                       </div>
-                      <span style={{ background: nbPresents >= total * 0.8 ? '#4ade8015' : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? '#4ade8030' : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
-                        {nbPresents}/{total} présents
-                      </span>
-                      <span style={{ color: '#444' }}>{ouvert ? '▲' : '▼'}</span>
+                      <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                          {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
+                          {!estFuture && total > 0 && (
+                            <>
+                              <span style={{ fontSize: '11px', color: '#4ade80', background: '#4ade8010', padding: '1px 7px', borderRadius: '10px' }}>✅ {nbPresents}</span>
+                              {nbConvoques > 0 && <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa10', padding: '1px 7px', borderRadius: '10px' }}>🏆 {nbConvoques}</span>}
+                              {nbBlesses > 0 && <span style={{ fontSize: '11px', color: '#f97316', background: '#f9731610', padding: '1px 7px', borderRadius: '10px' }}>🤕 {nbBlesses}</span>}
+                              {nbMalades > 0 && <span style={{ fontSize: '11px', color: '#a855f7', background: '#a855f710', padding: '1px 7px', borderRadius: '10px' }}>🤒 {nbMalades}</span>}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {!estFuture && total > 0 && (
+                          <span style={{ background: nbPresents >= total * 0.8 ? '#4ade8015' : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? '#4ade8030' : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+                            {nbPresents}/{total}
+                          </span>
+                        )}
+                        <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
+                        <span style={{ color: '#444', cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
+                      </div>
                     </div>
 
                     {ouvert && (
                       <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
-                        {/* Légende */}
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                          {Object.entries(STATUT_CONFIG).map(([key, s]) => (
-                            <span key={key} style={{ fontSize: '11px', color: s.color, background: s.bg, border: `1px solid ${s.border}`, padding: '2px 8px', borderRadius: '10px' }}>
-                              {s.emoji} {s.label}
-                            </span>
-                          ))}
-                          <span style={{ fontSize: '11px', color: '#555', alignSelf: 'center' }}>· Clique pour changer</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                          {joueurs.map(j => {
-                            const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
-                            const statut = p?.statut || (p?.present ? 'present' : 'absent')
-                            const cfg = STATUT_CONFIG[statut] || STATUT_CONFIG.absent
-                            return (
-                              <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, statut)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                                <span style={{ fontSize: '16px', flexShrink: 0 }}>{cfg.emoji}</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
+                        {joueurs.length === 0 ? (
+                          <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Ajoute des joueurs dans "Mon équipe" pour saisir les présences.</p>
+                        ) : (
+                          <>
+                            {/* Légende */}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+                              {Object.entries(STATUT_CONFIG).map(([key, s]) => (
+                                <span key={key} style={{ fontSize: '11px', color: s.color, background: s.bg, border: `1px solid ${s.border}`, padding: '2px 8px', borderRadius: '10px' }}>
+                                  {s.emoji} {s.label}
+                                </span>
+                              ))}
+                              <span style={{ fontSize: '11px', color: '#333' }}>· Clique pour changer le statut</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '7px' }}>
+                              {joueurs.map(j => {
+                                const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
+                                const statut = p?.statut || (p?.present ? 'present' : 'absent')
+                                const cfg = STATUT_CONFIG[statut] || STATUT_CONFIG.absent
+                                return (
+                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, statut)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                                    <span style={{ fontSize: '15px', flexShrink: 0 }}>{cfg.emoji}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
+                                      <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
                 )
               })}
-              {entrainements.length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>Aucune séance enregistrée</p></div>}
+              {entrainements.length === 0 && (
+                <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
+                  <p style={{ color: '#555', margin: '0 0 8px' }}>Aucune séance enregistrée</p>
+                  <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>Utilise "📅 Planifier la saison" pour générer toute l'année en un clic</p>
+                </div>
+              )}
             </div>
           </>
         )}
