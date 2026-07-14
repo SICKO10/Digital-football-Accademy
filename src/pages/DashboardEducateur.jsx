@@ -108,8 +108,9 @@ export default function DashboardEducateur() {
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
 
-  // Notes
+  // Notes / Évaluations
   const [notes, setNotes] = useState({})
+  const [localNotes, setLocalNotes] = useState({}) // édition en cours par joueur_id
   const [savingNote, setSavingNote] = useState(false)
 
   useEffect(() => { init() }, [])
@@ -144,9 +145,20 @@ export default function DashboardEducateur() {
     const { data } = await supabase.from('notes_joueurs').select('*').eq('educateur_id', uid)
     if (data) {
       const map = {}
-      data.forEach(n => { map[n.joueur_id] = n })
+      const localMap = {}
+      data.forEach(n => {
+        map[n.joueur_id] = n
+        localMap[n.joueur_id] = { technique: n.technique || 0, physique: n.physique || 0, mental: n.mental || 0, tactique: n.tactique || 0, commentaire: n.commentaire || '', visible_joueur: n.visible_joueur || false }
+      })
       setNotes(map)
+      setLocalNotes(localMap)
     }
+  }
+
+  const getLocalNote = (joueurId) => localNotes[joueurId] || { technique: 0, physique: 0, mental: 0, tactique: 0, commentaire: '', visible_joueur: false }
+
+  const setLocalNote = (joueurId, update) => {
+    setLocalNotes(prev => ({ ...prev, [joueurId]: { ...getLocalNote(joueurId), ...update } }))
   }
 
   const ajouterJoueur = async () => {
@@ -347,7 +359,7 @@ export default function DashboardEducateur() {
     { key: 'stats', label: '📊 Stats joueurs' },
     { key: 'matchs', label: '⚽ Matchs & Classement' },
     { key: 'entrainements', label: '🏃 Entraînements' },
-    { key: 'notes', label: '📋 Carnet de notes' },
+    { key: 'notes', label: '📝 Évaluations' },
   ]
 
   return (
@@ -965,20 +977,19 @@ export default function DashboardEducateur() {
           </>
         )}
 
-        {/* ===== CARNET DE NOTES ===== */}
+        {/* ===== ÉVALUATIONS ===== */}
         {activeSection === 'notes' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Carnet de notes</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Note + commentaire partageable avec le joueur via le toggle ci-dessous</p>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📝 Évaluations joueurs</h1>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Note chaque joueur sur 4 critères. Active le toggle pour partager ta note avec le joueur dans son propre dashboard.</p>
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>Ajoute d'abord des joueurs dans "Mon équipe"</p></div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {joueurs.map(j => {
-                  const note = notes[j.id] || {}
-                  const [localNote, setLocalNote] = useState({ technique: note.technique || 0, physique: note.physique || 0, mental: note.mental || 0, tactique: note.tactique || 0, commentaire: note.commentaire || '', visible_joueur: note.visible_joueur || false })
-                  const noteGlobale = localNote.technique || localNote.physique || localNote.mental || localNote.tactique
-                    ? ((localNote.technique + localNote.physique + localNote.mental + localNote.tactique) / 4).toFixed(1)
+                  const ln = getLocalNote(j.id)
+                  const noteGlobale = ln.technique || ln.physique || ln.mental || ln.tactique
+                    ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1)
                     : null
                   return (
                     <div key={j.id} style={st.card}>
@@ -998,35 +1009,35 @@ export default function DashboardEducateur() {
                             <label style={st.label}>{label}</label>
                             <div style={{ display: 'flex', gap: '4px' }}>
                               {[1,2,3,4,5].map(n => (
-                                <span key={n} onClick={() => setLocalNote(prev => ({ ...prev, [key]: n }))}
-                                  style={{ cursor: 'pointer', fontSize: '20px', opacity: localNote[key] >= n ? 1 : 0.2 }}>⭐</span>
+                                <span key={n} onClick={() => setLocalNote(j.id, { [key]: n })}
+                                  style={{ cursor: 'pointer', fontSize: '20px', opacity: ln[key] >= n ? 1 : 0.2 }}>⭐</span>
                               ))}
                             </div>
                           </div>
                         ))}
                       </div>
                       {/* Toggle visible par le joueur */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: localNote.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${localNote.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setLocalNote(prev => ({ ...prev, visible_joueur: !prev.visible_joueur }))}>
-                        <div style={{ width: '36px', height: '20px', background: localNote.visible_joueur ? '#4ade80' : '#333', borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                          <div style={{ position: 'absolute', top: '3px', left: localNote.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${ln.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: 'pointer' }}
+                        onClick={() => setLocalNote(j.id, { visible_joueur: !ln.visible_joueur })}>
+                        <div style={{ width: '36px', height: '20px', background: ln.visible_joueur ? '#4ade80' : '#333', borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                          <div style={{ position: 'absolute', top: '3px', left: ln.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
                         </div>
                         <div>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: localNote.visible_joueur ? '#4ade80' : '#aaa' }}>
-                            {localNote.visible_joueur ? '👁️ Visible par le joueur' : '🔒 Privé (non visible)'}
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? '#4ade80' : '#aaa' }}>
+                            {ln.visible_joueur ? '👁️ Visible par le joueur' : '🔒 Privé (non visible)'}
                           </p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
-                            {localNote.visible_joueur ? 'Le joueur peut voir cette note et ce commentaire dans son dashboard' : 'Seul vous voyez cette note'}
+                            {ln.visible_joueur ? 'Le joueur verra cette note dans son dashboard' : 'Seul vous voyez cette évaluation'}
                           </p>
                         </div>
                       </div>
-
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={st.label}>{localNote.visible_joueur ? '💬 Commentaire (visible par le joueur)' : '💬 Commentaire (privé)'}</label>
-                        <textarea value={localNote.commentaire} onChange={e => setLocalNote(prev => ({ ...prev, commentaire: e.target.value }))}
+                        <label style={st.label}>{ln.visible_joueur ? '💬 Commentaire (visible par le joueur)' : '💬 Commentaire (privé)'}</label>
+                        <textarea value={ln.commentaire} onChange={e => setLocalNote(j.id, { commentaire: e.target.value })}
                           placeholder="Points forts, axes de progression, comportement..."
                           style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
                       </div>
-                      <button onClick={() => sauvegarderNote(j.id, localNote)} disabled={savingNote} style={st.btnSolid}>
+                      <button onClick={() => sauvegarderNote(j.id, ln)} disabled={savingNote} style={st.btnSolid}>
                         {savingNote ? 'Sauvegarde...' : '💾 Sauvegarder'}
                       </button>
                     </div>
