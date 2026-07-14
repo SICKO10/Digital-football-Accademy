@@ -126,9 +126,21 @@ export default function DashboardEducateur() {
     setShowAddEntrainement(false)
   }
 
-  const togglePresence = async (entrainementId, joueurId, actuel) => {
+  // Statuts disponibles (cycle au clic)
+  const STATUTS = ['absent', 'present', 'blesse', 'malade', 'convoque']
+  const STATUT_CONFIG = {
+    present:  { label: 'Présent',   emoji: '✅', bg: '#4ade8015', border: '#4ade8040', color: '#4ade80' },
+    absent:   { label: 'Absent',    emoji: '❌', bg: '#ef444415', border: '#ef444440', color: '#ef4444' },
+    blesse:   { label: 'Blessé',    emoji: '🤕', bg: '#f9731615', border: '#f9731640', color: '#f97316' },
+    malade:   { label: 'Malade',    emoji: '🤒', bg: '#a855f715', border: '#a855f740', color: '#a855f7' },
+    convoque: { label: 'Convoqué',  emoji: '🏆', bg: '#60a5fa15', border: '#60a5fa40', color: '#60a5fa' },
+  }
+
+  const cyclerPresence = async (entrainementId, joueurId, statutActuel) => {
+    const idx = STATUTS.indexOf(statutActuel || 'absent')
+    const prochain = STATUTS[(idx + 1) % STATUTS.length]
     await supabase.from('presences_entrainement').upsert(
-      { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, present: !actuel },
+      { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, statut: prochain, present: prochain === 'present' || prochain === 'convoque' },
       { onConflict: 'entrainement_id,joueur_id' }
     )
     await chargerEntrainements(userId)
@@ -180,11 +192,20 @@ export default function DashboardEducateur() {
   const tauxPresence = (joueurId) => {
     if (!entrainements.length) return null
     const total = entrainements.length
-    const present = entrainements.reduce((acc, e) => {
+    const presents = entrainements.reduce((acc, e) => {
       const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      return acc + (p?.present ? 1 : 0)
+      const s = p?.statut || (p?.present ? 'present' : 'absent')
+      return acc + (['present', 'convoque'].includes(s) ? 1 : 0)
     }, 0)
-    return Math.round((present / total) * 100)
+    const absents = entrainements.reduce((acc, e) => {
+      const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
+      return acc + (p?.statut === 'absent' || (!p?.statut && !p?.present) ? 1 : 0)
+    }, 0)
+    const blesses = entrainements.reduce((acc, e) => {
+      const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
+      return acc + (['blesse', 'malade'].includes(p?.statut) ? 1 : 0)
+    }, 0)
+    return { taux: Math.round((presents / total) * 100), presents, absents, blesses, total }
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
@@ -298,7 +319,7 @@ export default function DashboardEducateur() {
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
-                        {tx !== null && <span style={{ background: tx >= 80 ? '#4ade8015' : tx >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx >= 80 ? '#4ade8030' : tx >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx >= 80 ? '#4ade80' : tx >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx}% présence</span>}
+                        {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}% · ✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>}
                       </div>
                     </div>
                   )
@@ -342,7 +363,12 @@ export default function DashboardEducateur() {
                           <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : '#333' }}>{s.cartons_j}</td>
                           <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : '#333' }}>{s.cartons_r}</td>
                           <td style={{ padding: '10px 12px' }}>
-                            {tx !== null ? <span style={{ color: tx >= 80 ? '#4ade80' : tx >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx}%</span> : <span style={{ color: '#333' }}>—</span>}
+                            {tx !== null ? (
+                              <div>
+                                <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
+                                <span style={{ fontSize: '10px', color: '#555', marginLeft: '4px' }}>✅{tx.presents} ❌{tx.absents} 🤕{tx.blesses}</span>
+                              </div>
+                            ) : <span style={{ color: '#333' }}>—</span>}
                           </td>
                         </tr>
                       )
@@ -526,7 +552,7 @@ export default function DashboardEducateur() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {entrainements.map(e => {
                 const ouvert = entrainementActif === e.id
-                const nbPresents = (e.presences_entrainement || []).filter(p => p.present).length
+                const nbPresents = (e.presences_entrainement || []).filter(p => p.statut === 'present' || p.statut === 'convoque' || (!p.statut && p.present)).length
                 const total = joueurs.length
                 return (
                   <div key={e.id} style={st.card}>
@@ -543,15 +569,28 @@ export default function DashboardEducateur() {
 
                     {ouvert && (
                       <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                        {/* Légende */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                          {Object.entries(STATUT_CONFIG).map(([key, s]) => (
+                            <span key={key} style={{ fontSize: '11px', color: s.color, background: s.bg, border: `1px solid ${s.border}`, padding: '2px 8px', borderRadius: '10px' }}>
+                              {s.emoji} {s.label}
+                            </span>
+                          ))}
+                          <span style={{ fontSize: '11px', color: '#555', alignSelf: 'center' }}>· Clique pour changer</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
                           {joueurs.map(j => {
                             const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
-                            const present = p?.present || false
+                            const statut = p?.statut || (p?.present ? 'present' : 'absent')
+                            const cfg = STATUT_CONFIG[statut] || STATUT_CONFIG.absent
                             return (
-                              <div key={j.id} onClick={() => togglePresence(e.id, j.id, present)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: present ? '#4ade8010' : '#141414', border: `1px solid ${present ? '#4ade8030' : '#222'}`, borderRadius: '8px', cursor: 'pointer' }}>
-                                <span style={{ fontSize: '16px' }}>{present ? '✅' : '❌'}</span>
-                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{j.prenom} {j.nom}</span>
+                              <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, statut)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                                <span style={{ fontSize: '16px', flexShrink: 0 }}>{cfg.emoji}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
+                                </div>
                               </div>
                             )
                           })}

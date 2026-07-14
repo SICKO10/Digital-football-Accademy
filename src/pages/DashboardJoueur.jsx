@@ -693,7 +693,7 @@ function DashboardJoueur() {
     { id: 'certif', label: 'Certification', icon: <IconBadge /> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
-    { id: 'coach', label: 'Coach', icon: <IconMic />, badge: coachUnread },
+    { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread },
     { id: 'clubs', label: 'Explorer', icon: <IconBuilding /> },
   ]
 
@@ -960,7 +960,7 @@ function DashboardJoueur() {
                     <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#f97316' }}>Coach Expert</p>
+                      <p style={{ fontSize: '11px', color: '#f97316' }}>Coach Analyseur</p>
                     </div>
                     <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
@@ -1573,8 +1573,8 @@ function DashboardJoueur() {
         {onglet === 'coach' && (
           <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Support Coach</h2>
-              <p style={{ fontSize: '13px', color: '#555' }}>Pose tes questions directement à notre coach expert.</p>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Analyse Vidéo</h2>
+              <p style={{ fontSize: '13px', color: '#555' }}>Envoie ta vidéo et reçois une analyse détaillée de notre coach analyseur.</p>
             </div>
             {convCoach.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
@@ -1587,7 +1587,7 @@ function DashboardJoueur() {
                     return messages.filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
                       <div key={i} style={msgBubble(m.sender_id === userId)}>
                         <p style={{ margin: 0 }}>{m.content}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach'}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach Analyseur'}</p>
                       </div>
                     ))
                   })()}
@@ -1615,7 +1615,7 @@ function DashboardJoueur() {
                   </div>
                 )}
                 <label style={{ ...labelStyle, marginBottom: '10px', display: 'block' }}>
-                  {convCoach.length > 0 ? 'Nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach'}`}
+                  {convCoach.length > 0 ? 'Nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach analyseur'}`}
                 </label>
                 {coachSent ? (
                   <div style={{ textAlign: 'center', padding: '36px 0', color: '#f97316' }}>
@@ -1629,7 +1629,7 @@ function DashboardJoueur() {
                       style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                     <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
                       style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
-                      {sendingCoach ? 'Envoi...' : 'Envoyer au coach'}
+                      {sendingCoach ? 'Envoi...' : 'Envoyer au coach analyseur'}
                     </button>
                   </>
                 )}
@@ -1777,7 +1777,13 @@ function DashboardJoueur() {
             <button
               onClick={() => { setNotationCible(recruteurModal); setRecruteurModal(null) }}
               style={{ width: '100%', marginTop: '1rem', background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              ⭐ Noter ce recruteur
+              ⭐ {(() => {
+                const t = (recruteurModal?.type_recruteur || '').toLowerCase()
+                if (t.includes('club') || t.includes('directeur')) return 'Noter ce club'
+                if (t.includes('éducateur') || t.includes('educateur') || t.includes('coach') || t.includes('entraîneur')) return 'Noter cet éducateur'
+                if (t.includes('agent')) return 'Noter cet agent'
+                return 'Noter ce recruteur'
+              })()}
             </button>
           </div>
         </div>
