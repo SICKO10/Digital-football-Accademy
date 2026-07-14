@@ -1,6 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+
+// ── Charge SheetJS depuis CDN (xlsx) ─────────────────────────────────────────
+function loadSheetJS() {
+  return new Promise((resolve) => {
+    if (window.XLSX) { resolve(window.XLSX); return }
+    const s = document.createElement('script')
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+    s.onload = () => resolve(window.XLSX)
+    document.head.appendChild(s)
+  })
+}
+
+// ── Normalise les en-têtes Excel vers nos champs ──────────────────────────────
+const HEADER_MAP = {
+  prenom: 'prenom', prénom: 'prenom', firstname: 'prenom', 'first name': 'prenom',
+  nom: 'nom', lastname: 'nom', 'last name': 'nom',
+  poste: 'poste', position: 'poste',
+  categorie: 'categorie', catégorie: 'categorie', category: 'categorie',
+  'numero maillot': 'numero_maillot', 'numéro maillot': 'numero_maillot', maillot: 'numero_maillot', numero: 'numero_maillot', '#': 'numero_maillot',
+  'date naissance': 'date_naissance', 'date de naissance': 'date_naissance', ddn: 'date_naissance', birthdate: 'date_naissance',
+  'numero licence': 'numero_licence', 'numéro licence': 'numero_licence', licence: 'numero_licence',
+}
+
+function parseRows(raw) {
+  return raw
+    .map(row => {
+      const j = {}
+      for (const [k, v] of Object.entries(row)) {
+        const key = HEADER_MAP[k.toLowerCase().trim()]
+        if (key && v !== undefined && v !== null && String(v).trim() !== '') {
+          j[key] = String(v).trim()
+        }
+      }
+      return j
+    })
+    .filter(j => j.prenom && j.nom)
+}
 
 // ── Bar chart horizontal SVG ──────────────────────────────────────────────────
 function BarChart({ data, color = '#4ade80', unit = '', max: forceMax }) {
@@ -50,6 +87,9 @@ export default function DashboardEducateur() {
   const [joueurs, setJoueurs] = useState([])
   const [showAddJoueur, setShowAddJoueur] = useState(false)
   const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
+  const importRef = useRef(null)
+  const [importPreview, setImportPreview] = useState(null) // { rows: [], importing: false, done: 0 }
+  const [importError, setImportError] = useState('')
   const [savingJoueur, setSavingJoueur] = useState(false)
   const [joueurActif, setJoueurActif] = useState(null)
 
@@ -124,6 +164,47 @@ export default function DashboardEducateur() {
     await supabase.from('equipe_joueurs').delete().eq('id', id)
     setJoueurs(prev => prev.filter(j => j.id !== id))
     if (joueurActif?.id === id) setJoueurActif(null)
+  }
+
+  const telechargerTemplate = () => {
+    const csv = 'Prenom,Nom,Poste,Categorie,Numero Maillot,Date Naissance,Numero Licence\nJean,Dupont,Attaquant,U17,9,2007-03-15,123456\nMarie,Martin,Gardien,U15,1,2009-06-20,'
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'template_effectif.csv'
+    a.click()
+  }
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImportError('')
+    try {
+      const XLSX = await loadSheetJS()
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer, { type: 'array', cellDates: true })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      const rows = parseRows(raw)
+      if (rows.length === 0) { setImportError('Aucun joueur trouvé. Vérifie que ton fichier a les colonnes Prenom et Nom.'); return }
+      setImportPreview({ rows, importing: false, done: 0 })
+    } catch (err) {
+      setImportError('Erreur lecture fichier : ' + err.message)
+    }
+    e.target.value = ''
+  }
+
+  const confirmerImport = async () => {
+    if (!importPreview) return
+    setImportPreview(prev => ({ ...prev, importing: true, done: 0 }))
+    let done = 0
+    for (const row of importPreview.rows) {
+      await supabase.from('equipe_joueurs').insert({ ...row, educateur_id: userId })
+      done++
+      setImportPreview(prev => ({ ...prev, done }))
+    }
+    await chargerJoueurs(userId)
+    setImportPreview(null)
   }
 
   const ajouterMatch = async () => {
@@ -305,8 +386,74 @@ export default function DashboardEducateur() {
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Mon équipe</h1>
                 <p style={{ color: '#555', fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} dans l'effectif</p>
               </div>
-              <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title="Télécharger un modèle Excel/CSV">📥 Template</button>
+                <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 Importer Excel/CSV</button>
+                <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
+                <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
+              </div>
             </div>
+
+            {importError && (
+              <div style={{ background: '#f8717115', border: '1px solid #f8717140', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', color: '#f87171', fontSize: '13px' }}>
+                ⚠️ {importError}
+              </div>
+            )}
+
+            {/* ── Modal prévisualisation import ── */}
+            {importPreview && (
+              <div style={{ ...st.card, border: '1px solid #a78bfa40', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, color: '#a78bfa', fontSize: '15px' }}>📂 {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''} détecté{importPreview.rows.length > 1 ? 's' : ''}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>Vérifie les données avant d'importer</p>
+                  </div>
+                  {!importPreview.importing && (
+                    <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '18px' }}>✕</button>
+                  )}
+                </div>
+
+                {/* Table de prévisualisation */}
+                <div style={{ overflow: 'auto', marginBottom: '1rem', maxHeight: '260px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                        {['Prénom', 'Nom', 'Poste', 'Catégorie', 'Maillot', 'Naissance', 'Licence'].map(h => (
+                          <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.rows.map((r, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid #1a1a1a', background: i < importPreview.done ? '#4ade8008' : 'transparent' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 600, color: i < importPreview.done ? '#4ade80' : '#fff' }}>{r.prenom}</td>
+                          <td style={{ padding: '7px 10px', color: i < importPreview.done ? '#4ade80' : '#fff' }}>{r.nom}</td>
+                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.poste || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.categorie || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.numero_maillot || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.date_naissance || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.numero_licence || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {importPreview.importing ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ flex: 1, background: '#1a1a1a', borderRadius: '6px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: '#4ade80', width: `${(importPreview.done / importPreview.rows.length) * 100}%`, transition: 'width 0.3s', borderRadius: '6px' }} />
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#4ade80', fontWeight: 700, flexShrink: 0 }}>{importPreview.done}/{importPreview.rows.length}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={confirmerImport} style={st.btnSolid}>✅ Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
+                    <button onClick={() => setImportPreview(null)} style={st.btn('#666')}>Annuler</button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {showAddJoueur && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
