@@ -279,8 +279,8 @@ function DashboardJoueur() {
       { data: prochainMatchs },
       { data: effectif },
     ] = await Promise.all([
-      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('joueur_id', equipeJoueurId),
-      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId),
+      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
+      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, victoire').eq('educateur_id', educateurId),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
@@ -348,6 +348,8 @@ function DashboardJoueur() {
         })
     }
     const leaderButs = buildLeader(tousMatchs, r => r.buts || 0)
+    const leaderPasses = buildLeader(tousMatchs, r => r.passes_dec || 0)
+    const leaderVictoires = buildLeader(tousMatchs, r => r.victoire ? 1 : 0)
     const leaderPoints = buildLeader(toutesPresences, r => r.point_seance ? 1 : 0)
 
     setStatsJoueur(prev => ({
@@ -360,7 +362,7 @@ function DashboardJoueur() {
         noteEdu: noteEdu || null,
         ligueUrl: profilEdu?.ligue_url || null,
         prochainMatchs: prochainMatchs || [],
-        leaderButs, leaderPoints,
+        leaderButs, leaderPasses, leaderVictoires, leaderPoints,
       }
     }))
     setStatsLoading(prev => ({ ...prev, [affiliationId]: false }))
@@ -2165,9 +2167,11 @@ function DashboardJoueur() {
                                   <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     {[
-                                      { title: '⚽ Top buteurs', data: s.leaderButs, unit: 'but' },
-                                      { title: '⭐ Points séance', data: s.leaderPoints, unit: 'pt' },
-                                    ].map(({ title, data, unit }) => (
+                                      { title: '⚽ Top buteurs', data: s.leaderButs },
+                                      { title: '🎯 Top passeurs', data: s.leaderPasses },
+                                      { title: '🏆 Top victoires', data: s.leaderVictoires },
+                                      { title: '⭐ Points séance', data: s.leaderPoints },
+                                    ].map(({ title, data }) => (
                                       <div key={title} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
                                         <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555' }}>{title}</p>
                                         {data?.length > 0 ? data.map((row, i) => (
