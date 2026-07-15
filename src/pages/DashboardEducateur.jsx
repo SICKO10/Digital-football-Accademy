@@ -58,6 +58,28 @@ function BarChart({ data, color = '#4ade80', unit = '', max: forceMax }) {
   )
 }
 
+// ── Radial progress skill (anneau rempli pour une compétence /5) ─────────────
+function RadialSkill({ value, max = 5, color, label, size = 80 }) {
+  const r = size * 0.36, cx = size / 2, cy = size / 2
+  const circ = 2 * Math.PI * r
+  const fill = (value / max) * circ
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth={size * 0.09} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={size * 0.09}
+          strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
+          transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+        <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
+          fontSize={size * 0.22} fontWeight="800" fill="#fff" fontFamily="Inter,sans-serif">{value || 0}</text>
+        <text x={cx} y={cy + size * 0.2} textAnchor="middle"
+          fontSize={size * 0.11} fill="#555" fontFamily="Inter,sans-serif">/{max}</text>
+      </svg>
+      <span style={{ fontSize: '11px', color: '#555', fontFamily: 'Inter,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
+    </div>
+  )
+}
+
 // ── Mini donut présence (anneau simple) ──────────────────────────────────────
 function DonutPresence({ taux }) {
   const r = 16, circ = 2 * Math.PI * r
@@ -124,8 +146,9 @@ export default function DashboardEducateur() {
   const [savingJoueur, setSavingJoueur] = useState(false)
   const [joueurActif, setJoueurActif] = useState(null)
   const [vueEquipe, setVueEquipe] = useState('poste') // 'poste' | 'liste'
-  const [joueurEnEdition, setJoueurEnEdition] = useState(null) // { id, prenom, nom, poste, ... }
+  const [joueurEnEdition, setJoueurEnEdition] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
+  const [joueurProfil, setJoueurProfil] = useState(null)
 
   // Matchs
   const [matchs, setMatchs] = useState([])
@@ -515,6 +538,107 @@ export default function DashboardEducateur() {
               </div>
             </div>
 
+            {/* ── Modal profil joueur ── */}
+            {joueurProfil && (() => {
+              const j = joueurProfil
+              const tx = tauxPresence(j.id)
+              const s = statsGlobalesJoueur(j.id)
+              const ln = getLocalNote(j.id)
+              const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
+              const noteGlobale = (ln.technique || ln.physique || ln.mental || ln.tactique)
+                ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1) : null
+              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? '#60a5fa' : j.poste?.toLowerCase().includes('milieu') ? '#a78bfa' : '#4ade80'
+              return (
+                <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
+                  <div style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+
+                    {/* Header */}
+                    <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: '1px solid #1a1a1a', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: posColor + '25', border: `2px solid ${posColor}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: posColor, fontWeight: 800, fontSize: '20px', flexShrink: 0 }}>
+                        {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
+                        <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${j.categorie}` : ''}</p>
+                        {j.numero_licence && <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa15', padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
+                      </div>
+                      {noteGlobale && <div style={{ textAlign: 'center' }}><p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#fbbf24' }}>{noteGlobale}</p><p style={{ margin: 0, fontSize: '10px', color: '#555' }}>NOTE ÉDU.</p></div>}
+                      <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
+                    </div>
+
+                    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                      {/* Présence - Donut multi + stats */}
+                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                        <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏃 Présence aux entraînements</p>
+                        {tx ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                            <DonutMulti presents={tx.presents} absents={tx.absents} blesses={tx.blesses} malade={tx.malade} convoque={tx.convoque} size={110} />
+                            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              {[
+                                { emoji: '✅', label: 'Présent', val: tx.presents, color: '#4ade80' },
+                                { emoji: '🏆', label: 'Convoqué', val: tx.convoque, color: '#60a5fa' },
+                                { emoji: '❌', label: 'Absent', val: tx.absents, color: '#ef4444' },
+                                { emoji: '🤕', label: 'Blessé', val: tx.blesses, color: '#f97316' },
+                                { emoji: '🤒', label: 'Malade', val: tx.malade, color: '#a855f7' },
+                                { emoji: '📅', label: 'Séances', val: tx.total, color: '#fff' },
+                              ].map(s => (
+                                <div key={s.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '12px', color: '#555' }}>{s.emoji} {s.label}</span>
+                                  <span style={{ fontWeight: 700, color: s.color, fontSize: '14px' }}>{s.val}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>Aucune présence saisie pour ce joueur.</p>}
+                      </div>
+
+                      {/* Évaluations - Radial skills */}
+                      {(ln.technique || ln.physique || ln.mental || ln.tactique) ? (
+                        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                          <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ Évaluation éducateur</p>
+                          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '12px' }}>
+                            <RadialSkill value={ln.technique} color="#4ade80" label="Technique" size={90} />
+                            <RadialSkill value={ln.physique} color="#60a5fa" label="Physique" size={90} />
+                            <RadialSkill value={ln.mental} color="#a78bfa" label="Mental" size={90} />
+                            <RadialSkill value={ln.tactique} color="#fbbf24" label="Tactique" size={90} />
+                          </div>
+                          {ln.commentaire && <p style={{ margin: '14px 0 0', fontSize: '13px', color: '#aaa', background: '#0a0a0a', borderRadius: '8px', padding: '10px 14px', fontStyle: 'italic' }}>"{ln.commentaire}"</p>}
+                        </div>
+                      ) : null}
+
+                      {/* Stats matchs */}
+                      {s.matchs > 0 && (
+                        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                          <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ Stats matchs</p>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px' }}>
+                            {[
+                              { label: 'Matchs', val: s.matchs, color: '#fff' },
+                              { label: 'Minutes', val: `${s.minutes}'`, color: '#fff' },
+                              { label: 'Buts', val: s.buts, color: '#4ade80' },
+                              { label: 'Passes D.', val: s.passes_dec, color: '#60a5fa' },
+                              { label: 'Clean S.', val: s.clean_sheets, color: '#a78bfa' },
+                              { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
+                              { label: '🟥', val: s.cartons_r, color: '#ef4444' },
+                            ].map(c => (
+                              <div key={c.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
+                                <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
+                                <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>{c.label}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ Modifier les infos</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* ── Modal édition joueur ── */}
             {joueurEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -641,7 +765,7 @@ export default function DashboardEducateur() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                      {['#', 'Joueur', 'Poste', 'Âge', 'Licence', 'Présence', ''].map(h => (
+                      {['#', 'Joueur', 'Poste', 'Âge', 'Licence', ''].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -662,13 +786,11 @@ export default function DashboardEducateur() {
                             <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                             <td style={{ padding: '10px 12px' }}><span style={{ color: posColor, fontSize: '12px' }}>{j.poste || '—'}</span></td>
                             <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
-                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700 }}>🪪 Oui</span> : <span style={{ color: '#333', fontSize: '11px' }}>—</span>}</td>
-                            <td style={{ padding: '10px 12px' }}>
-                              {tx !== null ? <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span> : <span style={{ color: '#333' }}>—</span>}
-                            </td>
+                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700 }}>🪪</span> : <span style={{ color: '#333', fontSize: '11px' }}>—</span>}</td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                                <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                                <button onClick={() => setJoueurProfil(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
+                                <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
                                 <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
                               </div>
                             </td>
@@ -715,9 +837,9 @@ export default function DashboardEducateur() {
                                   <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
-                                {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}%</span>}
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪</span>}
+                                <button onClick={e => { e.stopPropagation(); setJoueurProfil(j) }} style={{ background: groupe.color + '15', border: `1px solid ${groupe.color}30`, color: groupe.color, borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
                               </div>
                             </div>
                           )
