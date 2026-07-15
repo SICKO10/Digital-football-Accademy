@@ -2275,6 +2275,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           {['National 3','Régional 1','Régional 2','Régional 3','Départemental 1','Départemental 2','Départemental 3','District','Loisir'].map(n => <option key={n}>{n}</option>)}
                         </select>
                       </div>
+                      <div>
+                        <label style={st.label}>🏆 Lien classement ligue (URL)</label>
+                        <input style={st.input} type="url" placeholder="https://fff.fr/..." value={profilEduEdit.ligue_url || ''} onChange={e => setProfilEduEdit(p => ({ ...p, ligue_url: e.target.value }))} />
+                      </div>
                     </div>
                   </div>
                 </div>
