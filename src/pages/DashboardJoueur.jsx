@@ -270,19 +270,15 @@ function DashboardJoueur() {
       ? await supabase.from('presences_entrainement').select('equipe_joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
       : { data: [] }
 
-    // 4. IDs des matchs de l'éducateur pour classements
-    const { data: matchsEquipe } = await supabase.from('matchs_equipe').select('id').eq('educateur_id', educateurId)
-    const matchIds = matchsEquipe?.map(m => m.id) || []
-
-    // 5. Stats match
+    // 4. Stats match
     const [
       { data: matchsMoi },
       { data: tousMatchs },
       { data: noteEdu },
       { data: profilEdu },
     ] = await Promise.all([
-      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId).then(r => { console.log('[stats] matchsMoi:', r.data, r.error); return r }),
-      matchIds.length ? supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').in('match_id', matchIds).then(r => { console.log('[stats] tousMatchs:', r.data?.length, r.error); return r }) : Promise.resolve({ data: [] }),
+      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('joueur_id', equipeJoueurId),
+      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
     ])
@@ -313,10 +309,10 @@ function DashboardJoueur() {
     }))
 
     // --- Classements équipe ---
-    const calcRank = (playerVal, allData, keyFn, higher = true) => {
+    const calcRank = (playerVal, allData, keyFn, idKey = 'joueur_id', higher = true) => {
       const vals = {}
       allData?.forEach(r => {
-        const id = r.equipe_joueur_id
+        const id = r[idKey]
         if (!vals[id]) vals[id] = 0
         vals[id] += keyFn(r)
       })
@@ -325,11 +321,11 @@ function DashboardJoueur() {
       return { rank: sorted.findIndex(v => v <= myVal) + 1, total: Object.keys(vals).length }
     }
 
-    const rankButs = calcRank(buts, tousMatchs, r => r.buts || 0)
-    const rankPasses = calcRank(passes, tousMatchs, r => r.passes_dec || 0)
-    const rankMatchs = calcRank(matchsJoues, tousMatchs, r => (r.minutes || 0) > 0 ? 1 : 0)
-    const rankClean = calcRank(cleanSheets, tousMatchs, r => r.clean_sheet ? 1 : 0)
-    const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0)
+    const rankButs = calcRank(buts, tousMatchs, r => r.buts || 0, 'joueur_id')
+    const rankPasses = calcRank(passes, tousMatchs, r => r.passes_dec || 0, 'joueur_id')
+    const rankMatchs = calcRank(matchsJoues, tousMatchs, r => (r.minutes || 0) > 0 ? 1 : 0, 'joueur_id')
+    const rankClean = calcRank(cleanSheets, tousMatchs, r => r.clean_sheet ? 1 : 0, 'joueur_id')
+    const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0, 'equipe_joueur_id')
 
     setStatsJoueur(prev => ({
       ...prev,
