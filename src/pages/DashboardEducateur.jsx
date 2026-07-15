@@ -273,7 +273,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id)])
     setLoading(false)
   }
 
@@ -286,6 +286,13 @@ export default function DashboardEducateur() {
       .limit(1)
       .maybeSingle()
     setClubAffiliation(data || null)
+  }
+
+  const chargerClubCategories = async (uid) => {
+    const { data: aff } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', uid).eq('statut', 'accepte').maybeSingle()
+    if (!aff) { setClubCategories([]); return }
+    const { data } = await supabase.from('club_categories').select('*').eq('club_id', aff.club_id).order('nom')
+    setClubCategories(data || [])
   }
 
   const chargerJoueurs = async (uid) => {
@@ -327,6 +334,7 @@ export default function DashboardEducateur() {
   const [affiliations, setAffiliations] = useState([])
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  const [clubCategories, setClubCategories] = useState([])
   const [codeClubInput, setCodeClubInput] = useState('')
   const [sendingCodeClub, setSendingCodeClub] = useState(false)
   const [codeClubError, setCodeClubError] = useState(null)
@@ -449,6 +457,11 @@ export default function DashboardEducateur() {
     await chargerJoueurs(userId)
     setJoueurEnEdition(null)
     setSavingEdit(false)
+  }
+
+  const assignerCategorieClub = async (joueurId, categorieId) => {
+    await supabase.from('equipe_joueurs').update({ club_categorie_id: categorieId || null }).eq('id', joueurId)
+    await chargerJoueurs(userId)
   }
 
   const telechargerTemplate = () => {
@@ -1117,6 +1130,15 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     <div><label style={st.label}>Date de naissance</label><input style={st.input} type="date" value={joueurEnEdition.date_naissance || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, date_naissance: e.target.value }))} /></div>
                     <div><label style={st.label}>Catégorie</label><input style={st.input} placeholder="U17, U18..." value={joueurEnEdition.categorie || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, categorie: e.target.value }))} /></div>
                     <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>N° licence FFF</label><input style={st.input} placeholder="Numéro de licence" value={joueurEnEdition.numero_licence || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_licence: e.target.value }))} /></div>
+                    {clubCategories.length > 0 && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={st.label}>Catégorie club (pour les classements)</label>
+                        <select style={st.input} value={joueurEnEdition.club_categorie_id || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, club_categorie_id: e.target.value }))}>
+                          <option value="">— Non assigné —</option>
+                          {clubCategories.map(c => <option key={c.id} value={c.id}>{c.nom} — Équipe {c.equipe}</option>)}
+                        </select>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : '💾 Sauvegarder'}</button>
@@ -1295,6 +1317,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                               </div>
                               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪</span>}
+                                {j.club_categorie_id && (() => {
+                                  const cat = clubCategories.find(c => c.id === j.club_categorie_id)
+                                  return cat ? <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{cat.nom}-{cat.equipe}</span> : null
+                                })()}
                                 <button onClick={e => { e.stopPropagation(); setJoueurProfil(j) }} style={{ background: groupe.color + '15', border: `1px solid ${groupe.color}30`, color: groupe.color, borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
                               </div>
                             </div>
