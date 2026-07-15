@@ -1028,82 +1028,80 @@ export default function DashboardEducateur() {
                   const seancesSaisies = allTx.length ? allTx[0].total : 0
                   return (
                     <div>
-                      {/* ── Résumé global équipe ── */}
-                      <div style={{ ...st.card, marginBottom: '1.5rem', border: '1px solid #1a2e1a' }}>
-                        <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '15px' }}>📊 Stats globales équipe</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
-                          <DonutMulti presents={totalPresents} absents={totalAbsents} blesses={totalBlesses} malade={totalMalades} convoque={totalConvoques} size={100} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
-                              {[
-                                { label: 'Séances saisies', val: seancesSaisies, color: '#fff' },
-                                { label: 'Taux moyen', val: tauxMoyen + '%', color: tauxMoyen >= 80 ? '#4ade80' : tauxMoyen >= 50 ? '#f59e0b' : '#f87171' },
-                                { label: 'Présents', val: totalPresents, color: '#4ade80' },
-                                { label: 'Convoqués', val: totalConvoques, color: '#60a5fa' },
-                                { label: 'Absents', val: totalAbsents, color: '#ef4444' },
-                                { label: 'Blessés', val: totalBlesses, color: '#f97316' },
-                                { label: 'Malades', val: totalMalades, color: '#a855f7' },
-                              ].map(c => (
-                                <div key={c.label} style={{ textAlign: 'center', background: '#0a0a0a', borderRadius: '10px', padding: '10px 6px' }}>
-                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
-                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{c.label}</p>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Légende camembert */}
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '12px' }}>
-                              {[['#4ade80','Présent'],['#60a5fa','Convoqué'],['#ef4444','Absent'],['#f97316','Blessé'],['#a855f7','Malade']].map(([color, label]) => (
-                                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#aaa' }}>
-                                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />{label}
-                                </span>
-                              ))}
-                            </div>
+                      {/* ── % par catégorie en haut ── */}
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                        {[
+                          { label: 'Taux moyen', val: tauxMoyen, color: tauxMoyen >= 80 ? '#4ade80' : tauxMoyen >= 50 ? '#f59e0b' : '#f87171' },
+                          { label: '✅ Présents', val: totalPresents + totalConvoques > 0 ? Math.round((totalPresents + totalConvoques) / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#4ade80' },
+                          { label: '❌ Absents', val: totalAbsents + totalBlesses + totalMalades > 0 ? Math.round((totalAbsents) / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#ef4444' },
+                          { label: '🤕 Blessés', val: totalBlesses + totalPresents + totalConvoques + totalAbsents + totalMalades > 0 ? Math.round(totalBlesses / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#f97316' },
+                          { label: '🤒 Malades', val: totalMalades + totalPresents + totalConvoques + totalAbsents + totalBlesses > 0 ? Math.round(totalMalades / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#a855f7' },
+                          { label: '🏆 Convoqués', val: totalConvoques > 0 ? Math.round(totalConvoques / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#60a5fa' },
+                        ].map(c => (
+                          <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
+                            <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>{c.val}%</span>
+                            <span style={{ fontSize: '11px', color: '#555', marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
                           </div>
-                        </div>
+                        ))}
                       </div>
 
-                      {/* ── Cards joueurs avec camembert ── */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
-                        {[...joueurs]
-                          .sort((a, b) => (tauxPresence(b.id)?.taux ?? -1) - (tauxPresence(a.id)?.taux ?? -1))
-                          .map(j => {
-                            const tx = tauxPresence(j.id)
-                            return (
-                              <div key={j.id} style={st.card}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                  <DonutMulti
-                                    presents={tx?.presents || 0}
-                                    absents={tx?.absents || 0}
-                                    blesses={tx?.blesses || 0}
-                                    malade={tx?.malade || 0}
-                                    convoque={tx?.convoque || 0}
-                                    size={72}
-                                  />
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                    <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} séance${tx.total > 1 ? 's' : ''}` : ''}</p>
-                                    {tx ? (
-                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
-                                        {[
-                                          { emoji: '✅', label: 'Présent', val: tx.presents, color: '#4ade80' },
-                                          { emoji: '🏆', label: 'Convoqué', val: tx.convoque, color: '#60a5fa' },
-                                          { emoji: '❌', label: 'Absent', val: tx.absents, color: '#ef4444' },
-                                          { emoji: '🤕', label: 'Blessé', val: tx.blesses, color: '#f97316' },
-                                          { emoji: '🤒', label: 'Malade', val: tx.malade, color: '#a855f7' },
-                                        ].filter(s => s.val > 0).map(s => (
-                                          <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
-                                            {s.emoji} {s.val} {s.label}
-                                          </span>
-                                        ))}
+                      {/* ── Cards joueurs par poste ── */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        {[
+                          { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+                          { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                          { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+                          { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                          { label: '❓ Autres', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                        ].map(groupe => {
+                          const gJoueurs = joueurs.filter(j => groupe.match(j.poste))
+                          if (!gJoueurs.length) return null
+                          return (
+                            <div key={groupe.label}>
+                              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: groupe.color }}>{groupe.label}</p>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+                                {gJoueurs.map(j => {
+                                  const tx = tauxPresence(j.id)
+                                  return (
+                                    <div key={j.id} style={st.card}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        <DonutMulti
+                                          presents={tx?.presents || 0}
+                                          absents={tx?.absents || 0}
+                                          blesses={tx?.blesses || 0}
+                                          malade={tx?.malade || 0}
+                                          convoque={tx?.convoque || 0}
+                                          size={72}
+                                        />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} séance${tx.total > 1 ? 's' : ''}` : ''}</p>
+                                          {tx ? (
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+                                              {[
+                                                { emoji: '✅', label: 'Présent', val: tx.presents, color: '#4ade80' },
+                                                { emoji: '🏆', label: 'Convoqué', val: tx.convoque, color: '#60a5fa' },
+                                                { emoji: '❌', label: 'Absent', val: tx.absents, color: '#ef4444' },
+                                                { emoji: '🤕', label: 'Blessé', val: tx.blesses, color: '#f97316' },
+                                                { emoji: '🤒', label: 'Malade', val: tx.malade, color: '#a855f7' },
+                                              ].filter(s => s.val > 0).map(s => (
+                                                <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
+                                                  {s.emoji} {s.val} {s.label}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <span style={{ fontSize: '11px', color: '#333' }}>Aucune présence saisie</span>
+                                          )}
+                                        </div>
                                       </div>
-                                    ) : (
-                                      <span style={{ fontSize: '11px', color: '#333' }}>Aucune présence saisie</span>
-                                    )}
-                                  </div>
-                                </div>
+                                    </div>
+                                  )
+                                })}
                               </div>
-                            )
-                          })}
+                            </div>
+                          )
+                        })}
                       </div>
 
                       {/* ── Bar chart classement présence ── */}
