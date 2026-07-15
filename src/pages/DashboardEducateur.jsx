@@ -124,6 +124,8 @@ export default function DashboardEducateur() {
   const [savingJoueur, setSavingJoueur] = useState(false)
   const [joueurActif, setJoueurActif] = useState(null)
   const [vueEquipe, setVueEquipe] = useState('poste') // 'poste' | 'liste'
+  const [joueurEnEdition, setJoueurEnEdition] = useState(null) // { id, prenom, nom, poste, ... }
+  const [savingEdit, setSavingEdit] = useState(false)
 
   // Matchs
   const [matchs, setMatchs] = useState([])
@@ -212,6 +214,16 @@ export default function DashboardEducateur() {
     await supabase.from('equipe_joueurs').delete().eq('id', id)
     setJoueurs(prev => prev.filter(j => j.id !== id))
     if (joueurActif?.id === id) setJoueurActif(null)
+  }
+
+  const sauvegarderJoueur = async () => {
+    if (!joueurEnEdition) return
+    setSavingEdit(true)
+    const { id, ...fields } = joueurEnEdition
+    await supabase.from('equipe_joueurs').update(fields).eq('id', id)
+    await chargerJoueurs(userId)
+    setJoueurEnEdition(null)
+    setSavingEdit(false)
   }
 
   const telechargerTemplate = () => {
@@ -503,6 +515,37 @@ export default function DashboardEducateur() {
               </div>
             </div>
 
+            {/* ── Modal édition joueur ── */}
+            {joueurEnEdition && (
+              <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
+                    <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    <div><label style={st.label}>Prénom</label><input style={st.input} value={joueurEnEdition.prenom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, prenom: e.target.value }))} /></div>
+                    <div><label style={st.label}>Nom</label><input style={st.input} value={joueurEnEdition.nom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, nom: e.target.value }))} /></div>
+                    <div>
+                      <label style={st.label}>Poste</label>
+                      <select style={st.input} value={joueurEnEdition.poste || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, poste: e.target.value }))}>
+                        <option value="">— Choisir —</option>
+                        {postes.map(po => <option key={po}>{po}</option>)}
+                      </select>
+                    </div>
+                    <div><label style={st.label}>N° maillot</label><input style={st.input} type="number" value={joueurEnEdition.numero_maillot || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_maillot: e.target.value }))} /></div>
+                    <div><label style={st.label}>Date de naissance</label><input style={st.input} type="date" value={joueurEnEdition.date_naissance || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, date_naissance: e.target.value }))} /></div>
+                    <div><label style={st.label}>Catégorie</label><input style={st.input} placeholder="U17, U18..." value={joueurEnEdition.categorie || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, categorie: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>N° licence FFF</label><input style={st.input} placeholder="Numéro de licence" value={joueurEnEdition.numero_licence || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_licence: e.target.value }))} /></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : '💾 Sauvegarder'}</button>
+                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn('#666')}>Annuler</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {importError && (
               <div style={{ background: '#f8717115', border: '1px solid #f8717140', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', color: '#f87171', fontSize: '13px' }}>
                 ⚠️ {importError}
@@ -624,7 +667,10 @@ export default function DashboardEducateur() {
                               {tx !== null ? <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span> : <span style={{ color: '#333' }}>—</span>}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                              <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                                <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -664,7 +710,10 @@ export default function DashboardEducateur() {
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
                                 </div>
-                                <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <button onClick={e => { e.stopPropagation(); setJoueurEnEdition({ ...j }) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
+                                  <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
+                                </div>
                               </div>
                               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                 {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
