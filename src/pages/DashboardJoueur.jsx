@@ -251,7 +251,7 @@ function DashboardJoueur() {
     const { data: presencesMoi, error: errP } = await supabase
       .from('presences_entrainement')
       .select('statut, point_seance, entrainement_id')
-      .eq('equipe_joueur_id', equipeJoueurId)
+      .eq('joueur_id', equipeJoueurId)
     console.log('[stats] presencesMoi:', presencesMoi, errP)
 
     // 2. Dates des entraînements pour le mensuel
@@ -267,7 +267,7 @@ function DashboardJoueur() {
       .from('entrainements').select('id').eq('educateur_id', educateurId)
     const tousEntIds = tousEntrainements?.map(e => e.id) || []
     const { data: toutesPresences } = tousEntIds.length
-      ? await supabase.from('presences_entrainement').select('equipe_joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
+      ? await supabase.from('presences_entrainement').select('joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
       : { data: [] }
 
     // 4. Stats match
@@ -325,7 +325,7 @@ function DashboardJoueur() {
     const rankPasses = calcRank(passes, tousMatchs, r => r.passes_dec || 0, 'joueur_id')
     const rankMatchs = calcRank(matchsJoues, tousMatchs, r => (r.minutes || 0) > 0 ? 1 : 0, 'joueur_id')
     const rankClean = calcRank(cleanSheets, tousMatchs, r => r.clean_sheet ? 1 : 0, 'joueur_id')
-    const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0, 'equipe_joueur_id')
+    const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0, 'joueur_id')
 
     setStatsJoueur(prev => ({
       ...prev,
