@@ -584,25 +584,46 @@ export default function DashboardEducateur() {
                 <p style={{ color: '#555' }}>Aucun joueur dans l'effectif. Commence par en ajouter un !</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                {joueurs.map(j => {
-                  const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-                  const tx = tauxPresence(j.id)
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {[
+                  { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+                  { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                  { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+                  { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: '❓ Sans poste', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                ].map(groupe => {
+                  const groupJoueurs = joueurs.filter(j => groupe.match(j.poste))
+                  if (!groupJoueurs.length) return null
                   return (
-                    <div key={j.id} style={{ ...st.card, cursor: 'pointer', transition: 'border-color 0.2s', borderColor: joueurActif?.id === j.id ? '#4ade8040' : '#1a1a1a' }} onClick={() => setJoueurActif(joueurActif?.id === j.id ? null : j)}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
-                          {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '16px', padding: '4px' }}>✕</button>
+                    <div key={groupe.label}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: groupe.color }}>{groupe.label}</h2>
+                        <span style={{ fontSize: '12px', color: '#444', background: '#1a1a1a', padding: '2px 8px', borderRadius: '20px' }}>{groupJoueurs.length} joueur{groupJoueurs.length > 1 ? 's' : ''}</span>
+                        <div style={{ flex: 1, height: '1px', background: groupe.color + '20' }} />
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
-                        {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}%</span>}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+                        {groupJoueurs.map(j => {
+                          const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
+                          const tx = tauxPresence(j.id)
+                          return (
+                            <div key={j.id} style={{ ...st.card, cursor: 'pointer', borderLeft: `3px solid ${groupe.color}30`, transition: 'border-color 0.2s', borderColor: joueurActif?.id === j.id ? groupe.color + '60' : undefined }} onClick={() => setJoueurActif(joueurActif?.id === j.id ? null : j)}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+                                  {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
+                                </div>
+                                <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪 Licencié</span>}
+                                {tx !== null && <span style={{ background: tx.taux >= 80 ? '#4ade8015' : tx.taux >= 50 ? '#f59e0b15' : '#f8717115', border: `1px solid ${tx.taux >= 80 ? '#4ade8030' : tx.taux >= 50 ? '#f59e0b30' : '#f8717130'}`, color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🏃 {tx.taux}%</span>}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )
