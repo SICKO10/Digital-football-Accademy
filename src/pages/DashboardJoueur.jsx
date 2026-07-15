@@ -218,11 +218,24 @@ function DashboardJoueur() {
   }
 
   const chargerAffiliations = async (uid) => {
-    const { data } = await supabase
+    // Fetch affiliations sans join pour éviter les erreurs FK
+    const { data: afData } = await supabase
       .from('affiliations')
-      .select('*, equipe_joueur_id, profil_educateur!affiliations_educateur_id_fkey(prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe), notes_educateur_count:notes_educateur(count)')
+      .select('*')
       .eq('joueur_id', uid)
-    setMesAffiliations(data || [])
+    if (!afData || afData.length === 0) { setMesAffiliations([]); return }
+
+    // Charger les profils éducateurs séparément
+    const educateurIds = [...new Set(afData.map(a => a.educateur_id))]
+    const { data: peData } = await supabase
+      .from('profil_educateur')
+      .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe')
+      .in('user_id', educateurIds)
+
+    const peMap = {}
+    peData?.forEach(pe => { peMap[pe.user_id] = pe })
+
+    setMesAffiliations(afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null })))
   }
 
   const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
