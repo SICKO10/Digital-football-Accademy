@@ -2,6 +2,46 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
+// ── Grille d'évaluation éducateur ────────────────────────────────────────────
+export const CRITERES_EDU = [
+  { key: 'leadership', label: '👥 Leadership & Management', color: '#f59e0b', criteres: [
+    { key: 'gestion_groupe', label: 'Gestion du groupe' },
+    { key: 'discipline', label: 'Discipline' },
+    { key: 'cohesion', label: 'Création de cohésion' },
+    { key: 'gestion_conflits', label: 'Gestion des conflits' },
+  ]},
+  { key: 'pedagogie', label: '🎓 Pédagogie', color: '#a78bfa', criteres: [
+    { key: 'qualite_explications', label: 'Qualité des explications' },
+    { key: 'capacite_corriger', label: 'Capacité à corriger' },
+    { key: 'individualisation', label: 'Individualisation' },
+    { key: 'adaptation_age', label: 'Adaptation à l\'âge' },
+  ]},
+  { key: 'football', label: '⚽ Compétences football', color: '#4ade80', criteres: [
+    { key: 'animation_seances', label: 'Animation des séances' },
+    { key: 'competence_tactique', label: 'Compétence tactique' },
+    { key: 'coaching_match', label: 'Coaching en match' },
+    { key: 'planification', label: 'Planification' },
+  ]},
+  { key: 'developpement', label: '📈 Développement joueurs', color: '#34d399', criteres: [
+    { key: 'progression_technique', label: 'Progression technique' },
+    { key: 'progression_tactique', label: 'Progression tactique' },
+    { key: 'progression_physique', label: 'Progression physique' },
+    { key: 'progression_mentale', label: 'Progression mentale' },
+  ]},
+  { key: 'professionnalisme', label: '🤝 Professionnalisme', color: '#60a5fa', criteres: [
+    { key: 'ponctualite', label: 'Ponctualité' },
+    { key: 'organisation', label: 'Organisation' },
+    { key: 'communication_club', label: 'Communication avec le club' },
+    { key: 'investissement', label: 'Investissement' },
+  ]},
+  { key: 'performance', label: '🏅 Performance', color: '#f87171', criteres: [
+    { key: 'resultats', label: 'Résultats' },
+    { key: 'respect_projet_jeu', label: 'Respect du projet de jeu' },
+    { key: 'valorisation_joueurs', label: 'Valorisation des joueurs' },
+    { key: 'objectifs_atteints', label: 'Objectifs atteints' },
+  ]},
+]
+
 // ── Charge SheetJS depuis CDN (xlsx) ─────────────────────────────────────────
 function loadSheetJS() {
   return new Promise((resolve) => {
@@ -2359,72 +2399,109 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             </div>
 
             {/* ── Section avis & notations ── */}
-            <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
-              <div style={st.card}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⭐ Avis reçus</p>
-                  {notesEdu.length > 0 && (() => {
-                    const moy = notesEdu.reduce((s, n) => s + n.note, 0) / notesEdu.length
-                    return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '18px', fontWeight: 800, color: '#fbbf24' }}>{moy.toFixed(1)}</span>
-                        <span style={{ color: '#fbbf24', fontSize: '16px' }}>{'★'.repeat(Math.round(moy))}{'☆'.repeat(5 - Math.round(moy))}</span>
-                        <span style={{ fontSize: '12px', color: '#555' }}>({notesEdu.length} avis)</span>
-                      </div>
-                    )
-                  })()}
-                </div>
+            {(() => {
+              // Calcul des moyennes par critère agrégé sur tous les avis
+              const allCriteres = {}
+              notesEdu.forEach(n => {
+                if (!n.criteres) return
+                Object.entries(n.criteres).forEach(([k, v]) => {
+                  if (!allCriteres[k]) allCriteres[k] = []
+                  allCriteres[k].push(v)
+                })
+              })
+              const moyC = (key) => {
+                const vals = allCriteres[key] || []
+                return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null
+              }
+              const moyCategorie = (cat) => {
+                const vals = cat.criteres.map(c => moyC(c.key)).filter(v => v !== null)
+                return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null
+              }
+              const allMoys = CRITERES_EDU.map(c => moyCategorie(c)).filter(v => v !== null)
+              const moyGlobale = allMoys.length ? allMoys.reduce((s, v) => s + v, 0) / allMoys.length : null
 
-                {notesEdu.length === 0 ? (
-                  <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1.5rem 0' }}>Aucun avis reçu pour le moment. Les joueurs et responsables de club pourront te noter depuis leur dashboard.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Par saison */}
-                    {(() => {
-                      const parSaison = {}
-                      notesEdu.forEach(n => {
-                        const s = n.saison || 'Non précisé'
-                        if (!parSaison[s]) parSaison[s] = []
-                        parSaison[s].push(n)
-                      })
-                      return Object.entries(parSaison).sort(([a], [b]) => b.localeCompare(a)).map(([saison, notes]) => {
-                        const moy = notes.reduce((s, n) => s + n.note, 0) / notes.length
+              return (
+                <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
+                  {/* En-tête score global */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
+                    <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>⭐ Évaluations reçues</h2>
+                    {moyGlobale !== null ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fbbf2415', border: '1px solid #fbbf2430', borderRadius: '12px', padding: '6px 16px' }}>
+                        <span style={{ fontSize: '24px', fontWeight: 900, color: '#fbbf24' }}>{moyGlobale.toFixed(1)}</span>
+                        <div>
+                          <div style={{ color: '#fbbf24', fontSize: '14px', lineHeight: 1 }}>{'★'.repeat(Math.round(moyGlobale))}{'☆'.repeat(5 - Math.round(moyGlobale))}</div>
+                          <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>{notesEdu.length} évaluation{notesEdu.length > 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: '#333' }}>Aucune évaluation reçue — les joueurs et responsables de club pourront te noter depuis leur dashboard</span>
+                    )}
+                  </div>
+
+                  {/* Grille 6 catégories */}
+                  {moyGlobale !== null && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                      {CRITERES_EDU.map(cat => {
+                        const mCat = moyCategorie(cat)
                         return (
-                          <div key={saison} style={{ background: '#0a0a0a', borderRadius: '12px', padding: '14px', border: '1px solid #1a1a1a' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#555', textTransform: 'uppercase' }}>Saison {saison}</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ color: '#fbbf24', fontSize: '14px' }}>{'★'.repeat(Math.round(moy))}{'☆'.repeat(5 - Math.round(moy))}</span>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#fbbf24' }}>{moy.toFixed(1)}</span>
-                                <span style={{ fontSize: '11px', color: '#444' }}>/ 5</span>
-                              </div>
+                          <div key={cat.key} style={{ ...st.card, border: `1px solid ${cat.color}20` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
+                              {mCat !== null && (
+                                <span style={{ fontSize: '16px', fontWeight: 800, color: cat.color }}>{mCat.toFixed(1)}<span style={{ fontSize: '10px', color: '#444' }}>/5</span></span>
+                              )}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {notes.filter(n => n.visible_public || true).map(n => (
-                                <div key={n.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 10px', background: '#111', borderRadius: '8px' }}>
-                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: n.auteur_type === 'club' ? '#60a5fa20' : '#4ade8020', border: `1px solid ${n.auteur_type === 'club' ? '#60a5fa40' : '#4ade8040'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
-                                    {n.auteur_type === 'club' ? '🏟️' : '⚽'}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                              {cat.criteres.map(c => {
+                                const val = moyC(c.key)
+                                return (
+                                  <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '11px', color: '#666', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</span>
+                                    {val !== null ? (
+                                      <>
+                                        <div style={{ width: '80px', height: '5px', background: '#1a1a1a', borderRadius: '3px', flexShrink: 0 }}>
+                                          <div style={{ width: `${(val / 5) * 100}%`, height: '100%', background: cat.color, borderRadius: '3px' }} />
+                                        </div>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: cat.color, width: '24px', textAlign: 'right', flexShrink: 0 }}>{val.toFixed(1)}</span>
+                                      </>
+                                    ) : (
+                                      <span style={{ fontSize: '10px', color: '#333' }}>—</span>
+                                    )}
                                   </div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 700 }}>{n.profiles?.prenom} {n.profiles?.nom}</span>
-                                      <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? '#60a5fa' : '#4ade80', fontWeight: 600 }}>{n.auteur_type === 'club' ? 'Club' : 'Joueur'}</span>
-                                      <span style={{ color: '#fbbf24', fontSize: '12px', marginLeft: 'auto' }}>{'★'.repeat(n.note)}{'☆'.repeat(5 - n.note)}</span>
-                                      {!n.visible_public && <span style={{ fontSize: '10px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>🔒 Privé</span>}
-                                    </div>
-                                    {n.commentaire && <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{n.commentaire}"</p>}
-                                  </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           </div>
                         )
-                      })
-                    })()}
-                  </div>
-                )}
-              </div>
-            </div>
+                      })}
+                    </div>
+                  )}
+
+                  {/* Commentaires par saison */}
+                  {notesEdu.filter(n => n.commentaire).length > 0 && (
+                    <div style={st.card}>
+                      <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px' }}>💬 Commentaires</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {notesEdu.filter(n => n.commentaire).map(n => (
+                          <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                            <span style={{ fontSize: '18px', flexShrink: 0 }}>{n.auteur_type === 'club' ? '🏟️' : '⚽'}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700 }}>{n.profiles?.prenom} {n.profiles?.nom}</span>
+                                <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? '#60a5fa' : '#4ade80' }}>{n.auteur_type === 'club' ? 'Club' : 'Joueur'}</span>
+                                {n.saison && <span style={{ fontSize: '10px', color: '#444' }}>{n.saison}</span>}
+                                {!n.visible_public && <span style={{ fontSize: '10px', color: '#444', background: '#111', padding: '1px 6px', borderRadius: '6px', marginLeft: 'auto' }}>🔒 Privé</span>}
+                              </div>
+                              <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{n.commentaire}"</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </>
         )}
 
