@@ -278,12 +278,14 @@ function DashboardJoueur() {
       { data: profilEdu },
       { data: prochainMatchs },
       { data: effectif },
+      { data: matchsEquipe },
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
-      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, victoire').eq('educateur_id', educateurId),
+      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
+      supabase.from('matchs_equipe').select('id, score_nous, score_eux').eq('educateur_id', educateurId),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
     ])
 
@@ -347,9 +349,13 @@ function DashboardJoueur() {
           return { nom: j ? `${j.prenom} ${j.nom}` : '?', val, isMe: id === equipeJoueurId }
         })
     }
+    // Map match_id → victoire (score_nous > score_eux)
+    const victoireMap = {}
+    matchsEquipe?.forEach(m => { victoireMap[m.id] = parseInt(m.score_nous) > parseInt(m.score_eux) })
+
     const leaderButs = buildLeader(tousMatchs, r => r.buts || 0)
     const leaderPasses = buildLeader(tousMatchs, r => r.passes_dec || 0)
-    const leaderVictoires = buildLeader(tousMatchs, r => r.victoire ? 1 : 0)
+    const leaderVictoires = buildLeader(tousMatchs, r => (r.match_id && victoireMap[r.match_id]) ? 1 : 0)
     const leaderPoints = buildLeader(toutesPresences, r => r.point_seance ? 1 : 0)
 
     setStatsJoueur(prev => ({
