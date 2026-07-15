@@ -149,6 +149,7 @@ export default function DashboardEducateur() {
   const [joueurEnEdition, setJoueurEnEdition] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
   const [joueurProfil, setJoueurProfil] = useState(null)
+  const [joueurMoisDetail, setJoueurMoisDetail] = useState(null)
 
   // Matchs
   const [matchs, setMatchs] = useState([])
@@ -1026,18 +1027,41 @@ export default function DashboardEducateur() {
                   const totalMalades   = allTx.reduce((s, t) => s + t.malade, 0)
                   const tauxMoyen      = allTx.length ? Math.round(allTx.reduce((s, t) => s + t.taux, 0) / allTx.length) : 0
                   const seancesSaisies = allTx.length ? allTx[0].total : 0
+                  const presenceParMois = (joueurId) => {
+                    const mois = {}
+                    entrainements.forEach(e => {
+                      const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === joueurId)
+                      if (!p || (!p.statut && !p.present)) return
+                      const d = new Date(e.date)
+                      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+                      if (!mois[key]) mois[key] = { presents:0, convoque:0, absents:0, blesses:0, malade:0, total:0 }
+                      mois[key].total++
+                      const st = p.statut || (p.present ? 'present' : 'absent')
+                      if (st==='present') mois[key].presents++
+                      else if (st==='convoque') mois[key].convoque++
+                      else if (st==='absent') mois[key].absents++
+                      else if (st==='blesse') mois[key].blesses++
+                      else if (st==='malade') mois[key].malade++
+                    })
+                    return Object.entries(mois).sort(([a],[b])=>a.localeCompare(b)).map(([key,s])=>({
+                      key, label: new Date(key+'-02').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}),
+                      ...s, taux: Math.round((s.presents+s.convoque)/s.total*100)
+                    }))
+                  }
                   return (
                     <div>
                       {/* ── % par catégorie en haut ── */}
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                        {[
-                          { label: 'Taux moyen', val: tauxMoyen, color: tauxMoyen >= 80 ? '#4ade80' : tauxMoyen >= 50 ? '#f59e0b' : '#f87171' },
-                          { label: '✅ Présents', val: totalPresents + totalConvoques > 0 ? Math.round((totalPresents + totalConvoques) / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#4ade80' },
-                          { label: '❌ Absents', val: totalAbsents + totalBlesses + totalMalades > 0 ? Math.round((totalAbsents) / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#ef4444' },
-                          { label: '🤕 Blessés', val: totalBlesses + totalPresents + totalConvoques + totalAbsents + totalMalades > 0 ? Math.round(totalBlesses / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#f97316' },
-                          { label: '🤒 Malades', val: totalMalades + totalPresents + totalConvoques + totalAbsents + totalBlesses > 0 ? Math.round(totalMalades / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#a855f7' },
-                          { label: '🏆 Convoqués', val: totalConvoques > 0 ? Math.round(totalConvoques / (totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades) * 100) : 0, color: '#60a5fa' },
-                        ].map(c => (
+                        {(() => {
+                          const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
+                          return [
+                            { label: '✅ Présence', val: Math.round((totalPresents + totalConvoques) / tot * 100), color: '#4ade80' },
+                            { label: '❌ Absents',  val: Math.round(totalAbsents / tot * 100),  color: '#ef4444' },
+                            { label: '🤕 Blessés',  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
+                            { label: '🤒 Malades',  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
+                            { label: '🏆 Convoqués',val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
+                          ]
+                        })().map(c => (
                           <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
                             <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>{c.val}%</span>
                             <span style={{ fontSize: '11px', color: '#555', marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
@@ -1094,7 +1118,38 @@ export default function DashboardEducateur() {
                                             <span style={{ fontSize: '11px', color: '#333' }}>Aucune présence saisie</span>
                                           )}
                                         </div>
+                                        {tx && (
+                                          <button
+                                            onClick={() => setJoueurMoisDetail(joueurMoisDetail === j.id ? null : j.id)}
+                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#aaa', fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                          >
+                                            📅 {joueurMoisDetail === j.id ? '▲' : '▼'}
+                                          </button>
+                                        )}
                                       </div>
+                                      {/* Détail par mois */}
+                                      {joueurMoisDetail === j.id && (() => {
+                                        const moisData = presenceParMois(j.id)
+                                        if (!moisData.length) return null
+                                        return (
+                                          <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Présence par mois</p>
+                                            {moisData.map(m => {
+                                              const color = m.taux >= 80 ? '#4ade80' : m.taux >= 50 ? '#f59e0b' : '#ef4444'
+                                              return (
+                                                <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                  <span style={{ fontSize: '11px', color: '#777', minWidth: '110px', textTransform: 'capitalize' }}>{m.label}</span>
+                                                  <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.4s' }} />
+                                                  </div>
+                                                  <span style={{ fontSize: '12px', fontWeight: 700, color, minWidth: '36px', textAlign: 'right' }}>{m.taux}%</span>
+                                                  <span style={{ fontSize: '10px', color: '#444' }}>{m.presents+m.convoque}/{m.total}</span>
+                                                </div>
+                                              )
+                                            })}
+                                          </div>
+                                        )
+                                      })()}
                                     </div>
                                   )
                                 })}
