@@ -245,25 +245,38 @@ function DashboardJoueur() {
     if (!equipeJoueurId || statsJoueur[affiliationId]) return
     setStatsLoading(prev => ({ ...prev, [affiliationId]: true }))
 
+    // 1. Mes présences (sans join)
+    const { data: presencesMoi } = await supabase
+      .from('presences_entrainement')
+      .select('statut, point_seance, entrainement_id')
+      .eq('equipe_joueur_id', equipeJoueurId)
+
+    // 2. Dates des entraînements pour le mensuel
+    const entrainementIds = presencesMoi?.map(p => p.entrainement_id).filter(Boolean) || []
+    const { data: entDates } = entrainementIds.length
+      ? await supabase.from('entrainements').select('id, date').in('id', entrainementIds)
+      : { data: [] }
+    const dateMap = {}
+    entDates?.forEach(e => { dateMap[e.id] = e.date })
+
+    // 3. Tous les entraînements de l'éducateur pour classements présence
+    const { data: tousEntrainements } = await supabase
+      .from('entrainements').select('id').eq('educateur_id', educateurId)
+    const tousEntIds = tousEntrainements?.map(e => e.id) || []
+    const { data: toutesPresences } = tousEntIds.length
+      ? await supabase.from('presences_entrainement').select('equipe_joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
+      : { data: [] }
+
+    // 4. Stats match
     const [
-      { data: presencesMoi },
       { data: matchsMoi },
-      { data: toutesPresences },
       { data: tousMatchs },
       { data: noteEdu },
       { data: profilEdu },
     ] = await Promise.all([
-      // Mes présences avec date pour mensuel
-      supabase.from('presences_entrainement').select('statut, point_seance, entrainements(date)').eq('equipe_joueur_id', equipeJoueurId),
-      // Mes stats match
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId),
-      // Toutes les présences de l'équipe pour classements
-      supabase.from('presences_entrainement').select('equipe_joueur_id, statut, point_seance').eq('entrainements.educateur_id', educateurId),
-      // Tous les stats match de l'équipe pour classements
       supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId),
-      // Avis de l'éducateur sur ce joueur
-      supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).single(),
-      // Profil éducateur pour URL ligue
+      supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
     ])
 
@@ -281,7 +294,7 @@ function DashboardJoueur() {
     // --- Présence par mois ---
     const byMonth = {}
     presencesMoi?.forEach(p => {
-      const date = p.entrainements?.date
+      const date = dateMap[p.entrainement_id]
       if (!date) return
       const month = date.slice(0, 7)
       if (!byMonth[month]) byMonth[month] = { present: 0, total: 0 }
