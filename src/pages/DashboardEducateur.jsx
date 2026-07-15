@@ -151,6 +151,11 @@ export default function DashboardEducateur() {
   const [joueurProfil, setJoueurProfil] = useState(null)
   const [joueurMoisDetail, setJoueurMoisDetail] = useState(null)
 
+  // Compétition
+  const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
+  const [ligueUrl, setLigueUrl] = useState('')
+  const [ligueUrlSaved, setLigueUrlSaved] = useState(localStorage.getItem('ligueUrl') || '')
+
   // Matchs
   const [matchs, setMatchs] = useState([])
   const [showAddMatch, setShowAddMatch] = useState(false)
@@ -614,7 +619,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
   const tabs = [
     { key: 'equipe', label: '👥 Mon équipe' },
     { key: 'stats', label: '📊 Stats joueurs' },
-    { key: 'matchs', label: '⚽ Matchs & Classement' },
+    { key: 'matchs', label: '🏟️ Compétition' },
     { key: 'entrainements', label: '🏃 Entraînements' },
     { key: 'notes', label: '📝 Évaluations' },
   ]
@@ -794,6 +799,44 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 </div>
                               ))}
                             </div>
+
+                            {/* Joueur du mois */}
+                            {(() => {
+                              const palmares = []
+                              const totalPts = {}
+                              entrainements.forEach(e => {
+                                const dateStr = e.date || e.created_at
+                                if (!dateStr) return
+                                const d = new Date(dateStr)
+                                const moisKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                                ;(e.presences_entrainement || []).forEach(p => {
+                                  if (!p.point_seance) return
+                                  if (!totalPts[moisKey]) totalPts[moisKey] = {}
+                                  totalPts[moisKey][p.joueur_id] = (totalPts[moisKey][p.joueur_id] || 0) + 1
+                                })
+                              })
+                              Object.entries(totalPts).sort().reverse().forEach(([moisKey, pts]) => {
+                                const maxPts = Math.max(...Object.values(pts))
+                                const winners = Object.entries(pts).filter(([, v]) => v === maxPts).map(([jid]) => jid)
+                                if (winners.includes(j.id)) {
+                                  const [y, m] = moisKey.split('-')
+                                  palmares.push({ label: new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), pts: maxPts, tie: winners.length > 1 })
+                                }
+                              })
+                              if (!palmares.length) return null
+                              return (
+                                <div style={{ marginTop: '12px' }}>
+                                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🌟 Joueur du mois</p>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {palmares.map((p, i) => (
+                                      <span key={i} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                                        🥇 {p.label}{p.tie ? ' (ex æquo)' : ''} · {p.pts}⭐
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            })()}
                           </div>
                         )
                       })()}
@@ -1498,15 +1541,25 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           </>
         )}
 
-        {/* ===== MATCHS & CLASSEMENT ===== */}
+        {/* ===== COMPÉTITION ===== */}
         {activeSection === 'matchs' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🏟️ Compétition</h1>
+            </div>
 
-              {/* Matchs */}
-              <div>
+            {/* Sous-onglets */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a' }}>
+              {[['resultats','⚽ Résultats'],['calendrier','🗓️ Calendrier'],['classement','🏆 Classement']].map(([k, label]) => (
+                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #4ade80' : '2px solid transparent', color: competitionSubTab === k ? '#4ade80' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{label}</button>
+              ))}
+            </div>
+
+            {/* ── Résultats ── */}
+            {competitionSubTab === 'resultats' && (
+              <div style={{ maxWidth: '640px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>⚽ Calendrier & Résultats</h2>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>⚽ Résultats</h2>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #4ade8040', color: '#4ade80' }}>📸 Scanner</button>
                     <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ Match</button>
@@ -1607,45 +1660,88 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   {matchs.length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>Aucun match enregistré</p></div>}
                 </div>
               </div>
+            )}
 
-              {/* Classement */}
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '1rem' }}>🏆 Classement</h2>
-                {classement().length === 0 ? (
-                  <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                    <p style={{ color: '#555' }}>Le classement apparaîtra dès que des résultats sont saisis</p>
-                  </div>
-                ) : (
-                  <div style={st.card}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                          {['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Pts'].map(h => (
-                            <th key={h} style={{ padding: '8px', textAlign: h === 'Équipe' ? 'left' : 'center', color: '#444', fontWeight: 700, fontSize: '11px' }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {classement().map((e, i) => (
-                          <tr key={e.nom} style={{ borderBottom: '1px solid #141414', background: e.moi ? '#4ade8008' : 'transparent' }}>
-                            <td style={{ padding: '8px', textAlign: 'center', color: '#555', fontWeight: 600 }}>{i + 1}</td>
-                            <td style={{ padding: '8px', fontWeight: e.moi ? 800 : 600, color: e.moi ? '#4ade80' : '#fff' }}>{e.nom}{e.moi ? ' ⬅' : ''}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', color: '#aaa' }}>{e.j}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', color: '#4ade80' }}>{e.v}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', color: '#f59e0b' }}>{e.n}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', color: '#f87171' }}>{e.d}</td>
-                            <td style={{ padding: '8px', textAlign: 'center' }}>{e.bp}</td>
-                            <td style={{ padding: '8px', textAlign: 'center' }}>{e.bc}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', color: e.bp - e.bc > 0 ? '#4ade80' : e.bp - e.bc < 0 ? '#f87171' : '#aaa' }}>{e.bp - e.bc > 0 ? '+' : ''}{e.bp - e.bc}</td>
-                            <td style={{ padding: '8px', textAlign: 'center', fontWeight: 800, color: '#fff', fontSize: '15px' }}>{e.pts}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+            {/* ── Calendrier ── */}
+            {competitionSubTab === 'calendrier' && (
+              <div style={{ maxWidth: '640px' }}>
+                <div style={{ ...st.card, textAlign: 'center', padding: '3rem', border: '1px dashed #2a2a2a' }}>
+                  <p style={{ fontSize: '32px', margin: '0 0 12px' }}>🗓️</p>
+                  <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 8px' }}>Calendrier à venir</p>
+                  <p style={{ color: '#555', fontSize: '13px', margin: '0 0 20px' }}>Tu pourras bientôt uploader une photo de ton calendrier ou plusieurs photos et l'IA extraira automatiquement les matchs.</p>
+                  <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>🚧 Fonctionnalité en développement</p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ── Classement ── */}
+            {competitionSubTab === 'classement' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px' }}>
+
+                {/* Lien vers le classement officiel */}
+                <div style={st.card}>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔗 Classement officiel de la ligue</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>Colle le lien du classement sur le site de ta ligue (FFF, Footeo, etc.) pour y accéder en un clic.</p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      style={{ ...st.input, flex: 1 }}
+                      placeholder="https://fff.fr/... ou https://footeo.com/..."
+                      value={ligueUrl || ligueUrlSaved}
+                      onChange={e => setLigueUrl(e.target.value)}
+                    />
+                    <button
+                      onClick={() => { const url = ligueUrl || ligueUrlSaved; localStorage.setItem('ligueUrl', url); setLigueUrlSaved(url); setLigueUrl('') }}
+                      style={st.btnSolid}>
+                      💾 Sauvegarder
+                    </button>
+                  </div>
+                  {ligueUrlSaved && (
+                    <a href={ligueUrlSaved} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                      🏆 Voir le classement officiel ↗
+                    </a>
+                  )}
+                </div>
+
+                {/* Classement calculé depuis les résultats saisis */}
+                <div>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📊 Classement calculé depuis tes résultats</p>
+                  {classement().length === 0 ? (
+                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
+                      <p style={{ color: '#555' }}>Le classement apparaîtra dès que des résultats sont saisis dans Résultats</p>
+                    </div>
+                  ) : (
+                    <div style={st.card}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                            {['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Pts'].map(h => (
+                              <th key={h} style={{ padding: '8px', textAlign: h === 'Équipe' ? 'left' : 'center', color: '#444', fontWeight: 700, fontSize: '11px' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {classement().map((e, i) => (
+                            <tr key={e.nom} style={{ borderBottom: '1px solid #141414', background: e.moi ? '#4ade8008' : 'transparent' }}>
+                              <td style={{ padding: '8px', textAlign: 'center', color: '#555', fontWeight: 600 }}>{i + 1}</td>
+                              <td style={{ padding: '8px', fontWeight: e.moi ? 800 : 600, color: e.moi ? '#4ade80' : '#fff' }}>{e.nom}{e.moi ? ' ⬅' : ''}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', color: '#aaa' }}>{e.j}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', color: '#4ade80' }}>{e.v}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', color: '#f59e0b' }}>{e.n}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', color: '#f87171' }}>{e.d}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{e.bp}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{e.bc}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', color: e.bp - e.bc > 0 ? '#4ade80' : e.bp - e.bc < 0 ? '#f87171' : '#aaa' }}>{e.bp - e.bc > 0 ? '+' : ''}{e.bp - e.bc}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', fontWeight: 800, color: '#fff', fontSize: '15px' }}>{e.pts}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
