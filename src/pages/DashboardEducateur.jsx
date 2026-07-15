@@ -304,7 +304,8 @@ export default function DashboardEducateur() {
     setParcoursEdu(pa || [])
     const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
     setNotesEdu(ne || [])
-    const { data: af } = await supabase.from('affiliations').select('*, profiles:joueur_id(id, prenom, nom, email)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    const { data: af, error: afError } = await supabase.from('affiliations').select('*, profiles:joueur_id(id, prenom, nom)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    console.log('[affiliations]', af, afError)
     setAffiliations(af || [])
   }
 
@@ -2445,11 +2446,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       {affiliations.filter(a => a.statut === 'en_attente').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f59e0b08', border: '1px solid #f59e0b20', borderRadius: '10px' }}>
                           <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#f59e0b20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color: '#f59e0b', flexShrink: 0 }}>
-                            {a.profiles?.prenom?.[0]}{a.profiles?.nom?.[0]}
+                            {a.profiles?.prenom?.[0] || '?'}{a.profiles?.nom?.[0] || ''}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.profiles?.prenom} {a.profiles?.nom}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{a.profiles?.email}</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.profiles?.prenom || 'Joueur'} {a.profiles?.nom || ''}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>ID: {a.joueur_id?.slice(0, 8)}…</p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
@@ -2479,9 +2480,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       {affiliations.filter(a => a.statut === 'accepte').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '20px' }}>
                           <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#4ade80' }}>
-                            {a.profiles?.prenom?.[0]}{a.profiles?.nom?.[0]}
+                            {a.profiles?.prenom?.[0] || '?'}{a.profiles?.nom?.[0] || ''}
                           </div>
-                          <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.profiles?.prenom} {a.profiles?.nom}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.profiles?.prenom || 'Joueur'} {a.profiles?.nom || ''}</span>
                           <button onClick={() => gererAffiliation(a.id, 'refuse')}
                             style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
                         </div>
