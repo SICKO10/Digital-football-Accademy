@@ -276,11 +276,15 @@ function DashboardJoueur() {
       { data: tousMatchs },
       { data: noteEdu },
       { data: profilEdu },
+      { data: prochainMatchs },
+      { data: effectif },
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('joueur_id', equipeJoueurId),
       supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
+      supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
+      supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
     ])
 
     // --- Stats personnelles ---
@@ -328,6 +332,24 @@ function DashboardJoueur() {
     const rankClean = calcRank(cleanSheets, tousMatchs, r => r.clean_sheet ? 1 : 0, 'joueur_id')
     const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0, 'joueur_id')
 
+    // --- Leaderboards internes ---
+    const buildLeader = (allData, keyFn, idKey = 'joueur_id') => {
+      const map = {}
+      allData?.forEach(r => {
+        if (!map[r[idKey]]) map[r[idKey]] = 0
+        map[r[idKey]] += keyFn(r)
+      })
+      return Object.entries(map)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([id, val]) => {
+          const j = effectif?.find(e => e.id === id)
+          return { nom: j ? `${j.prenom} ${j.nom}` : '?', val, isMe: id === equipeJoueurId }
+        })
+    }
+    const leaderButs = buildLeader(tousMatchs, r => r.buts || 0)
+    const leaderPoints = buildLeader(toutesPresences, r => r.point_seance ? 1 : 0)
+
     setStatsJoueur(prev => ({
       ...prev,
       [affiliationId]: {
@@ -337,6 +359,8 @@ function DashboardJoueur() {
         rankButs, rankPasses, rankMatchs, rankClean, rankPoints,
         noteEdu: noteEdu || null,
         ligueUrl: profilEdu?.ligue_url || null,
+        prochainMatchs: prochainMatchs || [],
+        leaderButs, leaderPoints,
       }
     }))
     setStatsLoading(prev => ({ ...prev, [affiliationId]: false }))
@@ -2111,11 +2135,58 @@ function DashboardJoueur() {
                                   )}
                                 </div>
 
+                                {/* Calendrier prochains matchs */}
+                                <div>
+                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 Prochains matchs</p>
+                                  {s.prochainMatchs?.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                      {s.prochainMatchs.map((m, i) => {
+                                        const d = new Date(m.date)
+                                        const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                                        return (
+                                          <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                              <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
+                                              {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
+                                            {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Aucun match programmé.</p>
+                                  )}
+                                </div>
+
+                                {/* Classements internes */}
+                                <div>
+                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    {[
+                                      { title: '⚽ Top buteurs', data: s.leaderButs, unit: 'but' },
+                                      { title: '⭐ Points séance', data: s.leaderPoints, unit: 'pt' },
+                                    ].map(({ title, data, unit }) => (
+                                      <div key={title} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
+                                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555' }}>{title}</p>
+                                        {data?.length > 0 ? data.map((row, i) => (
+                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
+                                            <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
+                                            <span style={{ fontSize: '10px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom.split(' ')[0]}</span>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
+                                          </div>
+                                        )) : <p style={{ margin: 0, fontSize: '10px', color: '#333' }}>—</p>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
                                 {/* Lien classement ligue */}
                                 {s.ligueUrl && (
                                   <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
                                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                                    🏆 Voir le classement du championnat →
+                                    🏆 Classement du championnat →
                                   </a>
                                 )}
 
