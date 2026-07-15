@@ -285,8 +285,8 @@ function DashboardJoueur() {
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
-      supabase.from('matchs_equipe').select('id, score_nous, score_eux').eq('educateur_id', educateurId),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
+      supabase.from('matchs_equipe').select('id, score_nous, score_eux').eq('educateur_id', educateurId),
     ])
 
     // --- Stats personnelles ---
