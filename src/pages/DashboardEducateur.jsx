@@ -547,15 +547,23 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
   // Stats globales joueur
   const statsGlobalesJoueur = (joueurId) => {
-    const allStats = matchs.flatMap(m => (m.stats_match || []).filter(s => s.joueur_id === joueurId))
+    const allStats = matchs.flatMap(m => {
+      const ps = (m.stats_match || []).filter(s => s.joueur_id === joueurId)
+      return ps.map(s => ({ ...s, _match: m }))
+    })
+    const joues = allStats.filter(s => s.minutes > 0)
     return {
-      matchs: allStats.filter(s => s.minutes > 0).length,
+      matchs: joues.length,
       minutes: allStats.reduce((s, r) => s + (r.minutes || 0), 0),
       buts: allStats.reduce((s, r) => s + (r.buts || 0), 0),
       passes_dec: allStats.reduce((s, r) => s + (r.passes_dec || 0), 0),
       clean_sheets: allStats.filter(s => s.clean_sheet).length,
       cartons_j: allStats.filter(s => s.carton_jaune).length,
       cartons_r: allStats.filter(s => s.carton_rouge).length,
+      victoires: joues.filter(s => {
+        const m = s._match
+        return m && parseInt(m.score_nous) > parseInt(m.score_eux)
+      }).length,
     }
   }
 
@@ -727,27 +735,60 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       ) : null}
 
                       {/* Stats matchs */}
-                      {s.matchs > 0 && (
-                        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-                          <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ Stats matchs</p>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px' }}>
-                            {[
-                              { label: 'Matchs', val: s.matchs, color: '#fff' },
-                              { label: 'Minutes', val: `${s.minutes}'`, color: '#fff' },
-                              { label: 'Buts', val: s.buts, color: '#4ade80' },
-                              { label: 'Passes D.', val: s.passes_dec, color: '#60a5fa' },
-                              { label: 'Clean S.', val: s.clean_sheets, color: '#a78bfa' },
-                              { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
-                              { label: '🟥', val: s.cartons_r, color: '#ef4444' },
-                            ].map(c => (
-                              <div key={c.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
-                                <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
-                                <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>{c.label}</p>
-                              </div>
-                            ))}
+                      {s.matchs > 0 && (() => {
+                        const rang = (getVal) => {
+                          const myVal = getVal(j.id)
+                          if (!myVal) return null
+                          const vals = joueurs.map(jj => getVal(jj.id))
+                          const better = vals.filter(v => v > myVal).length
+                          const rank = better + 1
+                          const isTie = vals.filter(v => v === myVal).length > 1
+                          const label = rank === 1 ? '1er' : `${rank}ème`
+                          return `${label}${isTie ? ' ex æquo' : ''}`
+                        }
+                        const rangStats = [
+                          { emoji: '🏆', label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: '#fbbf24' },
+                          { emoji: '⚽', label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: '#4ade80' },
+                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: '#60a5fa' },
+                          { emoji: '🧤', label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: '#a78bfa' },
+                          { emoji: '⏱️', label: 'Temps de jeu', val: `${s.minutes}'`, rang: rang(id => statsGlobalesJoueur(id).minutes), color: '#f59e0b' },
+                          { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: '#4ade80' },
+                        ]
+                        return (
+                          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                            <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ Stats matchs</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', marginBottom: '16px' }}>
+                              {[
+                                { label: 'Matchs', val: s.matchs, color: '#fff' },
+                                { label: 'Victoires', val: s.victoires, color: '#fbbf24' },
+                                { label: 'Minutes', val: `${s.minutes}'`, color: '#fff' },
+                                { label: 'Buts', val: s.buts, color: '#4ade80' },
+                                { label: 'Passes D.', val: s.passes_dec, color: '#60a5fa' },
+                                { label: 'Clean S.', val: s.clean_sheets, color: '#a78bfa' },
+                                { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
+                                { label: '🟥', val: s.cartons_r, color: '#ef4444' },
+                              ].map(c => (
+                                <div key={c.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
+                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
+                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>{c.label}</p>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Classements dans l'équipe */}
+                            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏅 Classements dans l'équipe</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {rangStats.filter(r => r.rang).map(r => (
+                                <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: '#0a0a0a', borderRadius: '8px' }}>
+                                  <span style={{ fontSize: '14px', width: '22px' }}>{r.emoji}</span>
+                                  <span style={{ fontSize: '12px', color: '#777', flex: 1 }}>{r.label}</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#aaa' }}>{r.val}</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 800, color: r.rang.startsWith('1er') ? '#fbbf24' : r.rang.startsWith('2') ? '#9ca3af' : r.rang.startsWith('3') ? '#d97706' : '#555', background: '#111', padding: '2px 8px', borderRadius: '10px' }}>{r.rang}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      })()}
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ Modifier les infos</button>
