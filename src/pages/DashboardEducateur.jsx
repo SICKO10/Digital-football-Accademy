@@ -273,8 +273,19 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id)])
     setLoading(false)
+  }
+
+  const chargerClubAffiliation = async (uid) => {
+    const { data } = await supabase
+      .from('club_educateurs')
+      .select('*, club:club_id(club, prenom, nom, avatar_url)')
+      .eq('educateur_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setClubAffiliation(data || null)
   }
 
   const chargerJoueurs = async (uid) => {
@@ -315,6 +326,12 @@ export default function DashboardEducateur() {
   const [notesEdu, setNotesEdu] = useState([])
   const [affiliations, setAffiliations] = useState([])
 
+  const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  const [codeClubInput, setCodeClubInput] = useState('')
+  const [sendingCodeClub, setSendingCodeClub] = useState(false)
+  const [codeClubError, setCodeClubError] = useState(null)
+  const [codeClubSuccess, setCodeClubSuccess] = useState(false)
+
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
     if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }) }
@@ -325,6 +342,35 @@ export default function DashboardEducateur() {
     setNotesEdu(ne || [])
     const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom)').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
+  }
+
+  const rejoindreClub = async () => {
+    if (!codeClubInput.trim()) return
+    setSendingCodeClub(true)
+    setCodeClubError(null)
+    setCodeClubSuccess(false)
+    const { data: clubProfile } = await supabase
+      .from('profiles')
+      .select('id, club, prenom, nom')
+      .ilike('code_club', codeClubInput.trim())
+      .eq('plan', 'club')
+      .single()
+    if (!clubProfile) {
+      setCodeClubError('Code invalide — vérifie auprès du club.')
+      setSendingCodeClub(false)
+      return
+    }
+    const { data: exist } = await supabase.from('club_educateurs').select('id, statut').eq('club_id', clubProfile.id).eq('educateur_id', userId).single()
+    if (exist) {
+      setCodeClubError(exist.statut === 'accepte' ? 'Tu es déjà affilié à ce club.' : 'Une demande est déjà en cours avec ce club.')
+      setSendingCodeClub(false)
+      return
+    }
+    await supabase.from('club_educateurs').insert({ club_id: clubProfile.id, educateur_id: userId, statut: 'en_attente', methode: 'code' })
+    setCodeClubSuccess(true)
+    setCodeClubInput('')
+    await chargerClubAffiliation(userId)
+    setSendingCodeClub(false)
   }
 
   const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
@@ -2677,6 +2723,43 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* ── Mon club ── */}
+            <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
+              <div style={st.card}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🏟️ Mon club</p>
+                <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#555' }}>Rejoins ton club avec le code qu'il t'a communiqué.</p>
+
+                {clubAffiliation ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px', background: clubAffiliation.statut === 'accepte' ? '#4ade8010' : '#f59e0b10', border: `1px solid ${clubAffiliation.statut === 'accepte' ? '#4ade8030' : '#f59e0b30'}`, borderRadius: '10px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#4ade80' }}>
+                      {(clubAffiliation.club?.club || clubAffiliation.club?.prenom || '?')[0]}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{clubAffiliation.club?.club || `${clubAffiliation.club?.prenom} ${clubAffiliation.club?.nom}`}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: clubAffiliation.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
+                        {clubAffiliation.statut === 'accepte' ? '✅ Affilié' : clubAffiliation.statut === 'en_attente' ? '⏳ En attente de validation par le club' : '✕ Refusé'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      style={{ ...st.input, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'monospace' }}
+                      placeholder="CODE CLUB"
+                      value={codeClubInput}
+                      onChange={e => { setCodeClubInput(e.target.value.toUpperCase()); setCodeClubError(null) }}
+                      onKeyDown={e => e.key === 'Enter' && rejoindreClub()}
+                    />
+                    <button onClick={rejoindreClub} disabled={sendingCodeClub || !codeClubInput.trim()} style={st.btnSolid}>
+                      {sendingCodeClub ? '...' : 'Rejoindre'}
+                    </button>
+                  </div>
+                )}
+                {codeClubError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px' }}>⚠️ {codeClubError}</p>}
+                {codeClubSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px' }}>✅ Demande envoyée ! Le club doit valider ton affiliation.</p>}
               </div>
             </div>
 
