@@ -5,6 +5,7 @@ import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
+import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 
 const STRIPE_LINKS = {
   starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
@@ -142,6 +143,20 @@ function DashboardJoueur() {
   const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
+  // Mon Équipe (affiliation éducateur)
+  const [mesAffiliations, setMesAffiliations] = useState([])
+  const [codeEquipe, setCodeEquipe] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [codeError, setCodeError] = useState(null)
+  const [codeSuccess, setCodeSuccess] = useState(false)
+  const [eduNote, setEduNote] = useState(null) // éducateur en cours de notation
+  const [noteCriteres, setNoteCriteres] = useState({})
+  const [noteCommentaire, setNoteCommentaire] = useState('')
+  const [notePublic, setNotePublic] = useState(true)
+  const [noteSaison, setNoteSaison] = useState('2024-2025')
+  const [savingNote, setSavingNoteEdu] = useState(false)
+  const [noteSaved, setNoteSaved] = useState(false)
+
   useEffect(() => { getProfil() }, [])
 
   useEffect(() => {
@@ -198,7 +213,66 @@ function DashboardJoueur() {
     console.log('[DashboardJoueur] reelRows:', reelRows, 'error:', reelErr)
     setReelJogabonito(reelRows?.[0] || null)
     await chargerConversations(user.id)
+    await chargerAffiliations(user.id)
     setLoading(false)
+  }
+
+  const chargerAffiliations = async (uid) => {
+    const { data } = await supabase
+      .from('affiliations')
+      .select('*, profil_educateur!affiliations_educateur_id_fkey(prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe), notes_educateur_count:notes_educateur(count)')
+      .eq('joueur_id', uid)
+    setMesAffiliations(data || [])
+  }
+
+  const rejoindreEquipe = async () => {
+    if (!codeEquipe.trim()) return
+    setSendingCode(true)
+    setCodeError(null)
+    setCodeSuccess(false)
+    // Chercher l'éducateur par code
+    const { data: pe } = await supabase
+      .from('profil_educateur')
+      .select('user_id, prenom, nom')
+      .ilike('code_equipe', codeEquipe.trim())
+      .single()
+    if (!pe) { setCodeError('Code invalide — vérifie auprès de ton éducateur.'); setSendingCode(false); return }
+    // Vérifier si déjà affilié
+    const { data: exist } = await supabase.from('affiliations').select('id, statut').eq('educateur_id', pe.user_id).eq('joueur_id', userId).single()
+    if (exist) {
+      if (exist.statut === 'accepte') { setCodeError('Tu es déjà affilié à cet éducateur.') }
+      else if (exist.statut === 'en_attente') { setCodeError('Ta demande est déjà en attente de validation.') }
+      else { setCodeError('Ta demande a été refusée. Contacte ton éducateur.') }
+      setSendingCode(false); return
+    }
+    await supabase.from('affiliations').insert({ educateur_id: pe.user_id, joueur_id: userId, statut: 'en_attente' })
+    setCodeSuccess(true)
+    setCodeEquipe('')
+    await chargerAffiliations(userId)
+    setSendingCode(false)
+  }
+
+  const soumettreNoteEdu = async () => {
+    if (!eduNote) return
+    setSavingNoteEdu(true)
+    const allKeys = CRITERES_EDU_KEYS.flatMap(c => c.criteres.map(cr => cr.key))
+    const allFilled = allKeys.every(k => noteCriteres[k])
+    if (!allFilled) { setSavingNoteEdu(false); return }
+    const moyGlobale = allKeys.reduce((s, k) => s + (noteCriteres[k] || 0), 0) / allKeys.length
+    await supabase.from('notes_educateur').upsert({
+      educateur_id: eduNote.educateur_id,
+      auteur_id: userId,
+      auteur_type: 'joueur',
+      saison: noteSaison,
+      note: Math.round(moyGlobale * 10) / 10,
+      criteres: noteCriteres,
+      commentaire: noteCommentaire,
+      visible_public: notePublic,
+    }, { onConflict: 'educateur_id,auteur_id,saison' })
+    setNoteSaved(true)
+    setEduNote(null)
+    setTimeout(() => setNoteSaved(false), 3000)
+    setSavingNoteEdu(false)
   }
 
   const chargerConversations = async (uid) => {
@@ -695,6 +769,7 @@ function DashboardJoueur() {
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread },
     { id: 'clubs', label: 'Explorer', icon: <IconBuilding /> },
+    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length },
   ]
 
   return (
@@ -1726,7 +1801,155 @@ function DashboardJoueur() {
           </div>
         )}
 
+        {/* ── MON ÉQUIPE ── */}
+        {onglet === 'equipe' && (
+          <div style={{ maxWidth: '700px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Mon Équipe</h1>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>Rejoins l'équipe de ton éducateur pour voir tes stats et le noter.</p>
+
+            {/* Code d'entrée */}
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px', marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔑 Rejoindre une équipe</p>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>Demande le code d'équipe à ton éducateur et entre-le ci-dessous.</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '15px', fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase' }}
+                  placeholder="CODE ÉQUIPE"
+                  value={codeEquipe}
+                  onChange={e => { setCodeEquipe(e.target.value.toUpperCase()); setCodeError(null); setCodeSuccess(false) }}
+                  onKeyDown={e => e.key === 'Enter' && rejoindreEquipe()}
+                />
+                <button onClick={rejoindreEquipe} disabled={sendingCode || !codeEquipe.trim()}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: codeEquipe.trim() ? 1 : 0.4 }}>
+                  {sendingCode ? '...' : 'Rejoindre'}
+                </button>
+              </div>
+              {codeError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>⚠️ {codeError}</p>}
+              {codeSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>✅ Demande envoyée ! Ton éducateur doit l'accepter.</p>}
+            </div>
+
+            {/* Mes affiliations */}
+            {mesAffiliations.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Mes éducateurs</p>
+                {mesAffiliations.map(a => {
+                  const pe = a.profil_educateur
+                  const isAccepted = a.statut === 'accepte'
+                  return (
+                    <div key={a.id} style={{ background: '#111', border: `1px solid ${isAccepted ? '#4ade8025' : '#2a2a2a'}`, borderRadius: '14px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: isAccepted ? '14px' : '0' }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: isAccepted ? '#4ade8020' : '#1a1a1a', border: `2px solid ${isAccepted ? '#4ade8040' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: isAccepted ? '#4ade80' : '#555', flexShrink: 0 }}>
+                          {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                          background: isAccepted ? '#4ade8015' : a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
+                          color: isAccepted ? '#4ade80' : a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
+                          border: `1px solid ${isAccepted ? '#4ade8030' : a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
+                          {isAccepted ? '✅ Affilié' : a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
+                        </span>
+                      </div>
+
+                      {isAccepted && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {pe?.diplome && (
+                            <span style={{ background: pe.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${pe.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: pe.diplome_verifie ? '#4ade80' : '#555', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>
+                              {pe.diplome_verifie ? '✅' : '🎓'} {pe.diplome}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
+                            style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
+                            ⭐ Évaluer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {mesAffiliations.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#333', fontSize: '13px' }}>
+                <p style={{ fontSize: '32px', marginBottom: '12px' }}>🏟️</p>
+                <p>Tu n'es encore affilié à aucune équipe.<br/>Entre un code d'équipe pour commencer.</p>
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
+
+      {/* Modal notation éducateur */}
+      {eduNote && (
+        <div onClick={() => setEduNote(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ Évaluer {eduNote.profil_educateur?.prenom} {eduNote.profil_educateur?.nom}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Ton évaluation est anonyme et aide à améliorer la qualité de l'encadrement.</p>
+              </div>
+              <button onClick={() => setEduNote(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {/* Saison */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <label style={{ fontSize: '12px', color: '#555', flexShrink: 0 }}>Saison évaluée :</label>
+              <select value={noteSaison} onChange={e => setNoteSaison(e.target.value)}
+                style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                {['2024-2025','2023-2024','2022-2023'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {/* 6 catégories */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+              {CRITERES_EDU_KEYS.map(cat => (
+                <div key={cat.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {cat.criteres.map(c => (
+                      <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} onClick={() => setNoteCriteres(prev => ({ ...prev, [c.key]: n }))}
+                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (noteCriteres[c.key] || 0) >= n ? cat.color : '#2a2a2a', padding: '2px', lineHeight: 1 }}>
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: cat.color, width: '16px', textAlign: 'right' }}>{noteCriteres[c.key] || ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Commentaire */}
+            <div style={{ marginBottom: '14px' }}>
+              <textarea value={noteCommentaire} onChange={e => setNoteCommentaire(e.target.value)}
+                placeholder="Commentaire (optionnel)..."
+                style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+            </div>
+
+            {/* Visibilité */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#aaa', marginBottom: '16px' }}>
+              <input type="checkbox" checked={notePublic} onChange={e => setNotePublic(e.target.checked)} />
+              Rendre mon commentaire public (visible par les recruteurs)
+            </label>
+
+            <button onClick={soumettreNoteEdu} disabled={savingNote || CRITERES_EDU_KEYS.flatMap(c => c.criteres).some(c => !noteCriteres[c.key])}
+              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU_KEYS.flatMap(c => c.criteres).every(c => noteCriteres[c.key]) ? 1 : 0.4 }}>
+              {savingNote ? '⏳ Envoi...' : '✅ Soumettre l\'évaluation'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal profil recruteur */}
       {recruteurModal && (
