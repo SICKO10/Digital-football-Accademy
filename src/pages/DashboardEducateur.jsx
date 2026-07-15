@@ -196,6 +196,15 @@ export default function DashboardEducateur() {
   const [localNotes, setLocalNotes] = useState({}) // édition en cours par joueur_id
   const [savingNote, setSavingNote] = useState(false)
 
+  // Mon Profil éducateur
+  const [profilEdu, setProfilEdu] = useState(null)
+  const [profilEduEdit, setProfilEduEdit] = useState(null)
+  const [parcoursEdu, setParcoursEdu] = useState([])
+  const [savingProfil, setSavingProfil] = useState(false)
+  const [uploadingDiplome, setUploadingDiplome] = useState(false)
+  const [showAddParcours, setShowAddParcours] = useState(false)
+  const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
+
   useEffect(() => { init() }, [])
 
   const init = async () => {
@@ -205,7 +214,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id)])
     setLoading(false)
   }
 
@@ -242,6 +251,53 @@ export default function DashboardEducateur() {
 
   const setLocalNote = (joueurId, update) => {
     setLocalNotes(prev => ({ ...prev, [joueurId]: { ...getLocalNote(joueurId), ...update } }))
+  }
+
+  const chargerProfilEdu = async (uid) => {
+    const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
+    if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }) }
+    else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '' }) }
+    const { data: pa } = await supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre')
+    setParcoursEdu(pa || [])
+  }
+
+  const sauvegarderProfilEdu = async () => {
+    if (!profilEduEdit) return
+    setSavingProfil(true)
+    const payload = { ...profilEduEdit, user_id: userId, updated_at: new Date().toISOString() }
+    const { data } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
+    if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
+    setSavingProfil(false)
+  }
+
+  const uploadDiplome = async (file) => {
+    if (!file) return
+    setUploadingDiplome(true)
+    const ext = file.name.split('.').pop()
+    const path = `diplomes/${userId}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+      const updated = { ...profilEduEdit, diplome_url: publicUrl, diplome_verifie: false }
+      setProfilEduEdit(updated)
+      await supabase.from('profil_educateur').upsert({ ...updated, user_id: userId }, { onConflict: 'user_id' })
+      await chargerProfilEdu(userId)
+    }
+    setUploadingDiplome(false)
+  }
+
+  const ajouterParcours = async () => {
+    if (!newParcours.club) return
+    const ordre = parcoursEdu.length
+    await supabase.from('parcours_educateur').insert({ ...newParcours, user_id: userId, ordre })
+    await chargerProfilEdu(userId)
+    setNewParcours({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
+    setShowAddParcours(false)
+  }
+
+  const supprimerParcours = async (id) => {
+    await supabase.from('parcours_educateur').delete().eq('id', id)
+    await chargerProfilEdu(userId)
   }
 
   const ajouterJoueur = async () => {
@@ -678,6 +734,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'matchs', label: '🏟️ Compétition' },
     { key: 'entrainements', label: '🏃 Entraînements' },
     { key: 'notes', label: '📝 Évaluations' },
+    { key: 'profil', label: '👤 Mon profil' },
   ]
 
   return (
@@ -2113,6 +2170,189 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 })}
               </div>
             )}
+          </>
+        )}
+
+        {/* ===== MON PROFIL ÉDUCATEUR ===== */}
+        {activeSection === 'profil' && profilEduEdit && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>👤 Mon profil</h1>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
+
+              {/* Infos principales */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={st.card}>
+                  <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 Informations</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={st.label}>Prénom</label>
+                        <input style={st.input} value={profilEduEdit.prenom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, prenom: e.target.value }))} placeholder="Ton prénom" />
+                      </div>
+                      <div>
+                        <label style={st.label}>Nom</label>
+                        <input style={st.input} value={profilEduEdit.nom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, nom: e.target.value }))} placeholder="Ton nom" />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={st.label}>Club</label>
+                      <input style={st.input} value={profilEduEdit.club || ''} onChange={e => setProfilEduEdit(p => ({ ...p, club: e.target.value }))} placeholder="Nom du club" />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={st.label}>Catégorie entraînée</label>
+                        <select style={st.input} value={profilEduEdit.categorie || ''} onChange={e => setProfilEduEdit(p => ({ ...p, categorie: e.target.value }))}>
+                          <option value="">— Choisir —</option>
+                          {['U7','U8','U9','U10','U11','U12','U13','U14','U15','U16','U17','U18','U19','U20','Seniors','Vétérans'].map(c => <option key={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={st.label}>Niveau de championnat</label>
+                        <select style={st.input} value={profilEduEdit.niveau_championnat || ''} onChange={e => setProfilEduEdit(p => ({ ...p, niveau_championnat: e.target.value }))}>
+                          <option value="">— Choisir —</option>
+                          {['National 3','Régional 1','Régional 2','Régional 3','Départemental 1','Départemental 2','Départemental 3','District','Loisir'].map(n => <option key={n}>{n}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Diplôme */}
+                <div style={st.card}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🎓 Diplôme</p>
+                    {profilEdu?.diplome_verifie && (
+                      <span style={{ background: '#4ade8020', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>✅ Certifié</span>
+                    )}
+                    {profilEdu?.diplome_url && !profilEdu?.diplome_verifie && (
+                      <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>⏳ En attente de vérification</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={st.label}>Diplôme obtenu</label>
+                      <select style={st.input} value={profilEduEdit.diplome || ''} onChange={e => setProfilEduEdit(p => ({ ...p, diplome: e.target.value }))}>
+                        <option value="">— Choisir —</option>
+                        {['UEFA A','UEFA B','UEFA C','BEF (Brevet d\'État)','BMF','CFF1','CFF2','Animateur','Initiateur','Éducateur Sportif','Aucun diplôme'].map(d => <option key={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={st.label}>Preuve du diplôme (PDF ou image)</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#0a0a0a', border: '1px dashed #2a2a2a', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
+                        <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => uploadDiplome(e.target.files[0])} />
+                        <span style={{ fontSize: '13px', color: '#555' }}>{uploadingDiplome ? '⏳ Upload...' : profilEdu?.diplome_url ? '✅ Preuve uploadée — Changer' : '📎 Uploader la preuve'}</span>
+                      </label>
+                      {profilEdu?.diplome_url && (
+                        <a href={profilEdu.diplome_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px', display: 'block' }}>Voir le document uploadé ↗</a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={sauvegarderProfilEdu} disabled={savingProfil} style={st.btnSolid}>
+                  {savingProfil ? '⏳ Sauvegarde...' : '💾 Sauvegarder le profil'}
+                </button>
+              </div>
+
+              {/* Parcours football */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={st.card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⚽ Parcours football</p>
+                    <button onClick={() => setShowAddParcours(true)} style={st.btn()}>+ Ajouter</button>
+                  </div>
+
+                  {showAddParcours && (
+                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={st.label}>Type</label>
+                          <select style={st.input} value={newParcours.type} onChange={e => setNewParcours(p => ({ ...p, type: e.target.value }))}>
+                            <option value="coach">🎙️ Coach</option>
+                            <option value="joueur">⚽ Joueur</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Club *</label>
+                          <input style={st.input} placeholder="Nom du club" value={newParcours.club} onChange={e => setNewParcours(p => ({ ...p, club: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Poste / Rôle</label>
+                          <input style={st.input} placeholder="Attaquant, Entraîneur principal..." value={newParcours.poste} onChange={e => setNewParcours(p => ({ ...p, poste: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Niveau</label>
+                          <input style={st.input} placeholder="National, Régional..." value={newParcours.niveau} onChange={e => setNewParcours(p => ({ ...p, niveau: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Saison début</label>
+                          <input style={st.input} placeholder="2018" value={newParcours.saison_debut} onChange={e => setNewParcours(p => ({ ...p, saison_debut: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Saison fin</label>
+                          <input style={st.input} placeholder="2022 ou En cours" value={newParcours.saison_fin} onChange={e => setNewParcours(p => ({ ...p, saison_fin: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={ajouterParcours} style={st.btnSolid}>Ajouter</button>
+                        <button onClick={() => setShowAddParcours(false)} style={st.btn('#666')}>Annuler</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {parcoursEdu.length === 0 && !showAddParcours && (
+                    <p style={{ color: '#333', fontSize: '13px', textAlign: 'center', padding: '1.5rem 0', margin: 0 }}>Aucun parcours ajouté</p>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {parcoursEdu.map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                        <span style={{ fontSize: '18px' }}>{p.type === 'coach' ? '🎙️' : '⚽'}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.club}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                            {p.poste && `${p.poste} · `}{p.niveau && `${p.niveau} · `}
+                            {p.saison_debut && p.saison_fin ? `${p.saison_debut} → ${p.saison_fin}` : p.saison_debut || ''}
+                          </p>
+                        </div>
+                        <button onClick={() => supprimerParcours(p.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Aperçu profil public */}
+                {profilEdu && (
+                  <div style={{ ...st.card, border: '1px solid #4ade8020' }}>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👁️ Aperçu public</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#4ade8020', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
+                        {profilEdu.prenom?.[0]}{profilEdu.nom?.[0]}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{profilEdu.prenom} {profilEdu.nom}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profilEdu.club || 'Club non renseigné'} · {profilEdu.categorie || '—'}</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {profilEdu.diplome && (
+                        <span style={{ background: profilEdu.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${profilEdu.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: profilEdu.diplome_verifie ? '#4ade80' : '#666', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
+                          {profilEdu.diplome_verifie ? '✅' : '🎓'} {profilEdu.diplome}
+                        </span>
+                      )}
+                      {profilEdu.niveau_championnat && (
+                        <span style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
+                          🏆 {profilEdu.niveau_championnat}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
 
