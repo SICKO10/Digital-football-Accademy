@@ -294,6 +294,7 @@ export default function DashboardEducateur() {
   }
 
   const [notesEdu, setNotesEdu] = useState([])
+  const [affiliations, setAffiliations] = useState([])
 
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
@@ -303,6 +304,13 @@ export default function DashboardEducateur() {
     setParcoursEdu(pa || [])
     const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
     setNotesEdu(ne || [])
+    const { data: af } = await supabase.from('affiliations').select('*, profiles:joueur_id(id, prenom, nom, email)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    setAffiliations(af || [])
+  }
+
+  const gererAffiliation = async (id, statut) => {
+    await supabase.from('affiliations').update({ statut }).eq('id', id)
+    await chargerProfilEdu(userId)
   }
 
   const sauvegarderProfilEdu = async () => {
@@ -2395,6 +2403,85 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* ── Joueurs affiliés ── */}
+            <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
+              <div style={st.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                  <div>
+                    <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>👥 Joueurs affiliés</p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Seuls les joueurs affiliés peuvent te noter. Partage ton code d'équipe pour qu'ils puissent rejoindre.</p>
+                  </div>
+                  {profilEdu?.code_equipe && (
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#555' }}>Ton code d'équipe</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontWeight: 800, fontSize: '16px', padding: '6px 14px', borderRadius: '8px', letterSpacing: '2px', fontFamily: 'monospace' }}>
+                          {profilEdu.code_equipe.toUpperCase()}
+                        </span>
+                        <button onClick={() => navigator.clipboard.writeText(profilEdu.code_equipe.toUpperCase())}
+                          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                          📋
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Demandes en attente */}
+                {affiliations.filter(a => a.statut === 'en_attente').length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>⏳ Demandes en attente ({affiliations.filter(a => a.statut === 'en_attente').length})</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {affiliations.filter(a => a.statut === 'en_attente').map(a => (
+                        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f59e0b08', border: '1px solid #f59e0b20', borderRadius: '10px' }}>
+                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#f59e0b20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color: '#f59e0b', flexShrink: 0 }}>
+                            {a.profiles?.prenom?.[0]}{a.profiles?.nom?.[0]}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.profiles?.prenom} {a.profiles?.nom}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{a.profiles?.email}</p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => gererAffiliation(a.id, 'accepte')}
+                              style={{ background: '#4ade8020', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              ✅ Accepter
+                            </button>
+                            <button onClick={() => gererAffiliation(a.id, 'refuse')}
+                              style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              ✕ Refuser
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Joueurs acceptés */}
+                <div>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#4ade80' }}>
+                    ✅ Joueurs affiliés ({affiliations.filter(a => a.statut === 'accepte').length})
+                  </p>
+                  {affiliations.filter(a => a.statut === 'accepte').length === 0 ? (
+                    <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>Aucun joueur affilié pour le moment.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {affiliations.filter(a => a.statut === 'accepte').map(a => (
+                        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '20px' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#4ade80' }}>
+                            {a.profiles?.prenom?.[0]}{a.profiles?.nom?.[0]}
+                          </div>
+                          <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.profiles?.prenom} {a.profiles?.nom}</span>
+                          <button onClick={() => gererAffiliation(a.id, 'refuse')}
+                            style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
