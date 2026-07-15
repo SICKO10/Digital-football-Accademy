@@ -345,12 +345,20 @@ export default function DashboardEducateur() {
   }
 
   const cyclerPresence = async (entrainementId, joueurId, statutActuel) => {
-    const idx = STATUTS.indexOf(statutActuel || 'absent')
-    const prochain = STATUTS[(idx + 1) % STATUTS.length]
-    await supabase.from('presences_entrainement').upsert(
-      { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, statut: prochain, present: prochain === 'present' || prochain === 'convoque' },
-      { onConflict: 'entrainement_id,joueur_id' }
-    )
+    if (statutActuel === 'convoque') {
+      // Dernier statut → retour à "non saisi" : on supprime la ligne
+      await supabase.from('presences_entrainement')
+        .delete()
+        .eq('entrainement_id', entrainementId)
+        .eq('joueur_id', joueurId)
+    } else {
+      const idx = statutActuel === 'non_saisi' ? -1 : STATUTS.indexOf(statutActuel)
+      const prochain = STATUTS[(idx + 1) % STATUTS.length]
+      await supabase.from('presences_entrainement').upsert(
+        { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, statut: prochain, present: prochain === 'present' || prochain === 'convoque' },
+        { onConflict: 'entrainement_id,joueur_id' }
+      )
+    }
     await chargerEntrainements(userId)
   }
 
@@ -1189,7 +1197,7 @@ export default function DashboardEducateur() {
                                   ? { emoji: '⬜', label: 'Non saisi', bg: '#ffffff05', border: '#2a2a2a', color: '#444' }
                                   : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
                                 return (
-                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'absent' : statut)}
+                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
                                     <span style={{ fontSize: '15px', flexShrink: 0 }}>{cfg.emoji}</span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
