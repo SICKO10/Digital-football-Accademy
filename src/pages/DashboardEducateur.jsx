@@ -604,6 +604,7 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
   ]
 
   return (
+    <>
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
 
       {/* NAV */}
@@ -1844,5 +1845,6 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
         </div>
       </div>
     )}
+    </>
   )
 }
