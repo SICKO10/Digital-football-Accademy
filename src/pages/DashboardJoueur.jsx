@@ -245,11 +245,14 @@ function DashboardJoueur() {
     if (!equipeJoueurId || statsJoueur[affiliationId]) return
     setStatsLoading(prev => ({ ...prev, [affiliationId]: true }))
 
+    console.log('[stats] equipeJoueurId:', equipeJoueurId, '| educateurId:', educateurId)
+
     // 1. Mes présences (sans join)
-    const { data: presencesMoi } = await supabase
+    const { data: presencesMoi, error: errP } = await supabase
       .from('presences_entrainement')
       .select('statut, point_seance, entrainement_id')
       .eq('equipe_joueur_id', equipeJoueurId)
+    console.log('[stats] presencesMoi:', presencesMoi, errP)
 
     // 2. Dates des entraînements pour le mensuel
     const entrainementIds = presencesMoi?.map(p => p.entrainement_id).filter(Boolean) || []
@@ -274,8 +277,8 @@ function DashboardJoueur() {
       { data: noteEdu },
       { data: profilEdu },
     ] = await Promise.all([
-      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId),
-      supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId),
+      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId).then(r => { console.log('[stats] matchsMoi:', r.data, r.error); return r }),
+      supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId).then(r => { console.log('[stats] tousMatchs:', r.data?.length, r.error); return r }),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
     ])
