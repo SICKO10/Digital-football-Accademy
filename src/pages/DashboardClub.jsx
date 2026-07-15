@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
-const CATEGORIES_STANDARD = ['U13', 'U15', 'U17', 'U19', 'Senior']
+const CATEGORIES_STANDARD = ['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
 const EQUIPES = ['A', 'B']
 
 export default function DashboardClub() {
