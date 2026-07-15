@@ -254,6 +254,14 @@ export default function DashboardEducateur() {
   const [recrutRegion, setRecrutRegion] = useState('Toutes')
   const [recrutSelectedJoueur, setRecrutSelectedJoueur] = useState(null)
   const [recrutParcours, setRecrutParcours] = useState([])
+  const [recrutStyleDeJeu, setRecrutStyleDeJeu] = useState('Tous')
+
+  const CARACTERISTIQUES_PAR_POSTE = {
+    Gardien:   ['Détente', 'Relance longue', 'Relance courte', 'Placement', 'Jeu aérien', 'Un contre un', 'Communication', 'Leadership', 'Reflexes', 'Prise de balle', 'Agilité', 'Lecture du jeu'],
+    Défenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
+    Milieu:    ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
+    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
+  }
 
   useEffect(() => { init() }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
@@ -2257,10 +2265,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           const postes = ['Tous', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant']
           const categories = ['Toutes', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Seniors']
           const regions = ['Toutes', ...Array.from(new Set(recrutJoueurs.map(j => j.region).filter(Boolean))).sort()]
+          const stylesDisponibles = recrutPoste !== 'Tous' && CARACTERISTIQUES_PAR_POSTE[recrutPoste]
+            ? ['Tous', ...CARACTERISTIQUES_PAR_POSTE[recrutPoste]]
+            : ['Tous']
           const filtered = recrutJoueurs.filter(j => {
             if (recrutPoste !== 'Tous' && j.poste !== recrutPoste) return false
             if (recrutCategorie !== 'Toutes' && j.categorie !== recrutCategorie) return false
             if (recrutRegion !== 'Toutes' && j.region !== recrutRegion) return false
+            if (recrutStyleDeJeu !== 'Tous' && !(j.points_forts || '').toLowerCase().includes(recrutStyleDeJeu.toLowerCase())) return false
             if (recrutSearch) {
               const s = recrutSearch.toLowerCase()
               return `${j.prenom} ${j.nom}`.toLowerCase().includes(s) || (j.club || '').toLowerCase().includes(s) || (j.poste || '').toLowerCase().includes(s) || (j.region || '').toLowerCase().includes(s)
@@ -2321,9 +2333,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           }
           return (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🔍 Recrutement</h1>
-                <a href="/jogabonito" target="_blank" style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>🎬 Jogabonito →</a>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: '#fff', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Feed</button>
+                  <a href="/jogabonito" target="_blank" style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>🎬 Jogabonito →</a>
+                </div>
               </div>
               {/* Filtres */}
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
@@ -2333,10 +2348,18 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Poste</p>
-                  <select value={recrutPoste} onChange={e => setRecrutPoste(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {postes.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
+                {recrutPoste !== 'Tous' && (
+                  <div>
+                    <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Style de jeu</p>
+                    <select value={recrutStyleDeJeu} onChange={e => setRecrutStyleDeJeu(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #60a5fa40', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                      {stylesDisponibles.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Catégorie</p>
                   <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
