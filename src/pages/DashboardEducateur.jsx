@@ -304,8 +304,7 @@ export default function DashboardEducateur() {
     setParcoursEdu(pa || [])
     const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
     setNotesEdu(ne || [])
-    const { data: af, error: afError } = await supabase.from('affiliations').select('*, profiles:joueur_id(id, prenom, nom)').eq('educateur_id', uid).order('created_at', { ascending: false })
-    console.log('[affiliations]', af, afError)
+    const { data: af } = await supabase.from('affiliations').select('*').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
   }
 
@@ -2740,7 +2739,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px' }}>
           <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ Accepter la demande</p>
           <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>
-            Lier le compte <strong style={{ color: '#aaa' }}>{affiliationEnCours.profiles?.email}</strong> à un joueur de votre effectif pour accéder à ses statistiques.
+            Lier ce joueur <strong style={{ color: '#aaa' }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> à un joueur de votre effectif pour accéder à ses statistiques.
           </p>
 
           <label style={{ display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px' }}>Joueur correspondant dans votre effectif</label>
