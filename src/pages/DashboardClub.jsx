@@ -136,6 +136,11 @@ export default function DashboardClub() {
     setEducateursAffilies(prev => prev.filter(e => e.id !== id))
   }
 
+  const accepterEducateur = async (id) => {
+    await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
+    await chargerEducateurs(clubId)
+  }
+
   const copierCode = () => {
     navigator.clipboard.writeText(codeClub)
   }
@@ -303,7 +308,10 @@ export default function DashboardClub() {
                         <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>Méthode : {e.methode === 'code' ? 'a rejoint via code' : 'invité par le club'}</p>
                       </div>
-                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Annuler</button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => accepterEducateur(e.id)} style={st.btnSolid}>✅ Accepter</button>
+                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Refuser</button>
+                      </div>
                     </div>
                   ))}
                 </div>
