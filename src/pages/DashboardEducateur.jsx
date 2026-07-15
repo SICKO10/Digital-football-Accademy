@@ -123,6 +123,7 @@ export default function DashboardEducateur() {
   const [importError, setImportError] = useState('')
   const [savingJoueur, setSavingJoueur] = useState(false)
   const [joueurActif, setJoueurActif] = useState(null)
+  const [vueEquipe, setVueEquipe] = useState('poste') // 'poste' | 'liste'
 
   // Matchs
   const [matchs, setMatchs] = useState([])
@@ -485,7 +486,16 @@ export default function DashboardEducateur() {
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Mon équipe</h1>
                 <p style={{ color: '#555', fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} dans l'effectif</p>
               </div>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Toggle vue */}
+                <div style={{ display: 'flex', background: '#1a1a1a', borderRadius: '8px', padding: '3px', gap: '2px' }}>
+                  {[['poste','⊞ Postes'],['liste','☰ Liste']].map(([v, label]) => (
+                    <button key={v} onClick={() => setVueEquipe(v)}
+                      style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: vueEquipe === v ? '#4ade80' : 'transparent', color: vueEquipe === v ? '#000' : '#555', transition: 'all 0.15s' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title="Télécharger un modèle Excel/CSV">📥 Template</button>
                 <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 Importer Excel/CSV</button>
                 <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
@@ -582,6 +592,45 @@ export default function DashboardEducateur() {
               <div style={{ ...st.card, textAlign: 'center', padding: '4rem' }}>
                 <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</p>
                 <p style={{ color: '#555' }}>Aucun joueur dans l'effectif. Commence par en ajouter un !</p>
+              </div>
+            ) : vueEquipe === 'liste' ? (
+              <div style={{ ...st.card, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                      {['#', 'Joueur', 'Poste', 'Âge', 'Licence', 'Présence', ''].map(h => (
+                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...joueurs]
+                      .sort((a, b) => {
+                        const ordre = ['Gardien','Défenseur central','Latéral droit','Latéral gauche','Milieu défensif','Milieu central','Milieu offensif','Ailier droit','Ailier gauche','Attaquant']
+                        return (ordre.indexOf(a.poste) === -1 ? 99 : ordre.indexOf(a.poste)) - (ordre.indexOf(b.poste) === -1 ? 99 : ordre.indexOf(b.poste))
+                      })
+                      .map((j, i) => {
+                        const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
+                        const tx = tauxPresence(j.id)
+                        const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? '#60a5fa' : j.poste?.toLowerCase().includes('milieu') ? '#a78bfa' : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? '#4ade80' : '#555'
+                        return (
+                          <tr key={j.id} style={{ borderBottom: '1px solid #0f0f0f' }}>
+                            <td style={{ padding: '10px 12px', color: '#555', fontWeight: 700, width: '36px' }}>{j.numero_maillot || '—'}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                            <td style={{ padding: '10px 12px' }}><span style={{ color: posColor, fontSize: '12px' }}>{j.poste || '—'}</span></td>
+                            <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
+                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700 }}>🪪 Oui</span> : <span style={{ color: '#333', fontSize: '11px' }}>—</span>}</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              {tx !== null ? <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span> : <span style={{ color: '#333' }}>—</span>}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                              <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
