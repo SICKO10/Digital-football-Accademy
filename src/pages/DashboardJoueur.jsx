@@ -270,7 +270,11 @@ function DashboardJoueur() {
       ? await supabase.from('presences_entrainement').select('equipe_joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
       : { data: [] }
 
-    // 4. Stats match
+    // 4. IDs des matchs de l'éducateur pour classements
+    const { data: matchsEquipe } = await supabase.from('matchs_equipe').select('id').eq('educateur_id', educateurId)
+    const matchIds = matchsEquipe?.map(m => m.id) || []
+
+    // 5. Stats match
     const [
       { data: matchsMoi },
       { data: tousMatchs },
@@ -278,7 +282,7 @@ function DashboardJoueur() {
       { data: profilEdu },
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId).then(r => { console.log('[stats] matchsMoi:', r.data, r.error); return r }),
-      supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').eq('educateur_id', educateurId).then(r => { console.log('[stats] tousMatchs:', r.data?.length, r.error); return r }),
+      matchIds.length ? supabase.from('stats_match').select('equipe_joueur_id, buts, passes_dec, minutes, clean_sheet').in('match_id', matchIds).then(r => { console.log('[stats] tousMatchs:', r.data?.length, r.error); return r }) : Promise.resolve({ data: [] }),
       supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
     ])
