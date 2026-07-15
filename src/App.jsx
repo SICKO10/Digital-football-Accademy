@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import RegisterRecruteur from './pages/RegisterRecruteur'
 import DashboardJoueur from './pages/DashboardJoueur'
 import DashboardCoach from './pages/DashboardCoach'
+import DashboardScoutClub from './pages/DashboardScoutClub'
 import DashboardClub from './pages/DashboardClub'
 import DashboardRecruteur from './pages/DashboardRecruteur'
 import DashboardEducateur from './pages/DashboardEducateur'
@@ -50,6 +51,7 @@ function App() {
         <Route path="/dashboard" element={<SmartDashboard />} />
         <Route path="/dashboard-joueur" element={<DashboardJoueur />} />
         <Route path="/coach" element={<DashboardCoach />} />
+        <Route path="/scout-club" element={<DashboardScoutClub />} />
         <Route path="/club" element={<DashboardClub />} />
         <Route path="/recruteur" element={<DashboardRecruteur />} />
         <Route path="/educateur" element={<DashboardEducateur />} />
