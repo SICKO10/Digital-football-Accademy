@@ -253,12 +253,16 @@ export default function DashboardEducateur() {
     setLocalNotes(prev => ({ ...prev, [joueurId]: { ...getLocalNote(joueurId), ...update } }))
   }
 
+  const [notesEdu, setNotesEdu] = useState([])
+
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
     if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }) }
     else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '' }) }
     const { data: pa } = await supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre')
     setParcoursEdu(pa || [])
+    const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
+    setNotesEdu(ne || [])
   }
 
   const sauvegarderProfilEdu = async () => {
@@ -2349,6 +2353,74 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </span>
                       )}
                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Section avis & notations ── */}
+            <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
+              <div style={st.card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⭐ Avis reçus</p>
+                  {notesEdu.length > 0 && (() => {
+                    const moy = notesEdu.reduce((s, n) => s + n.note, 0) / notesEdu.length
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '18px', fontWeight: 800, color: '#fbbf24' }}>{moy.toFixed(1)}</span>
+                        <span style={{ color: '#fbbf24', fontSize: '16px' }}>{'★'.repeat(Math.round(moy))}{'☆'.repeat(5 - Math.round(moy))}</span>
+                        <span style={{ fontSize: '12px', color: '#555' }}>({notesEdu.length} avis)</span>
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {notesEdu.length === 0 ? (
+                  <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1.5rem 0' }}>Aucun avis reçu pour le moment. Les joueurs et responsables de club pourront te noter depuis leur dashboard.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {/* Par saison */}
+                    {(() => {
+                      const parSaison = {}
+                      notesEdu.forEach(n => {
+                        const s = n.saison || 'Non précisé'
+                        if (!parSaison[s]) parSaison[s] = []
+                        parSaison[s].push(n)
+                      })
+                      return Object.entries(parSaison).sort(([a], [b]) => b.localeCompare(a)).map(([saison, notes]) => {
+                        const moy = notes.reduce((s, n) => s + n.note, 0) / notes.length
+                        return (
+                          <div key={saison} style={{ background: '#0a0a0a', borderRadius: '12px', padding: '14px', border: '1px solid #1a1a1a' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#555', textTransform: 'uppercase' }}>Saison {saison}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ color: '#fbbf24', fontSize: '14px' }}>{'★'.repeat(Math.round(moy))}{'☆'.repeat(5 - Math.round(moy))}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#fbbf24' }}>{moy.toFixed(1)}</span>
+                                <span style={{ fontSize: '11px', color: '#444' }}>/ 5</span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {notes.filter(n => n.visible_public || true).map(n => (
+                                <div key={n.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 10px', background: '#111', borderRadius: '8px' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: n.auteur_type === 'club' ? '#60a5fa20' : '#4ade8020', border: `1px solid ${n.auteur_type === 'club' ? '#60a5fa40' : '#4ade8040'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
+                                    {n.auteur_type === 'club' ? '🏟️' : '⚽'}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                                      <span style={{ fontSize: '12px', fontWeight: 700 }}>{n.profiles?.prenom} {n.profiles?.nom}</span>
+                                      <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? '#60a5fa' : '#4ade80', fontWeight: 600 }}>{n.auteur_type === 'club' ? 'Club' : 'Joueur'}</span>
+                                      <span style={{ color: '#fbbf24', fontSize: '12px', marginLeft: 'auto' }}>{'★'.repeat(n.note)}{'☆'.repeat(5 - n.note)}</span>
+                                      {!n.visible_public && <span style={{ fontSize: '10px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>🔒 Privé</span>}
+                                    </div>
+                                    {n.commentaire && <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{n.commentaire}"</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })
+                    })()}
                   </div>
                 )}
               </div>
