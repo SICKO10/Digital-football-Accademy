@@ -1301,6 +1301,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   const TRIS = [
                     { key: 'buts', label: '⚽ Buteurs', get: j => j.s.buts, color: '#4ade80', unit: 'but' },
                     { key: 'passes_dec', label: '🎯 Passeurs', get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
+                    { key: 'victoires', label: '🏆 Victoires', get: j => j.s.victoires, color: '#fbbf24', unit: 'V' },
                     { key: 'matchs', label: '📅 Temps de jeu', get: j => j.s.matchs, color: '#a78bfa', unit: 'match' },
                     { key: 'presence', label: '🏃 Présence', get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
                     { key: 'note', label: '⭐ Note éducateur', get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
