@@ -516,6 +516,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     await chargerEntrainements(userId)
   }
 
+  const togglePointSeance = async (entrainementId, joueurId, current) => {
+    await supabase.from('presences_entrainement').upsert(
+      { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, point_seance: !current },
+      { onConflict: 'entrainement_id,joueur_id' }
+    )
+    await chargerEntrainements(userId)
+  }
+
   const sauvegarderNote = async (joueurId, noteData) => {
     setSavingNote(true)
     await supabase.from('notes_joueurs').upsert(
@@ -1022,7 +1030,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
             {/* Sous-onglets */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0' }}>
-              {[['tableau','📋 Tableau'],['classement','🏆 Classement'],['graphiques','📈 Graphiques'],['presence','🏃 Présences']].map(([k, label]) => (
+              {[['tableau','📋 Tableau'],['classement','🏆 Classement'],['graphiques','📈 Graphiques'],['presence','🏃 Présences'],['mois','🌟 Mois']].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #4ade80' : '2px solid transparent', color: statsSubTab === k ? '#4ade80' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{label}</button>
               ))}
             </div>
@@ -1339,6 +1347,154 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 })()}
               </>
             )}
+
+            {/* ─ Joueur du mois ─ */}
+            {statsSubTab === 'mois' && (() => {
+              // Group point_seance entries by month per player
+              const pointsParJoueurMois = {}
+              entrainements.forEach(e => {
+                const dateStr = e.date || e.created_at
+                if (!dateStr) return
+                const d = new Date(dateStr)
+                const moisKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                ;(e.presences_entrainement || []).forEach(p => {
+                  if (!p.point_seance) return
+                  const jid = p.joueur_id
+                  if (!pointsParJoueurMois[moisKey]) pointsParJoueurMois[moisKey] = {}
+                  pointsParJoueurMois[moisKey][jid] = (pointsParJoueurMois[moisKey][jid] || 0) + 1
+                })
+              })
+
+              const moisKeys = Object.keys(pointsParJoueurMois).sort().reverse()
+              const now = new Date()
+              const moisCourant = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+              const moisLabel = (k) => {
+                const [y, m] = k.split('-')
+                return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+              }
+
+              const getPodium = (moisKey) => {
+                const pts = pointsParJoueurMois[moisKey] || {}
+                return Object.entries(pts)
+                  .map(([jid, count]) => ({ joueur: joueurs.find(j => j.id === jid), count }))
+                  .filter(x => x.joueur)
+                  .sort((a, b) => b.count - a.count)
+              }
+
+              const totalPoints = () => {
+                const total = {}
+                Object.values(pointsParJoueurMois).forEach(mois => {
+                  Object.entries(mois).forEach(([jid, pts]) => {
+                    total[jid] = (total[jid] || 0) + pts
+                  })
+                })
+                return Object.entries(total)
+                  .map(([jid, pts]) => ({ joueur: joueurs.find(j => j.id === jid), pts }))
+                  .filter(x => x.joueur)
+                  .sort((a, b) => b.pts - a.pts)
+              }
+
+              const podiumActuel = getPodium(moisCourant)
+              const topAll = totalPoints()
+              const medals = ['🥇', '🥈', '🥉']
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Mois en cours */}
+                  <div style={st.card}>
+                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 Joueur du mois — {moisLabel(moisCourant)}</p>
+                    {podiumActuel.length === 0 ? (
+                      <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Aucun point ⭐ attribué ce mois-ci. Attribue des étoiles dans les séances d'entraînement !</p>
+                    ) : (
+                      <>
+                        {/* Podium top 3 */}
+                        {podiumActuel.length >= 2 && (
+                          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '16px', marginBottom: '2rem' }}>
+                            {[0, 1, 2].filter(i => podiumActuel[i]).map((i) => {
+                              const item = podiumActuel[i]
+                              const heights = [130, 100, 80]
+                              const colors = ['#fbbf24', '#9ca3af', '#cd7f32']
+                              return (
+                                <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '20px' }}>{medals[i]}</span>
+                                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: `${colors[i]}20`, border: `2px solid ${colors[i]}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                                    {item.joueur.prenom?.[0]}{item.joueur.nom?.[0]}
+                                  </div>
+                                  <div style={{ textAlign: 'center' }}>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom}</p>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{item.joueur.nom}</p>
+                                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: colors[i] }}>{item.count}⭐</p>
+                                  </div>
+                                  <div style={{ width: '80px', height: `${heights[i]}px`, background: `${colors[i]}30`, border: `1px solid ${colors[i]}50`, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
+                                    <span style={{ fontWeight: 800, color: colors[i], fontSize: '18px' }}>{i === 0 ? '1er' : i === 1 ? '2ème' : '3ème'}</span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                        {/* Liste complète */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {podiumActuel.map((item, idx) => (
+                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#111', borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                              <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{item.joueur.poste || 'Joueur'}</p>
+                              </div>
+                              <span style={{ fontSize: '18px', fontWeight: 800, color: '#fbbf24' }}>{item.count} ⭐</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Classement historique total */}
+                  {topAll.length > 0 && (
+                    <div style={st.card}>
+                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏅 Classement général (toutes saisons)</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {topAll.map((item, idx) => (
+                          <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: '#111', borderRadius: '8px' }}>
+                            <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
+                            </div>
+                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>{item.pts} ⭐</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Historique par mois */}
+                  {moisKeys.filter(k => k !== moisCourant).length > 0 && (
+                    <div style={st.card}>
+                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📅 Historique des joueurs du mois</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {moisKeys.filter(k => k !== moisCourant).map(k => {
+                          const podium = getPodium(k)
+                          if (!podium.length) return null
+                          const winner = podium[0]
+                          return (
+                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#111', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                              <span style={{ fontSize: '20px' }}>🥇</span>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{winner.joueur.prenom} {winner.joueur.nom}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: '#555', textTransform: 'capitalize' }}>{moisLabel(k)}</p>
+                              </div>
+                              <span style={{ fontSize: '15px', fontWeight: 700, color: '#fbbf24' }}>{winner.count} ⭐</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </>
         )}
 
@@ -1652,14 +1808,21 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 const cfg = nonSaisi
                                   ? { emoji: '⬜', label: 'Non saisi', bg: '#ffffff05', border: '#2a2a2a', color: '#444' }
                                   : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
+                                const hasPoint = !!p?.point_seance
                                 return (
-                                  <div key={j.id} onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                                    <span style={{ fontSize: '15px', flexShrink: 0 }}>{cfg.emoji}</span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div key={j.id}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${hasPoint ? '#fbbf2460' : cfg.border}`, borderRadius: '8px', transition: 'all 0.15s', position: 'relative' }}>
+                                    <span onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ fontSize: '15px', flexShrink: 0, cursor: 'pointer' }}>{cfg.emoji}</span>
+                                    <div onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
                                       <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
                                       <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
                                     </div>
+                                    <span
+                                      title={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
+                                      onClick={ev => { ev.stopPropagation(); togglePointSeance(e.id, j.id, hasPoint) }}
+                                      style={{ fontSize: '14px', cursor: 'pointer', opacity: hasPoint ? 1 : 0.2, flexShrink: 0, transition: 'opacity 0.15s' }}>
+                                      ⭐
+                                    </span>
                                   </div>
                                 )
                               })}
