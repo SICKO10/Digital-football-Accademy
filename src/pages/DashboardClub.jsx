@@ -1,3 +1,341 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabase'
+
+const CATEGORIES_STANDARD = ['U13', 'U15', 'U17', 'U19', 'Senior']
+const EQUIPES = ['A', 'B']
+
 export default function DashboardClub() {
-  return <div style={{ color: '#fff', background: '#0a0a0a', minHeight: '100vh', padding: '2rem' }}>Dashboard Club — en construction</div>
+  const navigate = useNavigate()
+  const [club, setClub] = useState(null)
+  const [clubId, setClubId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('categories')
+
+  // Catégories & équipes
+  const [categories, setCategories] = useState([])
+  const [showAddCategorie, setShowAddCategorie] = useState(false)
+  const [newCategorie, setNewCategorie] = useState({ nom: 'U13', equipe: 'A', educateur_id: '' })
+  const [savingCategorie, setSavingCategorie] = useState(false)
+
+  // Éducateurs affiliés
+  const [educateursAffilies, setEducateursAffilies] = useState([])
+  const [searchEducateur, setSearchEducateur] = useState('')
+  const [resultatsEducateurs, setResultatsEducateurs] = useState([])
+  const [invitingId, setInvitingId] = useState(null)
+  const [codeClub, setCodeClub] = useState('')
+
+  const st = {
+    page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
+    navbar: { background: '#111', borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
+    logo: { color: '#4ade80', fontWeight: 700, fontSize: '1.1rem', letterSpacing: '1px' },
+    content: { padding: '2rem', maxWidth: '1100px', margin: '0 auto' },
+    tabs: { display: 'flex', gap: '8px', marginBottom: '2rem', flexWrap: 'wrap' },
+    tab: (active) => ({ padding: '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
+    card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
+    btnSolid: { background: '#4ade80', color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
+    btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
+    input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
+    label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
+  }
+
+  useEffect(() => { init() }, [])
+
+  const init = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { navigate('/login'); return }
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    if (!profile || profile.plan !== 'club') { navigate('/'); return }
+    setClubId(user.id)
+    setClub(profile)
+
+    // Génère un code club s'il n'existe pas encore
+    if (!profile.code_club) {
+      const code = generateCode()
+      await supabase.from('profiles').update({ code_club: code }).eq('id', user.id)
+      setCodeClub(code)
+    } else {
+      setCodeClub(profile.code_club)
+    }
+
+    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id)])
+    setLoading(false)
+  }
+
+  const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
+
+  const chargerCategories = async (uid) => {
+    const { data } = await supabase
+      .from('club_categories')
+      .select('*, educateur:educateur_id(prenom, nom)')
+      .eq('club_id', uid)
+      .order('nom')
+    setCategories(data || [])
+  }
+
+  const chargerEducateurs = async (uid) => {
+    const { data } = await supabase
+      .from('club_educateurs')
+      .select('*, educateur:educateur_id(prenom, nom, email, avatar_url)')
+      .eq('club_id', uid)
+      .order('created_at', { ascending: false })
+    setEducateursAffilies(data || [])
+  }
+
+  // ── Gestion catégories ──
+  const ajouterCategorie = async () => {
+    if (!newCategorie.nom) return
+    setSavingCategorie(true)
+    await supabase.from('club_categories').insert({
+      club_id: clubId,
+      nom: newCategorie.nom,
+      equipe: newCategorie.equipe,
+      educateur_id: newCategorie.educateur_id || null,
+    })
+    await chargerCategories(clubId)
+    setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' })
+    setShowAddCategorie(false)
+    setSavingCategorie(false)
+  }
+
+  const supprimerCategorie = async (id) => {
+    if (!confirm('Supprimer cette catégorie/équipe ?')) return
+    await supabase.from('club_categories').delete().eq('id', id)
+    setCategories(prev => prev.filter(c => c.id !== id))
+  }
+
+  // ── Gestion éducateurs (méthode 1 : recherche + invitation) ──
+  const rechercherEducateurs = async (query) => {
+    setSearchEducateur(query)
+    if (query.length < 2) { setResultatsEducateurs([]); return }
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, prenom, nom, email, club, avatar_url')
+      .eq('plan', 'educateur')
+      .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%,club.ilike.%${query}%`)
+      .limit(8)
+    setResultatsEducateurs(data || [])
+  }
+
+  const inviterEducateur = async (educateurId) => {
+    setInvitingId(educateurId)
+    const existing = educateursAffilies.find(e => e.educateur_id === educateurId)
+    if (existing) { setInvitingId(null); return }
+    await supabase.from('club_educateurs').insert({
+      club_id: clubId, educateur_id: educateurId, statut: 'en_attente', methode: 'invite',
+    })
+    await chargerEducateurs(clubId)
+    setSearchEducateur('')
+    setResultatsEducateurs([])
+    setInvitingId(null)
+  }
+
+  const retirerEducateur = async (id) => {
+    if (!confirm('Retirer cet éducateur du club ?')) return
+    await supabase.from('club_educateurs').delete().eq('id', id)
+    setEducateursAffilies(prev => prev.filter(e => e.id !== id))
+  }
+
+  const copierCode = () => {
+    navigator.clipboard.writeText(codeClub)
+  }
+
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
+
+  if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#4ade80' }}>Chargement...</p></div>
+
+  const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
+  const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
+
+  return (
+    <div style={st.page}>
+      <nav style={st.navbar}>
+        <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>
+          <button style={st.btnSecondary} onClick={handleLogout}>Déconnexion</button>
+        </div>
+      </nav>
+
+      <div style={st.content}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || 'Mon club'}</h1>
+          <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} catégorie{categories.length !== 1 ? 's' : ''} · {educateursAcceptes.length} éducateur{educateursAcceptes.length !== 1 ? 's' : ''} affilié{educateursAcceptes.length !== 1 ? 's' : ''}</p>
+        </div>
+
+        <div style={st.tabs}>
+          {[
+            { id: 'categories', label: '📋 Catégories & Équipes' },
+            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
+            { id: 'classements', label: '🏆 Classements' },
+            { id: 'recrutement', label: '🔍 Recrutement' },
+            { id: 'profil', label: '⭐ Profil club' },
+          ].map(t => (
+            <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* ── CATÉGORIES ── */}
+        {activeTab === 'categories' && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+              <button style={st.btnSolid} onClick={() => setShowAddCategorie(true)}>+ Ajouter une catégorie</button>
+            </div>
+
+            {showAddCategorie && (
+              <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={st.label}>Catégorie</label>
+                    <select style={st.input} value={newCategorie.nom} onChange={e => setNewCategorie(p => ({ ...p, nom: e.target.value }))}>
+                      {CATEGORIES_STANDARD.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={st.label}>Équipe</label>
+                    <select style={st.input} value={newCategorie.equipe} onChange={e => setNewCategorie(p => ({ ...p, equipe: e.target.value }))}>
+                      {EQUIPES.map(e => <option key={e}>{e}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={st.label}>Éducateur responsable</label>
+                    <select style={st.input} value={newCategorie.educateur_id} onChange={e => setNewCategorie(p => ({ ...p, educateur_id: e.target.value }))}>
+                      <option value="">— Aucun pour l'instant —</option>
+                      {educateursAcceptes.map(e => (
+                        <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button style={st.btnSolid} onClick={ajouterCategorie} disabled={savingCategorie}>{savingCategorie ? 'Ajout...' : 'Ajouter'}</button>
+                  <button style={st.btnSecondary} onClick={() => setShowAddCategorie(false)}>Annuler</button>
+                </div>
+              </div>
+            )}
+
+            {categories.length === 0 ? (
+              <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+                Aucune catégorie créée. Commence par ajouter U13, U15... avec les équipes A/B.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                {CATEGORIES_STANDARD.map(nom => {
+                  const cats = categories.filter(c => c.nom === nom)
+                  if (!cats.length) return null
+                  return (
+                    <div key={nom} style={st.card}>
+                      <p style={{ margin: '0 0 10px', fontWeight: 800, color: '#4ade80', fontSize: '14px' }}>{nom}</p>
+                      {cats.map(c => (
+                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Équipe {c.equipe}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>
+                              {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : 'Pas d\'éducateur assigné'}
+                            </p>
+                          </div>
+                          <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── ÉDUCATEURS ── */}
+        {activeTab === 'educateurs' && (
+          <>
+            {/* Code club */}
+            <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔑 Ton code club</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Partage ce code à tes éducateurs — ils peuvent rejoindre depuis leur dashboard.</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontWeight: 800, fontSize: '18px', padding: '8px 18px', borderRadius: '10px', letterSpacing: '3px', fontFamily: 'monospace' }}>{codeClub}</span>
+                <button onClick={copierCode} style={st.btnSecondary}>📋 Copier</button>
+              </div>
+            </div>
+
+            {/* Recherche & invitation */}
+            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 Inviter un éducateur</p>
+              <input
+                style={st.input}
+                placeholder="Rechercher par nom, prénom, club..."
+                value={searchEducateur}
+                onChange={e => rechercherEducateurs(e.target.value)}
+              />
+              {resultatsEducateurs.length > 0 && (
+                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {resultatsEducateurs.map(e => {
+                    const dejaInvite = educateursAffilies.some(a => a.educateur_id === e.id)
+                    return (
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.prenom} {e.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{e.club || e.email}</p>
+                        </div>
+                        <button
+                          onClick={() => inviterEducateur(e.id)}
+                          disabled={dejaInvite || invitingId === e.id}
+                          style={{ ...st.btnSolid, opacity: dejaInvite ? 0.4 : 1, fontSize: '12px', padding: '6px 14px' }}>
+                          {dejaInvite ? 'Déjà invité' : invitingId === e.id ? '...' : 'Inviter'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* En attente */}
+            {educateursEnAttente.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#f59e0b' }}>⏳ En attente de validation ({educateursEnAttente.length})</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {educateursEnAttente.map(e => (
+                    <div key={e.id} style={{ ...st.card, borderColor: '#f59e0b30', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>Méthode : {e.methode === 'code' ? 'a rejoint via code' : 'invité par le club'}</p>
+                      </div>
+                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Annuler</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affiliés */}
+            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>✅ Éducateurs affiliés ({educateursAcceptes.length})</p>
+            {educateursAcceptes.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>Aucun éducateur affilié pour le moment.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {educateursAcceptes.map(e => (
+                  <div key={e.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>
+                        {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
+                      </div>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
+                    </div>
+                    <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'classements' && <p style={{ color: '#555' }}>🚧 Onglet Classements — Partie 2, à venir</p>}
+        {activeTab === 'recrutement' && <p style={{ color: '#555' }}>🚧 Onglet Recrutement — Partie 3, à venir</p>}
+        {activeTab === 'profil' && <p style={{ color: '#555' }}>🚧 Onglet Profil club — Partie 4, à venir</p>}
+      </div>
+    </div>
+  )
 }
