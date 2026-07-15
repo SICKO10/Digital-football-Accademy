@@ -1054,10 +1054,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       {/* Podium top 3 */}
                       {sorted.length >= 3 && (
                         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', marginBottom: '2rem' }}>
-                          {[1, 0, 2].map(rank => {
+                          {[0, 1, 2].map(rank => {
                             const j = sorted[rank]
                             if (!j) return null
-                            const heights = [100, 130, 80]
+                            const heights = [130, 100, 80]
                             const medals = ['🥇','🥈','🥉']
                             const val = triActif.get(j)
                             return (
