@@ -156,6 +156,15 @@ export default function DashboardEducateur() {
   const [showAddMatch, setShowAddMatch] = useState(false)
   const [newMatch, setNewMatch] = useState({ date: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
   const [savingMatch, setSavingMatch] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scannerImageBase64, setScannerImageBase64] = useState(null)
+  const [scannerImagePreview, setScannerImagePreview] = useState(null)
+  const [scannerLoading, setScannerLoading] = useState(false)
+  const [scannerResult, setScannerResult] = useState(null)
+  const [scannerMatchData, setScannerMatchData] = useState({ date: '', adversaire: '', competition: '', score_nous: '', score_eux: '', domicile: true })
+  const [scannerStats, setScannerStats] = useState({})
+  const [scannerSaving, setScannerSaving] = useState(false)
+  const [scannerError, setScannerError] = useState(null)
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
 
@@ -313,6 +322,114 @@ export default function DashboardEducateur() {
     await chargerMatchs(userId)
     setMatchActif(null)
     setStatsMatch({})
+  }
+
+  const scannerMatch = async () => {
+    if (!scannerImageBase64) return
+    setScannerLoading(true)
+    setScannerError(null)
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const prompt = `Tu es un assistant qui analyse des feuilles de match de football. Extrais toutes les informations de cette image.
+
+Voici les joueurs de notre équipe (utilise leurs IDs exacts dans la réponse):
+${joueurs.map(j => `- "${j.prenom} ${j.nom}" (joueur_id: "${j.id}")`).join('\n')}
+
+Identifie quelle équipe sur la feuille correspond à "notre équipe" en faisant correspondre les noms.
+
+Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
+{
+  "equipe_nous": "nom de notre équipe",
+  "equipe_adversaire": "nom adversaire",
+  "score_nous": 0,
+  "score_adversaire": 0,
+  "date": "YYYY-MM-DD ou null",
+  "competition": "nom ou null",
+  "domicile": true,
+  "joueurs_identifies": [
+    {
+      "joueur_id": "uuid exact de notre liste ci-dessus",
+      "nom_sur_feuille": "comme sur la feuille",
+      "titulaire": true,
+      "buts": 0,
+      "carton_jaune": false,
+      "carton_rouge": false
+    }
+  ]
+}`
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: scannerImageBase64 } }] }],
+            generationConfig: { temperature: 0.1 }
+          })
+        }
+      )
+      const data = await response.json()
+      if (data.error) throw new Error(data.error.message)
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
+      const result = JSON.parse(jsonMatch[0])
+      setScannerResult(result)
+      setScannerMatchData({
+        date: result.date || '',
+        adversaire: result.equipe_adversaire || '',
+        competition: result.competition || '',
+        score_nous: result.score_nous !== undefined ? String(result.score_nous) : '',
+        score_eux: result.score_adversaire !== undefined ? String(result.score_adversaire) : '',
+        domicile: result.domicile !== false
+      })
+      const stats = {}
+      ;(result.joueurs_identifies || []).forEach(j => {
+        if (j.joueur_id && joueurs.find(jj => jj.id === j.joueur_id)) {
+          stats[j.joueur_id] = {
+            minutes: j.titulaire ? 90 : 20,
+            buts: j.buts || 0,
+            passes_dec: 0,
+            clean_sheet: false,
+            carton_jaune: j.carton_jaune || false,
+            carton_rouge: j.carton_rouge || false
+          }
+        }
+      })
+      setScannerStats(stats)
+    } catch (e) {
+      setScannerError(e.message)
+    } finally {
+      setScannerLoading(false)
+    }
+  }
+
+  const sauvegarderMatchScanne = async () => {
+    if (!scannerMatchData.adversaire) return
+    setScannerSaving(true)
+    const { data: matchInserted } = await supabase.from('matchs_equipe').insert({
+      ...scannerMatchData,
+      educateur_id: userId,
+      score_nous: parseInt(scannerMatchData.score_nous) || 0,
+      score_eux: parseInt(scannerMatchData.score_eux) || 0,
+    }).select().single()
+    if (matchInserted) {
+      for (const [joueurId, s] of Object.entries(scannerStats)) {
+        await supabase.from('stats_match').upsert({
+          match_id: matchInserted.id, joueur_id: joueurId, educateur_id: userId,
+          minutes: s.minutes || 0, buts: s.buts || 0, passes_dec: s.passes_dec || 0,
+          clean_sheet: s.clean_sheet || false, carton_jaune: s.carton_jaune || false, carton_rouge: s.carton_rouge || false
+        }, { onConflict: 'match_id,joueur_id' })
+      }
+    }
+    await chargerMatchs(userId)
+    setShowScanner(false)
+    setScannerResult(null)
+    setScannerImageBase64(null)
+    setScannerImagePreview(null)
+    setScannerStats({})
+    setScannerSaving(false)
   }
 
   const ajouterEntrainement = async () => {
@@ -1192,7 +1309,10 @@ export default function DashboardEducateur() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>⚽ Calendrier & Résultats</h2>
-                  <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ Match</button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #4ade8040', color: '#4ade80' }}>📸 Scanner</button>
+                    <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ Match</button>
+                  </div>
                 </div>
 
                 {showAddMatch && (
@@ -1592,5 +1712,137 @@ export default function DashboardEducateur() {
 
       </div>
     </div>
+
+    {/* ===== MODALE SCANNER FEUILLE DE MATCH ===== */}
+    {showScanner && (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '900px', padding: '24px' }}>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>📸 Scanner une feuille de match</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>L'IA extrait automatiquement score, joueurs, buts et cartons</p>
+            </div>
+            <button onClick={() => { setShowScanner(false); setScannerResult(null); setScannerImageBase64(null); setScannerImagePreview(null); setScannerError(null) }}
+              style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+          </div>
+
+          {!scannerResult ? (
+            <div>
+              <div
+                onClick={() => document.getElementById('scanner-input').click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
+                  e.preventDefault()
+                  const file = e.dataTransfer.files[0]; if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => { setScannerImageBase64(ev.target.result.split(',')[1]); setScannerImagePreview(ev.target.result) }
+                  reader.readAsDataURL(file)
+                }}
+                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', background: '#050505' }}>
+                {scannerImagePreview
+                  ? <img src={scannerImagePreview} alt="Feuille" style={{ maxHeight: '400px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
+                  : <div>
+                      <p style={{ fontSize: '40px', margin: '0 0 10px' }}>📄</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: '#aaa' }}>Clique ou glisse une photo de la feuille de match</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#444' }}>JPG, PNG — photo de téléphone acceptée</p>
+                    </div>
+                }
+              </div>
+              <input id="scanner-input" type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files[0]; if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => { setScannerImageBase64(ev.target.result.split(',')[1]); setScannerImagePreview(ev.target.result) }
+                  reader.readAsDataURL(file)
+                }} />
+              {scannerError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '12px' }}>⚠️ {scannerError}</p>}
+              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
+                  {scannerLoading ? '🔍 Analyse en cours...' : '✨ Analyser avec l\'IA'}
+                </button>
+                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn('#666')}>Annuler</button>
+              </div>
+              {scannerLoading && (
+                <div style={{ marginTop: '16px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
+                  🤖 L'IA lit la feuille et identifie tes joueurs... (5-10 secondes)
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'flex-start' }}>
+                <div>
+                  <img src={scannerImagePreview} alt="Feuille" style={{ width: '100%', borderRadius: '8px', objectFit: 'contain', maxHeight: '300px', background: '#050505' }} />
+                  <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div><label style={st.label}>Date</label><input style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
+                    <div><label style={st.label}>Adversaire</label><input style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
+                    <div><label style={st.label}>Compétition</label><input style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))} /></div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>
+                      <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" value={scannerMatchData.score_eux} onChange={e => setScannerMatchData(d => ({ ...d, score_eux: e.target.value }))} /></div>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={scannerMatchData.domicile} onChange={e => setScannerMatchData(d => ({ ...d, domicile: e.target.checked }))} />
+                      Match à domicile
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>
+                    ✅ {Object.keys(scannerStats).length} joueur{Object.keys(scannerStats).length > 1 ? 's' : ''} détecté{Object.keys(scannerStats).length > 1 ? 's' : ''} automatiquement
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', marginBottom: '6px' }}>
+                    {['Joueur', 'Min', 'Buts', 'PD ✏️', 'CS', '🟨', '🟥'].map(h => (
+                      <span key={h} style={{ fontSize: '10px', color: '#444', textAlign: h === 'Joueur' ? 'left' : 'center', textTransform: 'uppercase' }}>{h}</span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '460px', overflowY: 'auto' }}>
+                    {joueurs.map(j => {
+                      const s = scannerStats[j.id] || {}
+                      const detected = !!scannerStats[j.id]
+                      const setS = (field, val) => setScannerStats(prev => ({
+                        ...prev,
+                        [j.id]: { minutes: 0, buts: 0, passes_dec: 0, clean_sheet: false, carton_jaune: false, carton_rouge: false, ...(prev[j.id] || {}), [field]: val }
+                      }))
+                      return (
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? '#0d1a0d' : '#0a0a0a', borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : '#111'}` }}>
+                          <span style={{ fontSize: '12px', fontWeight: detected ? 700 : 500, color: detected ? '#fff' : '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ''}.
+                          </span>
+                          <input type="number" min="0" max="120" value={s.minutes ?? ''} placeholder="—"
+                            onChange={e => setS('minutes', parseInt(e.target.value) || 0)}
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                          <input type="number" min="0" value={s.buts ?? ''} placeholder="—"
+                            onChange={e => setS('buts', parseInt(e.target.value) || 0)}
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                          <input type="number" min="0" value={s.passes_dec ?? ''} placeholder="—"
+                            onChange={e => setS('passes_dec', parseInt(e.target.value) || 0)}
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
+                          <input type="number" min="0" max="1" value={s.clean_sheet ? 1 : ''} placeholder="—"
+                            onChange={e => setS('clean_sheet', e.target.value === '1')}
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                          <span onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_jaune ? 1 : 0.2 }}>🟨</span>
+                          <span onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_rouge ? 1 : 0.2 }}>🟥</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#333' }}>✏️ PD (passes décisives) et CS (clean sheet) sont à compléter manuellement</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: '1px solid #1a1a1a', paddingTop: '16px' }}>
+                <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} style={{ ...st.btnSolid, flex: 1 }}>
+                  {scannerSaving ? 'Enregistrement...' : '💾 Enregistrer le match et toutes les stats'}
+                </button>
+                <button onClick={() => { setScannerResult(null); setScannerError(null) }} style={st.btn('#666')}>← Rescanner</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
   )
 }
