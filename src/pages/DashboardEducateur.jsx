@@ -308,8 +308,15 @@ export default function DashboardEducateur() {
     setAffiliations(af || [])
   }
 
-  const gererAffiliation = async (id, statut) => {
-    await supabase.from('affiliations').update({ statut }).eq('id', id)
+  const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
+  const [joueurLieId, setJoueurLieId] = useState('')
+
+  const gererAffiliation = async (id, statut, equipeJoueurId = null) => {
+    const update = { statut }
+    if (equipeJoueurId) update.equipe_joueur_id = equipeJoueurId
+    await supabase.from('affiliations').update(update).eq('id', id)
+    setAffiliationEnCours(null)
+    setJoueurLieId('')
     await chargerProfilEdu(userId)
   }
 
@@ -2445,7 +2452,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{a.profiles?.email}</p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => gererAffiliation(a.id, 'accepte')}
+                            <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
                               style={{ background: '#4ade8020', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                               ✅ Accepter
                             </button>
@@ -2726,6 +2733,48 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         </div>
       </div>
     )}
+    {/* ===== MODAL LIAISON JOUEUR AFFILIÉ ===== */}
+    {affiliationEnCours && (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px' }}>
+          <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ Accepter la demande</p>
+          <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>
+            Lier le compte <strong style={{ color: '#aaa' }}>{affiliationEnCours.profiles?.email}</strong> à un joueur de votre effectif pour accéder à ses statistiques.
+          </p>
+
+          <label style={{ display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px' }}>Joueur correspondant dans votre effectif</label>
+          <select
+            value={joueurLieId}
+            onChange={e => setJoueurLieId(e.target.value)}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #222', background: '#111', color: '#fff', fontSize: '13px', marginBottom: '20px' }}
+          >
+            <option value="">— Sélectionner un joueur —</option>
+            {joueurs.map(j => (
+              <option key={j.id} value={j.id}>{j.prenom} {j.nom}{j.poste ? ` — ${j.poste}` : ''}</option>
+            ))}
+          </select>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId || null)}
+              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #4ade8040', background: '#4ade8020', color: '#4ade80', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+            >
+              ✅ Confirmer l'affiliation
+            </button>
+            <button
+              onClick={() => { setAffiliationEnCours(null); setJoueurLieId('') }}
+              style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: '#666', fontSize: '13px', cursor: 'pointer' }}
+            >
+              Annuler
+            </button>
+          </div>
+          <p style={{ margin: '12px 0 0', fontSize: '11px', color: '#444', textAlign: 'center' }}>
+            La liaison est optionnelle — vous pouvez accepter sans sélectionner de joueur.
+          </p>
+        </div>
+      </div>
+    )}
+
     </>
   )
 }

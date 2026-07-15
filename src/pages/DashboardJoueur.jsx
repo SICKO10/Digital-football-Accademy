@@ -220,9 +220,33 @@ function DashboardJoueur() {
   const chargerAffiliations = async (uid) => {
     const { data } = await supabase
       .from('affiliations')
-      .select('*, profil_educateur!affiliations_educateur_id_fkey(prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe), notes_educateur_count:notes_educateur(count)')
+      .select('*, equipe_joueur_id, profil_educateur!affiliations_educateur_id_fkey(prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe), notes_educateur_count:notes_educateur(count)')
       .eq('joueur_id', uid)
     setMesAffiliations(data || [])
+  }
+
+  const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
+  const [statsLoading, setStatsLoading] = useState({})
+
+  const chargerStatsJoueur = async (affiliationId, equipeJoueurId) => {
+    if (!equipeJoueurId || statsJoueur[affiliationId]) return
+    setStatsLoading(prev => ({ ...prev, [affiliationId]: true }))
+    const [{ data: presences }, { data: matchs }] = await Promise.all([
+      supabase.from('presences_entrainement').select('statut, point_seance').eq('equipe_joueur_id', equipeJoueurId),
+      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('equipe_joueur_id', equipeJoueurId),
+    ])
+    const total = presences?.length || 0
+    const present = presences?.filter(p => p.statut === 'present').length || 0
+    const points = presences?.filter(p => p.point_seance).length || 0
+    const buts = matchs?.reduce((s, m) => s + (m.buts || 0), 0) || 0
+    const passes = matchs?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
+    const minutesTotal = matchs?.reduce((s, m) => s + (m.minutes || 0), 0) || 0
+    const matchsJoues = matchs?.filter(m => (m.minutes || 0) > 0).length || 0
+    const cleanSheets = matchs?.filter(m => m.clean_sheet).length || 0
+    const jaunes = matchs?.filter(m => m.carton_jaune).length || 0
+    const rouges = matchs?.filter(m => m.carton_rouge).length || 0
+    setStatsJoueur(prev => ({ ...prev, [affiliationId]: { total, present, points, tauxPresence: total ? Math.round((present / total) * 100) : null, buts, passes, minutesTotal, matchsJoues, cleanSheets, jaunes, rouges } }))
+    setStatsLoading(prev => ({ ...prev, [affiliationId]: false }))
   }
 
   const rejoindreEquipe = async () => {
@@ -1854,18 +1878,73 @@ function DashboardJoueur() {
                       </div>
 
                       {isAccepted && (
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {pe?.diplome && (
-                            <span style={{ background: pe.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${pe.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: pe.diplome_verifie ? '#4ade80' : '#555', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>
-                              {pe.diplome_verifie ? '✅' : '🎓'} {pe.diplome}
-                            </span>
+                        <>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: a.equipe_joueur_id ? '12px' : '0' }}>
+                            {pe?.diplome && (
+                              <span style={{ background: pe.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${pe.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: pe.diplome_verifie ? '#4ade80' : '#555', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>
+                                {pe.diplome_verifie ? '✅' : '🎓'} {pe.diplome}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
+                              style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
+                              ⭐ Évaluer
+                            </button>
+                            {a.equipe_joueur_id && !statsJoueur[a.id] && (
+                              <button
+                                onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id)}
+                                disabled={statsLoading[a.id]}
+                                style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
+                                {statsLoading[a.id] ? '...' : '📊 Mes stats'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Stats chargées */}
+                          {statsJoueur[a.id] && (() => {
+                            const s = statsJoueur[a.id]
+                            return (
+                              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '12px' }}>
+                                <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: 700, color: '#60a5fa' }}>📊 Mes statistiques</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: s.matchsJoues > 0 ? '10px' : '0' }}>
+                                  {[
+                                    { label: 'Présence', value: s.tauxPresence !== null ? `${s.tauxPresence}%` : '—', sub: `${s.present}/${s.total} séances`, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' },
+                                    { label: '⭐ Points séance', value: s.points, sub: 'séances récompensées', color: '#fbbf24' },
+                                    { label: '⚽ Buts', value: s.buts, sub: `${s.matchsJoues} matchs joués`, color: '#4ade80' },
+                                  ].map(stat => (
+                                    <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px', textAlign: 'center', border: '1px solid #1a1a1a' }}>
+                                      <p style={{ margin: '0 0 2px', fontSize: '18px', fontWeight: 800, color: stat.color }}>{stat.value}</p>
+                                      <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: 700, color: '#aaa' }}>{stat.label}</p>
+                                      <p style={{ margin: 0, fontSize: '9px', color: '#444' }}>{stat.sub}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                                {s.matchsJoues > 0 && (
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                                    {[
+                                      { label: 'Passes D.', value: s.passes, color: '#a78bfa' },
+                                      { label: 'Minutes', value: s.minutesTotal, color: '#60a5fa' },
+                                      { label: '🟨 Jaunes', value: s.jaunes, color: '#f59e0b' },
+                                      { label: '🟥 Rouges', value: s.rouges, color: '#ef4444' },
+                                    ].map(stat => (
+                                      <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '8px', textAlign: 'center', border: '1px solid #1a1a1a' }}>
+                                        <p style={{ margin: '0 0 2px', fontSize: '15px', fontWeight: 700, color: stat.color }}>{stat.value}</p>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555' }}>{stat.label}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()}
+
+                          {/* Joueur lié mais pas encore dans l'effectif */}
+                          {!a.equipe_joueur_id && (
+                            <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
+                              ⏳ Ton éducateur doit encore te lier à ton dossier dans l'effectif pour accéder à tes stats.
+                            </p>
                           )}
-                          <button
-                            onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
-                            style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
-                            ⭐ Évaluer
-                          </button>
-                        </div>
+                        </>
                       )}
                     </div>
                   )
