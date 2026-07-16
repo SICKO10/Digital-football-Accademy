@@ -163,7 +163,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
           <button onClick={() => onOpenProfile(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Profil →</button>
           {profil?.plan === 'recruteur' && !isOwner && (
             <button
-              onClick={() => navigate('/scout-club', { state: { contactJoueur: j } })}
+              onClick={() => navigate(isClub ? '/club' : '/scout-club', { state: { contactJoueur: j } })}
               style={{ background: '#4ade80', color: '#000', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
             >
               Contacter →
@@ -346,6 +346,7 @@ function Feed() {
   const joueursAvecClipFiltres = joueursAvecClip.filter(appliquerFiltres)
   const feedVideos = joueursAvecClipFiltres
   const isRecruteur = profil?.plan === 'recruteur'
+  const isClub = profil?.plan === 'club'
 
   const st = {
     stat: { background: '#1a1a1a', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', color: '#ccc', display: 'inline-block', margin: '2px' },
@@ -390,7 +391,7 @@ function Feed() {
           {favoriIds.length > 0 && vue === 'videos' && (
             <button onClick={() => setVue('favoris')} style={{ background: '#f59e0b15', border: '1px solid #f59e0b40', color: '#f59e0b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>⭐ Favoris ({favoriIds.length})</button>
           )}
-          <button onClick={() => navigate(isRecruteur ? '/scout-club' : '/dashboard')} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '8px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
+          <button onClick={() => navigate(isClub ? '/club' : isRecruteur ? '/scout-club' : '/dashboard')} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '8px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
             {isRecruteur ? 'Scout Center' : 'Mon espace'}
           </button>
         </div>
@@ -542,7 +543,7 @@ function Feed() {
               <div style={{ display: 'flex', gap: '8px', paddingTop: '1rem', borderTop: '1px solid #222', flexWrap: 'wrap' }}>
                 <button onClick={async () => { await (likedIds.includes(joueurModal.id) ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id) : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id })); refresh() }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
                 <button onClick={async () => { await (favoriIds.includes(joueurModal.id) ? supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', joueurModal.id) : supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: joueurModal.id })); refresh() }} style={{ background: favoriIds.includes(joueurModal.id) ? '#f59e0b20' : '#1a1a1a', border: `1px solid ${favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#333'}`, color: favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{favoriIds.includes(joueurModal.id) ? '⭐ Favori' : '☆ Favoris'}</button>
-                {isRecruteur && (<button onClick={() => navigate('/scout-club')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Scout Center →</button>)}
+                {(isRecruteur || isClub) && (<button onClick={() => navigate(isClub ? '/club' : '/scout-club')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{isClub ? 'Mon Club →' : 'Scout Center →'}</button>)}
                 <button onClick={() => { setNotationCible(joueurModal); setJoueurModal(null) }} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>⭐ Noter</button>
               </div>
             )}
