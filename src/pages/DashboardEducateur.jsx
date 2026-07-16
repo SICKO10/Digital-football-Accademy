@@ -348,6 +348,8 @@ export default function DashboardEducateur() {
   const [seanceDate, setSeanceDate] = useState('')
   const [seanceVideoFile, setSeanceVideoFile] = useState(null)
   const [uploadingSeance, setUploadingSeance] = useState(false)
+  const [seanceVideoMode, setSeanceVideoMode] = useState('upload') // 'upload' | 'veo'
+  const [seanceVeoUrl, setSeanceVeoUrl] = useState('')
   const [codeClubInput, setCodeClubInput] = useState('')
   const [sendingCodeClub, setSendingCodeClub] = useState(false)
   const [codeClubError, setCodeClubError] = useState(null)
@@ -395,34 +397,42 @@ export default function DashboardEducateur() {
   }
 
   const uploaderSeance = async () => {
-    if (!seanceVideoFile || !clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte') return
+    if (!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte') return
+    if (seanceVideoMode === 'upload' && !seanceVideoFile) return
+    if (seanceVideoMode === 'veo' && !seanceVeoUrl.trim()) return
     const dejaCetteSaison = mesSeances.filter(s => s.saison === seanceSaison).length
     if (dejaCetteSaison >= 2) { alert('Tu as déjà uploadé 2 séances pour cette saison.'); return }
     setUploadingSeance(true)
     try {
-      const sigRes = await fetch('/api/upload-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
-      const formData = new FormData()
-      formData.append('file', seanceVideoFile)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`, { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-      if (uploadData.secure_url) {
+      let videoUrl = null
+      if (seanceVideoMode === 'veo') {
+        videoUrl = seanceVeoUrl.trim()
+      } else {
+        const sigRes = await fetch('/api/upload-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
+        const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+        const formData = new FormData()
+        formData.append('file', seanceVideoFile)
+        formData.append('signature', signature)
+        formData.append('timestamp', timestamp)
+        formData.append('folder', folder)
+        formData.append('public_id', public_id)
+        formData.append('api_key', api_key)
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`, { method: 'POST', body: formData })
+        const uploadData = await uploadRes.json()
+        videoUrl = uploadData.secure_url || null
+      }
+      if (videoUrl) {
         await supabase.from('seances_uploadees').insert({
           educateur_id: userId,
           club_id: clubAffiliation.club_id,
           saison: seanceSaison,
           theme: seanceTheme || null,
           date_seance: seanceDate || null,
-          video_url: uploadData.secure_url,
+          video_url: videoUrl,
         })
         await chargerMesSeances(userId)
         setShowUploadSeance(false)
-        setSeanceTheme(''); setSeanceDate(''); setSeanceVideoFile(null)
+        setSeanceTheme(''); setSeanceDate(''); setSeanceVideoFile(null); setSeanceVeoUrl(''); setSeanceVideoMode('upload')
       }
     } catch (e) { console.error(e) }
     setUploadingSeance(false)
@@ -2866,11 +2876,23 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
                           <label style={st.label}>Vidéo de la séance</label>
-                          <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                            {[{ val: 'upload', label: '📁 Uploader un fichier' }, { val: 'veo', label: '🎥 Lien Veo' }].map(opt => (
+                              <button key={opt.val} onClick={() => setSeanceVideoMode(opt.val)}
+                                style={{ flex: 1, background: seanceVideoMode === opt.val ? '#4ade8015' : '#1a1a1a', border: `1px solid ${seanceVideoMode === opt.val ? '#4ade80' : '#333'}`, color: seanceVideoMode === opt.val ? '#4ade80' : '#aaa', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                          {seanceVideoMode === 'upload' ? (
+                            <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
+                          ) : (
+                            <input style={st.input} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={uploaderSeance} disabled={uploadingSeance || !seanceVideoFile} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
+                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
                         <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>Annuler</button>
                       </div>
                     </div>
