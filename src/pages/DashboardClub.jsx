@@ -51,6 +51,7 @@ export default function DashboardClub() {
   const [categorieActive, setCategorieActive] = useState(null)
   const [triClassement, setTriClassement] = useState('buts')
   const [effectifModal, setEffectifModal] = useState(null) // categorieId en cours d'affichage
+  const [effectifVue, setEffectifVue] = useState('poste') // 'poste' | 'liste'
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
   const [loadingMatchs, setLoadingMatchs] = useState(false)
   const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
@@ -954,13 +955,56 @@ export default function DashboardClub() {
             <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 Effectif — {cat?.nom} {cat?.equipe}</p>
-                <button onClick={() => setEffectifModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
+                    {[['poste', '⊞ Postes'], ['liste', '☰ Liste']].map(([v, label]) => (
+                      <button key={v} onClick={() => setEffectifVue(v)}
+                        style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: effectifVue === v ? '#4ade80' : 'transparent', color: effectifVue === v ? '#000' : '#555', transition: 'all 0.15s' }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setEffectifModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                </div>
               </div>
 
               {!catData ? (
                 <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
               ) : catData.joueurs.length === 0 ? (
                 <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>Aucun joueur dans cette catégorie.</p>
+              ) : effectifVue === 'liste' ? (
+                <div style={{ ...st.card, overflow: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                        {['#', 'Joueur', 'Poste', 'Buts', 'Passes', 'Matchs', 'Présence', 'Note'].map(h => (
+                          <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Joueur' || h === 'Poste' ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {catData.joueurs.map(j => {
+                        const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
+                        return (
+                          <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#555', fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                            <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#4ade80', fontWeight: 700 }}>{j.stats.buts}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#60a5fa', fontWeight: 700 }}>{j.stats.passes}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#a78bfa', fontWeight: 700 }}>{j.stats.matchsJoues}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: '#333' }}>—</span>}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: '#333' }}>—</span>}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {GROUPES_POSTE.map(groupe => {
