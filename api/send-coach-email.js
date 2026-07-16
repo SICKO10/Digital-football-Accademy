@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       : `<p><strong>${clubNom}</strong> t'a transféré une séance de <strong>${theme || 'entraînement'}</strong> pour évaluation.</p><p>Connecte-toi à ton dashboard, onglet "Séances club", pour la traiter.</p>`
 
     await resend.emails.send({
-      from: 'Digital Football <onboarding@resend.dev>',
+      from: 'Digital Football <notifications@digitalfootball.academy>',
       to: coachEmails,
       subject,
       html,
