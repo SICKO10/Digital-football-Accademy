@@ -999,40 +999,48 @@ export default function DashboardClub() {
                 <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
               ) : catData.joueurs.length === 0 ? (
                 <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>Aucun joueur dans cette catégorie.</p>
-              ) : effectifVue === 'liste' ? (
-                <div style={{ ...st.card, overflow: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                        {['#', 'Joueur', 'Poste', 'Buts', 'Passes', 'Matchs', 'Présence', 'Note'].map(h => (
-                          <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Joueur' || h === 'Poste' ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {catData.joueurs.map(j => {
-                        const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
-                        return (
-                          <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
-                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#555', fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
-                            <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                            <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#4ade80', fontWeight: 700 }}>{j.stats.buts}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#60a5fa', fontWeight: 700 }}>{j.stats.passes}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#a78bfa', fontWeight: 700 }}>{j.stats.matchsJoues}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                              {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: '#333' }}>—</span>}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                              {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: '#333' }}>—</span>}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
+              ) : effectifVue === 'liste' ? (() => {
+                const getGroupeIndex = (poste) => {
+                  const idx = GROUPES_POSTE.findIndex(g => g.match(poste))
+                  return idx === -1 ? GROUPES_POSTE.length : idx
+                }
+                const joueursTries = [...catData.joueurs].sort((a, b) => getGroupeIndex(a.poste) - getGroupeIndex(b.poste))
+
+                return (
+                  <div style={{ ...st.card, overflow: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                          {['#', 'Joueur', 'Poste', 'Buts', 'Passes', 'Matchs', 'Présence', 'Note'].map(h => (
+                            <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Joueur' || h === 'Poste' ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {joueursTries.map(j => {
+                          const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
+                          return (
+                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#555', fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
+                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                              <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#4ade80', fontWeight: 700 }}>{j.stats.buts}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#60a5fa', fontWeight: 700 }}>{j.stats.passes}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#a78bfa', fontWeight: 700 }}>{j.stats.matchsJoues}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: '#333' }}>—</span>}
+                              </td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: '#333' }}>—</span>}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })() : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {GROUPES_POSTE.map(groupe => {
                     const joueursGroupe = catData.joueurs.filter(j => groupe.match(j.poste))
