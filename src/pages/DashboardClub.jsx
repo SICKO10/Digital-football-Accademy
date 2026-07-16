@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import ScoutCenter from '../components/ScoutCenter'
 
 const CATEGORIES_STANDARD = ['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
 const EQUIPES = ['A', 'B']
@@ -619,7 +620,9 @@ export default function DashboardClub() {
             </div>
           )
         })()}
-        {activeTab === 'recrutement' && <p style={{ color: '#555' }}>🚧 Onglet Recrutement — Partie 3, à venir</p>}
+        {activeTab === 'recrutement' && (
+          <ScoutCenter userId={clubId} profil={club} embedded={true} />
+        )}
         {activeTab === 'profil' && <p style={{ color: '#555' }}>🚧 Onglet Profil club — Partie 4, à venir</p>}
       </div>
     </div>
