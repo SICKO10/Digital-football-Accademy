@@ -32,6 +32,14 @@ export default function DashboardClub() {
   const [triClassement, setTriClassement] = useState('buts')
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
   const [loadingMatchs, setLoadingMatchs] = useState(false)
+  const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
+
+  const chargerLigueUrl = async (categorieId) => {
+    const cat = categories.find(c => c.id === categorieId)
+    if (!cat || !cat.educateur_id || ligueUrls[categorieId] !== undefined) return
+    const { data } = await supabase.from('profil_educateur').select('ligue_url').eq('user_id', cat.educateur_id).maybeSingle()
+    setLigueUrls(prev => ({ ...prev, [categorieId]: data?.ligue_url || null }))
+  }
 
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
@@ -58,6 +66,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (activeTab === 'classements' && categorieActive) {
       chargerMatchsCategorie(categorieActive)
+      chargerLigueUrl(categorieActive)
     }
   }, [activeTab, categorieActive])
 
@@ -164,23 +173,6 @@ export default function DashboardClub() {
       .order('date', { ascending: false })
     setClubMatchs(prev => ({ ...prev, [categorieId]: data || [] }))
     setLoadingMatchs(false)
-  }
-
-  const calculerClassementEquipe = (matchs, nomClub) => {
-    const equipes = {}
-    matchs.filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_eux !== '' && m.score_eux !== null).forEach(m => {
-      const nous = parseInt(m.score_nous)
-      const eux = parseInt(m.score_eux)
-      if (!equipes[nomClub]) equipes[nomClub] = { nom: nomClub, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: true }
-      if (!equipes[m.adversaire]) equipes[m.adversaire] = { nom: m.adversaire, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: false }
-      equipes[nomClub].j++; equipes[m.adversaire].j++
-      equipes[nomClub].bp += nous; equipes[nomClub].bc += eux
-      equipes[m.adversaire].bp += eux; equipes[m.adversaire].bc += nous
-      if (nous > eux) { equipes[nomClub].v++; equipes[nomClub].pts += 3; equipes[m.adversaire].d++ }
-      else if (nous < eux) { equipes[m.adversaire].v++; equipes[m.adversaire].pts += 3; equipes[nomClub].d++ }
-      else { equipes[nomClub].n++; equipes[nomClub].pts++; equipes[m.adversaire].n++; equipes[m.adversaire].pts++ }
-    })
-    return Object.values(equipes).sort((a, b) => b.pts - a.pts || (b.bp - b.bc) - (a.bp - a.bc))
   }
 
   const [autoAssignLoading, setAutoAssignLoading] = useState(false)
@@ -515,46 +507,20 @@ export default function DashboardClub() {
                 ))}
               </div>
 
-              {/* ── Résultats & classement équipe ── */}
+              {/* ── Résultats & classement officiel ── */}
               {(() => {
                 const matchsCat = clubMatchs[categorieActive] || []
-                const nomEquipe = `${club?.club || 'Mon équipe'} ${categories.find(c => c.id === categorieActive)?.equipe || ''}`
-                const classementEquipe = calculerClassementEquipe(matchsCat, nomEquipe)
                 const derniersMatchs = matchsCat.slice(0, 5)
                 return (
                   <div style={{ marginBottom: '2rem' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement de l'équipe</p>
-                    {loadingMatchs ? (
-                      <p style={{ color: '#555', fontSize: '13px' }}>Chargement...</p>
-                    ) : classementEquipe.length === 0 ? (
-                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun résultat de match enregistré par l'éducateur pour cette catégorie.</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement officiel</p>
+                    {ligueUrls[categorieActive] ? (
+                      <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '1.5rem' }}>
+                        🏆 Voir le classement sur le site de la ligue ↗
+                      </a>
                     ) : (
-                      <div style={{ ...st.card, overflow: 'auto', marginBottom: '1.5rem' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                              {['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Pts'].map(h => (
-                                <th key={h} style={{ padding: '8px 10px', textAlign: h === 'Équipe' ? 'left' : 'center', color: '#555', fontSize: '11px', textTransform: 'uppercase' }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {classementEquipe.map((e, i) => (
-                              <tr key={e.nom} style={{ borderBottom: '1px solid #141414', background: e.moi ? '#4ade8008' : 'transparent' }}>
-                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#555' }}>{i + 1}</td>
-                                <td style={{ padding: '8px 10px', fontWeight: e.moi ? 700 : 400, color: e.moi ? '#4ade80' : '#fff' }}>{e.nom}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.j}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#4ade80' }}>{e.v}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#f59e0b' }}>{e.n}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#ef4444' }}>{e.d}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.bp}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.bc}</td>
-                                <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{e.pts}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>L'éducateur n'a pas encore renseigné le lien du classement officiel (dans son propre dashboard, onglet Compétition).</p>
                     )}
 
                     {derniersMatchs.length > 0 && (
