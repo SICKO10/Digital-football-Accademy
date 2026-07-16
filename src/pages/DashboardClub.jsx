@@ -681,11 +681,49 @@ export default function DashboardClub() {
                       </div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
-                    <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>⭐ Noter</button>
+                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {/* ── Séances reçues pour évaluation ── */}
+            <div style={{ marginTop: '2rem' }}>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🎥 Séances reçues ({seancesRecues.length})</p>
+              {seancesRecues.length === 0 ? (
+                <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance uploadée par tes éducateurs pour l'instant.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {seancesRecues.map(s => {
+                    const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                    return (
+                      <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.saison}{s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 Voir</a>
+                          {s.statut === 'a_analyser' && (
+                            <>
+                              <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 Analyser</button>
+                              <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>🎙️ Transférer au coach</button>
+                            </>
+                          )}
+                          {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
+                          {s.statut === 'analyse' && eval_ && (
+                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {eval_.note_totale}/100</span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -895,6 +933,135 @@ export default function DashboardClub() {
           )
         })()}
       </div>
+
+      {/* Modal notation éducateur */}
+      {eduNoteModal && (
+        <div onClick={() => setEduNoteModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ Évaluer {eduNoteModal.educateur?.prenom} {eduNoteModal.educateur?.nom}</p>
+              </div>
+              <button onClick={() => setEduNoteModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <label style={{ fontSize: '12px', color: '#555' }}>Saison évaluée :</label>
+              <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px' }}>
+                {['2025-2026', '2024-2025', '2023-2024'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+              {CRITERES_EDU.map(cat => (
+                <div key={cat.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {cat.criteres.map(c => (
+                      <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} onClick={() => setEduNoteCriteres(prev => ({ ...prev, [c.key]: n }))}
+                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (eduNoteCriteres[c.key] || 0) >= n ? cat.color : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <textarea value={eduNoteCommentaire} onChange={e => setEduNoteCommentaire(e.target.value)}
+              placeholder="Commentaire (optionnel)..."
+              style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
+
+            <button onClick={soumettreNotationEducateur} disabled={savingEduNote || CRITERES_EDU.flatMap(c => c.criteres).some(c => !eduNoteCriteres[c.key])}
+              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
+              {savingEduNote ? '⏳ Envoi...' : '✅ Soumettre l\'évaluation'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal grille évaluation séance */}
+      {seanceEvalModal && (
+        <div onClick={() => setSeanceEvalModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '700px', padding: '24px', margin: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Grille d'évaluation — {seanceEvalModal.theme || 'Séance'}</p>
+              <button onClick={() => setSeanceEvalModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>{seanceEvalModal.educateur?.prenom} {seanceEvalModal.educateur?.nom} — {seanceEvalModal.saison}</p>
+
+            {GRILLE_SEANCE.map(domaine => (
+              <div key={domaine.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{domaine.label}</p>
+                  <span style={{ fontSize: '12px', color: '#666' }}>{calculerNoteDomaine(domaine.key)}/20</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {domaine.criteres.map(c => (
+                    <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {[1,2,3,4,5].map(n => (
+                          <button key={n} onClick={() => setGrilleCriteres(prev => ({ ...prev, [c.key]: n }))}
+                            style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? '#4ade80' : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div style={{ background: '#111', borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid #fbbf2430' }}>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>✨ Bonus</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {GRILLE_BONUS.map(c => (
+                  <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {[1,2,3,4,5].map(n => (
+                        <button key={n} onClick={() => setGrilleCriteres(prev => ({ ...prev, [c.key]: n }))}
+                          style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? '#fbbf24' : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '12px', padding: '14px', marginBottom: '16px', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#4ade80', fontWeight: 700 }}>
+                NOTE TOTALE : {GRILLE_SEANCE.reduce((s, d) => s + calculerNoteDomaine(d.key), 0).toFixed(1)}/100
+              </p>
+            </div>
+
+            {[
+              { key: 'points_forts', label: 'Points forts' },
+              { key: 'axes_amelioration', label: "Axes d'amélioration" },
+              { key: 'actions', label: 'Actions à mettre en place' },
+            ].map(f => (
+              <div key={f.key} style={{ marginBottom: '12px' }}>
+                <label style={st.label}>{f.label}</label>
+                <textarea
+                  value={grilleObservations[f.key]}
+                  onChange={e => setGrilleObservations(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  style={{ ...st.input, minHeight: '60px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }}
+                />
+              </div>
+            ))}
+
+            <button onClick={soumettreGrilleEvaluation} disabled={savingGrille}
+              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginTop: '10px' }}>
+              {savingGrille ? '⏳ Envoi...' : '✅ Valider l\'évaluation'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
