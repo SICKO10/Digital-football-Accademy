@@ -25,6 +25,12 @@ export default function DashboardClub() {
   const [invitingId, setInvitingId] = useState(null)
   const [codeClub, setCodeClub] = useState('')
 
+  // Classements
+  const [statsParCategorie, setStatsParCategorie] = useState({})
+  const [loadingClassements, setLoadingClassements] = useState(false)
+  const [categorieActive, setCategorieActive] = useState(null)
+  const [triClassement, setTriClassement] = useState('buts')
+
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
     navbar: { background: '#111', borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
@@ -40,6 +46,12 @@ export default function DashboardClub() {
   }
 
   useEffect(() => { init() }, [])
+
+  useEffect(() => {
+    if (activeTab === 'classements' && Object.keys(statsParCategorie).length === 0) {
+      chargerClassements()
+    }
+  }, [activeTab, categories])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -80,6 +92,57 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
     setEducateursAffilies(data || [])
+  }
+
+  const chargerClassements = async () => {
+    if (categories.length === 0) return
+    setLoadingClassements(true)
+    const educateurIds = [...new Set(categories.map(c => c.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) { setLoadingClassements(false); return }
+
+    const { data: joueurs } = await supabase
+      .from('equipe_joueurs')
+      .select('id, prenom, nom, poste, educateur_id, club_categorie_id, numero_maillot')
+      .in('educateur_id', educateurIds)
+
+    if (!joueurs || joueurs.length === 0) { setStatsParCategorie({}); setLoadingClassements(false); return }
+
+    const joueurIds = joueurs.map(j => j.id)
+
+    const [{ data: statsMatch }, { data: presences }, { data: notes }] = await Promise.all([
+      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet').in('joueur_id', joueurIds),
+      supabase.from('presences_entrainement').select('joueur_id, statut, point_seance').in('joueur_id', joueurIds),
+      supabase.from('notes_joueurs').select('joueur_id, technique, physique, mental, tactique').in('joueur_id', joueurIds),
+    ])
+
+    const buildStats = (joueurId) => {
+      const sm = (statsMatch || []).filter(s => s.joueur_id === joueurId)
+      const pr = (presences || []).filter(p => p.joueur_id === joueurId)
+      const note = (notes || []).find(n => n.joueur_id === joueurId)
+      const totalPresences = pr.filter(p => p.statut && p.statut !== 'non_saisi').length
+      const presents = pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length
+      const points = pr.filter(p => p.point_seance).length
+      const noteGlobale = note ? ((note.technique + note.physique + note.mental + note.tactique) / 4) : null
+      return {
+        buts: sm.reduce((s, r) => s + (r.buts || 0), 0),
+        passes: sm.reduce((s, r) => s + (r.passes_dec || 0), 0),
+        matchsJoues: sm.filter(r => (r.minutes || 0) > 0).length,
+        cleanSheets: sm.filter(r => r.clean_sheet).length,
+        tauxPresence: totalPresences ? Math.round((presents / totalPresences) * 100) : null,
+        pointsSeance: points,
+        noteGlobale,
+      }
+    }
+
+    const grouped = {}
+    categories.forEach(cat => {
+      const joueursCat = joueurs.filter(j => j.club_categorie_id === cat.id)
+      grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j.id) })) }
+    })
+
+    setStatsParCategorie(grouped)
+    if (!categorieActive && categories.length > 0) setCategorieActive(categories[0].id)
+    setLoadingClassements(false)
   }
 
   // ── Gestion catégories ──
@@ -340,7 +403,84 @@ export default function DashboardClub() {
           </>
         )}
 
-        {activeTab === 'classements' && <p style={{ color: '#555' }}>🚧 Onglet Classements — Partie 2, à venir</p>}
+        {activeTab === 'classements' && (() => {
+          const TRIS = [
+            { key: 'buts', label: '⚽ Buteurs', color: '#4ade80' },
+            { key: 'passes', label: '🎯 Passeurs', color: '#60a5fa' },
+            { key: 'matchsJoues', label: '📅 Matchs joués', color: '#a78bfa' },
+            { key: 'tauxPresence', label: '🏃 Présence', color: '#34d399', unit: '%' },
+            { key: 'pointsSeance', label: '⭐ Points séance', color: '#fbbf24' },
+            { key: 'noteGlobale', label: '📝 Note éducateur', color: '#f59e0b', unit: '/5' },
+          ]
+          const catData = categorieActive ? statsParCategorie[categorieActive] : null
+          const triActif = TRIS.find(t => t.key === triClassement) || TRIS[0]
+          const sorted = catData ? [...catData.joueurs].sort((a, b) => (b.stats[triClassement] || 0) - (a.stats[triClassement] || 0)) : []
+
+          if (categories.length === 0) {
+            return <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Crée d'abord des catégories dans l'onglet précédent.</div>
+          }
+          if (loadingClassements) {
+            return <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement des classements...</p>
+          }
+
+          return (
+            <div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                {categories.map(c => (
+                  <button key={c.id} onClick={() => setCategorieActive(c.id)} style={st.tab(categorieActive === c.id)}>
+                    {c.nom} — {c.equipe}
+                  </button>
+                ))}
+              </div>
+
+              {!catData || catData.joueurs.length === 0 ? (
+                <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+                  Aucun joueur rattaché à cette catégorie pour l'instant.<br />
+                  <span style={{ fontSize: '12px', color: '#444' }}>L'éducateur doit lier ses joueurs à cette catégorie club.</span>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                    {TRIS.map(t => (
+                      <button key={t.key} onClick={() => setTriClassement(t.key)}
+                        style={{ background: triClassement === t.key ? t.color + '20' : '#111', border: `1px solid ${triClassement === t.key ? t.color + '60' : '#222'}`, color: triClassement === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ ...st.card, overflow: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                          <th style={{ padding: '8px 12px', textAlign: 'center', color: '#444', fontSize: '11px', width: '40px' }}>#</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>Joueur</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>Poste</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'right', color: triActif.color, fontSize: '11px' }}>{triActif.label}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sorted.map((j, i) => {
+                          const val = j.stats[triClassement]
+                          return (
+                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : '#444' }}>{i + 1}</td>
+                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
+                              <td style={{ padding: '10px 12px', color: '#666' }}>{j.poste || '—'}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color }}>
+                                {val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '—'}{triActif.unit === '%' ? '%' : ''}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })()}
         {activeTab === 'recrutement' && <p style={{ color: '#555' }}>🚧 Onglet Recrutement — Partie 3, à venir</p>}
         {activeTab === 'profil' && <p style={{ color: '#555' }}>🚧 Onglet Profil club — Partie 4, à venir</p>}
       </div>
