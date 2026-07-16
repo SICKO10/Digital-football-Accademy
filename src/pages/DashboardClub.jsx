@@ -26,6 +26,12 @@ export default function DashboardClub() {
   const [invitingId, setInvitingId] = useState(null)
   const [codeClub, setCodeClub] = useState('')
 
+  // Profil club
+  const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', description: '' })
+  const [savingProfilClub, setSavingProfilClub] = useState(false)
+  const [avatarClubUploading, setAvatarClubUploading] = useState(false)
+  const [avisRecus, setAvisRecus] = useState([])
+
   // Classements
   const [statsParCategorie, setStatsParCategorie] = useState({})
   const [loadingClassements, setLoadingClassements] = useState(false)
@@ -78,6 +84,7 @@ export default function DashboardClub() {
     if (!profile || profile.plan !== 'club') { navigate('/'); return }
     setClubId(user.id)
     setClub(profile)
+    setProfilClubEdit({ club: profile.club || '', region: profile.region || '', description: profile.description || '' })
 
     // Génère un code club s'il n'existe pas encore
     if (!profile.code_club) {
@@ -88,7 +95,7 @@ export default function DashboardClub() {
       setCodeClub(profile.code_club)
     }
 
-    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id)])
+    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id), chargerAvisClub(user.id)])
     setLoading(false)
   }
 
@@ -101,6 +108,15 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('nom')
     setCategories(data || [])
+  }
+
+  const chargerAvisClub = async (uid) => {
+    const { data } = await supabase
+      .from('avis')
+      .select('*, auteur:auteur_id(prenom, nom, plan)')
+      .eq('cible_id', uid)
+      .order('created_at', { ascending: false })
+    setAvisRecus(data || [])
   }
 
   const chargerEducateurs = async (uid) => {
@@ -292,6 +308,39 @@ export default function DashboardClub() {
 
   const copierCode = () => {
     navigator.clipboard.writeText(codeClub)
+  }
+
+  const sauvegarderProfilClub = async () => {
+    setSavingProfilClub(true)
+    await supabase.from('profiles').update({
+      club: profilClubEdit.club,
+      region: profilClubEdit.region,
+      description: profilClubEdit.description,
+    }).eq('id', clubId)
+    setClub(prev => ({ ...prev, ...profilClubEdit }))
+    setSavingProfilClub(false)
+  }
+
+  const handleAvatarClubUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file || !clubId) return
+    setAvatarClubUploading(true)
+    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId }) })
+    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('signature', signature)
+    formData.append('timestamp', timestamp)
+    formData.append('folder', folder)
+    formData.append('public_id', public_id)
+    formData.append('api_key', api_key)
+    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+    const uploadData = await uploadRes.json()
+    if (uploadData.secure_url) {
+      await supabase.from('profiles').update({ avatar_url: uploadData.secure_url }).eq('id', clubId)
+      setClub(prev => ({ ...prev, avatar_url: uploadData.secure_url }))
+    }
+    setAvatarClubUploading(false)
   }
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
@@ -623,7 +672,86 @@ export default function DashboardClub() {
         {activeTab === 'recrutement' && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />
         )}
-        {activeTab === 'profil' && <p style={{ color: '#555' }}>🚧 Onglet Profil club — Partie 4, à venir</p>}
+        {activeTab === 'profil' && (() => {
+          const moyenne = avisRecus.length ? avisRecus.reduce((s, a) => s + (a.note || 0), 0) / avisRecus.length : null
+          return (
+            <div style={{ maxWidth: '700px' }}>
+              {/* Avatar + infos */}
+              <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '1.5rem' }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  {club?.avatar_url
+                    ? <img src={club.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
+                    : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 800, color: '#4ade80' }}>
+                        {(profilClubEdit.club || club?.club || '?')[0]}
+                      </div>
+                  }
+                  <label style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '11px' }}>
+                    {avatarClubUploading ? '…' : '✎'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
+                  </label>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: '18px', margin: '0 0 4px' }}>{profilClubEdit.club || 'Nom du club'}</p>
+                  {moyenne !== null ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#fbbf24', fontSize: '16px' }}>{'★'.repeat(Math.round(moyenne))}{'☆'.repeat(5 - Math.round(moyenne))}</span>
+                      <span style={{ fontSize: '13px', color: '#666' }}>{moyenne.toFixed(1)} ({avisRecus.length} avis)</span>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>Aucun avis reçu pour l'instant</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Formulaire */}
+              <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 Informations du club</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={st.label}>Nom du club</label>
+                    <input style={st.input} value={profilClubEdit.club} onChange={e => setProfilClubEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex: AS Cannes" />
+                  </div>
+                  <div>
+                    <label style={st.label}>Région</label>
+                    <input style={st.input} value={profilClubEdit.region} onChange={e => setProfilClubEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex: Provence-Alpes-Côte d'Azur" />
+                  </div>
+                  <div>
+                    <label style={st.label}>Description</label>
+                    <textarea
+                      style={{ ...st.input, minHeight: '100px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }}
+                      value={profilClubEdit.description}
+                      onChange={e => setProfilClubEdit(p => ({ ...p, description: e.target.value }))}
+                      placeholder="Présente ton club, son histoire, ses valeurs..."
+                    />
+                  </div>
+                </div>
+                <button onClick={sauvegarderProfilClub} disabled={savingProfilClub} style={{ ...st.btnSolid, marginTop: '16px' }}>
+                  {savingProfilClub ? 'Enregistrement...' : '✓ Sauvegarder'}
+                </button>
+              </div>
+
+              {/* Avis reçus */}
+              <div style={st.card}>
+                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ Avis reçus ({avisRecus.length})</p>
+                {avisRecus.length === 0 ? (
+                  <p style={{ color: '#444', fontSize: '13px' }}>Aucun avis pour l'instant. Les joueurs et éducateurs affiliés pourront noter le club.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {avisRecus.map(a => (
+                      <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontWeight: 600, fontSize: '13px' }}>{a.auteur?.prenom} {a.auteur?.nom}</span>
+                          <span style={{ color: '#fbbf24', fontSize: '13px' }}>{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
+                        </div>
+                        {a.commentaire && <p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>"{a.commentaire}"</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </div>
   )
