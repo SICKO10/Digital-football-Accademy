@@ -40,10 +40,21 @@ function DashboardCoach() {
     await Promise.all([getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()])
   }
 
+  const prendreEnCharge = async (table, id, dejaPris) => {
+    if (dejaPris) {
+      // Libérer la prise en charge
+      await supabase.from(table).update({ pris_en_charge_par: null, pris_en_charge_at: null }).eq('id', id)
+    } else {
+      await supabase.from(table).update({ pris_en_charge_par: coachId, pris_en_charge_at: new Date().toISOString() }).eq('id', id)
+    }
+    if (table === 'demandes') await getDemandes()
+    else await chargerSeancesTransferees()
+  }
+
   const getDemandes = async () => {
     const { data, error } = await supabase
       .from('demandes')
-      .select('*, profiles(id, prenom, nom, email, plan)')
+      .select('*, profiles(id, prenom, nom, email, plan), coach:pris_en_charge_par(prenom, nom)')
       .order('created_at', { ascending: false })
     if (!error) setDemandes(data)
     setLoading(false)
@@ -61,7 +72,7 @@ function DashboardCoach() {
   const chargerSeancesTransferees = async () => {
     const { data } = await supabase
       .from('seances_uploadees')
-      .select('*, educateur:educateur_id(prenom, nom), club:club_id(club, prenom, nom), evaluation:evaluations_seance(*)')
+      .select('*, educateur:educateur_id(prenom, nom), club:club_id(club, prenom, nom), evaluation:evaluations_seance(*), coach:pris_en_charge_par(prenom, nom)')
       .eq('statut', 'transfere_coach')
       .order('created_at', { ascending: false })
     setSeancesTransferees(data || [])
@@ -349,6 +360,21 @@ function DashboardCoach() {
                                   <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                                     {getStatutLabel(demande.statut)}
                                   </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+                                  {demande.pris_en_charge_par ? (
+                                    <>
+                                      <span style={{ background: demande.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${demande.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: demande.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
+                                        {demande.pris_en_charge_par === coachId ? '✅ Pris en charge par toi' : `🔒 Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
+                                      </span>
+                                      {demande.pris_en_charge_par === coachId && (
+                                        <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                                  )}
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -654,6 +680,18 @@ function DashboardCoach() {
                         </p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {s.pris_en_charge_par ? (
+                          <>
+                            <span style={{ background: s.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${s.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: s.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                              {s.pris_en_charge_par === coachId ? '✅ Toi' : `🔒 ${s.coach?.prenom || 'Autre coach'}`}
+                            </span>
+                            {s.pris_en_charge_par === coachId && (
+                              <button onClick={() => prendreEnCharge('seances_uploadees', s.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                            )}
+                          </>
+                        ) : (
+                          <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                        )}
                         <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
                         {s.statut === 'transfere_coach' && (
                           <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
