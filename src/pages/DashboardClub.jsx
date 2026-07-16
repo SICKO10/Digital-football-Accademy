@@ -429,9 +429,22 @@ export default function DashboardClub() {
     setEduNoteModal(null)
   }
 
+  const notifierCoachs = async (payload) => {
+    const { data: coachs } = await supabase.from('profiles').select('email').eq('plan', 'coach')
+    const coachEmails = coachs?.map(c => c.email).filter(Boolean) || []
+    if (coachEmails.length === 0) return
+    await fetch('/api/send-coach-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coachEmails, ...payload }),
+    })
+  }
+
   const transfererAuCoach = async (seanceId) => {
+    const seance = seancesRecues.find(s => s.id === seanceId)
     await supabase.from('seances_uploadees').update({ statut: 'transfere_coach' }).eq('id', seanceId)
     await chargerSeancesRecues(clubId)
+    await notifierCoachs({ type: 'seance', clubNom: club?.club, theme: seance?.theme })
   }
 
   const ouvrirGrilleEvaluation = (seance) => {
