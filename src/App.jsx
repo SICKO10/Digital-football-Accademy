@@ -30,7 +30,7 @@ function SmartDashboard() {
         const plan = data?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'recruteur') setDest('/recruteur')
-        else if (plan === 'club') setDest('/scout-club')
+        else if (plan === 'club') setDest('/club')
         else if (plan === 'coach') setDest('/coach')
         else setDest('/dashboard-joueur')
       })
