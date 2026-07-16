@@ -54,8 +54,9 @@ function DashboardCoach() {
   const getDemandes = async () => {
     const { data, error } = await supabase
       .from('demandes')
-      .select('*, profiles(id, prenom, nom, email, plan), coach:pris_en_charge_par(prenom, nom)')
+      .select('*, profiles!demandes_joueur_id_fkey(id, prenom, nom, email, plan), coach:profiles!demandes_pris_en_charge_par_fkey(prenom, nom)')
       .order('created_at', { ascending: false })
+    if (error) console.error('Erreur getDemandes:', error)
     if (!error) setDemandes(data)
     setLoading(false)
   }
