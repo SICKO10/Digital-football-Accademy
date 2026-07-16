@@ -2,9 +2,54 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
+import { CRITERES_EDU } from './DashboardEducateur'
 
 const CATEGORIES_STANDARD = ['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
 const EQUIPES = ['A', 'B']
+
+const GRILLE_SEANCE = [
+  { key: 'preparation', label: '1. Préparation de la séance', criteres: [
+    { key: 'objectif_clair', label: 'Objectif clair' },
+    { key: 'organisation_materiel', label: 'Organisation du matériel' },
+    { key: 'installation_avant', label: "Installation avant l'arrivée des joueurs" },
+  ]},
+  { key: 'animation', label: '2. Animation de la séance', criteres: [
+    { key: 'dynamisme', label: 'Dynamisme' },
+    { key: 'gestion_temps', label: 'Gestion du temps' },
+    { key: 'rythme', label: 'Rythme de la séance' },
+    { key: 'fluidite_transitions', label: 'Fluidité des transitions' },
+    { key: 'intensite', label: 'Intensité recherchée' },
+    { key: 'gestion_temps_morts', label: 'Gestion des temps morts' },
+  ]},
+  { key: 'pedagogie', label: '3. Qualité pédagogique', criteres: [
+    { key: 'explications', label: 'Explications simples et précises' },
+    { key: 'demonstrations', label: 'Démonstrations' },
+    { key: 'corrections_individuelles', label: 'Corrections individuelles' },
+    { key: 'corrections_collectives', label: 'Corrections collectives' },
+    { key: 'adaptation_exercices', label: 'Adaptation des exercices' },
+  ]},
+  { key: 'management', label: '4. Management', criteres: [
+    { key: 'leadership', label: 'Leadership' },
+    { key: 'communication', label: 'Communication' },
+    { key: 'motivation', label: 'Motivation des joueurs' },
+    { key: 'discipline', label: 'Discipline' },
+    { key: 'gestion_comportements', label: 'Gestion des comportements' },
+  ]},
+  { key: 'football', label: '5. Contenu footballistique', criteres: [
+    { key: 'coherence_theme', label: 'Cohérence avec le thème' },
+    { key: 'travail_tactique', label: 'Travail tactique' },
+    { key: 'travail_technique', label: 'Travail technique' },
+    { key: 'sollicitations_cognitives', label: "Sollicitations cognitives (prise d'information, choix...)" },
+    { key: 'respect_projet', label: 'Respect du projet de jeu' },
+  ]},
+]
+
+const GRILLE_BONUS = [
+  { key: 'climat_positif', label: 'Climat positif' },
+  { key: 'plaisir_joueurs', label: 'Plaisir des joueurs' },
+  { key: 'exigence', label: 'Exigence' },
+  { key: 'individualisation', label: 'Individualisation' },
+]
 
 export default function DashboardClub() {
   const navigate = useNavigate()
@@ -31,6 +76,20 @@ export default function DashboardClub() {
   const [savingProfilClub, setSavingProfilClub] = useState(false)
   const [avatarClubUploading, setAvatarClubUploading] = useState(false)
   const [avisRecus, setAvisRecus] = useState([])
+
+  // Notation générale éducateur
+  const [eduNoteModal, setEduNoteModal] = useState(null) // affiliation en cours de notation
+  const [eduNoteCriteres, setEduNoteCriteres] = useState({})
+  const [eduNoteCommentaire, setEduNoteCommentaire] = useState('')
+  const [eduNoteSaison, setEduNoteSaison] = useState('2025-2026')
+  const [savingEduNote, setSavingEduNote] = useState(false)
+
+  // Séances reçues
+  const [seancesRecues, setSeancesRecues] = useState([])
+  const [seanceEvalModal, setSeanceEvalModal] = useState(null) // séance en cours d'évaluation
+  const [grilleCriteres, setGrilleCriteres] = useState({})
+  const [grilleObservations, setGrilleObservations] = useState({ points_forts: '', axes_amelioration: '', actions: '' })
+  const [savingGrille, setSavingGrille] = useState(false)
 
   // Classements
   const [statsParCategorie, setStatsParCategorie] = useState({})
@@ -95,7 +154,7 @@ export default function DashboardClub() {
       setCodeClub(profile.code_club)
     }
 
-    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id), chargerAvisClub(user.id)])
+    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id), chargerAvisClub(user.id), chargerSeancesRecues(user.id)])
     setLoading(false)
   }
 
@@ -126,6 +185,15 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
     setEducateursAffilies(data || [])
+  }
+
+  const chargerSeancesRecues = async (uid) => {
+    const { data } = await supabase
+      .from('seances_uploadees')
+      .select('*, educateur:educateur_id(prenom, nom), evaluation:evaluations_seance(*)')
+      .eq('club_id', uid)
+      .order('created_at', { ascending: false })
+    setSeancesRecues(data || [])
   }
 
   const chargerClassements = async () => {
@@ -341,6 +409,80 @@ export default function DashboardClub() {
       setClub(prev => ({ ...prev, avatar_url: uploadData.secure_url }))
     }
     setAvatarClubUploading(false)
+  }
+
+  const ouvrirNotationEducateur = (affiliation) => {
+    setEduNoteModal(affiliation)
+    setEduNoteCriteres({})
+    setEduNoteCommentaire('')
+  }
+
+  const soumettreNotationEducateur = async () => {
+    if (!eduNoteModal) return
+    const allKeys = CRITERES_EDU.flatMap(c => c.criteres.map(cr => cr.key))
+    const allFilled = allKeys.every(k => eduNoteCriteres[k])
+    if (!allFilled) return
+    setSavingEduNote(true)
+    const moyGlobale = allKeys.reduce((s, k) => s + (eduNoteCriteres[k] || 0), 0) / allKeys.length
+    await supabase.from('notes_educateur').upsert({
+      educateur_id: eduNoteModal.educateur_id,
+      auteur_id: clubId,
+      auteur_type: 'club',
+      saison: eduNoteSaison,
+      note: Math.round(moyGlobale * 10) / 10,
+      criteres: eduNoteCriteres,
+      commentaire: eduNoteCommentaire,
+      visible_public: true,
+    }, { onConflict: 'educateur_id,auteur_id,saison' })
+    setSavingEduNote(false)
+    setEduNoteModal(null)
+  }
+
+  const transfererAuCoach = async (seanceId) => {
+    await supabase.from('seances_uploadees').update({ statut: 'transfere_coach' }).eq('id', seanceId)
+    await chargerSeancesRecues(clubId)
+  }
+
+  const ouvrirGrilleEvaluation = (seance) => {
+    setSeanceEvalModal(seance)
+    setGrilleCriteres({})
+    setGrilleObservations({ points_forts: '', axes_amelioration: '', actions: '' })
+  }
+
+  const calculerNoteDomaine = (domaineKey) => {
+    const domaine = GRILLE_SEANCE.find(d => d.key === domaineKey)
+    const vals = domaine.criteres.map(c => grilleCriteres[c.key]).filter(Boolean)
+    if (vals.length === 0) return 0
+    const moyenneSur5 = vals.reduce((s, v) => s + v, 0) / vals.length
+    return Math.round((moyenneSur5 / 5) * 20 * 10) / 10 // conversion /5 -> /20
+  }
+
+  const soumettreGrilleEvaluation = async () => {
+    if (!seanceEvalModal) return
+    setSavingGrille(true)
+    const notesDomaines = {
+      note_preparation: calculerNoteDomaine('preparation'),
+      note_animation: calculerNoteDomaine('animation'),
+      note_pedagogie: calculerNoteDomaine('pedagogie'),
+      note_management: calculerNoteDomaine('management'),
+      note_football: calculerNoteDomaine('football'),
+    }
+    const note_totale = Object.values(notesDomaines).reduce((s, v) => s + v, 0)
+    await supabase.from('evaluations_seance').upsert({
+      seance_id: seanceEvalModal.id,
+      evaluateur_id: clubId,
+      evaluateur_type: 'club',
+      criteres: grilleCriteres,
+      ...notesDomaines,
+      note_totale,
+      points_forts: grilleObservations.points_forts,
+      axes_amelioration: grilleObservations.axes_amelioration,
+      actions: grilleObservations.actions,
+    }, { onConflict: 'seance_id' })
+    await supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceEvalModal.id)
+    await chargerSeancesRecues(clubId)
+    setSavingGrille(false)
+    setSeanceEvalModal(null)
   }
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
