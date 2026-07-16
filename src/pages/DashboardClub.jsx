@@ -30,6 +30,8 @@ export default function DashboardClub() {
   const [loadingClassements, setLoadingClassements] = useState(false)
   const [categorieActive, setCategorieActive] = useState(null)
   const [triClassement, setTriClassement] = useState('buts')
+  const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
+  const [loadingMatchs, setLoadingMatchs] = useState(false)
 
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
@@ -52,6 +54,12 @@ export default function DashboardClub() {
       chargerClassements()
     }
   }, [activeTab, categories])
+
+  useEffect(() => {
+    if (activeTab === 'classements' && categorieActive) {
+      chargerMatchsCategorie(categorieActive)
+    }
+  }, [activeTab, categorieActive])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -143,6 +151,36 @@ export default function DashboardClub() {
     setStatsParCategorie(grouped)
     if (!categorieActive && categories.length > 0) setCategorieActive(categories[0].id)
     setLoadingClassements(false)
+  }
+
+  const chargerMatchsCategorie = async (categorieId) => {
+    const cat = categories.find(c => c.id === categorieId)
+    if (!cat || !cat.educateur_id || clubMatchs[categorieId]) return
+    setLoadingMatchs(true)
+    const { data } = await supabase
+      .from('matchs_equipe')
+      .select('*')
+      .eq('educateur_id', cat.educateur_id)
+      .order('date', { ascending: false })
+    setClubMatchs(prev => ({ ...prev, [categorieId]: data || [] }))
+    setLoadingMatchs(false)
+  }
+
+  const calculerClassementEquipe = (matchs, nomClub) => {
+    const equipes = {}
+    matchs.filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_eux !== '' && m.score_eux !== null).forEach(m => {
+      const nous = parseInt(m.score_nous)
+      const eux = parseInt(m.score_eux)
+      if (!equipes[nomClub]) equipes[nomClub] = { nom: nomClub, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: true }
+      if (!equipes[m.adversaire]) equipes[m.adversaire] = { nom: m.adversaire, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: false }
+      equipes[nomClub].j++; equipes[m.adversaire].j++
+      equipes[nomClub].bp += nous; equipes[nomClub].bc += eux
+      equipes[m.adversaire].bp += eux; equipes[m.adversaire].bc += nous
+      if (nous > eux) { equipes[nomClub].v++; equipes[nomClub].pts += 3; equipes[m.adversaire].d++ }
+      else if (nous < eux) { equipes[m.adversaire].v++; equipes[m.adversaire].pts += 3; equipes[nomClub].d++ }
+      else { equipes[nomClub].n++; equipes[nomClub].pts++; equipes[m.adversaire].n++; equipes[m.adversaire].pts++ }
+    })
+    return Object.values(equipes).sort((a, b) => b.pts - a.pts || (b.bp - b.bc) - (a.bp - a.bc))
   }
 
   const [autoAssignLoading, setAutoAssignLoading] = useState(false)
@@ -476,6 +514,76 @@ export default function DashboardClub() {
                   </button>
                 ))}
               </div>
+
+              {/* ── Résultats & classement équipe ── */}
+              {(() => {
+                const matchsCat = clubMatchs[categorieActive] || []
+                const nomEquipe = `${club?.club || 'Mon équipe'} ${categories.find(c => c.id === categorieActive)?.equipe || ''}`
+                const classementEquipe = calculerClassementEquipe(matchsCat, nomEquipe)
+                const derniersMatchs = matchsCat.slice(0, 5)
+                return (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement de l'équipe</p>
+                    {loadingMatchs ? (
+                      <p style={{ color: '#555', fontSize: '13px' }}>Chargement...</p>
+                    ) : classementEquipe.length === 0 ? (
+                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun résultat de match enregistré par l'éducateur pour cette catégorie.</p>
+                    ) : (
+                      <div style={{ ...st.card, overflow: 'auto', marginBottom: '1.5rem' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                              {['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Pts'].map(h => (
+                                <th key={h} style={{ padding: '8px 10px', textAlign: h === 'Équipe' ? 'left' : 'center', color: '#555', fontSize: '11px', textTransform: 'uppercase' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {classementEquipe.map((e, i) => (
+                              <tr key={e.nom} style={{ borderBottom: '1px solid #141414', background: e.moi ? '#4ade8008' : 'transparent' }}>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#555' }}>{i + 1}</td>
+                                <td style={{ padding: '8px 10px', fontWeight: e.moi ? 700 : 400, color: e.moi ? '#4ade80' : '#fff' }}>{e.nom}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.j}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#4ade80' }}>{e.v}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#f59e0b' }}>{e.n}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#ef4444' }}>{e.d}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.bp}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>{e.bc}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{e.pts}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {derniersMatchs.length > 0 && (
+                      <>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '10px' }}>⚽ Derniers résultats</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.5rem' }}>
+                          {derniersMatchs.map(m => {
+                            const aScore = m.score_nous !== '' && m.score_nous !== null
+                            const nous = parseInt(m.score_nous)
+                            const eux = parseInt(m.score_eux)
+                            const resultat = aScore ? (nous > eux ? 'V' : nous < eux ? 'D' : 'N') : null
+                            const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#ef4444' : '#f59e0b'
+                            return (
+                              <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px' }}>
+                                {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{resultat}</span>}
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
+                                </div>
+                                {aScore && <span style={{ fontWeight: 800, fontSize: '14px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
 
               {!catData || catData.joueurs.length === 0 ? (
                 <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
