@@ -96,6 +96,7 @@ export default function DashboardClub() {
   const [loadingClassements, setLoadingClassements] = useState(false)
   const [categorieActive, setCategorieActive] = useState(null)
   const [triClassement, setTriClassement] = useState('buts')
+  const [effectifModal, setEffectifModal] = useState(null) // categorieId en cours d'affichage
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
   const [loadingMatchs, setLoadingMatchs] = useState(false)
   const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
@@ -246,6 +247,14 @@ export default function DashboardClub() {
     if (!categorieActive && categories.length > 0) setCategorieActive(categories[0].id)
     setLoadingClassements(false)
   }
+
+  const GROUPES_POSTE = [
+    { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+    { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur', 'defenseur', 'latéral', 'lateral'].some(k => p.toLowerCase().includes(k)) },
+    { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+    { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
+    { label: '❓ Autres', color: '#555', match: p => !p || !['gardien', 'défenseur', 'defenseur', 'latéral', 'lateral', 'milieu', 'attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
+  ]
 
   const chargerMatchsCategorie = async (categorieId) => {
     const cat = categories.find(c => c.id === categorieId)
@@ -588,7 +597,10 @@ export default function DashboardClub() {
                               {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : 'Pas d\'éducateur assigné'}
                             </p>
                           </div>
-                          <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 Effectif</button>
+                            <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1062,6 +1074,74 @@ export default function DashboardClub() {
           </div>
         </div>
       )}
+
+      {/* Modal effectif par poste */}
+      {effectifModal && (() => {
+        const catData = statsParCategorie[effectifModal]
+        const cat = categories.find(c => c.id === effectifModal)
+        return (
+          <div onClick={() => setEffectifModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 Effectif — {cat?.nom} {cat?.equipe}</p>
+                <button onClick={() => setEffectifModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              {!catData ? (
+                <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
+              ) : catData.joueurs.length === 0 ? (
+                <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>Aucun joueur dans cette catégorie.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {GROUPES_POSTE.map(groupe => {
+                    const joueursGroupe = catData.joueurs.filter(j => groupe.match(j.poste))
+                    if (joueursGroupe.length === 0) return null
+                    return (
+                      <div key={groupe.label}>
+                        <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: groupe.color }}>{groupe.label} ({joueursGroupe.length})</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+                          {joueursGroupe.map(j => (
+                            <div key={j.id} style={{ background: '#111', border: `1px solid ${groupe.color}20`, borderRadius: '12px', padding: '14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
+                                  {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
+                                </div>
+                                <div>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                                {[
+                                  { label: 'Buts', val: j.stats.buts, color: '#4ade80' },
+                                  { label: 'Passes', val: j.stats.passes, color: '#60a5fa' },
+                                  { label: 'Matchs', val: j.stats.matchsJoues, color: '#a78bfa' },
+                                ].map(s => (
+                                  <div key={s.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
+                                    <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: s.color }}>{s.val}</p>
+                                    <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase' }}>{s.label}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                {j.stats.tauxPresence !== null && (
+                                  <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
+                                )}
+                                {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: '#fbbf24' }}>⭐ {j.stats.pointsSeance}</span>}
+                                {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/5</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
