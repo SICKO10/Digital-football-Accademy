@@ -72,7 +72,7 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
       note_management: calculerNoteDomaine(grilleCriteres, 'management'),
       note_football: calculerNoteDomaine(grilleCriteres, 'football'),
     }
-    const note_totale = Object.values(notesDomaines).reduce((s, v) => s + v, 0)
+    const note_totale = Math.round(Object.values(notesDomaines).reduce((s, v) => s + v, 0) * 10) / 10
     await onSubmit({ criteres: grilleCriteres, ...notesDomaines, note_totale, ...grilleObservations, evaluateurType })
     setSaving(false)
   }
