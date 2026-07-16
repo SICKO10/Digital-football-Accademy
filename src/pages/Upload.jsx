@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
+const notifierCoachs = async (payload) => {
+  const { data: coachs } = await supabase.from('profiles').select('email').eq('plan', 'coach')
+  const coachEmails = coachs?.map(c => c.email).filter(Boolean) || []
+  if (coachEmails.length === 0) return
+  try {
+    await fetch('/api/send-coach-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coachEmails, ...payload }),
+    })
+  } catch (e) {
+    console.error('Erreur notification coach:', e)
+  }
+}
+
 export default function Upload() {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
@@ -73,6 +88,7 @@ export default function Upload() {
       })
       if (e2) throw e2
 
+      await notifierCoachs({ type: 'demande', joueurNom: `${profil.prenom} ${profil.nom}` })
       await decrementerAnalyse()
       setSuccess(true)
     } catch (e) {
@@ -150,6 +166,7 @@ export default function Upload() {
           })
           if (e2) throw e2
 
+          await notifierCoachs({ type: 'demande', joueurNom: `${profil.prenom} ${profil.nom}` })
           await decrementerAnalyse()
           setProgress(100)
           setSuccess(true)
