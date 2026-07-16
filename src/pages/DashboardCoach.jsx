@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { ModalNotation, BadgeNote } from '../components/Notation'
+import { ModalGrilleSeance } from '../components/GrilleSeance'
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -25,6 +26,10 @@ function DashboardCoach() {
   // Notation
   const [notationCible, setNotationCible] = useState(null)
 
+  // Séances transférées par les clubs
+  const [seancesTransferees, setSeancesTransferees] = useState([])
+  const [seanceEvalModal, setSeanceEvalModal] = useState(null)
+
   useEffect(() => {
     init()
   }, [])
@@ -32,7 +37,7 @@ function DashboardCoach() {
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) setCoachId(user.id)
-    await Promise.all([getDemandes(), getCertifications(), getRecruteurs()])
+    await Promise.all([getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()])
   }
 
   const getDemandes = async () => {
@@ -51,6 +56,36 @@ function DashboardCoach() {
       .eq('plan', 'recruteur')
       .order('created_at', { ascending: false })
     if (data) setRecruteurs(data)
+  }
+
+  const chargerSeancesTransferees = async () => {
+    const { data } = await supabase
+      .from('seances_uploadees')
+      .select('*, educateur:educateur_id(prenom, nom), club:club_id(club, prenom, nom), evaluation:evaluations_seance(*)')
+      .eq('statut', 'transfere_coach')
+      .order('created_at', { ascending: false })
+    setSeancesTransferees(data || [])
+  }
+
+  const soumettreGrilleCoach = async (payload) => {
+    await supabase.from('evaluations_seance').upsert({
+      seance_id: seanceEvalModal.id,
+      evaluateur_id: coachId,
+      evaluateur_type: 'coach',
+      criteres: payload.criteres,
+      note_preparation: payload.note_preparation,
+      note_animation: payload.note_animation,
+      note_pedagogie: payload.note_pedagogie,
+      note_management: payload.note_management,
+      note_football: payload.note_football,
+      note_totale: payload.note_totale,
+      points_forts: payload.points_forts,
+      axes_amelioration: payload.axes_amelioration,
+      actions: payload.actions,
+    }, { onConflict: 'seance_id' })
+    await supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceEvalModal.id)
+    await chargerSeancesTransferees()
+    setSeanceEvalModal(null)
   }
 
   const getCertifications = async () => {
@@ -243,6 +278,7 @@ function DashboardCoach() {
             { key: 'analyses', label: '🎬 Demandes d\'analyse', count: enAttente.length },
             { key: 'certifications', label: '⭐ Certifications', count: certifsEnAttente.length },
             { key: 'recruteurs', label: '🏢 Clubs / Agents', count: 0 },
+            { key: 'seances_club', label: '🎥 Séances club', count: seancesTransferees.length },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveSection(tab.key)}
               style={{
@@ -596,6 +632,44 @@ function DashboardCoach() {
           </>
         )}
 
+        {/* ===== SECTION SÉANCES CLUB ===== */}
+        {activeSection === 'seances_club' && (
+          <>
+            {seancesTransferees.length === 0 ? (
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🎥</p>
+                <p style={{ color: '#666' }}>Aucune séance transférée par un club pour l'instant</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {seancesTransferees.map(s => {
+                  const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                  return (
+                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>
+                          Club : {s.club?.club || `${s.club?.prenom} ${s.club?.nom}`} · {s.saison}
+                          {s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                        {s.statut === 'transfere_coach' && (
+                          <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
+                        )}
+                        {eval_ && (
+                          <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {eval_.note_totale}/100</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
 
       {/* MODAL PROFIL RECRUTEUR */}
@@ -665,6 +739,15 @@ function DashboardCoach() {
           cible={notationCible}
           onClose={() => setNotationCible(null)}
           onDone={() => setNotationCible(null)}
+        />
+      )}
+
+      {seanceEvalModal && (
+        <ModalGrilleSeance
+          seance={seanceEvalModal}
+          onClose={() => setSeanceEvalModal(null)}
+          onSubmit={soumettreGrilleCoach}
+          evaluateurType="coach"
         />
       )}
     </div>
