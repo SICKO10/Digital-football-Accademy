@@ -265,8 +265,28 @@ export default function DashboardClub() {
   }
 
   const accepterEducateur = async (id) => {
+    const affiliation = educateursAffilies.find(e => e.id === id)
     await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
     await chargerEducateurs(clubId)
+
+    // Auto-assignation des joueurs de cet éducateur si leur categorie texte matche une categorie club existante
+    if (affiliation?.educateur_id && categories.length > 0) {
+      const { data: joueursEducateur } = await supabase
+        .from('equipe_joueurs')
+        .select('id, categorie, club_categorie_id')
+        .eq('educateur_id', affiliation.educateur_id)
+        .is('club_categorie_id', null)
+
+      if (joueursEducateur && joueursEducateur.length > 0) {
+        for (const j of joueursEducateur) {
+          if (!j.categorie) continue
+          const match = categories.find(c => c.nom.toLowerCase() === j.categorie.toLowerCase().trim() && c.equipe === 'A')
+          if (match) {
+            await supabase.from('equipe_joueurs').update({ club_categorie_id: match.id }).eq('id', j.id)
+          }
+        }
+      }
+    }
   }
 
   const copierCode = () => {
