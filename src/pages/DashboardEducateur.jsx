@@ -273,7 +273,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id)])
     setLoading(false)
   }
 
@@ -286,6 +286,11 @@ export default function DashboardEducateur() {
       .limit(1)
       .maybeSingle()
     setClubAffiliation(data || null)
+  }
+
+  const chargerMesSeances = async (uid) => {
+    const { data } = await supabase.from('seances_uploadees').select('*').eq('educateur_id', uid).order('created_at', { ascending: false })
+    setMesSeances(data || [])
   }
 
   const chargerClubCategories = async (uid) => {
@@ -335,6 +340,14 @@ export default function DashboardEducateur() {
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [clubCategories, setClubCategories] = useState([])
+
+  const [mesSeances, setMesSeances] = useState([])
+  const [showUploadSeance, setShowUploadSeance] = useState(false)
+  const [seanceSaison, setSeanceSaison] = useState('2025-2026')
+  const [seanceTheme, setSeanceTheme] = useState('')
+  const [seanceDate, setSeanceDate] = useState('')
+  const [seanceVideoFile, setSeanceVideoFile] = useState(null)
+  const [uploadingSeance, setUploadingSeance] = useState(false)
   const [codeClubInput, setCodeClubInput] = useState('')
   const [sendingCodeClub, setSendingCodeClub] = useState(false)
   const [codeClubError, setCodeClubError] = useState(null)
@@ -379,6 +392,40 @@ export default function DashboardEducateur() {
     setCodeClubInput('')
     await chargerClubAffiliation(userId)
     setSendingCodeClub(false)
+  }
+
+  const uploaderSeance = async () => {
+    if (!seanceVideoFile || !clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte') return
+    const dejaCetteSaison = mesSeances.filter(s => s.saison === seanceSaison).length
+    if (dejaCetteSaison >= 2) { alert('Tu as déjà uploadé 2 séances pour cette saison.'); return }
+    setUploadingSeance(true)
+    try {
+      const sigRes = await fetch('/api/upload-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', seanceVideoFile)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (uploadData.secure_url) {
+        await supabase.from('seances_uploadees').insert({
+          educateur_id: userId,
+          club_id: clubAffiliation.club_id,
+          saison: seanceSaison,
+          theme: seanceTheme || null,
+          date_seance: seanceDate || null,
+          video_url: uploadData.secure_url,
+        })
+        await chargerMesSeances(userId)
+        setShowUploadSeance(false)
+        setSeanceTheme(''); setSeanceDate(''); setSeanceVideoFile(null)
+      }
+    } catch (e) { console.error(e) }
+    setUploadingSeance(false)
   }
 
   const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
@@ -2788,6 +2835,71 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 {codeClubSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px' }}>✅ Demande envoyée ! Le club doit valider ton affiliation.</p>}
               </div>
             </div>
+
+            {clubAffiliation?.statut === 'accepte' && (
+              <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
+                <div style={st.card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🎥 Séances pour évaluation club</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Uploade jusqu'à 2 séances par saison pour être évalué par ton club.</p>
+                    </div>
+                    <button onClick={() => setShowUploadSeance(true)} style={st.btnSolid}>+ Uploader une séance</button>
+                  </div>
+
+                  {showUploadSeance && (
+                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                        <div>
+                          <label style={st.label}>Saison</label>
+                          <select style={st.input} value={seanceSaison} onChange={e => setSeanceSaison(e.target.value)}>
+                            {['2025-2026', '2024-2025', '2026-2027'].map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Date de la séance</label>
+                          <input style={st.input} type="date" value={seanceDate} onChange={e => setSeanceDate(e.target.value)} />
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={st.label}>Thème de la séance</label>
+                          <input style={st.input} placeholder="Ex: Travail défensif, transition rapide..." value={seanceTheme} onChange={e => setSeanceTheme(e.target.value)} />
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={st.label}>Vidéo de la séance</label>
+                          <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={uploaderSeance} disabled={uploadingSeance || !seanceVideoFile} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
+                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>Annuler</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mesSeances.length === 0 ? (
+                    <p style={{ color: '#333', fontSize: '13px' }}>Aucune séance uploadée pour l'instant.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {mesSeances.map(s => (
+                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || 'Séance'} — {s.saison}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                          </div>
+                          <span style={{
+                            fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                            background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
+                            color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
+                          }}>
+                            {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── Section avis & notations ── */}
             {(() => {
