@@ -318,24 +318,51 @@ export default function DashboardClub() {
     await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
     await chargerEducateurs(clubId)
 
-    // Auto-assignation des joueurs de cet éducateur si leur categorie texte matche une categorie club existante
-    if (affiliation?.educateur_id && categories.length > 0) {
-      const { data: joueursEducateur } = await supabase
-        .from('equipe_joueurs')
-        .select('id, categorie, club_categorie_id')
-        .eq('educateur_id', affiliation.educateur_id)
-        .is('club_categorie_id', null)
+    if (!affiliation?.educateur_id) return
 
-      if (joueursEducateur && joueursEducateur.length > 0) {
-        for (const j of joueursEducateur) {
-          if (!j.categorie) continue
-          const match = categories.find(c => c.nom.toLowerCase() === j.categorie.toLowerCase().trim() && c.equipe === 'A')
-          if (match) {
-            await supabase.from('equipe_joueurs').update({ club_categorie_id: match.id }).eq('id', j.id)
-          }
-        }
+    // Récupère tous les joueurs de cet éducateur
+    const { data: joueursEducateur } = await supabase
+      .from('equipe_joueurs')
+      .select('id, categorie, club_categorie_id')
+      .eq('educateur_id', affiliation.educateur_id)
+
+    if (!joueursEducateur || joueursEducateur.length === 0) return
+
+    // Recharge les catégories actuelles du club (au cas où elles auraient changé)
+    const { data: categoriesActuelles } = await supabase
+      .from('club_categories')
+      .select('*')
+      .eq('club_id', clubId)
+
+    let categoriesMap = categoriesActuelles || []
+
+    // Catégories texte distinctes utilisées par les joueurs de l'éducateur (non vides)
+    const categoriesTexte = [...new Set(joueursEducateur.map(j => j.categorie).filter(Boolean).map(c => c.trim()))]
+
+    // Pour chaque catégorie texte, vérifie si elle existe côté club (équipe A) — sinon la crée
+    for (const catTexte of categoriesTexte) {
+      const existe = categoriesMap.find(c => c.nom.toLowerCase() === catTexte.toLowerCase() && c.equipe === 'A')
+      if (!existe) {
+        const { data: nouvelleCat } = await supabase.from('club_categories').insert({
+          club_id: clubId,
+          nom: catTexte,
+          equipe: 'A',
+          educateur_id: affiliation.educateur_id,
+        }).select().single()
+        if (nouvelleCat) categoriesMap = [...categoriesMap, nouvelleCat]
       }
     }
+
+    // Assigne chaque joueur non encore assigné à sa catégorie correspondante
+    for (const j of joueursEducateur) {
+      if (j.club_categorie_id || !j.categorie) continue
+      const match = categoriesMap.find(c => c.nom.toLowerCase() === j.categorie.trim().toLowerCase() && c.equipe === 'A')
+      if (match) {
+        await supabase.from('equipe_joueurs').update({ club_categorie_id: match.id }).eq('id', j.id)
+      }
+    }
+
+    await chargerCategories(clubId)
   }
 
   const copierCode = () => {
