@@ -145,6 +145,41 @@ export default function DashboardClub() {
     setLoadingClassements(false)
   }
 
+  const [autoAssignLoading, setAutoAssignLoading] = useState(false)
+  const [autoAssignResult, setAutoAssignResult] = useState(null)
+
+  const autoAssignerJoueurs = async () => {
+    setAutoAssignLoading(true)
+    setAutoAssignResult(null)
+    const educateurIds = [...new Set(categories.map(c => c.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) { setAutoAssignLoading(false); return }
+
+    const { data: joueurs } = await supabase
+      .from('equipe_joueurs')
+      .select('id, categorie, club_categorie_id')
+      .in('educateur_id', educateurIds)
+      .is('club_categorie_id', null)
+
+    if (!joueurs || joueurs.length === 0) {
+      setAutoAssignResult({ count: 0 })
+      setAutoAssignLoading(false)
+      return
+    }
+
+    let count = 0
+    for (const j of joueurs) {
+      if (!j.categorie) continue
+      const match = categories.find(c => c.nom.toLowerCase() === j.categorie.toLowerCase().trim() && c.equipe === 'A')
+      if (match) {
+        await supabase.from('equipe_joueurs').update({ club_categorie_id: match.id }).eq('id', j.id)
+        count++
+      }
+    }
+    setAutoAssignResult({ count })
+    setAutoAssignLoading(false)
+    setStatsParCategorie({}) // force le rechargement des classements
+  }
+
   // ── Gestion catégories ──
   const ajouterCategorie = async () => {
     if (!newCategorie.nom) return
@@ -246,9 +281,18 @@ export default function DashboardClub() {
         {/* ── CATÉGORIES ── */}
         {activeTab === 'categories' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
+              <button style={st.btnSecondary} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
+                {autoAssignLoading ? '⏳ Assignation...' : '⚡ Auto-assigner les joueurs (équipe A)'}
+              </button>
               <button style={st.btnSolid} onClick={() => setShowAddCategorie(true)}>+ Ajouter une catégorie</button>
             </div>
+
+            {autoAssignResult && (
+              <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', color: '#4ade80', fontSize: '13px' }}>
+                ✅ {autoAssignResult.count} joueur{autoAssignResult.count !== 1 ? 's' : ''} assigné{autoAssignResult.count !== 1 ? 's' : ''} automatiquement (équipe A par défaut — ajuste manuellement si besoin pour l'équipe B)
+              </div>
+            )}
 
             {showAddCategorie && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
