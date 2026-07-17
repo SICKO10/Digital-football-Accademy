@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
+import { notifierJoueur } from '../lib/notifications'
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -170,6 +171,16 @@ function DashboardCoach() {
         receiver_id: joueurId,
         content: `🎬 Ton analyse vidéo est prête ! J'ai analysé "${titreDemande}". Regarde ici : ${loomUrl}`,
         created_at: new Date().toISOString()
+      })
+    }
+
+    if (joueurId) {
+      await notifierJoueur({
+        type: 'analyse',
+        userId: joueurId,
+        titre: `Analyse de "${titreDemande}" prête`,
+        contenu: { texte: `Regarde ici : ${loomUrl}` },
+        lien: '/dashboard',
       })
     }
 
