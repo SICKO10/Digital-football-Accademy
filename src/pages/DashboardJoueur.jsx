@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
+import { notifierJoueur } from '../lib/notifications'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
@@ -455,6 +456,7 @@ function DashboardJoueur() {
   const envoyerMessage = async () => {
     if (!newMessage.trim() || !messageActif || !userId) return
     await supabase.from('messages').insert({ sender_id: userId, receiver_id: messageActif.otherId, content: newMessage.trim(), created_at: new Date().toISOString() })
+    await notifierJoueur({ type: 'message', userId: messageActif.otherId, titre: 'Nouveau message', contenu: { auteur: profil?.prenom, texte: newMessage.trim() }, lien: '/dashboard' })
     setNewMessage('')
     await chargerConversations(userId)
   }

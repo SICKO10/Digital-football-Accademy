@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import { notifierJoueur } from "../lib/notifications";
 
 const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
@@ -382,6 +383,7 @@ export default function DashboardRecruteur() {
       content: newMessage.trim(),
       created_at: new Date().toISOString()
     });
+    await notifierJoueur({ type: 'message', userId: convActive.otherId, titre: 'Nouveau message', contenu: { auteur: recruteur?.prenom, texte: newMessage.trim() }, lien: '/dashboard' });
     setNewMessage("");
     await ouvrirConversation(convActive);
     await chargerConversations(recruteurId);
@@ -399,6 +401,7 @@ export default function DashboardRecruteur() {
     });
     setSendingMessage(false);
     if (!error) {
+      await notifierJoueur({ type: 'message', userId: messageModal.id, titre: 'Nouveau message', contenu: { auteur: recruteur?.prenom, texte: messageText.trim() }, lien: '/dashboard' });
       setMessageSent(true);
       await chargerConversations(recruteurId);
       setTimeout(() => { setMessageModal(null); setMessageText(""); setMessageSent(false); }, 2000);
