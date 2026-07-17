@@ -997,6 +997,47 @@ function DashboardJoueur() {
           ))}
         </nav>
 
+        {/* Clochette notifications */}
+        <div style={{ padding: '0 10px 12px', position: 'relative' }}>
+          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'transparent', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
+            <span style={{ fontSize: '16px' }}>🔔</span>
+            <span style={{ flex: 1, textAlign: 'left' }}>Notifications</span>
+            {notifications.filter(n => !n.lu).length > 0 && (
+              <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px' }}>
+                {notifications.filter(n => !n.lu).length}
+              </span>
+            )}
+          </button>
+
+          {notifDropdownOpen && (
+            <div style={{ position: 'absolute', bottom: '100%', left: '10px', right: '10px', background: '#111', border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', marginBottom: '8px', zIndex: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Notifications</p>
+                {notifications.some(n => !n.lu) && (
+                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: '#4ade80', fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
+                )}
+              </div>
+              {notifications.length === 0 ? (
+                <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
+              ) : (
+                notifications.map(n => (
+                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) window.location.hash = n.lien }}
+                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      {!n.lu && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', marginTop: '5px', flexShrink: 0 }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: n.lu ? 400 : 700 }}>{n.titre}</p>
+                        {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.contenu}</p>}
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#333' }}>{new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
         <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '8px' }}>
             <Avatar person={profil} size={32} border="1.5px solid #4ade8040" />
@@ -1027,6 +1068,40 @@ function DashboardJoueur() {
             </button>
           ))}
         </nav>
+      )}
+
+      {isMobile && (
+        <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 150 }}>
+          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#111', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <span style={{ fontSize: '18px' }}>🔔</span>
+          {notifications.filter(n => !n.lu).length > 0 && (
+            <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {notifications.filter(n => !n.lu).length}
+            </span>
+          )}
+          </button>
+          {notifDropdownOpen && (
+            <div style={{ position: 'absolute', top: '48px', right: 0, width: '300px', background: '#111', border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Notifications</p>
+                {notifications.some(n => !n.lu) && (
+                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: '#4ade80', fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
+                )}
+              </div>
+              {notifications.length === 0 ? (
+                <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
+              ) : (
+                notifications.map(n => (
+                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false) }}
+                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: n.lu ? 400 : 700 }}>{n.titre}</p>
+                    {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{n.contenu}</p>}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── MAIN CONTENT ── */}
