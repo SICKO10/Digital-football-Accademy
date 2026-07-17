@@ -1629,6 +1629,28 @@ function DashboardJoueur() {
               </div>
             </div>
 
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <p style={{ ...labelStyle, marginBottom: '6px' }}>Préférences de notification</p>
+              <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Choisis les emails que tu veux recevoir. Les notifications restent toujours visibles dans la clochette.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  { key: 'email_analyse', label: '🎬 Analyse vidéo terminée' },
+                  { key: 'email_like', label: '❤️ Nouveau like' },
+                  { key: 'email_commentaire', label: '💬 Nouveau commentaire' },
+                  { key: 'email_message', label: '✉️ Nouveau message' },
+                ].map(pref => (
+                  <div key={pref.key} onClick={() => sauvegarderNotifPrefs({ ...notifPrefs, [pref.key]: !notifPrefs[pref.key] })}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '14px' }}>{pref.label}</span>
+                    <div style={{ width: '40px', height: '22px', background: notifPrefs[pref.key] ? '#4ade80' : '#333', borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', top: '3px', left: notifPrefs[pref.key] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {savingPrefs && <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '10px' }}>Enregistrement...</p>}
+            </div>
+
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
               {savingStats ? 'Sauvegarde...' : statsSaved ? 'Profil sauvegardé' : 'Sauvegarder le profil'}
