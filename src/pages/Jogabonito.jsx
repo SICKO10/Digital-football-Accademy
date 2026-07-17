@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
+import { notifierJoueur } from '../lib/notifications'
 
 const detectType = (url) => {
   if (!url) return null
@@ -86,6 +87,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
     } else {
       await supabase.from('likes').insert({ user_id: user.id, clip_id: reel.joueur_id })
       setLikeCount(c => c + 1)
+      if (reel.joueur_id !== user.id) {
+        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+        await notifierJoueur({ type: 'like', userId: reel.joueur_id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
+      }
     }
     setLiked(!liked)
   }
@@ -117,6 +122,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
     await supabase.from('comments').insert({ user_id: user.id, joueur_id: reel.joueur_id, content: newComment.trim() })
     setNewComment('')
     chargerInteractions()
+    if (reel.joueur_id !== user.id) {
+      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+      await notifierJoueur({ type: 'commentaire', userId: reel.joueur_id, titre: 'Nouveau commentaire', contenu: { auteur: auteur?.prenom, texte: newComment.trim() }, lien: '/dashboard' })
+    }
   }
 
   const togglePlay = () => {

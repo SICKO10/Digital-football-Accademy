@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
 import { ModalNotation, BadgeNote } from '../components/Notation'
+import { notifierJoueur } from '../lib/notifications'
 
 const detectVideoType = (url) => {
   if (!url) return null
@@ -95,7 +96,13 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
   const handleLike = async () => {
     if (!user) return
     if (liked) { await supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', j.id) }
-    else { await supabase.from('likes').insert({ user_id: user.id, clip_id: j.id }) }
+    else {
+      await supabase.from('likes').insert({ user_id: user.id, clip_id: j.id })
+      if (j.id !== user.id) {
+        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+        await notifierJoueur({ type: 'like', userId: j.id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
+      }
+    }
     onRefresh()
   }
 
@@ -110,6 +117,10 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
     if (!newComment.trim() || !user) return
     setSendingComment(true)
     await supabase.from('comments').insert({ user_id: user.id, joueur_id: j.id, content: newComment.trim() })
+    if (j.id !== user.id) {
+      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+      await notifierJoueur({ type: 'commentaire', userId: j.id, titre: 'Nouveau commentaire', contenu: { auteur: auteur?.prenom, texte: newComment.trim() }, lien: '/dashboard' })
+    }
     setNewComment('')
     setSendingComment(false)
     onRefresh()
@@ -541,7 +552,17 @@ function Feed() {
             )}
             {user && (
               <div style={{ display: 'flex', gap: '8px', paddingTop: '1rem', borderTop: '1px solid #222', flexWrap: 'wrap' }}>
-                <button onClick={async () => { await (likedIds.includes(joueurModal.id) ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id) : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id })); refresh() }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
+                <button onClick={async () => {
+                  const dejaLike = likedIds.includes(joueurModal.id)
+                  await (dejaLike
+                    ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id)
+                    : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id }))
+                  if (!dejaLike && joueurModal.id !== user.id) {
+                    const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+                    await notifierJoueur({ type: 'like', userId: joueurModal.id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
+                  }
+                  refresh()
+                }} style={{ background: likedIds.includes(joueurModal.id) ? '#ef444420' : '#1a1a1a', border: `1px solid ${likedIds.includes(joueurModal.id) ? '#ef4444' : '#333'}`, color: likedIds.includes(joueurModal.id) ? '#ef4444' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{likedIds.includes(joueurModal.id) ? '❤️ Like' : '🤍 Liker'}</button>
                 <button onClick={async () => { await (favoriIds.includes(joueurModal.id) ? supabase.from('video_favoris').delete().eq('user_id', user.id).eq('joueur_id', joueurModal.id) : supabase.from('video_favoris').insert({ user_id: user.id, joueur_id: joueurModal.id })); refresh() }} style={{ background: favoriIds.includes(joueurModal.id) ? '#f59e0b20' : '#1a1a1a', border: `1px solid ${favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#333'}`, color: favoriIds.includes(joueurModal.id) ? '#f59e0b' : '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{favoriIds.includes(joueurModal.id) ? '⭐ Favori' : '☆ Favoris'}</button>
                 {(isRecruteur || isClub) && (<button onClick={() => navigate(isClub ? '/club' : '/scout-club')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{isClub ? 'Mon Club →' : 'Scout Center →'}</button>)}
                 <button onClick={() => { setNotationCible(joueurModal); setJoueurModal(null) }} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>⭐ Noter</button>
