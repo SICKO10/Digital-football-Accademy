@@ -1021,7 +1021,7 @@ function DashboardJoueur() {
                 <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
               ) : (
                 notifications.map(n => (
-                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) window.location.hash = n.lien }}
+                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
                     style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                       {!n.lu && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', marginTop: '5px', flexShrink: 0 }} />}
@@ -1092,7 +1092,7 @@ function DashboardJoueur() {
                 <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
               ) : (
                 notifications.map(n => (
-                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false) }}
+                  <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
                     style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
                     <p style={{ margin: 0, fontSize: '12px', fontWeight: n.lu ? 400 : 700 }}>{n.titre}</p>
                     {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{n.contenu}</p>}
