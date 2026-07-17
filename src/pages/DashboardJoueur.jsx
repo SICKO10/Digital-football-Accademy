@@ -85,6 +85,10 @@ const IconBuilding = () => (
 function DashboardJoueur() {
   const navigate = useNavigate()
   const [profil, setProfil] = useState(null)
+  const [notifications, setNotifications] = useState([])
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const [notifPrefs, setNotifPrefs] = useState({ email_analyse: true, email_like: true, email_commentaire: true, email_message: true })
+  const [savingPrefs, setSavingPrefs] = useState(false)
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('dashboard')
@@ -188,6 +192,8 @@ function DashboardJoueur() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
     setUserId(user.id)
+    await chargerNotifications(user.id)
+    await chargerNotifPrefs(user.id)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
     const { data: coachData } = await supabase.from('profiles').select('*').eq('plan', 'coach')
@@ -216,6 +222,33 @@ function DashboardJoueur() {
     await chargerConversations(user.id)
     await chargerAffiliations(user.id)
     setLoading(false)
+  }
+
+  const chargerNotifications = async (uid) => {
+    const { data } = await supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(30)
+    setNotifications(data || [])
+  }
+
+  const chargerNotifPrefs = async (uid) => {
+    const { data } = await supabase.from('notification_preferences').select('*').eq('user_id', uid).maybeSingle()
+    if (data) setNotifPrefs(data)
+  }
+
+  const marquerNotifLue = async (notifId) => {
+    await supabase.from('notifications').update({ lu: true }).eq('id', notifId)
+    setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, lu: true } : n))
+  }
+
+  const marquerToutLu = async (uid) => {
+    await supabase.from('notifications').update({ lu: true }).eq('user_id', uid).eq('lu', false)
+    setNotifications(prev => prev.map(n => ({ ...n, lu: true })))
+  }
+
+  const sauvegarderNotifPrefs = async (newPrefs) => {
+    setSavingPrefs(true)
+    await supabase.from('notification_preferences').upsert({ user_id: userId, ...newPrefs }, { onConflict: 'user_id' })
+    setNotifPrefs(newPrefs)
+    setSavingPrefs(false)
   }
 
   const chargerAffiliations = async (uid) => {
