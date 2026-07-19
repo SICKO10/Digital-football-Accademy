@@ -8,6 +8,17 @@ import { ModalGrilleSeance } from '../components/GrilleSeance'
 const CATEGORIES_STANDARD = ['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
 const EQUIPES = ['A', 'B']
 
+const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
+function StatCard({ label, valeur, couleur }) {
+  const color = STAT_CARD_COLORS[couleur] || '#fff'
+  return (
+    <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+      <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+      <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color }}>{valeur}</p>
+    </div>
+  )
+}
+
 export default function DashboardClub() {
   const navigate = useNavigate()
   const [club, setClub] = useState(null)
@@ -52,6 +63,7 @@ export default function DashboardClub() {
   const [triClassement, setTriClassement] = useState('buts')
   const [effectifModal, setEffectifModal] = useState(null) // categorieId en cours d'affichage
   const [effectifVue, setEffectifVue] = useState('poste') // 'poste' | 'liste'
+  const [joueurDetail, setJoueurDetail] = useState(null) // id du joueur affiché en fiche individuelle
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
   const [loadingMatchs, setLoadingMatchs] = useState(false)
   const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
@@ -168,8 +180,8 @@ export default function DashboardClub() {
     const joueurIds = joueurs.map(j => j.id)
 
     const [{ data: statsMatch }, { data: presences }, { data: notes }] = await Promise.all([
-      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet').in('joueur_id', joueurIds),
-      supabase.from('presences_entrainement').select('joueur_id, statut, point_seance').in('joueur_id', joueurIds),
+      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', joueurIds),
+      supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainements(date)').in('joueur_id', joueurIds),
       supabase.from('notes_joueurs').select('joueur_id, technique, physique, mental, tactique').in('joueur_id', joueurIds),
     ])
 
@@ -181,14 +193,43 @@ export default function DashboardClub() {
       const presents = pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length
       const points = pr.filter(p => p.point_seance).length
       const noteGlobale = note ? ((note.technique + note.physique + note.mental + note.tactique) / 4) : null
+
+      // Matchs réellement joués (minutes > 0) — le résultat V/N/D vient du match lié, pas d'une
+      // colonne stats_match.victoire (existe en base mais jamais renseignée par l'app).
+      const smJoues = sm.filter(r => (r.minutes || 0) > 0)
+      const victoires = smJoues.filter(r => {
+        const me = r.matchs_equipe
+        return me && me.score_nous !== '' && me.score_nous !== null && parseInt(me.score_nous) > parseInt(me.score_eux)
+      }).length
+
+      // Présence par mois (pour les barres horizontales de la fiche individuelle)
+      const moisMap = {}
+      pr.forEach(p => {
+        const date = p.entrainements?.date
+        if (!date) return
+        const key = date.slice(0, 7)
+        if (!moisMap[key]) moisMap[key] = { present: 0, total: 0, points: 0 }
+        if (p.statut && p.statut !== 'non_saisi') {
+          moisMap[key].total++
+          if (p.statut === 'present' || p.statut === 'convoque') moisMap[key].present++
+        }
+        if (p.point_seance) moisMap[key].points++
+      })
+      const presenceMensuelle = Object.entries(moisMap).sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, s]) => ({ month, taux: s.total ? Math.round((s.present / s.total) * 100) : 0, present: s.present, total: s.total, points: s.points }))
+
       return {
         buts: sm.reduce((s, r) => s + (r.buts || 0), 0),
         passes: sm.reduce((s, r) => s + (r.passes_dec || 0), 0),
-        matchsJoues: sm.filter(r => (r.minutes || 0) > 0).length,
+        matchsJoues: smJoues.length,
         cleanSheets: sm.filter(r => r.clean_sheet).length,
+        cartonsJaunes: sm.filter(r => r.carton_jaune).length,
+        cartonsRouges: sm.filter(r => r.carton_rouge).length,
+        tauxVictoire: smJoues.length ? Math.round((victoires / smJoues.length) * 100) : null,
         tauxPresence: totalPresences ? Math.round((presents / totalPresences) * 100) : null,
         pointsSeance: points,
         noteGlobale,
+        presenceMensuelle,
       }
     }
 
@@ -752,8 +793,34 @@ export default function DashboardClub() {
               {(() => {
                 const matchsCat = clubMatchs[categorieActive] || []
                 const derniersMatchs = matchsCat.slice(0, 5)
+                const matchsAvecScore = matchsCat.filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_eux !== '' && m.score_eux !== null)
+                const nbMatchsJoues = matchsAvecScore.length
+                let victoires = 0, nuls = 0, defaites = 0, cleanSheets = 0
+                matchsAvecScore.forEach(m => {
+                  const nous = parseInt(m.score_nous) || 0
+                  const eux = parseInt(m.score_eux) || 0
+                  if (nous > eux) victoires++
+                  else if (nous < eux) defaites++
+                  else nuls++
+                  if (eux === 0) cleanSheets++
+                })
+                const tauxV = nbMatchsJoues ? Math.round(victoires / nbMatchsJoues * 100) : 0
+                const tauxN = nbMatchsJoues ? Math.round(nuls / nbMatchsJoues * 100) : 0
+                const tauxD = nbMatchsJoues ? Math.round(defaites / nbMatchsJoues * 100) : 0
+                const tauxCS = nbMatchsJoues ? Math.round(cleanSheets / nbMatchsJoues * 100) : 0
                 return (
                   <div style={{ marginBottom: '2rem' }}>
+                    {nbMatchsJoues > 0 && (
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                          <StatCard label="Matchs joués" valeur={nbMatchsJoues} />
+                          <StatCard label="Taux victoire" valeur={`${tauxV}%`} couleur="green" />
+                          <StatCard label="Taux nul" valeur={`${tauxN}%`} couleur="orange" />
+                          <StatCard label="Taux défaite" valeur={`${tauxD}%`} couleur="red" />
+                        </div>
+                        <StatCard label="Clean sheets" valeur={`${tauxCS}%`} />
+                      </div>
+                    )}
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement officiel</p>
                     {ligueUrls[categorieActive] ? (
                       <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
@@ -991,7 +1058,7 @@ export default function DashboardClub() {
         const catData = statsParCategorie[effectifModal]
         const cat = categories.find(c => c.id === effectifModal)
         return (
-          <div onClick={() => setEffectifModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 Effectif — {cat?.nom} {cat?.equipe}</p>
@@ -1004,7 +1071,7 @@ export default function DashboardClub() {
                       </button>
                     ))}
                   </div>
-                  <button onClick={() => setEffectifModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  <button onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
 
@@ -1033,7 +1100,7 @@ export default function DashboardClub() {
                         {joueursTries.map(j => {
                           const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
                           return (
-                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                            <tr key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ borderBottom: '1px solid #141414', cursor: 'pointer' }}>
                               <td style={{ padding: '10px 12px', textAlign: 'center', color: '#555', fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
@@ -1063,7 +1130,7 @@ export default function DashboardClub() {
                         <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: groupe.color }}>{groupe.label} ({joueursGroupe.length})</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
                           {joueursGroupe.map(j => (
-                            <div key={j.id} style={{ background: '#111', border: `1px solid ${groupe.color}20`, borderRadius: '12px', padding: '14px' }}>
+                            <div key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ background: '#111', border: `1px solid ${groupe.color}20`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                 <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
                                   {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
@@ -1098,6 +1165,93 @@ export default function DashboardClub() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Modal fiche individuelle joueur */}
+      {joueurDetail && effectifModal && (() => {
+        const catData = statsParCategorie[effectifModal]
+        const j = catData?.joueurs.find(x => x.id === joueurDetail)
+        if (!j) return null
+        const s = j.stats
+
+        const moisSet = new Set()
+        catData.joueurs.forEach(jj => jj.stats.presenceMensuelle.forEach(m => moisSet.add(m.month)))
+        const positionParMois = [...moisSet].sort().map(month => {
+          const classement = catData.joueurs
+            .map(jj => ({ id: jj.id, points: jj.stats.presenceMensuelle.find(m => m.month === month)?.points || 0 }))
+            .sort((a, b) => b.points - a.points)
+          const label = new Date(month + '-02').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+          return {
+            month, label,
+            rank: classement.findIndex(c => c.id === j.id) + 1,
+            total: classement.length,
+            points: classement.find(c => c.id === j.id)?.points || 0,
+          }
+        })
+
+        return (
+          <div onClick={() => setJoueurDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 2100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>{j.prenom} {j.nom}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{j.poste || '—'}{j.numero_maillot ? ` · #${j.numero_maillot}` : ''}</p>
+                </div>
+                <button onClick={() => setJoueurDetail(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
+                <StatCard label="⚽ Buts" valeur={s.buts} />
+                <StatCard label="🎯 Passes déc." valeur={s.passes} />
+                <StatCard label="🏃 Matchs joués" valeur={s.matchsJoues} />
+                <StatCard label="✅ % Victoires" valeur={s.tauxVictoire !== null ? `${s.tauxVictoire}%` : '—'} />
+                <StatCard label="🧤 Clean sheets" valeur={s.cleanSheets} />
+                <StatCard label="🟨 Cartons J." valeur={s.cartonsJaunes} />
+                <StatCard label="🟥 Cartons R." valeur={s.cartonsRouges} />
+                <StatCard label="📋 Présence globale" valeur={s.tauxPresence !== null ? `${s.tauxPresence}%` : '—'} />
+              </div>
+
+              {/* Présence par mois */}
+              {s.presenceMensuelle.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#a78bfa' }}>📅 Présence par mois</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                      const label = new Date(month + '-02').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+                      const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                      return (
+                        <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: '#555', width: '44px', flexShrink: 0 }}>{label}</span>
+                          <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
+                            <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px' }} />
+                          </div>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
+                          <span style={{ fontSize: '10px', color: '#444', flexShrink: 0 }}>{present}/{total}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Position points séance par mois */}
+              {positionParMois.length > 0 && (
+                <div>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>⭐ Position points séance par mois</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {positionParMois.map(({ month, label, rank, total, points }) => (
+                      <div key={month} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#111', borderRadius: '8px', padding: '8px 12px' }}>
+                        <span style={{ fontSize: '11px', color: '#555' }}>{label}</span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: rank === 1 ? '#fbbf24' : '#888' }}>#{rank}/{total} {rank === 1 ? '🏆' : ''}</span>
+                        <span style={{ fontSize: '11px', color: '#fbbf24' }}>{points} pts</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
