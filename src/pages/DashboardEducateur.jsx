@@ -168,6 +168,39 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
   )
 }
 
+const TerrainFoot = () => (
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '160px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+    {/* Fond blanc */}
+    <rect width="300" height="200" fill="white" stroke="#333" strokeWidth="2"/>
+    {/* Ligne médiane */}
+    <line x1="150" y1="0" x2="150" y2="200" stroke="#333" strokeWidth="1.5"/>
+    {/* Cercle central */}
+    <circle cx="150" cy="100" r="30" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <circle cx="150" cy="100" r="2" fill="#333"/>
+    {/* Surface de réparation gauche */}
+    <rect x="0" y="55" width="55" height="90" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface de but gauche */}
+    <rect x="0" y="75" width="18" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Point de penalty gauche */}
+    <circle cx="40" cy="100" r="2" fill="#333"/>
+    {/* Arc de cercle gauche */}
+    <path d="M 55 75 A 30 30 0 0 1 55 125" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface de réparation droite */}
+    <rect x="245" y="55" width="55" height="90" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface de but droite */}
+    <rect x="282" y="75" width="18" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Point de penalty droit */}
+    <circle cx="260" cy="100" r="2" fill="#333"/>
+    {/* Arc de cercle droit */}
+    <path d="M 245 75 A 30 30 0 0 0 245 125" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Coins arrondis (arcs de corner) */}
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 290 0 A 10 10 0 0 1 300 10" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 190 A 10 10 0 0 0 10 200" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 300 190 A 10 10 0 0 1 290 200" fill="none" stroke="#333" strokeWidth="1"/>
+  </svg>
+)
+
 function FicheSeancePrint({ fiche, categorieLabel }) {
   return createPortal(
     <div id="fiche-print">
@@ -181,7 +214,9 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
           <span>Objectif général : {fiche.objectif_general || '—'}</span>
         </div>
       </div>
-      {fiche.procedes.map((p, i) => (
+      {fiche.procedes.map((p, i) => {
+        const consignesLignes = (p.consignes || '').split('\n')
+        return (
         <div className="procede-block" key={i}>
           <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
           <div className="procede-grid">
@@ -189,11 +224,20 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
             <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
             <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
             <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Consignes</label><div className="valeur">{p.consignes}</div></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><TerrainFoot /></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+              <label>Consignes</label>
+              {[0, 1, 2, 3].map(idx => (
+                <div key={idx} style={{ borderBottom: '1px solid #999', minHeight: '18px', marginBottom: '6px' }}>
+                  {consignesLignes[idx] || ''}
+                </div>
+              ))}
+            </div>
             <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>,
     document.body
   )
