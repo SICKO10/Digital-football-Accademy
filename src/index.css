@@ -27,11 +27,14 @@ body {
     color: black;
     background: white;
   }
-  .fiche-header { margin-bottom: 20px; }
-  .fiche-header h2 { font-size: 18px; margin-bottom: 8px; }
-  .fiche-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 13px; }
-  .fiche-meta span { border-bottom: 1px solid #000; padding-bottom: 4px; }
-  .procede-block { border: 1px solid #333; margin-bottom: 16px; padding: 12px; page-break-inside: avoid; }
+  .fiche-header { margin-bottom: 14px; }
+  .fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .fiche-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+  .fiche-row-2 { grid-template-columns: 1fr 2fr; }
+  .fiche-champ { border-bottom: 1px solid #000; padding-bottom: 4px; }
+  .fiche-champ label { font-weight: bold; display: block; font-size: 10px; text-transform: uppercase; }
+  .procedes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .procede-block { border: 1px solid #333; padding: 12px; page-break-inside: avoid; }
   .procede-block h3 { font-size: 14px; margin-bottom: 10px; }
   .procede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
   .procede-field label { font-weight: bold; display: block; margin-bottom: 2px; }

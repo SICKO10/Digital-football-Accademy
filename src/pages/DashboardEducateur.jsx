@@ -169,7 +169,7 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
 }
 
 const TerrainFoot = () => (
-  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '160px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
     <rect width="300" height="200" fill="white" stroke="#333" strokeWidth="2"/>
     {/* Ligne médiane */}
@@ -201,43 +201,125 @@ const TerrainFoot = () => (
   </svg>
 )
 
+const DemiTerrain = () => (
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+    <rect width="299" height="199" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    {/* Ligne centrale (bord droit, pointillé) */}
+    <line x1="299" y1="0" x2="299" y2="200" stroke="#333" strokeWidth="1.5" strokeDasharray="6,3"/>
+    {/* Surface de réparation */}
+    <rect x="0" y="50" width="90" height="100" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface de but */}
+    <rect x="0" y="70" width="28" height="60" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Point de penalty */}
+    <circle cx="62" cy="100" r="2.5" fill="#333"/>
+    {/* Arc de penalty */}
+    <path d="M 90 70 A 38 38 0 0 1 90 130" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Demi-cercle central (bord droit) */}
+    <path d="M 299 65 A 40 40 0 0 0 299 135" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Arcs de corner */}
+    <path d="M 0 15 A 15 15 0 0 1 15 0" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 185 A 15 15 0 0 0 15 200" fill="none" stroke="#333" strokeWidth="1"/>
+  </svg>
+)
+
+const DemiTerrainFutsal = () => (
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    {/* Ligne centrale pointillée */}
+    <line x1="299" y1="0" x2="299" y2="180" stroke="#333" strokeWidth="1.5" strokeDasharray="6,3"/>
+    {/* Zone de but (rectangle) */}
+    <rect x="0" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface de réparation arrondie (demi-cercle r=65) */}
+    <path d="M 0 25 A 80 80 0 0 1 0 155" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Point de penalty 6m */}
+    <circle cx="48" cy="90" r="2.5" fill="#333"/>
+    {/* Point de penalty 10m */}
+    <circle cx="80" cy="90" r="2.5" fill="#333"/>
+    {/* Demi-cercle central bord droit */}
+    <path d="M 299 60 A 40 40 0 0 0 299 120" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Arcs de corner (petits) */}
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke="#333" strokeWidth="1"/>
+  </svg>
+)
+
+const TerrainFutsal = () => (
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    {/* Ligne médiane */}
+    <line x1="150" y1="0" x2="150" y2="180" stroke="#333" strokeWidth="1.5"/>
+    {/* Cercle central */}
+    <circle cx="150" cy="90" r="30" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <circle cx="150" cy="90" r="2.5" fill="#333"/>
+    {/* Zone de but gauche */}
+    <rect x="0" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface arrondie gauche */}
+    <path d="M 0 20 A 80 80 0 0 1 0 160" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Points penalty gauche */}
+    <circle cx="48" cy="90" r="2.5" fill="#333"/>
+    <circle cx="80" cy="90" r="2.5" fill="#333"/>
+    {/* Zone de but droite */}
+    <rect x="274" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Surface arrondie droite */}
+    <path d="M 299 20 A 80 80 0 0 0 299 160" fill="none" stroke="#333" strokeWidth="1.5"/>
+    {/* Points penalty droite */}
+    <circle cx="251" cy="90" r="2.5" fill="#333"/>
+    <circle cx="219" cy="90" r="2.5" fill="#333"/>
+    {/* Arcs de corner */}
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 290 0 A 10 10 0 0 1 299 10" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 299 170 A 10 10 0 0 1 290 180" fill="none" stroke="#333" strokeWidth="1"/>
+  </svg>
+)
+
+const getTerrainComponent = (numeroProcede, sport) => {
+  const estDemi = numeroProcede <= 2
+  if (sport === 'futsal') return estDemi ? <DemiTerrainFutsal /> : <TerrainFutsal />
+  return estDemi ? <DemiTerrain /> : <TerrainFoot />
+}
+
 function FicheSeancePrint({ fiche, categorieLabel }) {
   return createPortal(
     <div id="fiche-print">
       <div className="fiche-header">
-        <h2>{fiche.theme || 'Fiche de séance'}</h2>
-        <div className="fiche-meta">
-          <span>Date : {fiche.date || '—'}</span>
-          <span>Catégorie : {categorieLabel || '—'}</span>
-          <span>Nb joueurs : {fiche.nb_joueurs || '—'}</span>
-          <span>Durée totale : {fiche.duree_totale || '—'}</span>
-          <span>Objectif général : {fiche.objectif_general || '—'}</span>
+        <div className="fiche-row fiche-row-1">
+          <div className="fiche-champ large"><label>Thème</label>{fiche.theme || '—'}</div>
+          <div className="fiche-champ"><label>Date</label>{fiche.date || '—'}</div>
+          <div className="fiche-champ"><label>Catégorie</label>{categorieLabel || '—'}</div>
+          <div className="fiche-champ"><label>Nb joueurs</label>{fiche.nb_joueurs || '—'}</div>
+        </div>
+        <div className="fiche-row fiche-row-2">
+          <div className="fiche-champ"><label>Durée totale</label>{fiche.duree_totale || '—'}</div>
+          <div className="fiche-champ large"><label>Objectif général</label>{fiche.objectif_general || '—'}</div>
         </div>
       </div>
-      {fiche.procedes.map((p, i) => {
-        const consignesLignes = (p.consignes || '').split('\n')
-        return (
-        <div className="procede-block" key={i}>
-          <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
-          <div className="procede-grid">
-            <div className="procede-field"><label>Durée</label><div className="valeur">{p.duree}</div></div>
-            <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><TerrainFoot /></div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Consignes</label>
-              {[0, 1, 2, 3].map(idx => (
-                <div key={idx} style={{ borderBottom: '1px solid #999', minHeight: '18px', marginBottom: '6px' }}>
-                  {consignesLignes[idx] || ''}
-                </div>
-              ))}
+      <div className="procedes-grid">
+        {fiche.procedes.map((p, i) => {
+          const consignesLignes = (p.consignes || '').split('\n')
+          return (
+          <div className="procede-block" key={i}>
+            <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
+            <div className="procede-grid">
+              <div className="procede-field"><label>Durée</label><div className="valeur">{p.duree}</div></div>
+              <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>{getTerrainComponent(p.numero, fiche.sport)}</div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                <label>Consignes</label>
+                {[0, 1, 2, 3].map(idx => (
+                  <div key={idx} style={{ borderBottom: '1px solid #999', minHeight: '18px', marginBottom: '6px' }}>
+                    {consignesLignes[idx] || ''}
+                  </div>
+                ))}
+              </div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
             </div>
-            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
           </div>
-        </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>,
     document.body
   )
@@ -453,6 +535,7 @@ export default function DashboardEducateur() {
     }))
   }
   const [fiche, setFiche] = useState(ficheVide)
+  const [sport, setSport] = useState('football')
   const [savingFiche, setSavingFiche] = useState(false)
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
 
@@ -606,7 +689,7 @@ export default function DashboardEducateur() {
       date_seance: fiche.date || null,
       categorie_tactique: fiche.categorie_tactique || null,
       saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-      fiche_seance: fiche,
+      fiche_seance: { ...fiche, sport },
       origine: 'ouvert',
       statut: 'archivee',
     })
@@ -2849,6 +2932,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </optgroup>
                   ))}
                 </select>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSport('football')}
+                    style={{ flex: 1, background: sport === 'football' ? '#4ade80' : '#0a0a0a', color: sport === 'football' ? '#000' : '#666', border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    ⚽ Football
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSport('futsal')}
+                    style={{ flex: 1, background: sport === 'futsal' ? '#4ade80' : '#0a0a0a', color: sport === 'futsal' ? '#000' : '#666', border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    🏟️ Futsal
+                  </button>
+                </div>
                 <input
                   placeholder="Nombre de joueurs"
                   value={fiche.nb_joueurs}
@@ -2941,7 +3040,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   🖨️ Imprimer la fiche
                 </button>
                 <button
-                  onClick={() => { setFiche(ficheVide); window.print() }}
+                  onClick={() => { setFiche(ficheVide); setSport('football'); window.print() }}
                   style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   📄 Fiche vierge
@@ -3684,7 +3783,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       </div>
     )}
 
-    <FicheSeancePrint fiche={fiche} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
+    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
 
     </>
   )
