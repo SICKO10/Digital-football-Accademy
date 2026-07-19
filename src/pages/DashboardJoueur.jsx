@@ -2214,44 +2214,57 @@ function DashboardJoueur() {
                   const pe = a.profil_educateur
                   const isAccepted = a.statut === 'accepte'
                   return (
-                    <div key={a.id} style={{ background: '#111', border: `1px solid ${isAccepted ? '#4ade8025' : '#2a2a2a'}`, borderRadius: '14px', padding: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: isAccepted ? '14px' : '0' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: isAccepted ? '#4ade8020' : '#1a1a1a', border: `2px solid ${isAccepted ? '#4ade8040' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: isAccepted ? '#4ade80' : '#555', flexShrink: 0 }}>
-                          {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                    <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
+                      {isAccepted ? (
+                        <div style={{ background: 'linear-gradient(135deg, #14532d, #166534)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
+                            {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '17px' }}>{pe?.prenom} {pe?.nom}</div>
+                            <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
+                            <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                              <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
+                                ✅ Affilié
+                              </span>
+                              {pe?.diplome && (
+                                <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                      ) : (
+                        <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#555', flexShrink: 0 }}>
+                            {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                          </div>
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                            background: a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
+                            color: a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
+                            border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
+                            {a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
+                          </span>
                         </div>
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                          background: isAccepted ? '#4ade8015' : a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
-                          color: isAccepted ? '#4ade80' : a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
-                          border: `1px solid ${isAccepted ? '#4ade8030' : a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
-                          {isAccepted ? '✅ Affilié' : a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
-                        </span>
-                      </div>
+                      )}
 
                       {isAccepted && (
-                        <>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: a.equipe_joueur_id ? '12px' : '0' }}>
-                            {pe?.diplome && (
-                              <span style={{ background: pe.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${pe.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: pe.diplome_verifie ? '#4ade80' : '#555', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>
-                                {pe.diplome_verifie ? '✅' : '🎓'} {pe.diplome}
-                              </span>
-                            )}
+                        <div style={{ padding: '16px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '4px' }}>
+                            <button
+                              onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
+                              disabled={!a.equipe_joueur_id || statsLoading[a.id]}
+                              style={{ background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
+                              {statsLoading[a.id] ? '...' : '📊 Mes stats'}
+                            </button>
                             <button
                               onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
-                              style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
+                              style={{ background: '#1f2937', color: 'white', border: '1px solid #374151', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
                               ⭐ Évaluer
                             </button>
-                            {a.equipe_joueur_id && !statsJoueur[a.id] && (
-                              <button
-                                onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
-                                disabled={statsLoading[a.id]}
-                                style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '20px', cursor: 'pointer' }}>
-                                {statsLoading[a.id] ? '...' : '📊 Mes stats'}
-                              </button>
-                            )}
                           </div>
 
                           {/* Stats chargées */}
@@ -2439,7 +2452,7 @@ function DashboardJoueur() {
                               ⏳ Ton éducateur doit encore te lier à ton dossier dans l'effectif pour accéder à tes stats.
                             </p>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   )
