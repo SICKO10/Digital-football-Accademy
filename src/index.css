@@ -19,8 +19,20 @@ body {
   display: none;
 }
 
-.sous-onglets::-webkit-scrollbar {
+.sous-onglets::-webkit-scrollbar,
+.filtres-scroll::-webkit-scrollbar {
   display: none;
+}
+
+@media (max-width: 768px) {
+  .tableau-classement {
+    width: 100%;
+    table-layout: fixed;
+  }
+  .tableau-classement .col-rang { width: 8%; }
+  .tableau-classement .col-joueur { width: 42%; }
+  .tableau-classement .col-poste { width: 30%; }
+  .tableau-classement .col-stat { width: 20%; }
 }
 
 @media print {

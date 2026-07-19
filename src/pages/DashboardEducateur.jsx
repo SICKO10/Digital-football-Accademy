@@ -1732,9 +1732,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   return (
                     <div>
                       {/* Sélecteur de critère */}
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                      <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', marginBottom: '1.5rem' }}>
                         {TRIS.map(t => (
-                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ background: statsTri === t.key ? t.color + '20' : '#111', border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
+                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : '#111', border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
                         ))}
                       </div>
                       {/* Podium top 3 */}
@@ -1763,7 +1763,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       )}
                       {/* Liste complète */}
                       <div style={{ ...st.card, overflow: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                        <table className="tableau-classement" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <colgroup>
+                            <col className="col-rang" />
+                            <col className="col-joueur" />
+                            <col className="col-poste" />
+                            <col className="col-stat" />
+                          </colgroup>
                           <thead>
                             <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                               <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
