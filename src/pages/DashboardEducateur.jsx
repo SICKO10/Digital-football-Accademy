@@ -2921,18 +2921,23 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   placeholder="Thème / intitulé de la séance"
                   value={fiche.theme}
                   onChange={e => setFiche(f => ({ ...f, theme: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
-                <input
-                  type="date"
-                  value={fiche.date}
-                  onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
-                />
+                <div>
+                  <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px', display: 'block' }}>
+                    Date de la séance
+                  </label>
+                  <input
+                    type="date"
+                    value={fiche.date}
+                    onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
+                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
                 <select
                   value={fiche.categorie_tactique}
                   onChange={e => setFiche(f => ({ ...f, categorie_tactique: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">Choisis une catégorie tactique</option>
                   {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
@@ -2963,20 +2968,20 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   placeholder="Nombre de joueurs"
                   value={fiche.nb_joueurs}
                   onChange={e => setFiche(f => ({ ...f, nb_joueurs: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <input
                   placeholder="Durée totale (ex: 90 min)"
                   value={fiche.duree_totale}
                   onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <textarea
                   placeholder="Objectif général de la séance"
                   value={fiche.objectif_general}
                   onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
                   rows={2}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -2988,20 +2993,20 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       placeholder="Titre du procédé"
                       value={p.titre}
                       onChange={e => updateProcede(i, 'titre', e.target.value)}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                     />
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div className="procede-duree-joueurs" style={{ display: 'flex', gap: '10px' }}>
                       <input
                         placeholder="Durée (min)"
                         value={p.duree}
                         onChange={e => updateProcede(i, 'duree', e.target.value)}
-                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                       <input
                         placeholder="Nombre de joueurs"
                         value={p.nb_joueurs}
                         onChange={e => updateProcede(i, 'nb_joueurs', e.target.value)}
-                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
                     <textarea
@@ -3009,28 +3014,28 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       value={p.but}
                       onChange={e => updateProcede(i, 'but', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder="Organisation"
                       value={p.organisation}
                       onChange={e => updateProcede(i, 'organisation', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder="Consignes"
                       value={p.consignes}
                       onChange={e => updateProcede(i, 'consignes', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder="Variables / progressions"
                       value={p.variables}
                       onChange={e => updateProcede(i, 'variables', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>

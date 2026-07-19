@@ -30,10 +30,20 @@ body {
   gap: 10px;
 }
 
+input[type="date"] {
+  color-scheme: dark;
+}
+
 @media (max-width: 768px) {
   .criteres-grid {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+  }
+  .procede-duree-joueurs {
+    flex-direction: column;
+  }
+  .procede-duree-joueurs input {
+    width: 100%;
   }
   .tableau-classement {
     width: 100%;
