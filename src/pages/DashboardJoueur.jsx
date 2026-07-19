@@ -2293,7 +2293,6 @@ function DashboardJoueur() {
                                           <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
                                           <div style={{ display: 'flex', alignItems: 'center' }}>
                                             <span style={{ fontSize: '20px', fontWeight: 800, color: stat.color }}>{stat.value}</span>
-                                            <RankBadge rank={stat.rank?.rank} total={stat.rank?.total} />
                                           </div>
                                         </div>
                                       </div>
