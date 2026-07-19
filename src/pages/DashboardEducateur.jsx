@@ -226,6 +226,8 @@ export default function DashboardEducateur() {
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '' })
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
+  const [generatingPlanDetaille, setGeneratingPlanDetaille] = useState({}) // { [entrainementId]: boolean }
+  const [planDetailleError, setPlanDetailleError] = useState({}) // { [entrainementId]: string }
   const [showPlanificateur, setShowPlanificateur] = useState(false)
   const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
@@ -799,6 +801,56 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     await supabase.from('presences_entrainement').delete().eq('entrainement_id', id)
     await supabase.from('entrainements').delete().eq('id', id)
     setEntrainements(prev => prev.filter(e => e.id !== id))
+  }
+
+  const genererPlanDetaille = async (entrainement) => {
+    const id = entrainement.id
+    setGeneratingPlanDetaille(prev => ({ ...prev, [id]: true }))
+    setPlanDetailleError(prev => ({ ...prev, [id]: null }))
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const theme = entrainement.description?.trim() || 'Entraînement général'
+      const prompt = `Tu es un éducateur de football expérimenté qui prépare le contenu détaillé d'une séance d'entraînement.
+
+Thème de la séance : "${theme}"
+
+Construis une séance complète avec un échauffement et 4 exercices progressifs autour de ce thème, adaptés à un groupe de jeunes footballeurs.
+
+Réponds UNIQUEMENT avec du JSON valide, sans texte autour, sans markdown, respectant exactement cette structure :
+{
+  "echauffement": { "titre": "", "duree": 15, "objectif": "", "organisation": "", "consignes": "" },
+  "exercices": [
+    { "titre": "", "duree": 20, "objectif": "", "organisation": "", "consignes": "", "variables": "" },
+    { "titre": "", "duree": 20, "objectif": "", "organisation": "", "consignes": "", "variables": "" },
+    { "titre": "", "duree": 20, "objectif": "", "organisation": "", "consignes": "", "variables": "" },
+    { "titre": "", "duree": 20, "objectif": "", "organisation": "", "consignes": "", "variables": "" }
+  ]
+}
+
+"duree" est en minutes (nombre). "organisation" décrit l'espace/le dispositif. "consignes" décrit les règles données aux joueurs. "variables" (uniquement pour les exercices) propose une variante pour complexifier ou simplifier.`
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4 } })
+        }
+      )
+      const data = await response.json()
+      if (data.error) throw new Error(data.error.message)
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
+      const planDetaille = JSON.parse(jsonMatch[0])
+
+      await supabase.from('entrainements').update({ plan_detaille: planDetaille }).eq('id', id)
+      setEntrainements(prev => prev.map(e => e.id === id ? { ...e, plan_detaille: planDetaille } : e))
+    } catch (e) {
+      setPlanDetailleError(prev => ({ ...prev, [id]: e.message }))
+    }
+    setGeneratingPlanDetaille(prev => ({ ...prev, [id]: false }))
   }
 
   const genererSaison = async () => {
@@ -2305,6 +2357,41 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                     {ouvert && (
                       <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
+                        {/* ── Contenu détaillé de la séance (échauffement + exercices) ── */}
+                        <div style={{ marginBottom: '16px' }}>
+                          {e.plan_detaille ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa30', borderRadius: '10px', padding: '12px 14px' }}>
+                                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🔥 Échauffement — {e.plan_detaille.echauffement?.duree} min</p>
+                                <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.plan_detaille.echauffement?.titre}</p>
+                                {e.plan_detaille.echauffement?.objectif && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}><strong>Objectif :</strong> {e.plan_detaille.echauffement.objectif}</p>}
+                                {e.plan_detaille.echauffement?.organisation && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#888' }}><strong>Organisation :</strong> {e.plan_detaille.echauffement.organisation}</p>}
+                                {e.plan_detaille.echauffement?.consignes && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#888' }}><strong>Consignes :</strong> {e.plan_detaille.echauffement.consignes}</p>}
+                              </div>
+                              {(e.plan_detaille.exercices || []).map((ex, i) => (
+                                <div key={i} style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '10px', padding: '12px 14px' }}>
+                                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>⚽ Exercice {i + 1} — {ex.duree} min</p>
+                                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{ex.titre}</p>
+                                  {ex.objectif && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}><strong>Objectif :</strong> {ex.objectif}</p>}
+                                  {ex.organisation && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#888' }}><strong>Organisation :</strong> {ex.organisation}</p>}
+                                  {ex.consignes && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#888' }}><strong>Consignes :</strong> {ex.consignes}</p>}
+                                  {ex.variables && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#888' }}><strong>Variante :</strong> {ex.variables}</p>}
+                                </div>
+                              ))}
+                              <button onClick={() => genererPlanDetaille(e)} disabled={generatingPlanDetaille[e.id]}
+                                style={{ ...st.btnSecondary, alignSelf: 'flex-start', opacity: generatingPlanDetaille[e.id] ? 0.5 : 1 }}>
+                                {generatingPlanDetaille[e.id] ? '⏳ Régénération...' : '🔄 Régénérer le contenu'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => genererPlanDetaille(e)} disabled={generatingPlanDetaille[e.id]}
+                              style={{ ...st.btnSolid, opacity: generatingPlanDetaille[e.id] ? 0.5 : 1 }}>
+                              {generatingPlanDetaille[e.id] ? '⏳ Génération en cours...' : '🪄 Générer le contenu de la séance'}
+                            </button>
+                          )}
+                          {planDetailleError[e.id] && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px' }}>⚠️ {planDetailleError[e.id]}</p>}
+                        </div>
+
                         {joueurs.length === 0 ? (
                           <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Ajoute des joueurs dans "Mon équipe" pour saisir les présences.</p>
                         ) : (
