@@ -489,7 +489,7 @@ export default function DashboardEducateur() {
       commentaire_perso: uploadSeanceOuverteForm.commentaire_perso || null,
       origine: 'ouvert',
       statut: 'en_attente',
-      saison: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+      saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
     })
     setUploadingSeanceOuverte(false)
     if (error) {
