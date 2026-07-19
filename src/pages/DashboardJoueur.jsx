@@ -147,6 +147,7 @@ function DashboardJoueur() {
   const [clubsLoading, setClubsLoading] = useState(false)
   const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [menuOuvert, setMenuOuvert] = useState(false)
 
   // Mon Équipe (affiliation éducateur)
   const [mesAffiliations, setMesAffiliations] = useState([])
@@ -956,6 +957,12 @@ function DashboardJoueur() {
     { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length },
   ]
 
+  // Bottom nav mobile : 4 items fixes + bouton "Plus" ouvrant les items restants dans un bottom sheet
+  const idsPrincipaux = ['dashboard', 'profil', 'analyses', 'coach']
+  const itemsPrincipaux = navItems.filter(item => idsPrincipaux.includes(item.id))
+  const itemsSecondaires = navItems.filter(item => !idsPrincipaux.includes(item.id))
+  const badgeSecondaireTotal = itemsSecondaires.reduce((sum, item) => sum + (item.badge > 0 ? item.badge : 0), 0)
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
       <style>{`
@@ -1053,10 +1060,39 @@ function DashboardJoueur() {
       </aside>}
 
       {/* ── BOTTOM NAV (mobile only) ── */}
+      {isMobile && menuOuvert && (
+        <div
+          onClick={() => setMenuOuvert(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 140 }}
+        />
+      )}
+
+      {isMobile && menuOuvert && (
+        <div style={{
+          position: 'fixed', bottom: '70px', left: 0, right: 0,
+          background: '#1a1a1a', borderRadius: '16px 16px 0 0',
+          padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', zIndex: 150,
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px',
+        }}>
+          {itemsSecondaires.map(item => (
+            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => { setOnglet(item.id); setMenuOuvert(false) }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 4px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#888', cursor: 'pointer', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
+              {item.badge > 0 && (
+                <span style={{ position: 'absolute', top: '0', right: 'calc(50% - 20px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.badge}
+                </span>
+              )}
+              {item.icon}
+              <span style={{ fontSize: '11px', fontWeight: onglet === item.id ? 700 : 400, letterSpacing: '0.2px', textAlign: 'center' }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {isMobile && (
         <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', borderTop: '1px solid #222', display: 'flex', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          {navItems.map(item => (
-            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => setOnglet(item.id)}
+          {itemsPrincipaux.map(item => (
+            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => { setOnglet(item.id); setMenuOuvert(false) }}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '10px 4px 8px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#555', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.15s', position: 'relative' }}>
               {item.badge > 0 && (
                 <span style={{ position: 'absolute', top: '6px', right: 'calc(50% - 18px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1067,6 +1103,16 @@ function DashboardJoueur() {
               <span style={{ fontSize: '10px', fontWeight: onglet === item.id ? 700 : 400, letterSpacing: '0.2px' }}>{item.label}</span>
             </button>
           ))}
+          <button className="dj-bottom-nav-btn" onClick={() => setMenuOuvert(m => !m)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '10px 4px 8px', background: 'transparent', border: 'none', color: menuOuvert ? '#4ade80' : '#555', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.15s', position: 'relative' }}>
+            {badgeSecondaireTotal > 0 && (
+              <span style={{ position: 'absolute', top: '6px', right: 'calc(50% - 18px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {badgeSecondaireTotal}
+              </span>
+            )}
+            <span style={{ fontSize: '18px', lineHeight: 1 }}>· · ·</span>
+            <span style={{ fontSize: '10px', fontWeight: menuOuvert ? 700 : 400, letterSpacing: '0.2px' }}>Plus</span>
+          </button>
         </nav>
       )}
 
