@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Tactipad from '../components/Tactipad'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -1207,6 +1208,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'matchs', label: '🏟️ Compétition' },
     { key: 'entrainements', label: '🏃 Entraînements' },
     { key: 'mes_seances', label: '🎥 Séances' },
+    { key: 'tactipad', label: '🎨 Tactipad' },
     { key: 'notes', label: '📝 Évaluations' },
     { key: 'recrutement', label: '🔍 Recrutement' },
     { key: 'profil', label: '👤 Mon profil' },
@@ -3151,6 +3153,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 )
               })()
             )}
+          </div>
+        )}
+
+        {activeSection === 'tactipad' && (
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 Tactipad</h1>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Dessine tes schémas tactiques : placements, mouvements de joueurs, exercices.</p>
+            <Tactipad userId={userId} />
           </div>
         )}
 
