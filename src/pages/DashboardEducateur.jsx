@@ -1861,7 +1861,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   return (
                     <div>
                       {/* ── % par catégorie en haut ── */}
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', width: '100%', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box', marginBottom: '1.5rem' }}>
                         {(() => {
                           const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
                           return [
