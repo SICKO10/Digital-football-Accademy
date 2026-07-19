@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
@@ -164,6 +165,37 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
         <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
       </div>
     </div>
+  )
+}
+
+function FicheSeancePrint({ fiche, categorieLabel }) {
+  return createPortal(
+    <div id="fiche-print">
+      <div className="fiche-header">
+        <h2>{fiche.theme || 'Fiche de séance'}</h2>
+        <div className="fiche-meta">
+          <span>Date : {fiche.date || '—'}</span>
+          <span>Catégorie : {categorieLabel || '—'}</span>
+          <span>Nb joueurs : {fiche.nb_joueurs || '—'}</span>
+          <span>Durée totale : {fiche.duree_totale || '—'}</span>
+          <span>Objectif général : {fiche.objectif_general || '—'}</span>
+        </div>
+      </div>
+      {fiche.procedes.map((p, i) => (
+        <div className="procede-block" key={i}>
+          <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
+          <div className="procede-grid">
+            <div className="procede-field"><label>Durée</label><div className="valeur">{p.duree}</div></div>
+            <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Consignes</label><div className="valeur">{p.consignes}</div></div>
+            <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
+          </div>
+        </div>
+      ))}
+    </div>,
+    document.body
   )
 }
 
@@ -368,6 +400,16 @@ export default function DashboardEducateur() {
   // Onglet "Mes séances" (séances ouvertes, hors flux club)
   const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
   const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
+  const [dossiersOuverts, setDossiersOuverts] = useState({})
+  const [modeSeance, setModeSeance] = useState('enregistrer')
+  const ficheVide = {
+    theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
+    procedes: Array(4).fill(null).map((_, i) => ({
+      numero: i + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: ''
+    }))
+  }
+  const [fiche, setFiche] = useState(ficheVide)
+  const [savingFiche, setSavingFiche] = useState(false)
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
 
   const chargerProfilEdu = async (uid) => {
@@ -498,6 +540,33 @@ export default function DashboardEducateur() {
       return
     }
     setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
+    await chargerMesSeancesOuvertes(userId)
+  }
+
+  const updateProcede = (index, field, value) => {
+    const newProcedes = [...fiche.procedes]
+    newProcedes[index] = { ...newProcedes[index], [field]: value }
+    setFiche({ ...fiche, procedes: newProcedes })
+  }
+
+  const sauvegarderFiche = async () => {
+    setSavingFiche(true)
+    const { error } = await supabase.from('seances_uploadees').insert({
+      educateur_id: userId,
+      theme: fiche.theme || null,
+      date_seance: fiche.date || null,
+      categorie_tactique: fiche.categorie_tactique || null,
+      saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+      fiche_seance: fiche,
+      origine: 'ouvert',
+      statut: 'archivee',
+    })
+    setSavingFiche(false)
+    if (error) {
+      console.error('Erreur insertion fiche:', error)
+      alert('Erreur lors de l\'enregistrement : ' + error.message)
+      return
+    }
     await chargerMesSeancesOuvertes(userId)
   }
 
@@ -2613,6 +2682,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
           <div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <button
+                onClick={() => setModeSeance('enregistrer')}
+                style={{ background: modeSeance === 'enregistrer' ? '#4ade80' : '#1a1a1a', color: modeSeance === 'enregistrer' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                📥 Enregistrer une séance
+              </button>
+              <button
+                onClick={() => setModeSeance('rediger')}
+                style={{ background: modeSeance === 'rediger' ? '#4ade80' : '#1a1a1a', color: modeSeance === 'rediger' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                ✏️ Rédiger une fiche
+              </button>
+            </div>
+
+            {modeSeance === 'enregistrer' && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 Enregistrer une séance</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2679,6 +2764,134 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </button>
               </div>
             </div>
+            )}
+
+            {modeSeance === 'rediger' && (
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ Rédiger une fiche de séance</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                <input
+                  placeholder="Thème / intitulé de la séance"
+                  value={fiche.theme}
+                  onChange={e => setFiche(f => ({ ...f, theme: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <input
+                  type="date"
+                  value={fiche.date}
+                  onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <select
+                  value={fiche.categorie_tactique}
+                  onChange={e => setFiche(f => ({ ...f, categorie_tactique: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                >
+                  <option value="">Choisis une catégorie tactique</option>
+                  {CATEGORIES_TACTIQUES.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="Nombre de joueurs"
+                  value={fiche.nb_joueurs}
+                  onChange={e => setFiche(f => ({ ...f, nb_joueurs: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <input
+                  placeholder="Durée totale (ex: 90 min)"
+                  value={fiche.duree_totale}
+                  onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <textarea
+                  placeholder="Objectif général de la séance"
+                  value={fiche.objectif_general}
+                  onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
+                  rows={2}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              {fiche.procedes.map((p, i) => (
+                <div key={i} style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: '#4ade80' }}>Procédé {p.numero}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input
+                      placeholder="Titre du procédé"
+                      value={p.titre}
+                      onChange={e => updateProcede(i, 'titre', e.target.value)}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                    />
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        placeholder="Durée (min)"
+                        value={p.duree}
+                        onChange={e => updateProcede(i, 'duree', e.target.value)}
+                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                      />
+                      <input
+                        placeholder="Nombre de joueurs"
+                        value={p.nb_joueurs}
+                        onChange={e => updateProcede(i, 'nb_joueurs', e.target.value)}
+                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px' }}
+                      />
+                    </div>
+                    <textarea
+                      placeholder="But"
+                      value={p.but}
+                      onChange={e => updateProcede(i, 'but', e.target.value)}
+                      rows={2}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                    <textarea
+                      placeholder="Organisation"
+                      value={p.organisation}
+                      onChange={e => updateProcede(i, 'organisation', e.target.value)}
+                      rows={2}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                    <textarea
+                      placeholder="Consignes"
+                      value={p.consignes}
+                      onChange={e => updateProcede(i, 'consignes', e.target.value)}
+                      rows={2}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                    <textarea
+                      placeholder="Variables / progressions"
+                      value={p.variables}
+                      onChange={e => updateProcede(i, 'variables', e.target.value)}
+                      rows={2}
+                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
+                <button
+                  onClick={sauvegarderFiche}
+                  disabled={savingFiche}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
+                >
+                  {savingFiche ? 'Enregistrement...' : '💾 Sauvegarder la fiche'}
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  style={{ background: 'transparent', color: '#60a5fa', border: '1px solid #60a5fa40', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                >
+                  🖨️ Imprimer la fiche
+                </button>
+                <button
+                  onClick={() => { setFiche(ficheVide); window.print() }}
+                  style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                >
+                  📄 Fiche vierge
+                </button>
+              </div>
+            </div>
+            )}
 
             <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 Mes séances ({mesSeancesOuvertes.length})</p>
             {mesSeancesOuvertes.length === 0 ? (
@@ -2693,9 +2906,17 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 }, {})
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {Object.entries(seancesParCategorie).map(([categorie, items]) => (
+                    {Object.entries(seancesParCategorie).map(([categorie, items]) => {
+                      const ouvert = !!dossiersOuverts[categorie]
+                      return (
                       <div key={categorie}>
-                        <p style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px' }}>📁 {categorie} ({items.length})</p>
+                        <p
+                          onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
+                          style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px', cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          {ouvert ? '▼' : '▶'} 📁 {categorie} ({items.length})
+                        </p>
+                        {ouvert && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(s => {
                             const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
@@ -2735,8 +2956,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             )
                           })}
                         </div>
+                        )}
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )
               })()
@@ -3403,6 +3626,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         </div>
       </div>
     )}
+
+    <FicheSeancePrint fiche={fiche} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
 
     </>
   )
