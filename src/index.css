@@ -24,7 +24,17 @@ body {
   display: none;
 }
 
+.criteres-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
 @media (max-width: 768px) {
+  .criteres-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
   .tableau-classement {
     width: 100%;
     table-layout: fixed;

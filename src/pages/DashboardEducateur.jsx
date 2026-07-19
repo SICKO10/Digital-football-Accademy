@@ -2620,11 +2620,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </div>
                         {noteGlobale && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>⭐ {noteGlobale}</span>}
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+                      <div className="criteres-grid" style={{ marginBottom: '12px' }}>
                         {[['technique', '🎯 Technique'], ['physique', '💪 Physique'], ['mental', '🧠 Mental'], ['tactique', '♟️ Tactique']].map(([key, label]) => (
-                          <div key={key}>
-                            <label style={st.label}>{label}</label>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                          <div key={key} className="critere-bloc">
+                            <label className="critere-label" style={st.label}>{label}</label>
+                            <div className="etoiles" style={{ display: 'flex', gap: '4px' }}>
                               {[1,2,3,4,5].map(n => (
                                 <span key={n} onClick={() => setLocalNote(j.id, { [key]: n })}
                                   style={{ cursor: 'pointer', fontSize: '20px', opacity: ln[key] >= n ? 1 : 0.2 }}>⭐</span>
