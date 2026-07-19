@@ -45,6 +45,18 @@ input[type="date"] {
   .procede-duree-joueurs input {
     width: 100%;
   }
+  .profil-grid {
+    grid-template-columns: 1fr;
+  }
+  .profil-col-left,
+  .profil-col-right {
+    display: contents;
+  }
+  .profil-informations { order: 1; width: 100%; }
+  .profil-parcours     { order: 2; width: 100%; }
+  .profil-diplome      { order: 3; width: 100%; }
+  .profil-apercu       { order: 4; width: 100%; }
+  .profil-save         { order: 5; width: 100%; box-sizing: border-box; }
   .tableau-classement {
     width: 100%;
     table-layout: fixed;

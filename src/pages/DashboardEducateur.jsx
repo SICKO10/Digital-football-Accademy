@@ -451,6 +451,21 @@ export default function DashboardEducateur() {
     setMesSeances(data || [])
   }
 
+  const supprimerDemande = async (id) => {
+    if (!confirm('Supprimer cette demande ?')) return
+    const { error } = await supabase
+      .from('seances_uploadees')
+      .delete()
+      .eq('id', id)
+      .eq('educateur_id', userId)
+    if (error) {
+      console.error('Erreur suppression demande:', error)
+      alert('Erreur lors de la suppression : ' + error.message)
+      return
+    }
+    await chargerMesSeances(userId)
+  }
+
   const chargerMesSeancesOuvertes = async (uid) => {
     const { data } = await supabase
       .from('seances_uploadees')
@@ -3145,11 +3160,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>👤 Mon profil</h1>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
+            <div className="profil-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
 
               {/* Infos principales */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={st.card}>
+              <div className="profil-col-left" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="profil-informations" style={st.card}>
                   <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 Informations</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -3190,7 +3205,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
 
                 {/* Diplôme */}
-                <div style={st.card}>
+                <div className="profil-diplome" style={st.card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🎓 Diplôme</p>
                     {profilEdu?.diplome_verifie && (
@@ -3221,14 +3236,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   </div>
                 </div>
 
-                <button onClick={sauvegarderProfilEdu} disabled={savingProfil} style={st.btnSolid}>
+                <button className="profil-save" onClick={sauvegarderProfilEdu} disabled={savingProfil} style={st.btnSolid}>
                   {savingProfil ? '⏳ Sauvegarde...' : '💾 Sauvegarder le profil'}
                 </button>
               </div>
 
               {/* Parcours football */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={st.card}>
+              <div className="profil-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="profil-parcours" style={st.card}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⚽ Parcours football</p>
                     <button onClick={() => setShowAddParcours(true)} style={st.btn()}>+ Ajouter</button>
@@ -3295,7 +3310,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                 {/* Aperçu profil public */}
                 {profilEdu && (
-                  <div style={{ ...st.card, border: '1px solid #4ade8020' }}>
+                  <div className="profil-apercu" style={{ ...st.card, border: '1px solid #4ade8020' }}>
                     <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👁️ Aperçu public</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
                       <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#4ade8020', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
@@ -3495,21 +3510,31 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     <p style={{ color: '#333', fontSize: '13px' }}>Aucune séance uploadée pour l'instant.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {mesSeances.map(s => (
-                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      {mesSeances.map(s => {
+                        const nonAnalysee = s.statut !== 'analyse' && s.statut !== 'transfere_coach'
+                        return (
+                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || 'Séance'} — {s.saison}</p>
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
                           </div>
-                          <span style={{
-                            fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                            background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
-                            color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
-                          }}>
-                            {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                              background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
+                              color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
+                            }}>
+                              {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
+                            </span>
+                            {nonAnalysee && (
+                              <button onClick={() => supprimerDemande(s.id)} style={{ background: 'none', border: '1px solid #333', color: '#888', cursor: 'pointer', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>
+                                🗑️ Supprimer
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
