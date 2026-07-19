@@ -478,18 +478,12 @@ export default function DashboardEducateur() {
   }
 
   const uploaderMaSeance = async () => {
-    if (!uploadSeanceOuverteForm.theme || !uploadSeanceOuverteForm.date_seance || !uploadSeanceOuverteForm.categorie_tactique) {
-      return alert('Remplis au moins le thème, la date et la catégorie')
-    }
-    if (!uploadSeanceOuverteForm.video_url && !uploadSeanceOuverteForm.fichier_url) {
-      return alert('Ajoute au moins un lien vidéo ou un fichier')
-    }
     setUploadingSeanceOuverte(true)
     const { error } = await supabase.from('seances_uploadees').insert({
       educateur_id: userId,
-      theme: uploadSeanceOuverteForm.theme,
-      date_seance: uploadSeanceOuverteForm.date_seance,
-      categorie_tactique: uploadSeanceOuverteForm.categorie_tactique,
+      theme: uploadSeanceOuverteForm.theme || null,
+      date_seance: uploadSeanceOuverteForm.date_seance || null,
+      categorie_tactique: uploadSeanceOuverteForm.categorie_tactique || null,
       video_url: uploadSeanceOuverteForm.video_url || null,
       fichier_url: uploadSeanceOuverteForm.fichier_url || null,
       commentaire_perso: uploadSeanceOuverteForm.commentaire_perso || null,
@@ -2690,44 +2684,62 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             {mesSeancesOuvertes.length === 0 ? (
               <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance envoyée pour l'instant.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {mesSeancesOuvertes.map(s => {
-                  const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)
-                  return (
-                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{s.theme}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
-                          {cat?.label || s.categorie_tactique} · {new Date(s.date_seance).toLocaleDateString('fr-FR')}
-                        </p>
-                        {s.commentaire_perso && (
-                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
-                        )}
+              (() => {
+                const seancesParCategorie = mesSeancesOuvertes.reduce((acc, s) => {
+                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)?.label || s.categorie_tactique || 'Sans catégorie'
+                  if (!acc[cat]) acc[cat] = []
+                  acc[cat].push(s)
+                  return acc
+                }, {})
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {Object.entries(seancesParCategorie).map(([categorie, items]) => (
+                      <div key={categorie}>
+                        <p style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px' }}>📁 {categorie} ({items.length})</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {items.map(s => {
+                            const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                            return (
+                              <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                                <div>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{s.theme || 'Sans thème'}</p>
+                                  {s.date_seance && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
+                                      {new Date(s.date_seance).toLocaleDateString('fr-FR')}
+                                    </p>
+                                  )}
+                                  {s.commentaire_perso && (
+                                    <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  {eval_ ? (
+                                    <>
+                                      <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                                        ✅ {eval_.note_totale?.toFixed?.(1) ?? eval_.note_totale}/100
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span style={{ background: '#ffffff08', color: '#888', border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                                      📁 Archivée
+                                    </span>
+                                  )}
+                                  {s.video_url && (
+                                    <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                                  )}
+                                  {s.fichier_url && (
+                                    <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 Fichier</a>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {eval_ ? (
-                          <>
-                            <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                              ✅ {eval_.note_totale?.toFixed?.(1) ?? eval_.note_totale}/100
-                            </span>
-                          </>
-                        ) : (
-                          <span style={{ background: '#ffffff08', color: '#888', border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                            📁 Archivée
-                          </span>
-                        )}
-                        {s.video_url && (
-                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
-                        )}
-                        {s.fichier_url && (
-                          <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 Fichier</a>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    ))}
+                  </div>
+                )
+              })()
             )}
           </div>
         )}
