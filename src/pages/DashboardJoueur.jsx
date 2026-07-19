@@ -1761,72 +1761,123 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (
-          <div style={{ padding: isMobile ? '12px' : '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid #141414' }}>
-                  <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Conversations</p>
+        {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (() => {
+          const panelConversation = messageActif ? (
+            <>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid #141414', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Avatar person={messageActif.other} size={36} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
+                  <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
                 </div>
+                <button onClick={async () => {
+                  const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).single()
+                  if (data) setRecruteurModal(data)
+                }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  👤 Voir le profil
+                </button>
+              </div>
+              <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
+                  <div key={i} style={msgBubble(m.sender_id === userId)}>
+                    <p style={{ margin: 0 }}>{m.content}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
+                <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
+                <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>Envoyer</button>
+              </div>
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: '#2a2a2a' }}>
+              <IconMessage />
+              <p style={{ fontSize: '13px', color: '#333' }}>Sélectionnez une conversation</p>
+            </div>
+          )
+
+          // ── MOBILE : pattern liste → détail (une seule vue visible à la fois) ──
+          if (isMobile) {
+            if (messageActif) {
+              return (
+                <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
+                  <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#4ade80', fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Inter, sans-serif' }}>
+                    ← Retour
+                  </button>
+                  <div style={{ flex: 1, minHeight: 0, background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    {panelConversation}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
+                <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
                 {conversations.length === 0 ? (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
                     <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Aucun message.</p>
                     <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
                   </div>
-                ) : conversations.map(conv => (
-                  <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8008' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                      <Avatar person={conv.other} size={30} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                        <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>Recruteur</p>
-                      </div>
-                    </div>
-                    <p style={{ fontSize: '11px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {messageActif ? (
-                  <>
-                    <div style={{ padding: '14px 18px', borderBottom: '1px solid #141414', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Avatar person={messageActif.other} size={36} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
-                        <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
-                      </div>
-                      <button onClick={async () => {
-                        const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).single()
-                        if (data) setRecruteurModal(data)
-                      }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                        👤 Voir le profil
-                      </button>
-                    </div>
-                    <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                      {messages.filter(m => m.sender_id === messageActif.otherId || m.receiver_id === messageActif.otherId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
-                        <div key={i} style={msgBubble(m.sender_id === userId)}>
-                          <p style={{ margin: 0 }}>{m.content}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
-                      <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
-                      <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>Envoyer</button>
-                    </div>
-                  </>
                 ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: '#2a2a2a' }}>
-                    <IconMessage />
-                    <p style={{ fontSize: '13px', color: '#333' }}>Sélectionnez une conversation</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
+                    {conversations.map(conv => (
+                      <div key={conv.otherId} onClick={() => setMessageActif(conv)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', cursor: 'pointer' }}>
+                        <Avatar person={conv.other} size={44} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
+                            <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                            {conv.msgs[0]?.created_at && (
+                              <span style={{ fontSize: '10px', color: '#444', flexShrink: 0 }}>{new Date(conv.msgs[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: '12px', color: '#555', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.msgs[0]?.content}</p>
+                        </div>
+                        <span style={{ color: '#333', fontSize: '18px', flexShrink: 0 }}>›</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
+            )
+          }
+
+          // ── DESKTOP : layout 2 colonnes inchangé ──
+          return (
+            <div style={{ padding: '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '14px 16px', borderBottom: '1px solid #141414' }}>
+                    <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Conversations</p>
+                  </div>
+                  {conversations.length === 0 ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                      <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Aucun message.</p>
+                      <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
+                    </div>
+                  ) : conversations.map(conv => (
+                    <div key={conv.otherId} onClick={() => setMessageActif(conv)}
+                      style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8008' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                        <Avatar person={conv.other} size={30} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                          <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>Recruteur</p>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  {panelConversation}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── COACH ── */}
         {onglet === 'carte' && (
