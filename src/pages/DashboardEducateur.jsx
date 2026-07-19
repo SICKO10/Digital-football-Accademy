@@ -140,7 +140,7 @@ function DonutPresence({ taux }) {
 // ── Camembert multi-segment (présence / absence / blessure / maladie / convoc) ─
 function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
   const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
-  const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
+  const taux = total ? Math.round((presents || 0) / total * 100) : 0
   const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
   if (!total) return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1864,9 +1864,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', width: '100%', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box', marginBottom: '1.5rem' }}>
                         {(() => {
                           const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
+                          const tauxPresenceGlobal = Math.round(totalPresents / tot * 100)
+                          const tauxAbsentsGlobal = 100 - tauxPresenceGlobal
                           return [
-                            { label: '✅ Présence', val: Math.round((totalPresents + totalConvoques) / tot * 100), color: '#4ade80' },
-                            { label: '❌ Absents',  val: Math.round((totalAbsents + totalBlesses + totalMalades + totalConvoques) / tot * 100),  color: '#ef4444' },
+                            { label: '✅ Présence', val: tauxPresenceGlobal, color: '#4ade80' },
+                            { label: '❌ Absents',  val: tauxAbsentsGlobal,  color: '#ef4444', note: 'dont blessés, malades, convoqués' },
                             { label: '🤕 Blessés',  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
                             { label: '🤒 Malades',  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
                             { label: '🏆 Convoqués',val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
@@ -1875,6 +1877,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
                             <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>{c.val}%</span>
                             <span style={{ fontSize: '11px', color: '#555', marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
+                            {c.note && (
+                              <span style={{ fontSize: '9px', color: '#444', marginTop: '2px', textAlign: 'center' }}>{c.note}</span>
+                            )}
                           </div>
                         ))}
                       </div>
