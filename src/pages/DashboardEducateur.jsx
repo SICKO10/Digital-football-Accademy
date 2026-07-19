@@ -1167,7 +1167,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     const blesses   = saisies.filter(e => getStatut(e) === 'blesse').length
     const malade    = saisies.filter(e => getStatut(e) === 'malade').length
     const total     = saisies.length
-    return { taux: Math.round(((presents + convoque) / total) * 100), presents, convoque, absents, blesses, malade, total }
+    return { taux: Math.round((presents / total) * 100), presents, convoque, absents, blesses, malade, total }
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
@@ -1866,7 +1866,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
                           return [
                             { label: '✅ Présence', val: Math.round((totalPresents + totalConvoques) / tot * 100), color: '#4ade80' },
-                            { label: '❌ Absents',  val: Math.round(totalAbsents / tot * 100),  color: '#ef4444' },
+                            { label: '❌ Absents',  val: Math.round((totalAbsents + totalBlesses + totalMalades + totalConvoques) / tot * 100),  color: '#ef4444' },
                             { label: '🤕 Blessés',  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
                             { label: '🤒 Malades',  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
                             { label: '🏆 Convoqués',val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
