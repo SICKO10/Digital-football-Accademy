@@ -658,7 +658,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
         ...calendarImages.map(img => ({ inline_data: { mime_type: 'image/jpeg', data: img.base64 } }))
       ]
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.1 } }) }
       )
@@ -715,7 +715,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
   ]
 }`
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -831,7 +831,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour, sans markdown, respe
 "duree" est en minutes (nombre). "organisation" décrit l'espace/le dispositif. "consignes" décrit les règles données aux joueurs. "variables" (uniquement pour les exercices) propose une variante pour complexifier ou simplifier.`
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
