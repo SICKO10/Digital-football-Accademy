@@ -540,13 +540,18 @@ export default function DashboardEducateur() {
   }
 
   const CATEGORIES_TACTIQUES = [
-    { value: 'proteger_axe_but', label: 'Protéger l\'axe du but' },
-    { value: 'reformuler_bloc_equipe', label: 'Reformuler le bloc équipe' },
-    { value: 'conserver', label: 'Conserver' },
-    { value: 'progresser', label: 'Progresser' },
-    { value: 'desequilibrer', label: 'Déséquilibrer' },
-    { value: 'finir', label: 'Finir' },
+    { value: 'proteger_axe_but', label: 'Protéger l\'axe du but', groupe: '🛡️ Défense / Transition' },
+    { value: 'reformuler_bloc_equipe', label: 'Reformuler le bloc équipe', groupe: '🛡️ Défense / Transition' },
+    { value: 'conserver', label: 'Conserver', groupe: '🔄 Conserver / Progresser' },
+    { value: 'progresser', label: 'Progresser', groupe: '🔄 Conserver / Progresser' },
+    { value: 'desequilibrer', label: 'Déséquilibrer', groupe: '⚡ Déséquilibrer / Finir' },
+    { value: 'finir', label: 'Finir', groupe: '⚡ Déséquilibrer / Finir' },
   ]
+  const CATEGORIES_TACTIQUES_GROUPEES = CATEGORIES_TACTIQUES.reduce((acc, cat) => {
+    if (!acc[cat.groupe]) acc[cat.groupe] = []
+    acc[cat.groupe].push(cat)
+    return acc
+  }, {})
 
   const uploaderFichierSeance = async (file) => {
     const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
@@ -2763,8 +2768,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
                 >
                   <option value="">Choisis une catégorie tactique</option>
-                  {CATEGORIES_TACTIQUES.map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
+                    <optgroup label={groupe} key={groupe}>
+                      {cats.map(cat => (
+                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <input
@@ -2832,8 +2841,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
                 >
                   <option value="">Choisis une catégorie tactique</option>
-                  {CATEGORIES_TACTIQUES.map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
+                    <optgroup label={groupe} key={groupe}>
+                      {cats.map(cat => (
+                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <input
