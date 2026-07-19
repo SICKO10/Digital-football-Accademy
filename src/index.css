@@ -19,6 +19,10 @@ body {
   display: none;
 }
 
+.sous-onglets::-webkit-scrollbar {
+  display: none;
+}
+
 @media print {
   body > *:not(#fiche-print) { display: none; }
   #fiche-print {
