@@ -367,7 +367,7 @@ export default function DashboardEducateur() {
 
   // Onglet "Mes séances" (séances ouvertes, hors flux club)
   const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
-  const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '' })
+  const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
 
   const chargerProfilEdu = async (uid) => {
@@ -462,9 +462,27 @@ export default function DashboardEducateur() {
     { value: 'finir', label: 'Finir' },
   ]
 
+  const uploaderFichierSeance = async (file) => {
+    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
+    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('signature', signature)
+    formData.append('timestamp', timestamp)
+    formData.append('folder', folder)
+    formData.append('public_id', public_id)
+    formData.append('api_key', api_key)
+    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+    const uploadData = await uploadRes.json()
+    return uploadData.secure_url || null
+  }
+
   const uploaderMaSeance = async () => {
-    if (!uploadSeanceOuverteForm.theme || !uploadSeanceOuverteForm.date_seance || !uploadSeanceOuverteForm.categorie_tactique || !uploadSeanceOuverteForm.video_url) {
-      return alert('Remplis tous les champs')
+    if (!uploadSeanceOuverteForm.theme || !uploadSeanceOuverteForm.date_seance || !uploadSeanceOuverteForm.categorie_tactique) {
+      return alert('Remplis au moins le thème, la date et la catégorie')
+    }
+    if (!uploadSeanceOuverteForm.video_url && !uploadSeanceOuverteForm.fichier_url) {
+      return alert('Ajoute au moins un lien vidéo ou un fichier')
     }
     setUploadingSeanceOuverte(true)
     await supabase.from('seances_uploadees').insert({
@@ -472,11 +490,13 @@ export default function DashboardEducateur() {
       theme: uploadSeanceOuverteForm.theme,
       date_seance: uploadSeanceOuverteForm.date_seance,
       categorie_tactique: uploadSeanceOuverteForm.categorie_tactique,
-      video_url: uploadSeanceOuverteForm.video_url,
+      video_url: uploadSeanceOuverteForm.video_url || null,
+      fichier_url: uploadSeanceOuverteForm.fichier_url || null,
+      commentaire_perso: uploadSeanceOuverteForm.commentaire_perso || null,
       origine: 'ouvert',
       statut: 'en_attente',
     })
-    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '' })
+    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
     setUploadingSeanceOuverte(false)
     await chargerMesSeancesOuvertes(userId)
   }
@@ -2624,6 +2644,32 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
                 />
+                <div>
+                  <p style={{ fontSize: '12px', color: '#666', marginBottom: '6px' }}>Ou upload un fichier (PDF, photo de la séance papier)</p>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={async e => {
+                      const file = e.target.files[0]
+                      if (!file) return
+                      setUploadingSeanceOuverte(true)
+                      const url = await uploaderFichierSeance(file)
+                      setUploadSeanceOuverteForm(prev => ({ ...prev, fichier_url: url }))
+                      setUploadingSeanceOuverte(false)
+                    }}
+                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', width: '100%' }}
+                  />
+                  {uploadSeanceOuverteForm.fichier_url && (
+                    <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '6px' }}>✅ Fichier prêt</p>
+                  )}
+                </div>
+                <textarea
+                  placeholder="Notes personnelles sur cette séance (ce qui a marché, ce qu'il faut ajuster...)"
+                  value={uploadSeanceOuverteForm.commentaire_perso}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, commentaire_perso: e.target.value }))}
+                  rows={3}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                />
                 <button
                   onClick={uploaderMaSeance}
                   disabled={uploadingSeanceOuverte}
@@ -2649,6 +2695,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
                           {cat?.label || s.categorie_tactique} · {new Date(s.date_seance).toLocaleDateString('fr-FR')}
                         </p>
+                        {s.commentaire_perso && (
+                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {eval_ ? (
@@ -2662,7 +2711,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             📁 Archivée
                           </span>
                         )}
-                        <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                        {s.video_url && (
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                        )}
+                        {s.fichier_url && (
+                          <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 Fichier</a>
+                        )}
                       </div>
                     </div>
                   )
