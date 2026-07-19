@@ -273,7 +273,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id)])
     setLoading(false)
   }
 
@@ -291,6 +291,16 @@ export default function DashboardEducateur() {
   const chargerMesSeances = async (uid) => {
     const { data } = await supabase.from('seances_uploadees').select('*').eq('educateur_id', uid).order('created_at', { ascending: false })
     setMesSeances(data || [])
+  }
+
+  const chargerMesSeancesOuvertes = async (uid) => {
+    const { data } = await supabase
+      .from('seances_uploadees')
+      .select('*, evaluation:evaluations_seance(*)')
+      .eq('educateur_id', uid)
+      .eq('origine', 'ouvert')
+      .order('date_seance', { ascending: false })
+    setMesSeancesOuvertes(data || [])
   }
 
   const chargerClubCategories = async (uid) => {
@@ -354,6 +364,11 @@ export default function DashboardEducateur() {
   const [sendingCodeClub, setSendingCodeClub] = useState(false)
   const [codeClubError, setCodeClubError] = useState(null)
   const [codeClubSuccess, setCodeClubSuccess] = useState(false)
+
+  // Onglet "Mes séances" (séances ouvertes, hors flux club)
+  const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
+  const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '' })
+  const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
 
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
@@ -436,6 +451,34 @@ export default function DashboardEducateur() {
       }
     } catch (e) { console.error(e) }
     setUploadingSeance(false)
+  }
+
+  const CATEGORIES_TACTIQUES = [
+    { value: 'proteger_axe_but', label: 'Protéger l\'axe du but' },
+    { value: 'reformuler_bloc_equipe', label: 'Reformuler le bloc équipe' },
+    { value: 'conserver', label: 'Conserver' },
+    { value: 'progresser', label: 'Progresser' },
+    { value: 'desequilibrer', label: 'Déséquilibrer' },
+    { value: 'finir', label: 'Finir' },
+  ]
+
+  const uploaderMaSeance = async () => {
+    if (!uploadSeanceOuverteForm.theme || !uploadSeanceOuverteForm.date_seance || !uploadSeanceOuverteForm.categorie_tactique || !uploadSeanceOuverteForm.video_url) {
+      return alert('Remplis tous les champs')
+    }
+    setUploadingSeanceOuverte(true)
+    await supabase.from('seances_uploadees').insert({
+      educateur_id: userId,
+      theme: uploadSeanceOuverteForm.theme,
+      date_seance: uploadSeanceOuverteForm.date_seance,
+      categorie_tactique: uploadSeanceOuverteForm.categorie_tactique,
+      video_url: uploadSeanceOuverteForm.video_url,
+      origine: 'ouvert',
+      statut: 'en_attente',
+    })
+    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '' })
+    setUploadingSeanceOuverte(false)
+    await chargerMesSeancesOuvertes(userId)
   }
 
   const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
@@ -927,6 +970,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'stats', label: '📊 Stats joueurs' },
     { key: 'matchs', label: '🏟️ Compétition' },
     { key: 'entrainements', label: '🏃 Entraînements' },
+    { key: 'mes_seances', label: '🎥 Séances' },
     { key: 'notes', label: '📝 Évaluations' },
     { key: 'recrutement', label: '🔍 Recrutement' },
     { key: 'profil', label: '👤 Mon profil' },
@@ -2545,6 +2589,88 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             </div>
           )
         })()}
+
+        {/* ===== MES SÉANCES ===== */}
+        {activeSection === 'mes_seances' && (
+          <div>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 Enregistrer une séance</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input
+                  placeholder="Thème de la séance (ex: Jeu de position 6v4)"
+                  value={uploadSeanceOuverteForm.theme}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, theme: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <input
+                  type="date"
+                  value={uploadSeanceOuverteForm.date_seance}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, date_seance: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <select
+                  value={uploadSeanceOuverteForm.categorie_tactique}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_tactique: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                >
+                  <option value="">Choisis une catégorie tactique</option>
+                  {CATEGORIES_TACTIQUES.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="Lien vidéo (Veo, YouTube...)"
+                  value={uploadSeanceOuverteForm.video_url}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                />
+                <button
+                  onClick={uploaderMaSeance}
+                  disabled={uploadingSeanceOuverte}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
+                >
+                  {uploadingSeanceOuverte ? 'Envoi...' : 'Enregistrer ma séance'}
+                </button>
+              </div>
+            </div>
+
+            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 Mes séances ({mesSeancesOuvertes.length})</p>
+            {mesSeancesOuvertes.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance envoyée pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {mesSeancesOuvertes.map(s => {
+                  const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)
+                  return (
+                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{s.theme}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
+                          {cat?.label || s.categorie_tactique} · {new Date(s.date_seance).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {eval_ ? (
+                          <>
+                            <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                              ✅ {eval_.note_totale?.toFixed?.(1) ?? eval_.note_totale}/100
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ background: '#ffffff08', color: '#888', border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                            📁 Archivée
+                          </span>
+                        )}
+                        <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {activeSection === 'profil' && profilEduEdit && (
           <>
