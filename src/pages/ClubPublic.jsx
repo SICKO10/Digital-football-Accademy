@@ -2,26 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
-// ── Calcul classement ──────────────────────────────────────────────────────────
-function calculerClassement(matchs, nomEquipe) {
-  const table = {}
-  matchs.forEach(m => {
-    const nous = nomEquipe || 'Mon équipe'
-    const eux = m.adversaire || 'Adversaire'
-    if (!table[nous]) table[nous] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
-    if (!table[eux]) table[eux] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
-    const bd = parseInt(m.score_nous) || 0, be = parseInt(m.score_eux) || 0
-    table[nous].J++; table[eux].J++
-    table[nous].BP += bd; table[nous].BC += be
-    table[eux].BP += be; table[eux].BC += bd
-    if (bd > be) { table[nous].V++; table[nous].Pts += 3; table[eux].D++ }
-    else if (bd < be) { table[eux].V++; table[eux].Pts += 3; table[nous].D++ }
-    else { table[nous].N++; table[nous].Pts += 1; table[eux].N++; table[eux].Pts += 1 }
-  })
-  return Object.entries(table).map(([nom, s]) => ({ nom, ...s, diff: s.BP - s.BC }))
-    .sort((a, b) => b.Pts - a.Pts || b.diff - a.diff)
-}
-
 // ── Composant étoiles ─────────────────────────────────────────────────────────
 function Etoiles({ note, onChange, size = 28, readonly = false }) {
   const [hover, setHover] = useState(0)
@@ -46,6 +26,7 @@ export default function ClubPublic() {
   const [educateur, setEducateur] = useState(null)
   const [joueurs, setJoueurs] = useState([])
   const [matchs, setMatchs] = useState([])
+  const [ligueUrl, setLigueUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('infos')
 
@@ -81,6 +62,10 @@ export default function ClubPublic() {
       // Matchs
       const { data: mData } = await supabase.from('matchs_equipe').select('*').eq('educateur_id', id).order('date', { ascending: false })
       setMatchs(mData || [])
+
+      // Lien classement officiel de la ligue (saisi par l'éducateur dans son profil)
+      const { data: profilExt } = await supabase.from('profil_educateur').select('ligue_url').eq('user_id', id).maybeSingle()
+      setLigueUrl(profilExt?.ligue_url || null)
 
       // Mes validations pour ce club
       const { data: vData } = await supabase.from('validations_joueur_club').select('*').eq('joueur_id', user.id).eq('educateur_id', id)
@@ -123,7 +108,6 @@ export default function ClubPublic() {
   }
 
   const estValide = validations.length > 0
-  const classement = calculerClassement(matchs, educateur?.club)
   const categories = [...new Set(joueurs.map(j => j.categorie).filter(Boolean))]
 
   const st = {
@@ -283,28 +267,29 @@ export default function ClubPublic() {
         {/* ── CLASSEMENT ── */}
         {onglet === 'classement' && (
           <div>
-            {classement.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: '#333' }}>
-                <p style={{ fontSize: '32px' }}>🏆</p>
-                <p style={{ color: '#444' }}>Aucun résultat pour calculer le classement.</p>
+            {ligueUrl ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                <p style={{ color: '#aaa', marginBottom: '16px' }}>
+                  Classement officiel de la ligue
+                </p>
+                <a
+                  href={ligueUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#22c55e', color: 'white',
+                    padding: '12px 24px', borderRadius: '8px',
+                    textDecoration: 'none', fontWeight: 'bold',
+                    display: 'inline-block',
+                  }}
+                >
+                  🏆 Voir le classement officiel →
+                </a>
               </div>
             ) : (
-              <div style={{ ...st.card, padding: 0, overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '30px 1fr 30px 30px 30px 30px 40px', gap: '0', padding: '10px 14px', borderBottom: '1px solid #1a1a1a', fontSize: '10px', fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '1px', alignItems: 'center' }}>
-                  <span>#</span><span>Équipe</span><span style={{ textAlign: 'center' }}>J</span><span style={{ textAlign: 'center' }}>V</span><span style={{ textAlign: 'center' }}>N</span><span style={{ textAlign: 'center' }}>D</span><span style={{ textAlign: 'right' }}>Pts</span>
-                </div>
-                {classement.map((e, i) => (
-                  <div key={e.nom} style={{ display: 'grid', gridTemplateColumns: '30px 1fr 30px 30px 30px 30px 40px', gap: '0', padding: '10px 14px', borderBottom: i < classement.length - 1 ? '1px solid #141414' : 'none', fontSize: '13px', alignItems: 'center', background: e.nom === (educateur.club || 'Mon équipe') ? '#4ade8008' : 'transparent' }}>
-                    <span style={{ color: '#555', fontWeight: 700 }}>{i + 1}</span>
-                    <span style={{ fontWeight: e.nom === (educateur.club || 'Mon équipe') ? 700 : 400, color: e.nom === (educateur.club || 'Mon équipe') ? '#4ade80' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.nom}</span>
-                    <span style={{ textAlign: 'center', color: '#666' }}>{e.J}</span>
-                    <span style={{ textAlign: 'center', color: '#4ade80' }}>{e.V}</span>
-                    <span style={{ textAlign: 'center', color: '#f59e0b' }}>{e.N}</span>
-                    <span style={{ textAlign: 'center', color: '#ef4444' }}>{e.D}</span>
-                    <span style={{ textAlign: 'right', fontWeight: 800, color: '#fff' }}>{e.Pts}</span>
-                  </div>
-                ))}
-              </div>
+              <p style={{ color: '#666', textAlign: 'center', padding: '32px' }}>
+                Lien de classement non renseigné par l'éducateur.
+              </p>
             )}
           </div>
         )}
