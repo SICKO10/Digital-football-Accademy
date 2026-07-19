@@ -485,7 +485,7 @@ export default function DashboardEducateur() {
       return alert('Ajoute au moins un lien vidéo ou un fichier')
     }
     setUploadingSeanceOuverte(true)
-    await supabase.from('seances_uploadees').insert({
+    const { error } = await supabase.from('seances_uploadees').insert({
       educateur_id: userId,
       theme: uploadSeanceOuverteForm.theme,
       date_seance: uploadSeanceOuverteForm.date_seance,
@@ -496,8 +496,13 @@ export default function DashboardEducateur() {
       origine: 'ouvert',
       statut: 'en_attente',
     })
-    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
     setUploadingSeanceOuverte(false)
+    if (error) {
+      console.error('Erreur insertion séance:', error)
+      alert('Erreur lors de l\'enregistrement : ' + error.message)
+      return
+    }
+    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
     await chargerMesSeancesOuvertes(userId)
   }
 
