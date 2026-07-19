@@ -3,20 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 // ── Calcul classement ──────────────────────────────────────────────────────────
-function calculerClassement(matchs) {
+function calculerClassement(matchs, nomEquipe) {
   const table = {}
   matchs.forEach(m => {
-    const domicile = m.equipe_nom || 'Mon équipe'
-    const exterieur = m.adversaire || 'Adversaire'
-    if (!table[domicile]) table[domicile] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
-    if (!table[exterieur]) table[exterieur] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
-    const bd = m.buts_pour ?? 0, be = m.buts_contre ?? 0
-    table[domicile].J++; table[exterieur].J++
-    table[domicile].BP += bd; table[domicile].BC += be
-    table[exterieur].BP += be; table[exterieur].BC += bd
-    if (bd > be) { table[domicile].V++; table[domicile].Pts += 3; table[exterieur].D++ }
-    else if (bd < be) { table[exterieur].V++; table[exterieur].Pts += 3; table[domicile].D++ }
-    else { table[domicile].N++; table[domicile].Pts += 1; table[exterieur].N++; table[exterieur].Pts += 1 }
+    const nous = nomEquipe || 'Mon équipe'
+    const eux = m.adversaire || 'Adversaire'
+    if (!table[nous]) table[nous] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
+    if (!table[eux]) table[eux] = { J: 0, V: 0, N: 0, D: 0, BP: 0, BC: 0, Pts: 0 }
+    const bd = parseInt(m.score_nous) || 0, be = parseInt(m.score_eux) || 0
+    table[nous].J++; table[eux].J++
+    table[nous].BP += bd; table[nous].BC += be
+    table[eux].BP += be; table[eux].BC += bd
+    if (bd > be) { table[nous].V++; table[nous].Pts += 3; table[eux].D++ }
+    else if (bd < be) { table[eux].V++; table[eux].Pts += 3; table[nous].D++ }
+    else { table[nous].N++; table[nous].Pts += 1; table[eux].N++; table[eux].Pts += 1 }
   })
   return Object.entries(table).map(([nom, s]) => ({ nom, ...s, diff: s.BP - s.BC }))
     .sort((a, b) => b.Pts - a.Pts || b.diff - a.diff)
@@ -123,7 +123,7 @@ export default function ClubPublic() {
   }
 
   const estValide = validations.length > 0
-  const classement = calculerClassement(matchs)
+  const classement = calculerClassement(matchs, educateur?.club)
   const categories = [...new Set(joueurs.map(j => j.categorie).filter(Boolean))]
 
   const st = {
@@ -255,7 +255,7 @@ export default function ClubPublic() {
                 <p style={{ color: '#444' }}>Aucun résultat enregistré.</p>
               </div>
             ) : matchs.map(m => {
-              const bp = m.buts_pour ?? 0, bc = m.buts_contre ?? 0
+              const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
               const res = bp > bc ? 'V' : bp < bc ? 'D' : 'N'
               const resColor = res === 'V' ? '#4ade80' : res === 'D' ? '#ef4444' : '#f59e0b'
               return (
