@@ -1159,6 +1159,26 @@ export default function DashboardClub() {
                                 {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: '#fbbf24' }}>⭐ {j.stats.pointsSeance}</span>}
                                 {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/5</span>}
                               </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setJoueurDetail(j.id)
+                                }}
+                                style={{
+                                  marginTop: '8px',
+                                  background: '#166534',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '4px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  width: '100%',
+                                }}
+                              >
+                                📊 Data
+                              </button>
                             </div>
                           ))}
                         </div>
