@@ -227,6 +227,10 @@ export default function DashboardClub() {
         cartonsRouges: sm.filter(r => r.carton_rouge).length,
         tauxVictoire: smJoues.length ? Math.round((victoires / smJoues.length) * 100) : null,
         tauxPresence: totalPresences ? Math.round((presents / totalPresences) * 100) : null,
+        // Compteurs bruts (présent stricto sensu, sans convoqué) pour le taux de présence
+        // effectif agrégé au niveau équipe, dans l'onglet Classements.
+        presenceEffectifTotal: totalPresences,
+        presenceEffectifPresents: pr.filter(p => p.statut === 'present').length,
         pointsSeance: points,
         noteGlobale,
         presenceMensuelle,
@@ -808,6 +812,13 @@ export default function DashboardClub() {
                 const tauxN = nbMatchsJoues ? Math.round(nuls / nbMatchsJoues * 100) : 0
                 const tauxD = nbMatchsJoues ? Math.round(defaites / nbMatchsJoues * 100) : 0
                 const tauxCS = nbMatchsJoues ? Math.round(cleanSheets / nbMatchsJoues * 100) : 0
+
+                const joueursCat = catData?.joueurs || []
+                const totalPresencesEffectif = joueursCat.reduce((s, j) => s + j.stats.presenceEffectifTotal, 0)
+                const presentsEffectif = joueursCat.reduce((s, j) => s + j.stats.presenceEffectifPresents, 0)
+                const tauxPresenceEffectif = totalPresencesEffectif ? Math.round(presentsEffectif / totalPresencesEffectif * 100) : 0
+                const tauxAbsenceEffectif = totalPresencesEffectif ? 100 - tauxPresenceEffectif : 0
+
                 return (
                   <div style={{ marginBottom: '2rem' }}>
                     {nbMatchsJoues > 0 && (
@@ -819,6 +830,12 @@ export default function DashboardClub() {
                           <StatCard label="Taux défaite" valeur={`${tauxD}%`} couleur="red" />
                         </div>
                         <StatCard label="Clean sheets" valeur={`${tauxCS}%`} />
+                      </div>
+                    )}
+                    {totalPresencesEffectif > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
+                        <StatCard label="Taux présence effectif" valeur={`${tauxPresenceEffectif}%`} couleur="green" />
+                        <StatCard label="Taux absence effectif" valeur={`${tauxAbsenceEffectif}%`} couleur="red" />
                       </div>
                     )}
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement officiel</p>
