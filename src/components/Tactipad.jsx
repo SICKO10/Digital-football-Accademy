@@ -13,6 +13,91 @@ const COULEURS = [
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
+// Positions en % du terrain (x: 0→1, y: 0→1), gardien (num 1) toujours en x:0.05, y:0.5.
+// Seuls 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3, 5-3-2 avaient des coordonnées fournies —
+// les 6 autres dispositifs listés dans le sélecteur (4-4-2 plat, 4-5-1, 4-1-4-1,
+// 4-3-2-1, 3-4-1-2, 5-4-1) ont été complétés ici en suivant le même gabarit de bandes
+// (défense x≈0.20, 1er bloc milieu x≈0.38-0.45, 2e bloc x≈0.55, attaque x≈0.65-0.70)
+// pour que le sélecteur fonctionne sur les 12 options plutôt que sur 6 seulement.
+export const DISPOSITIFS = {
+  '4-3-3': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.42, y: 0.25 }, { num: 7, x: 0.42, y: 0.50 }, { num: 8, x: 0.42, y: 0.75 },
+    { num: 9, x: 0.65, y: 0.20 }, { num: 10, x: 0.65, y: 0.50 }, { num: 11, x: 0.65, y: 0.80 },
+  ],
+  '4-4-2': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.42, y: 0.15 }, { num: 7, x: 0.42, y: 0.38 }, { num: 8, x: 0.42, y: 0.62 }, { num: 9, x: 0.42, y: 0.85 },
+    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
+  ],
+  '4-4-2-plat': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.40, y: 0.15 }, { num: 7, x: 0.40, y: 0.38 }, { num: 8, x: 0.40, y: 0.62 }, { num: 9, x: 0.40, y: 0.85 },
+    { num: 10, x: 0.65, y: 0.38 }, { num: 11, x: 0.65, y: 0.62 },
+  ],
+  '4-2-3-1': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.38, y: 0.35 }, { num: 7, x: 0.38, y: 0.65 },
+    { num: 8, x: 0.55, y: 0.15 }, { num: 9, x: 0.55, y: 0.50 }, { num: 10, x: 0.55, y: 0.85 },
+    { num: 11, x: 0.70, y: 0.50 },
+  ],
+  '4-5-1': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.40, y: 0.10 }, { num: 7, x: 0.40, y: 0.30 }, { num: 8, x: 0.40, y: 0.50 }, { num: 9, x: 0.40, y: 0.70 }, { num: 10, x: 0.40, y: 0.90 },
+    { num: 11, x: 0.65, y: 0.50 },
+  ],
+  '4-1-4-1': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.35, y: 0.50 },
+    { num: 7, x: 0.50, y: 0.15 }, { num: 8, x: 0.50, y: 0.38 }, { num: 9, x: 0.50, y: 0.62 }, { num: 10, x: 0.50, y: 0.85 },
+    { num: 11, x: 0.68, y: 0.50 },
+  ],
+  '4-3-2-1': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
+    { num: 6, x: 0.38, y: 0.20 }, { num: 7, x: 0.38, y: 0.50 }, { num: 8, x: 0.38, y: 0.80 },
+    { num: 9, x: 0.55, y: 0.35 }, { num: 10, x: 0.55, y: 0.65 },
+    { num: 11, x: 0.70, y: 0.50 },
+  ],
+  '3-5-2': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
+    { num: 5, x: 0.40, y: 0.10 }, { num: 6, x: 0.40, y: 0.30 }, { num: 7, x: 0.40, y: 0.50 }, { num: 8, x: 0.40, y: 0.70 }, { num: 9, x: 0.40, y: 0.90 },
+    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
+  ],
+  '3-4-3': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
+    { num: 5, x: 0.40, y: 0.15 }, { num: 6, x: 0.40, y: 0.38 }, { num: 7, x: 0.40, y: 0.62 }, { num: 8, x: 0.40, y: 0.85 },
+    { num: 9, x: 0.65, y: 0.20 }, { num: 10, x: 0.65, y: 0.50 }, { num: 11, x: 0.65, y: 0.80 },
+  ],
+  '3-4-1-2': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
+    { num: 5, x: 0.42, y: 0.15 }, { num: 6, x: 0.42, y: 0.38 }, { num: 7, x: 0.42, y: 0.62 }, { num: 8, x: 0.42, y: 0.85 },
+    { num: 9, x: 0.55, y: 0.50 },
+    { num: 10, x: 0.68, y: 0.35 }, { num: 11, x: 0.68, y: 0.65 },
+  ],
+  '5-3-2': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.10 }, { num: 3, x: 0.20, y: 0.30 }, { num: 4, x: 0.20, y: 0.50 }, { num: 5, x: 0.20, y: 0.70 }, { num: 6, x: 0.20, y: 0.90 },
+    { num: 7, x: 0.42, y: 0.25 }, { num: 8, x: 0.42, y: 0.50 }, { num: 9, x: 0.42, y: 0.75 },
+    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
+  ],
+  '5-4-1': [
+    { num: 1, x: 0.05, y: 0.50 },
+    { num: 2, x: 0.20, y: 0.10 }, { num: 3, x: 0.20, y: 0.30 }, { num: 4, x: 0.20, y: 0.50 }, { num: 5, x: 0.20, y: 0.70 }, { num: 6, x: 0.20, y: 0.90 },
+    { num: 7, x: 0.45, y: 0.15 }, { num: 8, x: 0.45, y: 0.38 }, { num: 9, x: 0.45, y: 0.62 }, { num: 10, x: 0.45, y: 0.85 },
+    { num: 11, x: 0.68, y: 0.50 },
+  ],
+}
+
 // ── Génération SVG du terrain (proportionnel à la taille du canvas) ────────────
 export function terrainSvgString({ sport, vue, fond, w, h }) {
   const bg = fond === 'vert' ? '#1a7a3c' : '#ffffff'
@@ -163,6 +248,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   const [elements, setElements] = useState([])
   const [selectedId, setSelectedId] = useState(null)
+  const [equipeActive, setEquipeActive] = useState('A') // équipe ciblée par les dispositifs / le bouton "Équipe A/B"
   const [tool, setTool] = useState('select')
   const [arrowColor, setArrowColor] = useState('#ffffff')
   const [pendingStart, setPendingStart] = useState(null) // {x,y} en attente du 2e clic pour une flèche
@@ -255,6 +341,33 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     applyElements([...elements, ...joueurs])
   }
 
+  // Applique un dispositif tactique à l'équipe active. Équipe A garde l'orientation
+  // gardien-à-gauche des coordonnées du dispositif ; équipe B est symétrisée en x
+  // (gardien à droite), pour rester cohérent avec ajouterEquipe qui place déjà B en
+  // miroir. Les noms déjà saisis pour cette équipe sont conservés par numéro de maillot.
+  const appliquerDispositif = (cle) => {
+    if (!cle || !DISPOSITIFS[cle]) return
+    const nouveauxJoueurs = DISPOSITIFS[cle].map(p => {
+      const px = equipeActive === 'B' ? 1 - p.x : p.x
+      const ancien = elements.find(e => e.type === 'joueur' && e.equipe === equipeActive && String(e.numero) === String(p.num))
+      return {
+        id: uid(),
+        type: 'joueur',
+        equipe: equipeActive,
+        gardien: p.num === 1,
+        numero: p.num,
+        nom: ancien?.nom || '',
+        x: px * width,
+        y: p.y * height,
+      }
+    })
+    applyElements([
+      ...elements.filter(e => !(e.type === 'joueur' && e.equipe === equipeActive)),
+      ...nouveauxJoueurs,
+    ])
+    setSelectedId(null)
+  }
+
   const updateElement = (updated) => {
     applyElements(elements.map(e => (e.id === updated.id ? updated : e)))
   }
@@ -267,6 +380,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     const nom = prompt('Nom du joueur (optionnel) :', el.nom ?? '')
     updateElement({ ...el, numero: numero.trim(), nom: (nom || '').trim() })
   }
+
+  // Renommage rapide via le panneau latéral — pas de push dans l'historique undo à
+  // chaque frappe (contrairement à editerJoueur), sinon chaque lettre tapée créerait
+  // une étape d'annulation séparée.
+  const renommerJoueur = (id, nom) => {
+    setElements(prev => prev.map(e => (e.id === id ? { ...e, nom } : e)))
+  }
+
+  const joueurSelectionne = selectedId ? elements.find(e => e.id === selectedId && e.type === 'joueur') || null : null
 
   const handleStageClick = (e) => {
     const stage = e.target.getStage()
@@ -522,8 +644,33 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : '#666' }}>{label}</button>
           ))}
         </div>
-        <button onClick={() => ajouterEquipe('A')} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #4ade8040', background: '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 Équipe A</button>
-        <button onClick={() => ajouterEquipe('B')} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #f9731640', background: '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 Équipe B</button>
+        <select
+          onChange={e => { appliquerDispositif(e.target.value); e.target.value = '' }}
+          defaultValue=""
+          style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
+        >
+          <option value="">📋 Dispositif ({equipeActive === 'A' ? 'Équipe A' : 'Équipe B'})...</option>
+          <optgroup label="4 défenseurs">
+            <option value="4-3-3">4-3-3</option>
+            <option value="4-4-2">4-4-2</option>
+            <option value="4-4-2-plat">4-4-2 plat</option>
+            <option value="4-2-3-1">4-2-3-1</option>
+            <option value="4-5-1">4-5-1</option>
+            <option value="4-1-4-1">4-1-4-1</option>
+            <option value="4-3-2-1">4-3-2-1 (arbre de Noël)</option>
+          </optgroup>
+          <optgroup label="3 défenseurs">
+            <option value="3-4-3">3-4-3</option>
+            <option value="3-5-2">3-5-2</option>
+            <option value="3-4-1-2">3-4-1-2</option>
+          </optgroup>
+          <optgroup label="5 défenseurs">
+            <option value="5-3-2">5-3-2</option>
+            <option value="5-4-1">5-4-1</option>
+          </optgroup>
+        </select>
+        <button onClick={() => { setEquipeActive('A'); ajouterEquipe('A') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'A' ? '1px solid #4ade80' : '1px solid #4ade8040', background: equipeActive === 'A' ? '#4ade8030' : '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 Équipe A</button>
+        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 Équipe B</button>
       </div>
 
       {tableMissing && !isModal && (
@@ -558,9 +705,27 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         </div>
 
         {/* Canvas */}
-        <div>
+        <div style={{ position: 'relative' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>Clique le point d'arrivée de la flèche…</p>
+          )}
+          {joueurSelectionne && (
+            <div style={{
+              position: 'absolute', right: '10px', top: '10px',
+              background: '#1a1a1a', border: '1px solid #333',
+              borderRadius: '8px', padding: '12px', zIndex: 10, width: '180px',
+            }}>
+              <div style={{ color: '#aaa', fontSize: '11px', marginBottom: '6px' }}>
+                Joueur {joueurSelectionne.numero}
+              </div>
+              <input
+                placeholder="Nom du joueur"
+                value={joueurSelectionne.nom || ''}
+                onChange={e => renommerJoueur(joueurSelectionne.id, e.target.value)}
+                style={{ width: '100%', background: '#111', color: 'white', border: '1px solid #444', borderRadius: '4px', padding: '6px', boxSizing: 'border-box' }}
+                autoFocus
+              />
+            </div>
           )}
           <Stage ref={stageRef} width={width} height={height} onClick={handleStageClick} onTap={handleStageClick} style={{ borderRadius: '12px', overflow: 'hidden' }}>
             <Layer>
