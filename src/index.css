@@ -46,11 +46,11 @@ input[type="date"] {
     width: 100%;
   }
   .profil-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
   .profil-col-left,
   .profil-col-right {
-    display: contents;
+    display: contents !important;
   }
   .profil-informations { order: 1; width: 100%; }
   .profil-parcours     { order: 2; width: 100%; }
