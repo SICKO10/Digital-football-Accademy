@@ -233,7 +233,10 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
       {isSelected && <Circle radius={16} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
-      <Text text={emoji} fontSize={22} x={-12} y={-13} listening={false} />
+      {/* Le texte porte la zone cliquable/draggable : elle ne doit jamais être
+          listening=false, sinon un objet non sélectionné n'a aucune zone
+          interactive (le cercle ci-dessus n'existe que déjà sélectionné). */}
+      <Text text={emoji} fontSize={22} x={-12} y={-13} />
     </Group>
   )
 }
@@ -282,9 +285,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (!isMobile && !isModal) chargerSchemas()
   }, [])
 
+  const selectedElement = selectedId ? elements.find(e => e.id === selectedId) || null : null
+  // Un seul Transformer partagé : seuls flèche/zone-rect/zone-cercle sont
+  // transformables — joueur/objet/texte n'ont pas de handles (resize n'a pas
+  // de sens sur eux, ils se déplacent juste par drag).
+  const TRANSFORMABLE_TYPES = ['fleche', 'zone-rect', 'zone-cercle']
+
   useEffect(() => {
     if (trRef.current) {
-      const node = selectedId ? nodeRefs.current[selectedId] : null
+      const node = selectedElement && TRANSFORMABLE_TYPES.includes(selectedElement.type) ? nodeRefs.current[selectedId] : null
       trRef.current.nodes(node ? [node] : [])
       trRef.current.getLayer()?.batchDraw()
     }
@@ -732,13 +741,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
 
               {elements.filter(e => e.type === 'zone-rect').map(e => (
-                <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height}
+                <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
                   onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
                   onTransformEnd={ev => {
                     const node = ev.target
-                    updateElement({ ...e, x: node.x(), y: node.y(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()) })
+                    updateElement({ ...e, x: node.x(), y: node.y(), rotation: node.rotation(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()) })
                     node.scaleX(1); node.scaleY(1)
                   }} />
               ))}
@@ -753,17 +762,31 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                     node.scaleX(1); node.scaleY(1)
                   }} />
               ))}
-              {elements.filter(e => e.type === 'fleche').map(e => (
-                <Arrow key={e.id} ref={n => (nodeRefs.current[e.id] = n)} points={e.points} stroke={e.color} fill={e.color}
-                  strokeWidth={3} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
-                  draggable onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
-                  onDragEnd={ev => {
-                    const node = ev.target
-                    const dx = node.x(), dy = node.y()
-                    node.x(0); node.y(0)
-                    updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
-                  }} />
-              ))}
+              {elements.filter(e => e.type === 'fleche').map(e => {
+                // Pivot = centre de la boîte englobante des points (coords absolues,
+                // stockage inchangé) — nécessaire pour que la rotation Konva tourne
+                // autour du centre de la flèche plutôt que du coin (0,0) du canvas.
+                const xs = e.points.filter((_, i) => i % 2 === 0)
+                const ys = e.points.filter((_, i) => i % 2 === 1)
+                const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+                const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+                const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
+                return (
+                  <Arrow key={e.id} ref={n => (nodeRefs.current[e.id] = n)}
+                    x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
+                    stroke={e.color} fill={e.color}
+                    strokeWidth={3} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
+                    draggable onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
+                    onDragEnd={ev => {
+                      const node = ev.target
+                      const dx = node.x() - cx, dy = node.y() - cy
+                      updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
+                    }}
+                    onTransformEnd={ev => {
+                      updateElement({ ...e, rotation: ev.target.rotation() })
+                    }} />
+                )
+              })}
               {elements.filter(e => e.type === 'texte').map(e => (
                 <Text key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
                   onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
@@ -779,7 +802,16 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               {elements.filter(e => e.type === 'joueur').map(e => (
                 <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} />
               ))}
-              <Transformer ref={trRef} rotateEnabled={false} flipEnabled={false} />
+              <Transformer
+                ref={trRef}
+                flipEnabled={false}
+                rotateEnabled={selectedElement?.type === 'fleche' || selectedElement?.type === 'zone-rect'}
+                resizeEnabled={selectedElement?.type === 'zone-rect' || selectedElement?.type === 'zone-cercle'}
+                keepRatio={selectedElement?.type === 'zone-cercle'}
+                borderStroke="#4ade80"
+                anchorStroke="#4ade80"
+                anchorSize={8}
+              />
             </Layer>
           </Stage>
 

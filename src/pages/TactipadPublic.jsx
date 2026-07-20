@@ -61,15 +61,24 @@ export default function TactipadPublic() {
           {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
 
           {elements.filter(e => e.type === 'zone-rect').map(e => (
-            <Rect key={e.id} x={e.x} y={e.y} width={e.width} height={e.height} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
+            <Rect key={e.id} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
           ))}
           {elements.filter(e => e.type === 'zone-cercle').map(e => (
             <Circle key={e.id} x={e.x} y={e.y} radius={e.radius} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
           ))}
-          {elements.filter(e => e.type === 'fleche').map(e => (
-            <Arrow key={e.id} points={e.points} stroke={e.color} fill={e.color} strokeWidth={3}
-              tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
-          ))}
+          {elements.filter(e => e.type === 'fleche').map(e => {
+            // Même logique de pivot que dans l'éditeur : rotation stockée = rotation
+            // autour du centre de la boîte englobante des points, pas de (0,0).
+            const xs = e.points.filter((_, i) => i % 2 === 0)
+            const ys = e.points.filter((_, i) => i % 2 === 1)
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+            const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+            const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
+            return (
+              <Arrow key={e.id} x={cx} y={cy} points={relPoints} rotation={e.rotation || 0} stroke={e.color} fill={e.color} strokeWidth={3}
+                tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
+            )
+          })}
           {elements.filter(e => e.type === 'texte').map(e => (
             <Text key={e.id} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} listening={false} />
           ))}
