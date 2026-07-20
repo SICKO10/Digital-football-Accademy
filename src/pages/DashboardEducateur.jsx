@@ -306,7 +306,9 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
               <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>{getTerrainComponent(p.numero, fiche.sport)}</div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: '1px solid #333', display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+              </div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                 <label>Consignes</label>
                 {[0, 1, 2, 3].map(idx => (
@@ -552,6 +554,7 @@ export default function DashboardEducateur() {
   }
   const [fiche, setFiche] = useState(ficheVide)
   const [sport, setSport] = useState('football')
+  const [tactipadModal, setTactipadModal] = useState(null) // index du procédé en cours d'édition de schéma
   const [savingFiche, setSavingFiche] = useState(false)
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
 
@@ -3026,6 +3029,19 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setTactipadModal(i)}
+                        style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        🎨 {p.schema_png ? 'Modifier le schéma' : 'Ajouter un schéma'}
+                      </button>
+                      {p.schema_png && (
+                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
+                      )}
+                    </div>
                     <textarea
                       placeholder="But"
                       value={p.but}
@@ -3835,6 +3851,24 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     )}
 
     <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
+
+    {tactipadModal !== null && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 Schéma — Procédé {fiche.procedes[tactipadModal]?.numero}</p>
+            <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          </div>
+          <Tactipad
+            userId={userId}
+            mode="modal"
+            vueParDefaut="demi"
+            onValider={png => { updateProcede(tactipadModal, 'schema_png', png); setTactipadModal(null) }}
+            onFermer={() => setTactipadModal(null)}
+          />
+        </div>
+      </div>
+    )}
 
     </>
   )

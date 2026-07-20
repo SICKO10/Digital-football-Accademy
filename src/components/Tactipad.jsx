@@ -153,11 +153,12 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   )
 }
 
-export default function Tactipad({ userId }) {
+export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer }) {
   const [isMobile] = useState(window.innerWidth < 768)
+  const isModal = mode === 'modal'
 
   const [sport, setSport] = useState('football')
-  const [vue, setVue] = useState('complet')
+  const [vue, setVue] = useState(vueParDefaut || 'complet')
   const [fond, setFond] = useState('vert')
 
   const [elements, setElements] = useState([])
@@ -192,7 +193,7 @@ export default function Tactipad({ userId }) {
   const terrainImg = useSvgImage(svgString)
 
   useEffect(() => {
-    if (!isMobile) chargerSchemas()
+    if (!isMobile && !isModal) chargerSchemas()
   }, [])
 
   useEffect(() => {
@@ -322,6 +323,15 @@ export default function Tactipad({ userId }) {
       link.download = `tactipad-${Date.now()}.png`
       link.href = uri
       link.click()
+    }, 50)
+  }
+
+  // Mode modal (intégration Fiche de séance) : génère le PNG et le remonte au parent
+  const validerSchema = () => {
+    setSelectedId(null)
+    setTimeout(() => {
+      const uri = stageRef.current.toDataURL({ pixelRatio: 2 })
+      onValider?.(uri)
     }, 50)
   }
 
@@ -516,7 +526,7 @@ export default function Tactipad({ userId }) {
         <button onClick={() => ajouterEquipe('B')} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #f9731640', background: '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 Équipe B</button>
       </div>
 
-      {tableMissing && (
+      {tableMissing && !isModal && (
         <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
           ⚠️ La table <code>tactipads</code> n'existe pas encore en base — la sauvegarde et la bibliothèque de schémas sont indisponibles tant qu'elle n'est pas créée.
         </div>
@@ -633,44 +643,57 @@ export default function Tactipad({ userId }) {
             <button onClick={exportGIF} disabled={sequences.length < 2 || playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa', opacity: sequences.length < 2 ? 0.4 : 1 }}>🎞️ Export GIF</button>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center' }}>
-            <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
-              style={{ flex: 1, background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px' }} />
-            <button onClick={sauvegarderSchema} disabled={savingSchema || tableMissing} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: tableMissing ? 0.4 : 1 }}>
-              {savingSchema ? '...' : currentSchemaId ? '💾 Mettre à jour' : '💾 Sauvegarder'}
-            </button>
-            {currentSchemaId && (
-              <button onClick={() => { setCurrentSchemaId(null); setNomSchema('') }} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
-            )}
-          </div>
+          {isModal ? (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+              <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                ✅ Valider le schéma
+              </button>
+              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                ✕ Fermer sans enregistrer
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center' }}>
+              <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
+                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px' }} />
+              <button onClick={sauvegarderSchema} disabled={savingSchema || tableMissing} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: tableMissing ? 0.4 : 1 }}>
+                {savingSchema ? '...' : currentSchemaId ? '💾 Mettre à jour' : '💾 Sauvegarder'}
+              </button>
+              {currentSchemaId && (
+                <button onClick={() => { setCurrentSchemaId(null); setNomSchema('') }} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Bibliothèque de schémas */}
-      <div style={{ marginTop: '2rem' }}>
-        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
-        {loadingSchemas ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-        ) : schemas.length === 0 ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Aucun schéma sauvegardé pour l'instant.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {schemas.map(s => (
-              <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.nom || 'Sans titre'}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{s.partage ? ' · 🔗 partagé' : ''}</p>
+      {!isModal && (
+        <div style={{ marginTop: '2rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
+          {loadingSchemas ? (
+            <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+          ) : schemas.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '13px' }}>Aucun schéma sauvegardé pour l'instant.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {schemas.map(s => (
+                <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.nom || 'Sans titre'}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{s.partage ? ' · 🔗 partagé' : ''}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
+                    <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
+                    <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
-                  <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
-                  <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
