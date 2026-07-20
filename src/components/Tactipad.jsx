@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text, Group, Transformer } from 'react-konva'
+import GIF from 'gif.js'
 import { supabase } from '../supabase'
 
 const COULEURS = [
@@ -13,7 +14,7 @@ const COULEURS = [
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
 // ── Génération SVG du terrain (proportionnel à la taille du canvas) ────────────
-function terrainSvgString({ sport, vue, fond, w, h }) {
+export function terrainSvgString({ sport, vue, fond, w, h }) {
   const bg = fond === 'vert' ? '#1a7a3c' : '#ffffff'
   const line = fond === 'vert' ? '#ffffff' : '#333333'
   const lw = 2
@@ -71,7 +72,7 @@ function terrainSvgString({ sport, vue, fond, w, h }) {
 // Charge une chaîne SVG comme image utilisable par Konva.Image (nécessaire pour
 // que le terrain fasse partie du canvas exporté — un <svg> DOM séparé en fond
 // n'apparaîtrait pas dans stage.toDataURL()).
-function useSvgImage(svgString) {
+export function useSvgImage(svgString) {
   const [img, setImg] = useState(null)
   useEffect(() => {
     const image = new window.Image()
@@ -112,11 +113,11 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
 }
 
 // ── Joueur ────────────────────────────────────────────────────────────────────
-function JoueurNode({ el, isSelected, onSelect, onChange, onEdit }) {
+export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true }) {
   const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
   return (
     <Group
-      x={el.x} y={el.y} draggable
+      x={el.x} y={el.y} draggable={draggable}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDblClick={() => onEdit(el.id)}
@@ -137,11 +138,11 @@ function JoueurNode({ el, isSelected, onSelect, onChange, onEdit }) {
 }
 
 // ── Objet (cone / ballon / mannequin) ────────────────────────────────────────
-function ObjetNode({ el, isSelected, onSelect, onChange }) {
+export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, draggable = true }) {
   const emoji = el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'
   return (
     <Group
-      x={el.x} y={el.y} draggable
+      x={el.x} y={el.y} draggable={draggable}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
@@ -167,6 +168,11 @@ export default function Tactipad({ userId }) {
 
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
+
+  const [sequences, setSequences] = useState([[]])
+  const [etapeActive, setEtapeActive] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const playIntervalRef = useRef(null)
 
   const [nomSchema, setNomSchema] = useState('')
   const [schemas, setSchemas] = useState([])
@@ -319,6 +325,75 @@ export default function Tactipad({ userId }) {
     }, 50)
   }
 
+  // ── V2 — séquences animées ────────────────────────────────────────────────
+  useEffect(() => () => clearInterval(playIntervalRef.current), [])
+
+  const allerEtape = (index) => {
+    if (index === etapeActive) return
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    setSequences(synced)
+    setEtapeActive(index)
+    setElements(synced[index] || [])
+    setHistory([])
+    setFuture([])
+    setSelectedId(null)
+  }
+
+  const ajouterEtape = () => {
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    const nouvelIndex = synced.length
+    setSequences([...synced, elements]) // la nouvelle étape démarre comme copie de l'étape actuelle
+    setEtapeActive(nouvelIndex)
+    setHistory([])
+    setFuture([])
+    setSelectedId(null)
+  }
+
+  const lire = () => {
+    if (sequences.length < 2 || playing) return
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    setSequences(synced)
+    setPlaying(true)
+    setSelectedId(null)
+    let i = etapeActive
+    playIntervalRef.current = setInterval(() => {
+      i = (i + 1) % synced.length
+      setEtapeActive(i)
+      setElements(synced[i] || [])
+    }, 1500)
+  }
+
+  const stopLecture = () => {
+    clearInterval(playIntervalRef.current)
+    setPlaying(false)
+  }
+
+  const exportGIF = async () => {
+    if (sequences.length < 2) { alert('Ajoute au moins 2 étapes pour exporter une animation.'); return }
+    stopLecture()
+    setSelectedId(null)
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    setSequences(synced)
+
+    const gif = new GIF({ workers: 2, quality: 10, width, height, workerScript: '/gif.worker.js' })
+    for (const etape of synced) {
+      setElements(etape)
+      await new Promise(r => setTimeout(r, 80)) // laisse Konva re-render l'étape avant capture
+      const canvas = stageRef.current.toCanvas({ pixelRatio: 1 })
+      gif.addFrame(canvas, { delay: 1500 })
+    }
+    gif.on('finished', blob => {
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `tactipad-animation-${Date.now()}.gif`
+      link.click()
+      URL.revokeObjectURL(url)
+    })
+    gif.render()
+    setElements(synced[etapeActive] || [])
+  }
+
   const chargerSchemas = async () => {
     setLoadingSchemas(true)
     const { data, error } = await supabase.from('tactipads').select('*').eq('educateur_id', userId).order('created_at', { ascending: false })
@@ -334,7 +409,8 @@ export default function Tactipad({ userId }) {
 
   const sauvegarderSchema = async () => {
     setSavingSchema(true)
-    const schema = { terrain: { sport, vue, fond }, elements }
+    const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences }
     const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema }
     const { error } = currentSchemaId
       ? await supabase.from('tactipads').update(payload).eq('id', currentSchemaId)
@@ -357,7 +433,10 @@ export default function Tactipad({ userId }) {
       setVue(schema.terrain.vue || 'complet')
       setFond(schema.terrain.fond || 'vert')
     }
-    setElements(schema.elements || [])
+    const seqs = schema.sequences && schema.sequences.length ? schema.sequences : [schema.elements || []]
+    setSequences(seqs)
+    setEtapeActive(0)
+    setElements(seqs[0] || schema.elements || [])
     setHistory([])
     setFuture([])
     setSelectedId(null)
@@ -535,6 +614,23 @@ export default function Tactipad({ userId }) {
             <button onClick={supprimerSelection} disabled={!selectedId} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 Supprimer</button>
             <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 Tout effacer</button>
             <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ Export PNG</button>
+          </div>
+
+          {/* Séquences animées (V2) */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+            {sequences.map((_, i) => (
+              <button key={i} onClick={() => allerEtape(i)} disabled={playing}
+                style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : '1px solid #222', background: i === etapeActive ? '#4ade8020' : '#111', color: i === etapeActive ? '#4ade80' : '#aaa', fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
+                Étape {i + 1}
+              </button>
+            ))}
+            <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>+ Ajouter étape</button>
+            {!playing ? (
+              <button onClick={lire} disabled={sequences.length < 2} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#4ade80', opacity: sequences.length < 2 ? 0.4 : 1 }}>▶ Lire</button>
+            ) : (
+              <button onClick={stopLecture} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>⏹ Stop</button>
+            )}
+            <button onClick={exportGIF} disabled={sequences.length < 2 || playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa', opacity: sequences.length < 2 ? 0.4 : 1 }}>🎞️ Export GIF</button>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center' }}>

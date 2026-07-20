@@ -20,6 +20,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import CGU from './pages/CGU'
 import ClubPublic from './pages/ClubPublic'
+import TactipadPublic from './pages/TactipadPublic'
 
 function SmartDashboard() {
   const [dest, setDest] = useState(null)
@@ -64,6 +65,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/cgu" element={<CGU />} />
         <Route path="/clubs/:id" element={<ClubPublic />} />
+        <Route path="/tactipad/:slug" element={<TactipadPublic />} />
       </Routes>
     </Router>
   )
