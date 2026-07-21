@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
+import { CATEGORIES } from '../lib/categories'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -2688,7 +2689,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         {/* ===== MON PROFIL ÉDUCATEUR ===== */}
         {activeSection === 'recrutement' && (() => {
           const postes = ['Tous', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant']
-          const categories = ['Toutes', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Seniors']
+          const categories = ['Toutes', ...CATEGORIES]
           const regions = ['Toutes', ...Array.from(new Set(recrutJoueurs.map(j => j.region).filter(Boolean))).sort()]
           const stylesDisponibles = recrutPoste !== 'Tous' && CARACTERISTIQUES_PAR_POSTE[recrutPoste]
             ? ['Tous', ...CARACTERISTIQUES_PAR_POSTE[recrutPoste]]
@@ -3212,7 +3213,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         <label style={st.label}>Catégorie entraînée</label>
                         <select style={st.input} value={profilEduEdit.categorie || ''} onChange={e => setProfilEduEdit(p => ({ ...p, categorie: e.target.value }))}>
                           <option value="">— Choisir —</option>
-                          {['U7','U8','U9','U10','U11','U12','U13','U14','U15','U16','U17','U18','U19','U20','Seniors','Vétérans'].map(c => <option key={c}>{c}</option>)}
+                          {[...CATEGORIES, 'Vétérans'].map(c => <option key={c}>{c}</option>)}
                         </select>
                       </div>
                       <div>

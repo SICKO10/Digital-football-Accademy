@@ -4,8 +4,8 @@ import { supabase } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
+import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 
-const CATEGORIES_STANDARD = ['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
 const EQUIPES = ['A', 'B']
 
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }

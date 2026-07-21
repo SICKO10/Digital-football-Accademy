@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { notifierJoueur } from '../lib/notifications'
+import { CATEGORIES as CATEGORIES_BASE } from '../lib/categories'
 
 const detectVideoType = (url) => {
   if (!url) return null
@@ -272,7 +273,7 @@ function Feed() {
   const [certifMap, setCertifMap] = useState({})
 
   const POSTES = ['Tous', 'Gardien', 'Defenseur', 'Milieu', 'Attaquant']
-  const CATEGORIES = ['Toutes', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Senior']
+  const CATEGORIES = ['Toutes', ...CATEGORIES_BASE]
 
   const CARACTERISTIQUES_PAR_POSTE = {
     Gardien:   ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu', 'Anticipation', 'Relance longue', 'Commandement défensif', 'Détente', 'Sang-froid'],

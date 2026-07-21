@@ -3,8 +3,9 @@ import { supabase } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
+import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 
-const CATEGORIES = ["Toutes", "U14", "U15", "U16", "U17", "U18", "U19", "U20", "Senior"];
+const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
 const POSTE_PILLS = [
   { val: "Tous",      label: "Tous",  icon: "⚽" },

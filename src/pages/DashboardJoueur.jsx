@@ -7,6 +7,11 @@ import { notifierJoueur } from '../lib/notifications'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
+import { CATEGORIES } from '../lib/categories'
+
+// CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
+const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
+const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors']
 
 const STRIPE_LINKS = {
   starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
@@ -1416,7 +1421,7 @@ function DashboardJoueur() {
                   <label style={labelStyle}>Catégorie</label>
                   <select value={stats.categorie} onChange={e => setStats({ ...stats, categorie: e.target.value })} style={inputStyle}>
                     <option value="">— Choisir —</option>
-                    {['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21', 'Senior', 'Veteran'].map(c => <option key={c}>{c}</option>)}
+                    {CATEGORIES_JOUEUR.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div><label style={labelStyle}>Région</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ile-de-France" style={inputStyle} /></div>
@@ -1618,7 +1623,7 @@ function DashboardJoueur() {
                   <label style={labelStyle}>Catégorie</label>
                   <select value={nouveauClub.categorie} onChange={e => setNouveauClub({ ...nouveauClub, categorie: e.target.value })} style={inputStyle}>
                     <option value="">— Choisir —</option>
-                    {['U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'U21', 'Senior'].map(c => <option key={c}>{c}</option>)}
+                    {CATEGORIES_CLUB_HISTORIQUE.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
