@@ -97,6 +97,24 @@ function DashboardCoach() {
       actions: payload.actions,
     }, { onConflict: 'seance_id' })
     await supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceEvalModal.id)
+
+    // Un seul destinataire : l'éducateur pour une séance "ouverte" (sans club), le club sinon.
+    // educateur_id/club_id sont tous deux des profiles.id — notifierJoueur fonctionne pour n'importe quel profil.
+    try {
+      const destinataireId = seanceEvalModal.origine === 'ouvert' ? seanceEvalModal.educateur_id : seanceEvalModal.club_id
+      if (destinataireId) {
+        await notifierJoueur({
+          type: 'analyse_seance',
+          userId: destinataireId,
+          titre: 'Analyse de séance disponible',
+          contenu: { texte: `La séance "${seanceEvalModal.theme || 'sans thème'}" a été analysée par un coach.` },
+          lien: seanceEvalModal.origine === 'ouvert' ? '/educateur' : '/club',
+        })
+      }
+    } catch (e) {
+      console.error('Erreur notification analyse séance:', e)
+    }
+
     await chargerSeancesTransferees()
     setSeanceEvalModal(null)
   }
@@ -709,7 +727,7 @@ function DashboardCoach() {
                           <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
                         )}
                         {eval_ && (
-                          <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {eval_.note_totale}/100</span>
+                          <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
                         )}
                       </div>
                     </div>

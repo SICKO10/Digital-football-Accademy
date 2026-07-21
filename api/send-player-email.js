@@ -19,6 +19,10 @@ const TEMPLATES = {
     subject: `✉️ Nouveau message`,
     html: `<p>Salut ${prenom},</p><p>Tu as reçu un nouveau message : "${contenu || ''}"</p>`,
   }),
+  analyse_seance: (prenom, contenu) => ({
+    subject: `📋 Analyse de séance disponible`,
+    html: `<p>Salut ${prenom},</p><p>${contenu || 'Une séance a été analysée par un coach.'} Connecte-toi à ton dashboard pour la consulter.</p>`,
+  }),
 }
 
 export default async function handler(req, res) {

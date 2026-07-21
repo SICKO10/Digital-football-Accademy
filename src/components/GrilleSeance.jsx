@@ -127,7 +127,7 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
 
         <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '12px', padding: '14px', marginBottom: '16px', textAlign: 'center' }}>
           <p style={{ margin: 0, fontSize: '13px', color: '#4ade80', fontWeight: 700 }}>
-            NOTE TOTALE : {GRILLE_SEANCE.reduce((s, d) => s + calculerNoteDomaine(grilleCriteres, d.key), 0).toFixed(1)}/100
+            NOTE TOTALE : {Math.round(GRILLE_SEANCE.reduce((s, d) => s + calculerNoteDomaine(grilleCriteres, d.key), 0))}/100
           </p>
         </div>
 

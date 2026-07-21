@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
+import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES } from '../lib/categories'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
@@ -435,7 +436,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerHistorique(user.id)])
     setLoading(false)
   }
 
@@ -448,6 +449,11 @@ export default function DashboardEducateur() {
       .limit(1)
       .maybeSingle()
     setClubAffiliation(data || null)
+  }
+
+  const chargerHistorique = async (uid) => {
+    const { data } = await supabase.from('historique_saisons').select('*').eq('educateur_id', uid).order('saison', { ascending: false })
+    setHistorique(data || [])
   }
 
   const chargerMesSeances = async (uid) => {
@@ -528,6 +534,17 @@ export default function DashboardEducateur() {
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [clubCategories, setClubCategories] = useState([])
 
+  const [historique, setHistorique] = useState([])
+  const [modalHistoriqueOuverte, setModalHistoriqueOuverte] = useState(false)
+  const [historiqueEnEdition, setHistoriqueEnEdition] = useState(null) // ligne historique_saisons en cours d'édition, ou null pour une clôture
+  const [classementFinal, setClassementFinal] = useState('')
+  const [savingHistorique, setSavingHistorique] = useState(false)
+  const [saisonActuelle] = useState(() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}` // saison sportive : 1er juillet → 30 juin
+  })
+
   const [mesSeances, setMesSeances] = useState([])
   const [showUploadSeance, setShowUploadSeance] = useState(false)
   const [seanceSaison, setSeanceSaison] = useState('2025-2026')
@@ -558,6 +575,13 @@ export default function DashboardEducateur() {
   const [tactipadModal, setTactipadModal] = useState(null) // index du procédé en cours d'édition de schéma
   const [savingFiche, setSavingFiche] = useState(false)
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
+  const [ficheFichierUrl, setFicheFichierUrl] = useState(null) // image du scan d'origine, portée jusqu'à la sauvegarde de la fiche
+  const [ficheExtraite, setFicheExtraite] = useState(false) // bandeau "fiche extraite" affiché après un scan IA
+  const [scanImageFile, setScanImageFile] = useState(null)
+  const [scanImagePreview, setScanImagePreview] = useState(null)
+  const [scanImageBase64, setScanImageBase64] = useState(null)
+  const [scanningFiche, setScanningFiche] = useState(false)
+  const [scanFicheError, setScanFicheError] = useState(null)
 
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
@@ -633,6 +657,7 @@ export default function DashboardEducateur() {
           theme: seanceTheme || null,
           date_seance: seanceDate || null,
           video_url: videoUrl,
+          origine: 'club',
         })
         await chargerMesSeances(userId)
         setShowUploadSeance(false)
@@ -710,6 +735,7 @@ export default function DashboardEducateur() {
       categorie_tactique: fiche.categorie_tactique || null,
       saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
       fiche_seance: { ...fiche, sport },
+      fichier_url: ficheFichierUrl || null,
       origine: 'ouvert',
       statut: 'archivee',
     })
@@ -719,7 +745,92 @@ export default function DashboardEducateur() {
       alert('Erreur lors de l\'enregistrement : ' + error.message)
       return
     }
+    setFicheFichierUrl(null)
+    setFicheExtraite(false)
     await chargerMesSeancesOuvertes(userId)
+  }
+
+  // Scanner IA : lit une photo de fiche papier (Gemini Vision) et pré-remplit le formulaire "Rédiger"
+  const analyserFicheScan = async () => {
+    if (!scanImageFile || !scanImageBase64) return
+    setScanningFiche(true)
+    setScanFicheError(null)
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const prompt = `Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
+
+Analyse cette image d'une fiche séance manuscrite ou imprimée et extrais toutes les informations visibles.
+Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
+{
+  "theme": "titre ou thème de la séance",
+  "date": "date si visible (format YYYY-MM-DD)",
+  "nb_joueurs": "nombre de joueurs si mentionné",
+  "duree_totale": "durée totale si mentionnée",
+  "objectif_general": "objectif général de la séance",
+  "procedes": [
+    {
+      "titre": "nom du procédé/exercice",
+      "duree": "durée en minutes",
+      "nb_joueurs": "nombre de joueurs",
+      "but": "but de l'exercice",
+      "organisation": "description de l'organisation",
+      "consignes": "consignes de l'exercice",
+      "variables": "variantes ou progressions"
+    }
+  ]
+}
+
+Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: scanImageFile.type || 'image/jpeg', data: scanImageBase64 } }] }],
+            generationConfig: { temperature: 0.1 }
+          })
+        }
+      )
+      const data = await response.json()
+      if (data.error) throw new Error(data.error.message)
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
+      const extrait = JSON.parse(jsonMatch[0])
+
+      const url = await uploaderFichierSeance(scanImageFile)
+
+      setFiche({
+        ...ficheVide,
+        theme: extrait.theme || '',
+        date: extrait.date || '',
+        nb_joueurs: extrait.nb_joueurs != null ? String(extrait.nb_joueurs) : '',
+        duree_totale: extrait.duree_totale != null ? String(extrait.duree_totale) : '',
+        objectif_general: extrait.objectif_general || '',
+        procedes: ficheVide.procedes.map((base, i) => {
+          const p = extrait.procedes?.[i]
+          if (!p) return base
+          return {
+            ...base, ...p, numero: i + 1,
+            duree: p.duree != null ? String(p.duree) : '',
+            nb_joueurs: p.nb_joueurs != null ? String(p.nb_joueurs) : '',
+          }
+        }),
+      })
+      setFicheFichierUrl(url)
+      setFicheExtraite(true)
+      setModeSeance('rediger')
+      setScanImageFile(null)
+      setScanImagePreview(null)
+      setScanImageBase64(null)
+    } catch (e) {
+      console.error('Erreur scan fiche:', e)
+      setScanFicheError('L\'IA n\'a pas pu lire la fiche. Assure-toi que l\'image est nette et bien éclairée.')
+    } finally {
+      setScanningFiche(false)
+    }
   }
 
   const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
@@ -741,6 +852,93 @@ export default function DashboardEducateur() {
     const { data } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
     if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
     setSavingProfil(false)
+  }
+
+  // Bornes calendaires d'une saison "2025-2026" → 1er juillet 2025 → 30 juin 2026.
+  // matchs_equipe et presences_entrainement n'ont pas de colonne saison, donc les stats
+  // sont recalculées à partir des dates plutôt que d'un filtre saison direct.
+  const saisonDates = (saison) => {
+    const [y1] = saison.split('-').map(Number)
+    return [`${y1}-07-01`, `${y1 + 1}-06-30`]
+  }
+
+  const ouvrirModalHistorique = (h = null) => {
+    setHistoriqueEnEdition(h)
+    setClassementFinal(h?.classement_final != null ? String(h.classement_final) : '')
+    setModalHistoriqueOuverte(true)
+  }
+
+  // "+ Clôturer la saison" : si la saison en cours a déjà une ligne, on l'édite plutôt que
+  // d'en recréer une (historique_saisons n'a pas de contrainte d'unicité éducateur+saison).
+  const ouvrirModalCloture = () => {
+    ouvrirModalHistorique(historique.find(h => h.saison === saisonActuelle) || null)
+  }
+
+  const cloturerSaison = async () => {
+    setSavingHistorique(true)
+    const saison = historiqueEnEdition?.saison || saisonActuelle
+    const [debut, fin] = saisonDates(saison)
+
+    const { data: matchsSaison } = await supabase
+      .from('matchs_equipe')
+      .select('score_nous, score_eux')
+      .eq('educateur_id', userId)
+      .gte('date', debut)
+      .lte('date', fin)
+
+    const matchsJoues = (matchsSaison || []).filter(m => m.score_nous !== null && m.score_nous !== '' && m.score_eux !== null && m.score_eux !== '')
+    const nbMatchs = matchsJoues.length
+    const nbVictoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
+    const nbDefaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+    const nbNuls = nbMatchs - nbVictoires - nbDefaites
+
+    const { data: entrainementsSaison } = await supabase
+      .from('entrainements')
+      .select('presences_entrainement(statut, present)')
+      .eq('educateur_id', userId)
+      .gte('date', debut)
+      .lte('date', fin)
+
+    // Même convention que le taux de présence global des Classements : "present" strict
+    // (convoqué/blessé/malade/absent ne comptent pas comme présent), sur les lignes saisies.
+    const presencesSaisies = (entrainementsSaison || [])
+      .flatMap(e => e.presences_entrainement || [])
+      .filter(p => p.statut || p.present)
+    const totalPresences = presencesSaisies.length
+    const presents = presencesSaisies.filter(p => (p.statut || (p.present ? 'present' : 'absent')) === 'present').length
+    const tauxPresence = totalPresences > 0 ? Math.round((presents / totalPresences) * 100) : 0
+
+    const payload = {
+      educateur_id: userId,
+      club_id: clubAffiliation?.statut === 'accepte' ? clubAffiliation.club_id : null,
+      saison,
+      categorie: profilEdu?.categorie || null,
+      niveau_championnat: profilEdu?.niveau_championnat || null,
+      classement_final: classementFinal ? parseInt(classementFinal, 10) : null,
+      nb_matchs: nbMatchs,
+      nb_victoires: nbVictoires,
+      nb_nuls: nbNuls,
+      nb_defaites: nbDefaites,
+      taux_victoire: nbMatchs > 0 ? Math.round((nbVictoires / nbMatchs) * 100) : 0,
+      taux_nul: nbMatchs > 0 ? Math.round((nbNuls / nbMatchs) * 100) : 0,
+      taux_defaite: nbMatchs > 0 ? Math.round((nbDefaites / nbMatchs) * 100) : 0,
+      taux_presence_entrainement: tauxPresence,
+    }
+
+    const { error } = historiqueEnEdition
+      ? await supabase.from('historique_saisons').update(payload).eq('id', historiqueEnEdition.id)
+      : await supabase.from('historique_saisons').insert(payload)
+
+    setSavingHistorique(false)
+    if (error) {
+      console.error('Erreur clôture saison:', error)
+      alert('Erreur lors de l\'enregistrement : ' + error.message)
+      return
+    }
+    setModalHistoriqueOuverte(false)
+    setHistoriqueEnEdition(null)
+    setClassementFinal('')
+    await chargerHistorique(userId)
   }
 
   const uploadDiplome = async (file) => {
@@ -2859,7 +3057,69 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               >
                 ✏️ Rédiger une fiche
               </button>
+              <button
+                onClick={() => setModeSeance('scanner')}
+                style={{ background: modeSeance === 'scanner' ? '#4ade80' : '#1a1a1a', color: modeSeance === 'scanner' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                📷 Scanner
+              </button>
             </div>
+
+            {modeSeance === 'scanner' && (
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px' }}>📷 Scanner une fiche papier</p>
+              <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
+                Prends en photo ta fiche séance manuscrite — l'IA la retranscrit automatiquement.
+              </p>
+              <div
+                onClick={() => document.getElementById('scan-fiche-input').click()}
+                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: '#0a0a0a' }}
+              >
+                {scanImagePreview
+                  ? <img src={scanImagePreview} alt="Fiche scannée" style={{ maxHeight: '360px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
+                  : <div>
+                      <p style={{ fontSize: '36px', margin: '0 0 10px' }}>📄</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: '#aaa' }}>Clique pour prendre une photo ou choisir une image</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#444' }}>JPG, PNG — photo de téléphone acceptée</p>
+                    </div>
+                }
+              </div>
+              <input
+                id="scan-fiche-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files[0]
+                  if (!file) return
+                  setScanFicheError(null)
+                  setScanImageFile(file)
+                  const reader = new FileReader()
+                  reader.onload = ev => {
+                    setScanImagePreview(ev.target.result)
+                    setScanImageBase64(ev.target.result.split(',')[1])
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
+              {scanFicheError && (
+                <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {scanFicheError}</p>
+              )}
+              <button
+                onClick={analyserFicheScan}
+                disabled={!scanImageFile || scanningFiche}
+                style={{ ...st.btnSolid, marginTop: '16px', opacity: !scanImageFile || scanningFiche ? 0.5 : 1 }}
+              >
+                {scanningFiche ? '🔄 Analyse en cours...' : '🤖 Analyser avec l\'IA'}
+              </button>
+              {scanningFiche && (
+                <div style={{ marginTop: '14px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
+                  🤖 L'IA lit la fiche et extrait les procédés... (5-10 secondes)
+                </div>
+              )}
+            </div>
+            )}
 
             {modeSeance === 'enregistrer' && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
@@ -2937,6 +3197,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             {modeSeance === 'rediger' && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ Rédiger une fiche de séance</p>
+              {ficheExtraite && (
+                <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: '#4ade80', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  <span>✅ Fiche extraite — vérifie et corrige si besoin avant de sauvegarder</span>
+                  <button onClick={() => setFicheExtraite(false)} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}>✕</button>
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                 <input
                   placeholder="Thème / intitulé de la séance"
@@ -3090,7 +3356,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   🖨️ Imprimer la fiche
                 </button>
                 <button
-                  onClick={() => { setFiche(ficheVide); setSport('football'); window.print() }}
+                  onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); window.print() }}
                   style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   📄 Fiche vierge
@@ -3143,7 +3409,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   {eval_ ? (
                                     <>
                                       <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                                        ✅ {eval_.note_totale?.toFixed?.(1) ?? eval_.note_totale}/100
+                                        ✅ {Math.round(eval_.note_totale)}/100
                                       </span>
                                     </>
                                   ) : (
@@ -3672,6 +3938,19 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
               )
             })()}
+
+            {/* ── Historique des saisons ── */}
+            <div style={{ marginTop: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>📅 Historique des saisons</h3>
+                <button onClick={ouvrirModalCloture} style={st.btnSolid}>+ Clôturer la saison</button>
+              </div>
+              {historique.length === 0 ? (
+                <p style={{ color: '#444', fontSize: '13px' }}>Aucune saison clôturée pour l'instant.</p>
+              ) : (
+                historique.map(h => <CarteHistoriqueSaison key={h.id} h={h} onEdit={ouvrirModalHistorique} />)
+              )}
+            </div>
           </>
         )}
 
@@ -3867,6 +4146,36 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             onValider={png => { updateProcede(tactipadModal, 'schema_png', png); setTactipadModal(null) }}
             onFermer={() => setTactipadModal(null)}
           />
+        </div>
+      </div>
+    )}
+
+    {/* ===== MODALE CLÔTURER / MODIFIER UNE SAISON ===== */}
+    {modalHistoriqueOuverte && (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '420px', padding: '24px', margin: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+              {historiqueEnEdition ? 'Modifier la saison' : 'Clôturer la saison'} {historiqueEnEdition?.saison || saisonActuelle}
+            </h3>
+            <button onClick={() => { setModalHistoriqueOuverte(false); setHistoriqueEnEdition(null) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          </div>
+          <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
+            Les stats de matchs et de présence sont recalculées automatiquement depuis tes matchs et entraînements. Renseigne uniquement le classement final.
+          </p>
+          <label style={st.label}>Classement final (position dans le championnat)</label>
+          <input
+            type="number" min="1" placeholder="ex: 3"
+            value={classementFinal} onChange={e => setClassementFinal(e.target.value)}
+            style={st.input}
+          />
+          <button
+            onClick={cloturerSaison}
+            disabled={savingHistorique}
+            style={{ ...st.btnSolid, marginTop: '18px', width: '100%', opacity: savingHistorique ? 0.6 : 1 }}
+          >
+            {savingHistorique ? 'Enregistrement...' : '✅ Enregistrer la saison'}
+          </button>
         </div>
       </div>
     )}

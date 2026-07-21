@@ -4,8 +4,8 @@ import { supabase } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
+import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
-
 const EQUIPES = ['A', 'B']
 
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
@@ -47,6 +47,8 @@ export default function DashboardClub() {
 
   // Notation générale éducateur
   const [eduNoteModal, setEduNoteModal] = useState(null) // affiliation en cours de notation
+  const [historiqueEducateurModal, setHistoriqueEducateurModal] = useState(null) // affiliation dont on consulte l'historique
+  const [historiqueEducateur, setHistoriqueEducateur] = useState([])
   const [eduNoteCriteres, setEduNoteCriteres] = useState({})
   const [eduNoteCommentaire, setEduNoteCommentaire] = useState('')
   const [eduNoteSaison, setEduNoteSaison] = useState('2025-2026')
@@ -453,6 +455,17 @@ export default function DashboardClub() {
     setEduNoteCommentaire('')
   }
 
+  const voirHistoriqueEducateur = async (affiliation) => {
+    setHistoriqueEducateurModal(affiliation)
+    const { data } = await supabase
+      .from('historique_saisons')
+      .select('*')
+      .eq('educateur_id', affiliation.educateur_id)
+      .eq('club_id', clubId)
+      .order('saison', { ascending: false })
+    setHistoriqueEducateur(data || [])
+  }
+
   const soumettreNotationEducateur = async () => {
     if (!eduNoteModal) return
     const allKeys = CRITERES_EDU.flatMap(c => c.criteres.map(cr => cr.key))
@@ -718,6 +731,7 @@ export default function DashboardClub() {
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => voirHistoriqueEducateur(e)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>📅 Historique</button>
                       <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>⭐ Noter</button>
                       <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
                     </div>
@@ -751,7 +765,7 @@ export default function DashboardClub() {
                           )}
                           {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
                           {s.statut === 'analyse' && eval_ && (
-                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {eval_.note_totale}/100</span>
+                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
                           )}
                         </div>
                       </div>
@@ -1008,6 +1022,23 @@ export default function DashboardClub() {
           )
         })()}
       </div>
+
+      {/* Modal historique des saisons — lecture seule */}
+      {historiqueEducateurModal && (
+        <div onClick={() => setHistoriqueEducateurModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📅 Historique — {historiqueEducateurModal.educateur?.prenom} {historiqueEducateurModal.educateur?.nom}</p>
+              <button onClick={() => setHistoriqueEducateurModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            {historiqueEducateur.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>Aucune saison clôturée pour cet éducateur.</p>
+            ) : (
+              historiqueEducateur.map(h => <CarteHistoriqueSaison key={h.id} h={h} />)
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal notation éducateur */}
       {eduNoteModal && (

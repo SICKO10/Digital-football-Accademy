@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 
 // ── Composant étoiles ─────────────────────────────────────────────────────────
 function Etoiles({ note, onChange, size = 28, readonly = false }) {
@@ -26,6 +27,7 @@ export default function ClubPublic() {
   const [educateur, setEducateur] = useState(null)
   const [joueurs, setJoueurs] = useState([])
   const [matchs, setMatchs] = useState([])
+  const [historique, setHistorique] = useState([])
   const [ligueUrl, setLigueUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('infos')
@@ -62,6 +64,14 @@ export default function ClubPublic() {
       // Matchs
       const { data: mData } = await supabase.from('matchs_equipe').select('*').eq('educateur_id', id).order('date', { ascending: false })
       setMatchs(mData || [])
+
+      // Historique des saisons (public, sans les notes internes du club)
+      const { data: hData } = await supabase
+        .from('historique_saisons')
+        .select('saison, categorie, classement_final, taux_victoire, taux_nul, taux_defaite, taux_presence_entrainement, nb_matchs')
+        .eq('educateur_id', id)
+        .order('saison', { ascending: false })
+      setHistorique(hData || [])
 
       // Lien classement officiel de la ligue (saisi par l'éducateur dans son profil)
       const { data: profilExt } = await supabase.from('profil_educateur').select('ligue_url').eq('user_id', id).maybeSingle()
@@ -161,6 +171,7 @@ export default function ClubPublic() {
             { id: 'equipes', label: `👥 Équipes (${joueurs.length})` },
             { id: 'resultats', label: `⚽ Résultats (${matchs.length})` },
             { id: 'classement', label: '🏆 Classement' },
+            { id: 'historique', label: `📅 Historique (${historique.length})` },
             { id: 'noter', label: '⭐ Noter' },
           ].map(t => (
             <button key={t.id} onClick={() => setOnglet(t.id)} style={st.tab(onglet === t.id)}>{t.label}</button>
@@ -290,6 +301,20 @@ export default function ClubPublic() {
               <p style={{ color: '#666', textAlign: 'center', padding: '32px' }}>
                 Lien de classement non renseigné par l'éducateur.
               </p>
+            )}
+          </div>
+        )}
+
+        {/* ── HISTORIQUE ── */}
+        {onglet === 'historique' && (
+          <div>
+            {historique.length === 0 ? (
+              <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: '#333' }}>
+                <p style={{ fontSize: '32px' }}>📅</p>
+                <p style={{ color: '#444' }}>Aucune saison clôturée pour le moment.</p>
+              </div>
+            ) : (
+              historique.map((h, i) => <CarteHistoriqueSaison key={i} h={h} />)
             )}
           </div>
         )}
