@@ -457,7 +457,7 @@ export default function DashboardEducateur() {
   }
 
   const chargerMesSeances = async (uid) => {
-    const { data } = await supabase.from('seances_uploadees').select('*').eq('educateur_id', uid).order('created_at', { ascending: false })
+    const { data } = await supabase.from('seances_uploadees').select('*').eq('educateur_id', uid).eq('origine', 'club').order('created_at', { ascending: false })
     setMesSeances(data || [])
   }
 
@@ -3063,7 +3063,104 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               >
                 📷 Scanner
               </button>
+              <button
+                onClick={() => setModeSeance('club')}
+                style={{ background: modeSeance === 'club' ? '#4ade80' : '#1a1a1a', color: modeSeance === 'club' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                🏟️ Éval. club
+              </button>
             </div>
+
+            {modeSeance === 'club' && (
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+              {clubAffiliation?.statut === 'accepte' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>🏟️ Séances évaluation club</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>Uploade jusqu'à 2 séances par saison pour être évalué par ton club.</p>
+                    </div>
+                    <button onClick={() => setShowUploadSeance(true)} style={st.btnSolid}>+ Uploader une séance</button>
+                  </div>
+
+                  {showUploadSeance && (
+                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                        <div>
+                          <label style={st.label}>Saison</label>
+                          <select style={st.input} value={seanceSaison} onChange={e => setSeanceSaison(e.target.value)}>
+                            {['2025-2026', '2024-2025', '2026-2027'].map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Date de la séance</label>
+                          <input style={st.input} type="date" value={seanceDate} onChange={e => setSeanceDate(e.target.value)} />
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={st.label}>Thème de la séance</label>
+                          <input style={st.input} placeholder="Ex: Travail défensif, transition rapide..." value={seanceTheme} onChange={e => setSeanceTheme(e.target.value)} />
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={st.label}>Vidéo de la séance</label>
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                            {[{ val: 'upload', label: '📁 Uploader un fichier' }, { val: 'veo', label: '🎥 Lien Veo' }].map(opt => (
+                              <button key={opt.val} onClick={() => setSeanceVideoMode(opt.val)}
+                                style={{ flex: 1, background: seanceVideoMode === opt.val ? '#4ade8015' : '#1a1a1a', border: `1px solid ${seanceVideoMode === opt.val ? '#4ade80' : '#333'}`, color: seanceVideoMode === opt.val ? '#4ade80' : '#aaa', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                          {seanceVideoMode === 'upload' ? (
+                            <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
+                          ) : (
+                            <input style={st.input} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
+                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>Annuler</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mesSeances.length === 0 ? (
+                    <p style={{ color: '#333', fontSize: '13px' }}>Aucune séance uploadée pour l'instant.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {mesSeances.map(s => {
+                        const nonAnalysee = s.statut !== 'analyse' && s.statut !== 'transfere_coach'
+                        return (
+                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || 'Séance'} — {s.saison}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                              background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
+                              color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
+                            }}>
+                              {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
+                            </span>
+                            {nonAnalysee && (
+                              <button onClick={() => supprimerDemande(s.id)} style={{ background: 'none', border: '1px solid #333', color: '#888', cursor: 'pointer', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>
+                                🗑️ Supprimer
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p style={{ color: '#555', fontSize: '13px' }}>Rejoins un club depuis l'onglet "Mon profil" pour envoyer des séances à évaluer.</p>
+              )}
+            </div>
+            )}
 
             {modeSeance === 'scanner' && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
@@ -3746,93 +3843,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 {codeClubSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px' }}>✅ Demande envoyée ! Le club doit valider ton affiliation.</p>}
               </div>
             </div>
-
-            {clubAffiliation?.statut === 'accepte' && (
-              <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
-                <div style={st.card}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div>
-                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🎥 Séances pour évaluation club</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Uploade jusqu'à 2 séances par saison pour être évalué par ton club.</p>
-                    </div>
-                    <button onClick={() => setShowUploadSeance(true)} style={st.btnSolid}>+ Uploader une séance</button>
-                  </div>
-
-                  {showUploadSeance && (
-                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                        <div>
-                          <label style={st.label}>Saison</label>
-                          <select style={st.input} value={seanceSaison} onChange={e => setSeanceSaison(e.target.value)}>
-                            {['2025-2026', '2024-2025', '2026-2027'].map(s => <option key={s}>{s}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label style={st.label}>Date de la séance</label>
-                          <input style={st.input} type="date" value={seanceDate} onChange={e => setSeanceDate(e.target.value)} />
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={st.label}>Thème de la séance</label>
-                          <input style={st.input} placeholder="Ex: Travail défensif, transition rapide..." value={seanceTheme} onChange={e => setSeanceTheme(e.target.value)} />
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={st.label}>Vidéo de la séance</label>
-                          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                            {[{ val: 'upload', label: '📁 Uploader un fichier' }, { val: 'veo', label: '🎥 Lien Veo' }].map(opt => (
-                              <button key={opt.val} onClick={() => setSeanceVideoMode(opt.val)}
-                                style={{ flex: 1, background: seanceVideoMode === opt.val ? '#4ade8015' : '#1a1a1a', border: `1px solid ${seanceVideoMode === opt.val ? '#4ade80' : '#333'}`, color: seanceVideoMode === opt.val ? '#4ade80' : '#aaa', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                          {seanceVideoMode === 'upload' ? (
-                            <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
-                          ) : (
-                            <input style={st.input} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
-                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>Annuler</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {mesSeances.length === 0 ? (
-                    <p style={{ color: '#333', fontSize: '13px' }}>Aucune séance uploadée pour l'instant.</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {mesSeances.map(s => {
-                        const nonAnalysee = s.statut !== 'analyse' && s.statut !== 'transfere_coach'
-                        return (
-                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || 'Séance'} — {s.saison}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{
-                              fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                              background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
-                              color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
-                            }}>
-                              {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
-                            </span>
-                            {nonAnalysee && (
-                              <button onClick={() => supprimerDemande(s.id)} style={{ background: 'none', border: '1px solid #333', color: '#888', cursor: 'pointer', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>
-                                🗑️ Supprimer
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* ── Section avis & notations ── */}
             {(() => {
