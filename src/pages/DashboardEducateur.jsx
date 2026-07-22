@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
 import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES } from '../lib/categories'
+import AnalyseVideo from '../components/AnalyseVideo'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -1410,6 +1411,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'matchs', label: '🏟️ Compétition' },
     { key: 'entrainements', label: '🏃 Entraînements' },
     { key: 'mes_seances', label: '🎥 Séances' },
+    { key: 'analyse_video', label: '🎬 Analyse vidéo' },
     { key: 'tactipad', label: '🎨 Tactipad' },
     { key: 'notes', label: '📝 Évaluations' },
     { key: 'recrutement', label: '🔍 Recrutement' },
@@ -3534,6 +3536,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               })()
             )}
           </div>
+        )}
+
+        {activeSection === 'analyse_video' && (
+          <AnalyseVideo userId={userId} />
         )}
 
         {activeSection === 'tactipad' && (
