@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 
-const rapportVide = () => ({
+const playerInfoVide = () => ({
   prenom: '',
+  nom: '',
   poste: '',
-  numero_maillot: '',
-  categorie: '',
-  niveau_championnat: '',
-  temps_jeu: '',
-  coach_analyseur: '',
-  url_video: '',
-  sequences: [{ minute: '', description: '' }],
-  points_positifs: ['', '', ''],
-  points_amelioration: ['', '', ''],
-  date_analyse: new Date().toISOString().split('T')[0],
+  numero: '',
+  date: new Date().toISOString().split('T')[0],
 })
 
 const st = {
@@ -25,221 +18,87 @@ const st = {
 }
 
 // ── Génération du PDF ──────────────────────────────────────────────────────
-// Prend un objet "rapport" en paramètre (état courant ou contenu jsonb d'un
+// Prend playerInfo + rapport en paramètres (état courant ou contenu jsonb d'un
 // rapport déjà sauvegardé) pour servir aussi bien à la génération initiale
 // qu'au re-téléchargement d'un rapport de la liste.
-async function genererPDF(data) {
+async function genererPDF(playerInfo, rapport) {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF()
-  const margin = 20
   let y = 20
 
-  doc.setFillColor(34, 197, 94)
-  doc.rect(0, 0, 210, 40, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text("RAPPORT D'ANALYSE", margin, 20)
-  doc.setFontSize(12)
-  doc.text('Digital Football Academy', margin, 30)
-
-  y = 55
-  doc.setTextColor(0, 0, 0)
-
-  doc.setFillColor(245, 245, 245)
-  doc.rect(margin, y - 5, 170, 8, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.text('INFORMATIONS JOUEUR', margin, y)
-  y += 12
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(`Prénom : ${data.prenom}`, margin, y); y += 7
-  doc.text(`Poste : ${data.poste}`, margin, y)
-  doc.text(`N° ${data.numero_maillot}`, 120, y); y += 7
-  if (data.categorie) { doc.text(`Catégorie : ${data.categorie}`, margin, y); y += 7 }
-  if (data.niveau_championnat) { doc.text(`Niveau : ${data.niveau_championnat}`, margin, y); y += 7 }
-  if (data.temps_jeu) { doc.text(`Temps de jeu : ${data.temps_jeu}`, margin, y); y += 7 }
-  y += 5
-
-  doc.setFont('helvetica', 'bold')
-  doc.text(`Coach analyseur : ${data.coach_analyseur}`, margin, y); y += 5
-  doc.text(`Date : ${new Date(data.date_analyse).toLocaleDateString('fr-FR')}`, margin, y); y += 10
-
-  doc.setDrawColor(34, 197, 94)
-  doc.line(margin, y, 190, y); y += 8
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.text('ANALYSE DES SÉQUENCES', margin, y); y += 8
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-
-  data.sequences.filter(s => s.description).forEach(seq => {
-    if (y > 260) { doc.addPage(); y = 20 }
-    doc.setFont('helvetica', 'bold')
-    if (seq.minute) doc.text(`⏱ ${seq.minute}`, margin, y)
-    doc.setFont('helvetica', 'normal')
-    const lines = doc.splitTextToSize(seq.description, 155)
-    doc.text(lines, seq.minute ? margin + 18 : margin, y)
-    y += lines.length * 5 + 4
-  })
-
-  y += 5
-  doc.setDrawColor(34, 197, 94)
-  doc.line(margin, y, 190, y); y += 8
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(34, 197, 94)
-  doc.text('✅ POINTS POSITIFS', margin, y); y += 8
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
-  data.points_positifs.filter(p => p).forEach(p => {
-    if (y > 260) { doc.addPage(); y = 20 }
-    const lines = doc.splitTextToSize(`• ${p}`, 165)
-    doc.text(lines, margin, y)
-    y += lines.length * 6
-  })
-
-  y += 5
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(239, 68, 68)
-  doc.text('📈 POINTS À AMÉLIORER', margin, y); y += 8
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
-  data.points_amelioration.filter(p => p).forEach(p => {
-    if (y > 260) { doc.addPage(); y = 20 }
-    const lines = doc.splitTextToSize(`• ${p}`, 165)
-    doc.text(lines, margin, y)
-    y += lines.length * 6
-  })
-
-  const totalPages = doc.getNumberOfPages()
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i)
-    doc.setFontSize(8)
-    doc.setTextColor(150)
-    doc.text('Digital Football Academy — Rapport confidentiel', margin, 285)
-    doc.text(`Page ${i}/${totalPages}`, 180, 285)
+  const addLine = (text, size = 12, bold = false, color = [0, 0, 0]) => {
+    doc.setFontSize(size)
+    doc.setFont('helvetica', bold ? 'bold' : 'normal')
+    doc.setTextColor(...color)
+    const lines = doc.splitTextToSize(String(text), 170)
+    lines.forEach(line => {
+      if (y > 270) { doc.addPage(); y = 20 }
+      doc.text(line, 20, y)
+      y += size * 0.52
+    })
+    y += 2
   }
 
-  doc.save(`analyse-${data.prenom || 'joueur'}-${data.date_analyse}.pdf`)
-}
+  doc.setFillColor(20, 83, 45)
+  doc.rect(0, 0, 210, 30, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text("RAPPORT D'ANALYSE", 20, 15)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Digital Football Academy', 20, 22)
+  y = 40
 
-// ── Formulaire manuel (mode "manuelle" + étape éditable du mode "hybride") ──
-// Composant au niveau module (pas imbriqué dans AnalyseVideo) : un composant
-// défini à l'intérieur du corps d'un autre serait recréé à chaque rendu et
-// perdrait le focus des champs à chaque frappe.
-function FormulaireRapport({ rapport, setRapport }) {
-  const champ = (key, value) => setRapport(r => ({ ...r, [key]: value }))
-  const updateSequence = (i, field, value) => setRapport(r => ({ ...r, sequences: r.sequences.map((s, j) => (j === i ? { ...s, [field]: value } : s)) }))
-  const ajouterSequence = () => setRapport(r => ({ ...r, sequences: [...r.sequences, { minute: '', description: '' }] }))
-  const supprimerSequence = (i) => setRapport(r => ({ ...r, sequences: r.sequences.filter((_, j) => j !== i) }))
-  const updatePoint = (cle, i, value) => setRapport(r => ({ ...r, [cle]: r[cle].map((p, j) => (j === i ? value : p)) }))
-  const ajouterPoint = (cle) => setRapport(r => ({ ...r, [cle]: [...r[cle], ''] }))
-  const supprimerPoint = (cle, i) => setRapport(r => ({ ...r, [cle]: r[cle].filter((_, j) => j !== i) }))
+  addLine('INFORMATIONS JOUEUR', 13, true, [20, 83, 45])
+  addLine(`${playerInfo.prenom} ${playerInfo.nom}  |  ${playerInfo.poste}  |  N°${playerInfo.numero}`)
+  addLine(`Date : ${playerInfo.date}`)
+  y += 5
 
-  return (
-    <div>
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>👤 Informations joueur</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-        <input style={st.input} placeholder="Prénom du joueur *" value={rapport.prenom} onChange={e => champ('prenom', e.target.value)} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <input style={st.input} placeholder="Poste *" value={rapport.poste} onChange={e => champ('poste', e.target.value)} />
-          <input style={st.input} placeholder="N° maillot *" type="number" value={rapport.numero_maillot} onChange={e => champ('numero_maillot', e.target.value)} />
-          <input style={st.input} placeholder="Catégorie (ex: U18)" value={rapport.categorie} onChange={e => champ('categorie', e.target.value)} />
-          <input style={st.input} placeholder="Niveau championnat" value={rapport.niveau_championnat} onChange={e => champ('niveau_championnat', e.target.value)} />
-          <input style={st.input} placeholder="Temps de jeu (ex: 72')" value={rapport.temps_jeu} onChange={e => champ('temps_jeu', e.target.value)} />
-        </div>
-      </div>
+  if (rapport.note) {
+    addLine(`NOTE GLOBALE : ${rapport.note} / 10`, 14, true, [20, 83, 45])
+    y += 3
+  }
 
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>🎙️ Coach analyseur</p>
-      <input style={{ ...st.input, marginBottom: '20px' }} placeholder="Nom du coach analyseur *" value={rapport.coach_analyseur} onChange={e => champ('coach_analyseur', e.target.value)} />
+  addLine('SYNTHÈSE', 13, true, [20, 83, 45])
+  addLine(rapport.synthese || '')
+  y += 5
 
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>🎬 Séquences analysées</p>
-      <p style={{ color: '#666', fontSize: '12px', margin: '0 0 12px' }}>Ajoute chaque séquence avec sa minute.</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-        {rapport.sequences.map((seq, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '8px' }}>
-            <input style={st.input} placeholder="min." value={seq.minute} onChange={e => updateSequence(i, 'minute', e.target.value)} />
-            <textarea style={{ ...st.input, resize: 'vertical', fontFamily: 'inherit' }} placeholder="Description de la séquence..." value={seq.description} rows={2} onChange={e => updateSequence(i, 'description', e.target.value)} />
-            <button onClick={() => supprimerSequence(i)} style={{ background: 'none', border: '1px solid #333', color: '#888', borderRadius: '8px', cursor: 'pointer', width: '32px' }}>✕</button>
-          </div>
-        ))}
-      </div>
-      <button onClick={ajouterSequence} style={{ ...st.btn('#60a5fa'), marginBottom: '20px' }}>+ Ajouter une séquence</button>
+  if (rapport.sequences?.length) {
+    addLine('SÉQUENCES ANALYSÉES', 13, true, [20, 83, 45])
+    rapport.sequences.forEach(s => addLine(`• [${s.minute}]  ${s.description}`))
+    y += 5
+  }
 
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>✅ Points positifs</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-        {rapport.points_positifs.map((p, i) => (
-          <div key={i} style={{ display: 'flex', gap: '8px' }}>
-            <input style={st.input} placeholder={`Point positif ${i + 1}`} value={p} onChange={e => updatePoint('points_positifs', i, e.target.value)} />
-            <button onClick={() => supprimerPoint('points_positifs', i)} style={{ background: 'none', border: '1px solid #333', color: '#888', borderRadius: '8px', cursor: 'pointer', width: '32px', flexShrink: 0 }}>✕</button>
-          </div>
-        ))}
-      </div>
-      <button onClick={() => ajouterPoint('points_positifs')} style={{ ...st.btn('#4ade80'), marginBottom: '20px' }}>+ Ajouter</button>
+  if (rapport.pointsPositifs?.length) {
+    addLine('POINTS POSITIFS', 13, true, [20, 83, 45])
+    rapport.pointsPositifs.forEach(p => addLine(`✓  ${p}`))
+    y += 5
+  }
 
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>📈 Points à améliorer</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-        {rapport.points_amelioration.map((p, i) => (
-          <div key={i} style={{ display: 'flex', gap: '8px' }}>
-            <input style={st.input} placeholder={`Point à améliorer ${i + 1}`} value={p} onChange={e => updatePoint('points_amelioration', i, e.target.value)} />
-            <button onClick={() => supprimerPoint('points_amelioration', i)} style={{ background: 'none', border: '1px solid #333', color: '#888', borderRadius: '8px', cursor: 'pointer', width: '32px', flexShrink: 0 }}>✕</button>
-          </div>
-        ))}
-      </div>
-      <button onClick={() => ajouterPoint('points_amelioration')} style={{ ...st.btn('#ef4444'), marginBottom: '20px' }}>+ Ajouter</button>
+  if (rapport.pointsAmeliorer?.length) {
+    addLine("AXES D'AMÉLIORATION", 13, true, [20, 83, 45])
+    rapport.pointsAmeliorer.forEach(p => addLine(`→  ${p}`))
+  }
 
-      <div>
-        <label style={st.label}>Date de l'analyse</label>
-        <input style={{ ...st.input, maxWidth: '200px' }} type="date" value={rapport.date_analyse} onChange={e => champ('date_analyse', e.target.value)} />
-      </div>
-    </div>
-  )
-}
-
-// ── Résultat IA en lecture seule (mode "ia" après analyse) ──────────────────
-function ResultatLectureSeule({ rapport }) {
-  return (
-    <div>
-      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 8px' }}>{rapport.prenom} {rapport.poste ? `— ${rapport.poste}` : ''} {rapport.numero_maillot ? `#${rapport.numero_maillot}` : ''}</p>
-      <p style={{ color: '#888', fontSize: '12px', margin: '0 0 16px' }}>
-        {[rapport.categorie, rapport.niveau_championnat, rapport.temps_jeu].filter(Boolean).join(' · ') || 'Aucune info complémentaire'}
-      </p>
-      <p style={{ fontWeight: 700, fontSize: '13px', color: '#60a5fa', margin: '0 0 8px' }}>🎬 Séquences</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-        {rapport.sequences.filter(s => s.description).map((s, i) => (
-          <p key={i} style={{ margin: 0, fontSize: '13px', color: '#ccc' }}><strong style={{ color: '#60a5fa' }}>{s.minute}</strong> — {s.description}</p>
-        ))}
-      </div>
-      <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80', margin: '0 0 8px' }}>✅ Points positifs</p>
-      <ul style={{ margin: '0 0 16px', paddingLeft: '18px', color: '#ccc', fontSize: '13px' }}>
-        {rapport.points_positifs.filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}
-      </ul>
-      <p style={{ fontWeight: 700, fontSize: '13px', color: '#ef4444', margin: '0 0 8px' }}>📈 Points à améliorer</p>
-      <ul style={{ margin: 0, paddingLeft: '18px', color: '#ccc', fontSize: '13px' }}>
-        {rapport.points_amelioration.filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}
-      </ul>
-    </div>
-  )
+  doc.save(`analyse_${playerInfo.nom || 'joueur'}_${playerInfo.date}.pdf`)
 }
 
 export default function AnalyseVideo({ userId }) {
-  const [rapport, setRapport] = useState(rapportVide)
-  const [modeAnalyse, setModeAnalyse] = useState('manuelle')
-  const [analyse, setAnalyse] = useState(false)
-  const [analyseTerminee, setAnalyseTerminee] = useState(false)
-  const [banniereIA, setBanniereIA] = useState(null)
+  const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
+  const [transcript, setTranscript] = useState('')
+  const [interimText, setInterimText] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+  const [rapport, setRapport] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState('input') // 'input' | 'transcript' | 'rapport'
+  const [supported, setSupported] = useState(true)
+  const [erreurIA, setErreurIA] = useState(null)
   const [savingRapport, setSavingRapport] = useState(false)
   const [rapports, setRapports] = useState([])
   const [loadingRapports, setLoadingRapports] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
+  const recognitionRef = useRef(null)
 
   const chargerRapports = async () => {
     setLoadingRapports(true)
@@ -256,87 +115,125 @@ export default function AnalyseVideo({ userId }) {
 
   useEffect(() => { if (userId) chargerRapports() }, [userId])
 
-  const changerMode = (mode) => {
-    setModeAnalyse(mode)
-    setAnalyseTerminee(false)
-    setBanniereIA(null)
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setSupported(false)
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'fr-FR'
+    recognition.continuous = true
+    recognition.interimResults = true
+
+    recognition.onresult = (event) => {
+      let interim = ''
+      let final = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i]
+        if (result.isFinal) {
+          final += result[0].transcript + ' '
+        } else {
+          interim += result[0].transcript
+        }
+      }
+      if (final) setTranscript(prev => prev + final)
+      setInterimText(interim)
+    }
+
+    recognition.onerror = (event) => {
+      console.error('Speech error:', event.error)
+      if (event.error !== 'no-speech') setIsRecording(false)
+    }
+
+    // Le navigateur coupe la reconnaissance après un silence même en mode
+    // continuous — on la relance tant que l'utilisateur n'a pas cliqué "Arrêter".
+    recognition.onend = () => {
+      if (recognitionRef.current?._shouldContinue) {
+        recognition.start()
+      } else {
+        setIsRecording(false)
+        setInterimText('')
+      }
+    }
+
+    recognitionRef.current = recognition
+  }, [])
+
+  const startRecording = () => {
+    if (!recognitionRef.current) return
+    recognitionRef.current._shouldContinue = true
+    try {
+      recognitionRef.current.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error('Erreur démarrage micro:', err)
+    }
   }
 
-  const recommencer = () => {
-    setRapport(rapportVide())
-    setAnalyseTerminee(false)
-    setBanniereIA(null)
+  const stopRecording = () => {
+    if (!recognitionRef.current) return
+    recognitionRef.current._shouldContinue = false
+    recognitionRef.current.stop()
+    setIsRecording(false)
+    setInterimText('')
+    if (transcript.trim()) setStep('transcript')
   }
 
-  const analyserVideoIA = async () => {
-    if (!rapport.url_video.trim() || !rapport.prenom.trim() || !rapport.coach_analyseur.trim()) return
-    setAnalyse(true)
-    setBanniereIA(null)
+  const handleGenerateRapport = async () => {
+    if (!transcript.trim()) return
+    setLoading(true)
+    setErreurIA(null)
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
-      const prompt = `Tu es un coach analyseur professionnel de football. Analyse cette vidéo et extrais les informations suivantes en JSON :
+      const prompt = `Tu es un analyste football expert. Voici la transcription d'une analyse vocale d'un éducateur/coach sur un joueur.
 
+Joueur: ${playerInfo.prenom} ${playerInfo.nom}, Poste: ${playerInfo.poste}, Numéro: ${playerInfo.numero}
+
+Transcription de l'analyse:
+${transcript}
+
+Génère un rapport d'analyse football structuré en JSON avec ce format EXACT (sans markdown, juste le JSON):
 {
-  "poste": "poste du joueur observé",
-  "numero_maillot": "numéro si visible",
-  "categorie": "catégorie si mentionnée",
-  "niveau_championnat": "niveau si mentionné",
-  "temps_jeu": "temps de jeu si mentionné",
   "sequences": [
-    { "minute": "timestamp en minutes (ex: 2'30)", "description": "ce qui se passe et ce qui est dit sur le joueur" }
+    { "minute": "XX:XX", "description": "description de l'action ou séquence mentionnée" }
   ],
-  "points_positifs": ["point 1", "point 2", "point 3"],
-  "points_amelioration": ["point 1", "point 2", "point 3"]
+  "pointsPositifs": ["point 1", "point 2", "point 3"],
+  "pointsAmeliorer": ["point 1", "point 2", "point 3"],
+  "synthese": "résumé global de la performance du joueur",
+  "note": 7.5
 }
 
-Extrais TOUTES les séquences où le joueur est mentionné ou analysé avec leurs minutes exactes.
-Si une info n'est pas disponible, mets null.
-Retourne UNIQUEMENT le JSON, sans texte autour.`
+Instructions:
+- Si des minutes/timestamps sont mentionnés dans la transcription, utilise-les pour les séquences
+- Extrais les points positifs et axes d'amélioration de ce qui est dit
+- La note est sur 10
+- Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication`
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: prompt },
-                { file_data: { mime_type: 'video/mp4', file_uri: rapport.url_video.trim() } },
-              ],
-            }],
+            contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { temperature: 0.1 },
           }),
         }
       )
       const data = await res.json()
       if (data.error) throw new Error(data.error.message)
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
-      const extracted = JSON.parse(jsonMatch[0])
-
-      setRapport(prev => ({
-        ...prev,
-        poste: extracted.poste || prev.poste,
-        numero_maillot: extracted.numero_maillot != null ? String(extracted.numero_maillot) : prev.numero_maillot,
-        categorie: extracted.categorie || prev.categorie,
-        niveau_championnat: extracted.niveau_championnat || prev.niveau_championnat,
-        temps_jeu: extracted.temps_jeu || prev.temps_jeu,
-        sequences: extracted.sequences?.length ? extracted.sequences.map(s => ({ minute: s.minute || '', description: s.description || '' })) : prev.sequences,
-        points_positifs: extracted.points_positifs?.length ? extracted.points_positifs : prev.points_positifs,
-        points_amelioration: extracted.points_amelioration?.length ? extracted.points_amelioration : prev.points_amelioration,
-      }))
-      setAnalyseTerminee(true)
-      setBanniereIA(modeAnalyse === 'hybride'
-        ? "🔄 Brouillon généré par Gemini — corrige si nécessaire avant de générer le PDF"
-        : '✅ Analyse terminée — vérifie et génère le PDF')
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!text) throw new Error('Réponse Gemini vide')
+      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      setRapport(JSON.parse(clean))
+      setStep('rapport')
     } catch (err) {
-      console.error('Erreur analyse vidéo IA:', err)
-      setBanniereIA("❌ Erreur : " + err.message)
+      console.error('Erreur génération rapport:', err)
+      setErreurIA(err.message)
     } finally {
-      setAnalyse(false)
+      setLoading(false)
     }
   }
 
@@ -344,12 +241,12 @@ Retourne UNIQUEMENT le JSON, sans texte autour.`
     setSavingRapport(true)
     const { error } = await supabase.from('rapports_analyse').insert({
       educateur_id: userId,
-      prenom_joueur: rapport.prenom,
-      poste: rapport.poste,
-      url_video: rapport.url_video || null,
-      contenu: rapport,
-      mode_analyse: modeAnalyse,
-      date_analyse: rapport.date_analyse,
+      prenom_joueur: `${playerInfo.prenom} ${playerInfo.nom}`.trim(),
+      poste: playerInfo.poste,
+      url_video: null,
+      contenu: { playerInfo, transcript, rapport },
+      mode_analyse: 'vocale',
+      date_analyse: playerInfo.date,
     })
     setSavingRapport(false)
     if (error) {
@@ -357,23 +254,37 @@ Retourne UNIQUEMENT le JSON, sans texte autour.`
       alert('Erreur lors de la sauvegarde : ' + error.message)
       return
     }
+    alert('Rapport sauvegardé !')
     await chargerRapports()
   }
 
-  const champsObligatoiresManquants = modeAnalyse === 'manuelle'
-    ? !rapport.prenom.trim() || !rapport.poste.trim() || !rapport.numero_maillot.toString().trim() || !rapport.coach_analyseur.trim()
-    : !rapport.prenom.trim() || !rapport.coach_analyseur.trim()
+  const reset = () => {
+    setTranscript('')
+    setInterimText('')
+    setRapport(null)
+    setStep('input')
+    setIsRecording(false)
+    setErreurIA(null)
+  }
 
-  const modes = [
-    { key: 'manuelle', label: '✍️ Manuelle' },
-    { key: 'ia', label: '🤖 IA automatique' },
-    { key: 'hybride', label: '🔄 Hybride' },
-  ]
+  if (!supported) {
+    return (
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎬 Analyse vidéo</h1>
+        <div style={{ ...st.card, maxWidth: '500px', textAlign: 'center', marginTop: '1.5rem' }}>
+          <p style={{ color: '#ef4444', margin: '0 0 8px' }}>⚠️ La dictée vocale n'est pas supportée sur ce navigateur.</p>
+          <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎬 Analyse vidéo</h1>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Génère un rapport d'analyse vidéo par joueur, à la main ou avec l'aide de l'IA.</p>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ Analyse par dictée vocale</h1>
+      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
+        Lance la vidéo sur ton écran, appuie sur Enregistrer et décris l'analyse à voix haute. L'IA structure ensuite ton commentaire en rapport PDF.
+      </p>
 
       {tableMissing && (
         <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
@@ -381,87 +292,119 @@ Retourne UNIQUEMENT le JSON, sans texte autour.`
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {modes.map(m => (
-          <button key={m.key} onClick={() => changerMode(m.key)}
-            style={{ background: modeAnalyse === m.key ? '#4ade80' : '#1a1a1a', color: modeAnalyse === m.key ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-            {m.label}
-          </button>
-        ))}
-      </div>
-
       <div style={{ ...st.card, maxWidth: '700px', marginBottom: '2rem' }}>
-        {modeAnalyse === 'manuelle' && (
-          <>
-            <FormulaireRapport rapport={rapport} setRapport={setRapport} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
-              <button onClick={() => genererPDF(rapport)} disabled={champsObligatoiresManquants}
-                style={{ ...st.btnSolid('#22c55e'), flex: 1, opacity: champsObligatoiresManquants ? 0.4 : 1 }}>
-                📄 Générer le rapport PDF
-              </button>
-              <button onClick={sauvegarderRapport} disabled={champsObligatoiresManquants || savingRapport || tableMissing}
-                style={{ ...st.btn('#60a5fa'), opacity: (champsObligatoiresManquants || tableMissing) ? 0.4 : 1 }}>
-                {savingRapport ? 'Sauvegarde...' : '💾 Sauvegarder'}
-              </button>
+        <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Informations du joueur</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          <input style={st.input} placeholder="Prénom" value={playerInfo.prenom} onChange={e => setPlayerInfo(p => ({ ...p, prenom: e.target.value }))} />
+          <input style={st.input} placeholder="Nom" value={playerInfo.nom} onChange={e => setPlayerInfo(p => ({ ...p, nom: e.target.value }))} />
+          <input style={st.input} placeholder="Poste (ex: Milieu)" value={playerInfo.poste} onChange={e => setPlayerInfo(p => ({ ...p, poste: e.target.value }))} />
+          <input style={st.input} placeholder="N° maillot" value={playerInfo.numero} onChange={e => setPlayerInfo(p => ({ ...p, numero: e.target.value }))} />
+        </div>
+        <input style={{ ...st.input, maxWidth: '200px' }} type="date" value={playerInfo.date} onChange={e => setPlayerInfo(p => ({ ...p, date: e.target.value }))} />
+
+        {(step === 'input' || step === 'transcript') && (
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>Enregistrement vocal</p>
+
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {!isRecording ? (
+                <button onClick={startRecording}
+                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#22c55e', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #22c55e40' }}>
+                  <span style={{ fontSize: '30px' }}>🎙️</span>
+                  <span style={{ fontSize: '11px', marginTop: '4px' }}>Démarrer</span>
+                </button>
+              ) : (
+                <button onClick={stopRecording}
+                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #ef444440' }}>
+                  <span style={{ fontSize: '30px' }}>⏹️</span>
+                  <span style={{ fontSize: '11px', marginTop: '4px' }}>Arrêter</span>
+                </button>
+              )}
             </div>
-          </>
-        )}
 
-        {(modeAnalyse === 'ia' || modeAnalyse === 'hybride') && !analyseTerminee && (
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>{modeAnalyse === 'ia' ? '🤖 Analyse IA automatique' : '🔄 Analyse hybride'}</p>
-            <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 16px' }}>
-              Colle l'URL YouTube — Gemini analyse la vidéo et {modeAnalyse === 'ia' ? 'génère le rapport complet.' : 'pré-remplit un brouillon que tu pourras corriger.'}
-            </p>
-            <input style={st.input} placeholder="https://www.youtube.com/watch?v=..." value={rapport.url_video} onChange={e => setRapport(r => ({ ...r, url_video: e.target.value }))} />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-              <input style={st.input} placeholder="Prénom du joueur *" value={rapport.prenom} onChange={e => setRapport(r => ({ ...r, prenom: e.target.value }))} />
-              <input style={st.input} placeholder="Coach analyseur *" value={rapport.coach_analyseur} onChange={e => setRapport(r => ({ ...r, coach_analyseur: e.target.value }))} />
-            </div>
-
-            {banniereIA && (
-              <p style={{ color: banniereIA.startsWith('❌') ? '#ef4444' : '#4ade80', fontSize: '13px', marginTop: '12px' }}>{banniereIA}</p>
+            {isRecording && (
+              <p style={{ textAlign: 'center', color: '#4ade80', fontSize: '13px', marginTop: '12px' }}>
+                🔴 Enregistrement en cours… parle dans ton micro
+              </p>
             )}
 
-            <button onClick={analyserVideoIA} disabled={!rapport.url_video.trim() || !rapport.prenom.trim() || !rapport.coach_analyseur.trim() || analyse}
-              style={{ ...st.btnSolid('#7c3aed', '#fff'), width: '100%', marginTop: '16px', opacity: (!rapport.url_video.trim() || !rapport.prenom.trim() || !rapport.coach_analyseur.trim()) ? 0.5 : 1 }}>
-              {analyse ? '🔄 Analyse en cours...' : '🤖 Analyser avec Gemini'}
-            </button>
+            {(transcript || interimText) && (
+              <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginTop: '16px' }}>
+                <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Transcription :</p>
+                <p style={{ color: '#ccc', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+                  {transcript}<span style={{ color: '#666', fontStyle: 'italic' }}>{interimText}</span>
+                </p>
+              </div>
+            )}
+
+            {erreurIA && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {erreurIA}</p>}
+
+            {transcript.trim() && !isRecording && (
+              <button onClick={handleGenerateRapport} disabled={loading}
+                style={{ ...st.btnSolid('#60a5fa', '#fff'), width: '100%', marginTop: '16px', opacity: loading ? 0.6 : 1 }}>
+                {loading ? '⏳ Génération en cours...' : "✨ Générer le rapport avec l'IA"}
+              </button>
+            )}
           </div>
         )}
 
-        {modeAnalyse === 'ia' && analyseTerminee && (
-          <div>
-            {banniereIA && <p style={{ color: '#4ade80', fontSize: '13px', marginBottom: '16px' }}>{banniereIA}</p>}
-            <ResultatLectureSeule rapport={rapport} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
-              <button onClick={() => genererPDF(rapport)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>📄 Générer le rapport PDF</button>
+        {step === 'rapport' && rapport && (
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>📋 Rapport généré</p>
+
+            {rapport.note != null && (
+              <div style={{ background: '#4ade8015', border: '1px solid #4ade8040', borderRadius: '10px', padding: '12px', textAlign: 'center', marginBottom: '16px' }}>
+                <p style={{ color: '#4ade80', fontSize: '24px', fontWeight: 800, margin: 0 }}>{rapport.note} / 10</p>
+                <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0' }}>Note globale</p>
+              </div>
+            )}
+
+            {rapport.synthese && (
+              <div style={{ marginBottom: '16px' }}>
+                <p style={st.label}>Synthèse</p>
+                <p style={{ color: '#ccc', fontSize: '13px', margin: 0 }}>{rapport.synthese}</p>
+              </div>
+            )}
+
+            {rapport.sequences?.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <p style={st.label}>Séquences analysées</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {rapport.sequences.map((s, i) => (
+                    <div key={i} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 10px' }}>
+                      <span style={{ color: '#4ade80', fontSize: '12px', fontFamily: 'monospace' }}>[{s.minute}]</span>
+                      <span style={{ color: '#ccc', fontSize: '13px', marginLeft: '8px' }}>{s.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {rapport.pointsPositifs?.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <p style={st.label}>Points positifs</p>
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {rapport.pointsPositifs.map((p, i) => <li key={i} style={{ color: '#4ade80', fontSize: '13px' }}>{p}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {rapport.pointsAmeliorer?.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <p style={st.label}>Axes d'amélioration</p>
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {rapport.pointsAmeliorer.map((p, i) => <li key={i} style={{ color: '#f59e0b', fontSize: '13px' }}>{p}</li>)}
+                </ul>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button onClick={() => genererPDF(playerInfo, rapport)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>📄 Exporter PDF</button>
               <button onClick={sauvegarderRapport} disabled={savingRapport || tableMissing} style={{ ...st.btn('#60a5fa'), opacity: tableMissing ? 0.4 : 1 }}>
                 {savingRapport ? 'Sauvegarde...' : '💾 Sauvegarder'}
               </button>
-              <button onClick={recommencer} style={st.btn('#666')}>🔄 Nouvelle analyse</button>
             </div>
-          </div>
-        )}
-
-        {modeAnalyse === 'hybride' && analyseTerminee && (
-          <div>
-            <div style={{ background: '#1e3a5f', borderRadius: '8px', padding: '12px', marginBottom: '16px', fontSize: '13px' }}>
-              🔄 Brouillon généré par Gemini — corrige si nécessaire avant de générer le PDF
-            </div>
-            <FormulaireRapport rapport={rapport} setRapport={setRapport} />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
-              <button onClick={() => genererPDF(rapport)} disabled={champsObligatoiresManquants}
-                style={{ ...st.btnSolid('#22c55e'), flex: 1, opacity: champsObligatoiresManquants ? 0.4 : 1 }}>
-                📄 Générer le rapport PDF
-              </button>
-              <button onClick={sauvegarderRapport} disabled={champsObligatoiresManquants || savingRapport || tableMissing}
-                style={{ ...st.btn('#60a5fa'), opacity: (champsObligatoiresManquants || tableMissing) ? 0.4 : 1 }}>
-                {savingRapport ? 'Sauvegarde...' : '💾 Sauvegarder'}
-              </button>
-              <button onClick={recommencer} style={st.btn('#666')}>🔄 Recommencer</button>
-            </div>
+            <button onClick={reset} style={{ ...st.btn('#666'), width: '100%', marginTop: '10px' }}>Nouvelle analyse</button>
           </div>
         )}
       </div>
@@ -479,10 +422,10 @@ Retourne UNIQUEMENT le JSON, sans texte autour.`
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{r.prenom_joueur || 'Sans nom'} {r.poste ? `— ${r.poste}` : ''}</p>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
-                    {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · {r.mode_analyse === 'ia' ? '🤖 IA' : r.mode_analyse === 'hybride' ? '🔄 Hybride' : '✍️ Manuelle'}
+                    {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · 🎙️ Vocale
                   </p>
                 </div>
-                <button onClick={() => genererPDF(r.contenu)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {})} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   ⬇️ Re-télécharger PDF
                 </button>
               </div>
