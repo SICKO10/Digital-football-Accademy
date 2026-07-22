@@ -295,7 +295,7 @@ Si une info n'est pas disponible, mets null.
 Retourne UNIQUEMENT le JSON, sans texte autour.`
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
