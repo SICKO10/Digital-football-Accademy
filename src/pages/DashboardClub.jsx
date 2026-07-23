@@ -6,6 +6,7 @@ import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
+import GestionSponsors from '../components/sponsors/GestionSponsors'
 const EQUIPES = ['A', 'B']
 
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
@@ -25,6 +26,11 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('categories')
+  const [saisonActuelle] = useState(() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}` // saison sportive : 1er juillet → 30 juin
+  })
 
   // Catégories & équipes
   const [categories, setCategories] = useState([])
@@ -559,6 +565,7 @@ export default function DashboardClub() {
             { id: 'categories', label: '📋 Catégories & Équipes' },
             { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
             { id: 'classements', label: '🏆 Classements' },
+            { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'recrutement', label: '🔍 Recrutement' },
             { id: 'profil', label: '⭐ Profil club' },
           ].map(t => (
@@ -938,6 +945,9 @@ export default function DashboardClub() {
             </div>
           )
         })()}
+        {activeTab === 'sponsors' && (
+          <GestionSponsors clubId={clubId} saison={saisonActuelle} />
+        )}
         {activeTab === 'recrutement' && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />
         )}
