@@ -8,6 +8,7 @@ import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
+import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -958,6 +959,7 @@ function DashboardJoueur() {
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
     { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread },
+    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
     { id: 'clubs', label: 'Explorer', icon: <IconBuilding /> },
     { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length },
   ]
@@ -2093,6 +2095,12 @@ function DashboardJoueur() {
                 )}
               </div>
             )}
+          </div>
+        )}
+        {/* ── PRÉPARATION PHYSIQUE ── */}
+        {onglet === 'prep_physique' && (
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <PrepPhysiqueJoueur joueurId={userId} />
           </div>
         )}
         {/* ── EXPLORER ── */}

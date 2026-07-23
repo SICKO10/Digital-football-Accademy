@@ -6,6 +6,7 @@ import Tactipad from '../components/Tactipad'
 import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
+import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -1412,6 +1413,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'entrainements', label: '🏃 Entraînements' },
     { key: 'mes_seances', label: '🎥 Séances' },
     { key: 'analyse_video', label: '🎬 Analyse vidéo' },
+    { key: 'prep_physique', label: '🏋️ Préparation physique' },
     { key: 'tactipad', label: '🎨 Tactipad' },
     { key: 'notes', label: '📝 Évaluations' },
     { key: 'recrutement', label: '🔍 Recrutement' },
@@ -3540,6 +3542,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
         {activeSection === 'analyse_video' && (
           <AnalyseVideo userId={userId} />
+        )}
+
+        {activeSection === 'prep_physique' && (
+          <GestionPrepPhysique educateurId={userId} />
         )}
 
         {activeSection === 'tactipad' && (
