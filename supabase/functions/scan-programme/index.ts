@@ -65,9 +65,10 @@ Ne retourne rien d'autre que le JSON.`
     if (data.error) throw new Error(data.error.message)
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-    // Nettoyer le JSON (Gemini ajoute parfois des backticks)
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const programme = JSON.parse(cleaned)
+    // Extraire le JSON même s'il y a du texte autour
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error(`Gemini n'a pas retourné de JSON valide: ${text.substring(0, 300)}`)
+    const programme = JSON.parse(jsonMatch[0])
 
     return new Response(JSON.stringify({ programme }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
