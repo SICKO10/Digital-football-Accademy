@@ -336,6 +336,7 @@ export default function DashboardEducateur() {
   const navigate = useNavigate()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
+  const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
   const [activeSection, setActiveSection] = useState('equipe')
   const [loading, setLoading] = useState(true)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
@@ -438,8 +439,18 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerStaffClub(user.id)])
     setLoading(false)
+  }
+
+  const chargerStaffClub = async (uid) => {
+    // Ce compte éducateur est-il aussi membre du staff d'un club ? (double accès)
+    const { data } = await supabase
+      .from('staff_club')
+      .select('club_id, profiles!staff_club_club_id_fkey(club)')
+      .eq('user_id', uid)
+      .maybeSingle()
+    setStaffClub(data || null)
   }
 
   const chargerClubAffiliation = async (uid) => {
@@ -1336,10 +1347,18 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>Éducateur</span>
           {profil?.club && <span style={{ fontSize: '13px', color: '#555' }}>· {profil.club}</span>}
         </div>
-        <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
-          style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
-          Déconnexion
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {staffClub && (
+            <button onClick={() => navigate('/club')}
+              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px' }}>
+              🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
+            </button>
+          )}
+          <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
+            style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            Déconnexion
+          </button>
+        </div>
       </nav>
 
       {/* TABS */}

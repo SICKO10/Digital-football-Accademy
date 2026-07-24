@@ -18,6 +18,7 @@ import Jogabonito from './pages/Jogabonito'
 import UploadReel from './pages/UploadReel'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import AcceptInvite from './pages/AcceptInvite'
 import CGU from './pages/CGU'
 import ClubPublic from './pages/ClubPublic'
 import TactipadPublic from './pages/TactipadPublic'
@@ -68,6 +69,7 @@ function App() {
         <Route path="/upload-reel" element={<UploadReel />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/cgu" element={<CGU />} />
         <Route path="/clubs/:id" element={<ClubPublic />} />
         <Route path="/tactipad/:slug" element={<TactipadPublic />} />

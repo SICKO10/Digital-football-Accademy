@@ -35,6 +35,7 @@ export default function DashboardClub() {
   const [activeTab, setActiveTab] = useState('categories')
   const [activeCategorie, setActiveCategorie] = useState('sportif')
   const [monRole, setMonRole] = useState(null)
+  const [estAussiEducateur, setEstAussiEducateur] = useState(false) // double accès : staff qui a aussi un profil éducateur
   const [saisonActuelle] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
@@ -47,6 +48,9 @@ export default function DashboardClub() {
   const [resultatsStaff, setResultatsStaff] = useState([])
   const [roleAAssigner, setRoleAAssigner] = useState('directeur_sportif')
   const [addingStaffId, setAddingStaffId] = useState(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [invitingStaff, setInvitingStaff] = useState(false)
+  const [inviteMessage, setInviteMessage] = useState(null) // { type: 'ok' | 'erreur', texte }
 
   // Catégories & équipes
   const [categories, setCategories] = useState([])
@@ -173,6 +177,7 @@ export default function DashboardClub() {
     setClubId(resolvedClubId)
     setClub(clubProfile)
     setMonRole(role)
+    setEstAussiEducateur(profile.plan === 'educateur')
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', description: clubProfile.description || '' })
 
     // Génère un code club s'il n'existe pas encore (seulement le club lui-même, pas le staff)
@@ -262,6 +267,22 @@ export default function DashboardClub() {
     setSearchStaff('')
     setResultatsStaff([])
     setAddingStaffId(null)
+  }
+
+  const inviterStaff = async () => {
+    if (!inviteEmail.trim()) return
+    setInvitingStaff(true)
+    setInviteMessage(null)
+    const { data, error } = await supabase.functions.invoke('inviter-staff', {
+      body: { email: inviteEmail.trim(), role: roleAAssigner, clubId, clubNom: club?.club || '' },
+    })
+    setInvitingStaff(false)
+    if (error || data?.error) {
+      setInviteMessage({ type: 'erreur', texte: error?.message || data?.error })
+      return
+    }
+    setInviteMessage({ type: 'ok', texte: `Invitation envoyée à ${inviteEmail}` })
+    setInviteEmail('')
   }
 
   const modifierRoleStaff = async (staffId, role) => {
@@ -655,6 +676,12 @@ export default function DashboardClub() {
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>
+          {estAussiEducateur && (
+            <button onClick={() => navigate('/educateur')}
+              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px' }}>
+              🎓 Vue Éducateur
+            </button>
+          )}
           <button style={st.btnSecondary} onClick={handleLogout}>Déconnexion</button>
         </div>
       </nav>
@@ -1226,6 +1253,29 @@ export default function DashboardClub() {
                     )
                   })}
                 </div>
+              )}
+            </div>
+
+            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>✉️ Inviter par email</p>
+              <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666' }}>Pour une personne qui n'a pas encore de compte — elle recevra un email pour créer son mot de passe et rejoindre le staff en tant que {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  style={{ ...st.input, flex: 1 }}
+                  type="email"
+                  placeholder="email@exemple.com"
+                  value={inviteEmail}
+                  onChange={e => setInviteEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && inviterStaff()}
+                />
+                <button onClick={inviterStaff} disabled={invitingStaff || !inviteEmail.trim()} style={{ ...st.btnSolid, fontSize: '12px', padding: '6px 14px', opacity: invitingStaff || !inviteEmail.trim() ? 0.5 : 1 }}>
+                  {invitingStaff ? '...' : '📨 Inviter'}
+                </button>
+              </div>
+              {inviteMessage && (
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? '#4ade80' : '#ef4444' }}>
+                  {inviteMessage.type === 'ok' ? '✅' : '⚠️'} {inviteMessage.texte}
+                </p>
               )}
             </div>
 
