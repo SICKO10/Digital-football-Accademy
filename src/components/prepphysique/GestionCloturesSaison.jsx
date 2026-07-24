@@ -154,11 +154,21 @@ export default function GestionCloturesSaison({ educateurId }) {
   const load = async () => {
     setLoading(true)
 
-    // Joueurs — TODO: adapter selon votre schéma de groupes
-    const { data: joueursData } = await supabase
-      .from('profiles')
-      .select('id, prenom, nom, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets')
-      .in('plan', ['pro', 'fan'])
+    // Joueurs affiliés à cet éducateur (même chemin que PrepPhysiqueJoueur : table
+    // `affiliations`, statut 'accepte' — pas tous les comptes pro/fan de la plateforme).
+    const { data: afData } = await supabase
+      .from('affiliations')
+      .select('joueur_id')
+      .eq('educateur_id', educateurId)
+      .eq('statut', 'accepte')
+    const joueurIds = [...new Set((afData || []).map(a => a.joueur_id))]
+
+    const { data: joueursData } = joueurIds.length > 0
+      ? await supabase
+          .from('profiles')
+          .select('id, prenom, nom, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets')
+          .in('id', joueurIds)
+      : { data: [] }
 
     // Historiques de la saison
     const { data: histData, error: histError } = await supabase
