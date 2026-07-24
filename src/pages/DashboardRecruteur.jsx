@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
+import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
 
 const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
@@ -625,6 +626,11 @@ export default function DashboardRecruteur() {
               </div>
             </>
           )}
+
+          <>
+            <p style={st.sectionTitle}>📅 Historique saisons</p>
+            <HistoriqueSaisons joueurId={j.id} />
+          </>
 
           {j.carte_fifa_url && (
             <>

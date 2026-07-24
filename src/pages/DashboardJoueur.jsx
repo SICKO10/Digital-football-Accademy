@@ -9,6 +9,7 @@ import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
+import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -1680,6 +1681,11 @@ function DashboardJoueur() {
                   </button>
                 )}
               </div>
+            </div>
+
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>📅 Historique saisons</p>
+              <HistoriqueSaisons joueurId={userId} />
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
