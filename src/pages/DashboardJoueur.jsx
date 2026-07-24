@@ -954,15 +954,15 @@ function DashboardJoueur() {
 
   const navItems = [
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
-    { id: 'profil', label: 'Mon Profil', icon: <IconUser /> },
-    { id: 'carte', label: 'Carte FIFA', icon: <IconCard /> },
-    { id: 'certif', label: 'Certification', icon: <IconBadge /> },
-    { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length },
-    { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length },
-    { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread },
-    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
-    { id: 'clubs', label: 'Explorer', icon: <IconBuilding /> },
-    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length },
+    { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: 'MON DÉVELOPPEMENT' },
+    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span>, section: 'MON DÉVELOPPEMENT' },
+    { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread, section: 'MON DÉVELOPPEMENT' },
+    { id: 'profil', label: 'Mon Profil', icon: <IconUser />, section: 'MON PROFIL' },
+    { id: 'carte', label: 'Carte FIFA', icon: <IconCard />, section: 'MON PROFIL' },
+    { id: 'certif', label: 'Certification', icon: <IconBadge />, section: 'MON PROFIL' },
+    { id: 'clubs', label: 'Explorer', icon: <IconBuilding />, section: 'MON RÉSEAU' },
+    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON RÉSEAU' },
+    { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length, section: 'MON RÉSEAU' },
   ]
 
   // Bottom nav mobile : 4 items fixes + bouton "Plus" ouvrant les items restants dans un bottom sheet
@@ -995,20 +995,27 @@ function DashboardJoueur() {
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {navItems.map(item => (
-            <button key={item.id} className="dj-nav-btn" onClick={() => setOnglet(item.id)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
-              <span style={{ flexShrink: 0 }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge > 0 && (
-                <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
-                  {item.badge}
-                </span>
+          {navItems.map((item, i) => (
+            <div key={item.id}>
+              {item.section && item.section !== navItems[i - 1]?.section && (
+                <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                  {item.section}
+                </div>
               )}
-              {onglet === item.id && (
-                <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
-              )}
-            </button>
+              <button className="dj-nav-btn" onClick={() => setOnglet(item.id)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.badge > 0 && (
+                  <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
+                    {item.badge}
+                  </span>
+                )}
+                {onglet === item.id && (
+                  <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
+                )}
+              </button>
+            </div>
           ))}
         </nav>
 
