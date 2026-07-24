@@ -18,15 +18,15 @@ const st = {
   red: '#ef4444', yellow: '#eab308',
 }
 
+const getSaison = () => {
+  const now = new Date()
+  const y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
+  return `${y}-${y + 1}`
+}
+
 function ModalCreerProgramme({ onClose, onSave, educateurId }) {
   const [form, setForm] = useState({ titre: '', description: '', date_debut: '', date_fin: '', nb_semaines: 2 })
   const [loading, setLoading] = useState(false)
-
-  const getSaison = () => {
-    const now = new Date()
-    const y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
-    return `${y}-${y + 1}`
-  }
 
   const handleSave = async () => {
     if (!form.titre || !form.date_debut || !form.date_fin) return
@@ -184,6 +184,8 @@ export default function GestionPrepPhysique({ educateurId }) {
   const [showCreerProgramme, setShowCreerProgramme] = useState(false)
   const [modalSeance, setModalSeance] = useState(null)
   const [modalSoumission, setModalSoumission] = useState(null)
+  const [scanLoading, setScanLoading] = useState(false)
+  const [scanResultat, setScanResultat] = useState(null)
 
   const loadProgrammes = async () => {
     setLoading(true)
@@ -248,6 +250,79 @@ export default function GestionPrepPhysique({ educateurId }) {
     await loadSeances(selectedProgramme.id)
   }
 
+  const handleScanProgramme = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setScanLoading(true)
+
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result.split(',')[1]
+
+      const { data, error } = await supabase.functions.invoke('scan-programme', {
+        body: { imageBase64: base64, mimeType: file.type },
+      })
+
+      setScanLoading(false)
+      if (error || data?.error) {
+        alert('Erreur lors du scan : ' + (error?.message || data?.error))
+        return
+      }
+      setScanResultat(data.programme)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  // Jours 1-indexés (lundi=1 … dimanche=7), pour matcher la grille (jour = ji + 1
+  // dans la vue Détail) — pas d'index 0, sinon les séances du lundi n'apparaîtraient
+  // jamais et les autres jours seraient décalés d'une case.
+  const JOUR_INDEX = { lundi: 1, mardi: 2, mercredi: 3, jeudi: 4, vendredi: 5, samedi: 6, dimanche: 7 }
+
+  const confirmerScanProgramme = async () => {
+    if (!scanResultat) return
+    // Le scan ne donne que des semaines relatives (S1, S2...), pas de vraies dates :
+    // on démarre le programme aujourd'hui pour nb_semaines.
+    const dateDebut = new Date()
+    const dateFin = new Date(dateDebut.getTime() + (scanResultat.nb_semaines || 1) * 7 * 24 * 60 * 60 * 1000)
+    const { data: prog, error } = await supabase.from('programmes_prep').insert({
+      educateur_id: educateurId,
+      titre: scanResultat.titre,
+      saison: getSaison(),
+      nb_semaines: scanResultat.nb_semaines,
+      date_debut: dateDebut.toISOString().split('T')[0],
+      date_fin: dateFin.toISOString().split('T')[0],
+      statut: 'actif',
+    }).select().single()
+
+    if (error) { alert('Erreur création programme : ' + error.message); return }
+
+    const seances = []
+    for (const sem of scanResultat.semaines) {
+      for (const j of sem.jours) {
+        if (!j.repos && j.exercice) {
+          seances.push({
+            programme_id: prog.id,
+            semaine: sem.numero,
+            jour: JOUR_INDEX[j.jour] ?? 1,
+            type_seance: j.type || 'course',
+            titre: j.exercice,
+            description: j.exercice,
+          })
+        }
+      }
+    }
+
+    if (seances.length > 0) {
+      const { error: errSeances } = await supabase.from('seances_prep').insert(seances)
+      if (errSeances) { alert('Programme créé, mais erreur sur les séances : ' + errSeances.message) }
+    }
+
+    setScanResultat(null)
+    setProgrammes(prev => [prog, ...prev])
+    alert('✅ Programme créé avec succès !')
+  }
+
   const getClassement = () => {
     const nbTotal = seances.filter(s => s.type_seance !== 'repos').length
     return joueurs.map(j => {
@@ -281,7 +356,18 @@ export default function GestionPrepPhysique({ educateurId }) {
           <h2 style={{ color: st.text, margin: 0 }}>🏋️ Préparation Physique</h2>
           <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>Programmes de vos joueurs</p>
         </div>
-        <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ Nouveau programme</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <label style={{
+            padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
+            borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            📷 Scanner un programme
+            <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
+              onChange={handleScanProgramme} disabled={scanLoading} />
+          </label>
+          <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ Nouveau programme</button>
+        </div>
       </div>
       {programmes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
@@ -312,6 +398,77 @@ export default function GestionPrepPhysique({ educateurId }) {
       {showCreerProgramme && (
         <ModalCreerProgramme educateurId={educateurId} onClose={() => setShowCreerProgramme(false)}
           onSave={(p) => { setProgrammes(prev => [p, ...prev]); setShowCreerProgramme(false); ouvrirProgramme(p) }} />
+      )}
+
+      {scanResultat && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#111', borderRadius: 16, padding: 32,
+            width: 600, maxWidth: '95vw', maxHeight: '80vh', overflowY: 'auto', border: `1px solid ${st.border}`,
+          }}>
+            <h2 style={{ color: st.green, marginBottom: 8 }}>
+              ✅ Programme détecté : {scanResultat.titre}
+            </h2>
+            <p style={{ color: st.muted, marginBottom: 24 }}>
+              {scanResultat.nb_semaines} semaine(s) • Vérifiez avant de confirmer
+            </p>
+
+            {scanResultat.semaines.map(sem => (
+              <div key={sem.numero} style={{ marginBottom: 20 }}>
+                <div style={{ color: st.green, fontWeight: 700, marginBottom: 10 }}>
+                  SEMAINE {sem.numero}
+                </div>
+                {sem.jours.map(j => (
+                  <div key={j.jour} style={{
+                    display: 'flex', gap: 12, padding: '8px 12px',
+                    background: j.repos ? '#0a0a0a' : st.card2,
+                    borderRadius: 8, marginBottom: 4,
+                  }}>
+                    <span style={{ color: st.muted, width: 80, textTransform: 'capitalize' }}>
+                      {j.jour}
+                    </span>
+                    <span style={{ color: j.repos ? '#444' : st.text }}>
+                      {j.repos ? '— Repos' : j.exercice}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <button
+                onClick={confirmerScanProgramme}
+                style={{
+                  flex: 1, padding: 14, background: st.green, border: 'none',
+                  borderRadius: 10, color: '#000', fontWeight: 800, cursor: 'pointer',
+                }}>
+                ✅ Confirmer et remplir la grille
+              </button>
+              <button
+                onClick={() => setScanResultat(null)}
+                style={{
+                  padding: '14px 24px', background: st.card2, border: `1px solid ${st.border}`,
+                  borderRadius: 10, color: st.text, cursor: 'pointer',
+                }}>
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {scanLoading && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999,
+        }}>
+          <div style={{ color: st.green, fontSize: 18, fontWeight: 700 }}>
+            🔍 Analyse du programme en cours...
+          </div>
+        </div>
       )}
     </div>
   )

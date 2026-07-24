@@ -27,8 +27,13 @@ function SmartDashboard() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setDest('/login'); return }
-      supabase.from('profiles').select('plan').eq('id', user.id).single().then(({ data }) => {
-        const plan = data?.plan
+      Promise.all([
+        supabase.from('profiles').select('plan').eq('id', user.id).single(),
+        supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),
+      ]).then(([{ data: profil }, { data: staff }]) => {
+        // Membre du staff d'un club (rôle géré et détecté par DashboardClub lui-même)
+        if (staff) { setDest('/club'); return }
+        const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'recruteur') setDest('/recruteur')
         else if (plan === 'club') setDest('/club')
