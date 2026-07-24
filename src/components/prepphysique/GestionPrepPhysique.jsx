@@ -241,6 +241,11 @@ export default function GestionPrepPhysique({ educateurId }) {
     await Promise.all([loadSoumissions(selectedProgramme.id), loadTests(selectedProgramme.id), loadJoueurs()])
   }
 
+  const ouvrirStats = async () => {
+    setVue('stats')
+    await loadSoumissions(selectedProgramme.id)
+  }
+
   const supprimerSeance = async (seanceId) => {
     if (!confirm('Supprimer cette séance ?')) return
     await supabase.from('seances_prep').delete().eq('id', seanceId)
@@ -333,9 +338,11 @@ export default function GestionPrepPhysique({ educateurId }) {
       const sj = soumissions.filter(s => s.joueur_id === j.id)
       const validees = sj.filter(s => s.statut === 'valide').length
       const taux = nbTotal > 0 ? Math.round((validees / nbTotal) * 100) : 0
+      const points = sj.reduce((acc, s) => acc + (s.bonus ? 2 : 1), 0)
+      const nbBonus = sj.filter(s => s.bonus).length
       const t = tests.find(t => t.joueur_id === j.id)
-      return { ...j, validees, total: nbTotal, taux, cmj: t?.cmj_cm, s10: t?.sprint_10m, s30: t?.sprint_30m, yoyo: t?.yoyo_ir1_m }
-    }).sort((a, b) => b.taux - a.taux)
+      return { ...j, validees, total: nbTotal, taux, points, nbBonus, cmj: t?.cmj_cm, s10: t?.sprint_10m, s30: t?.sprint_30m, yoyo: t?.yoyo_ir1_m }
+    }).sort((a, b) => b.points - a.points)
   }
 
   const joueurAFait = (joueurId, seanceId) =>
@@ -495,6 +502,7 @@ export default function GestionPrepPhysique({ educateurId }) {
             <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>{selectedProgramme.titre}</h2>
           </div>
           <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 Suivi</button>
+          <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 Stats</button>
           <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 Classement</button>
         </div>
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
@@ -590,6 +598,55 @@ export default function GestionPrepPhysique({ educateurId }) {
     )
   }
 
+  // VUE STATS
+  if (vue === 'stats') {
+    return (
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
+          <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>📊 Stats joueurs</h2>
+        </div>
+        {joueurs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>Aucun joueur affilié</div>
+        ) : (
+          joueurs.map(j => {
+            const soumJ = soumissions.filter(s => s.joueur_id === j.id)
+            const distTotal = soumJ.reduce((acc, s) => acc + (s.distance_reelle || 0), 0)
+            const dureeTotal = soumJ.reduce((acc, s) => acc + (s.duree_reelle || 0), 0)
+            const allureMoy = distTotal > 0 ? (dureeTotal / distTotal).toFixed(1) : '—'
+            const captures = soumJ.filter(s => s.proof_url)
+            return (
+              <div key={j.id} style={{ background: st.card2, borderRadius: 10, padding: 16, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <span style={{ color: st.text, fontWeight: 700 }}>{j.prenom} {j.nom}</span>
+                  <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap' }}>
+                    <span>🏃 {distTotal.toFixed(1)} km</span>
+                    <span>⏱ {dureeTotal} min</span>
+                    <span>📈 {allureMoy} min/km</span>
+                    <span>✅ {soumJ.length} séances</span>
+                  </div>
+                </div>
+                {captures.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    {captures.map(s => {
+                      const seance = seances.find(se => se.id === s.seance_id)
+                      return (
+                        <a key={s.id} href={s.proof_url} target="_blank" rel="noreferrer"
+                          style={{ padding: '4px 10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
+                          📎 {(seance?.titre || 'Séance').substring(0, 20)}
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+    )
+  }
+
   // VUE CLASSEMENT
   if (vue === 'classement') {
     const classement = getClassement()
@@ -599,20 +656,23 @@ export default function GestionPrepPhysique({ educateurId }) {
           <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
           <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>🏆 Classement</h2>
         </div>
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 90px 65px 65px 65px 70px', padding: '12px 16px', background: st.card2, color: st.muted, fontSize: 11, fontWeight: 700, gap: 8 }}>
-            <div>#</div><div>JOUEUR</div><div style={{ textAlign: 'center' }}>RÉGULARITÉ</div>
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, overflow: 'hidden', overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', background: st.card2, color: st.muted, fontSize: 11, fontWeight: 700, gap: 8 }}>
+            <div>#</div><div>JOUEUR</div><div style={{ textAlign: 'center' }}>POINTS</div><div style={{ textAlign: 'center' }}>RÉGULARITÉ</div>
+            <div style={{ textAlign: 'center' }}>BONUS</div>
             <div style={{ textAlign: 'center' }}>CMJ</div><div style={{ textAlign: 'center' }}>10m</div>
             <div style={{ textAlign: 'center' }}>30m</div><div style={{ textAlign: 'center' }}>Yo-Yo</div>
           </div>
           {classement.map((j, idx) => (
-            <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 90px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? '#0a1a0a' : 'transparent' }}>
-              <div style={{ color: idx === 0 ? st.green : st.muted, fontWeight: 700 }}>{idx + 1}</div>
+            <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? '#0a1a0a' : 'transparent' }}>
+              <div style={{ color: idx === 0 ? st.green : st.muted, fontWeight: 700 }}>{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}</div>
               <div style={{ color: st.text, fontWeight: idx < 3 ? 700 : 400 }}>{j.full_name || `${j.prenom || ''} ${j.nom || ''}`}</div>
+              <div style={{ textAlign: 'center', color: st.green, fontWeight: 800 }}>{j.points} pts</div>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ color: j.taux >= 80 ? st.green : j.taux >= 50 ? st.yellow : st.red, fontWeight: 700 }}>{j.taux}%</span>
                 <div style={{ color: st.muted, fontSize: 10 }}>{j.validees}/{j.total}</div>
               </div>
+              <div style={{ textAlign: 'center', color: j.nbBonus > 0 ? st.yellow : st.border }}>{j.nbBonus > 0 ? `⭐ x${j.nbBonus}` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.cmj ? st.text : st.border }}>{j.cmj ? `${j.cmj}cm` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s10 ? st.text : st.border }}>{j.s10 ? `${j.s10}s` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s30 ? st.text : st.border }}>{j.s30 ? `${j.s30}s` : '—'}</div>

@@ -23,7 +23,13 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
     rpe: soumissionExistante?.rpe || '',
     notes: soumissionExistante?.notes || '',
     date_realisation: soumissionExistante?.date_realisation || new Date().toISOString().split('T')[0],
+    objectifs_atteints: soumissionExistante?.objectifs_atteints || false,
+    bonus: soumissionExistante?.bonus || false,
   })
+  // Course/fractionné = distance et durée à saisir (manuel ou scan) ; les autres types
+  // (renforcement, gainage, circuit...) n'ont pas de distance/durée à mesurer, juste
+  // une validation "objectifs atteints".
+  const estCourse = ['course', 'fractionne'].includes(seance.type_seance)
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(soumissionExistante?.proof_url || null)
   const [loading, setLoading] = useState(false)
@@ -88,6 +94,9 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
       fc_moyenne: form.fc_moyenne ? parseInt(form.fc_moyenne) : null,
       rpe: form.rpe ? parseInt(form.rpe) : null,
       notes: form.notes || null,
+      objectifs_atteints: form.objectifs_atteints || false,
+      bonus: form.bonus || false,
+      points: form.bonus ? 2 : 1,
       // Auto-validé : plus de bouton "Valider" côté éducateur, la soumission du
       // joueur est directement comptabilisée (classement, progression).
       proof_url, statut: 'valide',
@@ -119,18 +128,35 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
             {soumissionExistante.statut === 'valide' ? '✅ Validé par le coach' : soumissionExistante.statut === 'refuse' ? '❌ Refusé — tu peux renvoyer' : '⏳ En attente de validation'}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, background: st.card2, borderRadius: 8, padding: 4 }}>
-          {['manuel', 'upload'].map(m => (
-            <button key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mode === m ? st.green : 'transparent', color: mode === m ? '#000' : st.muted }}>
-              {m === 'manuel' ? '✍️ Saisie manuelle' : '📷 Screenshot'}
-            </button>
-          ))}
-        </div>
+        {estCourse && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, background: st.card2, borderRadius: 8, padding: 4 }}>
+            {['manuel', 'upload'].map(m => (
+              <button key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mode === m ? st.green : 'transparent', color: mode === m ? '#000' : st.muted }}>
+                {m === 'manuel' ? '✍️ Saisie manuelle' : '📷 Screenshot'}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ marginBottom: 16 }}>
           <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date de réalisation</label>
           <input type="date" value={form.date_realisation} onChange={e => setForm(f => ({ ...f, date_realisation: e.target.value }))} style={inp} />
         </div>
-        {mode === 'manuel' ? (
+        {!estCourse ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <label style={{ display: 'flex', gap: 12, alignItems: 'center', color: st.text, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.objectifs_atteints} onChange={e => setForm(f => ({ ...f, objectifs_atteints: e.target.checked }))} />
+              ✅ J'ai atteint les objectifs de la séance
+            </label>
+            <label style={{ display: 'flex', gap: 12, alignItems: 'center', color: st.green, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.bonus} onChange={e => setForm(f => ({ ...f, bonus: e.target.checked }))} />
+              ⭐ BONUS — J'ai fait plus que demandé
+            </label>
+            <div>
+              <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Notes</label>
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Ressenti, conditions..." style={{ ...inp, resize: 'vertical' }} />
+            </div>
+          </div>
+        ) : mode === 'manuel' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {scanNotice && (
               <div style={{ background: '#0a1a0a', border: `1px solid ${st.green}40`, borderRadius: 8, padding: 10, color: st.green, fontSize: 12 }}>
