@@ -615,7 +615,6 @@ export default function GestionPrepPhysique({ educateurId }) {
             const distTotal = soumJ.reduce((acc, s) => acc + (s.distance_reelle || 0), 0)
             const dureeTotal = soumJ.reduce((acc, s) => acc + (s.duree_reelle || 0), 0)
             const allureMoy = distTotal > 0 ? (dureeTotal / distTotal).toFixed(1) : '—'
-            const captures = soumJ.filter(s => s.proof_url)
             const ouvert = joueurOuvert === j.id
             return (
               <div key={j.id} style={{ background: st.card2, borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
@@ -627,25 +626,32 @@ export default function GestionPrepPhysique({ educateurId }) {
                   <span style={{ color: st.muted, fontSize: 13 }}>✅ {soumJ.length} séances</span>
                 </button>
                 {ouvert && (
-                  <div style={{ padding: '0 16px 16px' }}>
-                    <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap', marginBottom: captures.length > 0 ? 12 : 0 }}>
+                  <div>
+                    <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap', padding: '0 16px 12px' }}>
                       <span>🏃 {distTotal.toFixed(1)} km</span>
                       <span>⏱ {dureeTotal} min</span>
                       <span>📈 {allureMoy} min/km</span>
                     </div>
-                    {captures.length > 0 && (
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {captures.map(s => {
-                          const seance = seances.find(se => se.id === s.seance_id)
-                          return (
-                            <a key={s.id} href={s.proof_url} target="_blank" rel="noreferrer"
-                              style={{ padding: '4px 10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
-                              📎 {(seance?.titre || 'Séance').substring(0, 20)}
-                            </a>
-                          )
-                        })}
-                      </div>
-                    )}
+                    {soumJ.length === 0 ? (
+                      <div style={{ padding: '8px 16px 16px', color: st.border, fontSize: 13 }}>Aucune séance soumise</div>
+                    ) : soumJ.map(s => {
+                      const seance = seances.find(se => se.id === s.seance_id)
+                      return (
+                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: `1px solid ${st.border}`, flexWrap: 'wrap', gap: 8 }}>
+                          <span style={{ color: '#ccc', fontSize: 13 }}>{seance?.titre || 'Séance'}</span>
+                          <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13 }}>
+                            <span style={{ color: st.muted }}>{s.distance_reelle ? `${s.distance_reelle} km` : '—'}</span>
+                            <span style={{ color: st.muted }}>{s.duree_reelle ? `${s.duree_reelle} min` : '—'}</span>
+                            {s.proof_url && (
+                              <a href={s.proof_url} target="_blank" rel="noreferrer"
+                                style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${st.green}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
+                                📎 Voir
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
