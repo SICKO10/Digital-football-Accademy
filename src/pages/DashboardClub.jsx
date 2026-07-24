@@ -25,6 +25,7 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('categories')
+  const [activeCategorie, setActiveCategorie] = useState('sportif')
   const [saisonActuelle] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
@@ -546,16 +547,41 @@ export default function DashboardClub() {
           <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} catégorie{categories.length !== 1 ? 's' : ''} · {educateursAcceptes.length} éducateur{educateursAcceptes.length !== 1 ? 's' : ''} affilié{educateursAcceptes.length !== 1 ? 's' : ''}</p>
         </div>
 
-        <div style={st.tabs}>
+        {/* Niveau 1 — SPORTIF / ADMINISTRATIF */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           {[
+            { id: 'sportif', label: '⚽ SPORTIF', defaultTab: 'categories' },
+            { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'educateurs' },
+          ].map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
+              style={{
+                padding: '12px 28px', borderRadius: '10px', border: 'none',
+                background: activeCategorie === cat.id ? '#4ade80' : '#1a1a1a',
+                color: activeCategorie === cat.id ? '#000' : '#666',
+                fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Niveau 2 — sous-onglets */}
+        <div style={st.tabs}>
+          {(activeCategorie === 'sportif' ? [
             { id: 'categories', label: '📋 Catégories & Équipes' },
-            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
             { id: 'classements', label: '🏆 Classements' },
+          ] : [
+            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
             { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'recrutement', label: '🔍 Recrutement' },
             { id: 'profil', label: '⭐ Profil club' },
-          ].map(t => (
-            <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
+          ]).map(t => (
+            <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>
+              {t.label}
+            </button>
           ))}
         </div>
 
