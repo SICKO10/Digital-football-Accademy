@@ -1314,19 +1314,26 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     </div>
   )
 
-  const tabs = [
-    { key: 'equipe', label: '👥 Mon équipe' },
-    { key: 'stats', label: '📊 Stats joueurs' },
-    { key: 'matchs', label: '🏟️ Compétition' },
-    { key: 'entrainements', label: '🏃 Entraînements' },
-    { key: 'mes_seances', label: '🎥 Séances' },
-    { key: 'analyse_video', label: '🎬 Analyse vidéo' },
-    { key: 'prep_physique', label: '🏋️ Préparation physique' },
-    { key: 'clotures_saison', label: '📅 Clôtures de saison' },
-    { key: 'tactipad', label: '🎨 Tactipad' },
-    { key: 'notes', label: '📝 Évaluations' },
-    { key: 'recrutement', label: '🔍 Recrutement' },
-    { key: 'profil', label: '👤 Mon profil' },
+  const sidebarSections = [
+    { titre: 'MON ÉQUIPE', items: [
+      { key: 'equipe', label: 'Mon équipe', icon: '👥' },
+      { key: 'stats', label: 'Stats joueurs', icon: '📊' },
+      { key: 'matchs', label: 'Compétition', icon: '🏆' },
+    ] },
+    { titre: 'ENTRAÎNEMENT', items: [
+      { key: 'entrainements', label: 'Entraînements', icon: '🏃' },
+      { key: 'mes_seances', label: 'Séances', icon: '🎬' },
+      { key: 'prep_physique', label: 'Préparation physique', icon: '🏋️' },
+      { key: 'tactipad', label: 'Tactipad', icon: '🗺️' },
+    ] },
+    { titre: 'SUIVI & ANALYSE', items: [
+      { key: 'analyse_video', label: 'Analyse vidéo', icon: '🎥' },
+      { key: 'notes', label: 'Évaluations', icon: '📝' },
+      { key: 'clotures_saison', label: 'Clôtures de saison', icon: '📅' },
+    ] },
+    { titre: 'RÉSEAU', items: [
+      { key: 'recrutement', label: 'Recrutement', icon: '🔍' },
+    ] },
   ]
 
   const chargerRecrutJoueurs = async () => {
@@ -1338,40 +1345,57 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
   return (
     <>
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 
-      {/* NAV */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #1a1a1a' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></span>
-          <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>Éducateur</span>
-          {profil?.club && <span style={{ fontSize: '13px', color: '#555' }}>· {profil.club}</span>}
+      {/* SIDEBAR */}
+      <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+        <div style={{ padding: '24px 20px 16px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+            Digital<span style={{ color: '#4ade80' }}>Football</span>
+          </div>
+          <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
+          {profil?.club && <p style={{ fontSize: '12px', color: '#555', margin: '8px 0 0' }}>{profil.club}</p>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+        <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
+          {sidebarSections.map(section => (
+            <div key={section.titre}>
+              <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                {section.titre}
+              </div>
+              {section.items.map(item => (
+                <button key={item.key} onClick={() => setActiveSection(item.key)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#4ade8012' : 'transparent', color: activeSection === item.key ? '#4ade80' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {activeSection === item.key && (
+                    <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
+          <button onClick={() => setActiveSection('profil')}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#4ade8012' : 'transparent', color: activeSection === 'profil' ? '#4ade80' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            <span>👤</span><span style={{ flex: 1 }}>Mon profil</span>
+          </button>
           {staffClub && (
             <button onClick={() => navigate('/club')}
-              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px' }}>
+              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
               🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
             </button>
           )}
           <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
-            style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ width: '100%', marginTop: '4px', background: 'transparent', color: '#555', border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
             Déconnexion
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* TABS */}
-      <div style={{ borderBottom: '1px solid #1a1a1a', padding: '0 2rem', display: 'flex', gap: '4px', overflowX: 'auto' }}>
-        {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveSection(tab.key)}
-            style={{ background: 'transparent', border: 'none', borderBottom: activeSection === tab.key ? '2px solid #4ade80' : '2px solid transparent', color: activeSection === tab.key ? '#4ade80' : '#555', padding: '14px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
         {/* ===== MON ÉQUIPE ===== */}
         {activeSection === 'equipe' && (
