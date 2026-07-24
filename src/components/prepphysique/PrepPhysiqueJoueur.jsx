@@ -217,17 +217,23 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
 
   const load = async () => {
     setLoading(true)
+    console.log('[DEBUG] joueurId reçu:', joueurId)
+    console.log('[DEBUG] attendu:', '147846d3-71e6-4c35-a84e-21084a9ea20a')
     // Un joueur ne doit voir que les programmes de ses éducateurs affiliés (table
     // `affiliations`, statut 'accepte') — pas le programme actif le plus récent
     // tous éducateurs confondus.
     const { data: afData, error: afError } = await supabase.from('affiliations').select('educateur_id').eq('joueur_id', joueurId).eq('statut', 'accepte')
+    console.log('[DEBUG PrepPhysique] joueurId:', joueurId)
+    console.log('[DEBUG PrepPhysique] affiliations trouvées:', afData, 'erreur:', afError)
     if (afError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     const educateurIds = [...new Set((afData || []).map(a => a.educateur_id))]
+    console.log('[DEBUG PrepPhysique] educateurIds:', educateurIds)
     if (educateurIds.length === 0) { setProgramme(null); setLoading(false); return }
 
     // maybeSingle (pas single) : si un éducateur a plusieurs programmes actifs à la fois,
     // single() lève une erreur ("multiple rows") et masque tout au joueur.
     const { data, error } = await supabase.from('programmes_prep').select('*').in('educateur_id', educateurIds).eq('statut', 'actif').order('created_at', { ascending: false }).limit(1).maybeSingle()
+    console.log('[DEBUG PrepPhysique] programmes trouvés:', data, 'erreur:', error)
     if (error?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     if (!data) { setProgramme(null); setLoading(false); return }
     setProgramme(data)
