@@ -88,7 +88,9 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
       fc_moyenne: form.fc_moyenne ? parseInt(form.fc_moyenne) : null,
       rpe: form.rpe ? parseInt(form.rpe) : null,
       notes: form.notes || null,
-      proof_url, statut: 'soumis',
+      // Auto-validé : plus de bouton "Valider" côté éducateur, la soumission du
+      // joueur est directement comptabilisée (classement, progression).
+      proof_url, statut: 'valide',
     }
     const { error } = soumissionExistante?.id
       ? await supabase.from('soumissions_prep').update(payload).eq('id', soumissionExistante.id)

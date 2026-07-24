@@ -142,7 +142,7 @@ function ModalSeance({ seance, programmeId, semaine, jour, onClose, onSave }) {
   )
 }
 
-function ModalSoumission({ soumission, joueurNom, onClose, onValider, onRefuser }) {
+function ModalSoumission({ soumission, joueurNom, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
       <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 520, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -153,6 +153,8 @@ function ModalSoumission({ soumission, joueurNom, onClose, onValider, onRefuser 
           {soumission.distance_reelle && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>DISTANCE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.distance_reelle} km</div></div>}
           {soumission.allure && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>ALLURE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.allure} /km</div></div>}
           {soumission.calories && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>CALORIES</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.calories} kcal</div></div>}
+          {soumission.fc_moyenne && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>FC MOYENNE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.fc_moyenne} bpm</div></div>}
+          {soumission.rpe && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>RPE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.rpe}/10</div></div>}
         </div>
         {soumission.notes && <div style={{ background: st.card2, borderRadius: 8, padding: 12, marginBottom: 16 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>NOTES</div><div style={{ color: st.text, fontSize: 14 }}>{soumission.notes}</div></div>}
         {soumission.proof_url && (
@@ -163,8 +165,6 @@ function ModalSoumission({ soumission, joueurNom, onClose, onValider, onRefuser 
         )}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Fermer</button>
-          {soumission.statut !== 'refuse' && <button onClick={onRefuser} style={{ padding: '10px 20px', background: st.red, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>❌ Refuser</button>}
-          {soumission.statut !== 'valide' && <button onClick={onValider} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>✅ Valider</button>}
         </div>
       </div>
     </div>
@@ -206,16 +206,19 @@ export default function GestionPrepPhysique({ educateurId }) {
     const { data: seancesData } = await supabase.from('seances_prep').select('id').eq('programme_id', programmeId)
     const ids = (seancesData || []).map(s => s.id)
     if (!ids.length) { setSoumissions([]); return }
-    // profiles.full_name n'existe pas dans ce schéma — seuls nom/prenom sont sélectionnés
-    // (nomJoueur() a déjà un fallback prenom+nom pour ce cas).
-    const { data } = await supabase.from('soumissions_prep').select('*, joueur:profiles!joueur_id(id, nom, prenom)').in('seance_id', ids).order('created_at', { ascending: false })
+    const { data } = await supabase.from('soumissions_prep').select('*').in('seance_id', ids).order('created_at', { ascending: false })
     setSoumissions(data || [])
   }
 
   const loadJoueurs = async () => {
-    // Les comptes joueurs de cette app sont plan='pro' ou plan='fan' (il n'existe pas de plan='joueur').
-    const { data } = await supabase.from('profiles').select('id, nom, prenom').in('plan', ['pro', 'fan'])
-    setJoueurs(data || [])
+    // Seuls les joueurs affiliés (statut='accepte') à cet éducateur — pas tous les
+    // comptes pro/fan de la plateforme. Même chemin que PrepPhysiqueJoueur/GestionCloturesSaison.
+    const { data } = await supabase
+      .from('affiliations')
+      .select('profiles!affiliations_joueur_id_fkey(id, nom, prenom)')
+      .eq('educateur_id', educateurId)
+      .eq('statut', 'accepte')
+    setJoueurs((data || []).map(a => a.profiles).filter(Boolean))
   }
 
   const loadTests = async (programmeId) => {
@@ -236,12 +239,6 @@ export default function GestionPrepPhysique({ educateurId }) {
   const ouvrirClassement = async () => {
     setVue('classement')
     await Promise.all([loadSoumissions(selectedProgramme.id), loadTests(selectedProgramme.id), loadJoueurs()])
-  }
-
-  const validerSoumission = async (id, statut) => {
-    await supabase.from('soumissions_prep').update({ statut, valide_par: educateurId, valide_le: new Date().toISOString() }).eq('id', id)
-    await loadSoumissions(selectedProgramme.id)
-    setModalSoumission(null)
   }
 
   const supprimerSeance = async (seanceId) => {
@@ -341,10 +338,11 @@ export default function GestionPrepPhysique({ educateurId }) {
     }).sort((a, b) => b.taux - a.taux)
   }
 
-  const nomJoueur = (s) => {
-    const j = s.joueur
-    return j?.full_name || `${j?.prenom || ''} ${j?.nom || ''}`.trim() || 'Joueur'
-  }
+  const joueurAFait = (joueurId, seanceId) =>
+    soumissions.some(s => s.joueur_id === joueurId && s.seance_id === seanceId)
+
+  const getSoumission = (joueurId, seanceId) =>
+    soumissions.find(s => s.joueur_id === joueurId && s.seance_id === seanceId)
 
   if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>Chargement...</div>
 
@@ -535,55 +533,62 @@ export default function GestionPrepPhysique({ educateurId }) {
     )
   }
 
-  // VUE SUIVI
-  if (vue === 'suivi') return (
-    <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-        <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
-        <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>📋 Suivi des joueurs</h2>
+  // VUE SUIVI — tableau fait/pas fait (aucune validation requise : une soumission = fait)
+  if (vue === 'suivi') {
+    const seancesActives = seances.filter(s => s.type_seance !== 'repos')
+    return (
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
+          <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>📋 Suivi des joueurs</h2>
+        </div>
+        {joueurs.length === 0 || seancesActives.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
+            <div style={{ color: st.text, marginBottom: 8 }}>{joueurs.length === 0 ? 'Aucun joueur affilié' : 'Aucune séance dans ce programme'}</div>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ color: st.muted, textAlign: 'left', padding: 8 }}>Joueur</th>
+                  {seancesActives.map(s => (
+                    <th key={s.id} style={{ color: st.muted, textAlign: 'center', padding: 8, fontSize: 11, whiteSpace: 'nowrap' }}>
+                      S{s.semaine} {['L', 'M', 'Me', 'J', 'V', 'S', 'D'][s.jour - 1]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {joueurs.map(j => (
+                  <tr key={j.id} style={{ borderTop: `1px solid ${st.border}` }}>
+                    <td style={{ padding: '10px 8px', color: st.text, fontWeight: 600, whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</td>
+                    {seancesActives.map(s => {
+                      const fait = joueurAFait(j.id, s.id)
+                      const sub = fait ? getSoumission(j.id, s.id) : null
+                      return (
+                        <td key={s.id} style={{ textAlign: 'center', padding: 8 }}>
+                          {fait ? (
+                            <button onClick={() => setModalSoumission({ soumission: sub, joueurNom: `${j.prenom} ${j.nom}` })}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, margin: '0 auto' }}>
+                              <span style={{ color: st.green, fontSize: 16 }}>✅</span>
+                              {sub?.proof_url && <span style={{ color: st.green, fontSize: 10 }}>📎</span>}
+                            </button>
+                          ) : <span style={{ color: st.border, fontSize: 16 }}>—</span>}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {modalSoumission && <ModalSoumission {...modalSoumission} onClose={() => setModalSoumission(null)} />}
       </div>
-      {soumissions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-          <div style={{ color: st.text, marginBottom: 8 }}>Aucune soumission reçue</div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {soumissions.map(s => {
-            const nom = nomJoueur(s)
-            const seance = seances.find(se => se.id === s.seance_id)
-            const statutColor = s.statut === 'valide' ? st.green : s.statut === 'refuse' ? st.red : st.yellow
-            const statutBg = s.statut === 'valide' ? '#14532d' : s.statut === 'refuse' ? '#450a0a' : '#1a1a00'
-            return (
-              <div key={s.id} style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: st.green, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{nom.charAt(0)}</div>
-                    <div>
-                      <div style={{ color: st.text, fontWeight: 700 }}>{nom}</div>
-                      <div style={{ color: st.muted, fontSize: 12 }}>{seance?.titre || '—'}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    {s.duree_reelle && <span style={{ color: st.muted, fontSize: 13 }}>⏱ {s.duree_reelle}min</span>}
-                    {s.distance_reelle && <span style={{ color: st.muted, fontSize: 13 }}>📍 {s.distance_reelle}km</span>}
-                    {s.proof_url && <span style={{ color: st.green, fontSize: 13 }}>📷 Screenshot</span>}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  <span style={{ background: statutBg, color: statutColor, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                    {s.statut === 'valide' ? '✅ Validé' : s.statut === 'refuse' ? '❌ Refusé' : '⏳ En attente'}
-                  </span>
-                  <button onClick={() => setModalSoumission({ soumission: s, joueurNom: nom })} style={{ padding: '6px 14px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer', fontSize: 13 }}>Voir →</button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-      {modalSoumission && <ModalSoumission {...modalSoumission} onClose={() => setModalSoumission(null)} onValider={() => validerSoumission(modalSoumission.soumission.id, 'valide')} onRefuser={() => validerSoumission(modalSoumission.soumission.id, 'refuse')} />}
-    </div>
-  )
+    )
+  }
 
   // VUE CLASSEMENT
   if (vue === 'classement') {
