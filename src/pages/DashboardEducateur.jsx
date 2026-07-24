@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
-import { CarteHistoriqueSaison } from '../components/HistoriqueSaisons'
 import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
+import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -438,7 +438,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerHistorique(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id)])
     setLoading(false)
   }
 
@@ -451,11 +451,6 @@ export default function DashboardEducateur() {
       .limit(1)
       .maybeSingle()
     setClubAffiliation(data || null)
-  }
-
-  const chargerHistorique = async (uid) => {
-    const { data } = await supabase.from('historique_saisons').select('*').eq('educateur_id', uid).order('saison', { ascending: false })
-    setHistorique(data || [])
   }
 
   const chargerMesSeances = async (uid) => {
@@ -535,17 +530,6 @@ export default function DashboardEducateur() {
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [clubCategories, setClubCategories] = useState([])
-
-  const [historique, setHistorique] = useState([])
-  const [modalHistoriqueOuverte, setModalHistoriqueOuverte] = useState(false)
-  const [historiqueEnEdition, setHistoriqueEnEdition] = useState(null) // ligne historique_saisons en cours d'édition, ou null pour une clôture
-  const [classementFinal, setClassementFinal] = useState('')
-  const [savingHistorique, setSavingHistorique] = useState(false)
-  const [saisonActuelle] = useState(() => {
-    const now = new Date()
-    const y = now.getFullYear()
-    return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}` // saison sportive : 1er juillet → 30 juin
-  })
 
   const [mesSeances, setMesSeances] = useState([])
   const [showUploadSeance, setShowUploadSeance] = useState(false)
@@ -854,93 +838,6 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const { data } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
     if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
     setSavingProfil(false)
-  }
-
-  // Bornes calendaires d'une saison "2025-2026" → 1er juillet 2025 → 30 juin 2026.
-  // matchs_equipe et presences_entrainement n'ont pas de colonne saison, donc les stats
-  // sont recalculées à partir des dates plutôt que d'un filtre saison direct.
-  const saisonDates = (saison) => {
-    const [y1] = saison.split('-').map(Number)
-    return [`${y1}-07-01`, `${y1 + 1}-06-30`]
-  }
-
-  const ouvrirModalHistorique = (h = null) => {
-    setHistoriqueEnEdition(h)
-    setClassementFinal(h?.classement_final != null ? String(h.classement_final) : '')
-    setModalHistoriqueOuverte(true)
-  }
-
-  // "+ Clôturer la saison" : si la saison en cours a déjà une ligne, on l'édite plutôt que
-  // d'en recréer une (historique_saisons n'a pas de contrainte d'unicité éducateur+saison).
-  const ouvrirModalCloture = () => {
-    ouvrirModalHistorique(historique.find(h => h.saison === saisonActuelle) || null)
-  }
-
-  const cloturerSaison = async () => {
-    setSavingHistorique(true)
-    const saison = historiqueEnEdition?.saison || saisonActuelle
-    const [debut, fin] = saisonDates(saison)
-
-    const { data: matchsSaison } = await supabase
-      .from('matchs_equipe')
-      .select('score_nous, score_eux')
-      .eq('educateur_id', userId)
-      .gte('date', debut)
-      .lte('date', fin)
-
-    const matchsJoues = (matchsSaison || []).filter(m => m.score_nous !== null && m.score_nous !== '' && m.score_eux !== null && m.score_eux !== '')
-    const nbMatchs = matchsJoues.length
-    const nbVictoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
-    const nbDefaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
-    const nbNuls = nbMatchs - nbVictoires - nbDefaites
-
-    const { data: entrainementsSaison } = await supabase
-      .from('entrainements')
-      .select('presences_entrainement(statut, present)')
-      .eq('educateur_id', userId)
-      .gte('date', debut)
-      .lte('date', fin)
-
-    // Même convention que le taux de présence global des Classements : "present" strict
-    // (convoqué/blessé/malade/absent ne comptent pas comme présent), sur les lignes saisies.
-    const presencesSaisies = (entrainementsSaison || [])
-      .flatMap(e => e.presences_entrainement || [])
-      .filter(p => p.statut || p.present)
-    const totalPresences = presencesSaisies.length
-    const presents = presencesSaisies.filter(p => (p.statut || (p.present ? 'present' : 'absent')) === 'present').length
-    const tauxPresence = totalPresences > 0 ? Math.round((presents / totalPresences) * 100) : 0
-
-    const payload = {
-      educateur_id: userId,
-      club_id: clubAffiliation?.statut === 'accepte' ? clubAffiliation.club_id : null,
-      saison,
-      categorie: profilEdu?.categorie || null,
-      niveau_championnat: profilEdu?.niveau_championnat || null,
-      classement_final: classementFinal ? parseInt(classementFinal, 10) : null,
-      nb_matchs: nbMatchs,
-      nb_victoires: nbVictoires,
-      nb_nuls: nbNuls,
-      nb_defaites: nbDefaites,
-      taux_victoire: nbMatchs > 0 ? Math.round((nbVictoires / nbMatchs) * 100) : 0,
-      taux_nul: nbMatchs > 0 ? Math.round((nbNuls / nbMatchs) * 100) : 0,
-      taux_defaite: nbMatchs > 0 ? Math.round((nbDefaites / nbMatchs) * 100) : 0,
-      taux_presence_entrainement: tauxPresence,
-    }
-
-    const { error } = historiqueEnEdition
-      ? await supabase.from('historique_saisons').update(payload).eq('id', historiqueEnEdition.id)
-      : await supabase.from('historique_saisons').insert(payload)
-
-    setSavingHistorique(false)
-    if (error) {
-      console.error('Erreur clôture saison:', error)
-      alert('Erreur lors de l\'enregistrement : ' + error.message)
-      return
-    }
-    setModalHistoriqueOuverte(false)
-    setHistoriqueEnEdition(null)
-    setClassementFinal('')
-    await chargerHistorique(userId)
   }
 
   const uploadDiplome = async (file) => {
@@ -1414,6 +1311,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { key: 'mes_seances', label: '🎥 Séances' },
     { key: 'analyse_video', label: '🎬 Analyse vidéo' },
     { key: 'prep_physique', label: '🏋️ Préparation physique' },
+    { key: 'clotures_saison', label: '📅 Clôtures de saison' },
     { key: 'tactipad', label: '🎨 Tactipad' },
     { key: 'notes', label: '📝 Évaluations' },
     { key: 'recrutement', label: '🔍 Recrutement' },
@@ -3548,6 +3446,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           <GestionPrepPhysique educateurId={userId} />
         )}
 
+        {activeSection === 'clotures_saison' && (
+          <GestionCloturesSaison educateurId={userId} />
+        )}
+
         {activeSection === 'tactipad' && (
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 Tactipad</h1>
@@ -3960,19 +3862,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
               )
             })()}
-
-            {/* ── Historique des saisons ── */}
-            <div style={{ marginTop: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>📅 Historique des saisons</h3>
-                <button onClick={ouvrirModalCloture} style={st.btnSolid}>+ Clôturer la saison</button>
-              </div>
-              {historique.length === 0 ? (
-                <p style={{ color: '#444', fontSize: '13px' }}>Aucune saison clôturée pour l'instant.</p>
-              ) : (
-                historique.map(h => <CarteHistoriqueSaison key={h.id} h={h} onEdit={ouvrirModalHistorique} />)
-              )}
-            </div>
           </>
         )}
 
@@ -4168,36 +4057,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             onValider={png => { updateProcede(tactipadModal, 'schema_png', png); setTactipadModal(null) }}
             onFermer={() => setTactipadModal(null)}
           />
-        </div>
-      </div>
-    )}
-
-    {/* ===== MODALE CLÔTURER / MODIFIER UNE SAISON ===== */}
-    {modalHistoriqueOuverte && (
-      <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '420px', padding: '24px', margin: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
-              {historiqueEnEdition ? 'Modifier la saison' : 'Clôturer la saison'} {historiqueEnEdition?.saison || saisonActuelle}
-            </h3>
-            <button onClick={() => { setModalHistoriqueOuverte(false); setHistoriqueEnEdition(null) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
-          </div>
-          <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
-            Les stats de matchs et de présence sont recalculées automatiquement depuis tes matchs et entraînements. Renseigne uniquement le classement final.
-          </p>
-          <label style={st.label}>Classement final (position dans le championnat)</label>
-          <input
-            type="number" min="1" placeholder="ex: 3"
-            value={classementFinal} onChange={e => setClassementFinal(e.target.value)}
-            style={st.input}
-          />
-          <button
-            onClick={cloturerSaison}
-            disabled={savingHistorique}
-            style={{ ...st.btnSolid, marginTop: '18px', width: '100%', opacity: savingHistorique ? 0.6 : 1 }}
-          >
-            {savingHistorique ? 'Enregistrement...' : '✅ Enregistrer la saison'}
-          </button>
         </div>
       </div>
     )}
