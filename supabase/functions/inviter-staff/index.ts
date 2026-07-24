@@ -16,8 +16,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
-    const { data: { user: caller } } = await supabaseAuth.auth.getUser()
+    const { data: { user: caller }, error: authError } = await supabaseAuth.auth.getUser()
     if (!caller) {
+      console.error('ERREUR inviter-staff (auth):', authError?.message, 'authHeader présent:', !!authHeader)
       return new Response(JSON.stringify({ error: 'Non authentifié' }), { status: 401, headers: corsHeaders })
     }
 
@@ -50,6 +51,7 @@ serve(async (req) => {
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
     return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
   } catch (err) {
+    console.error('ERREUR inviter-staff:', err.message, err)
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders })
   }
 })
