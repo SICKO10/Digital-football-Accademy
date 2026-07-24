@@ -642,12 +642,11 @@ export default function GestionPrepPhysique({ educateurId }) {
                           <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13 }}>
                             <span style={{ color: st.muted }}>{s.distance_reelle ? `${s.distance_reelle} km` : '—'}</span>
                             <span style={{ color: st.muted }}>{s.duree_reelle ? `${s.duree_reelle} min` : '—'}</span>
-                            {s.proof_url && (
-                              <a href={s.proof_url} target="_blank" rel="noreferrer"
-                                style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${st.green}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
-                                📎 Voir
-                              </a>
-                            )}
+                            <a href={s.proof_url || '#'} target={s.proof_url ? '_blank' : '_self'} rel="noreferrer"
+                              onClick={!s.proof_url ? e => e.preventDefault() : undefined}
+                              style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : '#333'}`, borderRadius: 6, color: s.proof_url ? st.green : '#444', fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
+                              📎 {s.proof_url ? 'Voir' : 'Aucun'}
+                            </a>
                           </div>
                         </div>
                       )
