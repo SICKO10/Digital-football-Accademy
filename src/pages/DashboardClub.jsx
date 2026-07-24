@@ -8,6 +8,14 @@ import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 const EQUIPES = ['A', 'B']
 
+const ROLES_STAFF = [
+  { val: 'president', label: 'Président' },
+  { val: 'directeur_sportif', label: 'Directeur sportif' },
+  { val: 'marketing', label: 'Marketing' },
+  { val: 'secretaire', label: 'Secrétaire' },
+]
+const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
+
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
 function StatCard({ label, valeur, couleur }) {
   const color = STAT_CARD_COLORS[couleur] || '#fff'
@@ -26,11 +34,19 @@ export default function DashboardClub() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('categories')
   const [activeCategorie, setActiveCategorie] = useState('sportif')
+  const [monRole, setMonRole] = useState(null)
   const [saisonActuelle] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
     return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}` // saison sportive : 1er juillet → 30 juin
   })
+
+  // Staff du club
+  const [staffMembers, setStaffMembers] = useState([])
+  const [searchStaff, setSearchStaff] = useState('')
+  const [resultatsStaff, setResultatsStaff] = useState([])
+  const [roleAAssigner, setRoleAAssigner] = useState('directeur_sportif')
+  const [addingStaffId, setAddingStaffId] = useState(null)
 
   // Catégories & équipes
   const [categories, setCategories] = useState([])
@@ -102,6 +118,21 @@ export default function DashboardClub() {
 
   useEffect(() => { init() }, [])
 
+  // Corrige la catégorie/onglet actifs si le rôle détecté ne peut pas voir le défaut
+  // ('sportif' + 'categories' par défaut, ce qui exclut par ex. un rôle 'marketing').
+  useEffect(() => {
+    if (!monRole) return
+    const sportifVisible = ['president', 'directeur_sportif'].includes(monRole)
+    const administratifVisible = ['president', 'marketing', 'secretaire'].includes(monRole)
+    if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
+      setActiveCategorie('administratif')
+      setActiveTab('sponsors')
+    } else if (activeCategorie === 'administratif' && !administratifVisible && sportifVisible) {
+      setActiveCategorie('sportif')
+      setActiveTab('categories')
+    }
+  }, [monRole])
+
   useEffect(() => {
     if (activeTab === 'classements' && Object.keys(statsParCategorie).length === 0) {
       chargerClassements()
@@ -119,21 +150,45 @@ export default function DashboardClub() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (!profile || profile.plan !== 'club') { navigate('/'); return }
-    setClubId(user.id)
-    setClub(profile)
-    setProfilClubEdit({ club: profile.club || '', region: profile.region || '', description: profile.description || '' })
+    if (!profile) { navigate('/'); return }
 
-    // Génère un code club s'il n'existe pas encore
-    if (!profile.code_club) {
-      const code = generateCode()
-      await supabase.from('profiles').update({ code_club: code }).eq('id', user.id)
-      setCodeClub(code)
+    let resolvedClubId, clubProfile, role
+
+    if (profile.plan === 'club') {
+      // Le compte connecté est le club lui-même
+      resolvedClubId = user.id
+      clubProfile = profile
+      role = 'president'
     } else {
-      setCodeClub(profile.code_club)
+      // Sinon, cherche un rattachement staff vers un club
+      const { data: staffRow } = await supabase.from('staff_club').select('role, club_id').eq('user_id', user.id).maybeSingle()
+      if (!staffRow) { navigate('/'); return }
+      const { data: cp } = await supabase.from('profiles').select('*').eq('id', staffRow.club_id).single()
+      if (!cp) { navigate('/'); return }
+      resolvedClubId = staffRow.club_id
+      clubProfile = cp
+      role = staffRow.role || 'president'
     }
 
-    await Promise.all([chargerCategories(user.id), chargerEducateurs(user.id), chargerAvisClub(user.id), chargerSeancesRecues(user.id)])
+    setClubId(resolvedClubId)
+    setClub(clubProfile)
+    setMonRole(role)
+    setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', description: clubProfile.description || '' })
+
+    // Génère un code club s'il n'existe pas encore (seulement le club lui-même, pas le staff)
+    if (profile.plan === 'club') {
+      if (!clubProfile.code_club) {
+        const code = generateCode()
+        await supabase.from('profiles').update({ code_club: code }).eq('id', resolvedClubId)
+        setCodeClub(code)
+      } else {
+        setCodeClub(clubProfile.code_club)
+      }
+    } else {
+      setCodeClub(clubProfile.code_club || '')
+    }
+
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId)])
     setLoading(false)
   }
 
@@ -173,6 +228,51 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
     setSeancesRecues(data || [])
+  }
+
+  // ── Staff du club ──
+  const chargerStaff = async (uid) => {
+    const { data } = await supabase
+      .from('staff_club')
+      .select('*, membre:user_id(prenom, nom, email)')
+      .eq('club_id', uid)
+      .order('created_at', { ascending: false })
+    setStaffMembers(data || [])
+  }
+
+  const rechercherUtilisateurs = async (query) => {
+    setSearchStaff(query)
+    if (query.length < 2) { setResultatsStaff([]); return }
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, prenom, nom, email, plan')
+      .neq('id', clubId)
+      .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%,email.ilike.%${query}%`)
+      .limit(8)
+    setResultatsStaff(data || [])
+  }
+
+  const ajouterStaff = async (userId) => {
+    setAddingStaffId(userId)
+    const dejaMembre = staffMembers.some(m => m.user_id === userId)
+    if (!dejaMembre) {
+      await supabase.from('staff_club').insert({ club_id: clubId, user_id: userId, role: roleAAssigner })
+      await chargerStaff(clubId)
+    }
+    setSearchStaff('')
+    setResultatsStaff([])
+    setAddingStaffId(null)
+  }
+
+  const modifierRoleStaff = async (staffId, role) => {
+    await supabase.from('staff_club').update({ role }).eq('id', staffId)
+    setStaffMembers(prev => prev.map(m => (m.id === staffId ? { ...m, role } : m)))
+  }
+
+  const retirerStaff = async (staffId) => {
+    if (!confirm('Retirer ce membre du staff ?')) return
+    await supabase.from('staff_club').delete().eq('id', staffId)
+    setStaffMembers(prev => prev.filter(m => m.id !== staffId))
   }
 
   const chargerClassements = async () => {
@@ -542,6 +642,13 @@ export default function DashboardClub() {
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 
+  const categoriesVisibles = [
+    { id: 'sportif', label: '⚽ SPORTIF', defaultTab: 'categories',
+      visible: ['president', 'directeur_sportif'].includes(monRole) },
+    { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'sponsors',
+      visible: ['president', 'marketing', 'secretaire'].includes(monRole) },
+  ].filter(c => c.visible)
+
   return (
     <div style={st.page}>
       <nav style={st.navbar}>
@@ -558,12 +665,9 @@ export default function DashboardClub() {
           <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} catégorie{categories.length !== 1 ? 's' : ''} · {educateursAcceptes.length} éducateur{educateursAcceptes.length !== 1 ? 's' : ''} affilié{educateursAcceptes.length !== 1 ? 's' : ''}</p>
         </div>
 
-        {/* Niveau 1 — SPORTIF / ADMINISTRATIF */}
+        {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          {[
-            { id: 'sportif', label: '⚽ SPORTIF', defaultTab: 'categories' },
-            { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'sponsors' },
-          ].map(cat => (
+          {categoriesVisibles.map(cat => (
             <button
               key={cat.id}
               onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
@@ -589,6 +693,7 @@ export default function DashboardClub() {
           ] : [
             { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'profil', label: '⭐ Profil club' },
+            ...(monRole === 'president' ? [{ id: 'staff', label: '👥 Staff' }] : []),
           ]).map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>
               {t.label}
@@ -1084,6 +1189,76 @@ export default function DashboardClub() {
             </div>
           )
         })()}
+
+        {/* ── STAFF (président uniquement) ── */}
+        {activeTab === 'staff' && monRole === 'president' && (
+          <div style={{ maxWidth: '700px' }}>
+            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 Ajouter un membre du staff</p>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <input
+                  style={{ ...st.input, flex: 1 }}
+                  placeholder="Rechercher par nom, prénom, email..."
+                  value={searchStaff}
+                  onChange={e => rechercherUtilisateurs(e.target.value)}
+                />
+                <select style={{ ...st.input, width: 'auto' }} value={roleAAssigner} onChange={e => setRoleAAssigner(e.target.value)}>
+                  {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                </select>
+              </div>
+              {resultatsStaff.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {resultatsStaff.map(u => {
+                    const dejaMembre = staffMembers.some(m => m.user_id === u.id)
+                    return (
+                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{u.prenom} {u.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{u.email}</p>
+                        </div>
+                        <button
+                          onClick={() => ajouterStaff(u.id)}
+                          disabled={dejaMembre || addingStaffId === u.id}
+                          style={{ ...st.btnSolid, opacity: dejaMembre ? 0.4 : 1, fontSize: '12px', padding: '6px 14px' }}>
+                          {dejaMembre ? 'Déjà staff' : addingStaffId === u.id ? '...' : `+ Ajouter comme ${ROLE_STAFF_LABEL(roleAAssigner)}`}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👥 Membres du staff ({staffMembers.length + 1})</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>
+                    {(club?.club || club?.prenom || '?')[0]}
+                  </div>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: '#555', fontWeight: 400 }}>(vous)</span></p>
+                </div>
+                <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>Président</span>
+              </div>
+              {staffMembers.map(m => (
+                <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 700, fontSize: '12px' }}>
+                      {m.membre?.prenom?.[0]}{m.membre?.nom?.[0]}
+                    </div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{m.membre?.prenom} {m.membre?.nom}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select style={{ ...st.input, width: 'auto' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
+                      {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                    </select>
+                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal notation éducateur */}
