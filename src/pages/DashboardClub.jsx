@@ -35,7 +35,7 @@ export default function DashboardClub() {
   const [activeTab, setActiveTab] = useState('categories')
   const [activeCategorie, setActiveCategorie] = useState('sportif')
   const [monRole, setMonRole] = useState(null)
-  const [estAussiEducateur, setEstAussiEducateur] = useState(false) // double accès : staff qui a aussi un profil éducateur
+  const [autreRole, setAutreRole] = useState(null) // 'educateur' | 'joueur' | null — double accès staff + autre plan
   const [saisonActuelle] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
@@ -177,7 +177,7 @@ export default function DashboardClub() {
     setClubId(resolvedClubId)
     setClub(clubProfile)
     setMonRole(role)
-    setEstAussiEducateur(profile.plan === 'educateur')
+    setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', description: clubProfile.description || '' })
 
     // Génère un code club s'il n'existe pas encore (seulement le club lui-même, pas le staff)
@@ -676,10 +676,16 @@ export default function DashboardClub() {
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>
-          {estAussiEducateur && (
+          {autreRole === 'educateur' && (
             <button onClick={() => navigate('/educateur')}
-              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px' }}>
+              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
               🎓 Vue Éducateur
+            </button>
+          )}
+          {autreRole === 'joueur' && (
+            <button onClick={() => navigate('/dashboard-joueur')}
+              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
+              ⚽ Vue Joueur
             </button>
           )}
           <button style={st.btnSecondary} onClick={handleLogout}>Déconnexion</button>
