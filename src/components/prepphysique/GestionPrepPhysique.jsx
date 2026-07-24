@@ -186,6 +186,7 @@ export default function GestionPrepPhysique({ educateurId }) {
   const [modalSoumission, setModalSoumission] = useState(null)
   const [scanLoading, setScanLoading] = useState(false)
   const [scanResultat, setScanResultat] = useState(null)
+  const [joueurOuvert, setJoueurOuvert] = useState(null) // id du joueur déplié dans l'onglet Stats
 
   const loadProgrammes = async () => {
     setLoading(true)
@@ -615,28 +616,36 @@ export default function GestionPrepPhysique({ educateurId }) {
             const dureeTotal = soumJ.reduce((acc, s) => acc + (s.duree_reelle || 0), 0)
             const allureMoy = distTotal > 0 ? (dureeTotal / distTotal).toFixed(1) : '—'
             const captures = soumJ.filter(s => s.proof_url)
+            const ouvert = joueurOuvert === j.id
             return (
-              <div key={j.id} style={{ background: st.card2, borderRadius: 10, padding: 16, marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <span style={{ color: st.text, fontWeight: 700 }}>{j.prenom} {j.nom}</span>
-                  <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap' }}>
-                    <span>🏃 {distTotal.toFixed(1)} km</span>
-                    <span>⏱ {dureeTotal} min</span>
-                    <span>📈 {allureMoy} min/km</span>
-                    <span>✅ {soumJ.length} séances</span>
-                  </div>
-                </div>
-                {captures.length > 0 && (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                    {captures.map(s => {
-                      const seance = seances.find(se => se.id === s.seance_id)
-                      return (
-                        <a key={s.id} href={s.proof_url} target="_blank" rel="noreferrer"
-                          style={{ padding: '4px 10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
-                          📎 {(seance?.titre || 'Séance').substring(0, 20)}
-                        </a>
-                      )
-                    })}
+              <div key={j.id} style={{ background: st.card2, borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+                <button onClick={() => setJoueurOuvert(ouvert ? null : j.id)}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: 16, background: 'none', border: 'none', cursor: 'pointer', flexWrap: 'wrap' }}>
+                  <span style={{ color: st.text, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{ouvert ? '▼' : '▶'}</span> {j.prenom} {j.nom}
+                  </span>
+                  <span style={{ color: st.muted, fontSize: 13 }}>✅ {soumJ.length} séances</span>
+                </button>
+                {ouvert && (
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap', marginBottom: captures.length > 0 ? 12 : 0 }}>
+                      <span>🏃 {distTotal.toFixed(1)} km</span>
+                      <span>⏱ {dureeTotal} min</span>
+                      <span>📈 {allureMoy} min/km</span>
+                    </div>
+                    {captures.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {captures.map(s => {
+                          const seance = seances.find(se => se.id === s.seance_id)
+                          return (
+                            <a key={s.id} href={s.proof_url} target="_blank" rel="noreferrer"
+                              style={{ padding: '4px 10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 6, color: st.green, fontSize: 12, textDecoration: 'none' }}>
+                              📎 {(seance?.titre || 'Séance').substring(0, 20)}
+                            </a>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
