@@ -250,6 +250,13 @@ export default function GestionPrepPhysique({ educateurId }) {
     await loadSeances(selectedProgramme.id)
   }
 
+  const supprimerProgramme = async (progId) => {
+    if (!confirm('Supprimer ce programme et toutes ses séances ?')) return
+    await supabase.from('seances_prep').delete().eq('programme_id', progId)
+    await supabase.from('programmes_prep').delete().eq('id', progId)
+    await loadProgrammes()
+  }
+
   const handleScanProgramme = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -387,9 +394,15 @@ export default function GestionPrepPhysique({ educateurId }) {
                   {p.description && <div style={{ color: st.muted, fontSize: 13, marginBottom: 8 }}>{p.description}</div>}
                   <div style={{ color: st.muted, fontSize: 12 }}>📅 {new Date(p.date_debut).toLocaleDateString('fr-FR')} → {new Date(p.date_fin).toLocaleDateString('fr-FR')} · {p.nb_semaines} semaine{p.nb_semaines > 1 ? 's' : ''}</div>
                 </div>
-                <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                  {p.statut === 'actif' ? '● Actif' : 'Terminé'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                    {p.statut === 'actif' ? '● Actif' : 'Terminé'}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
+                    style={{ padding: '6px 12px', background: '#2a0a0a', border: '1px solid #5a1a1a', borderRadius: 6, color: st.red, cursor: 'pointer', fontSize: 12 }}>
+                    🗑 Supprimer
+                  </button>
+                </div>
               </div>
             </div>
           ))}

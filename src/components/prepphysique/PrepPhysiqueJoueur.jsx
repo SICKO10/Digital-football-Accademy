@@ -217,9 +217,19 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
 
   const load = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('programmes_prep').select('*').eq('statut', 'actif').order('created_at', { ascending: false }).limit(1).single()
+    // Un joueur ne doit voir que les programmes de ses éducateurs affiliés (table
+    // `affiliations`, statut 'accepte') — pas le programme actif le plus récent
+    // tous éducateurs confondus.
+    const { data: afData, error: afError } = await supabase.from('affiliations').select('educateur_id').eq('joueur_id', joueurId).eq('statut', 'accepte')
+    if (afError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
+    const educateurIds = [...new Set((afData || []).map(a => a.educateur_id))]
+    if (educateurIds.length === 0) { setProgramme(null); setLoading(false); return }
+
+    // maybeSingle (pas single) : si un éducateur a plusieurs programmes actifs à la fois,
+    // single() lève une erreur ("multiple rows") et masque tout au joueur.
+    const { data, error } = await supabase.from('programmes_prep').select('*').in('educateur_id', educateurIds).eq('statut', 'actif').order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (error?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
-    if (!data) { setLoading(false); return }
+    if (!data) { setProgramme(null); setLoading(false); return }
     setProgramme(data)
     const [s, sub, t] = await Promise.all([
       supabase.from('seances_prep').select('*').eq('programme_id', data.id).order('semaine').order('jour'),
