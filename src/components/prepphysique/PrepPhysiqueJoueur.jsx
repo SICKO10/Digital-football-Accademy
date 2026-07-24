@@ -348,7 +348,6 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
 
   const nbTotal = seances.filter(s => s.type_seance !== 'repos').length
   const nbValides = soumissions.filter(s => s.statut === 'valide').length
-  const nbSoumis = soumissions.filter(s => s.statut === 'soumis').length
   const progression = nbTotal > 0 ? Math.round((nbValides / nbTotal) * 100) : 0
   const testActuel = tests[0]
 
@@ -376,8 +375,7 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
           </div>
           <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
             <span style={{ color: st.green, fontSize: 12 }}>✅ {nbValides} validées</span>
-            <span style={{ color: st.yellow, fontSize: 12 }}>⏳ {nbSoumis} en attente</span>
-            <span style={{ color: st.muted, fontSize: 12 }}>📋 {nbTotal - nbValides - nbSoumis} à faire</span>
+            <span style={{ color: st.muted, fontSize: 12 }}>📋 {nbTotal - nbValides} à faire</span>
           </div>
         </div>
       </div>
