@@ -12,6 +12,11 @@ const st = {
 export default function HistoriqueSaisons({ joueurId }) {
   const [saisons, setSaisons] = useState([])
   const [loading, setLoading] = useState(true)
+  const [saisonsOuvertes, setSaisonsOuvertes] = useState({})
+
+  const toggleSaison = (saison) => {
+    setSaisonsOuvertes(prev => ({ ...prev, [saison]: !prev[saison] }))
+  }
 
   useEffect(() => {
     if (!joueurId) return
@@ -36,10 +41,17 @@ export default function HistoriqueSaisons({ joueurId }) {
       {saisons.map(s => {
         const totalMatchs = (s.victoires || 0) + (s.nuls || 0) + (s.defaites || 0)
         const tauxPresence = s.seances_total > 0 ? Math.round((s.seances_realisees / s.seances_total) * 100) : null
+        const ouverte = !!saisonsOuvertes[s.saison]
         return (
           <div key={s.id} style={st.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{s.saison}</p>
+            <div
+              onClick={() => toggleSaison(s.saison)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: ouverte ? '10px' : 0 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#555', fontSize: '11px', transform: ouverte ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>▶</span>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{s.saison}</p>
+              </div>
               {totalMatchs > 0 && (
                 <div style={{ display: 'flex', gap: '8px', fontSize: '11px' }}>
                   <span style={{ color: '#4ade80' }}>{s.victoires || 0}V</span>
@@ -48,20 +60,24 @@ export default function HistoriqueSaisons({ joueurId }) {
                 </div>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
-              <div><p style={st.label}>Matchs</p><p style={st.value}>{s.matchs_joues || 0}</p></div>
-              <div><p style={st.label}>Buts</p><p style={st.value}>{s.buts || 0}</p></div>
-              <div><p style={st.label}>Passes</p><p style={st.value}>{s.passes_decisives || 0}</p></div>
-              <div><p style={st.label}>Minutes</p><p style={st.value}>{s.minutes_jouees || 0}</p></div>
-              {s.cleansheets > 0 && <div><p style={st.label}>Clean sheets</p><p style={st.value}>{s.cleansheets}</p></div>}
-              {tauxPresence !== null && (
-                <div>
-                  <p style={st.label}>Présence entr.</p>
-                  <p style={{ ...st.value, color: tauxPresence >= 80 ? '#4ade80' : tauxPresence >= 50 ? '#eab308' : '#ef4444' }}>{tauxPresence}%</p>
+            {ouverte && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
+                  <div><p style={st.label}>Matchs</p><p style={st.value}>{s.matchs_joues || 0}</p></div>
+                  <div><p style={st.label}>Buts</p><p style={st.value}>{s.buts || 0}</p></div>
+                  <div><p style={st.label}>Passes</p><p style={st.value}>{s.passes_decisives || 0}</p></div>
+                  <div><p style={st.label}>Minutes</p><p style={st.value}>{s.minutes_jouees || 0}</p></div>
+                  {s.cleansheets > 0 && <div><p style={st.label}>Clean sheets</p><p style={st.value}>{s.cleansheets}</p></div>}
+                  {tauxPresence !== null && (
+                    <div>
+                      <p style={st.label}>Présence entr.</p>
+                      <p style={{ ...st.value, color: tauxPresence >= 80 ? '#4ade80' : tauxPresence >= 50 ? '#eab308' : '#ef4444' }}>{tauxPresence}%</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {s.notes && <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{s.notes}"</p>}
+                {s.notes && <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{s.notes}"</p>}
+              </>
+            )}
           </div>
         )
       })}

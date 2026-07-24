@@ -13,6 +13,18 @@ const COULEURS_NIVEAU = [
 const MODES_PAIEMENT = ['Virement', 'Chèque', 'Espèces', 'Autre']
 const SAISONS = ['2026-2027', '2025-2026', '2024-2025', '2023-2024']
 
+const ROLES_SPONSOR = [
+  { val: '', label: '— Non défini —' },
+  { val: 'maillot', label: '👕 Maillot' },
+  { val: 'equipementier', label: '⚽ Équipementier' },
+  { val: 'partenaire_officiel', label: '🤝 Partenaire officiel' },
+  { val: 'fournisseur', label: '📦 Fournisseur' },
+  { val: 'media', label: '📺 Média' },
+  { val: 'naming', label: '🏟️ Naming' },
+  { val: 'autre', label: '➕ Autre' },
+]
+const ROLE_LABEL = (role) => ROLES_SPONSOR.find(r => r.val === role)?.label || '➕ Autre'
+
 const st = {
   card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
@@ -91,6 +103,11 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
               <span style={{ background: niveau.couleur + '20', border: `1px solid ${niveau.couleur}50`, color: niveau.couleur, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{niveau.nom}</span>
             )}
             <StatutBadge statut={statut} />
+            {sponsor.role && (
+              <span style={{ fontSize: '11px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '4px', padding: '2px 8px', color: '#aaa' }}>
+                {ROLE_LABEL(sponsor.role)}
+              </span>
+            )}
           </div>
           {(sponsor.contact_nom || sponsor.contact_email) && (
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
@@ -176,6 +193,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
   const [form, setForm] = useState(() => ({
     entreprise: sponsor?.entreprise || '',
     contact_nom: sponsor?.contact_nom || '',
+    role: sponsor?.role || '',
     contact_email: sponsor?.contact_email || '',
     contact_telephone: sponsor?.contact_telephone || '',
     niveau_id: sponsor?.niveau_id || '',
@@ -221,6 +239,12 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
           <div>
             <label style={st.label}>Entreprise *</label>
             <input style={st.input} value={form.entreprise} onChange={e => champ('entreprise', e.target.value)} />
+          </div>
+          <div>
+            <label style={st.label}>Type de partenariat</label>
+            <select style={st.input} value={form.role} onChange={e => champ('role', e.target.value)}>
+              {ROLES_SPONSOR.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+            </select>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
@@ -451,6 +475,7 @@ export default function GestionSponsors({ clubId, saison }) {
       saison: saisonActive,
       entreprise: form.entreprise.trim(),
       contact_nom: form.contact_nom || null,
+      role: form.role || null,
       contact_email: form.contact_email || null,
       contact_telephone: form.contact_telephone || null,
       niveau_id: form.niveau_id || null,

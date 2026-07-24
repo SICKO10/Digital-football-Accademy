@@ -61,6 +61,11 @@ export default function DashboardClub() {
   // Séances reçues
   const [seancesRecues, setSeancesRecues] = useState([])
   const [seanceEvalModal, setSeanceEvalModal] = useState(null) // séance en cours d'évaluation
+  const [saisonsOuvertes, setSaisonsOuvertes] = useState({})
+
+  const toggleSaison = (saison) => {
+    setSaisonsOuvertes(prev => ({ ...prev, [saison]: prev[saison] === false ? true : false }))
+  }
 
   // Classements
   const [statsParCategorie, setStatsParCategorie] = useState({})
@@ -498,6 +503,12 @@ export default function DashboardClub() {
     await notifierCoachs({ type: 'seance', clubNom: club?.club, theme: seance?.theme })
   }
 
+  const supprimerSeance = async (seanceId) => {
+    if (!confirm('Supprimer cette séance définitivement ?')) return
+    const { error } = await supabase.from('seances_uploadees').delete().eq('id', seanceId)
+    if (!error) setSeancesRecues(prev => prev.filter(s => s.id !== seanceId))
+  }
+
   const ouvrirGrilleEvaluation = (seance) => {
     setSeanceEvalModal(seance)
   }
@@ -763,34 +774,65 @@ export default function DashboardClub() {
               <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🎥 Séances reçues ({seancesRecues.length})</p>
               {seancesRecues.length === 0 ? (
                 <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance uploadée par tes éducateurs pour l'instant.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {seancesRecues.map(s => {
-                    const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                    return (
-                      <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                        <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.saison}{s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 Voir</a>
-                          {s.statut === 'a_analyser' && (
-                            <>
-                              <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 Analyser</button>
-                              <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>🎙️ Transférer au coach</button>
-                            </>
-                          )}
-                          {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
-                          {s.statut === 'analyse' && eval_ && (
-                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+              ) : (() => {
+                const parSaison = seancesRecues.reduce((acc, s) => {
+                  const k = s.saison || 'Non définie'
+                  if (!acc[k]) acc[k] = []
+                  acc[k].push(s)
+                  return acc
+                }, {})
+                const saisonsTriees = Object.keys(parSaison).sort().reverse()
+
+                return saisonsTriees.map(saison => {
+                  const ouverte = saisonsOuvertes[saison] !== false
+                  return (
+                    <div key={saison} style={{ marginBottom: '12px' }}>
+                      <button
+                        onClick={() => toggleSaison(saison)}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center',
+                          gap: '10px', padding: '10px 16px', background: '#1a1a1a',
+                          border: '1px solid #2a2a2a', borderRadius: '10px',
+                          color: '#4ade80', fontWeight: 700, fontSize: '14px',
+                          cursor: 'pointer', textAlign: 'left',
+                        }}>
+                        <span>{ouverte ? '📂' : '📁'}</span>
+                        <span>Saison {saison}</span>
+                        <span style={{ marginLeft: 'auto', color: '#666', fontSize: '12px' }}>
+                          {parSaison[saison].length} séance{parSaison[saison].length > 1 ? 's' : ''}
+                        </span>
+                        <span style={{ color: '#444' }}>{ouverte ? '▼' : '▶'}</span>
+                      </button>
+
+                      {ouverte && parSaison[saison].map(s => {
+                        const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                        return (
+                          <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '6px', marginLeft: '16px' }}>
+                            <div>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 Voir</a>
+                              {s.statut === 'a_analyser' && (
+                                <>
+                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 Analyser</button>
+                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>🎙️ Transférer au coach</button>
+                                </>
+                              )}
+                              {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
+                              {s.statut === 'analyse' && eval_ && (
+                                <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
+                              )}
+                              <button onClick={() => supprimerSeance(s.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </>
         )}
