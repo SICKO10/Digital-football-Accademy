@@ -25,6 +25,18 @@ const ROLES_SPONSOR = [
 ]
 const ROLE_LABEL = (role) => ROLES_SPONSOR.find(r => r.val === role)?.label || '➕ Autre'
 
+const CONTACT_ROLES = [
+  { val: '', label: '— Sélectionner —' },
+  { val: 'pdg', label: 'PDG / Directeur Général' },
+  { val: 'directeur_marketing', label: 'Directeur Marketing' },
+  { val: 'responsable_marketing', label: 'Responsable Marketing' },
+  { val: 'responsable_communication', label: 'Responsable Communication' },
+  { val: 'secretaire', label: 'Secrétaire' },
+  { val: 'comptable', label: 'Comptable' },
+  { val: 'autre', label: 'Autre' },
+]
+const CONTACT_ROLE_LABEL = (role) => CONTACT_ROLES.find(r => r.val === role)?.label || null
+
 const st = {
   card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
@@ -111,7 +123,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
           </div>
           {(sponsor.contact_nom || sponsor.contact_email) && (
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
-              {[sponsor.contact_nom, sponsor.contact_email].filter(Boolean).join(' · ')}
+              {[sponsor.contact_nom, CONTACT_ROLE_LABEL(sponsor.contact_role), sponsor.contact_email].filter(Boolean).join(' · ')}
             </p>
           )}
         </div>
@@ -193,6 +205,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
   const [form, setForm] = useState(() => ({
     entreprise: sponsor?.entreprise || '',
     contact_nom: sponsor?.contact_nom || '',
+    contact_role: sponsor?.contact_role || '',
     role: sponsor?.role || '',
     contact_email: sponsor?.contact_email || '',
     contact_telephone: sponsor?.contact_telephone || '',
@@ -259,6 +272,12 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
           <div>
             <label style={st.label}>Contact — email</label>
             <input style={st.input} type="email" value={form.contact_email} onChange={e => champ('contact_email', e.target.value)} />
+          </div>
+          <div>
+            <label style={st.label}>Contact — rôle</label>
+            <select style={st.input} value={form.contact_role} onChange={e => champ('contact_role', e.target.value)}>
+              {CONTACT_ROLES.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+            </select>
           </div>
           <div>
             <label style={st.label}>Niveau de partenariat</label>
@@ -475,6 +494,7 @@ export default function GestionSponsors({ clubId, saison }) {
       saison: saisonActive,
       entreprise: form.entreprise.trim(),
       contact_nom: form.contact_nom || null,
+      contact_role: form.contact_role || null,
       role: form.role || null,
       contact_email: form.contact_email || null,
       contact_telephone: form.contact_telephone || null,
