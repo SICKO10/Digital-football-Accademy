@@ -19,19 +19,51 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
     distance_reelle: soumissionExistante?.distance_reelle || '',
     allure: soumissionExistante?.allure || '',
     calories: soumissionExistante?.calories || '',
+    fc_moyenne: soumissionExistante?.fc_moyenne || '',
+    rpe: soumissionExistante?.rpe || '',
     notes: soumissionExistante?.notes || '',
     date_realisation: soumissionExistante?.date_realisation || new Date().toISOString().split('T')[0],
   })
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(soumissionExistante?.proof_url || null)
   const [loading, setLoading] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanNotice, setScanNotice] = useState(false)
   const fileRef = useRef()
+
+  const scannerScreenshot = async (f) => {
+    setScanning(true)
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result.split(',')[1]
+      const { data, error } = await supabase.functions.invoke('scan-soumission', {
+        body: { imageBase64: base64, mimeType: f.type },
+      })
+      setScanning(false)
+      if (error || data?.error) {
+        alert('Erreur analyse du screenshot : ' + (error?.message || data?.error))
+        return
+      }
+      const r = data.resultat || {}
+      setForm(prev => ({
+        ...prev,
+        distance_reelle: r.distance_km != null ? String(r.distance_km) : prev.distance_reelle,
+        duree_reelle: r.duree_min != null ? String(r.duree_min) : prev.duree_reelle,
+        allure: r.allure || prev.allure,
+        fc_moyenne: r.fc_moyenne != null ? String(r.fc_moyenne) : prev.fc_moyenne,
+      }))
+      setScanNotice(true)
+      setMode('manuel')
+    }
+    reader.readAsDataURL(f)
+  }
 
   const handleFile = (e) => {
     const f = e.target.files[0]
     if (!f) return
     setFile(f)
     setPreview(URL.createObjectURL(f))
+    scannerScreenshot(f)
   }
 
   const handleSave = async () => {
@@ -53,6 +85,8 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
       distance_reelle: form.distance_reelle ? parseFloat(form.distance_reelle) : null,
       allure: form.allure || null,
       calories: form.calories ? parseInt(form.calories) : null,
+      fc_moyenne: form.fc_moyenne ? parseInt(form.fc_moyenne) : null,
+      rpe: form.rpe ? parseInt(form.rpe) : null,
       notes: form.notes || null,
       proof_url, statut: 'soumis',
     }
@@ -96,6 +130,11 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
         </div>
         {mode === 'manuel' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {scanNotice && (
+              <div style={{ background: '#0a1a0a', border: `1px solid ${st.green}40`, borderRadius: 8, padding: 10, color: st.green, fontSize: 12 }}>
+                ✨ Champs pré-remplis depuis le screenshot — vérifie avant de valider.
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Durée (min)</label>
@@ -116,6 +155,16 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
                 <input type="number" value={form.calories} onChange={e => setForm(f => ({ ...f, calories: e.target.value }))} placeholder="350" style={inp} />
               </div>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>FC moyenne (bpm)</label>
+                <input type="number" value={form.fc_moyenne} onChange={e => setForm(f => ({ ...f, fc_moyenne: e.target.value }))} placeholder="152" style={inp} />
+              </div>
+              <div>
+                <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>RPE (1-10)</label>
+                <input type="number" min="1" max="10" value={form.rpe} onChange={e => setForm(f => ({ ...f, rpe: e.target.value }))} placeholder="7" style={inp} />
+              </div>
+            </div>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Notes</label>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Ressenti, conditions..." style={{ ...inp, resize: 'vertical' }} />
@@ -123,17 +172,20 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
           </div>
         ) : (
           <div>
-            <div onClick={() => fileRef.current?.click()} style={{ border: `2px dashed ${preview ? st.green : st.border}`, borderRadius: 12, padding: 32, textAlign: 'center', cursor: 'pointer', background: st.card2 }}>
-              {preview ? <img src={preview} alt="Preview" style={{ maxWidth: '100%', borderRadius: 8 }} /> : (
+            <div onClick={() => !scanning && fileRef.current?.click()} style={{ border: `2px dashed ${preview ? st.green : st.border}`, borderRadius: 12, padding: 32, textAlign: 'center', cursor: scanning ? 'default' : 'pointer', background: st.card2 }}>
+              {scanning ? (
+                <div style={{ color: st.green, fontWeight: 600 }}>🔍 Analyse du screenshot en cours...</div>
+              ) : preview ? <img src={preview} alt="Preview" style={{ maxWidth: '100%', borderRadius: 8 }} /> : (
                 <>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>📷</div>
                   <div style={{ color: st.text, fontWeight: 600, marginBottom: 4 }}>Ajouter un screenshot</div>
                   <div style={{ color: st.muted, fontSize: 13 }}>Nike Run, Strava, Adidas Running, Decathlon Coach...</div>
+                  <div style={{ color: st.green, fontSize: 12, marginTop: 8 }}>L'IA remplit distance / durée / allure / FC pour toi</div>
                 </>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
-            {preview && <button onClick={() => { setFile(null); setPreview(null) }} style={{ width: '100%', marginTop: 8, background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 8, color: st.muted, padding: '6px', cursor: 'pointer', fontSize: 12 }}>Changer l'image</button>}
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} disabled={scanning} />
+            {preview && !scanning && <button onClick={() => { setFile(null); setPreview(null); setScanNotice(false) }} style={{ width: '100%', marginTop: 8, background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 8, color: st.muted, padding: '6px', cursor: 'pointer', fontSize: 12 }}>Changer l'image</button>}
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
