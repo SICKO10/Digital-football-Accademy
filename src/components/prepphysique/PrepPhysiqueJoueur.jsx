@@ -294,6 +294,7 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
   const [error, setError] = useState(null)
   const [modalSeance, setModalSeance] = useState(null)
   const [showTests, setShowTests] = useState(false)
+  const [accordeonOuvert, setAccordeonOuvert] = useState(true)
 
   const load = async () => {
     setLoading(true)
@@ -350,6 +351,10 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
   const nbValides = soumissions.filter(s => s.statut === 'valide').length
   const progression = nbTotal > 0 ? Math.round((nbValides / nbTotal) * 100) : 0
   const testActuel = tests[0]
+  const mesSoumissions = soumissions
+    .map(s => ({ ...s, seance: seances.find(se => se.id === s.seance_id) }))
+    .filter(s => s.seance)
+    .sort((a, b) => new Date(b.date_realisation || b.created_at) - new Date(a.date_realisation || a.created_at))
 
   return (
     <div style={{ padding: 16 }}>
@@ -414,6 +419,43 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
           </div>
         </div>
       ))}
+
+      {/* Mes séances soumises (récap) */}
+      {mesSoumissions.length > 0 && (
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, marginBottom: 20, overflow: 'hidden' }}>
+          <button onClick={() => setAccordeonOuvert(o => !o)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: st.text, fontWeight: 700, fontSize: 14 }}>
+            <span>{accordeonOuvert ? '▼' : '▶'}</span> Mes séances soumises ({mesSoumissions.length})
+          </button>
+          {accordeonOuvert && (
+            <div style={{ padding: '0 20px 16px' }}>
+              {mesSoumissions.map(s => {
+                const estCourseS = ['course', 'fractionne'].includes(s.seance.type_seance)
+                return (
+                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${st.border}`, flexWrap: 'wrap' }}>
+                    <span style={{ color: st.text, fontSize: 13 }}>{s.seance.titre}</span>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 12, color: st.muted, flexWrap: 'wrap' }}>
+                      {estCourseS ? (
+                        <>
+                          {s.distance_reelle != null && <span>{s.distance_reelle} km</span>}
+                          {s.duree_reelle != null && <span>{s.duree_reelle} min</span>}
+                          {s.allure && <span>{s.allure}/km</span>}
+                        </>
+                      ) : (
+                        <>
+                          {s.objectifs_atteints && <span style={{ color: st.green }}>✅ Objectifs atteints</span>}
+                          {s.bonus && <span style={{ color: st.yellow }}>⭐ Bonus</span>}
+                        </>
+                      )}
+                      {s.proof_url && <a href={s.proof_url} target="_blank" rel="noreferrer" style={{ color: st.green, textDecoration: 'none' }}>📎 Voir</a>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Résultats tests */}
       {testActuel && (
