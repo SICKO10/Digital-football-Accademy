@@ -551,7 +551,7 @@ export default function DashboardClub() {
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           {[
             { id: 'sportif', label: '⚽ SPORTIF', defaultTab: 'categories' },
-            { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'educateurs' },
+            { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'sponsors' },
           ].map(cat => (
             <button
               key={cat.id}
@@ -573,10 +573,10 @@ export default function DashboardClub() {
           {(activeCategorie === 'sportif' ? [
             { id: 'categories', label: '📋 Catégories & Équipes' },
             { id: 'classements', label: '🏆 Classements' },
-          ] : [
-            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
-            { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'recrutement', label: '🔍 Recrutement' },
+            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
+          ] : [
+            { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'profil', label: '⭐ Profil club' },
           ]).map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>
