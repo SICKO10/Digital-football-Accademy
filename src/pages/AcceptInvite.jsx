@@ -9,11 +9,15 @@ function AcceptInvite() {
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
   const [ready, setReady] = useState(false)
+  const [readyMeta, setReadyMeta] = useState(null)
 
   useEffect(() => {
     // Supabase échange automatiquement les tokens du hash URL au chargement.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) setReady(true)
+      if (session?.user) {
+        setReady(true)
+        setReadyMeta(session.user.user_metadata || {})
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -27,22 +31,47 @@ function AcceptInvite() {
     const { data: { user }, error: pwError } = await supabase.auth.updateUser({ password })
     if (pwError || !user) { setLoading(false); setErreur(pwError?.message || 'Erreur de session'); return }
 
-    const roleInvite = user.user_metadata?.role_invite
-    const clubId = user.user_metadata?.club_id
+    const meta = user.user_metadata || {}
+    const clubId = meta.club_id
+    const educateurId = meta.educateur_id
+    const equipeJoueurId = meta.equipe_joueur_id
+
     if (clubId) {
+      // Invitation staff
       const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
       if (!profilExistant) {
         await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
       }
       const { data: staffExistant } = await supabase.from('staff_club').select('id').eq('club_id', clubId).eq('user_id', user.id).maybeSingle()
       if (!staffExistant) {
-        await supabase.from('staff_club').insert({ club_id: clubId, user_id: user.id, role: roleInvite || 'secretaire' })
+        await supabase.from('staff_club').insert({ club_id: clubId, user_id: user.id, role: meta.role_invite || 'secretaire' })
       }
+      setLoading(false)
+      navigate('/club')
+      return
+    }
+
+    if (educateurId && equipeJoueurId) {
+      // Invitation joueur
+      const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+      if (!profilExistant) {
+        await supabase.from('profiles').insert({ id: user.id, email: user.email, prenom: meta.prenom || '', nom: meta.nom || '', plan: meta.plan || 'fan' })
+      }
+      const { data: affiliationExistante } = await supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('educateur_id', educateurId).maybeSingle()
+      if (!affiliationExistante) {
+        await supabase.from('affiliations').insert({ joueur_id: user.id, educateur_id: educateurId, equipe_joueur_id: equipeJoueurId, statut: 'accepte' })
+      }
+      await supabase.from('equipe_joueurs').update({ joueur_id: user.id }).eq('id', equipeJoueurId)
+      setLoading(false)
+      navigate('/dashboard-joueur')
+      return
     }
 
     setLoading(false)
-    navigate('/club')
+    navigate('/')
   }
+
+  const estInvitationJoueur = !!(readyMeta?.educateur_id && readyMeta?.equipe_joueur_id)
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -52,7 +81,7 @@ function AcceptInvite() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Rejoindre le staff du club</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{estInvitationJoueur ? 'Rejoindre ton équipe' : 'Rejoindre le staff du club'}</h1>
         </div>
 
         {!ready ? (
@@ -98,7 +127,7 @@ function AcceptInvite() {
               disabled={loading}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
             >
-              {loading ? 'Finalisation...' : 'Rejoindre le club'}
+              {loading ? 'Finalisation...' : estInvitationJoueur ? 'Rejoindre l\'équipe' : 'Rejoindre le club'}
             </button>
           </>
         )}

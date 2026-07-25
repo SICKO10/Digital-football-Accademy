@@ -356,6 +356,9 @@ export default function DashboardEducateur() {
   const [savingEdit, setSavingEdit] = useState(false)
   const [joueurProfil, setJoueurProfil] = useState(null)
   const [joueurMoisDetail, setJoueurMoisDetail] = useState(null)
+  const [inviteEmails, setInviteEmails] = useState({})
+  const [invitingId, setInvitingId] = useState(null)
+  const [inviteStatus, setInviteStatus] = useState({}) // { joueurId: 'sent' | 'error' }
 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
@@ -896,6 +899,24 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     await supabase.from('equipe_joueurs').delete().eq('id', id)
     setJoueurs(prev => prev.filter(j => j.id !== id))
     if (joueurActif?.id === id) setJoueurActif(null)
+  }
+
+  const inviterJoueur = async (j) => {
+    const email = (inviteEmails[j.id] || j.email || '').trim()
+    if (!email) return
+    setInvitingId(j.id)
+    try {
+      const { data, error } = await supabase.functions.invoke('inviter-joueur', {
+        body: { email, educateur_id: userId, equipe_joueur_id: j.id, prenom: j.prenom, nom: j.nom }
+      })
+      if (error || data?.error) throw new Error(data?.error || error.message)
+      setInviteStatus(prev => ({ ...prev, [j.id]: 'sent' }))
+      await chargerJoueurs(userId)
+    } catch (err) {
+      alert('Erreur invitation : ' + (err.message || 'Inconnu'))
+      setInviteStatus(prev => ({ ...prev, [j.id]: 'error' }))
+    }
+    setInvitingId(null)
   }
 
   const sauvegarderJoueur = async () => {
@@ -1808,6 +1829,55 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   return cat ? <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{cat.nom}-{cat.equipe}</span> : null
                                 })()}
                                 <button onClick={e => { e.stopPropagation(); setJoueurProfil(j) }} style={{ background: groupe.color + '15', border: `1px solid ${groupe.color}30`, color: groupe.color, borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
+                              </div>
+
+                              {/* === INVITATION JOUEUR === */}
+                              <div style={{ marginTop: 10, borderTop: '1px solid #1a1a1a', paddingTop: 8 }}
+                                   onClick={e => e.stopPropagation()}>
+                                {j.joueur_id ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontSize: 10, color: '#4ade80', background: '#4ade8015',
+                                                   padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+                                      ✅ Compte lié
+                                    </span>
+                                  </div>
+                                ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontSize: 10, color: '#facc15', background: '#facc1510',
+                                                   padding: '3px 10px', borderRadius: 20 }}>
+                                      ✉️ Invitation envoyée · {j.email}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <input
+                                      value={inviteEmails[j.id] || ''}
+                                      onChange={e => setInviteEmails(prev => ({ ...prev, [j.id]: e.target.value }))}
+                                      onKeyDown={e => { if (e.key === 'Enter') inviterJoueur(j) }}
+                                      placeholder="Email du joueur..."
+                                      type="email"
+                                      style={{
+                                        flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a',
+                                        borderRadius: 6, color: '#fff', padding: '5px 9px', fontSize: 11,
+                                        outline: 'none'
+                                      }}
+                                    />
+                                    <button
+                                      disabled={invitingId === j.id || !(inviteEmails[j.id] || '').trim()}
+                                      onClick={() => inviterJoueur(j)}
+                                      style={{
+                                        background: (inviteEmails[j.id] || '').trim() ? '#4ade8020' : '#111',
+                                        border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#4ade8060' : '#2a2a2a'),
+                                        color: (inviteEmails[j.id] || '').trim() ? '#4ade80' : '#555',
+                                        borderRadius: 6, padding: '5px 10px', fontSize: 11,
+                                        fontWeight: 700, cursor: (inviteEmails[j.id] || '').trim() ? 'pointer' : 'default',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s'
+                                      }}
+                                    >
+                                      {invitingId === j.id ? '⏳' : '📧 Inviter'}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
