@@ -10,10 +10,22 @@ function AcceptInvite() {
   const [erreur, setErreur] = useState('')
   const [ready, setReady] = useState(false)
   const [readyMeta, setReadyMeta] = useState(null)
-  const [lienExpire, setLienExpire] = useState(false)
+  // Supabase ajoute directement l'erreur réelle dans le hash de l'URL quand le lien est
+  // expiré/invalide (#error=...&error_code=...&error_description=...) — lu une seule fois,
+  // à l'initialisation du state (pas dans un effet), pour l'afficher immédiatement au lieu
+  // d'attendre le timeout générique de 10s.
+  const hashErrorInitial = (() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const hashError = hashParams.get('error_description') || hashParams.get('error')
+    return hashError ? decodeURIComponent(hashError.replace(/\+/g, ' ')) : ''
+  })()
+  const [lienExpire, setLienExpire] = useState(!!hashErrorInitial)
+  const [lienExpireDetail] = useState(hashErrorInitial)
   const readyRef = useRef(false)
 
   useEffect(() => {
+    if (hashErrorInitial) return // déjà géré par le state initial ci-dessus
+
     // Supabase échange automatiquement les tokens du hash URL au chargement.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
@@ -86,7 +98,7 @@ function AcceptInvite() {
       navigate('/')
     } catch (err) {
       console.error('[AcceptInvite]', err)
-      setErreur(err.message || 'Une erreur inconnue est survenue.')
+      setErreur(err?.message || err?.error_description || JSON.stringify(err) || 'Erreur inconnue')
     } finally {
       setLoading(false)
     }
@@ -107,9 +119,15 @@ function AcceptInvite() {
 
         {lienExpire ? (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '1.5rem' }}>
+            <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '0.5rem' }}>
               Une erreur s'est produite, contacte ton éducateur.
             </p>
+            {/* Détail réel temporaire, pour diagnostiquer le blocage — à retirer une fois corrigé. */}
+            {lienExpireDetail && (
+              <p style={{ color: '#f87171', fontSize: '12px', marginBottom: '1.5rem', wordBreak: 'break-word' }}>
+                {lienExpireDetail}
+              </p>
+            )}
             <button
               onClick={() => navigate('/')}
               style={{ width: '100%', background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
