@@ -103,6 +103,123 @@ function UpgradeCard({ titre, texte }) {
   )
 }
 
+function ProfilAffilieOnglet({ profil, userId, setProfil }) {
+  const [editProfil, setEditProfil] = useState(false)
+  const [profilForm, setProfilForm] = useState({
+    prenom: profil?.prenom || '', nom: profil?.nom || '',
+    poste: profil?.poste || '', categorie: profil?.categorie || '',
+    numero_licence: profil?.numero_licence || '', date_naissance: profil?.date_naissance || '',
+    club: profil?.club || '', region: profil?.region || '', pied: profil?.pied || 'droit',
+  })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const sauvegarder = async () => {
+    setSaving(true)
+    await supabase.from('profiles').update(profilForm).eq('id', userId)
+    setProfil(prev => ({ ...prev, ...profilForm }))
+    setSaving(false); setSaved(true)
+    setTimeout(() => { setSaved(false); setEditProfil(false) }, 1500)
+  }
+
+  const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
+
+  return (
+    <div style={{ maxWidth: '560px' }}>
+      {/* Hero */}
+      <div style={{ background: 'linear-gradient(135deg, #0d1f0d, #111)', border: '1px solid #1a2e1a', borderRadius: '20px', padding: '28px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <Avatar person={profil} size={72} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>
+            {profil?.prenom || '—'} {profil?.nom || ''}
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4ade80' }}>
+            {profil?.poste || 'Poste non renseigné'}
+          </p>
+          {profil?.categorie && (
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{profil.categorie}{profil?.club ? ` · ${profil.club}` : ''}</p>
+          )}
+        </div>
+        <button onClick={() => setEditProfil(!editProfil)}
+          style={{ background: editProfil ? '#4ade8020' : '#111', border: `1px solid ${editProfil ? '#4ade8060' : '#2a2a2a'}`, color: editProfil ? '#4ade80' : '#555', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+          {editProfil ? 'Annuler' : '✏️ Modifier'}
+        </button>
+      </div>
+
+      {/* Infos / Formulaire */}
+      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {editProfil ? (
+          <>
+            {[
+              { label: 'Prénom', key: 'prenom', type: 'text' },
+              { label: 'Nom', key: 'nom', type: 'text' },
+              { label: 'Club', key: 'club', type: 'text' },
+              { label: 'Région', key: 'region', type: 'text' },
+              { label: 'N° Licence', key: 'numero_licence', type: 'text' },
+              { label: 'Date de naissance', key: 'date_naissance', type: 'date' },
+            ].map(({ label, key, type }) => (
+              <div key={key}>
+                <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
+                <input type={type} value={profilForm[key]}
+                  onChange={e => setProfilForm(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+              </div>
+            ))}
+            <div>
+              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Poste</label>
+              <select value={profilForm.poste} onChange={e => setProfilForm(prev => ({ ...prev, poste: e.target.value }))}
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                <option value="">Sélectionner...</option>
+                {postes.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Pied fort</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['droit', 'gauche', 'les deux'].map(p => (
+                  <button key={p} onClick={() => setProfilForm(prev => ({ ...prev, pied: p }))}
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? '#4ade8060' : '#2a2a2a'}`, background: profilForm.pied === p ? '#4ade8015' : '#0a0a0a', color: profilForm.pied === p ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize' }}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button onClick={sauvegarder} disabled={saving}
+              style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
+              {saving ? 'Sauvegarde...' : saved ? '✅ Sauvegardé !' : 'Sauvegarder'}
+            </button>
+          </>
+        ) : (
+          <>
+            {[
+              { label: 'Email', val: profil?.email },
+              { label: 'Poste', val: profil?.poste },
+              { label: 'Pied fort', val: profil?.pied },
+              { label: 'Catégorie', val: profil?.categorie },
+              { label: 'Club', val: profil?.club },
+              { label: 'Région', val: profil?.region },
+              { label: 'N° Licence', val: profil?.numero_licence },
+              { label: 'Date de naissance', val: profil?.date_naissance ? new Date(profil.date_naissance).toLocaleDateString('fr-FR') : null },
+            ].filter(r => r.val).map(({ label, val }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', padding: '4px 0', borderBottom: '1px solid #141414' }}>
+                <span style={{ color: '#555' }}>{label}</span>
+                <span style={{ fontWeight: 600, color: '#ccc' }}>{val}</span>
+              </div>
+            ))}
+            {[profil?.prenom, profil?.nom, profil?.poste].every(v => !v) && (
+              <p style={{ margin: 0, fontSize: '13px', color: '#333', textAlign: 'center', padding: '12px 0' }}>
+                Clique sur <strong style={{ color: '#555' }}>Modifier</strong> pour compléter ton profil.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DashboardJoueur() {
   const navigate = useNavigate()
   const [profil, setProfil] = useState(null)
@@ -1201,25 +1318,7 @@ function DashboardJoueur() {
               )}
             </div>
           )}
-          {onglet === 'profil' && (
-            <div style={{ maxWidth: '480px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mon Profil</h2>
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
-                  <Avatar person={profil} size={56} />
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '17px' }}>{profil?.prenom} {profil?.nom}</p>
-                    <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#4ade80' }}>{profil?.poste || 'Poste non renseigné'}</p>
-                  </div>
-                </div>
-                {[{ label: 'Email', val: profil?.email }, { label: 'Catégorie', val: profil?.categorie }, { label: 'Club', val: profil?.club }, { label: 'Région', val: profil?.region }].filter(r => r.val).map(({ label, val }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: '#555' }}>{label}</span><span style={{ fontWeight: 600 }}>{val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} />}
           {onglet === 'analyses' && <UpgradeCard titre="Analyse vidéo" texte="Reçois des retours vocaux personnalisés de coachs experts. Disponible dès le plan Starter." />}
           {onglet === 'feed' && <UpgradeCard titre="Feed" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
           {onglet === 'recruteurs' && <UpgradeCard titre="Messagerie recruteurs" texte="Reçois des messages de clubs et agents directement. Plan Pro requis." />}
