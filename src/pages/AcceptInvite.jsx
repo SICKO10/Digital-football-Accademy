@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
@@ -10,16 +10,24 @@ function AcceptInvite() {
   const [erreur, setErreur] = useState('')
   const [ready, setReady] = useState(false)
   const [readyMeta, setReadyMeta] = useState(null)
+  const [lienExpire, setLienExpire] = useState(false)
+  const readyRef = useRef(false)
 
   useEffect(() => {
     // Supabase échange automatiquement les tokens du hash URL au chargement.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
+        readyRef.current = true
         setReady(true)
         setReadyMeta(session.user.user_metadata || {})
       }
     })
-    return () => subscription.unsubscribe()
+    // Si la session n'est toujours pas établie après 10s (lien expiré, invalide...),
+    // on arrête d'afficher un spinner éternel et on donne une sortie claire.
+    const timeout = setTimeout(() => {
+      if (!readyRef.current) setLienExpire(true)
+    }, 10000)
+    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
   }, [])
 
   const handleSubmit = async () => {
@@ -28,47 +36,60 @@ function AcceptInvite() {
     setLoading(true)
     setErreur('')
 
-    const { data: { user }, error: pwError } = await supabase.auth.updateUser({ password })
-    if (pwError || !user) { setLoading(false); setErreur(pwError?.message || 'Erreur de session'); return }
+    try {
+      const { data: { user }, error: pwError } = await supabase.auth.updateUser({ password })
+      if (pwError || !user) throw new Error(pwError?.message || 'Erreur de session')
 
-    const meta = user.user_metadata || {}
-    const clubId = meta.club_id
-    const educateurId = meta.educateur_id
-    const equipeJoueurId = meta.equipe_joueur_id
+      const meta = user.user_metadata || {}
+      const clubId = meta.club_id
+      const educateurId = meta.educateur_id
+      const equipeJoueurId = meta.equipe_joueur_id
 
-    if (clubId) {
-      // Invitation staff
-      const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
-      if (!profilExistant) {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
+      if (clubId) {
+        // Invitation staff
+        const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+        if (errProfilSelect) throw new Error(errProfilSelect.message)
+        if (!profilExistant) {
+          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
+          if (errProfilInsert) throw new Error(errProfilInsert.message)
+        }
+        const { data: staffExistant, error: errStaffSelect } = await supabase.from('staff_club').select('id').eq('club_id', clubId).eq('user_id', user.id).maybeSingle()
+        if (errStaffSelect) throw new Error(errStaffSelect.message)
+        if (!staffExistant) {
+          const { error: errStaffInsert } = await supabase.from('staff_club').insert({ club_id: clubId, user_id: user.id, role: meta.role_invite || 'secretaire' })
+          if (errStaffInsert) throw new Error(errStaffInsert.message)
+        }
+        navigate('/club')
+        return
       }
-      const { data: staffExistant } = await supabase.from('staff_club').select('id').eq('club_id', clubId).eq('user_id', user.id).maybeSingle()
-      if (!staffExistant) {
-        await supabase.from('staff_club').insert({ club_id: clubId, user_id: user.id, role: meta.role_invite || 'secretaire' })
+
+      if (educateurId && equipeJoueurId) {
+        // Invitation joueur
+        const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+        if (errProfilSelect) throw new Error(errProfilSelect.message)
+        if (!profilExistant) {
+          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, prenom: meta.prenom || '', nom: meta.nom || '', plan: meta.plan || 'fan' })
+          if (errProfilInsert) throw new Error(errProfilInsert.message)
+        }
+        const { data: affiliationExistante, error: errAffSelect } = await supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('educateur_id', educateurId).maybeSingle()
+        if (errAffSelect) throw new Error(errAffSelect.message)
+        if (!affiliationExistante) {
+          const { error: errAffInsert } = await supabase.from('affiliations').insert({ joueur_id: user.id, educateur_id: educateurId, equipe_joueur_id: equipeJoueurId, statut: 'accepte' })
+          if (errAffInsert) throw new Error(errAffInsert.message)
+        }
+        const { error: errEquipeUpdate } = await supabase.from('equipe_joueurs').update({ joueur_id: user.id }).eq('id', equipeJoueurId)
+        if (errEquipeUpdate) throw new Error(errEquipeUpdate.message)
+        navigate('/dashboard-joueur')
+        return
       }
+
+      navigate('/')
+    } catch (err) {
+      console.error('[AcceptInvite]', err)
+      setErreur(err.message || 'Une erreur inconnue est survenue.')
+    } finally {
       setLoading(false)
-      navigate('/club')
-      return
     }
-
-    if (educateurId && equipeJoueurId) {
-      // Invitation joueur
-      const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
-      if (!profilExistant) {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email, prenom: meta.prenom || '', nom: meta.nom || '', plan: meta.plan || 'fan' })
-      }
-      const { data: affiliationExistante } = await supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('educateur_id', educateurId).maybeSingle()
-      if (!affiliationExistante) {
-        await supabase.from('affiliations').insert({ joueur_id: user.id, educateur_id: educateurId, equipe_joueur_id: equipeJoueurId, statut: 'accepte' })
-      }
-      await supabase.from('equipe_joueurs').update({ joueur_id: user.id }).eq('id', equipeJoueurId)
-      setLoading(false)
-      navigate('/dashboard-joueur')
-      return
-    }
-
-    setLoading(false)
-    navigate('/')
   }
 
   const estInvitationJoueur = !!(readyMeta?.educateur_id && readyMeta?.equipe_joueur_id)
@@ -84,7 +105,19 @@ function AcceptInvite() {
           <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? 'Finaliser ton invitation' : estInvitationJoueur ? 'Rejoindre ton équipe' : 'Rejoindre le staff du club'}</h1>
         </div>
 
-        {!ready ? (
+        {lienExpire ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '1.5rem' }}>
+              Une erreur s'est produite, contacte ton éducateur.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              style={{ width: '100%', background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              Retour à l'accueil
+            </button>
+          </div>
+        ) : !ready ? (
           <div style={{ textAlign: 'center', color: '#666', fontSize: '14px' }}>
             <p>Vérification de l'invitation en cours...</p>
             <p style={{ fontSize: '12px', marginTop: '1rem', color: '#444' }}>
