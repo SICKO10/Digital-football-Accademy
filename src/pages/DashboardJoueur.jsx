@@ -861,7 +861,7 @@ function DashboardJoueur() {
       { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span> },
       { id: 'profil',        label: 'Mon Profil',           icon: <IconUser /> },
       { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span> },
-      { id: 'feed',          label: 'Feed Jogabonito',      icon: <span style={{ fontSize: '18px' }}>🌐</span>, locked: true },
+      { id: 'feed',          label: 'Feed',                 icon: <span style={{ fontSize: '18px' }}>🌐</span>, locked: true },
       { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />,                              locked: true },
     ]
 
@@ -1221,7 +1221,7 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'analyses' && <UpgradeCard titre="Analyse vidéo" texte="Reçois des retours vocaux personnalisés de coachs experts. Disponible dès le plan Starter." />}
-          {onglet === 'feed' && <UpgradeCard titre="Feed Jogabonito" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
+          {onglet === 'feed' && <UpgradeCard titre="Feed" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
           {onglet === 'recruteurs' && <UpgradeCard titre="Messagerie recruteurs" texte="Reçois des messages de clubs et agents directement. Plan Pro requis." />}
         </main>
 
