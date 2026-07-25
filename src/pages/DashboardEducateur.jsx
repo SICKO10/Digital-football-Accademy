@@ -933,11 +933,27 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
           </span>
         </div>
       ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, color: '#facc15', background: '#facc1510',
-                         padding: '3px 10px', borderRadius: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#facc15' }}>
             ✉️ Invitation envoyée · {j.email}
-          </span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => inviterJoueur(j)}
+              disabled={invitingId === j.id}
+              style={{ fontSize: 11, background: '#facc1510', border: '1px solid #facc1430', color: '#facc14', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+              {invitingId === j.id ? '...' : '🔁 Renvoyer'}
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.from('equipe_joueurs').update({ email: null }).eq('id', j.id)
+                setInviteStatus(prev => { const next = { ...prev }; delete next[j.id]; return next })
+                await chargerJoueurs(userId)
+              }}
+              style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+              ✕ Corriger
+            </button>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 6 }}>

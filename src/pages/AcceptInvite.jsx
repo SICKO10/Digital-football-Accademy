@@ -81,7 +81,7 @@ function AcceptInvite() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{estInvitationJoueur ? 'Rejoindre ton équipe' : 'Rejoindre le staff du club'}</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? 'Finaliser ton invitation' : estInvitationJoueur ? 'Rejoindre ton équipe' : 'Rejoindre le staff du club'}</h1>
         </div>
 
         {!ready ? (
