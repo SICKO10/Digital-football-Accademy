@@ -919,6 +919,59 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setInvitingId(null)
   }
 
+  // Bloc réutilisable (vue "poste" + modal profil) — fonction, pas un composant,
+  // pour ne pas être remonté à chaque render (voir fix appliqué à NavBarVues dans
+  // GestionPrepPhysique.jsx).
+  const blocInvitationJoueur = (j) => (
+    <div style={{ marginTop: 10, borderTop: '1px solid #1a1a1a', paddingTop: 8 }}
+         onClick={e => e.stopPropagation()}>
+      {j.joueur_id ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, color: '#4ade80', background: '#4ade8015',
+                         padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+            ✅ Compte lié
+          </span>
+        </div>
+      ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, color: '#facc15', background: '#facc1510',
+                         padding: '3px 10px', borderRadius: 20 }}>
+            ✉️ Invitation envoyée · {j.email}
+          </span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={inviteEmails[j.id] || ''}
+            onChange={e => setInviteEmails(prev => ({ ...prev, [j.id]: e.target.value }))}
+            onKeyDown={e => { if (e.key === 'Enter') inviterJoueur(j) }}
+            placeholder="Email du joueur..."
+            type="email"
+            style={{
+              flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a',
+              borderRadius: 6, color: '#fff', padding: '5px 9px', fontSize: 11,
+              outline: 'none'
+            }}
+          />
+          <button
+            disabled={invitingId === j.id || !(inviteEmails[j.id] || '').trim()}
+            onClick={() => inviterJoueur(j)}
+            style={{
+              background: (inviteEmails[j.id] || '').trim() ? '#4ade8020' : '#111',
+              border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#4ade8060' : '#2a2a2a'),
+              color: (inviteEmails[j.id] || '').trim() ? '#4ade80' : '#555',
+              borderRadius: 6, padding: '5px 10px', fontSize: 11,
+              fontWeight: 700, cursor: (inviteEmails[j.id] || '').trim() ? 'pointer' : 'default',
+              whiteSpace: 'nowrap', transition: 'all 0.2s'
+            }}
+          >
+            {invitingId === j.id ? '⏳' : '📧 Inviter'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   const sauvegarderJoueur = async () => {
     if (!joueurEnEdition) return
     setSavingEdit(true)
@@ -1473,6 +1526,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+                      {blocInvitationJoueur(j)}
+
                       {/* Présence - Donut multi + stats */}
                       <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
                         <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏃 Présence aux entraînements</p>
@@ -1773,7 +1828,21 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
                             <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700 }}>🪪</span> : <span style={{ color: '#333', fontSize: '11px' }}>—</span>}</td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                {j.joueur_id ? (
+                                  <span title="Compte lié" style={{ color: '#4ade80', fontSize: 12 }}>✅</span>
+                                ) : j.email ? (
+                                  <span title={`Invitation envoyée · ${j.email}`} style={{ color: '#facc15', fontSize: 12 }}>✉️</span>
+                                ) : (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setJoueurProfil(j) }}
+                                    title="Inviter ce joueur"
+                                    style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: 4,
+                                             color: '#888', fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
+                                  >
+                                    +
+                                  </button>
+                                )}
                                 <button onClick={() => setJoueurProfil(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
                                 <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
                                 <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
@@ -1831,54 +1900,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 <button onClick={e => { e.stopPropagation(); setJoueurProfil(j) }} style={{ background: groupe.color + '15', border: `1px solid ${groupe.color}30`, color: groupe.color, borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
                               </div>
 
-                              {/* === INVITATION JOUEUR === */}
-                              <div style={{ marginTop: 10, borderTop: '1px solid #1a1a1a', paddingTop: 8 }}
-                                   onClick={e => e.stopPropagation()}>
-                                {j.joueur_id ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontSize: 10, color: '#4ade80', background: '#4ade8015',
-                                                   padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
-                                      ✅ Compte lié
-                                    </span>
-                                  </div>
-                                ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontSize: 10, color: '#facc15', background: '#facc1510',
-                                                   padding: '3px 10px', borderRadius: 20 }}>
-                                      ✉️ Invitation envoyée · {j.email}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div style={{ display: 'flex', gap: 6 }}>
-                                    <input
-                                      value={inviteEmails[j.id] || ''}
-                                      onChange={e => setInviteEmails(prev => ({ ...prev, [j.id]: e.target.value }))}
-                                      onKeyDown={e => { if (e.key === 'Enter') inviterJoueur(j) }}
-                                      placeholder="Email du joueur..."
-                                      type="email"
-                                      style={{
-                                        flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a',
-                                        borderRadius: 6, color: '#fff', padding: '5px 9px', fontSize: 11,
-                                        outline: 'none'
-                                      }}
-                                    />
-                                    <button
-                                      disabled={invitingId === j.id || !(inviteEmails[j.id] || '').trim()}
-                                      onClick={() => inviterJoueur(j)}
-                                      style={{
-                                        background: (inviteEmails[j.id] || '').trim() ? '#4ade8020' : '#111',
-                                        border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#4ade8060' : '#2a2a2a'),
-                                        color: (inviteEmails[j.id] || '').trim() ? '#4ade80' : '#555',
-                                        borderRadius: 6, padding: '5px 10px', fontSize: 11,
-                                        fontWeight: 700, cursor: (inviteEmails[j.id] || '').trim() ? 'pointer' : 'default',
-                                        whiteSpace: 'nowrap', transition: 'all 0.2s'
-                                      }}
-                                    >
-                                      {invitingId === j.id ? '⏳' : '📧 Inviter'}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              {blocInvitationJoueur(j)}
                             </div>
                           )
                         })}
