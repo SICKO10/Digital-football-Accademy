@@ -13,12 +13,6 @@ const COULEURS = [
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
-// Positions en % du terrain (x: 0→1, y: 0→1), gardien (num 1) toujours en x:0.05, y:0.5.
-// Seuls 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3, 5-3-2 avaient des coordonnées fournies —
-// les 6 autres dispositifs listés dans le sélecteur (4-4-2 plat, 4-5-1, 4-1-4-1,
-// 4-3-2-1, 3-4-1-2, 5-4-1) ont été complétés ici en suivant le même gabarit de bandes
-// (défense x≈0.20, 1er bloc milieu x≈0.38-0.45, 2e bloc x≈0.55, attaque x≈0.65-0.70)
-// pour que le sélecteur fonctionne sur les 12 options plutôt que sur 6 seulement.
 export const DISPOSITIFS = {
   '4-3-3': [
     { num: 1, x: 0.05, y: 0.50 },
@@ -98,7 +92,6 @@ export const DISPOSITIFS = {
   ],
 }
 
-// ── Génération SVG du terrain (proportionnel à la taille du canvas) ────────────
 export function terrainSvgString({ sport, vue, fond, w, h }) {
   const bg = fond === 'vert' ? '#1a7a3c' : '#ffffff'
   const line = fond === 'vert' ? '#ffffff' : '#333333'
@@ -106,7 +99,7 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
   const cx = w / 2, cy = h / 2
 
   if (sport === 'futsal') {
-    const zoneW = w * 0.16, buteW = w * 0.05, buteH = h * 0.32
+    const buteW = w * 0.05, buteH = h * 0.32
     if (vue === 'demi') {
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
         <rect width="${w}" height="${h}" fill="${bg}" stroke="${line}" stroke-width="${lw}"/>
@@ -154,9 +147,6 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
   </svg>`
 }
 
-// Charge une chaîne SVG comme image utilisable par Konva.Image (nécessaire pour
-// que le terrain fasse partie du canvas exporté — un <svg> DOM séparé en fond
-// n'apparaîtrait pas dans stage.toDataURL()).
 export function useSvgImage(svgString) {
   const [img, setImg] = useState(null)
   useEffect(() => {
@@ -168,7 +158,6 @@ export function useSvgImage(svgString) {
   return img
 }
 
-// ── Génération des points d'une flèche selon son style ──────────────────────
 function computeArrowPoints(style, x1, y1, x2, y2) {
   if (style === 'dribble') {
     const steps = 6
@@ -197,7 +186,6 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
   return [x1, y1, x2, y2]
 }
 
-// ── Joueur ────────────────────────────────────────────────────────────────────
 export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true }) {
   const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
   return (
@@ -222,7 +210,6 @@ export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () 
   )
 }
 
-// ── Objet (cone / ballon / mannequin) ────────────────────────────────────────
 export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, draggable = true }) {
   const emoji = el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'
   return (
@@ -251,10 +238,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   const [elements, setElements] = useState([])
   const [selectedId, setSelectedId] = useState(null)
-  const [equipeActive, setEquipeActive] = useState('A') // équipe ciblée par les dispositifs / le bouton "Équipe A/B"
+  const [equipeActive, setEquipeActive] = useState('A')
   const [tool, setTool] = useState('select')
   const [arrowColor, setArrowColor] = useState('#ffffff')
-  const [pendingStart, setPendingStart] = useState(null) // {x,y} en attente du 2e clic pour une flèche
+  const [pendingStart, setPendingStart] = useState(null)
+  // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
+  const [mousePos, setMousePos] = useState(null)
 
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
@@ -286,9 +275,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   }, [])
 
   const selectedElement = selectedId ? elements.find(e => e.id === selectedId) || null : null
-  // Un seul Transformer partagé : seuls flèche/zone-rect/zone-cercle sont
-  // transformables — joueur/objet/texte n'ont pas de handles (resize n'a pas
-  // de sens sur eux, ils se déplacent juste par drag).
   const TRANSFORMABLE_TYPES = ['fleche', 'zone-rect', 'zone-cercle']
 
   useEffect(() => {
@@ -297,6 +283,63 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       trRef.current.nodes(node ? [node] : [])
       trRef.current.getLayer()?.batchDraw()
     }
+  }, [selectedId, elements])
+
+  // ── NOUVEAU : raccourcis clavier ──────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = e.target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault()
+        setElements(prev => prev.filter(el => el.id !== selectedId))
+        setSelectedId(null)
+        return
+      }
+      if (e.key === 'Escape') {
+        setSelectedId(null)
+        setPendingStart(null)
+        setMousePos(null)
+        setTool('select')
+        return
+      }
+      if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+        e.preventDefault()
+        setHistory(h => {
+          if (h.length === 0) return h
+          const prev = h[h.length - 1]
+          setFuture(f => [elements, ...f])
+          setElements(prev)
+          setSelectedId(null)
+          return h.slice(0, -1)
+        })
+        return
+      }
+      if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+        e.preventDefault()
+        setFuture(f => {
+          if (f.length === 0) return f
+          const next = f[0]
+          setHistory(h => [...h, elements])
+          setElements(next)
+          setSelectedId(null)
+          return f.slice(1)
+        })
+        return
+      }
+      if (e.ctrlKey && e.key === 'd' && selectedId) {
+        e.preventDefault()
+        setElements(prev => {
+          const el = prev.find(el => el.id === selectedId)
+          if (!el) return prev
+          return [...prev, { ...el, id: uid(), x: (el.x || 0) + 20, y: (el.y || 0) + 20 }]
+        })
+        return
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [selectedId, elements])
 
   const pushHistory = () => {
@@ -350,10 +393,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     applyElements([...elements, ...joueurs])
   }
 
-  // Applique un dispositif tactique à l'équipe active. Équipe A garde l'orientation
-  // gardien-à-gauche des coordonnées du dispositif ; équipe B est symétrisée en x
-  // (gardien à droite), pour rester cohérent avec ajouterEquipe qui place déjà B en
-  // miroir. Les noms déjà saisis pour cette équipe sont conservés par numéro de maillot.
   const appliquerDispositif = (cle) => {
     if (!cle || !DISPOSITIFS[cle]) return
     const nouveauxJoueurs = DISPOSITIFS[cle].map(p => {
@@ -397,8 +436,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setElements(prev => prev.map(e => (e.id === id ? { ...e, nom } : e)))
   }
 
-  const joueurSelectionne = selectedId ? elements.find(e => e.id === selectedId && e.type === 'joueur') || null : null
-
   const handleStageClick = (e) => {
     const stage = e.target.getStage()
     const pos = stage.getPointerPosition()
@@ -406,10 +443,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     const clickedOnEmpty = e.target === stage || e.target.getClassName() === 'Image'
     if (!clickedOnEmpty) return
 
-    if (tool === 'select') {
-      setSelectedId(null)
-      return
-    }
+    if (tool === 'select') { setSelectedId(null); return }
 
     if (['cone', 'ballon', 'mannequin'].includes(tool)) {
       applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y }])
@@ -437,13 +471,23 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble'].includes(tool)) {
       if (!pendingStart) {
         setPendingStart({ x: pos.x, y: pos.y })
+        setMousePos({ x: pos.x, y: pos.y })
       } else {
         const style = tool.replace('fleche-', '')
         const points = computeArrowPoints(style, pendingStart.x, pendingStart.y, pos.x, pos.y)
         applyElements([...elements, { id: uid(), type: 'fleche', style, points, color: arrowColor }])
         setPendingStart(null)
+        setMousePos(null)
       }
     }
+  }
+
+  // ── NOUVEAU : mise à jour de la position souris pour la preview flèche ────
+  const handleMouseMove = (e) => {
+    if (!pendingStart) return
+    const stage = e.target.getStage()
+    const pos = stage.getPointerPosition()
+    if (pos) setMousePos(pos)
   }
 
   const exportPNG = () => {
@@ -457,7 +501,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }, 50)
   }
 
-  // Mode modal (intégration Fiche de séance) : génère le PNG et le remonte au parent
   const validerSchema = () => {
     setSelectedId(null)
     setTimeout(() => {
@@ -466,7 +509,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }, 50)
   }
 
-  // ── V2 — séquences animées ────────────────────────────────────────────────
   useEffect(() => () => clearInterval(playIntervalRef.current), [])
 
   const allerEtape = (index) => {
@@ -475,19 +517,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSequences(synced)
     setEtapeActive(index)
     setElements(synced[index] || [])
-    setHistory([])
-    setFuture([])
-    setSelectedId(null)
+    setHistory([]); setFuture([]); setSelectedId(null)
   }
 
   const ajouterEtape = () => {
     const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
     const nouvelIndex = synced.length
-    setSequences([...synced, elements]) // la nouvelle étape démarre comme copie de l'étape actuelle
+    setSequences([...synced, elements])
     setEtapeActive(nouvelIndex)
-    setHistory([])
-    setFuture([])
-    setSelectedId(null)
+    setHistory([]); setFuture([]); setSelectedId(null)
   }
 
   const lire = () => {
@@ -504,10 +542,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }, 1500)
   }
 
-  const stopLecture = () => {
-    clearInterval(playIntervalRef.current)
-    setPlaying(false)
-  }
+  const stopLecture = () => { clearInterval(playIntervalRef.current); setPlaying(false) }
 
   const exportGIF = async () => {
     if (sequences.length < 2) { alert('Ajoute au moins 2 étapes pour exporter une animation.'); return }
@@ -515,11 +550,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSelectedId(null)
     const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
     setSequences(synced)
-
     const gif = new GIF({ workers: 2, quality: 10, width, height, workerScript: '/gif.worker.js' })
     for (const etape of synced) {
       setElements(etape)
-      await new Promise(r => setTimeout(r, 80)) // laisse Konva re-render l'étape avant capture
+      await new Promise(r => setTimeout(r, 80))
       const canvas = stageRef.current.toCanvas({ pixelRatio: 1 })
       gif.addFrame(canvas, { delay: 1500 })
     }
@@ -578,9 +612,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSequences(seqs)
     setEtapeActive(0)
     setElements(seqs[0] || schema.elements || [])
-    setHistory([])
-    setFuture([])
-    setSelectedId(null)
+    setHistory([]); setFuture([]); setSelectedId(null)
     setNomSchema(s.nom || '')
     setCurrentSchemaId(s.id)
   }
@@ -635,8 +667,17 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   })
 
+  // ── Panneau joueurs droit ─────────────────────────────────────────────────
+  const joueursA = elements.filter(e => e.type === 'joueur' && e.equipe === 'A').sort((a, b) => Number(a.numero) - Number(b.numero))
+  const joueursB = elements.filter(e => e.type === 'joueur' && e.equipe === 'B').sort((a, b) => Number(a.numero) - Number(b.numero))
+  const hasJoueurs = joueursA.length > 0 || joueursB.length > 0
+
+  // Style du tool actif pour preview flèche
+  const arrowPreviewStyle = tool.replace('fleche-', '')
+
   return (
     <div>
+      {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
           {[['football', '⚽ Football'], ['futsal', '🏟️ Futsal']].map(([v, label]) => (
@@ -684,25 +725,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
       {tableMissing && !isModal && (
         <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
-          ⚠️ La table <code>tactipads</code> n'existe pas encore en base — la sauvegarde et la bibliothèque de schémas sont indisponibles tant qu'elle n'est pas créée.
+          ⚠️ La table <code>tactipads</code> n'existe pas encore en base.
         </div>
       )}
 
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
         {/* Toolbar gauche */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
-          <button onClick={() => { setTool('select'); setPendingStart(null) }} style={btnStyle(tool === 'select')} title="Sélection">↖</button>
+          <button onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
           <div style={{ height: '1px', background: '#222' }} />
           {outilsFlêches.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
           <div style={{ height: '1px', background: '#222' }} />
           {outilsZones.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
           <div style={{ height: '1px', background: '#222' }} />
           {outilsObjets.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
           <div style={{ height: '1px', background: '#222' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -716,27 +757,19 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         {/* Canvas */}
         <div style={{ position: 'relative' }}>
           {pendingStart && (
-            <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>Clique le point d'arrivée de la flèche…</p>
+            <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
+              Clique le point d'arrivée de la flèche… <span style={{ color: '#666' }}>(Échap pour annuler)</span>
+            </p>
           )}
-          {joueurSelectionne && (
-            <div style={{
-              position: 'absolute', right: '10px', top: '10px',
-              background: '#1a1a1a', border: '1px solid #333',
-              borderRadius: '8px', padding: '12px', zIndex: 10, width: '180px',
-            }}>
-              <div style={{ color: '#aaa', fontSize: '11px', marginBottom: '6px' }}>
-                Joueur {joueurSelectionne.numero}
-              </div>
-              <input
-                placeholder="Nom du joueur"
-                value={joueurSelectionne.nom || ''}
-                onChange={e => renommerJoueur(joueurSelectionne.id, e.target.value)}
-                style={{ width: '100%', background: '#111', color: 'white', border: '1px solid #444', borderRadius: '4px', padding: '6px', boxSizing: 'border-box' }}
-                autoFocus
-              />
-            </div>
-          )}
-          <Stage ref={stageRef} width={width} height={height} onClick={handleStageClick} onTap={handleStageClick} style={{ borderRadius: '12px', overflow: 'hidden' }}>
+          <Stage
+            ref={stageRef}
+            width={width}
+            height={height}
+            onClick={handleStageClick}
+            onTap={handleStageClick}
+            onMouseMove={handleMouseMove}
+            style={{ borderRadius: '12px', overflow: 'hidden', cursor: pendingStart ? 'crosshair' : 'default' }}
+          >
             <Layer>
               {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
 
@@ -782,18 +815,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
                     }}
-                    onTransformEnd={ev => {
-                      updateElement({ ...e, rotation: ev.target.rotation() })
-                    }} />
+                    onTransformEnd={ev => { updateElement({ ...e, rotation: ev.target.rotation() }) }} />
                 )
               })}
               {elements.filter(e => e.type === 'texte').map(e => (
                 <Text key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
                   onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
-                  onDblClick={() => {
-                    const t = prompt('Modifier le texte :', e.text)
-                    if (t !== null) updateElement({ ...e, text: t })
-                  }}
+                  onDblClick={() => { const t = prompt('Modifier le texte :', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
@@ -802,6 +830,32 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               {elements.filter(e => e.type === 'joueur').map(e => (
                 <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} />
               ))}
+
+              {/* ── NOUVEAU : preview flèche en temps réel ──────────────────── */}
+              {pendingStart && mousePos && ['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble'].includes(tool) && (
+                <>
+                  {/* Point de départ */}
+                  <Circle x={pendingStart.x} y={pendingStart.y} radius={5} fill={arrowColor} opacity={0.8} listening={false} />
+                  {/* Flèche preview */}
+                  <Arrow
+                    points={computeArrowPoints(
+                      arrowPreviewStyle,
+                      pendingStart.x, pendingStart.y,
+                      mousePos.x, mousePos.y
+                    )}
+                    stroke={arrowColor}
+                    fill={arrowColor}
+                    strokeWidth={2}
+                    opacity={0.5}
+                    dash={[6, 4]}
+                    tension={arrowPreviewStyle === 'courbe' ? 0.5 : 0}
+                    listening={false}
+                    pointerLength={10}
+                    pointerWidth={8}
+                  />
+                </>
+              )}
+
               <Transformer
                 ref={trRef}
                 flipEnabled={false}
@@ -815,15 +869,16 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </Layer>
           </Stage>
 
+          {/* Actions */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-            <button onClick={undo} disabled={!history.length} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ Undo</button>
-            <button onClick={redo} disabled={!future.length} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ Redo</button>
-            <button onClick={supprimerSelection} disabled={!selectedId} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 Supprimer</button>
+            <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ Undo</button>
+            <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ Redo</button>
+            <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 Supprimer</button>
             <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 Tout effacer</button>
             <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ Export PNG</button>
           </div>
 
-          {/* Séquences animées (V2) */}
+          {/* Séquences */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
             {sequences.map((_, i) => (
               <button key={i} onClick={() => allerEtape(i)} disabled={playing}
@@ -842,12 +897,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
           {isModal ? (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-              <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-                ✅ Valider le schéma
-              </button>
-              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>
-                ✕ Fermer sans enregistrer
-              </button>
+              <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>✅ Valider le schéma</button>
+              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center' }}>
@@ -862,9 +913,62 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </div>
           )}
         </div>
+
+        {/* ── NOUVEAU : panneau joueurs à droite ──────────────────────────── */}
+        {hasJoueurs && (
+          <div style={{ width: 170, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {joueursA.length > 0 && (
+              <div>
+                <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>ÉQUIPE A</div>
+                {joueursA.map(j => (
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                      {j.numero}
+                    </div>
+                    <input
+                      value={j.nom || ''}
+                      onChange={e => renommerJoueur(j.id, e.target.value)}
+                      placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
+                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#4ade80' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      onFocus={() => setSelectedId(j.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {joueursB.length > 0 && (
+              <div>
+                <div style={{ color: '#f97316', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>ÉQUIPE B</div>
+                {joueursB.map(j => (
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                      {j.numero}
+                    </div>
+                    <input
+                      value={j.nom || ''}
+                      onChange={e => renommerJoueur(j.id, e.target.value)}
+                      placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
+                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#f97316' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      onFocus={() => setSelectedId(j.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Raccourcis clavier */}
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: 10 }}>
+              <div style={{ color: '#444', fontSize: 10, lineHeight: 1.7 }}>
+                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Suppr</kbd> Effacer</div>
+                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Ctrl+Z</kbd> Annuler</div>
+                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Ctrl+D</kbd> Dupliquer</div>
+                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Échap</kbd> Désélectionner</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bibliothèque de schémas */}
+      {/* Bibliothèque */}
       {!isModal && (
         <div style={{ marginTop: '2rem' }}>
           <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
