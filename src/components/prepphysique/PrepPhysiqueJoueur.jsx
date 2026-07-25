@@ -78,10 +78,15 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
     if (file) {
       const ext = file.name.split('.').pop()
       const path = `prep_physique/${joueurId}/${seance.id}_${Date.now()}.${ext}`
+      console.log('[Upload] Tentative upload vers proofs/', path)
       const { error: uploadError } = await supabase.storage.from('proofs').upload(path, file, { upsert: true })
-      if (!uploadError) {
+      if (uploadError) {
+        console.error('[Upload] Erreur:', uploadError)
+        alert('Erreur upload image : ' + uploadError.message + '\n\nLa séance sera quand même enregistrée sans photo.')
+      } else {
         const { data: urlData } = supabase.storage.from('proofs').getPublicUrl(path)
         proof_url = urlData.publicUrl
+        console.log('[Upload] Succès. proof_url:', proof_url)
       }
     }
     const payload = {
