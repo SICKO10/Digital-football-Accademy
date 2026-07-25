@@ -644,19 +644,37 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     )
   }
 
+  const iconeZigzag = (
+    <svg width="16" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="1,12 5,4 9,12 13,4 17,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline points="15,6 17,8 15,10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+  const iconeCarre = (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+    </svg>
+  )
+  const iconeCoupelle = (
+    <svg width="18" height="14" viewBox="0 0 22 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 11 Q11 1 20 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+      <ellipse cx="11" cy="11.5" rx="9" ry="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  )
+
   const outilsFlêches = [
     { key: 'fleche-droite', label: '→', title: 'Flèche droite' },
     { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe' },
     { key: 'fleche-pointillee', label: '⇢', title: 'Flèche pointillée' },
-    { key: 'fleche-dribble', label: '⚡', title: 'Flèche dribble' },
+    { key: 'fleche-dribble', label: iconeZigzag, title: 'Flèche dribble (zigzag)' },
   ]
   const outilsZones = [
-    { key: 'zone-rect', label: '🔵', title: 'Zone rectangle' },
+    { key: 'zone-rect', label: iconeCarre, title: 'Zone rectangle' },
     { key: 'zone-cercle', label: '○', title: 'Zone cercle' },
     { key: 'texte', label: 'T', title: 'Texte libre' },
   ]
   const outilsObjets = [
-    { key: 'cone', label: '🔸', title: 'Cone' },
+    { key: 'cone', label: iconeCoupelle, title: 'Coupelle' },
     { key: 'ballon', label: '⚽', title: 'Ballon' },
     { key: 'mannequin', label: '👤', title: 'Mannequin' },
   ]
