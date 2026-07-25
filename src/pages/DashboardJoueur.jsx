@@ -973,13 +973,16 @@ function DashboardJoueur() {
 
     const secAffilie = [
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
-      { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
+
+      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: 'MON CLUB' },
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
-      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span> },
-      { id: 'profil',        label: 'Mon Profil',           icon: <IconUser /> },
-      { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span> },
-      { id: 'feed',          label: 'Feed',                 icon: <span style={{ fontSize: '18px' }}>🌐</span>, locked: true },
-      { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />,                              locked: true },
+      { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
+
+      { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: 'EXPLORER' },
+      { id: 'feed',          label: 'Feed',                 icon: <IconGlobe />,  locked: true },
+      { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />, locked: true },
+
+      { id: 'profil',        label: 'Mon Profil',           icon: <IconUser />, section: 'MON COMPTE' },
     ]
 
     return (
@@ -994,13 +997,20 @@ function DashboardJoueur() {
             </div>
             <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
               {secAffilie.map(item => (
-                <button key={item.id} className="af-nav-btn" onClick={() => item.id === 'jogabonito' ? navigate('/jogabonito') : setOnglet(item.id)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
-                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
-                  {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
-                </button>
+                <div key={item.id}>
+                  {item.section && (
+                    <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                      {item.section}
+                    </div>
+                  )}
+                  <button className="af-nav-btn" onClick={() => item.id === 'jogabonito' ? navigate('/jogabonito') : setOnglet(item.id)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                    {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
+                  </button>
+                </div>
               ))}
             </nav>
             <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
