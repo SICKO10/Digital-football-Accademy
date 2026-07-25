@@ -89,6 +89,20 @@ const IconBuilding = () => (
   </svg>
 )
 
+function UpgradeCard({ titre, texte }) {
+  return (
+    <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
+      <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
+      <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
+      <p style={{ fontSize: '13px', color: '#555', maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Starter — 49,99€/mois</button>
+        <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Pro — 79,99€/mois</button>
+      </div>
+    </div>
+  )
+}
+
 function DashboardJoueur() {
   const navigate = useNavigate()
   const [profil, setProfil] = useState(null)
@@ -829,6 +843,154 @@ function DashboardJoueur() {
           </p>
           <span onClick={handleLogout} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
+      </div>
+    )
+  }
+
+  // ── JOUEUR AFFILIÉ (plan fan + éducateur lié) ──
+  const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
+
+  if (estAffilie) {
+    const affiliation = mesAffiliations[0]
+    const edu = affiliation.profil_educateur
+
+    const secAffilie = [
+      { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
+      { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
+      { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
+      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span> },
+      { id: 'profil',        label: 'Mon Profil',           icon: <IconUser /> },
+      { id: 'analyses',      label: 'Analyse vidéo',        icon: <span style={{ fontSize: '18px' }}>🎬</span>, locked: true },
+      { id: 'feed',          label: 'Feed Jogabonito',      icon: <span style={{ fontSize: '18px' }}>🌐</span>, locked: true },
+      { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />,                              locked: true },
+    ]
+
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; } .af-nav-btn:hover { background: #141414 !important; color: #ccc !important; }`}</style>
+
+        {!isMobile && (
+          <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+            <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414' }}>
+              <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+              <div style={{ marginTop: '4px', fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>Joueur affilié</div>
+            </div>
+            <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {secAffilie.map(item => (
+                <button key={item.id} className="af-nav-btn" onClick={() => setOnglet(item.id)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                  {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
+                </button>
+              ))}
+            </nav>
+            <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
+              <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
+            </div>
+          </aside>
+        )}
+
+        <main style={{ flex: 1, padding: isMobile ? '20px 16px' : '32px 36px', overflowY: 'auto' }}>
+          {onglet === 'accueil' && (
+            <div style={{ maxWidth: '640px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>Bonjour, {profil?.prenom} 👋</h1>
+              <p style={{ color: '#555', fontSize: '13px', marginBottom: '28px' }}>Voici ton espace joueur.</p>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                <div style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>TON ÉDUCATEUR</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{(edu?.prenom?.[0] || '?').toUpperCase()}</div>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{edu?.prenom} {edu?.nom}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{edu?.club || ''}{edu?.categorie ? ` · ${edu.categorie}` : ''}</p>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                {[{ id: 'prep_physique', label: 'Prépa physique', emoji: '🏋️', desc: 'Tes séances et exercices' }, { id: 'stats', label: 'Mes stats', emoji: '📊', desc: 'Présences & performance' }].map(item => (
+                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>
+                    <div style={{ fontSize: '22px', marginBottom: '8px' }}>{item.emoji}</div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.label}</p>
+                    <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#555' }}>{item.desc}</p>
+                  </button>
+                ))}
+              </div>
+              <div style={{ background: 'linear-gradient(135deg, #4ade8010, #0a0a0a)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Passe au niveau supérieur</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Analyses vidéo, feed recruteurs — dès 49,99€/mois</p>
+                </div>
+                <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>Voir les packs</button>
+              </div>
+            </div>
+          )}
+          {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} />}
+          {onglet === 'stats' && (
+            <div style={{ maxWidth: '640px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
+              {!statsJoueur[affiliation.id] ? (
+                <button onClick={() => chargerStatsJoueur(affiliation.id, affiliation.equipe_joueur_id, affiliation.educateur_id)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '11px 22px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{statsLoading[affiliation.id] ? 'Chargement…' : 'Charger mes stats'}</button>
+              ) : (() => { const s = statsJoueur[affiliation.id]; return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                  {[{ label: 'Présences', val: s.presences ?? '—' }, { label: 'Points séance', val: s.pointsTotal ?? '—' }, { label: 'Moy. points', val: s.presences ? (s.pointsTotal / s.presences).toFixed(1) : '—' }].map(({ label, val }) => (
+                    <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: '#4ade80' }}>{val}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>{label}</p>
+                    </div>
+                  ))}
+                </div>
+              )})()}
+            </div>
+          )}
+          {onglet === 'equipe' && (
+            <div style={{ maxWidth: '640px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mon Équipe</h2>
+              {mesAffiliations.map(af => { const e = af.profil_educateur; return (
+                <div key={af.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '10px' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>{e?.prenom} {e?.nom}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{e?.club || 'Club non renseigné'}{e?.categorie ? ` · ${e.categorie}` : ''}</p>
+                  <div style={{ marginTop: '10px' }}>
+                    <span style={{ background: af.statut === 'accepte' ? '#4ade8015' : '#f9731615', color: af.statut === 'accepte' ? '#4ade80' : '#f97316', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>{af.statut === 'accepte' ? '✅ Affilié' : '⏳ En attente'}</span>
+                  </div>
+                </div>
+              )})}
+            </div>
+          )}
+          {onglet === 'profil' && (
+            <div style={{ maxWidth: '480px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mon Profil</h2>
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+                  <Avatar person={profil} size={56} />
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '17px' }}>{profil?.prenom} {profil?.nom}</p>
+                    <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#4ade80' }}>{profil?.poste || 'Poste non renseigné'}</p>
+                  </div>
+                </div>
+                {[{ label: 'Email', val: profil?.email }, { label: 'Catégorie', val: profil?.categorie }, { label: 'Club', val: profil?.club }, { label: 'Région', val: profil?.region }].filter(r => r.val).map(({ label, val }) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#555' }}>{label}</span><span style={{ fontWeight: 600 }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {onglet === 'analyses' && <UpgradeCard titre="Analyse vidéo" texte="Reçois des retours vocaux personnalisés de coachs experts. Disponible dès le plan Starter." />}
+          {onglet === 'feed' && <UpgradeCard titre="Feed Jogabonito" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
+          {onglet === 'recruteurs' && <UpgradeCard titre="Messagerie recruteurs" texte="Reçois des messages de clubs et agents directement. Plan Pro requis." />}
+        </main>
+
+        {isMobile && (
+          <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#0d0d0d', borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-around', padding: '10px 0 14px', zIndex: 100 }}>
+            {[{ id: 'accueil', icon: <IconHome />, label: 'Accueil' }, { id: 'prep_physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span>, label: 'Prépa' }, { id: 'stats', icon: <IconChart />, label: 'Stats' }, { id: 'profil', icon: <IconUser />, label: 'Profil' }].map(item => (
+              <button key={item.id} onClick={() => setOnglet(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#444', cursor: 'pointer', fontFamily: 'Inter, sans-serif', minWidth: '56px' }}>
+                {item.icon}
+                <span style={{ fontSize: '10px', fontWeight: onglet === item.id ? 700 : 400 }}>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     )
   }
