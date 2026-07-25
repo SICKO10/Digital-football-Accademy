@@ -325,7 +325,13 @@ function DashboardJoueur() {
         setClubsLoading(false)
       })
     }
-  }, [onglet, userId])
+    // Joueur affilié : charge ses stats dès l'ouverture de l'onglet, pas seulement
+    // via le bouton de l'onglet "Mon Équipe" (chargerStatsJoueur est déjà idempotent).
+    if (onglet === 'stats' && mesAffiliations.length > 0) {
+      const a = mesAffiliations[0]
+      chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)
+    }
+  }, [onglet, userId, mesAffiliations])
 
   const getProfil = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -1056,22 +1062,85 @@ function DashboardJoueur() {
           {onglet === 'stats' && (
             <div style={{ maxWidth: '640px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
-              {!statsJoueur[affiliation.id] ? (
-                <button onClick={() => chargerStatsJoueur(affiliation.id, affiliation.equipe_joueur_id, affiliation.educateur_id)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '11px 22px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{statsLoading[affiliation.id] ? 'Chargement…' : 'Charger mes stats'}</button>
-              ) : (() => {
+
+              {statsLoading[affiliation.id] && (
+                <p style={{ color: '#4ade80', fontSize: '13px' }}>Chargement...</p>
+              )}
+
+              {statsJoueur[affiliation.id] && (() => {
                 const s = statsJoueur[affiliation.id]
-                console.log('[DEBUG stats affilié]', s)
-                if (!s.present && !s.points) {
-                  return <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>Aucune séance enregistrée pour le moment.</p>
-                }
+
+                if (!s.present && !s.points && !s.matchsJoues) return (
+                  <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>
+                    Aucune séance ou match enregistré pour le moment.
+                  </p>
+                )
+
                 return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-                    {[{ label: 'Présences', val: s.present ?? '—' }, { label: 'Points séance', val: s.points ?? '—' }, { label: 'Moy. points', val: (s.present && s.points) ? (s.points / s.present).toFixed(1) : '—' }].map(({ label, val }) => (
-                      <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', textAlign: 'center' }}>
-                        <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: '#4ade80' }}>{val}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>{label}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Entraînement */}
+                    <div>
+                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#fbbf24', letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ Entraînement</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                        {[
+                          { label: 'Présences', val: `${s.present ?? 0}/${s.total ?? 0}` },
+                          { label: 'Taux présence', val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' },
+                          { label: 'Points séance', val: s.points ?? 0, color: '#fbbf24' },
+                        ].map(({ label, val, color }) => (
+                          <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: color || '#4ade80' }}>{val}</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555' }}>{label}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Présence par mois */}
+                    {s.presenceMensuelle?.length > 0 && (
+                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: '#a78bfa', letterSpacing: '1px', textTransform: 'uppercase' }}>📅 Points séance par mois</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                            const [y, m] = month.split('-')
+                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: '2-digit' })
+                            const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                            return (
+                              <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
+                                <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
+                                  <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.5s' }} />
+                                </div>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
+                                <span style={{ fontSize: '10px', color: '#333', flexShrink: 0 }}>{present}/{total}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stats de match */}
+                    {(s.matchsJoues > 0 || s.buts > 0 || s.passes > 0) && (
+                      <div>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#60a5fa', letterSpacing: '1px', textTransform: 'uppercase' }}>⚽ Stats de match</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                          {[
+                            { label: 'Matchs joués', val: s.matchsJoues ?? 0, color: '#60a5fa' },
+                            { label: 'Buts', val: s.buts ?? 0, color: '#4ade80' },
+                            { label: 'Passes déc.', val: s.passes ?? 0, color: '#a78bfa' },
+                            { label: 'Minutes jouées', val: s.minutesJouees ?? 0, color: '#34d399' },
+                            { label: 'Clean sheets', val: s.cleanSheets ?? 0, color: '#34d399' },
+                          ].map(({ label, val, color }) => (
+                            <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                              <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color }}>{val}</p>
+                              <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555' }}>{label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 )
               })()}
