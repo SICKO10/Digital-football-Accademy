@@ -171,6 +171,31 @@ function ModalSoumission({ soumission, joueurNom, onClose }) {
   )
 }
 
+function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassement }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <button onClick={onBack} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer', fontSize: 13 }}>← Programme</button>
+        <span style={{ color: st.muted, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{programmeTitre}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6, background: st.card2, borderRadius: 10, padding: 4 }}>
+        {[
+          { key: 'suivi', label: '📋 Suivi', fn: onSuivi },
+          { key: 'stats', label: '📊 Stats', fn: onStats },
+          { key: 'classement', label: '🏆 Classement', fn: onClassement },
+        ].map(tab => (
+          <button key={tab.key} onClick={tab.fn}
+            style={{ flex: 1, padding: '9px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+              background: vue === tab.key ? st.green : 'transparent',
+              color: vue === tab.key ? '#000' : st.muted, transition: 'all 0.15s' }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function GestionPrepPhysique({ educateurId }) {
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
@@ -547,10 +572,7 @@ export default function GestionPrepPhysique({ educateurId }) {
     const seancesActives = seances.filter(s => s.type_seance !== 'repos')
     return (
       <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
-          <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>📋 Suivi des joueurs</h2>
-        </div>
+        <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
         {joueurs.length === 0 || seancesActives.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
@@ -603,10 +625,7 @@ export default function GestionPrepPhysique({ educateurId }) {
   if (vue === 'stats') {
     return (
       <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
-          <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>📊 Stats joueurs</h2>
-        </div>
+        <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
         {joueurs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>Aucun joueur affilié</div>
         ) : (
@@ -666,10 +685,7 @@ export default function GestionPrepPhysique({ educateurId }) {
     const classement = getClassement()
     return (
       <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <button onClick={() => setVue('detail')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Programme</button>
-          <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>🏆 Classement</h2>
-        </div>
+        <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
         <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, overflow: 'hidden', overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', background: st.card2, color: st.muted, fontSize: 11, fontWeight: 700, gap: 8 }}>
             <div>#</div><div>JOUEUR</div><div style={{ textAlign: 'center' }}>POINTS</div><div style={{ textAlign: 'center' }}>RÉGULARITÉ</div>
