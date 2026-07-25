@@ -1048,16 +1048,23 @@ function DashboardJoueur() {
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
               {!statsJoueur[affiliation.id] ? (
                 <button onClick={() => chargerStatsJoueur(affiliation.id, affiliation.equipe_joueur_id, affiliation.educateur_id)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '11px 22px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{statsLoading[affiliation.id] ? 'Chargement…' : 'Charger mes stats'}</button>
-              ) : (() => { const s = statsJoueur[affiliation.id]; return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-                  {[{ label: 'Présences', val: s.presences ?? '—' }, { label: 'Points séance', val: s.pointsTotal ?? '—' }, { label: 'Moy. points', val: s.presences ? (s.pointsTotal / s.presences).toFixed(1) : '—' }].map(({ label, val }) => (
-                    <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', textAlign: 'center' }}>
-                      <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: '#4ade80' }}>{val}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>{label}</p>
-                    </div>
-                  ))}
-                </div>
-              )})()}
+              ) : (() => {
+                const s = statsJoueur[affiliation.id]
+                console.log('[DEBUG stats affilié]', s)
+                if (!s.present && !s.points) {
+                  return <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>Aucune séance enregistrée pour le moment.</p>
+                }
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                    {[{ label: 'Présences', val: s.present ?? '—' }, { label: 'Points séance', val: s.points ?? '—' }, { label: 'Moy. points', val: (s.present && s.points) ? (s.points / s.present).toFixed(1) : '—' }].map(({ label, val }) => (
+                      <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', textAlign: 'center' }}>
+                        <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: '#4ade80' }}>{val}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           )}
           {onglet === 'equipe' && (
