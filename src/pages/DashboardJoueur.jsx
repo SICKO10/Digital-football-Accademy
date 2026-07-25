@@ -860,7 +860,7 @@ function DashboardJoueur() {
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
       { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span> },
       { id: 'profil',        label: 'Mon Profil',           icon: <IconUser /> },
-      { id: 'analyses',      label: 'Analyse vidéo',        icon: <span style={{ fontSize: '18px' }}>🎬</span>, locked: true },
+      { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span> },
       { id: 'feed',          label: 'Feed Jogabonito',      icon: <span style={{ fontSize: '18px' }}>🌐</span>, locked: true },
       { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />,                              locked: true },
     ]
@@ -877,7 +877,7 @@ function DashboardJoueur() {
             </div>
             <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
               {secAffilie.map(item => (
-                <button key={item.id} className="af-nav-btn" onClick={() => setOnglet(item.id)}
+                <button key={item.id} className="af-nav-btn" onClick={() => item.id === 'jogabonito' ? navigate('/jogabonito') : setOnglet(item.id)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -944,17 +944,261 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'equipe' && (
-            <div style={{ maxWidth: '640px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mon Équipe</h2>
-              {mesAffiliations.map(af => { const e = af.profil_educateur; return (
-                <div key={af.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '10px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>{e?.prenom} {e?.nom}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{e?.club || 'Club non renseigné'}{e?.categorie ? ` · ${e.categorie}` : ''}</p>
-                  <div style={{ marginTop: '10px' }}>
-                    <span style={{ background: af.statut === 'accepte' ? '#4ade8015' : '#f9731615', color: af.statut === 'accepte' ? '#4ade80' : '#f97316', fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px' }}>{af.statut === 'accepte' ? '✅ Affilié' : '⏳ En attente'}</span>
-                  </div>
+            <div style={{ maxWidth: '700px' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>🏟️ Mon Équipe</h1>
+
+              {/* Mes affiliations */}
+              {mesAffiliations.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Mes éducateurs</p>
+                  {mesAffiliations.map(a => {
+                    const pe = a.profil_educateur
+                    const isAccepted = a.statut === 'accepte'
+                    return (
+                      <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
+                        {isAccepted ? (
+                          <div style={{ background: 'linear-gradient(135deg, #14532d, #166534)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
+                              {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 'bold', fontSize: '17px' }}>{pe?.prenom} {pe?.nom}</div>
+                              <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
+                              <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
+                                  ✅ Affilié
+                                </span>
+                                {pe?.diplome && (
+                                  <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#555', flexShrink: 0 }}>
+                              {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                              background: a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
+                              color: a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
+                              border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
+                              {a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
+                            </span>
+                          </div>
+                        )}
+
+                        {isAccepted && (
+                          <div style={{ padding: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '4px' }}>
+                              <button
+                                onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
+                                disabled={!a.equipe_joueur_id || statsLoading[a.id]}
+                                style={{ background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
+                                {statsLoading[a.id] ? '...' : '📊 Mes stats'}
+                              </button>
+                              <button
+                                onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
+                                style={{ background: '#1f2937', color: 'white', border: '1px solid #374151', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+                                ⭐ Évaluer
+                              </button>
+                            </div>
+
+                            {/* Stats chargées */}
+                            {statsJoueur[a.id] && (() => {
+                              const s = statsJoueur[a.id]
+                              const RankBadge = ({ rank, total }) => rank && total > 1 ? (
+                                <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', background: rank === 1 ? '#fbbf2420' : '#ffffff10', color: rank === 1 ? '#fbbf24' : '#555', marginLeft: '4px' }}>
+                                  #{rank}/{total}
+                                </span>
+                              ) : null
+                              return (
+                                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+                                  {/* Stats match */}
+                                  <div>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ Stats de match</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                                      {[
+                                        { label: 'Matchs joués', value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
+                                        { label: 'Buts', value: s.buts, color: '#4ade80', rank: s.rankButs },
+                                        { label: 'Passes déc.', value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                        { label: 'Clean sheets', value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
+                                      ].map(stat => (
+                                        <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                          <div>
+                                            <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                              <span style={{ fontSize: '20px', fontWeight: 800, color: stat.color }}>{stat.value}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '8px' }}>⏱ {s.minutesJouees} min</span>
+                                      {s.jaunes > 0 && <span style={{ fontSize: '11px', color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', padding: '2px 8px', borderRadius: '8px' }}>🟨 {s.jaunes}</span>}
+                                      {s.rouges > 0 && <span style={{ fontSize: '11px', color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '2px 8px', borderRadius: '8px' }}>🟥 {s.rouges}</span>}
+                                    </div>
+                                  </div>
+
+                                  {/* Présence + Points séance */}
+                                  <div>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ Entraînement</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                                      {/* Taux de présence */}
+                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Taux présence</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                          <span style={{ fontSize: '20px', fontWeight: 800, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' }}>
+                                            {s.tauxPresence ?? '—'}%
+                                          </span>
+                                        </div>
+                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} séances</span>
+                                      </div>
+                                      {/* Points séance */}
+                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Points séance</p>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                          <span style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>{s.points}</span>
+                                          <RankBadge rank={s.rankPoints?.rank} total={s.rankPoints?.total} />
+                                        </div>
+                                        {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 Meilleur de l'équipe</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Présence par mois */}
+                                  {s.presenceMensuelle?.length > 0 && (
+                                    <div>
+                                      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>📅 Présence par mois</p>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                          const [y, m] = month.split('-')
+                                          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+                                          const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                          return (
+                                            <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                              <span style={{ fontSize: '10px', color: '#555', width: '40px', flexShrink: 0 }}>{label}</span>
+                                              <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
+                                                <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.5s' }} />
+                                              </div>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color, width: '32px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
+                                              <span style={{ fontSize: '9px', color: '#333', flexShrink: 0 }}>{present}/{total}</span>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Avis éducateur */}
+                                  <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '12px', border: '1px solid #1a1a1a' }}>
+                                    <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>📝 Avis de l'éducateur</p>
+                                    {s.noteEdu ? (
+                                      <>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
+                                          {[
+                                            { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
+                                            { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
+                                            { label: 'Mental', value: s.noteEdu.mental, color: '#a78bfa' },
+                                            { label: 'Tactique', value: s.noteEdu.tactique, color: '#f59e0b' },
+                                          ].map(n => (
+                                            <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                              <span style={{ fontSize: '10px', color: '#555', flex: 1 }}>{n.label}</span>
+                                              <div style={{ display: 'flex', gap: '2px' }}>
+                                                {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '10px', color: i <= (n.value || 0) ? n.color : '#222' }}>★</span>)}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        {s.noteEdu.commentaire && (
+                                          <p style={{ margin: 0, fontSize: '11px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>"{s.noteEdu.commentaire}"</p>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
+                                    )}
+                                  </div>
+
+                                  {/* Calendrier prochains matchs */}
+                                  <div>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 Prochains matchs</p>
+                                    {s.prochainMatchs?.length > 0 ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {s.prochainMatchs.map((m, i) => {
+                                          const d = new Date(m.date)
+                                          const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                                          return (
+                                            <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
+                                                {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                              </div>
+                                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
+                                              {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Aucun match programmé.</p>
+                                    )}
+                                  </div>
+
+                                  {/* Classements internes */}
+                                  <div>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                      {[
+                                        { title: '⚽ Top buteurs', data: s.leaderButs },
+                                        { title: '🎯 Top passeurs', data: s.leaderPasses },
+                                        { title: '🏆 Top victoires', data: s.leaderVictoires },
+                                        { title: '⭐ Points séance', data: s.leaderPoints },
+                                      ].map(({ title, data }) => (
+                                        <div key={title} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
+                                          <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555' }}>{title}</p>
+                                          {data?.length > 0 ? data.map((row, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
+                                              <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
+                                              <span style={{ fontSize: '10px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom.split(' ')[0]}</span>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
+                                            </div>
+                                          )) : <p style={{ margin: 0, fontSize: '10px', color: '#333' }}>—</p>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Lien classement ligue */}
+                                  {s.ligueUrl && (
+                                    <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
+                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+                                      🏆 Classement du championnat →
+                                    </a>
+                                  )}
+
+                                </div>
+                              )
+                            })()}
+
+                            {/* Joueur lié mais pas encore dans l'effectif */}
+                            {!a.equipe_joueur_id && (
+                              <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
+                                ⏳ Ton éducateur doit encore te lier à ton dossier dans l'effectif pour accéder à tes stats.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-              )})}
+              )}
             </div>
           )}
           {onglet === 'profil' && (
