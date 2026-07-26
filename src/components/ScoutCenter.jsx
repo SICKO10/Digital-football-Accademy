@@ -65,6 +65,12 @@ function Toast({ message, onClose }) {
 export default function ScoutCenter({ userId, profil, embedded = false }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   // Miroir local de la prop profil, pour refléter immédiatement les mises à jour
   // (sauvegarde du profil, upload avatar) sans attendre un re-fetch du parent.
   const [profilLocal, setProfilLocal] = useState(profil);
@@ -433,18 +439,18 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     navbar: { background: "#111", borderBottom: "1px solid #222", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" },
     logo: { color: "#4ade80", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
     logoutBtn: { background: "transparent", border: "1px solid #333", color: "#aaa", padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
-    content: { padding: "2rem", maxWidth: "1200px", margin: "0 auto" },
-    tabs: { display: "flex", gap: "8px", marginBottom: "2rem", flexWrap: "wrap" },
-    tab: (active) => ({ padding: "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#4ade80" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: "14px" }),
-    filterBar: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" },
+    content: { padding: isMobile ? "1rem" : "2rem", maxWidth: "1200px", margin: "0 auto" },
+    tabs: { display: "flex", gap: "8px", marginBottom: "1.5rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: "2px" },
+    tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#4ade80" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
+    filterBar: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: isMobile ? "1rem" : "1.25rem", marginBottom: "1.5rem", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" },
     filterLabel: { fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" },
     select: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px" },
     searchInput: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
-    grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
+    grid: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
     card: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem" },
     avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "16px" },
     posteBadge: (p) => ({ background: posteColor(p).bg, color: posteColor(p).text, fontSize: "11px", padding: "3px 10px", borderRadius: "20px", fontWeight: 500 }),
-    statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginTop: "12px", borderTop: "1px solid #1e1e1e", paddingTop: "12px" },
+    statsRow: { display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "8px", marginTop: "12px", borderTop: "1px solid #1e1e1e", paddingTop: "12px" },
     stat: { textAlign: "center" },
     statVal: { fontSize: "18px", fontWeight: 700, color: "#4ade80" },
     statLabel: { fontSize: "10px", color: "#555", textTransform: "uppercase" },
@@ -455,7 +461,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" },
     modal: { background: "#111", border: "1px solid #333", borderRadius: "16px", padding: "2rem", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto" },
     sectionTitle: { fontSize: "11px", color: "#4ade80", textTransform: "uppercase", letterSpacing: "1px", margin: "1.5rem 0 0.75rem" },
-    statsGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" },
+    statsGrid: { display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "12px" },
     statBox: { background: "#1a1a1a", borderRadius: "8px", padding: "12px", textAlign: "center" },
     statBoxVal: { fontSize: "22px", fontWeight: 700, color: "#4ade80" },
     statBoxLabel: { fontSize: "11px", color: "#555", marginTop: "2px" },

@@ -868,11 +868,11 @@ export default function DashboardClub() {
         {/* ── CATÉGORIES ── */}
         {activeTab === 'categories' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
-              <button style={st.btnSecondary} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
+              <button style={{ ...st.btnSecondary, width: isMobile ? '100%' : 'auto' }} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
                 {autoAssignLoading ? '⏳ Assignation...' : '⚡ Auto-assigner les joueurs (équipe A)'}
               </button>
-              <button style={st.btnSolid} onClick={() => setShowAddCategorie(true)}>+ Ajouter une catégorie</button>
+              <button style={{ ...st.btnSolid, width: isMobile ? '100%' : 'auto' }} onClick={() => setShowAddCategorie(true)}>+ Ajouter une catégorie</button>
             </div>
 
             {autoAssignResult && (
@@ -1000,14 +1000,14 @@ export default function DashboardClub() {
                 <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#f59e0b' }}>⏳ En attente de validation ({educateursEnAttente.length})</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {educateursEnAttente.map(e => (
-                    <div key={e.id} style={{ ...st.card, borderColor: '#f59e0b30', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div key={e.id} style={{ ...st.card, borderColor: '#f59e0b30', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
                       <div>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>Méthode : {e.methode === 'code' ? 'a rejoint via code' : 'invité par le club'}</p>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => accepterEducateur(e.id)} style={st.btnSolid}>✅ Accepter</button>
-                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Refuser</button>
+                      <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                        <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>✅ Accepter</button>
+                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>Refuser</button>
                       </div>
                     </div>
                   ))}
@@ -1022,16 +1022,16 @@ export default function DashboardClub() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {educateursAcceptes.map(e => (
-                  <div key={e.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div key={e.id} style={{ ...st.card, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>
                         {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
                       </div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>⭐ Noter</button>
-                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                    <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ Noter</button>
+                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>Retirer</button>
                     </div>
                   </div>
                 ))}
@@ -1081,12 +1081,12 @@ export default function DashboardClub() {
                               <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
                               <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
                               <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 Voir</a>
                               {s.statut === 'a_analyser' && (
                                 <>
                                   <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 Analyser</button>
-                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>🎙️ Transférer au coach</button>
+                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? '🎙️ Coach' : '🎙️ Transférer au coach'}</button>
                                 </>
                               )}
                               {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
