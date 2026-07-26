@@ -1163,7 +1163,7 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'equipe' && (
-            <div style={{ maxWidth: '700px' }}>
+            <div style={{ maxWidth: '960px' }}>
               <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>🏟️ Mon Équipe</h1>
 
               {/* Mes affiliations actives / en attente / refusées (l'historique archivé est plus bas) */}
@@ -1326,7 +1326,7 @@ function DashboardJoueur() {
                                     <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>📝 Avis de l'éducateur</p>
                                     {s.noteEdu ? (
                                       <>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
                                           {[
                                             { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
                                             { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
@@ -1378,7 +1378,7 @@ function DashboardJoueur() {
                                   {/* Classements internes */}
                                   <div>
                                     <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
                                       {[
                                         { title: '⚽ Top buteurs', data: s.leaderButs },
                                         { title: '🎯 Top passeurs', data: s.leaderPasses },
@@ -1844,7 +1844,7 @@ function DashboardJoueur() {
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
 
             {/* HERO CARD */}
             <div style={{ background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -2073,7 +2073,7 @@ function DashboardJoueur() {
 
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon profil</h1>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
@@ -2400,7 +2400,7 @@ function DashboardJoueur() {
 
         {/* ── ANALYSES ── */}
         {onglet === 'analyses' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>Mes analyses</h1>
               {(profil?.analyses_restantes || 0) > 0 && (
@@ -2441,7 +2441,7 @@ function DashboardJoueur() {
 
         {/* ── MESSAGES ── */}
         {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan') && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
               <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Messages recruteurs — Plan Pro</h2>
@@ -2718,7 +2718,7 @@ function DashboardJoueur() {
         )}
 
         {onglet === 'coach' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Analyse Vidéo</h2>
               <p style={{ fontSize: '13px', color: '#555' }}>Envoie ta vidéo et reçois une analyse détaillée de notre coach analyseur.</p>
@@ -2786,13 +2786,13 @@ function DashboardJoueur() {
         )}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto' }}>
             <PrepPhysiqueJoueur joueurId={userId} />
           </div>
         )}
         {/* ── EXPLORER ── */}
         {onglet === 'clubs' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>🌐 Explorer</h1>
             <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Découvre les clubs, éducateurs et recruteurs. Note ceux avec qui tu as travaillé.</p>
 
@@ -2881,7 +2881,7 @@ function DashboardJoueur() {
 
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (
-          <div style={{ maxWidth: '700px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Mon Équipe</h1>
             <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>Rejoins l'équipe de ton éducateur pour voir tes stats et le noter.</p>
 
@@ -3060,7 +3060,7 @@ function DashboardJoueur() {
                                   <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>📝 Avis de l'éducateur</p>
                                   {s.noteEdu ? (
                                     <>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
                                         {[
                                           { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
                                           { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
@@ -3112,7 +3112,7 @@ function DashboardJoueur() {
                                 {/* Classements internes */}
                                 <div>
                                   <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
                                     {[
                                       { title: '⚽ Top buteurs', data: s.leaderButs },
                                       { title: '🎯 Top passeurs', data: s.leaderPasses },
