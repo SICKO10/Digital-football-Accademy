@@ -626,6 +626,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setInvitingDirigeant(false)
   }
 
+  const modifierPermissions = async (dirigeantId, key, val) => {
+    const dirigeant = dirigeants.find(d => d.id === dirigeantId)
+    if (!dirigeant) return
+    const newPerms = { ...dirigeant.permissions, [key]: val }
+    setDirigeants(prev => prev.map(d => (d.id === dirigeantId ? { ...d, permissions: newPerms } : d)))
+    const { error } = await supabase.from('dirigeant_acces').update({ permissions: newPerms }).eq('id', dirigeantId)
+    if (error) { alert('Erreur : ' + error.message); await chargerDirigeants(userId) }
+  }
+
   const rejoindreClub = async () => {
     if (!codeClubInput.trim()) return
     setSendingCodeClub(true)
@@ -3782,16 +3791,52 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
             {/* Liste dirigeants existants */}
             {dirigeants.map(d => (
-              <div key={d.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '14px 16px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: 11, color: '#555' }}>
-                    {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ')}
-                  </p>
+              <div key={d.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
+                    <p style={{ margin: '3px 0 0', fontSize: 11, color: '#555' }}>
+                      {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ') || 'Aucun accès'}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? '#4ade8015' : '#f59e0b15', color: d.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
+                    {d.statut === 'accepte' ? '✅ Actif' : '⏳ En attente'}
+                  </span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? '#4ade8015' : '#f59e0b15', color: d.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
-                  {d.statut === 'accepte' ? '✅ Actif' : '⏳ En attente'}
-                </span>
+
+                {/* Modifier permissions inline */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    { key: 'effectif', label: '👥 Effectif' },
+                    { key: 'stats', label: '📊 Stats' },
+                    { key: 'competition', label: '🏆 Compétition' },
+                    { key: 'entrainements', label: '🏃 Entraînements' },
+                    { key: 'prep_physique', label: '🏋️ Prépa physique' },
+                    { key: 'budget', label: '💰 Budget' },
+                    { key: 'notes', label: '📝 Notes' },
+                  ].map(({ key, label }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: '#0d0d0d', borderRadius: 6 }}>
+                      <span style={{ fontSize: 11, color: '#888' }}>{label}</span>
+                      <div style={{ display: 'flex', gap: 3 }}>
+                        {['aucun', 'lecture', 'edition'].map(val => (
+                          <button key={val}
+                            onClick={() => modifierPermissions(d.id, key, val)}
+                            style={{
+                              padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                              background: (d.permissions?.[key] || 'aucun') === val
+                                ? (val === 'edition' ? '#4ade8020' : val === 'lecture' ? '#60a5fa20' : '#ef444420')
+                                : '#1a1a1a',
+                              color: (d.permissions?.[key] || 'aucun') === val
+                                ? (val === 'edition' ? '#4ade80' : val === 'lecture' ? '#60a5fa' : '#ef4444')
+                                : '#333',
+                            }}>
+                            {val === 'aucun' ? '✕' : val === 'lecture' ? '👁' : '✏️'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

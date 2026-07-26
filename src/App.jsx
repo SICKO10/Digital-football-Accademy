@@ -32,9 +32,12 @@ function SmartDashboard() {
       Promise.all([
         supabase.from('profiles').select('plan').eq('id', user.id).single(),
         supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),
-      ]).then(([{ data: profil }, { data: staff }]) => {
+        supabase.from('dirigeant_acces').select('id').eq('dirigeant_id', user.id).eq('statut', 'accepte').maybeSingle(),
+      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }]) => {
         // Membre du staff d'un club (rôle géré et détecté par DashboardClub lui-même)
         if (staff) { setDest('/club'); return }
+        // Dirigeant délégué par un éducateur (plan reste 'fan', accès géré par dirigeant_acces)
+        if (dirigeant) { setDest('/dashboard-dirigeant'); return }
         const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'recruteur') setDest('/recruteur')
