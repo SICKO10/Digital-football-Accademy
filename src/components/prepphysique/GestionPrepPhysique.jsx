@@ -196,7 +196,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId, readOnly = false }) {
+export default function GestionPrepPhysique({ educateurId, readOnly = false, isMobile = false }) {
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
   const [selectedProgramme, setSelectedProgramme] = useState(null)
@@ -531,43 +531,45 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false }) {
     const nbSemaines = selectedProgramme.nb_semaines || 2
     return (
       <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 24 }}>
           <button onClick={() => setVue('programmes')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Retour</button>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ color: st.text, margin: 0, fontSize: 18 }}>{selectedProgramme.titre}</h2>
+          <h2 style={{ color: st.text, margin: 0, fontSize: isMobile ? 16 : 18, flex: isMobile ? 'none' : 1 }}>{selectedProgramme.titre}</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 Suivi</button>
+            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 Stats</button>
+            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 Classement</button>
           </div>
-          <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 Suivi</button>
-          <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 Stats</button>
-          <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 Classement</button>
         </div>
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
           <div key={sem} style={{ marginBottom: 24 }}>
             <h3 style={{ color: st.green, marginBottom: 12, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em' }}>SEMAINE {sem}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
-              {JOURS.map((jourLabel, ji) => {
-                const jour = ji + 1
-                const seance = seances.find(s => s.semaine === sem && s.jour === jour)
-                const typeInfo = TYPES_SEANCE.find(t => t.value === seance?.type_seance) || TYPES_SEANCE[0]
-                const isRepos = seance?.type_seance === 'repos'
-                return (
-                  <div key={jour}>
-                    <div style={{ color: st.muted, fontSize: 11, textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>{jourLabel}</div>
-                    <div onClick={() => !readOnly && setModalSeance({ semaine: sem, jour, seance })}
-                      style={{ background: seance ? (isRepos ? '#1a1a1a' : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? '#333' : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
-                      onMouseEnter={e => { if (!readOnly) e.currentTarget.style.borderColor = st.green }}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
-                      {seance ? (
-                        <>
-                          <div style={{ fontSize: 20 }}>{typeInfo.icon}</div>
-                          <div style={{ color: st.text, fontSize: 10, textAlign: 'center', lineHeight: 1.3 }}>{seance.titre}</div>
-                          {seance.duree_cible && <div style={{ color: st.muted, fontSize: 10 }}>{seance.duree_cible}min</div>}
-                        </>
-                      ) : !readOnly && <div style={{ color: st.border, fontSize: 20 }}>+</div>}
+            <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(110px, 1fr))', gap: 8, minWidth: isMobile ? 770 : 'auto' }}>
+                {JOURS.map((jourLabel, ji) => {
+                  const jour = ji + 1
+                  const seance = seances.find(s => s.semaine === sem && s.jour === jour)
+                  const typeInfo = TYPES_SEANCE.find(t => t.value === seance?.type_seance) || TYPES_SEANCE[0]
+                  const isRepos = seance?.type_seance === 'repos'
+                  return (
+                    <div key={jour}>
+                      <div style={{ color: st.muted, fontSize: isMobile ? 11 : 13, textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>{jourLabel}</div>
+                      <div onClick={() => !readOnly && setModalSeance({ semaine: sem, jour, seance })}
+                        style={{ background: seance ? (isRepos ? '#1a1a1a' : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? '#333' : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
+                        onMouseEnter={e => { if (!readOnly) e.currentTarget.style.borderColor = st.green }}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
+                        {seance ? (
+                          <>
+                            <div style={{ fontSize: 20 }}>{typeInfo.icon}</div>
+                            <div style={{ color: st.text, fontSize: 10, textAlign: 'center', lineHeight: 1.3 }}>{seance.titre}</div>
+                            {seance.duree_cible && <div style={{ color: st.muted, fontSize: 10 }}>{seance.duree_cible}min</div>}
+                          </>
+                        ) : !readOnly && <div style={{ color: st.border, fontSize: 20 }}>+</div>}
+                      </div>
+                      {seance && !readOnly && <button onClick={e => { e.stopPropagation(); supprimerSeance(seance.id) }} style={{ width: '100%', marginTop: 3, background: 'transparent', border: 'none', color: st.muted, fontSize: 10, cursor: 'pointer' }}>suppr.</button>}
                     </div>
-                    {seance && !readOnly && <button onClick={e => { e.stopPropagation(); supprimerSeance(seance.id) }} style={{ width: '100%', marginTop: 3, background: 'transparent', border: 'none', color: st.muted, fontSize: 10, cursor: 'pointer' }}>suppr.</button>}
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </div>
         ))}

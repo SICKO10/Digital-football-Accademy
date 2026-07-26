@@ -290,7 +290,7 @@ function ModalTests({ joueurId, programmeId, testExistant, onClose, onSaved }) {
   )
 }
 
-export default function PrepPhysiqueJoueur({ joueurId }) {
+export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
   const [programme, setProgramme] = useState(null)
   const [seances, setSeances] = useState([])
   const [soumissions, setSoumissions] = useState([])
@@ -394,33 +394,35 @@ export default function PrepPhysiqueJoueur({ joueurId }) {
       {Array.from({ length: programme.nb_semaines || 2 }, (_, i) => i + 1).map(sem => (
         <div key={sem} style={{ marginBottom: 24 }}>
           <h3 style={{ color: st.green, marginBottom: 12, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em' }}>SEMAINE {sem}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-            {Array.from({ length: 7 }, (_, ji) => ji + 1).map(jour => {
-              const seance = seances.find(s => s.semaine === sem && s.jour === jour)
-              const soumission = seance ? soumissions.find(s => s.seance_id === seance.id) : null
-              const isRepos = seance?.type_seance === 'repos'
-              const typeInfo = seance ? TYPES_SEANCE.find(t => t.value === seance.type_seance) : null
-              let borderColor = st.border, bgColor = st.card, statusIcon = null
-              if (seance && !isRepos) {
-                if (soumission?.statut === 'valide') { borderColor = st.green; bgColor = '#0a1a0a'; statusIcon = '✅' }
-                else if (soumission?.statut === 'soumis') { borderColor = st.yellow; bgColor = '#1a1a00'; statusIcon = '⏳' }
-                else if (soumission?.statut === 'refuse') { borderColor = st.red; bgColor = '#1a0000'; statusIcon = '🔄' }
-              }
-              return (
-                <div key={jour}>
-                  <div style={{ color: st.muted, fontSize: 10, textAlign: 'center', marginBottom: 3, fontWeight: 600 }}>{'LMMJVSD'[jour - 1]}</div>
-                  <div onClick={() => seance && !isRepos && setModalSeance({ seance, soumission })}
-                    style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 8, padding: 8, minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, opacity: isRepos ? 0.4 : 1 }}>
-                    {seance ? (
-                      <>
-                        <div style={{ fontSize: statusIcon ? 14 : 18 }}>{statusIcon || typeInfo?.icon || '🏋️'}</div>
-                        <div style={{ color: st.text, fontSize: 9, textAlign: 'center', lineHeight: 1.2 }}>{seance.titre.substring(0, 18)}{seance.titre.length > 18 ? '…' : ''}</div>
-                      </>
-                    ) : <div style={{ color: st.border }}>—</div>}
+          <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(90px, 1fr))', gap: 6, minWidth: isMobile ? 630 : 'auto' }}>
+              {Array.from({ length: 7 }, (_, ji) => ji + 1).map(jour => {
+                const seance = seances.find(s => s.semaine === sem && s.jour === jour)
+                const soumission = seance ? soumissions.find(s => s.seance_id === seance.id) : null
+                const isRepos = seance?.type_seance === 'repos'
+                const typeInfo = seance ? TYPES_SEANCE.find(t => t.value === seance.type_seance) : null
+                let borderColor = st.border, bgColor = st.card, statusIcon = null
+                if (seance && !isRepos) {
+                  if (soumission?.statut === 'valide') { borderColor = st.green; bgColor = '#0a1a0a'; statusIcon = '✅' }
+                  else if (soumission?.statut === 'soumis') { borderColor = st.yellow; bgColor = '#1a1a00'; statusIcon = '⏳' }
+                  else if (soumission?.statut === 'refuse') { borderColor = st.red; bgColor = '#1a0000'; statusIcon = '🔄' }
+                }
+                return (
+                  <div key={jour}>
+                    <div style={{ color: st.muted, fontSize: 10, textAlign: 'center', marginBottom: 3, fontWeight: 600 }}>{'LMMJVSD'[jour - 1]}</div>
+                    <div onClick={() => seance && !isRepos && setModalSeance({ seance, soumission })}
+                      style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 8, padding: 8, minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, opacity: isRepos ? 0.4 : 1 }}>
+                      {seance ? (
+                        <>
+                          <div style={{ fontSize: statusIcon ? 14 : 18 }}>{statusIcon || typeInfo?.icon || '🏋️'}</div>
+                          <div style={{ color: st.text, fontSize: 9, textAlign: 'center', lineHeight: 1.2 }}>{seance.titre.substring(0, 18)}{seance.titre.length > 18 ? '…' : ''}</div>
+                        </>
+                      ) : <div style={{ color: st.border }}>—</div>}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       ))}

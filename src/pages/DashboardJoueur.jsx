@@ -1070,7 +1070,7 @@ function DashboardJoueur() {
               </div>
             </div>
           )}
-          {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} />}
+          {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />}
           {onglet === 'stats' && (
             <div style={{ maxWidth: '640px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
@@ -1855,16 +1855,16 @@ function DashboardJoueur() {
                 <p style={{ color: '#555', fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
                 </p>
-                <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: isMobile ? '16px' : '28px', flexWrap: 'wrap' }}>
                   {[
                     { val: profil?.analyses_restantes ?? '—', label: 'Analyses' },
                     { val: demandes.length, label: 'Demandes' },
                     { val: profil?.categorie || '—', label: 'Catégorie' },
                   ].map((s, i, arr) => (
-                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '28px' }}>
                       <div>
-                        <p style={{ fontSize: '22px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
-                        <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '3px' }}>{s.label}</p>
+                        <p style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
+                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '3px' }}>{s.label}</p>
                       </div>
                       {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', background: '#1f1f1f' }} />}
                     </div>
@@ -2772,7 +2772,7 @@ function DashboardJoueur() {
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-            <PrepPhysiqueJoueur joueurId={userId} />
+            <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />
           </div>
         )}
         {/* ── EXPLORER ── */}

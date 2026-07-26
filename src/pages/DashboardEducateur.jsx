@@ -342,6 +342,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
   const [activeSection, setActiveSection] = useState('equipe')
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
   const [statsTri, setStatsTri] = useState('buts') // pour classement
 
@@ -444,6 +446,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   useEffect(() => { init() }, [])
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
 
   const init = async () => {
@@ -1038,7 +1045,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'√† 
           )}
         </div>
       ) : canEdit('effectif') ? (
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 6 }}>
           <input
             value={inviteEmails[j.id] || ''}
             onChange={e => setInviteEmails(prev => ({ ...prev, [j.id]: e.target.value }))}
@@ -1542,8 +1549,23 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
     <>
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 
+      {/* Overlay mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 40 }}
+        />
+      )}
+
       {/* SIDEBAR */}
-      <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+      <aside style={{
+        width: '220px', background: '#0d0d0d', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        ...(isMobile ? {
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+        } : {
+          position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
+        }),
+      }}>
         <div style={{ padding: '24px 20px 16px' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
@@ -1559,7 +1581,7 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
                 {section.titre}
               </div>
               {section.items.map(item => (
-                <button key={item.key} onClick={() => setActiveSection(item.key)}
+                <button key={item.key} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#4ade8012' : 'transparent', color: activeSection === item.key ? '#4ade80' : item.locked ? '#333' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -1574,7 +1596,7 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
         </nav>
 
         <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
-          <button onClick={() => setActiveSection('profil')}
+          <button onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#4ade8012' : 'transparent', color: activeSection === 'profil' ? '#4ade80' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span>üë§</span><span style={{ flex: 1 }}>Mon profil</span>
           </button>
@@ -1591,7 +1613,14 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
         </div>
       </aside>
 
-      <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: isMobile ? '16px 14px' : '2rem' }}>
+
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(true)}
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
+            ‚ò∞
+          </button>
+        )}
 
         {/* ===== MON √âQUIPE ===== */}
         {activeSection === 'equipe' && (
@@ -3781,7 +3810,7 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} readOnly={!canEdit('prep_physique')} />
+          <GestionPrepPhysique educateurId={userId} readOnly={!canEdit('prep_physique')} isMobile={isMobile} />
         )}
 
         {activeSection === 'clotures_saison' && (
