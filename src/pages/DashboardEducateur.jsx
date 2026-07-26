@@ -5,7 +5,6 @@ import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
-import AnalyseurIA from '../components/AnalyseurIA'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 
@@ -1510,7 +1509,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     ] },
     { titre: 'SUIVI & ANALYSE', items: [
       { key: 'analyse_video', label: 'Analyse vidéo', icon: '🎥' },
-      { key: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️' },
       { key: 'notes', label: 'Évaluations', icon: '📝' },
       { key: 'clotures_saison', label: 'Clôtures de saison', icon: '📅' },
     ] },
@@ -3809,10 +3807,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
         {activeSection === 'analyse_video' && (
           <AnalyseVideo userId={userId} />
-        )}
-
-        {activeSection === 'analyseur_ia' && (
-          <AnalyseurIA />
         )}
 
         {activeSection === 'prep_physique' && (

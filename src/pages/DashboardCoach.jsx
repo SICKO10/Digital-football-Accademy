@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { notifierJoueur } from '../lib/notifications'
+import AnalyseurIA from '../components/AnalyseurIA'
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -320,6 +321,7 @@ function DashboardCoach() {
             { key: 'certifications', label: '⭐ Certifications', count: certifsEnAttente.length },
             { key: 'recruteurs', label: '🏢 Clubs / Agents', count: 0 },
             { key: 'seances_club', label: '🎥 Séances club', count: seancesTransferees.length },
+            { key: 'analyseur_ia', label: '🎙️ Analyseur IA', count: 0 },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveSection(tab.key)}
               style={{
@@ -737,6 +739,8 @@ function DashboardCoach() {
             )}
           </>
         )}
+
+        {activeSection === 'analyseur_ia' && <AnalyseurIA />}
 
       </div>
 
