@@ -956,6 +956,15 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (joueurActif?.id === id) setJoueurActif(null)
   }
 
+  const reinitialiserAccesJoueur = async (email) => {
+    if (!email) { alert('Email inconnu pour ce joueur.'); return }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://digital-football-accademy.vercel.app/reset-password',
+    })
+    if (error) alert('Erreur : ' + error.message)
+    else alert('Email de réinitialisation envoyé à ' + email)
+  }
+
   const inviterJoueur = async (j) => {
     const email = (inviteEmails[j.id] || j.email || '').trim()
     if (!email) return
@@ -996,6 +1005,13 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
                          padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
             ✅ Compte lié
           </span>
+          {canEdit('effectif') && (
+            <button onClick={() => reinitialiserAccesJoueur(j.email)}
+              style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              title="Envoyer un email de réinitialisation de mot de passe">
+              🔑
+            </button>
+          )}
         </div>
       ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
