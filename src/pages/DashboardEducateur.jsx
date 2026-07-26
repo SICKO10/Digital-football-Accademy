@@ -332,7 +332,10 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
-export default function DashboardEducateur() {
+// educateurIdOverride/permissions : utilisés quand ce dashboard est rendu pour un
+// dirigeant délégué (DashboardDirigeant.jsx) plutôt que pour l'éducateur lui-même —
+// voir canEdit()/canView() et sidebarSections plus bas pour le gating par section.
+export default function DashboardEducateur({ educateurIdOverride, permissions } = {}) {
   const navigate = useNavigate()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
@@ -446,11 +449,15 @@ export default function DashboardEducateur() {
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    // Dirigeant délégué (DashboardDirigeant.jsx) : on charge le dashboard de l'éducateur
+    // ciblé, pas celui du compte connecté. chargerStaffClub reste sur le compte connecté
+    // (bouton "Vue Club" propre à qui est réellement staff, pas au dirigeant délégué).
+    const targetId = educateurIdOverride || user.id
+    const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId).single()
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
-    setUserId(user.id)
+    setUserId(targetId)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerStaffClub(user.id), chargerDirigeants(user.id)])
+    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId)])
     setLoading(false)
   }
 
@@ -971,25 +978,27 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#facc15' }}>
             ✉️ Invitation envoyée · {j.email}
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              onClick={() => inviterJoueur(j)}
-              disabled={invitingId === j.id}
-              style={{ fontSize: 11, background: '#facc1510', border: '1px solid #facc1430', color: '#facc14', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
-              {invitingId === j.id ? '...' : '🔁 Renvoyer'}
-            </button>
-            <button
-              onClick={async () => {
-                await supabase.from('equipe_joueurs').update({ email: null }).eq('id', j.id)
-                setInviteStatus(prev => { const next = { ...prev }; delete next[j.id]; return next })
-                await chargerJoueurs(userId)
-              }}
-              style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
-              ✕ Corriger
-            </button>
-          </div>
+          {canEdit('effectif') && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={() => inviterJoueur(j)}
+                disabled={invitingId === j.id}
+                style={{ fontSize: 11, background: '#facc1510', border: '1px solid #facc1430', color: '#facc14', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                {invitingId === j.id ? '...' : '🔁 Renvoyer'}
+              </button>
+              <button
+                onClick={async () => {
+                  await supabase.from('equipe_joueurs').update({ email: null }).eq('id', j.id)
+                  setInviteStatus(prev => { const next = { ...prev }; delete next[j.id]; return next })
+                  await chargerJoueurs(userId)
+                }}
+                style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                ✕ Corriger
+              </button>
+            </div>
+          )}
         </div>
-      ) : (
+      ) : canEdit('effectif') ? (
         <div style={{ display: 'flex', gap: 6 }}>
           <input
             value={inviteEmails[j.id] || ''}
@@ -1018,6 +1027,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             {invitingId === j.id ? '⏳' : '📧 Inviter'}
           </button>
         </div>
+      ) : (
+        <span style={{ fontSize: 11, color: '#333', fontStyle: 'italic' }}>Aucune invitation envoyée</span>
       )}
     </div>
   )
@@ -1461,6 +1472,26 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     ] },
   ]
 
+  // Gating par permissions (dirigeant délégué uniquement — permissions est undefined
+  // pour l'éducateur lui-même, donc canView/canEdit renvoient toujours true).
+  // Seules les sections avec une clé de permission correspondante sont masquables ;
+  // les autres (séances, tactipad, recrutement, dirigeants...) restent visibles faute
+  // de permission dédiée pour l'instant.
+  const PERMISSION_PAR_SECTION = {
+    equipe: 'effectif', stats: 'stats', matchs: 'competition',
+    entrainements: 'entrainements', prep_physique: 'prep_physique', notes: 'notes',
+  }
+  const canView = (sidebarKey) => {
+    if (!permissions) return true
+    const permKey = PERMISSION_PAR_SECTION[sidebarKey]
+    return !permKey || permissions[permKey] !== 'aucun'
+  }
+  const canEdit = (permKey) => !permissions || permissions[permKey] === 'edition'
+
+  const sidebarSectionsVisibles = sidebarSections
+    .map(section => ({ ...section, items: section.items.filter(item => canView(item.key)) }))
+    .filter(section => section.items.length > 0)
+
   const chargerRecrutJoueurs = async () => {
     if (recrutLoaded) return
     const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'pro').eq('abonnement_actif', true)
@@ -1483,7 +1514,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         </div>
 
         <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
-          {sidebarSections.map(section => (
+          {sidebarSectionsVisibles.map(section => (
             <div key={section.titre}>
               <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
                 {section.titre}
@@ -1541,11 +1572,21 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   ))}
                 </div>
                 <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title="Télécharger un modèle Excel/CSV">📥 Template</button>
-                <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 Importer Excel/CSV</button>
-                <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
-                <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
+                {canEdit('effectif') && (
+                  <>
+                    <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 Importer Excel/CSV</button>
+                    <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
+                    <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
+                  </>
+                )}
               </div>
             </div>
+
+            {permissions?.effectif === 'lecture' && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+                👁 Mode lecture seule
+              </div>
+            )}
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
@@ -1745,9 +1786,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         )
                       })()}
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ Modifier les infos</button>
-                      </div>
+                      {canEdit('effectif') && (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ Modifier les infos</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1928,8 +1971,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   </button>
                                 )}
                                 <button onClick={() => setJoueurProfil(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 Profil</button>
-                                <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
-                                <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                {canEdit('effectif') && (
+                                  <>
+                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                                    <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1970,10 +2017,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px' }}>
-                                  <button onClick={e => { e.stopPropagation(); setJoueurEnEdition({ ...j }) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                                  <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
-                                </div>
+                                {canEdit('effectif') && (
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button onClick={e => { e.stopPropagation(); setJoueurEnEdition({ ...j }) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', borderRadius: '6px', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
+                                    <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
+                                  </div>
+                                )}
                               </div>
                               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪</span>}

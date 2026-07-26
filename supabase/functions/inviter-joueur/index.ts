@@ -32,15 +32,26 @@ serve(async (req) => {
       )
     }
 
-    // Seul l'éducateur propriétaire de cette ligne peut inviter pour elle.
-    if (caller.id !== educateur_id) {
-      return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 403, headers: corsHeaders })
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
+
+    // Autorisé si l'éducateur lui-même, ou un dirigeant avec édition sur "effectif".
+    let autorise = caller.id === educateur_id
+    if (!autorise) {
+      const { data: acces } = await supabaseAdmin
+        .from('dirigeant_acces')
+        .select('permissions')
+        .eq('educateur_id', educateur_id)
+        .eq('dirigeant_id', caller.id)
+        .eq('statut', 'accepte')
+        .maybeSingle()
+      autorise = acces?.permissions?.effectif === 'edition'
+    }
+    if (!autorise) {
+      return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 403, headers: corsHeaders })
+    }
 
     // Envoyer l'invitation via Supabase Auth
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {

@@ -11,6 +11,7 @@ import DashboardScoutClub from './pages/DashboardScoutClub'
 import DashboardClub from './pages/DashboardClub'
 import DashboardRecruteur from './pages/DashboardRecruteur'
 import DashboardEducateur from './pages/DashboardEducateur'
+import DashboardDirigeant from './pages/DashboardDirigeant'
 import Upload from './pages/Upload'
 import Feed from './pages/Feed'
 import UploadClip from './pages/UploadClip'
@@ -62,6 +63,7 @@ function App() {
         <Route path="/club" element={<DashboardClub />} />
         <Route path="/recruteur" element={<DashboardRecruteur />} />
         <Route path="/educateur" element={<DashboardEducateur />} />
+        <Route path="/dashboard-dirigeant" element={<DashboardDirigeant />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/upload-clip" element={<UploadClip />} />
