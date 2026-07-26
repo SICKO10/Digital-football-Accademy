@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
+import AnalyseurIA from '../components/AnalyseurIA'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 
@@ -1505,10 +1506,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       { key: 'entrainements', label: 'Entraînements', icon: '🏃' },
       { key: 'mes_seances', label: 'Séances', icon: '🎬' },
       { key: 'prep_physique', label: 'Préparation physique', icon: '🏋️' },
-      { key: 'tactipad', label: 'Tactipad', icon: '🗺️' },
+      { key: 'tactipad', label: 'Tacticboard', icon: '🗺️' },
     ] },
     { titre: 'SUIVI & ANALYSE', items: [
       { key: 'analyse_video', label: 'Analyse vidéo', icon: '🎥' },
+      { key: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️' },
       { key: 'notes', label: 'Évaluations', icon: '📝' },
       { key: 'clotures_saison', label: 'Clôtures de saison', icon: '📅' },
     ] },
@@ -3809,6 +3811,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           <AnalyseVideo userId={userId} />
         )}
 
+        {activeSection === 'analyseur_ia' && (
+          <AnalyseurIA />
+        )}
+
         {activeSection === 'prep_physique' && (
           <GestionPrepPhysique educateurId={userId} readOnly={!canEdit('prep_physique')} isMobile={isMobile} />
         )}
@@ -3819,9 +3825,17 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
         {activeSection === 'tactipad' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 Tactipad</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 Tacticboard</h1>
             <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Dessine tes schémas tactiques : placements, mouvements de joueurs, exercices.</p>
-            <Tactipad userId={userId} />
+            {isMobile ? (
+              <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🖥️</div>
+                <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px', color: '#fff' }}>Disponible sur ordinateur ou tablette</p>
+                <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>Le Tacticboard est optimisé pour les grands écrans. Connecte-toi depuis un ordinateur ou une tablette pour dessiner tes schémas tactiques.</p>
+              </div>
+            ) : (
+              <Tactipad userId={userId} />
+            )}
           </div>
         )}
 
