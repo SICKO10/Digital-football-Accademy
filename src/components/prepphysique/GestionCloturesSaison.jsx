@@ -150,6 +150,7 @@ export default function GestionCloturesSaison({ educateurId }) {
   const [error, setError] = useState(null)
   const [saison, setSaison] = useState(getSaison())
   const [modalJoueur, setModalJoueur] = useState(null)
+  const [archiving, setArchiving] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -223,6 +224,26 @@ export default function GestionCloturesSaison({ educateurId }) {
 
   useEffect(() => { load() }, [saison])
 
+  const archiverAffiliations = async () => {
+    const incomplet = joueurs.length - nbClotures
+    const message = incomplet > 0
+      ? `${incomplet} joueur(s) n'ont pas encore été clôturés individuellement. Archiver quand même toutes les affiliations actives de la saison ${saison} ?\n\nCette action est irréversible : les joueurs devront être ré-affiliés pour la nouvelle saison.`
+      : `Archiver toutes les affiliations actives de la saison ${saison} ?\n\nCette action est irréversible : les joueurs devront être ré-affiliés pour la nouvelle saison.`
+    if (!confirm(message)) return
+
+    setArchiving(true)
+    const { error } = await supabase
+      .from('affiliations')
+      .update({ statut: 'archive', saison, date_fin: new Date().toISOString() })
+      .eq('educateur_id', educateurId)
+      .eq('statut', 'accepte')
+    setArchiving(false)
+
+    if (error) { alert('Erreur lors de l\'archivage : ' + error.message); return }
+    alert('✅ Saison archivée — les affiliations actives ont été clôturées.')
+    await load()
+  }
+
   const getHistorique = (joueurId) => historiques.find(h => h.joueur_id === joueurId)
   const getPresence = (joueurId) => presences[joueurId] || { realisees: 0, total: 0 }
 
@@ -262,6 +283,12 @@ export default function GestionCloturesSaison({ educateurId }) {
             style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 12px', color: st.text, fontSize: 13 }}>
             {saisonsDispo.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          {joueurs.length > 0 && (
+            <button onClick={archiverAffiliations} disabled={archiving}
+              style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.red}60`, borderRadius: 8, color: st.red, fontWeight: 700, cursor: 'pointer', fontSize: 13, opacity: archiving ? 0.6 : 1 }}>
+              {archiving ? '...' : '🔒 Clôturer toute la saison'}
+            </button>
+          )}
         </div>
       </div>
 
