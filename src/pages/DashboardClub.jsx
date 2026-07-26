@@ -37,6 +37,8 @@ const CATEGORIES_DEPENSE = [
   { label: 'Matériel', emoji: '⚽' },
   { label: 'Médical', emoji: '🏥' },
   { label: 'Communication', emoji: '📣' },
+  { label: 'Éducateur', emoji: '🧑‍🏫' },
+  { label: 'Équipes', emoji: '⚽' },
   { label: 'Divers', emoji: '📦' },
 ]
 
