@@ -231,6 +231,7 @@ function DashboardJoueur() {
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('dashboard')
+  const [classementActif, setClassementActif] = useState('buteurs')
   const [stats, setStats] = useState({})
   const [savingStats, setSavingStats] = useState(false)
   const [statsSaved, setStatsSaved] = useState(false)
@@ -526,7 +527,7 @@ function DashboardJoueur() {
       })
       return Object.entries(map)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
+        .slice(0, 10)
         .map(([id, val]) => {
           const j = effectif?.find(e => e.id === id)
           return { nom: j ? `${j.prenom} ${j.nom}` : '?', val, isMe: id === equipeJoueurId }
@@ -1322,28 +1323,19 @@ function DashboardJoueur() {
                                   )}
 
                                   {/* Avis éducateur */}
-                                  <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '12px', border: '1px solid #1a1a1a' }}>
-                                    <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>📝 Avis de l'éducateur</p>
+                                  <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '12px 16px' }}>
+                                    <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 Avis de l'éducateur</p>
                                     {s.noteEdu ? (
                                       <>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
-                                          {[
-                                            { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
-                                            { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
-                                            { label: 'Mental', value: s.noteEdu.mental, color: '#a78bfa' },
-                                            { label: 'Tactique', value: s.noteEdu.tactique, color: '#f59e0b' },
-                                          ].map(n => (
-                                            <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                              <span style={{ fontSize: '10px', color: '#555', flex: 1 }}>{n.label}</span>
-                                              <div style={{ display: 'flex', gap: '2px' }}>
-                                                {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '10px', color: i <= (n.value || 0) ? n.color : '#222' }}>★</span>)}
-                                              </div>
+                                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                                          {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
+                                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                              <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
+                                              <span style={{ color: '#f59e0b', fontSize: 12 }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
                                             </div>
-                                          ))}
+                                          ) : null)}
                                         </div>
-                                        {s.noteEdu.commentaire && (
-                                          <p style={{ margin: 0, fontSize: '11px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>"{s.noteEdu.commentaire}"</p>
-                                        )}
+                                        {s.noteEdu.commentaire && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#555', fontStyle: 'italic' }}>"{s.noteEdu.commentaire}"</p>}
                                       </>
                                     ) : (
                                       <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
@@ -1378,25 +1370,33 @@ function DashboardJoueur() {
                                   {/* Classements internes */}
                                   <div>
                                     <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                                       {[
-                                        { title: '⚽ Top buteurs', data: s.leaderButs },
-                                        { title: '🎯 Top passeurs', data: s.leaderPasses },
-                                        { title: '🏆 Top victoires', data: s.leaderVictoires },
-                                        { title: '⭐ Points séance', data: s.leaderPoints },
-                                      ].map(({ title, data }) => (
-                                        <div key={title} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                          <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555' }}>{title}</p>
-                                          {data?.length > 0 ? data.map((row, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
-                                              <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
-                                              <span style={{ fontSize: '10px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom.split(' ')[0]}</span>
-                                              <span style={{ fontSize: '10px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
-                                            </div>
-                                          )) : <p style={{ margin: 0, fontSize: '10px', color: '#333' }}>—</p>}
-                                        </div>
+                                        { key: 'buteurs', label: '⚽ Top buteurs', data: s.leaderButs },
+                                        { key: 'passeurs', label: '🎯 Top passeurs', data: s.leaderPasses },
+                                        { key: 'victoires', label: '🏆 Top victoires', data: s.leaderVictoires },
+                                        { key: 'points', label: '⭐ Points séance', data: s.leaderPoints },
+                                      ].map(c => (
+                                        <button key={c.key} onClick={() => setClassementActif(c.key)}
+                                          style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#0a0a0a', color: classementActif === c.key ? '#000' : '#555' }}>
+                                          {c.label}
+                                        </button>
                                       ))}
                                     </div>
+                                    {(() => {
+                                      const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
+                                      return (
+                                        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+                                          {actif.length > 0 ? actif.map((row, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
+                                              <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? '#4ade80' : '#555', minWidth: '18px' }}>{i + 1}</span>
+                                              <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
+                                              <span style={{ fontSize: '12px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#888' }}>{row.val}</span>
+                                            </div>
+                                          )) : <p style={{ margin: 0, padding: '12px', fontSize: '11px', color: '#333' }}>—</p>}
+                                        </div>
+                                      )
+                                    })()}
                                   </div>
 
                                   {/* Lien classement ligue */}
@@ -3056,28 +3056,19 @@ function DashboardJoueur() {
                                 )}
 
                                 {/* Avis éducateur */}
-                                <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '12px', border: '1px solid #1a1a1a' }}>
-                                  <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>📝 Avis de l'éducateur</p>
+                                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '12px 16px' }}>
+                                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 Avis de l'éducateur</p>
                                   {s.noteEdu ? (
                                     <>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '6px', marginBottom: s.noteEdu.commentaire ? '10px' : '0' }}>
-                                        {[
-                                          { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
-                                          { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
-                                          { label: 'Mental', value: s.noteEdu.mental, color: '#a78bfa' },
-                                          { label: 'Tactique', value: s.noteEdu.tactique, color: '#f59e0b' },
-                                        ].map(n => (
-                                          <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '10px', color: '#555', flex: 1 }}>{n.label}</span>
-                                            <div style={{ display: 'flex', gap: '2px' }}>
-                                              {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '10px', color: i <= (n.value || 0) ? n.color : '#222' }}>★</span>)}
-                                            </div>
+                                      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                                        {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
+                                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
+                                            <span style={{ color: '#f59e0b', fontSize: 12 }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
                                           </div>
-                                        ))}
+                                        ) : null)}
                                       </div>
-                                      {s.noteEdu.commentaire && (
-                                        <p style={{ margin: 0, fontSize: '11px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>"{s.noteEdu.commentaire}"</p>
-                                      )}
+                                      {s.noteEdu.commentaire && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#555', fontStyle: 'italic' }}>"{s.noteEdu.commentaire}"</p>}
                                     </>
                                   ) : (
                                     <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
@@ -3112,25 +3103,33 @@ function DashboardJoueur() {
                                 {/* Classements internes */}
                                 <div>
                                   <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+                                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                                     {[
-                                      { title: '⚽ Top buteurs', data: s.leaderButs },
-                                      { title: '🎯 Top passeurs', data: s.leaderPasses },
-                                      { title: '🏆 Top victoires', data: s.leaderVictoires },
-                                      { title: '⭐ Points séance', data: s.leaderPoints },
-                                    ].map(({ title, data }) => (
-                                      <div key={title} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555' }}>{title}</p>
-                                        {data?.length > 0 ? data.map((row, i) => (
-                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
-                                            <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
-                                            <span style={{ fontSize: '10px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom.split(' ')[0]}</span>
-                                            <span style={{ fontSize: '10px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
-                                          </div>
-                                        )) : <p style={{ margin: 0, fontSize: '10px', color: '#333' }}>—</p>}
-                                      </div>
+                                      { key: 'buteurs', label: '⚽ Top buteurs', data: s.leaderButs },
+                                      { key: 'passeurs', label: '🎯 Top passeurs', data: s.leaderPasses },
+                                      { key: 'victoires', label: '🏆 Top victoires', data: s.leaderVictoires },
+                                      { key: 'points', label: '⭐ Points séance', data: s.leaderPoints },
+                                    ].map(c => (
+                                      <button key={c.key} onClick={() => setClassementActif(c.key)}
+                                        style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#0a0a0a', color: classementActif === c.key ? '#000' : '#555' }}>
+                                        {c.label}
+                                      </button>
                                     ))}
                                   </div>
+                                  {(() => {
+                                    const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
+                                    return (
+                                      <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+                                        {actif.length > 0 ? actif.map((row, i) => (
+                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
+                                            <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? '#4ade80' : '#555', minWidth: '18px' }}>{i + 1}</span>
+                                            <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
+                                            <span style={{ fontSize: '12px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#888' }}>{row.val}</span>
+                                          </div>
+                                        )) : <p style={{ margin: 0, padding: '12px', fontSize: '11px', color: '#333' }}>—</p>}
+                                      </div>
+                                    )
+                                  })()}
                                 </div>
 
                                 {/* Lien classement ligue */}
