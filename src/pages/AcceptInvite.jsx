@@ -75,6 +75,24 @@ function AcceptInvite() {
         return
       }
 
+      if (meta.role === 'dirigeant' && educateurId) {
+        // Invitation dirigeant
+        const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+        if (errProfilSelect) throw new Error(errProfilSelect.message)
+        if (!profilExistant) {
+          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
+          if (errProfilInsert) throw new Error(errProfilInsert.message)
+        }
+        const { error: errDirigeantUpdate } = await supabase
+          .from('dirigeant_acces')
+          .update({ dirigeant_id: user.id, statut: 'accepte' })
+          .eq('educateur_id', educateurId)
+          .eq('email', user.email)
+        if (errDirigeantUpdate) throw new Error(errDirigeantUpdate.message)
+        navigate('/dashboard-dirigeant')
+        return
+      }
+
       if (educateurId && equipeJoueurId) {
         // Invitation joueur
         const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
@@ -105,6 +123,7 @@ function AcceptInvite() {
   }
 
   const estInvitationJoueur = !!(readyMeta?.educateur_id && readyMeta?.equipe_joueur_id)
+  const estInvitationDirigeant = readyMeta?.role === 'dirigeant' && !!readyMeta?.educateur_id
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -114,7 +133,7 @@ function AcceptInvite() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? 'Finaliser ton invitation' : estInvitationJoueur ? 'Rejoindre ton équipe' : 'Rejoindre le staff du club'}</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? 'Finaliser ton invitation' : estInvitationJoueur ? 'Rejoindre ton équipe' : estInvitationDirigeant ? 'Rejoindre en tant que dirigeant' : 'Rejoindre le staff du club'}</h1>
         </div>
 
         {lienExpire ? (
@@ -178,7 +197,7 @@ function AcceptInvite() {
               disabled={loading}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
             >
-              {loading ? 'Finalisation...' : estInvitationJoueur ? 'Rejoindre l\'équipe' : 'Rejoindre le club'}
+              {loading ? 'Finalisation...' : estInvitationJoueur ? 'Rejoindre l\'équipe' : estInvitationDirigeant ? 'Rejoindre en tant que dirigeant' : 'Rejoindre le club'}
             </button>
           </>
         )}

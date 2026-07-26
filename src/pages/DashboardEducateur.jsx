@@ -409,6 +409,13 @@ export default function DashboardEducateur() {
   const [profilEdu, setProfilEdu] = useState(null)
   const [profilEduEdit, setProfilEduEdit] = useState(null)
   const [lienGroupe, setLienGroupe] = useState('')
+  const [dirigeants, setDirigeants] = useState([])
+  const [newDirigeantEmail, setNewDirigeantEmail] = useState('')
+  const [newDirigeantPerms, setNewDirigeantPerms] = useState({
+    effectif: 'lecture', stats: 'lecture', competition: 'lecture',
+    entrainements: 'lecture', prep_physique: 'aucun', budget: 'aucun', notes: 'aucun'
+  })
+  const [invitingDirigeant, setInvitingDirigeant] = useState(false)
   const [parcoursEdu, setParcoursEdu] = useState([])
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
@@ -443,7 +450,7 @@ export default function DashboardEducateur() {
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(user.id)
     setProfil(p)
-    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerStaffClub(user.id)])
+    await Promise.all([chargerJoueurs(user.id), chargerMatchs(user.id), chargerEntrainements(user.id), chargerNotes(user.id), chargerProfilEdu(user.id), chargerClubAffiliation(user.id), chargerClubCategories(user.id), chargerMesSeances(user.id), chargerMesSeancesOuvertes(user.id), chargerStaffClub(user.id), chargerDirigeants(user.id)])
     setLoading(false)
   }
 
@@ -594,6 +601,22 @@ export default function DashboardEducateur() {
     setNotesEdu(ne || [])
     const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom)').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
+  }
+
+  const chargerDirigeants = async (uid) => {
+    const { data } = await supabase.from('dirigeant_acces').select('*').eq('educateur_id', uid)
+    setDirigeants(data || [])
+  }
+
+  const inviterDirigeant = async () => {
+    if (!newDirigeantEmail.trim()) return
+    setInvitingDirigeant(true)
+    const { data, error } = await supabase.functions.invoke('inviter-dirigeant', {
+      body: { email: newDirigeantEmail.trim(), educateur_id: userId, permissions: newDirigeantPerms }
+    })
+    if (error || data?.error) { alert('Erreur : ' + (data?.error || error.message)) }
+    else { await chargerDirigeants(userId); setNewDirigeantEmail('') }
+    setInvitingDirigeant(false)
   }
 
   const rejoindreClub = async () => {
@@ -1434,6 +1457,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     ] },
     { titre: 'RÉSEAU', items: [
       { key: 'recrutement', label: 'Recrutement', icon: '🔍' },
+      { key: 'dirigeants', label: 'Dirigeants', icon: '👔' },
     ] },
   ]
 
@@ -3650,6 +3674,77 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 Tactipad</h1>
             <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Dessine tes schémas tactiques : placements, mouvements de joueurs, exercices.</p>
             <Tactipad userId={userId} />
+          </div>
+        )}
+
+        {activeSection === 'dirigeants' && (
+          <div style={{ maxWidth: 700 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>👔 Dirigeants</h2>
+            <p style={{ color: '#555', fontSize: 13, marginBottom: 24 }}>
+              Invite des dirigeants à consulter ou gérer ton dashboard avec des accès personnalisés.
+            </p>
+
+            {/* Formulaire invitation */}
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+              <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>Inviter un dirigeant</p>
+              <input
+                value={newDirigeantEmail}
+                onChange={e => setNewDirigeantEmail(e.target.value)}
+                placeholder="Email du dirigeant..."
+                type="email"
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+              />
+
+              {/* Grille permissions */}
+              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Permissions par section</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {[
+                  { key: 'effectif', label: '👥 Effectif' },
+                  { key: 'stats', label: '📊 Stats joueurs' },
+                  { key: 'competition', label: '🏆 Compétition' },
+                  { key: 'entrainements', label: '🏃 Entraînements' },
+                  { key: 'prep_physique', label: '🏋️ Prépa physique' },
+                  { key: 'budget', label: '💰 Budget' },
+                  { key: 'notes', label: '📝 Notes' },
+                ].map(({ key, label }) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#0a0a0a', borderRadius: 8 }}>
+                    <span style={{ fontSize: 13, color: '#ccc' }}>{label}</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {['aucun', 'lecture', 'edition'].map(val => (
+                        <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
+                          style={{
+                            padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                            background: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade8020' : val === 'lecture' ? '#60a5fa20' : '#ef444420') : '#1a1a1a',
+                            color: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade80' : val === 'lecture' ? '#60a5fa' : '#ef4444') : '#444',
+                          }}>
+                          {val === 'aucun' ? '✕ Aucun' : val === 'lecture' ? '👁 Lecture' : '✏️ Édition'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
+                style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+                {invitingDirigeant ? 'Envoi...' : '📧 Envoyer l\'invitation'}
+              </button>
+            </div>
+
+            {/* Liste dirigeants existants */}
+            {dirigeants.map(d => (
+              <div key={d.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '14px 16px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
+                  <p style={{ margin: '3px 0 0', fontSize: 11, color: '#555' }}>
+                    {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ')}
+                  </p>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? '#4ade8015' : '#f59e0b15', color: d.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
+                  {d.statut === 'accepte' ? '✅ Actif' : '⏳ En attente'}
+                </span>
+              </div>
+            ))}
           </div>
         )}
 
