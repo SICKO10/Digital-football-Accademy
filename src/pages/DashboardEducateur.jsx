@@ -627,6 +627,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setInvitingDirigeant(false)
   }
 
+  const renvoyerInvitationDirigeant = async (d) => {
+    const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+      body: { email: d.email, role: 'dirigeant', educateur_id: userId, permissions: d.permissions }
+    })
+    if (error || data?.error) alert('Erreur : ' + (data?.error || error.message))
+    else alert('Invitation renvoyée à ' + d.email)
+  }
+
+  const supprimerDirigeant = async (id) => {
+    if (!confirm('Supprimer cette invitation ?')) return
+    await supabase.from('dirigeant_acces').delete().eq('id', id)
+    await chargerDirigeants(userId)
+  }
+
   const modifierPermissions = async (dirigeantId, key, val) => {
     const dirigeant = dirigeants.find(d => d.id === dirigeantId)
     if (!dirigeant) return
@@ -3884,6 +3898,19 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </div>
                   ))}
                 </div>
+
+                {d.statut === 'en_attente' && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a1a1a' }}>
+                    <button onClick={() => renvoyerInvitationDirigeant(d)}
+                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#4ade80', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      🔁 Renvoyer
+                    </button>
+                    <button onClick={() => supprimerDirigeant(d.id)}
+                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      ✕ Supprimer
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
