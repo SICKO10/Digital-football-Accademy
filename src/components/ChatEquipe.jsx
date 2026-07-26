@@ -40,33 +40,46 @@ function BulleMessage({ msg, auteurs, userId, onVote, sondages, reponses }) {
               const nb = comptes[opt] || 0
               const pct = total > 0 ? Math.round((nb / total) * 100) : 0
               const voted = monVote?.choix === opt
+              const voteurs = reponsesS.filter(r => r.choix === opt)
+              const nomsVoteurs = voteurs
+                .map(v => v.profiles ? `${v.profiles.prenom || ''} ${v.profiles.nom || ''}`.trim() : '')
+                .filter(Boolean)
+
               return (
-                <button key={opt}
-                  onClick={() => !monVote && !sondage.cloture && onVote(sondage.id, opt)}
-                  disabled={!!monVote || sondage.cloture}
-                  style={{
-                    position: 'relative', overflow: 'hidden',
-                    background: voted ? '#4ade8020' : '#0a0a0a',
-                    border: `1px solid ${voted ? '#4ade8060' : '#2a2a2a'}`,
-                    borderRadius: 8, padding: '8px 12px',
-                    cursor: monVote || sondage.cloture ? 'default' : 'pointer',
-                    textAlign: 'left', fontFamily: 'Inter, sans-serif',
-                  }}>
-                  {monVote && (
+                <div key={opt} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    onClick={() => !sondage.cloture && onVote(sondage.id, opt)}
+                    disabled={sondage.cloture}
+                    style={{
+                      position: 'relative', overflow: 'hidden',
+                      background: voted ? '#4ade8020' : '#0a0a0a',
+                      border: `1px solid ${voted ? '#4ade8060' : '#2a2a2a'}`,
+                      borderRadius: 8, padding: '8px 12px',
+                      cursor: sondage.cloture ? 'default' : 'pointer',
+                      textAlign: 'left', fontFamily: 'Inter, sans-serif',
+                      transition: 'all 0.15s',
+                    }}>
                     <div style={{ position: 'absolute', inset: 0, background: voted ? '#4ade8015' : '#ffffff08', width: `${pct}%`, transition: 'width 0.4s ease', pointerEvents: 'none' }} />
+                    <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: voted ? '#4ade80' : '#ccc', fontWeight: voted ? 700 : 400 }}>
+                        {voted ? '✓ ' : ''}{opt}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>{pct}% · {nb}</span>
+                    </div>
+                  </button>
+                  {nomsVoteurs.length > 0 && (
+                    <p style={{ margin: '0 0 0 4px', fontSize: 10, color: '#444', lineHeight: 1.4 }}>
+                      {nomsVoteurs.join(', ')}
+                    </p>
                   )}
-                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: voted ? '#4ade80' : '#ccc', fontWeight: voted ? 700 : 400 }}>
-                      {voted ? '✓ ' : ''}{opt}
-                    </span>
-                    {monVote && <span style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>{pct}% · {nb}</span>}
-                  </div>
-                </button>
+                </div>
               )
             })}
           </div>
-          {monVote && <p style={{ margin: '8px 0 0', fontSize: 10, color: '#555' }}>{total} réponse{total > 1 ? 's' : ''}</p>}
-          {!monVote && !sondage.cloture && <p style={{ margin: '8px 0 0', fontSize: 10, color: '#555' }}>Vote en cours</p>}
+          <p style={{ margin: '8px 0 0', fontSize: 10, color: '#555' }}>
+            {total} réponse{total > 1 ? 's' : ''}
+            {monVote && !sondage.cloture && <span style={{ color: '#4ade8060', marginLeft: 6 }}>· Cliquer pour changer</span>}
+          </p>
           {sondage.cloture && <p style={{ margin: '8px 0 0', fontSize: 10, color: '#ef4444' }}>Sondage clôturé</p>}
         </div>
       </div>
@@ -190,7 +203,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
       if (s?.length > 0) {
         const { data: r } = await supabase
           .from('sondage_reponses')
-          .select('*')
+          .select('*, profiles(prenom, nom)')
           .in('sondage_id', s.map(sd => sd.id))
         const rMap = {}
         r?.forEach(rep => {
@@ -273,16 +286,27 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
   }
 
   const voter = async (sondageId, choix) => {
-    const { error } = await supabase.from('sondage_reponses').insert({
-      sondage_id: sondageId,
-      joueur_id: userId,
-      choix,
-    })
+    const { error } = await supabase.from('sondage_reponses').upsert(
+      { sondage_id: sondageId, joueur_id: userId, choix },
+      { onConflict: 'sondage_id,joueur_id' }
+    )
     if (!error) {
-      setReponses(prev => ({
-        ...prev,
-        [sondageId]: [...(prev[sondageId] || []), { sondage_id: sondageId, joueur_id: userId, choix }],
-      }))
+      setReponses(prev => {
+        const existantes = (prev[sondageId] || []).filter(r => r.joueur_id !== userId)
+        const profil = auteurs[userId] || null
+        return {
+          ...prev,
+          [sondageId]: [
+            ...existantes,
+            {
+              sondage_id: sondageId,
+              joueur_id: userId,
+              choix,
+              profiles: profil ? { prenom: profil.prenom, nom: profil.nom } : null,
+            },
+          ],
+        }
+      })
     }
   }
 
