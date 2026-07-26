@@ -195,12 +195,12 @@ export default function DashboardClub() {
 
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
-    navbar: { background: '#111', borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
-    logo: { color: '#4ade80', fontWeight: 700, fontSize: '1.1rem', letterSpacing: '1px' },
-    content: { padding: '2rem', maxWidth: '1100px', margin: '0 auto' },
-    tabs: { display: 'flex', gap: '8px', marginBottom: '2rem', flexWrap: 'wrap' },
-    tab: (active) => ({ padding: '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
-    card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
+    navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? '0 1rem' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '8px' },
+    logo: { color: '#4ade80', fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
+    content: { padding: isMobile ? '1rem' : '2rem', maxWidth: '1100px', margin: '0 auto' },
+    tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
+    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
+    card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: '#4ade80', color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
     btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
     input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
@@ -802,21 +802,23 @@ export default function DashboardClub() {
     <div style={st.page}>
       <nav style={st.navbar}>
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
+          {!isMobile && <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>}
           {autreRole === 'educateur' && (
             <button onClick={() => navigate('/educateur')}
-              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-              🎓 Vue Éducateur
+              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
+              {isMobile ? '🎓' : '🎓 Vue Éducateur'}
             </button>
           )}
           {autreRole === 'joueur' && (
             <button onClick={() => navigate('/dashboard-joueur')}
-              style={{ padding: '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-              ⚽ Vue Joueur
+              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
+              {isMobile ? '⚽' : '⚽ Vue Joueur'}
             </button>
           )}
-          <button style={st.btnSecondary} onClick={handleLogout}>Déconnexion</button>
+          <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
+            {isMobile ? '⏏️' : 'Déconnexion'}
+          </button>
         </div>
       </nav>
 
@@ -881,7 +883,7 @@ export default function DashboardClub() {
 
             {showAddCategorie && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
                     <label style={st.label}>Catégorie</label>
                     <select style={st.input} value={newCategorie.nom} onChange={e => setNewCategorie(p => ({ ...p, nom: e.target.value }))}>
@@ -1164,7 +1166,7 @@ export default function DashboardClub() {
                   <div style={{ marginBottom: '2rem' }}>
                     {nbMatchsJoues > 0 && (
                       <div style={{ marginBottom: '1.5rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
                           <StatCard label="Matchs joués" valeur={nbMatchsJoues} />
                           <StatCard label="Taux victoire" valeur={`${tauxV}%`} couleur="green" />
                           <StatCard label="Taux nul" valeur={`${tauxN}%`} couleur="orange" />
