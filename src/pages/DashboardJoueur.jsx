@@ -993,7 +993,6 @@ function DashboardJoueur() {
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
 
       { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: labelSection },
-      { id: 'messagerie',    label: 'Messagerie',           icon: <span style={{ fontSize: '18px' }}>💬</span>, locked: true },
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
       { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
 
@@ -1472,7 +1471,6 @@ function DashboardJoueur() {
               )}
             </div>
           )}
-          {onglet === 'messagerie' && <UpgradeCard titre="Canal d'équipe" texte="Bientôt disponible." />}
           {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} />}
           {onglet === 'analyses' && <UpgradeCard titre="Analyse vidéo" texte="Reçois des retours vocaux personnalisés de coachs experts. Disponible dès le plan Starter." />}
           {onglet === 'feed' && <UpgradeCard titre="Feed" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
@@ -1615,7 +1613,6 @@ function DashboardJoueur() {
   const navItems = [
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
     { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON ÉQUIPE' },
-    { id: 'messagerie', label: 'Canal d\'équipe', icon: <span style={{ fontSize: '18px' }}>💬</span>, locked: true },
     { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: 'MON DÉVELOPPEMENT' },
     { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread, section: 'MON DÉVELOPPEMENT' },
@@ -3152,12 +3149,6 @@ function DashboardJoueur() {
                 <p>Tu n'es encore affilié à aucune équipe.<br/>Entre un code d'équipe pour commencer.</p>
               </div>
             )}
-          </div>
-        )}
-
-        {onglet === 'messagerie' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <UpgradeCard titre="Canal d'équipe" texte="Bientôt disponible." />
           </div>
         )}
 

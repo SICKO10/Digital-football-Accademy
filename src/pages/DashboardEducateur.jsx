@@ -1493,7 +1493,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       { key: 'equipe', label: 'Mon équipe', icon: '👥' },
       { key: 'stats', label: 'Stats joueurs', icon: '📊' },
       { key: 'matchs', label: 'Compétition', icon: '🏆' },
-      { key: 'messagerie', label: 'Messagerie', icon: '💬', locked: true },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
       { key: 'entrainements', label: 'Entraînements', icon: '🏃' },
@@ -3123,21 +3122,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               </div>
             )}
           </>
-        )}
-
-        {/* ===== MESSAGERIE ===== */}
-        {activeSection === 'messagerie' && (
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>💬 Canal d'équipe</h2>
-            <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
-              Messages et sondages visibles par tous tes joueurs affiliés.
-            </p>
-            <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-              <p style={{ fontSize: '32px', margin: '0 0 12px' }}>🔒</p>
-              <p style={{ color: '#888', fontWeight: 700, marginBottom: '4px' }}>Bientôt disponible</p>
-              <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Cette fonctionnalité arrive prochainement.</p>
-            </div>
-          </div>
         )}
 
         {/* ===== MON PROFIL ÉDUCATEUR ===== */}
