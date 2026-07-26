@@ -14,6 +14,8 @@ function DashboardCoach() {
   const [loomUrls, setLoomUrls] = useState({})
   const [sending, setSending] = useState({})
   const [coachId, setCoachId] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Certifications
   const [certifs, setCertifs] = useState([])
@@ -34,6 +36,12 @@ function DashboardCoach() {
 
   useEffect(() => {
     init()
+  }, [])
+
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
   }, [])
 
   const init = async () => {
@@ -259,489 +267,553 @@ function DashboardCoach() {
     </div>
   )
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
+  const NAV_ITEMS = [
+    { id: 'analyses', label: 'Demandes', icon: '📋', badge: enAttente.length },
+    { id: 'certifications', label: 'Certifications', icon: '⭐', badge: 0 },
+    { id: 'recruteurs', label: 'Clubs / Agents', icon: '🏢', badge: 0 },
+    { id: 'seances_club', label: 'Séances club', icon: '🎥', badge: seancesTransferees.length },
+    { id: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️', badge: 0 },
+  ]
 
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
-        <div style={{ fontSize: '18px', fontWeight: '700' }}>
+  const TITRES_SECTION = {
+    analyses: "📋 Demandes d'analyse",
+    certifications: '⭐ Certifications',
+    recruteurs: '🏢 Clubs / Agents',
+    seances_club: '🎥 Séances club',
+    analyseur_ia: '🎙️ Analyseur IA',
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
+
+      {/* ── Header fin ─────────────────────────────────────────────────── */}
+      <div style={{ height: 52, background: '#111', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(true)}
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
+            ☰
+          </button>
+        )}
+        <span style={{ fontWeight: 900, fontSize: 15, color: '#fff', letterSpacing: -0.5 }}>
           Digital<span style={{ color: '#4ade80' }}>Football</span>
-          <span style={{ fontSize: '12px', color: '#4ade80', marginLeft: '8px', background: '#4ade8020', padding: '2px 8px', borderRadius: '20px' }}>Coach</span>
-        </div>
+        </span>
+        <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: '1px solid #4ade8040' }}>
+          COACH
+        </span>
         <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
-          style={{ background: 'transparent', color: '#666', border: '1px solid #333', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+          style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           Déconnexion
         </button>
-      </nav>
+      </div>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
+      {/* ── Corps : sidebar + contenu ──────────────────────────────────── */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-        {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Total demandes</p>
-            <p style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{demandes.length}</p>
+        {/* Overlay mobile */}
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
+        )}
+
+        {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
+        <div style={{
+          width: 220, background: '#111', borderRight: '1px solid #1a1a1a',
+          display: 'flex', flexDirection: 'column', flexShrink: 0,
+          ...(isMobile ? {
+            position: 'fixed', top: 52, left: sidebarOpen ? 0 : -240,
+            height: 'calc(100% - 52px)', zIndex: 50,
+            transition: 'left 0.25s ease', overflowY: 'auto',
+          } : {
+            overflowY: 'auto', height: 'calc(100vh - 52px)',
+            position: 'sticky', top: 52,
+          })
+        }}>
+
+          {/* Stats résumé dans la sidebar */}
+          <div style={{ padding: '20px 16px 0' }}>
+            <p style={{ fontSize: 10, color: '#444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>
+              VUE D'ENSEMBLE
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {[
+                { label: 'Total demandes', val: demandes.length, color: '#fff' },
+                { label: 'En attente', val: enAttente.length, color: '#f59e0b' },
+                { label: 'Analyses envoyées', val: analysees.length, color: '#4ade80' },
+                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? '#f59e0b' : '#4ade80' },
+              ].map(s => (
+                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#0d0d0d', borderRadius: 8 }}>
+                  <span style={{ fontSize: 12, color: '#555' }}>{s.label}</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.val}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ height: 1, background: '#1a1a1a', margin: '0 0 16px' }} />
+            <p style={{ fontSize: 10, color: '#444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>
+              NAVIGATION
+            </p>
           </div>
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>En attente</p>
-            <p style={{ fontSize: '28px', fontWeight: '700', color: '#f59e0b', margin: 0 }}>{enAttente.length}</p>
-          </div>
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Analyses envoyées</p>
-            <p style={{ fontSize: '28px', fontWeight: '700', color: '#4ade80', margin: 0 }}>{analysees.length}</p>
-          </div>
-          <div style={{ background: '#111', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1.5rem', cursor: 'pointer' }}
-            onClick={() => setActiveSection('certifications')}>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Certifs à valider</p>
-            <p style={{ fontSize: '28px', fontWeight: '700', color: certifsEnAttente.length > 0 ? '#f59e0b' : '#4ade80', margin: 0 }}>{certifsEnAttente.length}</p>
+
+          {/* Items de navigation */}
+          {NAV_ITEMS.map(item => {
+            const actif = activeSection === item.id
+            return (
+              <button key={item.id}
+                onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '11px 16px', background: actif ? '#4ade8015' : 'transparent',
+                  border: 'none', borderLeft: `3px solid ${actif ? '#4ade80' : 'transparent'}`,
+                  color: actif ? '#4ade80' : '#666', cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: actif ? 700 : 400,
+                  textAlign: 'left', transition: 'all 0.15s',
+                }}>
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.badge > 0 && (
+                  <span style={{ background: '#f59e0b', color: '#000', fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10 }}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+
+          <div style={{ marginTop: 'auto', padding: 16 }}>
+            <div style={{ background: '#0d0d0d', borderRadius: 10, padding: '10px 12px' }}>
+              <p style={{ margin: 0, fontSize: 11, color: '#4ade80', fontWeight: 700 }}>🎙️ Analyseur IA</p>
+              <p style={{ margin: '3px 0 0', fontSize: 10, color: '#444', lineHeight: 1.4 }}>Transcription + rapport PDF gratuit</p>
+            </div>
           </div>
         </div>
 
-        {/* BANNERS */}
-        {enAttente.length > 0 && activeSection === 'analyses' && (
-          <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '20px' }}>⏳</span>
-            <p style={{ margin: 0, fontSize: '14px', color: '#f59e0b', fontWeight: 600 }}>
-              {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} en attente d'analyse
-            </p>
+        {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 14px' : '32px 40px' }}>
+
+          {/* Titre section */}
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 26, fontWeight: 900 }}>
+              {TITRES_SECTION[activeSection]}
+            </h1>
           </div>
-        )}
-        {certifsEnAttente.length > 0 && activeSection === 'certifications' && (
-          <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '20px' }}>⭐</span>
-            <p style={{ margin: 0, fontSize: '14px', color: '#f59e0b', fontWeight: 600 }}>
-              {certifsEnAttente.length} certification{certifsEnAttente.length > 1 ? 's' : ''} en attente de validation
-            </p>
-          </div>
-        )}
 
-        {/* TABS */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          {[
-            { key: 'analyses', label: '🎬 Demandes d\'analyse', count: enAttente.length },
-            { key: 'certifications', label: '⭐ Certifications', count: certifsEnAttente.length },
-            { key: 'recruteurs', label: '🏢 Clubs / Agents', count: 0 },
-            { key: 'seances_club', label: '🎥 Séances club', count: seancesTransferees.length },
-            { key: 'analyseur_ia', label: '🎙️ Analyseur IA', count: 0 },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveSection(tab.key)}
-              style={{
-                background: activeSection === tab.key ? '#4ade80' : '#111',
-                color: activeSection === tab.key ? '#0a0a0a' : '#aaa',
-                border: `1px solid ${activeSection === tab.key ? '#4ade80' : '#333'}`,
-                padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
-              }}>
-              {tab.label}
-              {tab.count > 0 && (
-                <span style={{
-                  background: activeSection === tab.key ? '#0a0a0a30' : '#f59e0b',
-                  color: activeSection === tab.key ? '#0a0a0a' : '#0a0a0a',
-                  borderRadius: '20px', fontSize: '11px', fontWeight: '700',
-                  padding: '1px 7px', minWidth: '18px', textAlign: 'center'
-                }}>{tab.count}</span>
-              )}
-            </button>
-          ))}
-        </div>
+          {/* BANNERS */}
+          {enAttente.length > 0 && activeSection === 'analyses' && (
+            <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '20px' }}>⏳</span>
+              <p style={{ margin: 0, fontSize: '14px', color: '#f59e0b', fontWeight: 600 }}>
+                {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} en attente d'analyse
+              </p>
+            </div>
+          )}
+          {certifsEnAttente.length > 0 && activeSection === 'certifications' && (
+            <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '20px' }}>⭐</span>
+              <p style={{ margin: 0, fontSize: '14px', color: '#f59e0b', fontWeight: 600 }}>
+                {certifsEnAttente.length} certification{certifsEnAttente.length > 1 ? 's' : ''} en attente de validation
+              </p>
+            </div>
+          )}
 
-        {/* ===== SECTION ANALYSES ===== */}
-        {activeSection === 'analyses' && (
-          <>
-            {demandes.length === 0 ? (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📭</p>
-                <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {joueursAvecDemandes.map(({ profil, demandes: demandesJoueur }) => {
-                  const joueurId = profil?.id || 'inconnu'
-                  const ouvert = joueursOuverts[joueurId]
-                  const nbAttente = demandesJoueur.filter(d => d.statut === 'en_attente').length
-                  const nbAnalysees = demandesJoueur.filter(d => d.statut === 'analyse').length
-                  const initiales = `${(profil?.prenom || '?')[0]}${(profil?.nom || '?')[0]}`
-                  return (
-                    <div key={joueurId} style={{ background: '#111', border: `1px solid ${nbAttente > 0 ? '#f59e0b30' : '#222'}`, borderRadius: '14px', overflow: 'hidden' }}>
-                      {/* En-tête joueur (toujours visible) */}
-                      <div onClick={() => toggleJoueur(joueurId)}
-                        style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', userSelect: 'none' }}>
-                        <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
-                          {initiales}
+          {/* ===== SECTION ANALYSES ===== */}
+          {activeSection === 'analyses' && (
+            <>
+              {demandes.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📭</p>
+                  <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {joueursAvecDemandes.map(({ profil, demandes: demandesJoueur }) => {
+                    const joueurId = profil?.id || 'inconnu'
+                    const ouvert = joueursOuverts[joueurId]
+                    const nbAttente = demandesJoueur.filter(d => d.statut === 'en_attente').length
+                    const nbAnalysees = demandesJoueur.filter(d => d.statut === 'analyse').length
+                    const initiales = `${(profil?.prenom || '?')[0]}${(profil?.nom || '?')[0]}`
+                    return (
+                      <div key={joueurId} style={{ background: '#111', border: `1px solid ${nbAttente > 0 ? '#f59e0b30' : '#222'}`, borderRadius: '14px', overflow: 'hidden' }}>
+                        {/* En-tête joueur (toujours visible) */}
+                        <div onClick={() => toggleJoueur(joueurId)}
+                          style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', userSelect: 'none' }}>
+                          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+                            {initiales}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{profil?.prenom} {profil?.nom}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profil?.email}</p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            {nbAttente > 0 && <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>⏳ {nbAttente} en attente</span>}
+                            {nbAnalysees > 0 && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</span>}
+                            <span style={{ color: '#444', fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
+                          </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{profil?.prenom} {profil?.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profil?.email}</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          {nbAttente > 0 && <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>⏳ {nbAttente} en attente</span>}
-                          {nbAnalysees > 0 && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</span>}
-                          <span style={{ color: '#444', fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
-                        </div>
-                      </div>
 
-                      {/* Demandes du joueur (dépliable) */}
-                      {ouvert && (
-                        <div style={{ borderTop: '1px solid #1a1a1a', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {demandesJoueur.map(demande => {
-                            const videoUrl = getVideoUrl(demande)
-                            const isSending = sending[demande.id]
-                            return (
-                              <div key={demande.id} style={{ background: '#0d0d0d', border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b20' : '#1a1a1a'}`, borderRadius: '10px', padding: '1.25rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                  <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{demande.titre}</h3>
-                                  <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                                    {getStatutLabel(demande.statut)}
-                                  </span>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                                  {demande.pris_en_charge_par ? (
-                                    <>
-                                      <span style={{ background: demande.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${demande.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: demande.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
-                                        {demande.pris_en_charge_par === coachId ? '✅ Pris en charge par toi' : `🔒 Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
-                                      </span>
-                                      {demande.pris_en_charge_par === coachId && (
-                                        <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
-                                  )}
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Poste</p>
-                                    <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{demande.poste}</p>
+                        {/* Demandes du joueur (dépliable) */}
+                        {ouvert && (
+                          <div style={{ borderTop: '1px solid #1a1a1a', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {demandesJoueur.map(demande => {
+                              const videoUrl = getVideoUrl(demande)
+                              const isSending = sending[demande.id]
+                              return (
+                                <div key={demande.id} style={{ background: '#0d0d0d', border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b20' : '#1a1a1a'}`, borderRadius: '10px', padding: '1.25rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{demande.titre}</h3>
+                                    <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                                      {getStatutLabel(demande.statut)}
+                                    </span>
                                   </div>
-                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Plan</p>
-                                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#4ade80', textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
-                                  </div>
-                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Date</p>
-                                    <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
-                                  </div>
-                                </div>
 
-                                {demande.description && (
-                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Ce que le joueur veut analyser</p>
-                                    <p style={{ fontSize: '13px', color: '#aaa', margin: '4px 0 0' }}>{demande.description}</p>
-                                  </div>
-                                )}
-
-                                {videoUrl ? (
-                                  <div style={{ marginBottom: '1rem' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Vidéo</p>
-                                    {isVeo(videoUrl) || isYoutube(videoUrl) ? (
-                                      <a href={videoUrl} target="_blank" rel="noreferrer"
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
-                                        🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
-                                      </a>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+                                    {demande.pris_en_charge_par ? (
+                                      <>
+                                        <span style={{ background: demande.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${demande.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: demande.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
+                                          {demande.pris_en_charge_par === coachId ? '✅ Pris en charge par toi' : `🔒 Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
+                                        </span>
+                                        {demande.pris_en_charge_par === coachId && (
+                                          <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                                        )}
+                                      </>
                                     ) : (
-                                      <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: '#000' }} />
+                                      <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
                                     )}
                                   </div>
-                                ) : (
-                                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                                    <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucune vidéo fournie</p>
+
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Poste</p>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{demande.poste}</p>
+                                    </div>
+                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Plan</p>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#4ade80', textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
+                                    </div>
+                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Date</p>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                                    </div>
                                   </div>
-                                )}
 
-                                {demande.statut === 'en_attente' && (
-                                  <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
-                                    <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
-                                      📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
+                                  {demande.description && (
+                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Ce que le joueur veut analyser</p>
+                                      <p style={{ fontSize: '13px', color: '#aaa', margin: '4px 0 0' }}>{demande.description}</p>
+                                    </div>
+                                  )}
+
+                                  {videoUrl ? (
+                                    <div style={{ marginBottom: '1rem' }}>
+                                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Vidéo</p>
+                                      {isVeo(videoUrl) || isYoutube(videoUrl) ? (
+                                        <a href={videoUrl} target="_blank" rel="noreferrer"
+                                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
+                                          🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
+                                        </a>
+                                      ) : (
+                                        <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: '#000' }} />
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                      <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucune vidéo fournie</p>
+                                    </div>
+                                  )}
+
+                                  {demande.statut === 'en_attente' && (
+                                    <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
+                                      <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+                                        📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
+                                      </p>
+                                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                        <input
+                                          placeholder="Colle ton lien YouTube ou Loom ici..."
+                                          value={loomUrls[demande.id] || ''}
+                                          onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
+                                          style={{ flex: 1, background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}
+                                        />
+                                        <button
+                                          onClick={() => envoyerAnalyse(demande.id, demande.profiles?.id)}
+                                          disabled={isSending || !loomUrls[demande.id]?.trim()}
+                                          style={{ background: isSending ? '#333' : '#4ade80', color: isSending ? '#666' : '#0a0a0a', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: isSending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (!loomUrls[demande.id]?.trim() && !isSending) ? 0.5 : 1 }}>
+                                          {isSending ? 'Envoi...' : '🚀 Envoyer l\'analyse'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {demande.statut === 'analyse' && demande.loom_url && (
+                                    <div style={{ background: '#4ade8010', border: '1px solid #4ade8033', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                                      <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                        <a href={demande.loom_url} target="_blank" rel="noreferrer"
+                                          style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
+                                        </a>
+                                        <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
+                                          style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                                          ⭐ Noter {profil?.prenom || 'le joueur'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ===== SECTION CERTIFICATIONS ===== */}
+          {activeSection === 'certifications' && (
+            <>
+              {certifLoading ? (
+                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
+              ) : certifs.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</p>
+                  <p style={{ color: '#666' }}>Aucune demande de certification pour le moment</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {certifs.map(certif => {
+                    const isProcessing = validating[certif.id]
+                    const isPending = certif.statut === 'en_attente'
+                    return (
+                      <div key={certif.id} style={{
+                        background: '#111',
+                        border: `1px solid ${isPending ? '#f59e0b30' : certif.statut === 'validé' ? '#4ade8030' : '#f8717130'}`,
+                        borderRadius: '12px', padding: '1.5rem'
+                      }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                          <div>
+                            <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px' }}>
+                              {certif.profiles?.prenom} {certif.profiles?.nom}
+                            </h3>
+                            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{certif.profiles?.email}</p>
+                          </div>
+                          <span style={{
+                            background: getStatutColor(certif.statut) + '20',
+                            color: getStatutColor(certif.statut),
+                            fontSize: '12px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap'
+                          }}>
+                            {getStatutLabel(certif.statut)}
+                          </span>
+                        </div>
+
+                        {/* Infos */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Niveau</p>
+                            <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: '#fbbf24' }}>{certif.niveau}</p>
+                          </div>
+                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Saison</p>
+                            <p style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>{certif.saison}</p>
+                          </div>
+                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Soumis le</p>
+                            <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>{new Date(certif.created_at).toLocaleDateString('fr-FR')}</p>
+                          </div>
+                        </div>
+
+                        {/* Documents (feuilles de match) */}
+                        <div style={{ marginBottom: '1rem' }}>
+                          <p style={{ fontSize: '12px', color: '#555', margin: '0 0 8px' }}>
+                            📄 Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
                           </p>
-                          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                            <input
-                              placeholder="Colle ton lien YouTube ou Loom ici..."
-                              value={loomUrls[demande.id] || ''}
-                              onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
-                              style={{ flex: 1, background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}
+                          {certif.documents?.length > 0 ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                              {certif.documents.map((url, i) => {
+                                const isPdf = url.includes('.pdf') || url.includes('/raw/') || url.includes('application')
+                                return (
+                                  <a key={i} href={url} target="_blank" rel="noreferrer"
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                      background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px',
+                                      padding: '8px 12px', color: '#4ade80', fontSize: '13px',
+                                      textDecoration: 'none', fontWeight: '500'
+                                    }}>
+                                    {isPdf ? '📄' : '🖼️'} Feuille {i + 1}
+                                  </a>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucun document joint</p>
+                          )}
+                        </div>
+
+                        {/* Commentaire admin (déjà rejeté ou validé) */}
+                        {certif.commentaire_admin && !isPending && (
+                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Commentaire admin</p>
+                            <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>{certif.commentaire_admin}</p>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        {isPending && (
+                          <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
+                            <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+                              💬 Commentaire (obligatoire en cas de rejet)
+                            </p>
+                            <textarea
+                              placeholder="Ex : Documents illisibles, mauvais niveau, etc."
+                              value={commentaires[certif.id] || ''}
+                              onChange={e => setCommentaires(prev => ({ ...prev, [certif.id]: e.target.value }))}
+                              rows={2}
+                              style={{
+                                width: '100%', background: '#111', border: '1px solid #333', borderRadius: '8px',
+                                padding: '10px 14px', color: 'white', fontSize: '13px', outline: 'none',
+                                resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'sans-serif'
+                              }}
                             />
-                            <button
-                              onClick={() => envoyerAnalyse(demande.id, demande.profiles?.id)}
-                              disabled={isSending || !loomUrls[demande.id]?.trim()}
-                              style={{ background: isSending ? '#333' : '#4ade80', color: isSending ? '#666' : '#0a0a0a', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: isSending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (!loomUrls[demande.id]?.trim() && !isSending) ? 0.5 : 1 }}>
-                              {isSending ? 'Envoi...' : '🚀 Envoyer l\'analyse'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {demande.statut === 'analyse' && demande.loom_url && (
-                        <div style={{ background: '#4ade8010', border: '1px solid #4ade8033', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                          <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <a href={demande.loom_url} target="_blank" rel="noreferrer"
-                              style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
-                            </a>
-                            <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
-                              style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                              ⭐ Noter {profil?.prenom || 'le joueur'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                              )
-                            })}
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <button
+                                onClick={() => validerCertification(certif)}
+                                disabled={!!isProcessing}
+                                style={{
+                                  flex: 1, background: isProcessing === 'validating' ? '#333' : '#4ade80',
+                                  color: isProcessing === 'validating' ? '#666' : '#0a0a0a',
+                                  border: 'none', padding: '10px 0', borderRadius: '8px',
+                                  fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
+                                }}>
+                                {isProcessing === 'validating' ? 'Validation...' : '✅ Valider le badge'}
+                              </button>
+                              <button
+                                onClick={() => rejeterCertification(certif)}
+                                disabled={!!isProcessing}
+                                style={{
+                                  flex: 1, background: isProcessing === 'rejecting' ? '#333' : '#f8717120',
+                                  color: isProcessing === 'rejecting' ? '#666' : '#f87171',
+                                  border: '1px solid #f8717140', padding: '10px 0', borderRadius: '8px',
+                                  fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
+                                }}>
+                                {isProcessing === 'rejecting' ? 'Rejet...' : '❌ Rejeter'}
+                              </button>
+                            </div>
                           </div>
                         )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
 
-        {/* ===== SECTION CERTIFICATIONS ===== */}
-        {activeSection === 'certifications' && (
-          <>
-            {certifLoading ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
-            ) : certifs.length === 0 ? (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</p>
-                <p style={{ color: '#666' }}>Aucune demande de certification pour le moment</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {certifs.map(certif => {
-                  const isProcessing = validating[certif.id]
-                  const isPending = certif.statut === 'en_attente'
-                  return (
-                    <div key={certif.id} style={{
-                      background: '#111',
-                      border: `1px solid ${isPending ? '#f59e0b30' : certif.statut === 'validé' ? '#4ade8030' : '#f8717130'}`,
-                      borderRadius: '12px', padding: '1.5rem'
-                    }}>
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                        {/* Validé */}
+                        {certif.statut === 'validé' && certif.validated_at && (
+                          <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '13px', color: '#4ade80', margin: 0, fontWeight: 600 }}>
+                              ⭐ Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ===== SECTION CLUBS / AGENTS ===== */}
+          {activeSection === 'recruteurs' && (
+            <>
+              {recruteurs.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏢</p>
+                  <p style={{ color: '#666' }}>Aucun recruteur inscrit pour le moment</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {recruteurs.map(r => {
+                    const initiales = `${(r.prenom || '?')[0]}${(r.nom || '?')[0]}`
+                    return (
+                      <div key={r.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {/* Avatar */}
+                        {r.avatar_url ? (
+                          <img src={r.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>
+                            {initiales}
+                          </div>
+                        )}
+                        {/* Infos */}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{r.prenom} {r.nom}</p>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
+                            {r.type_recruteur || 'Recruteur'}{r.club ? ` — ${r.club}` : ''}{r.region ? ` · ${r.region}` : ''}
+                          </p>
+                        </div>
+                        {/* Bouton profil */}
+                        <button onClick={() => setRecruteurModal(r)}
+                          style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          👤 Voir le profil
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ===== SECTION SÉANCES CLUB ===== */}
+          {activeSection === 'seances_club' && (
+            <>
+              {seancesTransferees.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🎥</p>
+                  <p style={{ color: '#666' }}>Aucune séance transférée par un club pour l'instant</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {seancesTransferees.map(s => {
+                    const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                    return (
+                      <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                         <div>
-                          <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px' }}>
-                            {certif.profiles?.prenom} {certif.profiles?.nom}
-                          </h3>
-                          <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{certif.profiles?.email}</p>
-                        </div>
-                        <span style={{
-                          background: getStatutColor(certif.statut) + '20',
-                          color: getStatutColor(certif.statut),
-                          fontSize: '12px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap'
-                        }}>
-                          {getStatutLabel(certif.statut)}
-                        </span>
-                      </div>
-
-                      {/* Infos */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Niveau</p>
-                          <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: '#fbbf24' }}>{certif.niveau}</p>
-                        </div>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Saison</p>
-                          <p style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>{certif.saison}</p>
-                        </div>
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Soumis le</p>
-                          <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>{new Date(certif.created_at).toLocaleDateString('fr-FR')}</p>
-                        </div>
-                      </div>
-
-                      {/* Documents (feuilles de match) */}
-                      <div style={{ marginBottom: '1rem' }}>
-                        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 8px' }}>
-                          📄 Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
-                        </p>
-                        {certif.documents?.length > 0 ? (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                            {certif.documents.map((url, i) => {
-                              const isPdf = url.includes('.pdf') || url.includes('/raw/') || url.includes('application')
-                              return (
-                                <a key={i} href={url} target="_blank" rel="noreferrer"
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px',
-                                    padding: '8px 12px', color: '#4ade80', fontSize: '13px',
-                                    textDecoration: 'none', fontWeight: '500'
-                                  }}>
-                                  {isPdf ? '📄' : '🖼️'} Feuille {i + 1}
-                                </a>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucun document joint</p>
-                        )}
-                      </div>
-
-                      {/* Commentaire admin (déjà rejeté ou validé) */}
-                      {certif.commentaire_admin && !isPending && (
-                        <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Commentaire admin</p>
-                          <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>{certif.commentaire_admin}</p>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      {isPending && (
-                        <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
-                          <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
-                            💬 Commentaire (obligatoire en cas de rejet)
-                          </p>
-                          <textarea
-                            placeholder="Ex : Documents illisibles, mauvais niveau, etc."
-                            value={commentaires[certif.id] || ''}
-                            onChange={e => setCommentaires(prev => ({ ...prev, [certif.id]: e.target.value }))}
-                            rows={2}
-                            style={{
-                              width: '100%', background: '#111', border: '1px solid #333', borderRadius: '8px',
-                              padding: '10px 14px', color: 'white', fontSize: '13px', outline: 'none',
-                              resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'sans-serif'
-                            }}
-                          />
-                          <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button
-                              onClick={() => validerCertification(certif)}
-                              disabled={!!isProcessing}
-                              style={{
-                                flex: 1, background: isProcessing === 'validating' ? '#333' : '#4ade80',
-                                color: isProcessing === 'validating' ? '#666' : '#0a0a0a',
-                                border: 'none', padding: '10px 0', borderRadius: '8px',
-                                fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
-                              }}>
-                              {isProcessing === 'validating' ? 'Validation...' : '✅ Valider le badge'}
-                            </button>
-                            <button
-                              onClick={() => rejeterCertification(certif)}
-                              disabled={!!isProcessing}
-                              style={{
-                                flex: 1, background: isProcessing === 'rejecting' ? '#333' : '#f8717120',
-                                color: isProcessing === 'rejecting' ? '#666' : '#f87171',
-                                border: '1px solid #f8717140', padding: '10px 0', borderRadius: '8px',
-                                fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
-                              }}>
-                              {isProcessing === 'rejecting' ? 'Rejet...' : '❌ Rejeter'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Validé */}
-                      {certif.statut === 'validé' && certif.validated_at && (
-                        <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '8px', padding: '0.75rem' }}>
-                          <p style={{ fontSize: '13px', color: '#4ade80', margin: 0, fontWeight: 600 }}>
-                            ⭐ Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>
+                            Club : {s.club?.club || `${s.club?.prenom} ${s.club?.nom}`} · {s.saison}
+                            {s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ===== SECTION CLUBS / AGENTS ===== */}
-        {activeSection === 'recruteurs' && (
-          <>
-            {recruteurs.length === 0 ? (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏢</p>
-                <p style={{ color: '#666' }}>Aucun recruteur inscrit pour le moment</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {recruteurs.map(r => {
-                  const initiales = `${(r.prenom || '?')[0]}${(r.nom || '?')[0]}`
-                  return (
-                    <div key={r.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      {/* Avatar */}
-                      {r.avatar_url ? (
-                        <img src={r.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>
-                          {initiales}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          {s.pris_en_charge_par ? (
+                            <>
+                              <span style={{ background: s.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${s.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: s.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                                {s.pris_en_charge_par === coachId ? '✅ Toi' : `🔒 ${s.coach?.prenom || 'Autre coach'}`}
+                              </span>
+                              {s.pris_en_charge_par === coachId && (
+                                <button onClick={() => prendreEnCharge('seances_uploadees', s.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                              )}
+                            </>
+                          ) : (
+                            <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                          )}
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                          {s.statut === 'transfere_coach' && (
+                            <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
+                          )}
+                          {eval_ && (
+                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
+                          )}
                         </div>
-                      )}
-                      {/* Infos */}
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{r.prenom} {r.nom}</p>
-                        <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
-                          {r.type_recruteur || 'Recruteur'}{r.club ? ` — ${r.club}` : ''}{r.region ? ` · ${r.region}` : ''}
-                        </p>
                       </div>
-                      {/* Bouton profil */}
-                      <button onClick={() => setRecruteurModal(r)}
-                        style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        👤 Voir le profil
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
 
-        {/* ===== SECTION SÉANCES CLUB ===== */}
-        {activeSection === 'seances_club' && (
-          <>
-            {seancesTransferees.length === 0 ? (
-              <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🎥</p>
-                <p style={{ color: '#666' }}>Aucune séance transférée par un club pour l'instant</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {seancesTransferees.map(s => {
-                  const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                  return (
-                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>
-                          Club : {s.club?.club || `${s.club?.prenom} ${s.club?.nom}`} · {s.saison}
-                          {s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}
-                        </p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {s.pris_en_charge_par ? (
-                          <>
-                            <span style={{ background: s.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${s.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: s.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
-                              {s.pris_en_charge_par === coachId ? '✅ Toi' : `🔒 ${s.coach?.prenom || 'Autre coach'}`}
-                            </span>
-                            {s.pris_en_charge_par === coachId && (
-                              <button onClick={() => prendreEnCharge('seances_uploadees', s.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
-                            )}
-                          </>
-                        ) : (
-                          <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
-                        )}
-                        <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
-                        {s.statut === 'transfere_coach' && (
-                          <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
-                        )}
-                        {eval_ && (
-                          <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
+          {activeSection === 'analyseur_ia' && <AnalyseurIA />}
 
-        {activeSection === 'analyseur_ia' && <AnalyseurIA />}
-
+        </div>
       </div>
 
       {/* MODAL PROFIL RECRUTEUR */}
