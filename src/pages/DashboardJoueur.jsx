@@ -1629,16 +1629,19 @@ function DashboardJoueur() {
   const maxAnalyses = profil?.plan === 'pro' ? 3 : 2
   const isPro = profil?.plan === 'pro'
 
+  const affiliationAcceptee = mesAffiliations.find(a => a.statut === 'accepte')
+
   const navItems = [
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
+    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON ÉQUIPE' },
+    { id: 'messagerie', label: 'Canal d\'équipe', icon: <span style={{ fontSize: '18px' }}>💬</span> },
+    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: 'MON DÉVELOPPEMENT' },
-    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span>, section: 'MON DÉVELOPPEMENT' },
     { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread, section: 'MON DÉVELOPPEMENT' },
     { id: 'profil', label: 'Mon Profil', icon: <IconUser />, section: 'MON PROFIL' },
     { id: 'carte', label: 'Carte FIFA', icon: <IconCard />, section: 'MON PROFIL' },
     { id: 'certif', label: 'Certification', icon: <IconBadge />, section: 'MON PROFIL' },
     { id: 'clubs', label: 'Explorer', icon: <IconBuilding />, section: 'MON RÉSEAU' },
-    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON RÉSEAU' },
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length, section: 'MON RÉSEAU' },
   ]
 
@@ -3166,6 +3169,24 @@ function DashboardJoueur() {
                 <p style={{ fontSize: '32px', marginBottom: '12px' }}>🏟️</p>
                 <p>Tu n'es encore affilié à aucune équipe.<br/>Entre un code d'équipe pour commencer.</p>
               </div>
+            )}
+          </div>
+        )}
+
+        {onglet === 'messagerie' && (
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>💬 Canal d'équipe</h2>
+            <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
+              Messages de ton coach et de l'équipe.
+            </p>
+            {affiliationAcceptee ? (
+              <ChatEquipe
+                educateurId={affiliationAcceptee.educateur_id}
+                userId={userId}
+                isEducateur={false}
+              />
+            ) : (
+              <p style={{ color: '#555', fontSize: 13 }}>Aucun éducateur affilié pour l'instant.</p>
             )}
           </div>
         )}
