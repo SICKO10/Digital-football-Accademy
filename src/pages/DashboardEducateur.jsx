@@ -7,6 +7,7 @@ import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
+import ChatEquipe from '../components/ChatEquipe'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -1463,6 +1464,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       { key: 'equipe', label: 'Mon équipe', icon: '👥' },
       { key: 'stats', label: 'Stats joueurs', icon: '📊' },
       { key: 'matchs', label: 'Compétition', icon: '🏆' },
+      { key: 'messagerie', label: 'Messagerie', icon: '💬' },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
       { key: 'entrainements', label: 'Entraînements', icon: '🏃' },
@@ -3091,6 +3093,21 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               </div>
             )}
           </>
+        )}
+
+        {/* ===== MESSAGERIE ===== */}
+        {activeSection === 'messagerie' && (
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>💬 Canal d'équipe</h2>
+            <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
+              Messages et sondages visibles par tous tes joueurs affiliés.
+            </p>
+            <ChatEquipe
+              educateurId={userId}
+              userId={userId}
+              isEducateur={true}
+            />
+          </div>
         )}
 
         {/* ===== MON PROFIL ÉDUCATEUR ===== */}

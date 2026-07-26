@@ -8,6 +8,7 @@ import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
+import ChatEquipe from '../components/ChatEquipe'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 
@@ -989,6 +990,7 @@ function DashboardJoueur() {
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
 
       { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: 'MON CLUB' },
+      { id: 'messagerie',    label: 'Messagerie',           icon: <span style={{ fontSize: '18px' }}>💬</span> },
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
       { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
 
@@ -1465,6 +1467,23 @@ function DashboardJoueur() {
                     Rejoindre
                   </button>
                 </div>
+              )}
+            </div>
+          )}
+          {onglet === 'messagerie' && (
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>💬 Canal d'équipe</h2>
+              <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
+                Messages de ton coach et de l'équipe.
+              </p>
+              {affiliation ? (
+                <ChatEquipe
+                  educateurId={affiliation.educateur_id}
+                  userId={userId}
+                  isEducateur={false}
+                />
+              ) : (
+                <p style={{ color: '#555', fontSize: 13 }}>Aucun éducateur affilié pour l'instant.</p>
               )}
             </div>
           )}
