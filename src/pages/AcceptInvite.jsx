@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
@@ -7,40 +7,69 @@ function AcceptInvite() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [verif, setVerif] = useState(false) // échange du token en cours (après clic)
   const [erreur, setErreur] = useState('')
   const [ready, setReady] = useState(false)
   const [readyMeta, setReadyMeta] = useState(null)
+  // Lecture pure des paramètres du lien (query string + hash), une seule fois à
+  // l'initialisation du state — jamais dans un effet qui appellerait Supabase.
+  // Les scanners de liens (Outlook Safe Links, Gmail, Apple Mail...) préchargent
+  // cette page automatiquement dès la réception de l'email ; si on échangeait le
+  // token contre une session ici, ce serait le scanner qui consommerait le lien à
+  // usage unique, pas l'utilisateur. L'échange réel n'a lieu qu'au clic sur le
+  // bouton (voir finaliserSession ci-dessous).
+  const [params] = useState(() => {
+    const url = new URL(window.location.href)
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    return {
+      token_hash: url.searchParams.get('token_hash'),
+      type: url.searchParams.get('type') || hashParams.get('type') || 'invite',
+      access_token: hashParams.get('access_token'),
+      refresh_token: hashParams.get('refresh_token'),
+    }
+  })
   // Supabase ajoute directement l'erreur réelle dans le hash de l'URL quand le lien est
   // expiré/invalide (#error=...&error_code=...&error_description=...) — lu une seule fois,
-  // à l'initialisation du state (pas dans un effet), pour l'afficher immédiatement au lieu
-  // d'attendre le timeout générique de 10s.
+  // à l'initialisation du state (pas dans un effet), pour l'afficher immédiatement.
   const hashErrorInitial = (() => {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const hashError = hashParams.get('error_description') || hashParams.get('error')
     return hashError ? decodeURIComponent(hashError.replace(/\+/g, ' ')) : ''
   })()
   const [lienExpire, setLienExpire] = useState(!!hashErrorInitial)
-  const [lienExpireDetail] = useState(hashErrorInitial)
-  const readyRef = useRef(false)
+  const [lienExpireDetail, setLienExpireDetail] = useState(hashErrorInitial)
 
-  useEffect(() => {
-    if (hashErrorInitial) return // déjà géré par le state initial ci-dessus
-
-    // Supabase échange automatiquement les tokens du hash URL au chargement.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        readyRef.current = true
-        setReady(true)
-        setReadyMeta(session.user.user_metadata || {})
+  // Étape 1, déclenchée par le clic utilisateur : échange le token du lien contre
+  // une vraie session. C'est ici (et seulement ici) que le lien à usage unique est
+  // consommé — jamais automatiquement au chargement de la page.
+  const finaliserSession = async () => {
+    if (!params || verif) return
+    setVerif(true)
+    setErreur('')
+    try {
+      let session = null
+      if (params.token_hash) {
+        const { data, error } = await supabase.auth.verifyOtp({ token_hash: params.token_hash, type: params.type })
+        if (error) throw error
+        session = data.session
+      } else if (params.access_token) {
+        const { data, error } = await supabase.auth.setSession({ access_token: params.access_token, refresh_token: params.refresh_token })
+        if (error) throw error
+        session = data.session
+      } else {
+        throw new Error('Lien invalide ou incomplet.')
       }
-    })
-    // Si la session n'est toujours pas établie après 10s (lien expiré, invalide...),
-    // on arrête d'afficher un spinner éternel et on donne une sortie claire.
-    const timeout = setTimeout(() => {
-      if (!readyRef.current) setLienExpire(true)
-    }, 10000)
-    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
-  }, [])
+      if (!session?.user) throw new Error('Session introuvable.')
+      setReady(true)
+      setReadyMeta(session.user.user_metadata || {})
+    } catch (err) {
+      console.error('[AcceptInvite]', err)
+      setLienExpireDetail(err?.message || err?.error_description || 'Lien invalide ou expiré.')
+      setLienExpire(true)
+    } finally {
+      setVerif(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (password.length < 8) { setErreur('Le mot de passe doit contenir au moins 8 caractères'); return }
@@ -155,11 +184,17 @@ function AcceptInvite() {
             </button>
           </div>
         ) : !ready ? (
-          <div style={{ textAlign: 'center', color: '#666', fontSize: '14px' }}>
-            <p>Vérification de l'invitation en cours...</p>
-            <p style={{ fontSize: '12px', marginTop: '1rem', color: '#444' }}>
-              Si cette page reste bloquée, le lien est peut-être expiré.
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '1.5rem' }}>
+              Clique sur le bouton ci-dessous pour finaliser ton invitation.
             </p>
+            <button
+              onClick={finaliserSession}
+              disabled={verif || !params}
+              style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
+            >
+              {verif ? 'Vérification...' : '⚽ Finaliser mon invitation'}
+            </button>
           </div>
         ) : (
           <>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
@@ -7,18 +7,44 @@ function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [verif, setVerif] = useState(false)
   const [done, setDone] = useState(false)
   const [erreur, setErreur] = useState('')
   const [ready, setReady] = useState(false)
+  // Lecture pure des tokens du lien (hash), une seule fois à l'initialisation du
+  // state — jamais dans un effet qui appellerait Supabase. Les scanners de liens
+  // (Outlook Safe Links, Gmail, Apple Mail...) préchargent la page automatiquement
+  // à la réception de l'email ; si on échangeait le token ici, ce serait le
+  // scanner qui consommerait le lien de recovery à usage unique, pas
+  // l'utilisateur. L'échange réel n'a lieu qu'au clic (voir finaliserSession).
+  const [params] = useState(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    return {
+      access_token: hashParams.get('access_token'),
+      refresh_token: hashParams.get('refresh_token'),
+    }
+  })
+  const [erreurLien, setErreurLien] = useState(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const hashError = hashParams.get('error_description') || hashParams.get('error')
+    return hashError ? decodeURIComponent(hashError.replace(/\+/g, ' ')) : ''
+  })
 
-  useEffect(() => {
-    // Supabase échange automatiquement les tokens du hash URL au chargement.
-    // L'événement PASSWORD_RECOVERY confirme que la session est prête.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+  const finaliserSession = async () => {
+    if (!params?.access_token || verif) return
+    setVerif(true)
+    setErreurLien('')
+    try {
+      const { data, error } = await supabase.auth.setSession({ access_token: params.access_token, refresh_token: params.refresh_token })
+      if (error) throw error
+      if (!data.session?.user) throw new Error('Session introuvable.')
+      setReady(true)
+    } catch (err) {
+      setErreurLien(err?.message || 'Lien invalide ou expiré.')
+    } finally {
+      setVerif(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (password.length < 8) { setErreur('Le mot de passe doit contenir au moins 8 caractères'); return }
@@ -49,15 +75,27 @@ function ResetPassword() {
             <p style={{ fontWeight: 700, marginBottom: '8px' }}>Mot de passe mis à jour !</p>
             <p style={{ color: '#666', fontSize: '14px' }}>Redirection vers la connexion...</p>
           </div>
-        ) : !ready ? (
-          <div style={{ textAlign: 'center', color: '#666', fontSize: '14px' }}>
-            <p>Vérification du lien en cours...</p>
-            <p style={{ fontSize: '12px', marginTop: '1rem', color: '#444' }}>
-              Si cette page reste bloquée, le lien est peut-être expiré.{' '}
+        ) : erreurLien ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '1.5rem' }}>{erreurLien}</p>
+            <p style={{ fontSize: '12px', color: '#444' }}>
               <span onClick={() => navigate('/forgot-password')} style={{ color: '#4ade80', cursor: 'pointer' }}>
                 Demander un nouveau lien
               </span>
             </p>
+          </div>
+        ) : !ready ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '1.5rem' }}>
+              Clique sur le bouton ci-dessous pour continuer.
+            </p>
+            <button
+              onClick={finaliserSession}
+              disabled={verif || !params}
+              style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
+            >
+              {verif ? 'Vérification...' : 'Réinitialiser mon mot de passe'}
+            </button>
           </div>
         ) : (
           <>
