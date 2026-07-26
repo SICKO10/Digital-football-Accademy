@@ -327,9 +327,11 @@ function DashboardJoueur() {
     }
     // Joueur affilié : charge ses stats dès l'ouverture de l'onglet, pas seulement
     // via le bouton de l'onglet "Mon Équipe" (chargerStatsJoueur est déjà idempotent).
-    if (onglet === 'stats' && mesAffiliations.length > 0) {
-      const a = mesAffiliations[0]
-      chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)
+    // Seulement s'il a une affiliation active — une affiliation archivée n'a plus de
+    // stats pertinentes à recharger.
+    if (onglet === 'stats') {
+      const a = mesAffiliations.find(af => af.statut === 'accepte')
+      if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)
     }
   }, [onglet, userId, mesAffiliations])
 
@@ -402,6 +404,7 @@ function DashboardJoueur() {
       .from('affiliations')
       .select('*')
       .eq('joueur_id', uid)
+      .order('date_fin', { ascending: false, nullsFirst: true })
     if (!afData || afData.length === 0) { setMesAffiliations([]); return }
 
     // Charger les profils éducateurs séparément
@@ -971,11 +974,16 @@ function DashboardJoueur() {
   }
 
   // ── JOUEUR AFFILIÉ (plan fan + éducateur lié) ──
+  // Note : basé sur "a une affiliation" (active OU archivée), pas seulement active.
+  // Un joueur dont la saison vient d'être clôturée (toutes ses affiliations archivées)
+  // doit quand même voir son historique et pouvoir rejoindre une nouvelle équipe depuis
+  // cet écran — si on exigeait une affiliation active ici, il retomberait sur le dashboard
+  // "fan" classique et cet historique/CTA (plus bas) ne serait jamais atteignable.
   const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
 
   if (estAffilie) {
-    const affiliation = mesAffiliations[0]
-    const edu = affiliation.profil_educateur
+    const affiliation = mesAffiliations.find(a => a.statut === 'accepte')
+    const edu = affiliation?.profil_educateur
 
     const secAffilie = [
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
@@ -1063,6 +1071,10 @@ function DashboardJoueur() {
             <div style={{ maxWidth: '640px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
 
+              {!affiliation ? (
+                <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>Rejoins une équipe (onglet Mon Équipe) pour voir tes stats.</p>
+              ) : (
+              <>
               {statsLoading[affiliation.id] && (
                 <p style={{ color: '#4ade80', fontSize: '13px' }}>Chargement...</p>
               )}
@@ -1144,17 +1156,19 @@ function DashboardJoueur() {
                   </div>
                 )
               })()}
+              </>
+              )}
             </div>
           )}
           {onglet === 'equipe' && (
             <div style={{ maxWidth: '700px' }}>
               <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>🏟️ Mon Équipe</h1>
 
-              {/* Mes affiliations */}
-              {mesAffiliations.length > 0 && (
+              {/* Mes affiliations actives / en attente / refusées (l'historique archivé est plus bas) */}
+              {mesAffiliations.filter(a => a.statut !== 'archive').length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Mes éducateurs</p>
-                  {mesAffiliations.map(a => {
+                  {mesAffiliations.filter(a => a.statut !== 'archive').map(a => {
                     const pe = a.profil_educateur
                     const isAccepted = a.statut === 'accepte'
                     return (
@@ -1400,6 +1414,50 @@ function DashboardJoueur() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+
+              {/* Historique */}
+              {mesAffiliations.filter(a => a.statut === 'archive').length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <p style={{ fontSize: 11, color: '#333', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 10 }}>
+                    HISTORIQUE
+                  </p>
+                  {mesAffiliations.filter(a => a.statut === 'archive').map(af => {
+                    const e = af.profil_educateur
+                    return (
+                      <div key={af.id} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#666' }}>{e?.prenom} {e?.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: '#333' }}>{e?.club}{e?.categorie ? ` · ${e.categorie}` : ''}</p>
+                        </div>
+                        {af.saison && (
+                          <span style={{ fontSize: 11, color: '#333', background: '#1a1a1a', padding: '3px 10px', borderRadius: 20 }}>
+                            {af.saison}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Aucune affiliation active → inviter à rejoindre */}
+              {mesAffiliations.filter(a => a.statut === 'accepte').length === 0 && (
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 24, textAlign: 'center', marginTop: 16 }}>
+                  <p style={{ fontSize: 32, marginBottom: 12 }}>🏟️</p>
+                  <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Nouvelle saison</p>
+                  <p style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>Rejoins ton équipe avec le code de ton éducateur.</p>
+                  <input
+                    placeholder="CODE ÉQUIPE"
+                    value={codeEquipe}
+                    onChange={e => setCodeEquipe(e.target.value.toUpperCase())}
+                    style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
+                  />
+                  <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
+                    style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Rejoindre
+                  </button>
                 </div>
               )}
             </div>
