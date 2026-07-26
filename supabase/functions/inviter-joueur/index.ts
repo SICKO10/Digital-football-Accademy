@@ -55,17 +55,30 @@ serve(async (req) => {
     })
 
     if (inviteError) {
-      // Si l'utilisateur existe déjà, on peut quand même lier les comptes
+      // Si l'utilisateur existe déjà, on peut quand même lier les comptes.
+      // On cherche dans auth.users (pas profiles) : beaucoup de comptes auth.users n'ont
+      // pas de ligne profiles correspondante (inscriptions abandonnées, etc.), donc chercher
+      // par profiles.email loupe la plupart des comptes réels.
       if (inviteError.message?.includes('already been registered')) {
-        const { data: existingUser } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle()
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+        const existingAuthUser = listData?.users?.find(u =>
+          u.email?.toLowerCase() === email.toLowerCase()
+        )
 
-        if (existingUser) {
+        if (existingAuthUser) {
+          // affiliations/equipe_joueurs référencent profiles(id) via clé étrangère — si ce
+          // compte auth existe sans ligne profiles (cas fréquent), il faut la créer d'abord
+          // sinon les deux appels suivants échouent avec une violation de FK.
+          const { data: profilExistant } = await supabaseAdmin.from('profiles').select('id').eq('id', existingAuthUser.id).maybeSingle()
+          if (!profilExistant) {
+            await supabaseAdmin.from('profiles').insert({
+              id: existingAuthUser.id, email: existingAuthUser.email,
+              prenom: prenom || '', nom: nom || '', plan: 'fan',
+            })
+          }
+
           await supabaseAdmin.from('affiliations').upsert({
-            joueur_id: existingUser.id,
+            joueur_id: existingAuthUser.id,
             educateur_id,
             equipe_joueur_id,
             statut: 'accepte',
@@ -73,7 +86,7 @@ serve(async (req) => {
 
           await supabaseAdmin
             .from('equipe_joueurs')
-            .update({ email, joueur_id: existingUser.id })
+            .update({ email, joueur_id: existingAuthUser.id })
             .eq('id', equipe_joueur_id)
 
           return new Response(
