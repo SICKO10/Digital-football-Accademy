@@ -909,7 +909,17 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       const { data, error } = await supabase.functions.invoke('inviter-joueur', {
         body: { email, educateur_id: userId, equipe_joueur_id: j.id, prenom: j.prenom, nom: j.nom }
       })
-      if (error || data?.error) throw new Error(data?.error || error.message)
+      if (error) {
+        // supabase-js masque le vrai message derrière "Edge Function returned a non-2xx
+        // status code" — le détail exact est dans le body de la réponse HTTP de la fonction.
+        let message = error.message
+        try {
+          const body = await error.context?.json()
+          if (body?.error) message = body.error
+        } catch { /* body non-JSON ou déjà consommé, on garde le message générique */ }
+        throw new Error(message)
+      }
+      if (data?.error) throw new Error(data.error)
       setInviteStatus(prev => ({ ...prev, [j.id]: 'sent' }))
       await chargerJoueurs(userId)
     } catch (err) {
