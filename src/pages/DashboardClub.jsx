@@ -57,7 +57,7 @@ const COULEURS_BUDGET = [
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
-function DonutChart({ segments, total, label }) {
+function DonutChart({ segments, total, label, couleurCentrale = '#fff' }) {
   const R = 70
   const STROKE = 18
   const C = 2 * Math.PI * R
@@ -95,7 +95,7 @@ function DonutChart({ segments, total, label }) {
         })}
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+        <span style={{ fontSize: 18, fontWeight: 900, color: couleurCentrale, fontFamily: 'Inter, sans-serif' }}>
           {total.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
         </span>
         <span style={{ fontSize: 10, color: '#555', fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
@@ -178,7 +178,6 @@ export default function DashboardClub() {
 
   // Budget
   const [budgetEntries, setBudgetEntries] = useState([])
-  const [budgetVue, setBudgetVue] = useState('depense') // 'depense' | 'recette'
   const [budgetPeriode, setBudgetPeriode] = useState('mois') // 'mois' | 'saison' | 'tout'
   const [budgetForm, setBudgetForm] = useState({
     type: 'depense', categorie: '', libelle: '', montant: '', date: new Date().toISOString().split('T')[0], note: '',
@@ -1367,19 +1366,19 @@ export default function DashboardClub() {
           const totalDepenses = entriesFiltrees.filter(e => e.type === 'depense').reduce((s, e) => s + parseFloat(e.montant), 0)
           const solde = totalRecettes - totalDepenses
 
-          const entreesVue = entriesFiltrees.filter(e => e.type === budgetVue)
-          const totalVue = entreesVue.reduce((s, e) => s + parseFloat(e.montant), 0)
-          const parCategorie = entreesVue.reduce((acc, e) => {
-            acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant)
-            return acc
-          }, {})
-          const categoriesBudget = Object.entries(parCategorie)
+          const categoriesDepense = entriesFiltrees
+            .filter(e => e.type === 'depense')
+            .reduce((acc, e) => { acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant); return acc }, {})
+          const categoriesDepenseArr = Object.entries(categoriesDepense)
             .sort((a, b) => b[1] - a[1])
-            .map(([cat, montant], i) => ({
-              cat, montant,
-              pct: totalVue > 0 ? (montant / totalVue) * 100 : 0,
-              color: COULEURS_BUDGET[i % COULEURS_BUDGET.length],
-            }))
+            .map(([cat, montant], i) => ({ cat, montant, pct: totalDepenses > 0 ? (montant / totalDepenses) * 100 : 0, color: ['#ef4444', '#f97316', '#f59e0b', '#fb923c', '#fbbf24', '#fca5a5', '#fed7aa', '#fde68a', '#fef3c7'][i % 9] }))
+
+          const categoriesRecette = entriesFiltrees
+            .filter(e => e.type === 'recette')
+            .reduce((acc, e) => { acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant); return acc }, {})
+          const categoriesRecetteArr = Object.entries(categoriesRecette)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, montant], i) => ({ cat, montant, pct: totalRecettes > 0 ? (montant / totalRecettes) * 100 : 0, color: COULEURS_BUDGET[i % COULEURS_BUDGET.length] }))
 
           return (
             <div style={{ maxWidth: 800 }}>
@@ -1465,52 +1464,71 @@ export default function DashboardClub() {
                 ))}
               </div>
 
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '20px 24px', marginBottom: 20 }}>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                  {['depense', 'recette'].map(t => (
-                    <button key={t} onClick={() => setBudgetVue(t)}
-                      style={{ padding: '6px 16px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetVue === t ? (t === 'recette' ? '#4ade8020' : '#ef444420') : '#1a1a1a', color: budgetVue === t ? (t === 'recette' ? '#4ade80' : '#ef4444') : '#555' }}>
-                      {t === 'recette' ? '↑ Recettes' : '↓ Dépenses'}
-                    </button>
-                  ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
+                {/* Donut Dépenses */}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ Dépenses</p>
+                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label="dépensé" />
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {categoriesDepenseArr.length === 0 && (
+                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
+                    )}
+                    {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
+                          {seg.cat}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
+                      </div>
+                    ))}
+                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} autres</p>}
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-                  <DonutChart
-                    segments={categoriesBudget}
-                    total={totalVue}
-                    label={budgetVue === 'depense' ? 'dépensé' : 'reçu'}
-                  />
-
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {categoriesBudget.length === 0 && (
-                      <p style={{ color: '#333', fontSize: 13 }}>Aucune entrée sur cette période.</p>
+                {/* Donut Recettes */}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ Recettes</p>
+                  <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label="reçu" />
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {categoriesRecetteArr.length === 0 && (
+                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
                     )}
-                    {categoriesBudget.map((seg, i) => {
-                      const cats = budgetVue === 'depense' ? CATEGORIES_DEPENSE : CATEGORIES_RECETTE
-                      const meta = cats.find(c => c.label === seg.cat)
-                      return (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: seg.color, flexShrink: 0 }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 13, color: '#ccc', fontWeight: 600 }}>
-                                {meta?.emoji || ''} {seg.cat}
-                              </span>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>
-                                {seg.montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                              </span>
-                            </div>
-                            <div style={{ height: 4, background: '#1a1a1a', borderRadius: 4, marginTop: 4, overflow: 'hidden' }}>
-                              <div style={{ height: '100%', width: `${seg.pct}%`, background: seg.color, borderRadius: 4, transition: 'width 0.4s ease' }} />
-                            </div>
-                          </div>
-                          <span style={{ fontSize: 11, color: '#555', fontWeight: 700, minWidth: 32, textAlign: 'right' }}>
-                            {Math.round(seg.pct)}%
-                          </span>
-                        </div>
-                      )
-                    })}
+                    {categoriesRecetteArr.slice(0, 4).map((seg, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
+                          {seg.cat}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
+                      </div>
+                    ))}
+                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesRecetteArr.length - 4} autres</p>}
+                  </div>
+                </div>
+
+                {/* Donut Global */}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ Global</p>
+                  <DonutChart
+                    segments={totalRecettes + totalDepenses > 0 ? [
+                      { pct: (totalRecettes / (totalRecettes + totalDepenses)) * 100, color: '#4ade80' },
+                      { pct: (totalDepenses / (totalRecettes + totalDepenses)) * 100, color: '#ef4444' },
+                    ] : []}
+                    total={Math.abs(solde)}
+                    label={solde >= 0 ? 'bénéfice' : 'déficit'}
+                    couleurCentrale={solde >= 0 ? '#4ade80' : '#ef4444'}
+                  />
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[{ label: 'Recettes', color: '#4ade80', val: totalRecettes }, { label: 'Dépenses', color: '#ef4444', val: totalDepenses }].map(({ label, color, val }) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                          {label}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color }}>{val.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1525,8 +1543,9 @@ export default function DashboardClub() {
                 {entriesFiltrees.map(e => {
                   const cats = e.type === 'depense' ? CATEGORIES_DEPENSE : CATEGORIES_RECETTE
                   const meta = cats.find(c => c.label === e.categorie)
-                  const couleurIdx = categoriesBudget.findIndex(c => c.cat === e.categorie)
-                  const couleur = couleurIdx >= 0 ? COULEURS_BUDGET[couleurIdx % COULEURS_BUDGET.length] : '#555'
+                  const categoriesArr = e.type === 'depense' ? categoriesDepenseArr : categoriesRecetteArr
+                  const segCat = categoriesArr.find(c => c.cat === e.categorie)
+                  const couleur = segCat?.color || '#555'
                   return (
                     <div key={e.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? '#4ade8015' : '#ef444415' }}>
