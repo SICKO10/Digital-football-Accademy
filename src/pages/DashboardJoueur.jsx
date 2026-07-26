@@ -286,7 +286,7 @@ function DashboardJoueur() {
   const [clubsLoading, setClubsLoading] = useState(false)
   const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [menuOuvert, setMenuOuvert] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Mon Équipe (affiliation éducateur)
   const [mesAffiliations, setMesAffiliations] = useState([])
@@ -1007,37 +1007,57 @@ function DashboardJoueur() {
       <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; } .af-nav-btn:hover { background: #141414 !important; color: #ccc !important; }`}</style>
 
-        {!isMobile && (
-          <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
-            <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414' }}>
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
+        )}
+
+        <aside style={{
+          width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
+          ...(isMobile ? {
+            position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+          } : {
+            position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
+          }),
+        }}>
+          <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
               <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
               <div style={{ marginTop: '4px', fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>Joueur affilié</div>
             </div>
-            <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {secAffilie.map(item => (
-                <div key={item.id}>
-                  {item.section && (
-                    <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
-                      {item.section}
-                    </div>
-                  )}
-                  <button className="af-nav-btn" onClick={() => item.id === 'jogabonito' ? navigate('/jogabonito') : setOnglet(item.id)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
-                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                    <span style={{ flex: 1 }}>{item.label}</span>
-                    {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
-                    {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
-                  </button>
-                </div>
-              ))}
-            </nav>
-            <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
-              <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
-            </div>
-          </aside>
-        )}
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer' }}>✕</button>
+            )}
+          </div>
+          <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {secAffilie.map(item => (
+              <div key={item.id}>
+                {item.section && (
+                  <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                    {item.section}
+                  </div>
+                )}
+                <button className="af-nav-btn" onClick={() => { if (item.id === 'jogabonito') navigate('/jogabonito'); else setOnglet(item.id); setSidebarOpen(false) }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                  {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
+                </button>
+              </div>
+            ))}
+          </nav>
+          <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
+            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
+          </div>
+        </aside>
 
-        <main style={{ flex: 1, padding: isMobile ? '20px 16px' : '32px 36px', overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '32px 36px', overflowY: 'auto' }}>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)}
+              style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
+              ☰
+            </button>
+          )}
           {onglet === 'accueil' && (
             <div style={{ maxWidth: '640px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>Bonjour, {profil?.prenom} 👋</h1>
@@ -1476,17 +1496,6 @@ function DashboardJoueur() {
           {onglet === 'feed' && <UpgradeCard titre="Feed" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
           {onglet === 'recruteurs' && <UpgradeCard titre="Messagerie recruteurs" texte="Reçois des messages de clubs et agents directement. Plan Pro requis." />}
         </main>
-
-        {isMobile && (
-          <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#0d0d0d', borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-around', padding: '10px 0 14px', zIndex: 100 }}>
-            {[{ id: 'accueil', icon: <IconHome />, label: 'Accueil' }, { id: 'prep_physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span>, label: 'Prépa' }, { id: 'stats', icon: <IconChart />, label: 'Stats' }, { id: 'profil', icon: <IconUser />, label: 'Profil' }].map(item => (
-              <button key={item.id} onClick={() => setOnglet(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#444', cursor: 'pointer', fontFamily: 'Inter, sans-serif', minWidth: '56px' }}>
-                {item.icon}
-                <span style={{ fontSize: '10px', fontWeight: onglet === item.id ? 700 : 400 }}>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-        )}
       </div>
     )
   }
@@ -1623,12 +1632,6 @@ function DashboardJoueur() {
     { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length, section: 'MON RÉSEAU' },
   ]
 
-  // Bottom nav mobile : 4 items fixes + bouton "Plus" ouvrant les items restants dans un bottom sheet
-  const idsPrincipaux = ['dashboard', 'profil', 'analyses', 'coach']
-  const itemsPrincipaux = navItems.filter(item => idsPrincipaux.includes(item.id))
-  const itemsSecondaires = navItems.filter(item => !idsPrincipaux.includes(item.id))
-  const badgeSecondaireTotal = itemsSecondaires.reduce((sum, item) => sum + (item.badge > 0 ? item.badge : 0), 0)
-
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
       <style>{`
@@ -1644,12 +1647,26 @@ function DashboardJoueur() {
         .dj-bottom-nav-btn:hover { color: #ccc !important; }
       `}</style>
 
-      {/* ── SIDEBAR (desktop only) ── */}
-      {!isMobile && <aside style={{ width: '220px', minHeight: '100vh', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
-        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414' }}>
+      {/* ── SIDEBAR ── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
+      )}
+
+      <aside style={{
+        width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        ...(isMobile ? {
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+        } : {
+          position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
+        }),
+      }}>
+        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer' }}>✕</button>
+          )}
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1660,7 +1677,7 @@ function DashboardJoueur() {
                   {item.section}
                 </div>
               )}
-              <button className="dj-nav-btn" onClick={() => setOnglet(item.id)}
+              <button className="dj-nav-btn" onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
@@ -1731,64 +1748,7 @@ function DashboardJoueur() {
             Déconnexion
           </button>
         </div>
-      </aside>}
-
-      {/* ── BOTTOM NAV (mobile only) ── */}
-      {isMobile && menuOuvert && (
-        <div
-          onClick={() => setMenuOuvert(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 140 }}
-        />
-      )}
-
-      {isMobile && menuOuvert && (
-        <div style={{
-          position: 'fixed', bottom: '70px', left: 0, right: 0,
-          background: '#1a1a1a', borderRadius: '16px 16px 0 0',
-          padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', zIndex: 150,
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px',
-        }}>
-          {itemsSecondaires.map(item => (
-            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => { setOnglet(item.id); setMenuOuvert(false) }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 4px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#888', cursor: 'pointer', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
-              {item.badge > 0 && (
-                <span style={{ position: 'absolute', top: '0', right: 'calc(50% - 20px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {item.badge}
-                </span>
-              )}
-              {item.icon}
-              <span style={{ fontSize: '11px', fontWeight: onglet === item.id ? 700 : 400, letterSpacing: '0.2px', textAlign: 'center' }}>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isMobile && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', borderTop: '1px solid #222', display: 'flex', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          {itemsPrincipaux.map(item => (
-            <button key={item.id} className="dj-bottom-nav-btn" onClick={() => { setOnglet(item.id); setMenuOuvert(false) }}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '10px 4px 8px', background: 'transparent', border: 'none', color: onglet === item.id ? '#4ade80' : '#555', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.15s', position: 'relative' }}>
-              {item.badge > 0 && (
-                <span style={{ position: 'absolute', top: '6px', right: 'calc(50% - 18px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {item.badge}
-                </span>
-              )}
-              {item.icon}
-              <span style={{ fontSize: '10px', fontWeight: onglet === item.id ? 700 : 400, letterSpacing: '0.2px' }}>{item.label}</span>
-            </button>
-          ))}
-          <button className="dj-bottom-nav-btn" onClick={() => setMenuOuvert(m => !m)}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '10px 4px 8px', background: 'transparent', border: 'none', color: menuOuvert ? '#4ade80' : '#555', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.15s', position: 'relative' }}>
-            {badgeSecondaireTotal > 0 && (
-              <span style={{ position: 'absolute', top: '6px', right: 'calc(50% - 18px)', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {badgeSecondaireTotal}
-              </span>
-            )}
-            <span style={{ fontSize: '18px', lineHeight: 1 }}>· · ·</span>
-            <span style={{ fontSize: '10px', fontWeight: menuOuvert ? 700 : 400, letterSpacing: '0.2px' }}>Plus</span>
-          </button>
-        </nav>
-      )}
+      </aside>
 
       {isMobile && (
         <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 150 }}>
@@ -1825,7 +1785,14 @@ function DashboardJoueur() {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh', paddingBottom: isMobile ? '80px' : 0 }}>
+      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh' }}>
+
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(true)}
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '20px 16px 0', display: 'block' }}>
+            ☰
+          </button>
+        )}
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (

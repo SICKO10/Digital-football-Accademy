@@ -109,6 +109,7 @@ export default function DashboardClub() {
   const [club, setClub] = useState(null)
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [activeTab, setActiveTab] = useState('categories')
   const [activeCategorie, setActiveCategorie] = useState('sportif')
   const [monRole, setMonRole] = useState(null)
@@ -207,6 +208,11 @@ export default function DashboardClub() {
   }
 
   useEffect(() => { init() }, [])
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   // Corrige la catégorie/onglet actifs si le rôle détecté ne peut pas voir le défaut
   // ('sportif' + 'categories' par défaut, ce qui exclut par ex. un rôle 'marketing').
@@ -1449,7 +1455,7 @@ export default function DashboardClub() {
                 ))}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
                 {[
                   { label: 'Recettes', val: totalRecettes, color: '#4ade80', bg: '#4ade8010', sign: '+' },
                   { label: 'Dépenses', val: totalDepenses, color: '#ef4444', bg: '#ef444410', sign: '−' },
@@ -1464,9 +1470,9 @@ export default function DashboardClub() {
                 ))}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 20, marginBottom: 20 }}>
                 {/* Donut Recettes */}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ Recettes</p>
                   <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label="reçu" />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1487,7 +1493,7 @@ export default function DashboardClub() {
                 </div>
 
                 {/* Donut Dépenses */}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ Dépenses</p>
                   <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label="dépensé" />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1508,7 +1514,7 @@ export default function DashboardClub() {
                 </div>
 
                 {/* Donut Global */}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ Global</p>
                   <DonutChart
                     segments={totalRecettes + totalDepenses > 0 ? [

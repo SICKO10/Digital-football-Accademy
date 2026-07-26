@@ -2261,7 +2261,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 {statsSubTab === 'graphiques' && (() => {
                   const withStats = joueurs.map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, ...statsGlobalesJoueur(j.id) }))
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '20px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box' }}>
                       {[
                         { title: '⚽ Buteurs', key: 'buts', color: '#4ade80' },
                         { title: '🎯 Passes décisives', key: 'passes_dec', color: '#60a5fa' },
