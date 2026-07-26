@@ -1381,7 +1381,7 @@ export default function DashboardClub() {
             .map(([cat, montant], i) => ({ cat, montant, pct: totalRecettes > 0 ? (montant / totalRecettes) * 100 : 0, color: COULEURS_BUDGET[i % COULEURS_BUDGET.length] }))
 
           return (
-            <div style={{ maxWidth: 800 }}>
+            <div style={{ maxWidth: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 Budget du club</h2>
@@ -1465,27 +1465,6 @@ export default function DashboardClub() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
-                {/* Donut Dépenses */}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ Dépenses</p>
-                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label="dépensé" />
-                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {categoriesDepenseArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
-                    )}
-                    {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
-                          {seg.cat}
-                        </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
-                      </div>
-                    ))}
-                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} autres</p>}
-                  </div>
-                </div>
-
                 {/* Donut Recettes */}
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ Recettes</p>
@@ -1504,6 +1483,27 @@ export default function DashboardClub() {
                       </div>
                     ))}
                     {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesRecetteArr.length - 4} autres</p>}
+                  </div>
+                </div>
+
+                {/* Donut Dépenses */}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: '18px 16px' }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ Dépenses</p>
+                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label="dépensé" />
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {categoriesDepenseArr.length === 0 && (
+                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
+                    )}
+                    {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
+                          {seg.cat}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
+                      </div>
+                    ))}
+                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} autres</p>}
                   </div>
                 </div>
 
