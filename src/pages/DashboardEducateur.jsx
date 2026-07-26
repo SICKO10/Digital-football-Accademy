@@ -7,7 +7,6 @@ import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
-import ChatEquipe from '../components/ChatEquipe'
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -1494,7 +1493,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       { key: 'equipe', label: 'Mon équipe', icon: '👥' },
       { key: 'stats', label: 'Stats joueurs', icon: '📊' },
       { key: 'matchs', label: 'Compétition', icon: '🏆' },
-      { key: 'messagerie', label: 'Messagerie', icon: '💬' },
+      { key: 'messagerie', label: 'Messagerie', icon: '💬', locked: true },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
       { key: 'entrainements', label: 'Entraînements', icon: '🏃' },
@@ -1562,9 +1561,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               </div>
               {section.items.map(item => (
                 <button key={item.key} onClick={() => setActiveSection(item.key)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#4ade8012' : 'transparent', color: activeSection === item.key ? '#4ade80' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#4ade8012' : 'transparent', color: activeSection === item.key ? '#4ade80' : item.locked ? '#333' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                   {activeSection === item.key && (
                     <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
                   )}
@@ -3132,11 +3132,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
               Messages et sondages visibles par tous tes joueurs affiliés.
             </p>
-            <ChatEquipe
-              educateurId={userId}
-              userId={userId}
-              isEducateur={true}
-            />
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
+              <p style={{ fontSize: '32px', margin: '0 0 12px' }}>🔒</p>
+              <p style={{ color: '#888', fontWeight: 700, marginBottom: '4px' }}>Bientôt disponible</p>
+              <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Cette fonctionnalité arrive prochainement.</p>
+            </div>
           </div>
         )}
 
