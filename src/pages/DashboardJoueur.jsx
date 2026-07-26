@@ -986,11 +986,14 @@ function DashboardJoueur() {
   if (estAffilie) {
     const affiliation = mesAffiliations.find(a => a.statut === 'accepte')
     const edu = affiliation?.profil_educateur
+    const labelSection = edu?.club
+      ? (edu.club + (edu.categorie ? ` ${edu.categorie}` : '')).toUpperCase()
+      : 'MON ÉQUIPE'
 
     const secAffilie = [
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
 
-      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: 'MON CLUB' },
+      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: labelSection },
       { id: 'messagerie',    label: 'Messagerie',           icon: <span style={{ fontSize: '18px' }}>💬</span> },
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
       { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
