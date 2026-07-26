@@ -259,7 +259,8 @@ const TAILLE_MAX = 25 * 1024 * 1024 // limite Groq Whisper
 export default function AnalyseurIA() {
   const [fichier, setFichier] = useState(null)
   const [nomJoueur, setNomJoueur] = useState('')
-  const [typeAnalyse, setTypeAnalyse] = useState('Analyse technique')
+  const [source, setSource] = useState('upload') // 'upload' | 'youtube'
+  const [youtubeUrl, setYoutubeUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [etape, setEtape] = useState('')  // message d'état
   const [resultat, setResultat] = useState(null)
@@ -267,8 +268,6 @@ export default function AnalyseurIA() {
   const inputRef = useRef(null)
 
   const isMobile = window.innerWidth < 768
-
-  const TYPES = ['Analyse technique', 'Analyse tactique', 'Analyse physique', 'Analyse globale', 'Bilan de match']
 
   const choisirFichier = (f) => {
     if (!f) return
@@ -285,35 +284,40 @@ export default function AnalyseurIA() {
   }
 
   const analyser = async () => {
-    if (!fichier) return
+    if (source === 'upload' && !fichier) return
+    if (source === 'youtube' && !youtubeUrl.trim()) return
     setLoading(true)
     setErreur('')
     setResultat(null)
 
     try {
-      // ── Étape 1 : extraction audio si c'est une vidéo ──────────────────
-      let fichierAudio = fichier
-      const estVideo = fichier.type.startsWith('video/') ||
-        /\.(mp4|mov|avi|mkv|webm)$/i.test(fichier.name)
-
-      if (estVideo) {
-        const { blob } = await extraireAudio(fichier, setEtape)
-        fichierAudio = new File([blob], fichier.name.replace(/\.[^.]+$/, '.wav'), { type: 'audio/wav' })
-      } else {
-        setEtape('Vérification du fichier audio…')
-      }
-
-      if (fichierAudio.size > TAILLE_MAX) {
-        throw new Error(`Fichier trop lourd (${(fichierAudio.size / 1024 / 1024).toFixed(1)} Mo). Limite : 25 Mo.`)
-      }
-
-      // ── Étape 2 : envoi à l'Edge Function ─────────────────────────────
       const fd = new FormData()
-      fd.append('fichier', fichierAudio)
       fd.append('nomJoueur', nomJoueur || 'Joueur')
-      fd.append('typeAnalyse', typeAnalyse)
 
-      setEtape('Transcription en cours… (peut prendre 20–60s)')
+      if (source === 'youtube') {
+        fd.append('youtubeUrl', youtubeUrl.trim())
+        setEtape('Récupération de la transcription YouTube…')
+      } else {
+        // ── Extraction audio si c'est une vidéo ────────────────────────
+        let fichierAudio = fichier
+        const estVideo = fichier.type.startsWith('video/') ||
+          /\.(mp4|mov|avi|mkv|webm)$/i.test(fichier.name)
+
+        if (estVideo) {
+          const { blob } = await extraireAudio(fichier, setEtape)
+          fichierAudio = new File([blob], fichier.name.replace(/\.[^.]+$/, '.wav'), { type: 'audio/wav' })
+        } else {
+          setEtape('Vérification du fichier audio…')
+        }
+
+        if (fichierAudio.size > TAILLE_MAX) {
+          throw new Error(`Fichier trop lourd (${(fichierAudio.size / 1024 / 1024).toFixed(1)} Mo). Limite : 25 Mo.`)
+        }
+
+        fd.append('fichier', fichierAudio)
+        setEtape('Transcription en cours… (peut prendre 20–60s)')
+      }
+
       const { data, error } = await supabase.functions.invoke('analyser-audio', { body: fd })
 
       if (error) throw new Error(error.message)
@@ -332,6 +336,8 @@ export default function AnalyseurIA() {
     await genererPDF(resultat)
   }
 
+  const peutAnalyser = source === 'upload' ? !!fichier : !!youtubeUrl.trim()
+
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, marginBottom: 4 }}>
@@ -345,44 +351,81 @@ export default function AnalyseurIA() {
       {!resultat && (
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: isMobile ? 16 : 24 }}>
 
-          {/* Upload fichier */}
-          <div
-            onClick={() => inputRef.current?.click()}
-            style={{
-              border: `2px dashed ${fichier ? '#4ade80' : '#2a2a2a'}`,
-              borderRadius: 12,
-              padding: '28px 20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              marginBottom: 20,
-              transition: 'border-color 0.2s',
-              background: fichier ? '#4ade8008' : 'transparent',
-            }}>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="audio/*,video/mp4,video/webm,video/quicktime,.m4a,.mp3,.wav,.mp4,.mov"
-              style={{ display: 'none' }}
-              onChange={e => choisirFichier(e.target.files[0])}
-            />
-            {fichier ? (
-              <>
-                <p style={{ margin: '0 0 4px', fontSize: 15, color: '#4ade80', fontWeight: 700 }}>✓ {fichier.name}</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#555' }}>{(fichier.size / 1024 / 1024).toFixed(1)} Mo · Cliquer pour changer</p>
-              </>
-            ) : (
-              <>
-                <p style={{ margin: '0 0 6px', fontSize: 32 }}>🎬</p>
-                <p style={{ margin: '0 0 4px', fontSize: 14, color: '#ccc', fontWeight: 600 }}>Glisser un fichier ou cliquer</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#444' }}>
-                  mp4, mov, mp3, m4a, wav · max 25 Mo (vidéo → audio extrait automatiquement)
-                </p>
-              </>
-            )}
+          {/* Toggle Upload / YouTube */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {[
+              { id: 'upload', label: '📁 Upload fichier' },
+              { id: 'youtube', label: '▶️ Lien YouTube' },
+            ].map(s => (
+              <button key={s.id} onClick={() => setSource(s.id)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  background: source === s.id ? '#4ade80' : '#1a1a1a',
+                  color: source === s.id ? '#000' : '#555',
+                  transition: 'all 0.15s',
+                }}>
+                {s.label}
+              </button>
+            ))}
           </div>
 
+          {/* Zone conditionnelle */}
+          {source === 'upload' ? (
+            <div
+              onClick={() => inputRef.current?.click()}
+              style={{
+                border: `2px dashed ${fichier ? '#4ade80' : '#2a2a2a'}`,
+                borderRadius: 12,
+                padding: '28px 20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                marginBottom: 20,
+                transition: 'border-color 0.2s',
+                background: fichier ? '#4ade8008' : 'transparent',
+              }}>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="audio/*,video/mp4,video/webm,video/quicktime,.m4a,.mp3,.wav,.mp4,.mov"
+                style={{ display: 'none' }}
+                onChange={e => choisirFichier(e.target.files[0])}
+              />
+              {fichier ? (
+                <>
+                  <p style={{ margin: '0 0 4px', fontSize: 15, color: '#4ade80', fontWeight: 700 }}>✓ {fichier.name}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#555' }}>{(fichier.size / 1024 / 1024).toFixed(1)} Mo · Cliquer pour changer</p>
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 6px', fontSize: 32 }}>🎬</p>
+                  <p style={{ margin: '0 0 4px', fontSize: 14, color: '#ccc', fontWeight: 600 }}>Glisser un fichier ou cliquer</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#444' }}>
+                    mp4, mov, mp3, m4a, wav · max 25 Mo (vidéo → audio extrait automatiquement)
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div style={{ marginBottom: 20 }}>
+              <input
+                value={youtubeUrl}
+                onChange={e => setYoutubeUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                style={{
+                  width: '100%', background: '#0a0a0a', border: `1px solid ${youtubeUrl ? '#4ade8060' : '#2a2a2a'}`,
+                  borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 13,
+                  fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+                }} />
+              <p style={{ margin: '8px 0 0', fontSize: 11, color: '#444' }}>
+                ⚠️ La vidéo doit avoir des sous-titres automatiques activés sur YouTube.
+                Si elle vient d'être uploadée, attendre quelques minutes.
+              </p>
+            </div>
+          )}
+
           {/* Nom joueur */}
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 11, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Nom du joueur</label>
             <input
               value={nomJoueur}
@@ -392,32 +435,15 @@ export default function AnalyseurIA() {
             />
           </div>
 
-          {/* Type d'analyse */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 11, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Type d'analyse</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {TYPES.map(t => (
-                <button key={t} onClick={() => setTypeAnalyse(t)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    background: typeAnalyse === t ? '#4ade80' : '#1a1a1a',
-                    color: typeAnalyse === t ? '#000' : '#555',
-                  }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Bouton analyser */}
           <button
             onClick={analyser}
-            disabled={!fichier || loading}
+            disabled={loading || !peutAnalyser}
             style={{
               width: '100%', padding: '12px', borderRadius: 10, border: 'none',
-              background: fichier && !loading ? '#4ade80' : '#1a1a1a',
-              color: fichier && !loading ? '#000' : '#555',
-              fontWeight: 700, fontSize: 14, cursor: fichier && !loading ? 'pointer' : 'default',
+              background: peutAnalyser && !loading ? '#4ade80' : '#1a1a1a',
+              color: peutAnalyser && !loading ? '#000' : '#555',
+              fontWeight: 700, fontSize: 14, cursor: peutAnalyser && !loading ? 'pointer' : 'default',
               fontFamily: 'Inter, sans-serif', transition: 'all 0.2s',
             }}>
             {loading ? etape || 'Analyse en cours…' : '🚀 Analyser et générer le rapport'}
@@ -445,7 +471,7 @@ export default function AnalyseurIA() {
                 style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 📄 Télécharger PDF
               </button>
-              <button onClick={() => { setResultat(null); setFichier(null); setNomJoueur(''); setEtape('') }}
+              <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setEtape('') }}
                 style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Nouvelle analyse
               </button>
