@@ -159,10 +159,14 @@ export default function GestionCloturesSaison({ educateurId }) {
     // `affiliations`, statut 'accepte' — pas tous les comptes pro/fan de la plateforme).
     const { data: afData } = await supabase
       .from('affiliations')
-      .select('joueur_id')
+      .select('joueur_id, equipe_joueur_id')
       .eq('educateur_id', educateurId)
       .eq('statut', 'accepte')
     const joueurIds = [...new Set((afData || []).map(a => a.joueur_id))]
+    // presences_entrainement.joueur_id référence equipe_joueurs(id), pas profiles(id) —
+    // il faut donc passer par l'affiliation pour retrouver l'equipe_joueur_id de chacun.
+    const equipeJoueurIdMap = {}
+    ;(afData || []).forEach(a => { equipeJoueurIdMap[a.joueur_id] = a.equipe_joueur_id })
 
     const { data: joueursData } = joueurIds.length > 0
       ? await supabase
@@ -180,40 +184,26 @@ export default function GestionCloturesSaison({ educateurId }) {
 
     if (histError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
 
-    // Calcul présences depuis soumissions_prep
-    const { data: programmes } = await supabase
-      .from('programmes_prep')
-      .select('id')
-      .eq('educateur_id', educateurId)
-
-    const progIds = (programmes || []).map(p => p.id)
+    // Présence réelle aux entraînements (pas la prépa physique, moins pertinente dans
+    // un historique de saison — même calcul que chargerStatsJoueur côté joueur).
+    const equipeJoueurIds = Object.values(equipeJoueurIdMap).filter(Boolean)
     let presenceMap = {}
 
-    if (progIds.length > 0) {
-      const { data: seances } = await supabase
-        .from('seances_prep')
-        .select('id')
-        .in('programme_id', progIds)
-        .neq('type_seance', 'repos')
+    if (equipeJoueurIds.length > 0) {
+      const { data: presencesData } = await supabase
+        .from('presences_entrainement')
+        .select('joueur_id, statut')
+        .eq('educateur_id', educateurId)
+        .in('joueur_id', equipeJoueurIds)
 
-      const seanceIds = (seances || []).map(s => s.id)
-      const nbTotal = seanceIds.length
-
-      if (seanceIds.length > 0) {
-        const { data: soumissions } = await supabase
-          .from('soumissions_prep')
-          .select('joueur_id, statut')
-          .in('seance_id', seanceIds)
-
-        const joueurIds = (joueursData || []).map(j => j.id)
-        joueurIds.forEach(jid => {
-          const sj = (soumissions || []).filter(s => s.joueur_id === jid)
-          presenceMap[jid] = {
-            realisees: sj.filter(s => s.statut === 'valide').length,
-            total: nbTotal,
-          }
-        })
-      }
+      ;(joueursData || []).forEach(j => {
+        const equipeJoueurId = equipeJoueurIdMap[j.id]
+        const pr = (presencesData || []).filter(p => p.joueur_id === equipeJoueurId)
+        presenceMap[j.id] = {
+          realisees: pr.filter(p => p.statut === 'present').length,
+          total: pr.length,
+        }
+      })
     }
 
     setJoueurs(joueursData || [])
@@ -326,13 +316,20 @@ export default function GestionCloturesSaison({ educateurId }) {
                       <span style={{ color: st.muted, fontSize: 12 }}>🏃 {cloture ? hist.matchs_joues : (j.matchs_officiel || 0)} matchs</span>
                       {tauxPres !== null && <span style={{ color: tauxPres >= 80 ? st.green : tauxPres >= 50 ? st.yellow : st.red, fontSize: 12 }}>📋 {tauxPres}% présence</span>}
                     </div>
-                    {cloture && (
-                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    {cloture && (() => {
+                      const totalMatchsHist = (hist.victoires || 0) + (hist.nuls || 0) + (hist.defaites || 0)
+                      const tauxVictoire = totalMatchsHist > 0 ? Math.round((hist.victoires / totalMatchsHist) * 100) : null
+                      return (
+                      <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
                         <span style={{ color: st.green, fontSize: 11 }}>✅ {hist.victoires}V</span>
                         <span style={{ color: st.yellow, fontSize: 11 }}>🟡 {hist.nuls}N</span>
                         <span style={{ color: st.red, fontSize: 11 }}>❌ {hist.defaites}D</span>
+                        {tauxVictoire !== null && (
+                          <span style={{ color: tauxVictoire >= 50 ? st.green : st.muted, fontSize: 11, fontWeight: 700 }}>· {tauxVictoire}% victoires</span>
+                        )}
                       </div>
-                    )}
+                      )
+                    })()}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
