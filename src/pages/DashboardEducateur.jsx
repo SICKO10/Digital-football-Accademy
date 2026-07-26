@@ -408,6 +408,7 @@ export default function DashboardEducateur() {
   // Mon Profil éducateur
   const [profilEdu, setProfilEdu] = useState(null)
   const [profilEduEdit, setProfilEduEdit] = useState(null)
+  const [lienGroupe, setLienGroupe] = useState('')
   const [parcoursEdu, setParcoursEdu] = useState([])
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
@@ -585,7 +586,7 @@ export default function DashboardEducateur() {
 
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
-    if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }) }
+    if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }); setLienGroupe(pe.lien_groupe || '') }
     else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '' }) }
     const { data: pa } = await supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre')
     setParcoursEdu(pa || [])
@@ -1521,6 +1522,39 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
               </div>
             </div>
+
+            {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
+            {profilEdu?.lien_groupe ? (
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+                <p style={{ margin: '0 0 8px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Groupe équipe</p>
+                <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#25D36615', border: '1px solid #25D36640', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#25D366', fontWeight: 700, fontSize: 13 }}>
+                  💬 Ouvrir le groupe
+                </a>
+                <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
+                  style={{ marginTop: 8, fontSize: 11, color: '#555', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Modifier le lien
+                </button>
+              </div>
+            ) : (
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+                <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700 }}>💬 Groupe équipe</p>
+                <p style={{ margin: '0 0 12px', fontSize: 12, color: '#555' }}>Colle le lien de ton groupe WhatsApp, Discord ou Slack.</p>
+                <input
+                  placeholder="https://chat.whatsapp.com/..."
+                  value={lienGroupe}
+                  onChange={e => setLienGroupe(e.target.value)}
+                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+                />
+                <button onClick={async () => {
+                  await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
+                  await chargerProfilEdu(userId)
+                }}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Sauvegarder
+                </button>
+              </div>
+            )}
 
             {/* ── Modal profil joueur ── */}
             {joueurProfil && (() => {

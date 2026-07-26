@@ -411,7 +411,7 @@ function DashboardJoueur() {
     const educateurIds = [...new Set(afData.map(a => a.educateur_id))]
     const { data: peData } = await supabase
       .from('profil_educateur')
-      .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe')
+      .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe, lien_groupe')
       .in('user_id', educateurIds)
 
     const peMap = {}
@@ -1189,6 +1189,12 @@ function DashboardJoueur() {
                                   <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
                                 )}
                               </div>
+                              {pe?.lien_groupe && (
+                                <a href={pe.lien_groupe} target="_blank" rel="noopener noreferrer"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#25D36615', border: '1px solid #25D36640', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#25D366', fontWeight: 700, fontSize: 13, marginTop: 12 }}>
+                                  💬 Rejoindre le groupe équipe
+                                </a>
+                              )}
                             </div>
                           </div>
                         ) : (
