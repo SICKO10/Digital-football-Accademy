@@ -2,53 +2,58 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!
+const SUPADATA_API_KEY = Deno.env.get('SUPADATA_API_KEY')!
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-async function getYouTubeTranscript(videoId: string): Promise<string> {
-  // Récupère la page YouTube pour trouver les pistes de sous-titres
-  const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-      'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-    }
-  })
-  const html = await pageRes.text()
+// ── Transcription YouTube via l'API Supadata (https://docs.supadata.ai/get-transcript) ──
+// Remplace l'ancien scraping direct de la page YouTube, trop fragile (structure de
+// page qui change, murs de consentement UE depuis une IP de datacenter).
+async function getYouTubeTranscript(youtubeUrl: string): Promise<string> {
+  const headers = { 'x-api-key': SUPADATA_API_KEY }
+  const params = new URLSearchParams({ url: youtubeUrl, text: 'true', lang: 'fr' })
 
-  // Extraire les pistes de captions du code source
-  const captionMatch = html.match(/"captionTracks":(\[.*?\])/)
-  if (!captionMatch) {
-    throw new Error('Aucune transcription disponible pour cette vidéo YouTube. Assure-toi que les sous-titres automatiques sont activés.')
+  const res = await fetch(`https://api.supadata.ai/v1/transcript?${params}`, { headers })
+  const data = await res.json()
+
+  if (res.status === 202 && data.jobId) {
+    return await pollSupadataJob(data.jobId, headers)
   }
 
-  const tracks = JSON.parse(captionMatch[1])
-  // Préférer le français, sinon prendre le premier disponible
-  const track = tracks.find((t: { languageCode?: string }) => t.languageCode === 'fr')
-    || tracks.find((t: { languageCode?: string }) => t.languageCode?.startsWith('fr'))
-    || tracks[0]
+  if (!res.ok) {
+    throw new Error(`Supadata error: ${data.error || res.statusText}`)
+  }
 
-  if (!track?.baseUrl) throw new Error('Piste de transcription introuvable.')
+  if (typeof data.content !== 'string') {
+    throw new Error('Réponse Supadata inattendue (pas de transcription textuelle).')
+  }
 
-  const xmlRes = await fetch(track.baseUrl)
-  const xml = await xmlRes.text()
+  return data.content
+}
 
-  // Parser le XML pour extraire le texte
-  const segments = [...xml.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
-    .map(m => m[1]
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&#39;/g, "'")
-      .replace(/&quot;/g, '"')
-      .replace(/<[^>]+>/g, '')
-      .trim()
-    )
-    .filter(Boolean)
+async function pollSupadataJob(jobId: string, headers: Record<string, string>): Promise<string> {
+  const deadline = Date.now() + 55_000 // reste sous la limite d'exécution de l'edge function
 
-  return segments.join(' ')
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 1000))
+    const res = await fetch(`https://api.supadata.ai/v1/transcript/${jobId}`, { headers })
+    const data = await res.json()
+
+    if (data.status === 'completed') {
+      if (typeof data.content !== 'string') {
+        throw new Error('Réponse Supadata inattendue (pas de transcription textuelle).')
+      }
+      return data.content
+    }
+    if (data.status === 'failed') {
+      throw new Error(`Échec de la transcription YouTube : ${data.error || 'raison inconnue'}`)
+    }
+  }
+
+  throw new Error('La transcription YouTube prend trop de temps (vidéo longue) — réessaie plus tard.')
 }
 
 function extractVideoId(url: string): string | null {
@@ -96,7 +101,7 @@ serve(async (req) => {
           status: 400, headers: { ...CORS, 'Content-Type': 'application/json' }
         })
       }
-      transcription = await getYouTubeTranscript(videoId)
+      transcription = await getYouTubeTranscript(youtubeUrl)
 
     } else if (fichier) {
       if (fichier.size > 25 * 1024 * 1024) {
