@@ -619,8 +619,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const inviterDirigeant = async () => {
     if (!newDirigeantEmail.trim()) return
     setInvitingDirigeant(true)
-    const { data, error } = await supabase.functions.invoke('inviter-dirigeant', {
-      body: { email: newDirigeantEmail.trim(), educateur_id: userId, permissions: newDirigeantPerms }
+    const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+      body: { email: newDirigeantEmail.trim(), role: 'dirigeant', educateur_id: userId, permissions: newDirigeantPerms }
     })
     if (error || data?.error) { alert('Erreur : ' + (data?.error || error.message)) }
     else { await chargerDirigeants(userId); setNewDirigeantEmail('') }
@@ -947,8 +947,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!email) return
     setInvitingId(j.id)
     try {
-      const { data, error } = await supabase.functions.invoke('inviter-joueur', {
-        body: { email, educateur_id: userId, equipe_joueur_id: j.id, prenom: j.prenom, nom: j.nom }
+      const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+        body: { email, role: 'joueur', educateur_id: userId, equipe_joueur_id: j.id, prenom: j.prenom, nom: j.nom }
       })
       if (error) {
         // supabase-js masque le vrai message derrière "Edge Function returned a non-2xx
