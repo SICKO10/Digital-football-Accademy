@@ -196,7 +196,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId }) {
+export default function GestionPrepPhysique({ educateurId, readOnly = false }) {
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
   const [selectedProgramme, setSelectedProgramme] = useState(null)
@@ -394,19 +394,26 @@ export default function GestionPrepPhysique({ educateurId }) {
           <h2 style={{ color: st.text, margin: 0 }}>🏋️ Préparation Physique</h2>
           <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>Programmes de vos joueurs</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <label style={{
-            padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
-            borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            📷 Scanner un programme
-            <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
-              onChange={handleScanProgramme} disabled={scanLoading} />
-          </label>
-          <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ Nouveau programme</button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <label style={{
+              padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
+              borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              📷 Scanner un programme
+              <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
+                onChange={handleScanProgramme} disabled={scanLoading} />
+            </label>
+            <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ Nouveau programme</button>
+          </div>
+        )}
       </div>
+      {readOnly && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+          👁 Mode lecture seule
+        </div>
+      )}
       {programmes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div>
@@ -429,10 +436,12 @@ export default function GestionPrepPhysique({ educateurId }) {
                   <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
                     {p.statut === 'actif' ? '● Actif' : 'Terminé'}
                   </span>
-                  <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
-                    style={{ padding: '6px 12px', background: '#2a0a0a', border: '1px solid #5a1a1a', borderRadius: 6, color: st.red, cursor: 'pointer', fontSize: 12 }}>
-                    🗑 Supprimer
-                  </button>
+                  {!readOnly && (
+                    <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
+                      style={{ padding: '6px 12px', background: '#2a0a0a', border: '1px solid #5a1a1a', borderRadius: 6, color: st.red, cursor: 'pointer', fontSize: 12 }}>
+                      🗑 Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -543,9 +552,9 @@ export default function GestionPrepPhysique({ educateurId }) {
                 return (
                   <div key={jour}>
                     <div style={{ color: st.muted, fontSize: 11, textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>{jourLabel}</div>
-                    <div onClick={() => setModalSeance({ semaine: sem, jour, seance })}
-                      style={{ background: seance ? (isRepos ? '#1a1a1a' : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? '#333' : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = st.green}
+                    <div onClick={() => !readOnly && setModalSeance({ semaine: sem, jour, seance })}
+                      style={{ background: seance ? (isRepos ? '#1a1a1a' : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? '#333' : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
+                      onMouseEnter={e => { if (!readOnly) e.currentTarget.style.borderColor = st.green }}
                       onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
                       {seance ? (
                         <>
@@ -553,9 +562,9 @@ export default function GestionPrepPhysique({ educateurId }) {
                           <div style={{ color: st.text, fontSize: 10, textAlign: 'center', lineHeight: 1.3 }}>{seance.titre}</div>
                           {seance.duree_cible && <div style={{ color: st.muted, fontSize: 10 }}>{seance.duree_cible}min</div>}
                         </>
-                      ) : <div style={{ color: st.border, fontSize: 20 }}>+</div>}
+                      ) : !readOnly && <div style={{ color: st.border, fontSize: 20 }}>+</div>}
                     </div>
-                    {seance && <button onClick={e => { e.stopPropagation(); supprimerSeance(seance.id) }} style={{ width: '100%', marginTop: 3, background: 'transparent', border: 'none', color: st.muted, fontSize: 10, cursor: 'pointer' }}>suppr.</button>}
+                    {seance && !readOnly && <button onClick={e => { e.stopPropagation(); supprimerSeance(seance.id) }} style={{ width: '100%', marginTop: 3, background: 'transparent', border: 'none', color: st.muted, fontSize: 10, cursor: 'pointer' }}>suppr.</button>}
                   </div>
                 )
               })}

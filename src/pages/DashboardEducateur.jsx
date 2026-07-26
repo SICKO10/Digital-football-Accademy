@@ -2547,9 +2547,15 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         {/* ===== COMPÉTITION ===== */}
         {activeSection === 'matchs' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: permissions?.competition === 'lecture' ? '0.5rem' : '1.5rem' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🏟️ Compétition</h1>
             </div>
+
+            {permissions?.competition === 'lecture' && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+                👁 Mode lecture seule
+              </div>
+            )}
 
             {/* Sous-onglets */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a' }}>
@@ -2563,13 +2569,17 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               <div style={{ maxWidth: '640px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>⚽ Résultats</h2>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #4ade8040', color: '#4ade80' }}>📸 Scanner</button>
-                    <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ Match</button>
-                  </div>
+                  {canEdit('competition') && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {canEdit('stats') && (
+                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #4ade8040', color: '#4ade80' }}>📸 Scanner</button>
+                      )}
+                      <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ Match</button>
+                    </div>
+                  )}
                 </div>
 
-                {showAddMatch && (
+                {showAddMatch && canEdit('competition') && (
                   <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                       <div><label style={st.label}>Date</label><input style={st.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
@@ -2618,8 +2628,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
                         </div>
 
-                        {/* Feuille de match */}
-                        {matchActif?.id === m.id && (
+                        {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
+                        {matchActif?.id === m.id && canEdit('stats') && (
                           <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Feuille de match</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -2805,14 +2815,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Entraînements</h1>
                 <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{entrainements.length} séance{entrainements.length !== 1 ? 's' : ''} · Clique sur une séance pour saisir les présences</p>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn('#60a5fa')}>📅 Planifier la saison</button>
-                <button onClick={() => { setShowAddEntrainement(true); setShowPlanificateur(false) }} style={st.btnSolid}>+ Séance</button>
-              </div>
+              {canEdit('entrainements') && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn('#60a5fa')}>📅 Planifier la saison</button>
+                  <button onClick={() => { setShowAddEntrainement(true); setShowPlanificateur(false) }} style={st.btnSolid}>+ Séance</button>
+                </div>
+              )}
             </div>
 
+            {permissions?.entrainements === 'lecture' && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+                👁 Mode lecture seule
+              </div>
+            )}
+
             {/* ── Ajout séance unique ── */}
-            {showAddEntrainement && (
+            {showAddEntrainement && canEdit('entrainements') && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
                 <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ Nouvelle séance</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
@@ -2827,7 +2845,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             )}
 
             {/* ── Planificateur récurrent ── */}
-            {showPlanificateur && (
+            {showPlanificateur && canEdit('entrainements') && (
               <div style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem' }}>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#60a5fa' }}>📅 Planifier la saison</p>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#555' }}>Choisis les jours récurrents et la période — toutes les séances seront créées automatiquement.</p>
@@ -2928,7 +2946,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             {nbPresents}/{total}
                           </span>
                         )}
-                        <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
+                        {canEdit('entrainements') && (
+                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
+                        )}
                         <span style={{ color: '#444', cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
                       </div>
                     </div>
@@ -2960,17 +2980,19 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 return (
                                   <div key={j.id}
                                     style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${hasPoint ? '#fbbf2460' : cfg.border}`, borderRadius: '8px', transition: 'all 0.15s', position: 'relative' }}>
-                                    <span onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ fontSize: '15px', flexShrink: 0, cursor: 'pointer' }}>{cfg.emoji}</span>
-                                    <div onClick={() => cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                                    <span onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ fontSize: '15px', flexShrink: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>{cfg.emoji}</span>
+                                    <div onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flex: 1, minWidth: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>
                                       <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
                                       <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
                                     </div>
-                                    <span
-                                      title={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
-                                      onClick={ev => { ev.stopPropagation(); togglePointSeance(e.id, j.id, hasPoint) }}
-                                      style={{ fontSize: '14px', cursor: 'pointer', opacity: hasPoint ? 1 : 0.2, flexShrink: 0, transition: 'opacity 0.15s' }}>
-                                      ⭐
-                                    </span>
+                                    {(canEdit('entrainements') || hasPoint) && (
+                                      <span
+                                        title={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
+                                        onClick={ev => { ev.stopPropagation(); canEdit('entrainements') && togglePointSeance(e.id, j.id, hasPoint) }}
+                                        style={{ fontSize: '14px', cursor: canEdit('entrainements') ? 'pointer' : 'default', opacity: hasPoint ? 1 : 0.2, flexShrink: 0, transition: 'opacity 0.15s' }}>
+                                        ⭐
+                                      </span>
+                                    )}
                                   </div>
                                 )
                               })}
@@ -2996,7 +3018,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         {activeSection === 'notes' && (
           <>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📝 Évaluations joueurs</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Note chaque joueur sur 4 critères. Active le toggle pour partager ta note avec le joueur dans son propre dashboard.</p>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>Note chaque joueur sur 4 critères. Active le toggle pour partager ta note avec le joueur dans son propre dashboard.</p>
+            {permissions?.notes === 'lecture' && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+                👁 Mode lecture seule
+              </div>
+            )}
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>Ajoute d'abord des joueurs dans "Mon équipe"</p></div>
             ) : (
@@ -3024,16 +3051,16 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             <label className="critere-label" style={st.label}>{label}</label>
                             <div className="etoiles" style={{ display: 'flex', gap: '4px' }}>
                               {[1,2,3,4,5].map(n => (
-                                <span key={n} onClick={() => setLocalNote(j.id, { [key]: n })}
-                                  style={{ cursor: 'pointer', fontSize: '20px', opacity: ln[key] >= n ? 1 : 0.2 }}>⭐</span>
+                                <span key={n} onClick={() => canEdit('notes') && setLocalNote(j.id, { [key]: n })}
+                                  style={{ cursor: canEdit('notes') ? 'pointer' : 'default', fontSize: '20px', opacity: ln[key] >= n ? 1 : 0.2 }}>⭐</span>
                               ))}
                             </div>
                           </div>
                         ))}
                       </div>
                       {/* Toggle visible par le joueur */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${ln.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: 'pointer' }}
-                        onClick={() => setLocalNote(j.id, { visible_joueur: !ln.visible_joueur })}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${ln.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: canEdit('notes') ? 'pointer' : 'default' }}
+                        onClick={() => canEdit('notes') && setLocalNote(j.id, { visible_joueur: !ln.visible_joueur })}>
                         <div style={{ width: '36px', height: '20px', background: ln.visible_joueur ? '#4ade80' : '#333', borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
                           <div style={{ position: 'absolute', top: '3px', left: ln.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
                         </div>
@@ -3050,11 +3077,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         <label style={st.label}>{ln.visible_joueur ? '💬 Commentaire (visible par le joueur)' : '💬 Commentaire (privé)'}</label>
                         <textarea value={ln.commentaire} onChange={e => setLocalNote(j.id, { commentaire: e.target.value })}
                           placeholder="Points forts, axes de progression, comportement..."
+                          disabled={!canEdit('notes')}
                           style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
                       </div>
-                      <button onClick={() => sauvegarderNote(j.id, ln)} disabled={savingNote} style={st.btnSolid}>
-                        {savingNote ? 'Sauvegarde...' : '💾 Sauvegarder'}
-                      </button>
+                      {canEdit('notes') && (
+                        <button onClick={() => sauvegarderNote(j.id, ln)} disabled={savingNote} style={st.btnSolid}>
+                          {savingNote ? 'Sauvegarde...' : '💾 Sauvegarder'}
+                        </button>
+                      )}
                     </div>
                   )
                 })}
@@ -3720,7 +3750,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} />
+          <GestionPrepPhysique educateurId={userId} readOnly={!canEdit('prep_physique')} />
         )}
 
         {activeSection === 'clotures_saison' && (
