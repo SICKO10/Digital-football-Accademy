@@ -13,6 +13,9 @@ const COULEURS = [
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
+const lerp = (a, b, t) => a + (b - a) * t
+const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+
 export const DISPOSITIFS = {
   '4-3-3': [
     { num: 1, x: 0.05, y: 0.50 },
@@ -252,6 +255,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [etapeActive, setEtapeActive] = useState(0)
   const [playing, setPlaying] = useState(false)
   const playIntervalRef = useRef(null)
+  const animRef = useRef(null)
+  const stepTimeoutRef = useRef(null)
+  const stopRequestedRef = useRef(false)
+  const [animSpeed, setAnimSpeed] = useState(1)
+  const [stepDurations, setStepDurations] = useState({})   // { [index]: ms }
+  const [showMovementArrows, setShowMovementArrows] = useState(true)
 
   const [nomSchema, setNomSchema] = useState('')
   const [schemas, setSchemas] = useState([])
@@ -510,6 +519,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   }
 
   useEffect(() => () => clearInterval(playIntervalRef.current), [])
+  useEffect(() => () => { cancelAnimationFrame(animRef.current); clearTimeout(stepTimeoutRef.current) }, [])
 
   const allerEtape = (index) => {
     if (index === etapeActive) return
@@ -528,21 +538,115 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setHistory([]); setFuture([]); setSelectedId(null)
   }
 
+  const dupliquerEtape = () => {
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    const copy = synced[etapeActive].map(el => ({ ...el }))
+    const newSeqs = [...synced]
+    newSeqs.splice(etapeActive + 1, 0, copy)
+    setSequences(newSeqs)
+    setEtapeActive(etapeActive + 1)
+    setElements(copy)
+    setHistory([]); setFuture([]); setSelectedId(null)
+  }
+
+  const supprimerEtape = (idx) => {
+    if (sequences.length <= 1) return
+    const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
+    const newSeqs = synced.filter((_, i) => i !== idx)
+    const newIdx = Math.min(idx, newSeqs.length - 1)
+    setSequences(newSeqs)
+    setEtapeActive(newIdx)
+    setElements(newSeqs[newIdx] || [])
+    setHistory([]); setFuture([]); setSelectedId(null)
+    // Réindexer les durées
+    setStepDurations(prev => {
+      const next = {}
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = parseInt(k)
+        if (ki < idx) next[ki] = v
+        else if (ki > idx) next[ki - 1] = v
+      })
+      return next
+    })
+  }
+
   const lire = () => {
     if (sequences.length < 2 || playing) return
+    cancelAnimationFrame(animRef.current)
+    clearInterval(playIntervalRef.current)
+    clearTimeout(stepTimeoutRef.current)
+    stopRequestedRef.current = false
+
     const synced = sequences.map((s, i) => (i === etapeActive ? elements : s))
     setSequences(synced)
     setPlaying(true)
     setSelectedId(null)
-    let i = etapeActive
-    playIntervalRef.current = setInterval(() => {
-      i = (i + 1) % synced.length
-      setEtapeActive(i)
-      setElements(synced[i] || [])
-    }, 1500)
+
+    // Capturer au moment du play (évite les stale closures dans rAF)
+    const seqs = synced
+    const spd = animSpeed
+    const durs = stepDurations
+
+    const animateStep = (fromIdx) => {
+      if (stopRequestedRef.current) return
+      const toIdx = fromIdx + 1
+      if (toIdx >= seqs.length) {
+        setPlaying(false)
+        setEtapeActive(fromIdx)
+        setElements(seqs[fromIdx])
+        return
+      }
+
+      const duration = (durs[fromIdx] || 2000) / spd
+      const fromElems = seqs[fromIdx]
+      const toElems = seqs[toIdx]
+      const fromIds = new Set(fromElems.map(e => e.id))
+      const startTime = performance.now()
+      setEtapeActive(fromIdx)
+
+      const frame = (now) => {
+        const raw = Math.min((now - startTime) / duration, 1)
+        const t = easeInOut(raw)
+
+        const interpolated = fromElems.map(el => {
+          // Joueurs et objets → interpolation de position
+          if (el.type === 'joueur' || el.type === 'objet') {
+            const target = toElems.find(e => e.id === el.id)
+            if (!target) return el
+            return { ...el, x: lerp(el.x, target.x, t), y: lerp(el.y, target.y, t) }
+          }
+          // Flèches/zones → bascule à mi-transition
+          return raw >= 0.5 ? (toElems.find(e => e.id === el.id) || el) : el
+        })
+
+        // Éléments présents dans toElems mais absents de fromElems
+        const newElems = toElems.filter(e => !fromIds.has(e.id))
+        setElements([...interpolated, ...newElems])
+
+        if (raw < 1) {
+          animRef.current = requestAnimationFrame(frame)
+        } else {
+          setElements(toElems)
+          setEtapeActive(toIdx)
+          if (stopRequestedRef.current) return
+          // Petite pause entre étapes
+          stepTimeoutRef.current = setTimeout(() => animateStep(toIdx), 150)
+        }
+      }
+
+      animRef.current = requestAnimationFrame(frame)
+    }
+
+    animateStep(etapeActive)
   }
 
-  const stopLecture = () => { clearInterval(playIntervalRef.current); setPlaying(false) }
+  const stopLecture = () => {
+    stopRequestedRef.current = true
+    cancelAnimationFrame(animRef.current)
+    clearInterval(playIntervalRef.current)
+    clearTimeout(stepTimeoutRef.current)
+    setPlaying(false)
+  }
 
   const exportGIF = async () => {
     if (sequences.length < 2) { alert('Ajoute au moins 2 étapes pour exporter une animation.'); return }
@@ -885,6 +989,30 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 anchorSize={8}
               />
             </Layer>
+
+            {/* ── Layer flèches de déplacement vers l'étape suivante ── */}
+            {showMovementArrows && !playing && sequences.length > 1 && etapeActive < sequences.length - 1 && (
+              <Layer listening={false}>
+                {elements.filter(el => el.type === 'joueur').map(el => {
+                  const nextElems = sequences[etapeActive + 1] || []
+                  const target = nextElems.find(e => e.id === el.id)
+                  if (!target) return null
+                  const dx = target.x - el.x
+                  const dy = target.y - el.y
+                  if (Math.sqrt(dx * dx + dy * dy) < 10) return null
+                  const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
+                  return (
+                    <Arrow key={`mv-${el.id}`}
+                      points={[el.x, el.y, target.x, target.y]}
+                      stroke={color} fill={color}
+                      strokeWidth={2.5} opacity={0.65}
+                      dash={[8, 5]}
+                      pointerLength={10} pointerWidth={8}
+                    />
+                  )
+                }).filter(Boolean)}
+              </Layer>
+            )}
           </Stage>
 
           {/* Actions */}
@@ -897,20 +1025,81 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           </div>
 
           {/* Séquences */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
-            {sequences.map((_, i) => (
-              <button key={i} onClick={() => allerEtape(i)} disabled={playing}
-                style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : '1px solid #222', background: i === etapeActive ? '#4ade8020' : '#111', color: i === etapeActive ? '#4ade80' : '#aaa', fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
-                Étape {i + 1}
+          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+
+            {/* Ligne 1 : étapes + boutons navigation */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+              {sequences.map((_, i) => (
+                <button key={i} onClick={() => allerEtape(i)} disabled={playing}
+                  style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : '1px solid #222', background: i === etapeActive ? '#4ade8020' : '#111', color: i === etapeActive ? '#4ade80' : '#aaa', fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
+                  Étape {i + 1}
+                </button>
+              ))}
+              <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>+ Étape</button>
+              <button onClick={dupliquerEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa' }}>📋 Dupliquer</button>
+              {sequences.length > 1 && (
+                <button onClick={() => supprimerEtape(etapeActive)} disabled={playing}
+                  style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>
+                  🗑 Étape
+                </button>
+              )}
+            </div>
+
+            {/* Ligne 2 : lecture + prev/next + vitesse + durée + flèches */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => { stopLecture(); allerEtape(0) }} disabled={playing || etapeActive === 0}
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}>⏮</button>
+              <button onClick={() => allerEtape(etapeActive - 1)} disabled={playing || etapeActive === 0}
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}>◀</button>
+
+              {!playing ? (
+                <button onClick={lire} disabled={sequences.length < 2}
+                  style={{ ...btnStyle(false), width: 'auto', padding: '0 16px', color: '#4ade80', opacity: sequences.length < 2 ? 0.4 : 1, fontWeight: 700 }}>
+                  ▶ Lire
+                </button>
+              ) : (
+                <button onClick={stopLecture}
+                  style={{ ...btnStyle(false), width: 'auto', padding: '0 16px', color: '#ef4444', fontWeight: 700 }}>
+                  ⏹ Stop
+                </button>
+              )}
+
+              <button onClick={() => allerEtape(etapeActive + 1)} disabled={playing || etapeActive >= sequences.length - 1}
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}>▶</button>
+              <button onClick={() => { stopLecture(); allerEtape(sequences.length - 1) }} disabled={playing || etapeActive >= sequences.length - 1}
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}>⏭</button>
+
+              {/* Vitesse */}
+              <div style={{ display: 'flex', gap: 3, background: '#0a0a0a', borderRadius: 8, padding: 3 }}>
+                {[0.5, 1, 1.5, 2].map(s => (
+                  <button key={s} onClick={() => setAnimSpeed(s)}
+                    style={{ ...btnStyle(animSpeed === s), width: 'auto', padding: '0 8px', fontSize: 11, height: 30 }}>
+                    {s}x
+                  </button>
+                ))}
+              </div>
+
+              {/* Durée de l'étape active */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 11, color: '#555' }}>Durée :</span>
+                <input type="number" min={300} max={8000} step={100}
+                  value={stepDurations[etapeActive] ?? 2000}
+                  onChange={e => setStepDurations(prev => ({ ...prev, [etapeActive]: Math.max(300, parseInt(e.target.value) || 2000) }))}
+                  style={{ width: 68, background: '#111', border: '1px solid #222', borderRadius: 6, padding: '4px 6px', color: '#aaa', fontSize: 11, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                <span style={{ fontSize: 11, color: '#555' }}>ms</span>
+              </div>
+
+              {/* Toggle flèches de déplacement */}
+              <button onClick={() => setShowMovementArrows(v => !v)}
+                style={{ ...btnStyle(showMovementArrows), width: 'auto', padding: '0 12px', fontSize: 11 }}>
+                {showMovementArrows ? '↗ Flèches ON' : '↗ Flèches OFF'}
               </button>
-            ))}
-            <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>+ Ajouter étape</button>
-            {!playing ? (
-              <button onClick={lire} disabled={sequences.length < 2} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#4ade80', opacity: sequences.length < 2 ? 0.4 : 1 }}>▶ Lire</button>
-            ) : (
-              <button onClick={stopLecture} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>⏹ Stop</button>
-            )}
-            <button onClick={exportGIF} disabled={sequences.length < 2 || playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa', opacity: sequences.length < 2 ? 0.4 : 1 }}>🎞️ Export GIF</button>
+
+              <button onClick={exportGIF} disabled={sequences.length < 2 || playing}
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa', opacity: sequences.length < 2 ? 0.4 : 1 }}>
+                🎞️ Export GIF
+              </button>
+            </div>
           </div>
 
           {isModal ? (
