@@ -95,162 +95,271 @@ async function genererPDF(data) {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-  const VERT = [74, 222, 128]
-  const NOIR = [10, 10, 10]
-  const GRIS = [80, 80, 80]
-  const BLANC = [255, 255, 255]
   const pageW = 210
-  const margin = 20
+  const margin = 18
   const contentW = pageW - margin * 2
 
-  let y = 0
+  // Couleurs
+  const NOIR   = [10, 10, 10]
+  const VERT   = [74, 222, 128]
+  const BLANC  = [255, 255, 255]
+  const GRIS   = [120, 120, 120]
+  const GRIS_F = [240, 240, 240]
+  const ROUGE  = [239, 100, 100]
+  const TEXTE  = [40, 40, 40]
 
-  // ── En-tête ────────────────────────────────────────────────────────────
-  doc.setFillColor(...NOIR)
-  doc.rect(0, 0, pageW, 45, 'F')
-
-  doc.setFillColor(...VERT)
-  doc.rect(0, 0, 6, 45, 'F')
-
-  doc.setTextColor(...VERT)
-  doc.setFontSize(18)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Digital Football', 14, 18)
-
-  doc.setTextColor(...BLANC)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Rapport d\'analyse', 14, 27)
-
-  doc.setFontSize(9)
-  doc.setTextColor(160, 160, 160)
-  doc.text(`${data.typeAnalyse}  ·  ${data.date}`, 14, 36)
-
-  // Note globale
-  if (data.rapport.note_globale) {
-    doc.setFillColor(...VERT)
-    doc.roundedRect(pageW - 50, 8, 36, 28, 4, 4, 'F')
-    doc.setTextColor(...NOIR)
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.text(`${data.rapport.note_globale}/10`, pageW - 43, 26)
+  const mention = (n) => {
+    if (!n) return '—'
+    if (n >= 9) return 'EXCELLENT'
+    if (n >= 7) return 'TRÈS BIEN'
+    if (n >= 5) return 'SATISFAISANT'
+    if (n >= 3) return 'À AMÉLIORER'
+    return 'INSUFFISANT'
   }
 
-  y = 55
+  const MOIS = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN',
+                'JUILLET','AOÛT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DÉCEMBRE']
+  const [j, m, a] = (data.date || '').split('/')
+  const dateLong = j && m && a ? `${j} ${MOIS[parseInt(m)-1]} ${a}` : data.date || ''
 
-  // ── Nom du joueur ──────────────────────────────────────────────────────
-  doc.setTextColor(...NOIR)
-  doc.setFontSize(22)
-  doc.setFont('helvetica', 'bold')
-  doc.text(data.nomJoueur, margin, y)
-  y += 10
-
-  // ── Résumé ─────────────────────────────────────────────────────────────
-  if (data.rapport.resume) {
-    doc.setFillColor(245, 245, 245)
-    const resumeLines = doc.splitTextToSize(data.rapport.resume, contentW - 10)
-    const resumeH = resumeLines.length * 6 + 12
-    doc.roundedRect(margin, y, contentW, resumeH, 3, 3, 'F')
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...GRIS)
-    doc.text('RÉSUMÉ', margin + 6, y + 8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...NOIR)
-    doc.text(resumeLines, margin + 6, y + 14)
-    y += resumeH + 8
-  }
-
-  // ── Points forts ───────────────────────────────────────────────────────
-  if (data.rapport.points_forts?.length) {
-    doc.setFillColor(...VERT)
-    doc.rect(margin, y, 4, data.rapport.points_forts.length * 8 + 16, 'F')
-    doc.setFontSize(11)
+  const drawHeader = (rightLabel) => {
+    doc.setFillColor(...NOIR)
+    doc.rect(0, 0, pageW, 24, 'F')
+    // Logo gauche
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...VERT)
-    doc.text('✓ Points forts', margin + 8, y + 8)
-    y += 14
-    doc.setFontSize(10)
+    doc.text('DIGITAL', margin, 10)
+    doc.setTextColor(...BLANC)
+    doc.text('FOOTBALL', margin, 17)
+    // Label droit
+    doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...NOIR)
-    data.rapport.points_forts.forEach((pt) => {
-      const lines = doc.splitTextToSize(`• ${pt}`, contentW - 12)
-      doc.text(lines, margin + 8, y)
-      y += lines.length * 6 + 2
-    })
-    y += 6
+    doc.setTextColor(130, 130, 130)
+    doc.text('RAPPORT D\'ANALYSE', pageW - margin, 10, { align: 'right' })
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...BLANC)
+    doc.text(rightLabel, pageW - margin, 17, { align: 'right' })
   }
 
-  // ── Axes d'amélioration ────────────────────────────────────────────────
-  if (data.rapport.axes_amelioration?.length) {
-    doc.setFillColor(239, 68, 68)
-    doc.rect(margin, y, 4, data.rapport.axes_amelioration.length * 8 + 16, 'F')
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(239, 68, 68)
-    doc.text('↗ Axes d\'amélioration', margin + 8, y + 8)
-    y += 14
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...NOIR)
-    data.rapport.axes_amelioration.forEach((ax) => {
-      const lines = doc.splitTextToSize(`• ${ax}`, contentW - 12)
-      doc.text(lines, margin + 8, y)
-      y += lines.length * 6 + 2
-    })
-    y += 6
-  }
-
-  // ── Conseils ───────────────────────────────────────────────────────────
-  if (data.rapport.conseils) {
-    doc.setFillColor(245, 245, 245)
-    const conseilLines = doc.splitTextToSize(data.rapport.conseils, contentW - 10)
-    const conseilH = conseilLines.length * 6 + 12
-    doc.roundedRect(margin, y, contentW, conseilH, 3, 3, 'F')
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...GRIS)
-    doc.text('CONSEILS COACH', margin + 6, y + 8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...NOIR)
-    doc.text(conseilLines, margin + 6, y + 14)
-    y += conseilH + 8
-  }
-
-  // ── Transcription (nouvelle page si besoin) ────────────────────────────
-  if (data.transcription && y > 220) doc.addPage()
-  else if (data.transcription) y += 4
-
-  if (data.transcription) {
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...GRIS)
-    doc.text('TRANSCRIPTION COMPLÈTE', margin, y)
-    y += 6
+  const drawFooter = (page, total) => {
+    doc.setFillColor(...NOIR)
+    doc.rect(0, 284, pageW, 13, 'F')
+    doc.setFontSize(6)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
-    const transLines = doc.splitTextToSize(data.transcription, contentW)
-    transLines.forEach((line) => {
-      if (y > 270) { doc.addPage(); y = 20 }
-      doc.text(line, margin, y)
-      y += 5
-    })
+    doc.text('DIGITAL FOOTBALL • RAPPORT D\'ANALYSE CONFIDENTIEL', margin, 292)
+    doc.text(`0${page} / 0${total}`, pageW - margin, 292, { align: 'right' })
   }
 
-  // ── Footer ─────────────────────────────────────────────────────────────
-  const pages = doc.getNumberOfPages()
-  for (let i = 1; i <= pages; i++) {
-    doc.setPage(i)
-    doc.setFillColor(245, 245, 245)
-    doc.rect(0, 285, pageW, 12, 'F')
-    doc.setFontSize(8)
+  // ════════════════════════════════════════════════════════════
+  // PAGE 1
+  // ════════════════════════════════════════════════════════════
+  drawHeader('BILAN DE MATCH')
+
+  let y = 34
+
+  // ── Bande stats ──────────────────────────────────────────────
+  const stats = [
+    { label: 'TYPE',    val: 'BILAN DE MATCH' },
+    { label: 'NOTE',    val: `${data.rapport?.note_globale ?? '—'}/10` },
+    { label: 'DATE',    val: dateLong },
+    { label: 'MENTION', val: mention(data.rapport?.note_globale) },
+  ]
+  const sw = contentW / stats.length
+  stats.forEach((s, i) => {
+    const x = margin + i * sw
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRIS)
-    doc.text('Digital Football — Rapport d\'analyse confidentiel', margin, 292)
-    doc.text(`Page ${i}/${pages}`, pageW - margin, 292, { align: 'right' })
+    doc.text(s.label, x, y)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...NOIR)
+    doc.text(s.val, x, y + 6)
+  })
+  y += 18
+
+  // Ligne
+  doc.setDrawColor(210, 210, 210)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, pageW - margin, y)
+  y += 10
+
+  // ── Nom du joueur ────────────────────────────────────────────
+  const parts = (data.nomJoueur || 'JOUEUR').toUpperCase().split(' ')
+  const prenom = parts[0] || ''
+  const nomFam = parts.slice(1).join(' ')
+  doc.setFontSize(32)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...NOIR)
+  doc.text(prenom, margin, y)
+  y += 12
+  if (nomFam) {
+    doc.text(nomFam, margin, y)
+    y += 12
   }
 
-  const nomFichier = `rapport_${data.nomJoueur.replace(/\s+/g, '_').toLowerCase()}_${data.date.replace(/\//g, '-')}.pdf`
-  doc.save(nomFichier)
+  // Nom du coach
+  if (data.nomCoach) {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...GRIS)
+    doc.text(`Analysé par ${data.nomCoach}`, margin, y)
+    y += 10
+  } else {
+    y += 4
+  }
+
+  // ── SYNTHÈSE ─────────────────────────────────────────────────
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...VERT)
+  doc.text('SYNTHÈSE', margin, y)
+  y += 5
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...TEXTE)
+  const resumeL = doc.splitTextToSize(data.rapport?.resume || '', contentW)
+  doc.text(resumeL, margin, y)
+  y += resumeL.length * 4.8 + 8
+
+  // Ligne
+  doc.setDrawColor(210, 210, 210)
+  doc.line(margin, y, pageW - margin, y)
+  y += 8
+
+  // ── POINTS FORTS | AXES (2 colonnes) ─────────────────────────
+  const colW = (contentW - 8) / 2
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...VERT)
+  doc.text('POINTS FORTS', margin, y)
+  doc.setTextColor(...ROUGE)
+  doc.text('AXES DE PROGRESSION', margin + colW + 8, y)
+  y += 6
+
+  const pts = data.rapport?.points_forts || []
+  const axes = data.rapport?.axes_amelioration || []
+  const maxR = Math.max(pts.length, axes.length)
+  for (let i = 0; i < maxR; i++) {
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...TEXTE)
+    if (pts[i])  doc.text(`• ${pts[i]}`,  margin,           y)
+    if (axes[i]) doc.text(`• ${axes[i]}`, margin + colW + 8, y)
+    y += 6
+  }
+
+  y += 4
+  doc.setDrawColor(210, 210, 210)
+  doc.line(margin, y, pageW - margin, y)
+  y += 8
+
+  // ── CONSEIL DU COACH ─────────────────────────────────────────
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...NOIR)
+  doc.text('CONSEIL DU COACH', margin, y)
+  y += 5
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...TEXTE)
+  const consL = doc.splitTextToSize(data.rapport?.conseils || '', contentW)
+  doc.text(consL, margin, y)
+
+  drawFooter(1, 2)
+
+  // ════════════════════════════════════════════════════════════
+  // PAGE 2
+  // ════════════════════════════════════════════════════════════
+  doc.addPage()
+  drawHeader('ANALYSE DU MATCH')
+
+  y = 34
+
+  // Titre
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...NOIR)
+  doc.text('ANALYSE DU MATCH', margin, y)
+  y += 6
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRIS)
+  doc.text('Lecture tactique et recommandations prioritaires', margin, y)
+  y += 12
+
+  // ── Sections tactiques ───────────────────────────────────────
+  const sections = data.rapport?.sections_analyse || []
+  sections.forEach((sec, i) => {
+    // Cercle numéro
+    doc.setFillColor(...NOIR)
+    doc.circle(margin + 4.5, y, 4.5, 'F')
+    doc.setFontSize(7.5)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...BLANC)
+    doc.text(String(i + 1).padStart(2, '0'), margin + 4.5, y + 2, { align: 'center' })
+
+    // Titre section
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...NOIR)
+    doc.text(sec.titre || '', margin + 13, y + 1.5)
+    y += 7
+
+    // Description
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...TEXTE)
+    const descL = doc.splitTextToSize(sec.description || '', contentW - 13)
+    doc.text(descL, margin + 13, y)
+    y += descL.length * 4.8 + 3
+
+    // Repère
+    if (sec.repere) {
+      doc.setFillColor(...GRIS_F)
+      const repL = doc.splitTextToSize(`Repère : ${sec.repere}`, contentW - 20)
+      const rh = repL.length * 4.5 + 5
+      doc.rect(margin + 13, y - 1, contentW - 13, rh, 'F')
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(...GRIS)
+      doc.text(repL, margin + 16, y + 3)
+      y += rh + 6
+    }
+
+    // Séparateur entre sections
+    if (i < sections.length - 1) {
+      doc.setDrawColor(220, 220, 220)
+      doc.line(margin + 13, y - 2, pageW - margin, y - 2)
+      y += 2
+    }
+  })
+
+  // ── PRIORITÉ D'ENTRAÎNEMENT ──────────────────────────────────
+  if (data.rapport?.priorite) {
+    y += 6
+    const prioL = doc.splitTextToSize(data.rapport.priorite, contentW - 16)
+    const ph = prioL.length * 5 + 14
+    doc.setFillColor(...NOIR)
+    doc.roundedRect(margin, y, contentW, ph, 2, 2, 'F')
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...VERT)
+    doc.text('PRIORITÉ D\'ENTRAÎNEMENT', margin + 8, y + 8)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...BLANC)
+    doc.text(prioL, margin + 8, y + 14)
+  }
+
+  drawFooter(2, 2)
+
+  // ── Téléchargement ───────────────────────────────────────────
+  const nom = `rapport_${(data.nomJoueur || 'joueur').replace(/\s+/g, '_').toLowerCase()}_${(data.date || '').replace(/\//g, '-')}.pdf`
+  doc.save(nom)
 }
 
 const TAILLE_MAX = 25 * 1024 * 1024 // limite Groq Whisper
@@ -259,6 +368,7 @@ const TAILLE_MAX = 25 * 1024 * 1024 // limite Groq Whisper
 export default function AnalyseurIA() {
   const [fichier, setFichier] = useState(null)
   const [nomJoueur, setNomJoueur] = useState('')
+  const [nomCoach, setNomCoach] = useState('')
   const [source, setSource] = useState('upload') // 'upload' | 'youtube'
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -324,7 +434,7 @@ export default function AnalyseurIA() {
       if (data.error) throw new Error(data.error)
 
       setEtape('Rapport généré ✓')
-      setResultat(data)
+      setResultat({ ...data, nomCoach: nomCoach || '' })
     } catch (err) {
       setErreur(err.message || 'Erreur inconnue')
     }
@@ -435,6 +545,19 @@ export default function AnalyseurIA() {
             />
           </div>
 
+          {/* Nom coach */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>
+              Nom du coach
+            </label>
+            <input
+              value={nomCoach}
+              onChange={e => setNomCoach(e.target.value)}
+              placeholder="Ex : Kevin Amorim"
+              style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+
           {/* Bouton analyser */}
           <button
             onClick={analyser}
@@ -471,7 +594,7 @@ export default function AnalyseurIA() {
                 style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 📄 Télécharger PDF
               </button>
-              <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setEtape('') }}
+              <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setNomCoach(''); setEtape('') }}
                 style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Nouvelle analyse
               </button>

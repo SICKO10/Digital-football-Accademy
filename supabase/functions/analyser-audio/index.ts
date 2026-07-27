@@ -141,13 +141,37 @@ Voici la transcription : """${transcription}"""
 
 Génère un rapport structuré en JSON avec exactement ces clés :
 {
-  "resume": "Résumé global de l'analyse en 2-3 phrases",
+  "resume": "Synthèse globale en 2-3 phrases, style professionnel, tu du joueur",
   "points_forts": ["point 1", "point 2", "point 3"],
   "axes_amelioration": ["axe 1", "axe 2", "axe 3"],
-  "conseils": "Conseils pratiques du coach pour la prochaine séance",
-  "note_globale": 7
+  "conseils": "Conseil du coach en 2-3 phrases concrètes pour les prochaines séances",
+  "note_globale": 7,
+  "sections_analyse": [
+    {
+      "titre": "POSITIONNEMENT",
+      "description": "Observation précise sur le positionnement du joueur, 1-2 phrases",
+      "repere": "phrase courte d'un repère pratique à retenir"
+    },
+    {
+      "titre": "TRANSITION",
+      "description": "Observation sur les transitions offensives/défensives, 1-2 phrases",
+      "repere": "phrase courte d'un repère pratique à retenir"
+    },
+    {
+      "titre": "PRISE DE DÉCISION",
+      "description": "Observation sur la lecture du jeu et les choix techniques, 1-2 phrases",
+      "repere": "phrase courte d'un repère pratique à retenir"
+    },
+    {
+      "titre": "GESTION DE L'ESPACE",
+      "description": "Observation sur l'utilisation et la création d'espaces, 1-2 phrases",
+      "repere": "phrase courte d'un repère pratique à retenir"
+    }
+  ],
+  "priorite": "Une seule phrase d'action prioritaire à travailler à l'entraînement"
 }
 note_globale est un entier de 1 à 10.
+Les titres des sections peuvent varier selon le contenu de l'analyse (ex: PRESSING, DUELS, RELANCE...).
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`
 
     const llmRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
