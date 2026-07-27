@@ -2383,6 +2383,18 @@ function DashboardJoueur() {
                           Voir l'analyse
                         </a>
                       )}
+                      {demande.rapport_pdf_url && (
+                        <a href={demande.rapport_pdf_url} target="_blank" rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: '#4ade8015', border: '1px solid #4ade8030',
+                            color: '#4ade80', borderRadius: 8, padding: '7px 14px',
+                            fontSize: 12, fontWeight: 700, textDecoration: 'none',
+                            fontFamily: 'Inter, sans-serif',
+                          }}>
+                          📄 Télécharger mon rapport
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -374,6 +374,7 @@ export default function AnalyseurIA() {
   const [loading, setLoading] = useState(false)
   const [etape, setEtape] = useState('')  // message d'état
   const [resultat, setResultat] = useState(null)
+  const [enEdition, setEnEdition] = useState(false)
   const [erreur, setErreur] = useState('')
   const inputRef = useRef(null)
 
@@ -447,6 +448,30 @@ export default function AnalyseurIA() {
   }
 
   const peutAnalyser = source === 'upload' ? !!fichier : !!youtubeUrl.trim()
+
+  const majRapport = (key, val) => setResultat(prev => ({ ...prev, rapport: { ...prev.rapport, [key]: val } }))
+
+  const majPointFort = (i, val) => {
+    const arr = [...(resultat?.rapport?.points_forts || [])]
+    arr[i] = val
+    majRapport('points_forts', arr)
+  }
+  const ajouterPointFort = () => majRapport('points_forts', [...(resultat?.rapport?.points_forts || []), ''])
+  const supprimerPointFort = (i) => majRapport('points_forts', (resultat?.rapport?.points_forts || []).filter((_, j) => j !== i))
+
+  const majAxe = (i, val) => {
+    const arr = [...(resultat?.rapport?.axes_amelioration || [])]
+    arr[i] = val
+    majRapport('axes_amelioration', arr)
+  }
+  const ajouterAxe = () => majRapport('axes_amelioration', [...(resultat?.rapport?.axes_amelioration || []), ''])
+  const supprimerAxe = (i) => majRapport('axes_amelioration', (resultat?.rapport?.axes_amelioration || []).filter((_, j) => j !== i))
+
+  const majSection = (i, key, val) => {
+    const arr = [...(resultat?.rapport?.sections_analyse || [])]
+    arr[i] = { ...arr[i], [key]: val }
+    majRapport('sections_analyse', arr)
+  }
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
@@ -589,64 +614,144 @@ export default function AnalyseurIA() {
               <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: '#4ade80' }}>✓ Rapport généré</p>
               <p style={{ margin: '3px 0 0', fontSize: 13, color: '#888' }}>{resultat.nomJoueur} · {resultat.typeAnalyse} · {resultat.date}</p>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setEnEdition(!enEdition)}
+                style={{ background: enEdition ? '#f59e0b' : '#1a1a1a', border: '1px solid #2a2a2a', color: enEdition ? '#000' : '#888', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {enEdition ? '✓ Fin édition' : '✏️ Modifier'}
+              </button>
               <button onClick={telechargerPDF}
                 style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 📄 Télécharger PDF
               </button>
-              <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setNomCoach(''); setEtape('') }}
+              <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setNomCoach(''); setEtape(''); setEnEdition(false) }}
                 style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Nouvelle analyse
               </button>
             </div>
           </div>
 
-          {/* Note */}
-          {resultat.rapport.note_globale && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: '#888' }}>Note globale</span>
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#4ade80' }}>{resultat.rapport.note_globale}<span style={{ fontSize: 13, color: '#555' }}>/10</span></span>
-            </div>
-          )}
+          {/* Note globale */}
+          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#888' }}>Note globale</span>
+            {enEdition ? (
+              <input type="number" min="1" max="10"
+                value={resultat.rapport?.note_globale || ''}
+                onChange={e => majRapport('note_globale', parseInt(e.target.value) || 0)}
+                style={{ width: 60, background: '#0a0a0a', border: '1px solid #4ade80', borderRadius: 6, padding: '4px 8px', color: '#4ade80', fontSize: 18, fontWeight: 800, textAlign: 'center', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+            ) : (
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#4ade80' }}>{resultat.rapport?.note_globale}<span style={{ fontSize: 13, color: '#555' }}>/10</span></span>
+            )}
+          </div>
 
           {/* Résumé */}
-          {resultat.rapport.resume && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
-              <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Résumé</p>
-              <p style={{ margin: 0, fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport.resume}</p>
-            </div>
-          )}
+          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Résumé</p>
+            {enEdition ? (
+              <textarea value={resultat.rapport?.resume || ''} onChange={e => majRapport('resume', e.target.value)} rows={3}
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+            ) : (
+              <p style={{ margin: 0, fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport?.resume}</p>
+            )}
+          </div>
 
           {/* Points forts */}
-          {resultat.rapport.points_forts?.length > 0 && (
-            <div style={{ background: '#111', border: '1px solid #4ade8030', borderLeft: '3px solid #4ade80', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>✓ Points forts</p>
-              {resultat.rapport.points_forts.map((pt, i) => (
-                <p key={i} style={{ margin: '0 0 6px', fontSize: 13, color: '#ccc' }}>• {pt}</p>
-              ))}
-            </div>
-          )}
+          <div style={{ background: '#111', border: '1px solid #4ade8030', borderLeft: '3px solid #4ade80', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>✓ Points forts</p>
+            {(resultat.rapport?.points_forts || []).map((pt, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                {enEdition ? (
+                  <>
+                    <input value={pt} onChange={e => majPointFort(i, e.target.value)}
+                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                    <button onClick={() => supprimerPointFort(i)}
+                      style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
+                  </>
+                ) : (
+                  <p style={{ margin: 0, fontSize: 13, color: '#ccc' }}>• {pt}</p>
+                )}
+              </div>
+            ))}
+            {enEdition && (
+              <button onClick={ajouterPointFort}
+                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
+                + Ajouter
+              </button>
+            )}
+          </div>
 
-          {/* Axes */}
-          {resultat.rapport.axes_amelioration?.length > 0 && (
-            <div style={{ background: '#111', border: '1px solid #ef444430', borderLeft: '3px solid #ef4444', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#ef4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>↗ Axes d'amélioration</p>
-              {resultat.rapport.axes_amelioration.map((ax, i) => (
-                <p key={i} style={{ margin: '0 0 6px', fontSize: 13, color: '#ccc' }}>• {ax}</p>
-              ))}
-            </div>
-          )}
+          {/* Axes d'amélioration */}
+          <div style={{ background: '#111', border: '1px solid #ef444430', borderLeft: '3px solid #ef4444', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: '#ef4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>↗ Axes d'amélioration</p>
+            {(resultat.rapport?.axes_amelioration || []).map((ax, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                {enEdition ? (
+                  <>
+                    <input value={ax} onChange={e => majAxe(i, e.target.value)}
+                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                    <button onClick={() => supprimerAxe(i)}
+                      style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
+                  </>
+                ) : (
+                  <p style={{ margin: 0, fontSize: 13, color: '#ccc' }}>• {ax}</p>
+                )}
+              </div>
+            ))}
+            {enEdition && (
+              <button onClick={ajouterAxe}
+                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
+                + Ajouter
+              </button>
+            )}
+          </div>
 
-          {/* Conseils */}
-          {resultat.rapport.conseils && (
+          {/* Conseils coach */}
+          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Conseils coach</p>
+            {enEdition ? (
+              <textarea value={resultat.rapport?.conseils || ''} onChange={e => majRapport('conseils', e.target.value)} rows={3}
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+            ) : (
+              <p style={{ margin: 0, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport?.conseils}</p>
+            )}
+          </div>
+
+          {/* Sections tactiques */}
+          {(resultat.rapport?.sections_analyse || []).map((sec, i) => (
+            <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+              {enEdition ? (
+                <>
+                  <input value={sec.titre || ''} onChange={e => majSection(i, 'titre', e.target.value)} placeholder="Titre de la section"
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, boxSizing: 'border-box' }} />
+                  <textarea value={sec.description || ''} onChange={e => majSection(i, 'description', e.target.value)} rows={2} placeholder="Description..."
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', marginBottom: 6, boxSizing: 'border-box' }} />
+                  <input value={sec.repere || ''} onChange={e => majSection(i, 'repere', e.target.value)} placeholder="Repère pratique..."
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#888', fontSize: 12, fontStyle: 'italic', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{sec.titre}</p>
+                  <p style={{ margin: '0 0 6px', fontSize: 13, color: '#ccc', lineHeight: 1.5 }}>{sec.description}</p>
+                  {sec.repere && <p style={{ margin: 0, fontSize: 11, color: '#555', fontStyle: 'italic' }}>Repère : {sec.repere}</p>}
+                </>
+              )}
+            </div>
+          ))}
+
+          {/* Priorité d'entraînement */}
+          {(enEdition || resultat.rapport?.priorite) && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
-              <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Conseils coach</p>
-              <p style={{ margin: 0, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport.conseils}</p>
+              <p style={{ margin: '0 0 6px', fontSize: 10, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Priorité d'entraînement</p>
+              {enEdition ? (
+                <input value={resultat.rapport?.priorite || ''} onChange={e => majRapport('priorite', e.target.value)}
+                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+              ) : (
+                <p style={{ margin: 0, fontSize: 13, color: '#ccc' }}>{resultat.rapport?.priorite}</p>
+              )}
             </div>
           )}
 
-          {/* Transcription (dépliable) */}
-          <details style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px', marginBottom: 12 }}>
+          {/* Transcription (dépliable, lecture seule) */}
+          <details style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 18px' }}>
             <summary style={{ fontSize: 12, color: '#555', cursor: 'pointer', fontWeight: 600 }}>Voir la transcription complète</summary>
             <p style={{ margin: '10px 0 0', fontSize: 12, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{resultat.transcription}</p>
           </details>

@@ -12,6 +12,7 @@ function DashboardCoach() {
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [loomUrls, setLoomUrls] = useState({})
+  const [rapportPdfFiles, setRapportPdfFiles] = useState({})
   const [sending, setSending] = useState({})
   const [coachId, setCoachId] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -184,8 +185,22 @@ function DashboardCoach() {
 
     setSending(prev => ({ ...prev, [demandeId]: true }))
 
+    let rapportPdfUrl = null
+    const pdfFile = rapportPdfFiles[demandeId]
+    if (pdfFile) {
+      const nomFichier = `rapport_${demandeId}_${Date.now()}.pdf`
+      const { error: uploadError } = await supabase.storage
+        .from('rapports')
+        .upload(nomFichier, pdfFile, { contentType: 'application/pdf', upsert: true })
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('rapports').getPublicUrl(nomFichier)
+        rapportPdfUrl = urlData.publicUrl
+      }
+    }
+
     await supabase.from('demandes')
-      .update({ statut: 'analyse', loom_url: loomUrl })
+      .update({ statut: 'analyse', loom_url: loomUrl, ...(rapportPdfUrl ? { rapport_pdf_url: rapportPdfUrl } : {}) })
       .eq('id', demandeId)
 
     const demande = demandes.find(d => d.id === demandeId)
@@ -212,11 +227,12 @@ function DashboardCoach() {
     }
 
     setDemandes(prev => prev.map(d =>
-      d.id === demandeId ? { ...d, statut: 'analyse', loom_url: loomUrl } : d
+      d.id === demandeId ? { ...d, statut: 'analyse', loom_url: loomUrl, ...(rapportPdfUrl ? { rapport_pdf_url: rapportPdfUrl } : {}) } : d
     ))
 
     setSending(prev => ({ ...prev, [demandeId]: false }))
     setLoomUrls(prev => ({ ...prev, [demandeId]: '' }))
+    setRapportPdfFiles(prev => ({ ...prev, [demandeId]: null }))
     alert(`✅ Analyse envoyée à ${joueurPrenom} !`)
   }
 
@@ -539,6 +555,17 @@ function DashboardCoach() {
                                           {isSending ? 'Envoi...' : '🚀 Envoyer l\'analyse'}
                                         </button>
                                       </div>
+                                      <div style={{ marginTop: '10px' }}>
+                                        <label style={{ fontSize: '11px', color: '#555', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                                          📄 Joindre un rapport PDF (optionnel)
+                                        </label>
+                                        <input type="file" accept=".pdf"
+                                          onChange={e => setRapportPdfFiles(prev => ({ ...prev, [demande.id]: e.target.files[0] || null }))}
+                                          style={{ fontSize: '12px', color: '#888', width: '100%' }} />
+                                        {rapportPdfFiles[demande.id] && (
+                                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#4ade80' }}>✓ {rapportPdfFiles[demande.id].name}</p>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
 
@@ -550,6 +577,12 @@ function DashboardCoach() {
                                           style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                           {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
                                         </a>
+                                        {demande.rapport_pdf_url && (
+                                          <a href={demande.rapport_pdf_url} target="_blank" rel="noreferrer"
+                                            style={{ fontSize: '13px', color: '#4ade80', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            📄 <span style={{ textDecoration: 'underline' }}>Rapport PDF</span>
+                                          </a>
+                                        )}
                                         <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
                                           style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
                                           ⭐ Noter {profil?.prenom || 'le joueur'}
