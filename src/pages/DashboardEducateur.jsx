@@ -1508,7 +1508,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       { key: 'tactipad', label: 'Tacticboard', icon: '🗺️' },
     ] },
     { titre: 'SUIVI & ANALYSE', items: [
-      { key: 'analyse_video', label: 'Analyse vidéo', icon: '🎥' },
+      { key: 'analyse_video', label: 'Analyse rapport', icon: '🎥' },
       { key: 'notes', label: 'Évaluations', icon: '📝' },
       { key: 'clotures_saison', label: 'Clôtures de saison', icon: '📅' },
     ] },

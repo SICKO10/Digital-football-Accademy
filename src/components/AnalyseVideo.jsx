@@ -302,7 +302,7 @@ Instructions:
   if (!supported) {
     return (
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎬 Analyse vidéo</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 Analyse rapport</h1>
         <div style={{ ...st.card, maxWidth: '500px', textAlign: 'center', marginTop: '1.5rem' }}>
           <p style={{ color: '#ef4444', margin: '0 0 8px' }}>⚠️ La dictée vocale n'est pas supportée sur ce navigateur.</p>
           <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
