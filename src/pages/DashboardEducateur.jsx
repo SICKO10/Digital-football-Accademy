@@ -7,6 +7,8 @@ import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
+import { t, LANGS } from '../lib/translations'
+import { useLang } from '../hooks/useLang'
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -351,6 +353,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
 // voir canEdit()/canView() et sidebarSections plus bas pour le gating par section.
 export default function DashboardEducateur({ educateurIdOverride, permissions } = {}) {
   const navigate = useNavigate()
+  const { lang, setLang } = useLang()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
@@ -1512,24 +1515,24 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
-      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers /> },
-      { key: 'stats', label: 'Stats joueurs', icon: <IcoChart /> },
-      { key: 'matchs', label: 'Compétition', icon: <IcoTrophy /> },
+      { key: 'equipe', label: t('nav_equipe', lang), icon: <IcoUsers /> },
+      { key: 'stats', label: t('nav_stats', lang), icon: <IcoChart /> },
+      { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
     ] },
-    { titre: 'ENTRAÎNEMENT', items: [
-      { key: 'entrainements', label: 'Entraînements', icon: <IcoRun /> },
-      { key: 'mes_seances', label: 'Séances', icon: <IcoFilm /> },
-      { key: 'prep_physique', label: 'Préparation physique', icon: <IcoDumbbell /> },
-      { key: 'tactipad', label: 'Tacticboard', icon: <IcoLayout /> },
+    { titre: t('section_entrainement', lang), items: [
+      { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
+      { key: 'mes_seances', label: t('nav_seances', lang), icon: <IcoFilm /> },
+      { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
+      { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
     ] },
-    { titre: 'SUIVI & ANALYSE', items: [
-      { key: 'analyse_video', label: 'Analyse rapport', icon: <IcoVideo /> },
-      { key: 'notes', label: 'Évaluations', icon: <IcoClipboard /> },
-      { key: 'clotures_saison', label: 'Clôtures de saison', icon: <IcoCalendar /> },
+    { titre: t('section_analyse', lang), items: [
+      { key: 'analyse_video', label: t('nav_analyse', lang), icon: <IcoVideo /> },
+      { key: 'notes', label: t('nav_evaluations', lang), icon: <IcoClipboard /> },
+      { key: 'clotures_saison', label: t('nav_clotures', lang), icon: <IcoCalendar /> },
     ] },
-    { titre: 'RÉSEAU', items: [
-      { key: 'recrutement', label: 'Recrutement', icon: <IcoSearch /> },
-      { key: 'dirigeants', label: 'Dirigeants', icon: <IcoBuilding /> },
+    { titre: t('section_reseau', lang), items: [
+      { key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> },
+      { key: 'dirigeants', label: t('nav_dirigeants', lang), icon: <IcoBuilding /> },
     ] },
   ]
 
@@ -1613,7 +1616,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
           <button onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#4ade8012' : 'transparent', color: activeSection === 'profil' ? '#4ade80' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span>👤</span><span style={{ flex: 1 }}>Mon profil</span>
+            <span>👤</span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
           </button>
           {staffClub && (
             <button onClick={() => navigate('/club')}
@@ -1621,9 +1624,28 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
             </button>
           )}
+
+          {/* ── Sélecteur de langue ── */}
+          <div style={{ padding: '8px 2px', borderTop: '1px solid #141414', marginTop: '4px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+              {LANGS.map(l => (
+                <button key={l.code} onClick={() => setLang(l.code)}
+                  title={l.label}
+                  style={{
+                    padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    background: lang === l.code ? '#4ade8020' : 'transparent',
+                    outline: lang === l.code ? '1px solid #4ade8040' : 'none',
+                    fontSize: '14px', lineHeight: 1,
+                  }}>
+                  {l.flag}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
             style={{ width: '100%', marginTop: '4px', background: 'transparent', color: '#555', border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
-            Déconnexion
+            {t('btn_deconnexion', lang)}
           </button>
         </div>
       </aside>
@@ -1642,7 +1664,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Mon équipe</h1>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('equipe_titre', lang)}</h1>
                 <p style={{ color: '#555', fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} dans l'effectif</p>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
