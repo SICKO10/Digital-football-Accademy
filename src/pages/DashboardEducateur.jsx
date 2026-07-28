@@ -495,7 +495,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const supprimerDemande = async (id) => {
-    if (!confirm('Supprimer cette demande ?')) return
     const { error } = await supabase
       .from('seances_uploadees')
       .delete()
@@ -506,7 +505,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       alert('Erreur lors de la suppression : ' + error.message)
       return
     }
-    await chargerMesSeances(userId)
+    setConfirmSuppr(null)
+    await Promise.all([chargerMesSeances(userId), chargerMesSeancesOuvertes(userId)])
   }
 
   const chargerMesSeancesOuvertes = async (uid) => {
@@ -586,6 +586,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
   const [dossiersOuverts, setDossiersOuverts] = useState({})
   const [modeSeance, setModeSeance] = useState('enregistrer')
+  const [confirmSuppr, setConfirmSuppr] = useState(null) // id de la séance à confirmer
   const ficheVide = {
     theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
     procedes: Array(4).fill(null).map((_, i) => ({
@@ -3398,7 +3399,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {mesSeances.map(s => {
-                        const nonAnalysee = s.statut !== 'analyse' && s.statut !== 'transfere_coach'
                         return (
                         <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                           <div>
@@ -3413,9 +3413,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             }}>
                               {s.statut === 'analyse' ? '✅ Analysée' : s.statut === 'transfere_coach' ? '🎙️ Chez le coach' : '⏳ En attente'}
                             </span>
-                            {nonAnalysee && (
-                              <button onClick={() => supprimerDemande(s.id)} style={{ background: 'none', border: '1px solid #333', color: '#888', cursor: 'pointer', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>
-                                🗑️ Supprimer
+                            {confirmSuppr === s.id ? (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '12px', color: '#ef4444' }}>Supprimer ?</span>
+                                <button onClick={() => supprimerDemande(s.id)}
+                                  style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                  Oui
+                                </button>
+                                <button onClick={() => setConfirmSuppr(null)}
+                                  style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                  Non
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => setConfirmSuppr(s.id)}
+                                style={{ background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                🗑
                               </button>
                             )}
                           </div>
@@ -3788,6 +3801,24 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   )}
                                   {s.fichier_url && (
                                     <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 Fichier</a>
+                                  )}
+                                  {confirmSuppr === s.id ? (
+                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '12px', color: '#ef4444' }}>Supprimer ?</span>
+                                      <button onClick={() => supprimerDemande(s.id)}
+                                        style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                        Oui
+                                      </button>
+                                      <button onClick={() => setConfirmSuppr(null)}
+                                        style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                        Non
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button onClick={() => setConfirmSuppr(s.id)}
+                                      style={{ background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                      🗑
+                                    </button>
                                   )}
                                 </div>
                               </div>
