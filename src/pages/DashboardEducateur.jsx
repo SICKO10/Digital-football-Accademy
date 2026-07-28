@@ -1509,7 +1509,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontFamily: 'Inter, sans-serif' }}>Chargement...</p>
+      <p style={{ color: '#4ade80', fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
     </div>
   )
 
@@ -1682,7 +1682,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   <>
                     <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 Importer Excel/CSV</button>
                     <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
-                    <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ Ajouter un joueur</button>
+                    <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ {t('equipe_ajouter', lang)}</button>
                   </>
                 )}
               </div>
@@ -1937,7 +1937,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : '💾 Sauvegarder'}</button>
-                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn('#666')}>Annuler</button>
+                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -1998,7 +1998,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 ) : (
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={confirmerImport} style={st.btnSolid}>✅ Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
-                    <button onClick={() => setImportPreview(null)} style={st.btn('#666')}>Annuler</button>
+                    <button onClick={() => setImportPreview(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                   </div>
                 )}
               </div>
@@ -2022,8 +2022,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   <div><label style={st.label}>Licence FFF</label><input style={st.input} placeholder="N° de licence" value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : 'Ajouter'}</button>
-                  <button onClick={() => setShowAddJoueur(false)} style={st.btn('#666')}>Annuler</button>
+                  <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
+                  <button onClick={() => setShowAddJoueur(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -2691,12 +2691,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
                         <input type="checkbox" checked={newMatch.domicile} onChange={e => setNewMatch({ ...newMatch, domicile: e.target.checked })} />
-                        Domicile
+                        {t('comp_domicile', lang)}
                       </label>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={ajouterMatch} disabled={savingMatch} style={st.btnSolid}>{savingMatch ? 'Ajout...' : 'Ajouter'}</button>
-                      <button onClick={() => setShowAddMatch(false)} style={st.btn('#666')}>Annuler</button>
+                      <button onClick={ajouterMatch} disabled={savingMatch} style={st.btnSolid}>{savingMatch ? 'Ajout...' : t('btn_ajouter', lang)}</button>
+                      <button onClick={() => setShowAddMatch(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                     </div>
                   </div>
                 )}
@@ -2719,7 +2719,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
                               {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                               {m.competition ? ` · ${m.competition}` : ''}
-                              {m.domicile ? ' · Domicile' : ' · Extérieur'}
+                              {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                             </p>
                           </div>
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
@@ -2760,7 +2760,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
                               <p style={{ fontSize: '10px', color: '#444', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
-                              <button onClick={e => { e.stopPropagation(); sauvegarderStatsMatch(m.id) }} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 Sauvegarder</button>
+                              <button onClick={e => { e.stopPropagation(); sauvegarderStatsMatch(m.id) }} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
                         )}
@@ -2936,7 +2936,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={ajouterEntrainement} style={st.btnSolid}>Créer la séance</button>
-                  <button onClick={() => setShowAddEntrainement(false)} style={st.btn('#666')}>Annuler</button>
+                  <button onClick={() => setShowAddEntrainement(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -3000,7 +3000,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     style={{ ...st.btnSolid, background: '#60a5fa', opacity: (generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) ? 0.5 : 1 }}>
                     {generatingPlan ? 'Génération...' : '🚀 Générer les séances'}
                   </button>
-                  <button onClick={() => setShowPlanificateur(false)} style={st.btn('#666')}>Annuler</button>
+                  <button onClick={() => setShowPlanificateur(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -3306,7 +3306,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               <p style={{ margin: '0 0 1rem', fontSize: '12px', color: '#555' }}>{filtered.length} joueur{filtered.length !== 1 ? 's' : ''} trouvé{filtered.length !== 1 ? 's' : ''}</p>
               {/* Grid joueurs */}
               {!recrutLoaded ? (
-                <p style={{ color: '#4ade80', textAlign: 'center', padding: '3rem' }}>Chargement...</p>
+                <p style={{ color: '#4ade80', textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
               ) : filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#444' }}>
                   <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
@@ -3425,7 +3425,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
-                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>Annuler</button>
+                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
@@ -4110,7 +4110,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <div className="profil-parcours" style={st.card}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⚽ Parcours football</p>
-                    <button onClick={() => setShowAddParcours(true)} style={st.btn()}>+ Ajouter</button>
+                    <button onClick={() => setShowAddParcours(true)} style={st.btn()}>+ {t('btn_ajouter', lang)}</button>
                   </div>
 
                   {showAddParcours && (
@@ -4145,8 +4145,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={ajouterParcours} style={st.btnSolid}>Ajouter</button>
-                        <button onClick={() => setShowAddParcours(false)} style={st.btn('#666')}>Annuler</button>
+                        <button onClick={ajouterParcours} style={st.btnSolid}>{t('btn_ajouter', lang)}</button>
+                        <button onClick={() => setShowAddParcours(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
@@ -4476,7 +4476,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
                   {scannerLoading ? '🔍 Analyse en cours...' : '✨ Analyser avec l\'IA'}
                 </button>
-                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn('#666')}>Annuler</button>
+                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
               </div>
               {scannerLoading && (
                 <div style={{ marginTop: '16px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
