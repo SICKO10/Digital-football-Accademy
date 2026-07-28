@@ -4560,8 +4560,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId || null)}
-              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #4ade8040', background: '#4ade8020', color: '#4ade80', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId)}
+              disabled={!joueurLieId}
+              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #4ade8040', background: joueurLieId ? '#4ade8020' : '#1a1a1a', color: joueurLieId ? '#4ade80' : '#444', fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
             >
               ✅ Confirmer l'affiliation
             </button>

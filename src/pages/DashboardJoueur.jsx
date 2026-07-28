@@ -347,6 +347,14 @@ function DashboardJoueur() {
     }
   }, [onglet, userId, mesAffiliations])
 
+  // Rediriger vers 'accueil' si joueur affilié et onglet non reconnu
+  useEffect(() => {
+    const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
+    if (estAffilie && onglet === 'dashboard') {
+      setOnglet('accueil')
+    }
+  }, [profil, mesAffiliations])
+
   const getProfil = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
