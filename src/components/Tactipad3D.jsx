@@ -138,8 +138,14 @@ function Goal({ side }) {
 // ── Joueur ─────────────────────────────────────────────────────────────────
 function Player({ el, cw, ch, isSelected, onClick }) {
   const [x, , z] = to3D(el.x, el.y, cw, ch)
-  const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
-  const scale = isSelected ? 1.25 : 1
+  const jerseyColor = el.equipe === 'A' ? '#4ade80' : '#f97316'
+  const skinColor   = '#e8c09a'
+  const shortColor  = el.equipe === 'A' ? '#166534' : '#7c2d12'
+  const scale = isSelected ? 1.2 : 1
+
+  const jersey = <meshStandardMaterial color={jerseyColor} roughness={0.6} />
+  const skin   = <meshStandardMaterial color={skinColor}   roughness={0.7} />
+  const short  = <meshStandardMaterial color={shortColor}  roughness={0.6} />
 
   return (
     <group
@@ -147,39 +153,93 @@ function Player({ el, cw, ch, isSelected, onClick }) {
       scale={[scale, scale, scale]}
       onClick={e => { e.stopPropagation(); onClick?.() }}
     >
-      {/* Corps */}
-      {el.gardien ? (
-        <mesh position={[0, 0.5, 0]} castShadow>
-          <boxGeometry args={[0.34, 1.0, 0.34]} />
-          <meshStandardMaterial color={color} roughness={0.5} />
-        </mesh>
-      ) : (
-        <mesh position={[0, 0.5, 0]} castShadow>
-          <cylinderGeometry args={[0.21, 0.21, 1.0, 12]} />
-          <meshStandardMaterial color={color} roughness={0.5} />
-        </mesh>
-      )}
-      {/* Tête */}
-      <mesh position={[0, 1.15, 0]} castShadow>
-        <sphereGeometry args={[0.175, 12, 12]} />
-        <meshStandardMaterial color={color} roughness={0.5} />
+      {/* ── Pieds ──────────────────────────────────────────────────── */}
+      <mesh position={[-0.08, 0.06, 0.05]}>
+        <boxGeometry args={[0.1, 0.08, 0.2]} />
+        <meshStandardMaterial color="#222" roughness={0.9} />
       </mesh>
-      {/* Numéro */}
+      <mesh position={[0.08, 0.06, 0.05]}>
+        <boxGeometry args={[0.1, 0.08, 0.2]} />
+        <meshStandardMaterial color="#222" roughness={0.9} />
+      </mesh>
+
+      {/* ── Jambes (chaussettes + peau) ────────────────────────────── */}
+      <mesh position={[-0.08, 0.28, 0]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.4, 8]} />
+        {skin}
+      </mesh>
+      <mesh position={[0.08, 0.28, 0]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.4, 8]} />
+        {skin}
+      </mesh>
+
+      {/* ── Short ──────────────────────────────────────────────────── */}
+      <mesh position={[0, 0.52, 0]}>
+        <boxGeometry args={[0.34, 0.18, 0.22]} />
+        {short}
+      </mesh>
+
+      {/* ── Torse (maillot) ────────────────────────────────────────── */}
+      <mesh position={[0, 0.77, 0]}>
+        <boxGeometry args={[0.36, 0.38, 0.22]} />
+        {jersey}
+      </mesh>
+
+      {/* ── Bras ───────────────────────────────────────────────────── */}
+      <mesh position={[-0.26, 0.77, 0]} rotation={[0, 0, 0.25]}>
+        <cylinderGeometry args={[0.065, 0.065, 0.42, 8]} />
+        {jersey}
+      </mesh>
+      <mesh position={[0.26, 0.77, 0]} rotation={[0, 0, -0.25]}>
+        <cylinderGeometry args={[0.065, 0.065, 0.42, 8]} />
+        {jersey}
+      </mesh>
+
+      {/* ── Avant-bras / mains ─────────────────────────────────────── */}
+      <mesh position={[-0.31, 0.57, 0]} rotation={[0, 0, -0.1]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.3, 8]} />
+        {skin}
+      </mesh>
+      <mesh position={[0.31, 0.57, 0]} rotation={[0, 0, 0.1]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.3, 8]} />
+        {skin}
+      </mesh>
+
+      {/* ── Cou ────────────────────────────────────────────────────── */}
+      <mesh position={[0, 1.02, 0]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.14, 8]} />
+        {skin}
+      </mesh>
+
+      {/* ── Tête ───────────────────────────────────────────────────── */}
+      <mesh position={[0, 1.22, 0]} castShadow>
+        <sphereGeometry args={[0.19, 14, 14]} />
+        {skin}
+      </mesh>
+
+      {/* ── Cheveux (petite calotte) ────────────────────────────────── */}
+      <mesh position={[0, 1.32, 0]} scale={[1, 0.5, 1]}>
+        <sphereGeometry args={[0.19, 10, 10]} />
+        <meshStandardMaterial color="#3b1f0a" roughness={1} />
+      </mesh>
+
+      {/* ── Numéro sur le maillot ──────────────────────────────────── */}
       <Text
-        position={[0, 1.75, 0.01]}
-        fontSize={0.26}
+        position={[0, 0.78, 0.12]}
+        fontSize={0.2}
         color="white"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.025}
-        outlineColor="black"
+        outlineWidth={0.02}
+        outlineColor={shortColor}
       >
         {String(el.numero ?? '')}
       </Text>
-      {/* Nom (optionnel) */}
+
+      {/* ── Nom flottant en dessous ─────────────────────────────────── */}
       {el.nom ? (
         <Text
-          position={[0, -0.18, 0.01]}
+          position={[0, -0.15, 0]}
           fontSize={0.16}
           color="white"
           anchorX="center"
@@ -190,13 +250,20 @@ function Player({ el, cw, ch, isSelected, onClick }) {
           {el.nom}
         </Text>
       ) : null}
-      {/* Anneau de sélection */}
+
+      {/* ── Anneau de sélection ────────────────────────────────────── */}
       {isSelected && (
-        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.30, 0.40, 32]} />
+        <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.32, 0.42, 32]} />
           <meshBasicMaterial color="#4ade80" side={THREE.DoubleSide} />
         </mesh>
       )}
+
+      {/* ── Ombre au sol ───────────────────────────────────────────── */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.22, 16]} />
+        <meshBasicMaterial color="black" transparent opacity={0.25} />
+      </mesh>
     </group>
   )
 }
