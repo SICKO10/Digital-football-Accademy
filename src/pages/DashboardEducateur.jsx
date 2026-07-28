@@ -418,7 +418,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [newDirigeantEmail, setNewDirigeantEmail] = useState('')
   const [newDirigeantPerms, setNewDirigeantPerms] = useState({
     effectif: 'lecture', stats: 'lecture', competition: 'lecture',
-    entrainements: 'lecture', prep_physique: 'aucun', budget: 'aucun', notes: 'aucun'
+    entrainements: 'lecture', prep_physique: 'aucun', notes: 'aucun'
   })
   const [invitingDirigeant, setInvitingDirigeant] = useState(false)
   const [parcoursEdu, setParcoursEdu] = useState([])
@@ -3860,7 +3860,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   { key: 'competition', label: '🏆 Compétition' },
                   { key: 'entrainements', label: '🏃 Entraînements' },
                   { key: 'prep_physique', label: '🏋️ Prépa physique' },
-                  { key: 'budget', label: '💰 Budget' },
                   { key: 'notes', label: '📝 Notes' },
                 ].map(({ key, label }) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#0a0a0a', borderRadius: 8 }}>
@@ -3910,7 +3909,6 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     { key: 'competition', label: '🏆 Compétition' },
                     { key: 'entrainements', label: '🏃 Entraînements' },
                     { key: 'prep_physique', label: '🏋️ Prépa physique' },
-                    { key: 'budget', label: '💰 Budget' },
                     { key: 'notes', label: '📝 Notes' },
                   ].map(({ key, label }) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: '#0d0d0d', borderRadius: 6 }}>
