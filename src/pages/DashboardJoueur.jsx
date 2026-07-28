@@ -1117,11 +1117,21 @@ function DashboardJoueur() {
               {statsJoueur[affiliation.id] && (() => {
                 const s = statsJoueur[affiliation.id]
 
-                if (!s.present && !s.points && !s.matchsJoues) return (
+                const hasDonnees = s.present || s.points || s.matchsJoues || s.noteEdu ||
+                  s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
+                if (!hasDonnees) return (
                   <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>
                     Aucune séance ou match enregistré pour le moment.
                   </p>
                 )
+
+                // ── Badges / streaks ──────────────────────────────────────
+                const badges = []
+                if (s.tauxPresence === 100) badges.push({ label: '100% ce mois', color: '#4ade80' })
+                else if (s.tauxPresence >= 80) badges.push({ label: 'Assidu', color: '#4ade80' })
+                if (s.rankPoints?.rank === 1) badges.push({ label: '⭐ Top points équipe', color: '#fbbf24' })
+                if (s.rankButs?.rank === 1) badges.push({ label: '⚽ Top buteur', color: '#f97316' })
+                if (s.buts >= 5) badges.push({ label: `${s.buts} buts`, color: '#f97316' })
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1142,6 +1152,17 @@ function DashboardJoueur() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Badges */}
+                    {badges.length > 0 && (
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {badges.map((b, i) => (
+                          <span key={i} style={{ background: b.color + '15', border: `1px solid ${b.color}40`, color: b.color, fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                            {b.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Présence par mois */}
                     {s.presenceMensuelle?.length > 0 && (
@@ -1184,6 +1205,92 @@ function DashboardJoueur() {
                               <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555' }}>{label}</p>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Avis éducateur */}
+                    <div>
+                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase' }}>Avis de ton éducateur</p>
+                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
+                        {s.noteEdu ? (
+                          <>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
+                              {[
+                                { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
+                                { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
+                                { label: 'Mental', value: s.noteEdu.mental, color: '#a78bfa' },
+                                { label: 'Tactique', value: s.noteEdu.tactique, color: '#f59e0b' },
+                              ].map(n => (
+                                <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '11px', color: '#555', flex: 1 }}>{n.label}</span>
+                                  <div style={{ display: 'flex', gap: '2px' }}>
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                      <span key={i} style={{ fontSize: '12px', color: i <= (n.value || 0) ? n.color : '#222' }}>★</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {s.noteEdu.commentaire && (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>
+                                "{s.noteEdu.commentaire}"
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>
+                            Pas encore de note partagée par ton éducateur.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Classements équipe */}
+                    {(s.leaderButs?.length > 0 || s.leaderPoints?.length > 0) && (
+                      <div>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f97316', letterSpacing: '1px', textTransform: 'uppercase' }}>Classements équipe</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          {[
+                            { title: 'Top buteurs', data: s.leaderButs },
+                            { title: 'Points séance', data: s.leaderPoints },
+                          ].map(({ title, data }) => data?.length > 0 && (
+                            <div key={title} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
+                              <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                              {data.slice(0, 3).map((row, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
+                                  <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
+                                  <span style={{ fontSize: '11px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                    {row.isMe ? '→ Toi' : row.nom?.split(' ')[0] || '—'}
+                                  </span>
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prochains matchs */}
+                    {s.prochainMatchs?.length > 0 && (
+                      <div>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#34d399', letterSpacing: '1px', textTransform: 'uppercase' }}>Prochains matchs</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {s.prochainMatchs.map((m, i) => {
+                            const d = new Date(m.date)
+                            const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                            return (
+                              <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
+                                  {m.competition && <span style={{ fontSize: '10px', color: '#444', background: '#1a1a1a', padding: '1px 7px', borderRadius: '6px' }}>{m.competition}</span>}
+                                </div>
+                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400 }}>vs</span> {m.equipe_exterieur}</p>
+                                {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     )}
