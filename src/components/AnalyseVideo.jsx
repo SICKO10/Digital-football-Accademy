@@ -7,6 +7,9 @@ const playerInfoVide = () => ({
   poste: '',
   numero: '',
   date: new Date().toISOString().split('T')[0],
+  nomClub: '',
+  typeMatch: 'aller',
+  periodeMatch: 'complet',
 })
 
 const st = {
@@ -52,7 +55,10 @@ async function genererPDF(playerInfo, rapport) {
 
   addLine('INFORMATIONS JOUEUR', 13, true, [20, 83, 45])
   addLine(`${playerInfo.prenom} ${playerInfo.nom}  |  ${playerInfo.poste}  |  N°${playerInfo.numero}`)
-  addLine(`Date : ${playerInfo.date}`)
+  const periodeLabel = { complet: 'Match complet', premiere: '1ère mi-temps', deuxieme: '2ème mi-temps' }[playerInfo.periodeMatch] || ''
+  const typeLabel = playerInfo.typeMatch === 'retour' ? 'Match retour' : 'Match aller'
+  addLine(`Date : ${playerInfo.date}  |  ${typeLabel}  |  ${periodeLabel}`)
+  if (playerInfo.nomClub) addLine(`Club adverse : ${playerInfo.nomClub}`)
   y += 5
 
   if (rapport.note) {
@@ -143,7 +149,13 @@ export default function AnalyseVideo({ userId }) {
 
     recognition.onerror = (event) => {
       console.error('Speech error:', event.error)
-      if (event.error !== 'no-speech') setIsRecording(false)
+      if (event.error === 'service-not-allowed' || event.error === 'not-allowed') {
+        recognitionRef.current._shouldContinue = false
+        setIsRecording(false)
+        setErreurIA("Accès au microphone refusé. Sur Mac : Réglages Système → Confidentialité → Microphone → autorise Safari/Chrome.")
+      } else if (event.error !== 'no-speech') {
+        setIsRecording(false)
+      }
     }
 
     // Le navigateur coupe la reconnaissance après un silence même en mode
@@ -160,14 +172,27 @@ export default function AnalyseVideo({ userId }) {
     recognitionRef.current = recognition
   }, [])
 
-  const startRecording = () => {
+  const startRecording = async () => {
     if (!recognitionRef.current) return
+    setErreurIA(null)
+
+    // Demander la permission micro explicitement (corrige "service-not-allowed" sur desktop)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(t => t.stop()) // Permission accordée, on libère le stream
+    } catch (permErr) {
+      console.error('Permission micro refusée:', permErr)
+      setErreurIA("Accès au microphone refusé. Vérifie les paramètres de confidentialité de ton navigateur.")
+      return
+    }
+
     recognitionRef.current._shouldContinue = true
     try {
       recognitionRef.current.start()
       setIsRecording(true)
     } catch (err) {
       console.error('Erreur démarrage micro:', err)
+      setErreurIA("Impossible de démarrer l'enregistrement : " + err.message)
     }
   }
 
@@ -185,11 +210,17 @@ export default function AnalyseVideo({ userId }) {
     setLoading(true)
     setErreurIA(null)
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
+
+      const periodeLabel = { complet: 'Match complet', premiere: '1ère mi-temps', deuxieme: '2ème mi-temps' }[playerInfo.periodeMatch] || 'Match complet'
+      const typeLabel = playerInfo.typeMatch === 'retour' ? 'Match retour' : 'Match aller'
+
       const prompt = `Tu es un analyste football expert. Voici la transcription d'une analyse vocale d'un éducateur/coach sur un joueur.
 
 Joueur: ${playerInfo.prenom} ${playerInfo.nom}, Poste: ${playerInfo.poste}, Numéro: ${playerInfo.numero}
+Club adverse: ${playerInfo.nomClub || 'non précisé'}
+Type: ${typeLabel} — ${periodeLabel}
 
 Transcription de l'analyse:
 ${transcript}
@@ -211,21 +242,22 @@ Instructions:
 - La note est sur 10
 - Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication`
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1 },
-          }),
-        }
-      )
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.1,
+        }),
+      })
       const data = await res.json()
       if (data.error) throw new Error(data.error.message)
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!text) throw new Error('Réponse Gemini vide')
+      const text = data.choices?.[0]?.message?.content
+      if (!text) throw new Error('Réponse Groq vide')
       const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
       setRapport(JSON.parse(clean))
       setStep('rapport')
@@ -281,7 +313,7 @@ Instructions:
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ Analyse par dictée vocale</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 Analyse rapport</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
         Lance la vidéo sur ton écran, appuie sur Enregistrer et décris l'analyse à voix haute. L'IA structure ensuite ton commentaire en rapport PDF.
       </p>
@@ -301,6 +333,25 @@ Instructions:
           <input style={st.input} placeholder="N° maillot" value={playerInfo.numero} onChange={e => setPlayerInfo(p => ({ ...p, numero: e.target.value }))} />
         </div>
         <input style={{ ...st.input, maxWidth: '200px' }} type="date" value={playerInfo.date} onChange={e => setPlayerInfo(p => ({ ...p, date: e.target.value }))} />
+
+        <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <input style={st.input} placeholder="Nom du club adverse" value={playerInfo.nomClub} onChange={e => setPlayerInfo(p => ({ ...p, nomClub: e.target.value }))} />
+          <select style={st.input} value={playerInfo.typeMatch} onChange={e => setPlayerInfo(p => ({ ...p, typeMatch: e.target.value }))}>
+            <option value="aller">Match Aller</option>
+            <option value="retour">Match Retour</option>
+          </select>
+        </div>
+        <div style={{ marginTop: '10px' }}>
+          <label style={st.label}>Période analysée</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[['complet', 'Match complet'], ['premiere', '1ère mi-temps'], ['deuxieme', '2ème mi-temps']].map(([val, label]) => (
+              <button key={val} onClick={() => setPlayerInfo(p => ({ ...p, periodeMatch: val }))}
+                style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#4ade80' : '#2a2a2a'}`, background: playerInfo.periodeMatch === val ? '#4ade8015' : '#1a1a1a', color: playerInfo.periodeMatch === val ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {(step === 'input' || step === 'transcript') && (
           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
