@@ -88,6 +88,17 @@ const IconBuilding = () => (
     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/>
   </svg>
 )
+const IconDumbbell = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12"/>
+  </svg>
+)
+const IconUsers = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
 
 function UpgradeCard({ titre, texte }) {
   return (
@@ -992,9 +1003,9 @@ function DashboardJoueur() {
     const secAffilie = [
       { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
 
-      { id: 'equipe',        label: 'Mon Équipe',           icon: <span style={{ fontSize: '18px' }}>🏟️</span>, section: labelSection },
+      { id: 'equipe',        label: 'Mon Équipe',           icon: <IconUsers />, section: labelSection },
       { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
-      { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
+      { id: 'prep_physique', label: 'Préparation physique', icon: <IconDumbbell /> },
 
       { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: 'EXPLORER' },
       { id: 'feed',          label: 'Feed',                 icon: <IconGlobe />,  locked: true },
@@ -1621,8 +1632,8 @@ function DashboardJoueur() {
 
   const navItems = [
     { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
-    { id: 'equipe', label: 'Mon Équipe', icon: <span style={{ fontSize: '18px' }}>🏟️</span>, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON ÉQUIPE' },
-    { id: 'prep_physique', label: 'Préparation physique', icon: <span style={{ fontSize: '18px' }}>🏋️</span> },
+    { id: 'equipe', label: 'Mon Équipe', icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON ÉQUIPE' },
+    { id: 'prep_physique', label: 'Préparation physique', icon: <IconDumbbell /> },
     { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: 'MON DÉVELOPPEMENT' },
     { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread, section: 'MON DÉVELOPPEMENT' },
     { id: 'profil', label: 'Mon Profil', icon: <IconUser />, section: 'MON PROFIL' },
@@ -2185,7 +2196,7 @@ function DashboardJoueur() {
                             {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
                               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                 {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: '#4ade80' }}>⚽ {p.matchs_joues} matchs</span>}
-                                {p.buts > 0 && <span style={{ fontSize: '11px', color: '#f97316' }}>🥅 {p.buts} buts</span>}
+                                {p.buts > 0 && <span style={{ fontSize: '11px', color: '#f97316' }}>⚽ {p.buts} buts</span>}
                                 {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: '#60a5fa' }}>🎯 {p.passes_decisives} passes</span>}
                                 {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: '#a855f7' }}>🧤 {p.cleansheets} CS</span>}
                               </div>
@@ -2317,7 +2328,7 @@ function DashboardJoueur() {
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>📅 Historique saisons</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>Historique saisons</p>
               <HistoriqueSaisons joueurId={userId} />
             </div>
 
@@ -2326,7 +2337,7 @@ function DashboardJoueur() {
               <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Choisis les emails que tu veux recevoir. Les notifications restent toujours visibles dans la clochette.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
-                  { key: 'email_analyse', label: '🎬 Analyse vidéo terminée' },
+                  { key: 'email_analyse', label: 'Analyse vidéo terminée' },
                   { key: 'email_like', label: '❤️ Nouveau like' },
                   { key: 'email_commentaire', label: '💬 Nouveau commentaire' },
                   { key: 'email_message', label: '✉️ Nouveau message' },
