@@ -1,12 +1,7 @@
-import { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
-
-// Chargé à la demande uniquement (three.js + @react-three/* sont volumineux et
-// ne doivent pas alourdir le bundle principal pour les utilisateurs qui ne
-// basculent jamais en vue 3D).
-const Tactipad3D = lazy(() => import('./Tactipad3D'))
 
 const COULEURS = [
   { val: '#4ade80', label: 'Vert' },
@@ -243,7 +238,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [sport, setSport] = useState('football')
   const [vue, setVue] = useState(vueParDefaut || 'complet')
   const [fond, setFond] = useState('vert')
-  const [vue3D, setVue3D] = useState(false)
 
   const [elements, setElements] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -807,15 +801,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     <div>
       {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
-        {/* Toggle 2D / 3D */}
-        <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
-          {[['2D', false], ['3D', true]].map(([label, val]) => (
-            <button key={label} onClick={() => setVue3D(val)}
-              style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', fontSize: '13px', fontWeight: 700, cursor: 'pointer', background: vue3D === val ? '#4ade80' : 'transparent', color: vue3D === val ? '#000' : '#666', fontFamily: 'Inter, sans-serif' }}>
-              {label}
-            </button>
-          ))}
-        </div>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
           {[['football', '⚽ Football'], ['futsal', '🏟️ Futsal']].map(([v, label]) => (
             <button key={v} onClick={() => setSport(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: sport === v ? '#4ade80' : 'transparent', color: sport === v ? '#000' : '#666' }}>{label}</button>
@@ -892,21 +877,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         </div>
 
         {/* Canvas */}
-        {vue3D ? (
-          <Suspense fallback={
-            <div style={{ width, height, borderRadius: 12, background: '#0a1a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontSize: 13 }}>
-              Chargement de la vue 3D…
-            </div>
-          }>
-            <Tactipad3D
-              elements={elements}
-              canvasW={width}
-              canvasH={height}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
-          </Suspense>
-        ) : (
         <div style={{ position: 'relative' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
@@ -1150,7 +1120,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </div>
           )}
         </div>
-        )}
 
         {/* ── NOUVEAU : panneau joueurs à droite ──────────────────────────── */}
         {hasJoueurs && (
