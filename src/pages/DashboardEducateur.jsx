@@ -1894,7 +1894,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ Modifier les infos</button>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
                         </div>
                       )}
                     </div>
@@ -2680,7 +2680,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                       <div><label style={st.label}>Date</label><input style={st.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
-                      <div><label style={st.label}>Adversaire</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
+                      <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
                       <div><label style={st.label}>Compétition</label><input style={st.input} placeholder="Championnat, Coupe..." value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })} /></div>
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
@@ -2750,9 +2750,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                     <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: e.target.value === '1' } } }))}
                                       style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
-                                    <span title="Carton jaune" style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_jaune') ? 1 : 0.25 }}
+                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_jaune') ? 1 : 0.25 }}
                                       onClick={e => { e.stopPropagation(); setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } })) }}>🟨</span>
-                                    <span title="Carton rouge" style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_rouge') ? 1 : 0.25 }}
+                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_rouge') ? 1 : 0.25 }}
                                       onClick={e => { e.stopPropagation(); setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } })) }}>🟥</span>
                                   </div>
                                 )
@@ -2929,7 +2929,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             {/* ── Ajout séance unique ── */}
             {showAddEntrainement && canEdit('entrainements') && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ Nouvelle séance</p>
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ {t('seance_nouvelle', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div><label style={st.label}>Date</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
                   <div><label style={st.label}>Thème (optionnel)</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
@@ -3163,7 +3163,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </div>
                         <div>
                           <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? '#4ade80' : '#aaa' }}>
-                            {ln.visible_joueur ? '👁️ Visible par le joueur' : '🔒 Privé (non visible)'}
+                            {ln.visible_joueur ? `👁️ ${t('eval_visible', lang)}` : '🔒 Privé (non visible)'}
                           </p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
                             {ln.visible_joueur ? 'Le joueur verra cette note dans son dashboard' : 'Seul vous voyez cette évaluation'}
@@ -3232,7 +3232,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
-                    {[{ label: 'Matchs officiels', val: j.matchs_officiel || 0 }, { label: 'Buts', val: j.buts_total || 0 }, { label: 'Passes déc.', val: j.passes_decisives || 0 }, { label: 'Clean sheets', val: j.cleansheets || 0 }, { label: 'Minutes jouées', val: j.minutes_jouees || 0 }, { label: 'Club', val: j.club || '—' }].map(s => (
+                    {[{ label: 'Matchs officiels', val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('comp_passes_dec', lang), val: j.passes_decisives || 0 }, { label: t('comp_clean_sheet', lang), val: j.cleansheets || 0 }, { label: t('comp_minutes', lang), val: j.minutes_jouees || 0 }, { label: 'Club', val: j.club || '—' }].map(s => (
                       <div key={s.label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: '#4ade80' }}>{s.val}</div>
                         <div style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
@@ -3424,7 +3424,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : 'Envoyer au club'}</button>
+                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : t('seance_envoyer_club', lang)}</button>
                         <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
@@ -3718,7 +3718,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         onClick={() => setTactipadModal(i)}
                         style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                       >
-                        🎨 {p.schema_png ? 'Modifier le schéma' : 'Ajouter un schéma'}
+                        🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                       </button>
                       {p.schema_png && (
                         <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
@@ -3780,13 +3780,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             </div>
             )}
 
-            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 Mes séances ({mesSeancesOuvertes.length})</p>
+            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 {t('seance_mes_seances', lang)} ({mesSeancesOuvertes.length})</p>
             {mesSeancesOuvertes.length === 0 ? (
               <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance envoyée pour l'instant.</p>
             ) : (
               (() => {
                 const seancesParCategorie = mesSeancesOuvertes.reduce((acc, s) => {
-                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)?.label || s.categorie_tactique || 'Sans catégorie'
+                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)?.label || s.categorie_tactique || t('seance_sans_categorie', lang)
                   if (!acc[cat]) acc[cat] = []
                   acc[cat].push(s)
                   return acc
@@ -3829,7 +3829,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                     </>
                                   ) : (
                                     <span style={{ background: '#ffffff08', color: '#888', border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                                      📁 Archivée
+                                      📁 {t('seance_archivee', lang)}
                                     </span>
                                   )}
                                   {s.video_url && (
@@ -3873,7 +3873,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         )}
 
         {activeSection === 'analyse_video' && (
-          <AnalyseVideo userId={userId} />
+          <AnalyseVideo userId={userId} lang={lang} />
         )}
 
         {activeSection === 'prep_physique' && (
@@ -3909,7 +3909,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
             {/* Formulaire invitation */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
-              <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>Inviter un dirigeant</p>
+              <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
               <input
                 value={newDirigeantEmail}
                 onChange={e => setNewDirigeantEmail(e.target.value)}
@@ -3919,10 +3919,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               />
 
               {/* Grille permissions */}
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Permissions par section</p>
+              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {[
-                  { key: 'effectif', label: '👥 Effectif' },
+                  { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
                   { key: 'stats', label: '📊 Stats joueurs' },
                   { key: 'competition', label: '🏆 Compétition' },
                   { key: 'entrainements', label: '🏃 Entraînements' },
@@ -3939,7 +3939,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             background: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade8020' : val === 'lecture' ? '#60a5fa20' : '#ef444420') : '#1a1a1a',
                             color: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade80' : val === 'lecture' ? '#60a5fa' : '#ef4444') : '#444',
                           }}>
-                          {val === 'aucun' ? '✕ Aucun' : val === 'lecture' ? '👁 Lecture' : '✏️ Édition'}
+                          {val === 'aucun' ? `✕ ${t('dir_aucun', lang)}` : val === 'lecture' ? `👁 ${t('dir_lecture', lang)}` : `✏️ ${t('dir_edition', lang)}`}
                         </button>
                       ))}
                     </div>
@@ -3949,7 +3949,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
               <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
                 style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
-                {invitingDirigeant ? 'Envoi...' : '📧 Envoyer l\'invitation'}
+                {invitingDirigeant ? 'Envoi...' : `📧 ${t('dir_envoyer_invitation', lang)}`}
               </button>
             </div>
 
@@ -3964,14 +3964,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     </p>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? '#4ade8015' : '#f59e0b15', color: d.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
-                    {d.statut === 'accepte' ? '✅ Actif' : '⏳ En attente'}
+                    {d.statut === 'accepte' ? `✅ ${t('dir_actif', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
                   </span>
                 </div>
 
                 {/* Modifier permissions inline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[
-                    { key: 'effectif', label: '👥 Effectif' },
+                    { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
                     { key: 'stats', label: '📊 Stats' },
                     { key: 'competition', label: '🏆 Compétition' },
                     { key: 'entrainements', label: '🏃 Entraînements' },
@@ -4491,7 +4491,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   <img src={scannerImagePreview} alt="Feuille" style={{ width: '100%', borderRadius: '8px', objectFit: 'contain', maxHeight: '300px', background: '#050505' }} />
                   <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div><label style={st.label}>Date</label><input style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
-                    <div><label style={st.label}>Adversaire</label><input style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
                     <div><label style={st.label}>Compétition</label><input style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))} /></div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>

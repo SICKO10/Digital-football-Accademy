@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
+import { t } from '../lib/translations'
 
 const playerInfoVide = () => ({
   prenom: '',
@@ -24,7 +25,7 @@ const st = {
 // Prend playerInfo + rapport en paramètres (état courant ou contenu jsonb d'un
 // rapport déjà sauvegardé) pour servir aussi bien à la génération initiale
 // qu'au re-téléchargement d'un rapport de la liste.
-async function genererPDF(playerInfo, rapport) {
+async function genererPDF(playerInfo, rapport, lang = 'fr') {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF()
   let y = 20
@@ -55,10 +56,10 @@ async function genererPDF(playerInfo, rapport) {
 
   addLine('INFORMATIONS JOUEUR', 13, true, [20, 83, 45])
   addLine(`${playerInfo.prenom} ${playerInfo.nom}  |  ${playerInfo.poste}  |  N°${playerInfo.numero}`)
-  const periodeLabel = { complet: 'Match complet', premiere: '1ère mi-temps', deuxieme: '2ème mi-temps' }[playerInfo.periodeMatch] || ''
-  const typeLabel = playerInfo.typeMatch === 'retour' ? 'Match retour' : 'Match aller'
+  const periodeLabel = { complet: t('analyse_match_complet', lang), premiere: t('analyse_premiere_mi', lang), deuxieme: t('analyse_deuxieme_mi', lang) }[playerInfo.periodeMatch] || ''
+  const typeLabel = playerInfo.typeMatch === 'retour' ? t('analyse_match_retour', lang) : t('analyse_match_aller', lang)
   addLine(`Date : ${playerInfo.date}  |  ${typeLabel}  |  ${periodeLabel}`)
-  if (playerInfo.nomClub) addLine(`Club adverse : ${playerInfo.nomClub}`)
+  if (playerInfo.nomClub) addLine(`${t('analyse_club_adverse', lang)} : ${playerInfo.nomClub}`)
   y += 5
 
   if (rapport.note) {
@@ -90,7 +91,7 @@ async function genererPDF(playerInfo, rapport) {
   doc.save(`analyse_${playerInfo.nom || 'joueur'}_${playerInfo.date}.pdf`)
 }
 
-export default function AnalyseVideo({ userId }) {
+export default function AnalyseVideo({ userId, lang = 'fr' }) {
   const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
   const [transcript, setTranscript] = useState('')
   const [interimText, setInterimText] = useState('')
@@ -302,7 +303,7 @@ Instructions:
   if (!supported) {
     return (
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 Analyse rapport</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 {t('analyse_titre', lang)}</h1>
         <div style={{ ...st.card, maxWidth: '500px', textAlign: 'center', marginTop: '1.5rem' }}>
           <p style={{ color: '#ef4444', margin: '0 0 8px' }}>⚠️ La dictée vocale n'est pas supportée sur ce navigateur.</p>
           <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
@@ -313,7 +314,7 @@ Instructions:
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 Analyse rapport</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 {t('analyse_titre', lang)}</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
         Lance la vidéo sur ton écran, appuie sur Enregistrer et décris l'analyse à voix haute. L'IA structure ensuite ton commentaire en rapport PDF.
       </p>
@@ -337,14 +338,14 @@ Instructions:
         <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <input style={st.input} placeholder="Nom du club adverse" value={playerInfo.nomClub} onChange={e => setPlayerInfo(p => ({ ...p, nomClub: e.target.value }))} />
           <select style={st.input} value={playerInfo.typeMatch} onChange={e => setPlayerInfo(p => ({ ...p, typeMatch: e.target.value }))}>
-            <option value="aller">Match Aller</option>
-            <option value="retour">Match Retour</option>
+            <option value="aller">{t('analyse_match_aller', lang)}</option>
+            <option value="retour">{t('analyse_match_retour', lang)}</option>
           </select>
         </div>
         <div style={{ marginTop: '10px' }}>
           <label style={st.label}>Période analysée</label>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {[['complet', 'Match complet'], ['premiere', '1ère mi-temps'], ['deuxieme', '2ème mi-temps']].map(([val, label]) => (
+            {[['complet', t('analyse_match_complet', lang)], ['premiere', t('analyse_premiere_mi', lang)], ['deuxieme', t('analyse_deuxieme_mi', lang)]].map(([val, label]) => (
               <button key={val} onClick={() => setPlayerInfo(p => ({ ...p, periodeMatch: val }))}
                 style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#4ade80' : '#2a2a2a'}`, background: playerInfo.periodeMatch === val ? '#4ade8015' : '#1a1a1a', color: playerInfo.periodeMatch === val ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {label}
@@ -355,20 +356,20 @@ Instructions:
 
         {(step === 'input' || step === 'transcript') && (
           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
-            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>Enregistrement vocal</p>
+            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>{t('analyse_enregistrer', lang)}</p>
 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               {!isRecording ? (
                 <button onClick={startRecording}
                   style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#22c55e', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #22c55e40' }}>
                   <span style={{ fontSize: '30px' }}>🎙️</span>
-                  <span style={{ fontSize: '11px', marginTop: '4px' }}>Démarrer</span>
+                  <span style={{ fontSize: '11px', marginTop: '4px' }}>{t('analyse_demarrer', lang)}</span>
                 </button>
               ) : (
                 <button onClick={stopRecording}
                   style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #ef444440' }}>
                   <span style={{ fontSize: '30px' }}>⏹️</span>
-                  <span style={{ fontSize: '11px', marginTop: '4px' }}>Arrêter</span>
+                  <span style={{ fontSize: '11px', marginTop: '4px' }}>{t('analyse_arreter', lang)}</span>
                 </button>
               )}
             </div>
@@ -393,7 +394,7 @@ Instructions:
             {transcript.trim() && !isRecording && (
               <button onClick={handleGenerateRapport} disabled={loading}
                 style={{ ...st.btnSolid('#60a5fa', '#fff'), width: '100%', marginTop: '16px', opacity: loading ? 0.6 : 1 }}>
-                {loading ? '⏳ Génération en cours...' : "✨ Générer le rapport avec l'IA"}
+                {loading ? '⏳ Génération en cours...' : `✨ ${t('analyse_generer', lang)}`}
               </button>
             )}
           </div>
@@ -450,7 +451,7 @@ Instructions:
             )}
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button onClick={() => genererPDF(playerInfo, rapport)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>📄 Exporter PDF</button>
+              <button onClick={() => genererPDF(playerInfo, rapport, lang)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>📄 {t('analyse_exporter_pdf', lang)}</button>
               <button onClick={sauvegarderRapport} disabled={savingRapport || tableMissing} style={{ ...st.btn('#60a5fa'), opacity: tableMissing ? 0.4 : 1 }}>
                 {savingRapport ? 'Sauvegarde...' : '💾 Sauvegarder'}
               </button>
@@ -461,11 +462,11 @@ Instructions:
       </div>
 
       <div>
-        <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📚 Mes rapports {rapports.length > 0 ? `(${rapports.length})` : ''}</p>
+        <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📚 {t('analyse_mes_rapports', lang)} {rapports.length > 0 ? `(${rapports.length})` : ''}</p>
         {loadingRapports ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+          <p style={{ color: '#444', fontSize: '13px' }}>{t('btn_chargement', lang)}</p>
         ) : rapports.length === 0 ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Aucun rapport sauvegardé pour l'instant.</p>
+          <p style={{ color: '#444', fontSize: '13px' }}>{t('analyse_aucun_rapport', lang)}.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {rapports.map(r => (
@@ -476,7 +477,7 @@ Instructions:
                     {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · 🎙️ Vocale
                   </p>
                 </div>
-                <button onClick={() => genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {})} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {}, lang)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   ⬇️ Re-télécharger PDF
                 </button>
               </div>
