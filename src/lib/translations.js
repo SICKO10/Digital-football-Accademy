@@ -1308,6 +1308,18 @@ export const T = {
   jogab_aucun_reel_moment:      { fr: 'Aucun reel pour le moment', en: 'No reels yet',             pt: 'Nenhum reel por agora',   es: 'Ningún reel por ahora',    it: 'Nessun reel al momento',   de: 'Noch keine Reels'      },
   jogab_joueurs_publient_desc:  { fr: 'Les joueurs publient leurs clips courts depuis leur dashboard', en: 'Players publish their short clips from their dashboard', pt: 'Os jogadores publicam os seus clips curtos a partir do painel', es: 'Los jugadores publican sus clips cortos desde su panel', it: 'I giocatori pubblicano i loro clip brevi dalla loro dashboard', de: 'Spieler veröffentlichen ihre Kurzclips über ihr Dashboard' },
   jogab_connexion:              { fr: 'Connexion',                 en: 'Log in',                   pt: 'Iniciar sessão',          es: 'Iniciar sesión',           it: 'Accedi',                   de: 'Anmelden'              },
+
+  // ── Sondage présence + calendrier (DashboardJoueur accueil, DashboardEducateur entraînements) ──
+  ent_dispo_auto:               { fr: 'Auto',                      en: 'Auto',                     pt: 'Auto',                    es: 'Auto',                     it: 'Auto',                     de: 'Auto'                  },
+  aff_prochain_entrainement:    { fr: 'Prochain entraînement',     en: 'Next training',            pt: 'Próximo treino',          es: 'Próximo entrenamiento',    it: 'Prossimo allenamento',     de: 'Nächstes Training'     },
+  aff_seras_tu_present:         { fr: 'Seras-tu présent ?',        en: 'Will you be there?',       pt: 'Vais estar presente?',    es: '¿Estarás presente?',       it: 'Sarai presente?',          de: 'Wirst du dabei sein?'  },
+  aff_reponse_envoyee:          { fr: 'Réponse envoyée à ton éducateur', en: 'Response sent to your coach', pt: 'Resposta enviada ao teu treinador', es: 'Respuesta enviada a tu entrenador', it: 'Risposta inviata al tuo allenatore', de: 'Antwort an deinen Trainer gesendet' },
+  aff_prochain_match:           { fr: 'Prochain match',            en: 'Next match',               pt: 'Próximo jogo',            es: 'Próximo partido',          it: 'Prossima partita',         de: 'Nächstes Spiel'        },
+  aff_match_titre:              { fr: 'Match',                     en: 'Match',                    pt: 'Jogo',                    es: 'Partido',                  it: 'Partita',                  de: 'Spiel'                 },
+  aff_dispo_pour_match:         { fr: 'Disponible pour ce match ?', en: 'Available for this match?', pt: 'Disponível para este jogo?', es: '¿Disponible para este partido?', it: 'Disponibile per questa partita?', de: 'Für dieses Spiel verfügbar?' },
+  aff_cette_semaine:            { fr: 'Cette semaine',             en: 'This week',                pt: 'Esta semana',             es: 'Esta semana',              it: 'Questa settimana',         de: 'Diese Woche'           },
+  aff_aujourdhui:               { fr: "Aujourd'hui",               en: 'Today',                    pt: 'Hoje',                    es: 'Hoy',                      it: 'Oggi',                     de: 'Heute'                 },
+  aff_demain:                   { fr: 'Demain',                    en: 'Tomorrow',                 pt: 'Amanhã',                  es: 'Mañana',                   it: 'Domani',                   de: 'Morgen'                },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'

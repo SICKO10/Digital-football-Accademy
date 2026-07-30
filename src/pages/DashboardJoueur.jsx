@@ -303,6 +303,13 @@ function DashboardJoueur() {
 
   // Mon Équipe (affiliation éducateur)
   const [mesAffiliations, setMesAffiliations] = useState([])
+  // Widget sondage présence + calendrier (accueil joueur affilié)
+  const [widgetProchainEnt, setWidgetProchainEnt] = useState(null)
+  const [widgetProchainMatch, setWidgetProchainMatch] = useState(null)
+  const [widgetDispoEnt, setWidgetDispoEnt] = useState(null)
+  const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
+  const [widgetCalendrier, setWidgetCalendrier] = useState([])
+  const [savingDispo, setSavingDispo] = useState(false)
   const [codeEquipe, setCodeEquipe] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
   const [codeError, setCodeError] = useState(null)
@@ -348,6 +355,10 @@ function DashboardJoueur() {
     if (onglet === 'stats') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)
+    }
+    if (onglet === 'accueil') {
+      const a = mesAffiliations.find(af => af.statut === 'accepte')
+      if (a) chargerCalendrierEtDispos(a.educateur_id)
     }
   }, [onglet, userId, mesAffiliations])
 
@@ -442,6 +453,57 @@ function DashboardJoueur() {
     peData?.forEach(pe => { peMap[pe.user_id] = pe })
 
     setMesAffiliations(afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null })))
+  }
+
+  // Widget accueil : prochain entraînement + prochain match de l'éducateur, avec ma dispo déclarée
+  const chargerCalendrierEtDispos = async (educateurId) => {
+    if (!userId || !educateurId) return
+    const aujourdHui = new Date().toISOString().split('T')[0]
+    const dans7jours = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    const [{ data: entrainements }, { data: matchs }] = await Promise.all([
+      supabase.from('entrainements').select('id, date, description').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans7jours).order('date', { ascending: true }),
+      supabase.from('matchs_equipe').select('id, date, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans7jours).order('date', { ascending: true }),
+    ])
+
+    const events = [
+      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date })),
+      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date })),
+    ].sort((a, b) => new Date(a.date) - new Date(b.date))
+    setWidgetCalendrier(events)
+
+    const prochainEnt = entrainements?.[0] || null
+    setWidgetProchainEnt(prochainEnt)
+    if (prochainEnt) {
+      const { data: dispo } = await supabase.from('disponibilites').select('statut').eq('joueur_id', userId).eq('entrainement_id', prochainEnt.id).maybeSingle()
+      setWidgetDispoEnt(dispo?.statut || null)
+    } else {
+      setWidgetDispoEnt(null)
+    }
+
+    const prochainM = matchs?.[0] || null
+    setWidgetProchainMatch(prochainM)
+    if (prochainM) {
+      const { data: dispo } = await supabase.from('disponibilites').select('statut').eq('joueur_id', userId).eq('match_id', prochainM.id).maybeSingle()
+      setWidgetDispoMatch(dispo?.statut || null)
+    } else {
+      setWidgetDispoMatch(null)
+    }
+  }
+
+  const repondreDisponibilite = async (statut, type) => {
+    const evenementId = type === 'entrainement' ? widgetProchainEnt?.id : widgetProchainMatch?.id
+    if (!evenementId || !userId) return
+    setSavingDispo(true)
+    const payload = {
+      joueur_id: userId,
+      statut,
+      ...(type === 'entrainement' ? { entrainement_id: evenementId } : { match_id: evenementId }),
+    }
+    await supabase.from('disponibilites').upsert(payload, { onConflict: type === 'entrainement' ? 'joueur_id,entrainement_id' : 'joueur_id,match_id' })
+    if (type === 'entrainement') setWidgetDispoEnt(statut)
+    else setWidgetDispoMatch(statut)
+    setSavingDispo(false)
   }
 
   const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
@@ -1105,6 +1167,94 @@ function DashboardJoueur() {
                   </div>
                 </div>
               </div>
+
+              {(() => {
+                const STATUT_OPTIONS = [
+                  { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: '#4ade80', bg: '#4ade8015', border: '#4ade8040' },
+                  { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: '#ef4444', bg: '#ef444415', border: '#ef444440' },
+                  { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: '#f97316', bg: '#f9731615', border: '#f9731640' },
+                  { val: 'malade',   label: t('ent_malade', lang),   emoji: '🤒', color: '#a855f7', bg: '#a855f715', border: '#a855f740' },
+                  { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa', bg: '#60a5fa15', border: '#60a5fa40' },
+                ]
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '14px' }}>
+                    {widgetProchainEnt && (
+                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <span style={{ fontSize: '20px' }}>📋</span>
+                          <div>
+                            <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px' }}>{t('aff_prochain_entrainement', lang)}</p>
+                            <p style={{ fontSize: '12px', color: '#555' }}>{new Date(widgetProchainEnt.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_seras_tu_present', lang)}</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {STATUT_OPTIONS.map(opt => (
+                            <button key={opt.val} onClick={() => repondreDisponibilite(opt.val, 'entrainement')} disabled={savingDispo}
+                              style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoEnt === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              {opt.emoji} {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        {widgetDispoEnt && <p style={{ fontSize: '11px', color: '#444', marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                      </div>
+                    )}
+
+                    {widgetProchainMatch && (
+                      <div style={{ background: '#111', border: '1px solid #60a5fa20', borderRadius: '16px', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <span style={{ fontSize: '20px' }}>⚽</span>
+                          <div>
+                            <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px' }}>{t('aff_prochain_match', lang)} — {widgetProchainMatch.adversaire || t('aff_match_titre', lang)}</p>
+                            <p style={{ fontSize: '12px', color: '#555' }}>{new Date(widgetProchainMatch.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_dispo_pour_match', lang)}</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {STATUT_OPTIONS.map(opt => (
+                            <button key={opt.val} onClick={() => repondreDisponibilite(opt.val, 'match')} disabled={savingDispo}
+                              style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoMatch === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              {opt.emoji} {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        {widgetDispoMatch && <p style={{ fontSize: '11px', color: '#444', marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                      </div>
+                    )}
+
+                    {widgetCalendrier.length > 0 && (
+                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+                        <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '16px' }}>📅 {t('aff_cette_semaine', lang)}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {widgetCalendrier.map((ev, i) => {
+                            const date = new Date(ev.date)
+                            const isToday = date.toDateString() === new Date().toDateString()
+                            const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
+                            const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'short' })
+                            const statut = ev.type === 'entrainement' && ev.id === widgetProchainEnt?.id ? widgetDispoEnt
+                              : ev.type === 'match' && ev.id === widgetProchainMatch?.id ? widgetDispoMatch
+                              : null
+                            const optStatut = STATUT_OPTIONS.find(o => o.val === statut)
+                            return (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? '#4ade8008' : '#141414', border: `1px solid ${isToday ? '#4ade8025' : '#1f1f1f'}`, borderRadius: '10px' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ev.type === 'match' ? '#60a5fa15' : '#4ade8015', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : '#4ade8030'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+                                  {ev.type === 'match' ? '⚽' : '🏃'}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{ev.titre}</p>
+                                  <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}</p>
+                                </div>
+                                {optStatut && <span style={{ fontSize: '16px' }}>{optStatut.emoji}</span>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[{ id: 'prep_physique', label: t('aff_prepa_physique_court', lang), emoji: '🏋️', desc: t('aff_tes_seances_exercices', lang) }, { id: 'stats', label: t('aff_mes_stats', lang), emoji: '📊', desc: t('aff_presences_performance', lang) }].map(item => (
                   <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>

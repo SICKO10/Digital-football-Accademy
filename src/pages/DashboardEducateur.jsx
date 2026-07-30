@@ -425,6 +425,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '' })
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
+  const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
   const [showPlanificateur, setShowPlanificateur] = useState(false)
   const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
@@ -564,6 +565,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerEntrainements = async (uid) => {
     const { data } = await supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', uid).order('date', { ascending: false })
     setEntrainements(data || [])
+
+    // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
+    const entrainementIds = (data || []).map(e => e.id)
+    if (entrainementIds.length > 0) {
+      const { data: dispos } = await supabase.from('disponibilites').select('joueur_id, entrainement_id, statut').in('entrainement_id', entrainementIds)
+      const map = {}
+      dispos?.forEach(d => { if (!map[d.entrainement_id]) map[d.entrainement_id] = {}; map[d.entrainement_id][d.joueur_id] = d.statut })
+      setDispoJoueurs(map)
+    } else {
+      setDispoJoueurs({})
+    }
   }
 
   const chargerNotes = async (uid) => {
@@ -3136,8 +3148,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
                                 const nonSaisi = !p || (!p.statut && !p.present)
                                 const statut = p?.statut || (p?.present ? 'present' : 'absent')
+                                // Dispo auto-déclarée par le joueur lui-même — seulement affichée si l'éducateur n'a pas encore saisi de présence
+                                // (j.joueur_id est renseigné à l'acceptation de l'invitation, cf. AcceptInvite.jsx)
+                                const dispoAuto = nonSaisi && j.joueur_id ? dispoJoueurs[e.id]?.[j.joueur_id] : null
                                 const cfg = nonSaisi
-                                  ? { emoji: '⬜', label: t('ent_non_saisi', lang), bg: '#ffffff05', border: '#2a2a2a', color: '#444' }
+                                  ? (dispoAuto
+                                      ? { ...(STATUT_CONFIG[dispoAuto] || STATUT_CONFIG.absent) }
+                                      : { emoji: '⬜', label: t('ent_non_saisi', lang), bg: '#ffffff05', border: '#2a2a2a', color: '#444' })
                                   : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
                                 const hasPoint = !!p?.point_seance
                                 return (
@@ -3146,7 +3163,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                     <span onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ fontSize: '15px', flexShrink: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>{cfg.emoji}</span>
                                     <div onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flex: 1, minWidth: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>
                                       <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
-                                      <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700 }}>{cfg.label}</p>
+                                      <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        {cfg.label}
+                                        {dispoAuto && (
+                                          <span style={{ fontSize: '8px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
+                                            {t('ent_dispo_auto', lang)}
+                                          </span>
+                                        )}
+                                      </p>
                                     </div>
                                     {(canEdit('entrainements') || hasPoint) && (
                                       <span
