@@ -17,7 +17,25 @@ body {
 
 #fiche-print {
   display: none;
+  font-family: sans-serif;
+  color: black;
+  background: white;
+  width: 800px;
+  padding: 20px;
+  box-sizing: border-box;
 }
+.fiche-header { margin-bottom: 14px; }
+.fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.fiche-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+.fiche-row-2 { grid-template-columns: 1fr 2fr; }
+.fiche-champ { border-bottom: 1px solid #000; padding-bottom: 4px; }
+.fiche-champ label { font-weight: bold; display: block; font-size: 10px; text-transform: uppercase; }
+.procedes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.procede-block { border: 1px solid #333; padding: 12px; page-break-inside: avoid; }
+.procede-block h3 { font-size: 14px; margin-bottom: 10px; }
+.procede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+.procede-field label { font-weight: bold; display: block; margin-bottom: 2px; }
+.procede-field .valeur { border-bottom: 1px solid #999; min-height: 18px; }
 
 .sous-onglets::-webkit-scrollbar,
 .filtres-scroll::-webkit-scrollbar {
@@ -69,22 +87,5 @@ input[type="date"] {
 
 @media print {
   body > *:not(#fiche-print) { display: none; }
-  #fiche-print {
-    display: block;
-    font-family: sans-serif;
-    color: black;
-    background: white;
-  }
-  .fiche-header { margin-bottom: 14px; }
-  .fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
-  .fiche-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
-  .fiche-row-2 { grid-template-columns: 1fr 2fr; }
-  .fiche-champ { border-bottom: 1px solid #000; padding-bottom: 4px; }
-  .fiche-champ label { font-weight: bold; display: block; font-size: 10px; text-transform: uppercase; }
-  .procedes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .procede-block { border: 1px solid #333; padding: 12px; page-break-inside: avoid; }
-  .procede-block h3 { font-size: 14px; margin-bottom: 10px; }
-  .procede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
-  .procede-field label { font-weight: bold; display: block; margin-bottom: 2px; }
-  .procede-field .valeur { border-bottom: 1px solid #999; min-height: 18px; }
+  #fiche-print { display: block; }
 }

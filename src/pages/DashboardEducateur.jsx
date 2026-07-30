@@ -805,9 +805,48 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setFiche({ ...fiche, procedes: newProcedes })
   }
 
+  // Capture #fiche-print (déjà stylé pour l'impression, cf. index.css) en PDF via html2canvas + jsPDF
+  const genererPdfFiche = async () => {
+    const el = document.getElementById('fiche-print')
+    if (!el) return null
+    const prevDisplay = el.style.display
+    const prevPosition = el.style.position
+    const prevLeft = el.style.left
+    el.style.display = 'block'
+    el.style.position = 'fixed'
+    el.style.left = '-9999px'
+    el.style.top = '0'
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const { jsPDF } = await import('jspdf')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const imgData = canvas.toDataURL('image/png')
+      let heightLeft = imgHeight
+      let position = 0
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      return pdf.output('blob')
+    } finally {
+      el.style.display = prevDisplay
+      el.style.position = prevPosition
+      el.style.left = prevLeft
+    }
+  }
+
   const sauvegarderFiche = async () => {
     setSavingFiche(true)
-    const { error } = await supabase.from('seances_uploadees').insert({
+    const { data: inserted, error } = await supabase.from('seances_uploadees').insert({
       educateur_id: userId,
       theme: fiche.theme || null,
       date_seance: fiche.date || null,
@@ -817,13 +856,31 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       fichier_url: ficheFichierUrl || null,
       origine: 'ouvert',
       statut: 'archivee',
-    })
-    setSavingFiche(false)
+    }).select().single()
     if (error) {
+      setSavingFiche(false)
       console.error('Erreur insertion fiche:', error)
       alert('Erreur lors de l\'enregistrement : ' + error.message)
       return
     }
+
+    try {
+      const pdfBlob = await genererPdfFiche()
+      if (pdfBlob) {
+        const path = `fiches/${userId}/${Date.now()}.pdf`
+        const { error: uploadError } = await supabase.storage.from('documents').upload(path, pdfBlob, { contentType: 'application/pdf', upsert: true })
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+          await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', inserted.id)
+        } else {
+          console.error('Erreur upload PDF fiche:', uploadError)
+        }
+      }
+    } catch (e) {
+      console.error('Erreur génération PDF fiche:', e)
+    }
+
+    setSavingFiche(false)
     setFicheFichierUrl(null)
     setFicheExtraite(false)
     await chargerMesSeancesOuvertes(userId)
