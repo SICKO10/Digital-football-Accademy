@@ -10,6 +10,8 @@ import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -312,6 +314,8 @@ function DashboardJoueur() {
   const [noteSaison, setNoteSaison] = useState('2024-2025')
   const [savingNote, setSavingNoteEdu] = useState(false)
   const [noteSaved, setNoteSaved] = useState(false)
+
+  const { lang, setLang } = useLang()
 
   useEffect(() => { getProfil() }, [])
 
@@ -1746,16 +1750,16 @@ function DashboardJoueur() {
   const isPro = profil?.plan === 'pro'
 
   const navItems = [
-    { id: 'dashboard', label: 'Accueil', icon: <IconHome /> },
-    { id: 'equipe', label: 'Mon Équipe', icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: 'MON ÉQUIPE' },
-    { id: 'prep_physique', label: 'Préparation physique', icon: <IconDumbbell /> },
-    { id: 'analyses', label: 'Analyses', icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: 'MON DÉVELOPPEMENT' },
-    { id: 'coach', label: 'Coach Analyseur', icon: <IconMic />, badge: coachUnread, section: 'MON DÉVELOPPEMENT' },
-    { id: 'profil', label: 'Mon Profil', icon: <IconUser />, section: 'MON PROFIL' },
-    { id: 'carte', label: 'Carte FIFA', icon: <IconCard />, section: 'MON PROFIL' },
-    { id: 'certif', label: 'Certification', icon: <IconBadge />, section: 'MON PROFIL' },
-    { id: 'clubs', label: 'Explorer', icon: <IconBuilding />, section: 'MON RÉSEAU' },
-    { id: 'messages', label: 'Recruteurs', icon: <IconMessage />, badge: conversations.length, section: 'MON RÉSEAU' },
+    { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
+    { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
+    { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
+    { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
+    { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
+    { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
+    { id: 'carte', label: t('jnav_carte', lang), icon: <IconCard />, section: t('jsec_profil', lang) },
+    { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
+    { id: 'clubs', label: t('jnav_explorer', lang), icon: <IconBuilding />, section: t('jsec_reseau', lang) },
+    { id: 'messages', label: t('jnav_recruteurs', lang), icon: <IconMessage />, badge: conversations.length, section: t('jsec_reseau', lang) },
   ]
 
   return (
@@ -1862,6 +1866,17 @@ function DashboardJoueur() {
           )}
         </div>
 
+        <div style={{ padding: '16px 12px', borderTop: '1px solid #1a1a1a', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {[['fr','🇫🇷'],['en','🇬🇧'],['pt','🇧🇷'],['es','🇪🇸'],['it','🇮🇹'],['de','🇩🇪']].map(([code, flag]) => (
+              <button key={code} onClick={() => setLang(code)}
+                style={{ background: lang === code ? '#4ade8020' : 'transparent', border: `1px solid ${lang === code ? '#4ade80' : '#2a2a2a'}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? '#4ade80' : '#555' }}>
+                {flag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '8px' }}>
             <Avatar person={profil} size={32} border="1.5px solid #4ade8040" />
@@ -1941,7 +1956,7 @@ function DashboardJoueur() {
                   </span>
                   {profil?.numero_licence && (
                     <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px', flexShrink: 0 }}>
-                      🪪 Licencié FFF
+                      🪪 {t('jd_licencie', lang)}
                     </span>
                   )}
                 </div>
@@ -1950,9 +1965,9 @@ function DashboardJoueur() {
                 </p>
                 <div style={{ display: 'flex', gap: isMobile ? '16px' : '28px', flexWrap: 'wrap' }}>
                   {[
-                    { val: profil?.analyses_restantes ?? '—', label: 'Analyses' },
-                    { val: demandes.length, label: 'Demandes' },
-                    { val: profil?.categorie || '—', label: 'Catégorie' },
+                    { val: profil?.analyses_restantes ?? '—', label: t('jd_analyses_stat', lang) },
+                    { val: demandes.length, label: t('jd_demandes_stat', lang) },
+                    { val: profil?.categorie || '—', label: t('equipe_categorie', lang) },
                   ].map((s, i, arr) => (
                     <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '28px' }}>
                       <div>
@@ -1970,8 +1985,8 @@ function DashboardJoueur() {
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                 <div>
-                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>Quota analyses</p>
-                  <p style={{ fontSize: '11px', color: '#444' }}>Réinitialisé automatiquement chaque mois</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>{t('jd_quota_titre', lang)}</p>
+                  <p style={{ fontSize: '11px', color: '#444' }}>{t('jd_quota_reset', lang)}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
@@ -1985,10 +2000,10 @@ function DashboardJoueur() {
               </div>
               {(profil?.analyses_restantes || 0) > 0 ? (
                 <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
-                  Envoyer une vidéo pour analyse
+                  {t('jd_envoyer_video', lang)}
                 </button>
               ) : (
-                <p style={{ fontSize: '12px', color: '#444' }}>Quota épuisé ce mois — renouvellement automatique.</p>
+                <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_quota_epuise', lang)}</p>
               )}
             </div>
 
@@ -2029,18 +2044,18 @@ function DashboardJoueur() {
               <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>Vidéo partagée</p>
-                    <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? 'Scout Center · Jogabonito · Feed' : 'Jogabonito uniquement'}</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_partagee', lang)}</p>
+                    <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? t('jvid_feed_visible', lang) : 'Jogabonito uniquement'}</p>
                   </div>
                   <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade80', color: '#000', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
-                    Voir ma vidéo
+                    {t('jvid_voir', lang)}
                   </a>
-                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Changer</button>
+                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
                   <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {deletingVideo ? 'Suppression...' : 'Supprimer'}
+                    {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                   </button>
                 </div>
               </div>
@@ -2048,30 +2063,30 @@ function DashboardJoueur() {
               <div style={{ background: '#111', border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>Vidéo Jogabonito</p>
-                    <p style={{ fontSize: '11px', color: '#444' }}>Visible dans Jogabonito</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_jogabonito', lang)}</p>
+                    <p style={{ fontSize: '11px', color: '#444' }}>{t('jvid_visible_joga', lang)}</p>
                   </div>
                   <span style={{ background: '#f9731615', color: '#f97316', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f97316', color: '#fff', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
-                    Voir ma vidéo
+                    {t('jvid_voir', lang)}
                   </a>
-                  <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Changer</button>
+                  <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
                   <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {deletingReel ? 'Suppression...' : 'Supprimer'}
+                    {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                   </button>
                 </div>
               </div>
             ) : (
               <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
                 <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
-                <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>Aucune vidéo publiée</p>
+                <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
                 <p style={{ fontSize: '12px', color: '#333', marginBottom: '20px', lineHeight: 1.6 }}>
                   {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
                 </p>
                 <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {isPro ? 'Publier un clip' : 'Publier un reel'}
+                  {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
                 </button>
               </div>
             )}
@@ -2080,15 +2095,15 @@ function DashboardJoueur() {
             {conversations.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>Messages recruteurs</p>
-                  <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{t('jd_messages_rec', lang)}</p>
+                  <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                 </div>
                 {conversations.slice(0, 2).map(conv => (
                   <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
                     <Avatar person={conv.other} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
+                      <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
                     </div>
                     <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
@@ -2099,15 +2114,15 @@ function DashboardJoueur() {
             {convCoach.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>Réponses coach</p>
-                  <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>{t('jd_reponses_coach', lang)}</p>
+                  <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                 </div>
                 {convCoach.slice(0, 1).map(conv => (
                   <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
                     <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#f97316' }}>Coach Analyseur</p>
+                      <p style={{ fontSize: '11px', color: '#f97316' }}>{t('jnav_coach', lang)}</p>
                     </div>
                     <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                   </div>
@@ -2119,11 +2134,11 @@ function DashboardJoueur() {
             {!isPro && (
               <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>Feed & visibilité recruteurs</p>
-                  <p style={{ fontSize: '12px', color: '#555' }}>Passe au Plan Pro pour être visible des clubs et agents.</p>
+                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
+                  <p style={{ fontSize: '12px', color: '#555' }}>{t('jd_upsell_desc', lang)}</p>
                 </div>
                 <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                  Plan Pro — 79,99€/mois
+                  {t('jd_plan_pro_cta', lang)}
                 </button>
               </div>
             )}
@@ -2132,16 +2147,16 @@ function DashboardJoueur() {
             <div style={{ background: '#111', border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
               {cancelDone ? (
                 <div>
-                  <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>Résiliation programmée</p>
-                  <p style={{ fontSize: '12px', color: '#444' }}>Accès conservé jusqu'à la fin de la période en cours.</p>
+                  <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>{t('jd_resiliation_prog', lang)}</p>
+                  <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_resiliation_desc', lang)}</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <p style={{ fontSize: '12px', color: '#444' }}>
-                    Plan actif : <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
+                    {t('jd_plan_actif', lang)} <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
                   </p>
                   <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? '#444' : '#ef4444', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
-                    {cancelling ? 'En cours...' : 'Résilier'}
+                    {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
                   </button>
                 </div>
               )}
@@ -2152,15 +2167,15 @@ function DashboardJoueur() {
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon profil</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jp_titre', lang)}</h1>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
-              <p style={labelStyle}>Photo de profil</p>
+              <p style={labelStyle}>{t('jp_photo', lang)}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
                 <Avatar person={profil} size={80} border="2px solid #4ade8050" />
                 <div>
                   <label style={{ display: 'inline-block', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? '#444' : '#aaa', fontFamily: 'Inter, sans-serif' }}>
-                    {avatarUploading ? 'Upload en cours...' : 'Choisir une photo'}
+                    {avatarUploading ? t('jp_upload_cours', lang) : t('jp_choisir_photo', lang)}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                   </label>
                   <p style={{ fontSize: '11px', color: '#444', marginTop: '8px' }}>JPG, PNG, WEBP · Max 5 MB</p>
@@ -2169,43 +2184,43 @@ function DashboardJoueur() {
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>Informations club</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_infos_club', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div><label style={labelStyle}>Club actuel</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} /></div>
+                <div><label style={labelStyle}>{t('jp_club_actuel', lang)}</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} /></div>
                 <div>
-                  <label style={labelStyle}>Niveau de l'équipe</label>
+                  <label style={labelStyle}>{t('jp_niveau_equipe', lang)}</label>
                   <select value={stats.niveau_equipe} onChange={e => setStats({ ...stats, niveau_equipe: e.target.value })} style={inputStyle}>
-                    <option value="">— Choisir —</option>
+                    <option value="">{t('equipe_choisir', lang)}</option>
                     {['Ligue 1', 'Ligue 2', 'National', 'Regional 1', 'Regional 2', 'Regional 3', 'Departemental', 'Amateur'].map(n => <option key={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Catégorie</label>
+                  <label style={labelStyle}>{t('equipe_categorie', lang)}</label>
                   <select value={stats.categorie} onChange={e => setStats({ ...stats, categorie: e.target.value })} style={inputStyle}>
-                    <option value="">— Choisir —</option>
+                    <option value="">{t('equipe_choisir', lang)}</option>
                     {CATEGORIES_JOUEUR.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div><label style={labelStyle}>Région</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ile-de-France" style={inputStyle} /></div>
+                <div><label style={labelStyle}>{t('profil_region', lang)}</label><input value={stats.region} onChange={e => setStats({ ...stats, region: e.target.value })} placeholder="Ile-de-France" style={inputStyle} /></div>
                 <div>
-                  <label style={labelStyle}>Numéro de licence FFF</label>
+                  <label style={labelStyle}>{t('jp_licence', lang)}</label>
                   <input value={stats.numero_licence || ''} onChange={e => setStats({ ...stats, numero_licence: e.target.value })} placeholder="Ex: 123456789" style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Pied fort</label>
+                  <label style={labelStyle}>{t('equipe_pied', lang)}</label>
                   <select value={stats.pied} onChange={e => setStats({ ...stats, pied: e.target.value })} style={inputStyle}>
-                    <option value="droit">Droit</option>
-                    <option value="gauche">Gauche</option>
-                    <option value="ambidextre">Ambidextre</option>
+                    <option value="droit">{t('equipe_droit', lang)}</option>
+                    <option value="gauche">{t('equipe_gauche', lang)}</option>
+                    <option value="ambidextre">{t('jp_ambidextre', lang)}</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>Statistiques</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_stats', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                {[['matchs_officiel', 'Matchs officiels'], ['matchs_amical', 'Matchs amicaux'], ['minutes_jouees', 'Minutes jouées'], ['buts_pied_droit', 'Buts pied droit'], ['buts_pied_gauche', 'Buts pied gauche'], ['buts_tete', 'Buts de la tête'], ['buts_total', 'Buts total'], ['passes_decisives', 'Passes décisives'], ['cleansheets', 'Cleansheets']].map(([key, label]) => (
+                {[['matchs_officiel', t('jp_matchs_off', lang)], ['matchs_amical', t('jp_matchs_amical', lang)], ['minutes_jouees', t('jp_minutes', lang)], ['buts_pied_droit', t('jp_buts_droit', lang)], ['buts_pied_gauche', t('jp_buts_gauche', lang)], ['buts_tete', t('jp_buts_tete', lang)], ['buts_total', t('jp_buts_total', lang)], ['passes_decisives', t('jp_passes_dec', lang)], ['cleansheets', t('jp_cleansheets', lang)]].map(([key, label]) => (
                   <div key={key}><label style={labelStyle}>{label}</label><input type="number" min="0" value={stats[key]} onChange={e => setStats({ ...stats, [key]: parseInt(e.target.value) || 0 })} style={inputStyle} /></div>
                 ))}
               </div>
@@ -2213,10 +2228,10 @@ function DashboardJoueur() {
 
             {caracteristiquesParPoste[profil?.poste] && (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-                <p style={{ ...labelStyle, marginBottom: '20px' }}>Style de jeu</p>
+                <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_style_jeu', lang)}</p>
 
                 <div style={{ marginBottom: '24px' }}>
-                  <label style={labelStyle}>Mon style de jeu</label>
+                  <label style={labelStyle}>{t('jp_mon_style', lang)}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                     {['Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent'].map(s => (
                       <div key={s} onClick={() => setStyleDeJeu(styleDeJeu === s ? '' : s)}
@@ -2233,7 +2248,7 @@ function DashboardJoueur() {
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>Mes points forts (max 4)</label>
+                  <label style={labelStyle}>{t('jp_points_forts', lang)}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                     {caracteristiquesParPoste[profil.poste].map(c => {
                       const selected = pointsForts.includes(c)
@@ -2259,7 +2274,7 @@ function DashboardJoueur() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Ce que je veux améliorer (max 4)</label>
+                  <label style={labelStyle}>{t('jp_ameliorer', lang)}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                     {caracteristiquesParPoste[profil.poste].map(c => {
                       const selected = aAmeliorer.includes(c)
@@ -2287,7 +2302,7 @@ function DashboardJoueur() {
             )}
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>Parcours footballistique</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_parcours', lang)}</p>
 
               {parcours.length > 0 && (
                 <div style={{ marginBottom: '24px' }}>
@@ -2334,7 +2349,7 @@ function DashboardJoueur() {
 
               <div id="parcours-form" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <label style={labelStyle}>Club</label>
+                  <label style={labelStyle}>{t('profil_club_label', lang)}</label>
                   <div style={{ position: 'relative' }}>
                     {nouveauClub.club.trim() && (
                       nouveauClub.logo_url
@@ -2378,20 +2393,20 @@ function DashboardJoueur() {
                   )}
                 </div>
                 <div>
-                  <label style={labelStyle}>Saison</label>
+                  <label style={labelStyle}>{t('profil_saison', lang)}</label>
                   <input value={nouveauClub.saison} onChange={e => setNouveauClub({ ...nouveauClub, saison: e.target.value })} placeholder="2023-2024" style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Catégorie</label>
+                  <label style={labelStyle}>{t('equipe_categorie', lang)}</label>
                   <select value={nouveauClub.categorie} onChange={e => setNouveauClub({ ...nouveauClub, categorie: e.target.value })} style={inputStyle}>
-                    <option value="">— Choisir —</option>
+                    <option value="">{t('equipe_choisir', lang)}</option>
                     {CATEGORIES_CLUB_HISTORIQUE.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Poste</label>
+                  <label style={labelStyle}>{t('equipe_poste', lang)}</label>
                   <select value={nouveauClub.poste} onChange={e => setNouveauClub({ ...nouveauClub, poste: e.target.value })} style={inputStyle}>
-                    <option value="">— Choisir —</option>
+                    <option value="">{t('equipe_choisir', lang)}</option>
                     <option>Gardien</option>
                     <option>Defenseur</option>
                     <option>Milieu</option>
@@ -2399,29 +2414,29 @@ function DashboardJoueur() {
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Niveau championnat</label>
+                  <label style={labelStyle}>{t('jp_niveau_champ', lang)}</label>
                   <select value={nouveauClub.niveau_championnat} onChange={e => setNouveauClub({ ...nouveauClub, niveau_championnat: e.target.value })} style={inputStyle}>
-                    <option value="">— Choisir —</option>
+                    <option value="">{t('equipe_choisir', lang)}</option>
                     {['Ligue 1','Ligue 2','National 1','National 2','National 3','R1','R2','R3','D1','D2','Futsal'].map(n => <option key={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Matchs joués</label>
+                  <label style={labelStyle}>{t('jp_matchs_joues', lang)}</label>
                   <input type="number" min="0" value={nouveauClub.matchs_joues} onChange={e => setNouveauClub({ ...nouveauClub, matchs_joues: e.target.value })} placeholder="0" style={inputStyle} />
                 </div>
                 {nouveauClub.poste === 'Gardien' ? (
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>Clean sheets</label>
+                    <label style={labelStyle}>{t('jp_clean_sheets', lang)}</label>
                     <input type="number" min="0" value={nouveauClub.cleansheets} onChange={e => setNouveauClub({ ...nouveauClub, cleansheets: e.target.value })} placeholder="0" style={inputStyle} />
                   </div>
                 ) : (
                   <>
                     <div>
-                      <label style={labelStyle}>Buts</label>
+                      <label style={labelStyle}>{t('comp_buts', lang)}</label>
                       <input type="number" min="0" value={nouveauClub.buts} onChange={e => setNouveauClub({ ...nouveauClub, buts: e.target.value })} placeholder="0" style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Passes décisives</label>
+                      <label style={labelStyle}>{t('jp_passes_dec', lang)}</label>
                       <input type="number" min="0" value={nouveauClub.passes_decisives} onChange={e => setNouveauClub({ ...nouveauClub, passes_decisives: e.target.value })} placeholder="0" style={inputStyle} />
                     </div>
                   </>
@@ -2431,31 +2446,31 @@ function DashboardJoueur() {
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
                   style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
-                  {savingParcours ? (editingParcoursId ? 'Modification...' : 'Ajout...') : (editingParcoursId ? '✓ Enregistrer la modification' : 'Ajouter ce club')}
+                  {savingParcours ? (editingParcoursId ? t('jp_modif_cours', lang) : t('jp_ajout_cours', lang)) : (editingParcoursId ? t('jp_modifier_parcours', lang) : t('jp_ajouter_club', lang))}
                 </button>
                 {editingParcoursId && (
                   <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
                     style={{ background: 'transparent', border: '1px solid #333', color: '#555', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    Annuler
+                    {t('btn_annuler', lang)}
                   </button>
                 )}
               </div>
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>Historique saisons</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_historique_saisons', lang)}</p>
               <HistoriqueSaisons joueurId={userId} />
             </div>
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '6px' }}>Préférences de notification</p>
-              <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Choisis les emails que tu veux recevoir. Les notifications restent toujours visibles dans la clochette.</p>
+              <p style={{ ...labelStyle, marginBottom: '6px' }}>{t('jp_notif_prefs', lang)}</p>
+              <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>{t('jp_notif_desc', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
-                  { key: 'email_analyse', label: 'Analyse vidéo terminée' },
-                  { key: 'email_like', label: '❤️ Nouveau like' },
-                  { key: 'email_commentaire', label: '💬 Nouveau commentaire' },
-                  { key: 'email_message', label: '✉️ Nouveau message' },
+                  { key: 'email_analyse', label: t('jp_notif_analyse', lang) },
+                  { key: 'email_like', label: t('jp_notif_like', lang) },
+                  { key: 'email_commentaire', label: t('jp_notif_commentaire', lang) },
+                  { key: 'email_message', label: t('jp_notif_message', lang) },
                 ].map(pref => (
                   <div key={pref.key} onClick={() => sauvegarderNotifPrefs({ ...notifPrefs, [pref.key]: !notifPrefs[pref.key] })}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
@@ -2466,12 +2481,12 @@ function DashboardJoueur() {
                   </div>
                 ))}
               </div>
-              {savingPrefs && <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '10px' }}>Enregistrement...</p>}
+              {savingPrefs && <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
             </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
-              {savingStats ? 'Sauvegarde...' : statsSaved ? 'Profil sauvegardé' : 'Sauvegarder le profil'}
+              {savingStats ? t('jp_sauvegarde_cours', lang) : statsSaved ? t('jp_profil_sauvegarde', lang) : t('profil_sauvegarder_profil', lang)}
             </button>
           </div>
         )}
@@ -2480,17 +2495,17 @@ function DashboardJoueur() {
         {onglet === 'analyses' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>Mes analyses</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{t('ja_titre', lang)}</h1>
               {(profil?.analyses_restantes || 0) > 0 && (
                 <button onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  Nouvelle analyse
+                  {t('ja_nouvelle', lang)}
                 </button>
               )}
             </div>
             {demandes.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 0' }}>
                 <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconSearch /></div>
-                <p style={{ color: '#444', fontSize: '14px' }}>Aucune analyse pour le moment</p>
+                <p style={{ color: '#444', fontSize: '14px' }}>{t('ja_aucune', lang)}</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -2499,14 +2514,14 @@ function DashboardJoueur() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <h3 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.2px' }}>{demande.titre}</h3>
                       <span style={{ background: demande.statut === 'analyse' ? '#4ade8012' : '#f59e0b12', color: demande.statut === 'analyse' ? '#4ade80' : '#f59e0b', fontSize: '10px', padding: '3px 10px', borderRadius: '20px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
-                        {demande.statut === 'analyse' ? 'Reçue' : 'En attente'}
+                        {demande.statut === 'analyse' ? t('ja_recue', lang) : t('etat_en_attente', lang)}
                       </span>
                     </div>
                     <p style={{ fontSize: '12px', color: '#444', marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                       {demande.loom_url && (
                         <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                          Voir l'analyse
+                          {t('ja_voir', lang)}
                         </a>
                       )}
                       {demande.rapport_pdf_url && (
@@ -2518,7 +2533,7 @@ function DashboardJoueur() {
                             fontSize: 12, fontWeight: 700, textDecoration: 'none',
                             fontFamily: 'Inter, sans-serif',
                           }}>
-                          📄 Télécharger mon rapport
+                          {t('ja_telecharger_rapport', lang)}
                         </a>
                       )}
                     </div>
@@ -2534,12 +2549,12 @@ function DashboardJoueur() {
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
               <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Messages recruteurs — Plan Pro</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>{t('jm_plan_pro', lang)}</h2>
               <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
-                Passe au Plan Pro pour recevoir des messages de recruteurs et clubs, et apparaître dans le Scout Center.
+                {t('jm_plan_pro_desc', lang)}
               </p>
               <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Plan Pro — 79,99€/mois
+                {t('jd_plan_pro_cta', lang)}
               </button>
             </div>
           </div>
@@ -2552,13 +2567,13 @@ function DashboardJoueur() {
                 <Avatar person={messageActif.other} size={36} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
-                  <p style={{ fontSize: '11px', color: '#4ade80' }}>Recruteur</p>
+                  <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
                 </div>
                 <button onClick={async () => {
                   const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).single()
                   if (data) setRecruteurModal(data)
                 }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  👤 Voir le profil
+                  {t('jm_voir_profil', lang)}
                 </button>
               </div>
               <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -2570,14 +2585,14 @@ function DashboardJoueur() {
                 ))}
               </div>
               <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
-                <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder="Répondre..." value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
-                <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>Envoyer</button>
+                <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
+                <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>{t('btn_envoyer', lang)}</button>
               </div>
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: '#2a2a2a' }}>
               <IconMessage />
-              <p style={{ fontSize: '13px', color: '#333' }}>Sélectionnez une conversation</p>
+              <p style={{ fontSize: '13px', color: '#333' }}>{t('jm_select_conv', lang)}</p>
             </div>
           )
 
@@ -2587,7 +2602,7 @@ function DashboardJoueur() {
               return (
                 <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
                   <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#4ade80', fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Inter, sans-serif' }}>
-                    ← Retour
+                    {t('jm_retour', lang)}
                   </button>
                   <div style={{ flex: 1, minHeight: 0, background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {panelConversation}
@@ -2597,11 +2612,11 @@ function DashboardJoueur() {
             }
             return (
               <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
+                <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>{t('jm_titre', lang)}</h1>
                 {conversations.length === 0 ? (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                    <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Aucun message.</p>
-                    <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
+                    <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
+                    <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
@@ -2630,16 +2645,16 @@ function DashboardJoueur() {
           // ── DESKTOP : layout 2 colonnes inchangé ──
           return (
             <div style={{ padding: '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
-              <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>Recruteurs</h1>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>{t('jm_titre', lang)}</h1>
               <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ padding: '14px 16px', borderBottom: '1px solid #141414' }}>
-                    <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Conversations</p>
+                    <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jm_conversations', lang)}</p>
                   </div>
                   {conversations.length === 0 ? (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                      <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Aucun message.</p>
-                      <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>Les recruteurs peuvent te contacter depuis le Scout Center.</p>
+                      <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
+                      <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
                     </div>
                   ) : conversations.map(conv => (
                     <div key={conv.otherId} onClick={() => setMessageActif(conv)}
@@ -2648,7 +2663,7 @@ function DashboardJoueur() {
                         <Avatar person={conv.other} size={30} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                          <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>Recruteur</p>
+                          <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>{t('jd_recruteur_badge', lang)}</p>
                         </div>
                       </div>
                       <p style={{ fontSize: '11px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
@@ -2668,7 +2683,7 @@ function DashboardJoueur() {
           <div style={{ maxWidth: '520px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
-                Ma Carte FIFA
+                {t('jcarte_titre', lang)}
                 <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
                   background: profil?.plan === 'pro' ? '#f0c03020' : '#c8c8c820',
                   color: profil?.plan === 'pro' ? '#f0c030' : '#c8c8c8',
@@ -2679,15 +2694,15 @@ function DashboardJoueur() {
                 </span>
               </h2>
               <p style={{ fontSize: '13px', color: '#555' }}>
-                Personnalise ta carte et utilise-la comme photo de profil.
+                {t('jcarte_desc', lang)}
               </p>
             </div>
 
             {(!profil?.plan || profil.plan === 'fan') ? (
               <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎮</div>
-                <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>Fonctionnalité Starter / Pro</p>
-                <p style={{ fontSize: '13px', color: '#555' }}>Abonne-toi pour générer ta carte FIFA personnalisée.</p>
+                <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>{t('jcarte_feature', lang)}</p>
+                <p style={{ fontSize: '13px', color: '#555' }}>{t('jcarte_abo', lang)}</p>
               </div>
             ) : (
               <>
@@ -2716,18 +2731,18 @@ function DashboardJoueur() {
           <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
-                Badge Certifié
+                {t('jcertif_titre', lang)}
                 <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#f0c03020', color: '#f0c030', border: '1px solid #f0c03040', verticalAlign: 'middle' }}>⭐ Officiel</span>
               </h2>
               <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.6 }}>
-                Envoie 5 feuilles de match minimum pour valider ton niveau. Notre équipe vérifie les documents et active ton badge certifié sous 48h. Le badge doit être renouvelé chaque saison.
+                {t('jcertif_desc', lang)}
               </p>
             </div>
 
             {/* Certifications existantes */}
             {certifications.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '14px' }}>Mes demandes</p>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '14px' }}>{t('jcertif_mes_demandes', lang)}</p>
                 {certifications.map(c => (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
                     <div>
@@ -2741,7 +2756,7 @@ function DashboardJoueur() {
                       color: c.statut === 'validé' ? '#4ade80' : c.statut === 'rejeté' ? '#ef4444' : '#f0c030',
                       border: `1px solid ${c.statut === 'validé' ? '#4ade8040' : c.statut === 'rejeté' ? '#ef444440' : '#f0c03040'}`,
                     }}>
-                      {c.statut === 'validé' ? '✓ Validé' : c.statut === 'rejeté' ? '✕ Rejeté' : '⏳ En attente'}
+                      {c.statut === 'validé' ? t('jcertif_valide', lang) : c.statut === 'rejeté' ? t('jcertif_rejete', lang) : t('jcertif_attente', lang)}
                     </span>
                   </div>
                 ))}
@@ -2752,35 +2767,35 @@ function DashboardJoueur() {
             {certifSent ? (
               <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
                 <p style={{ fontSize: '32px', marginBottom: '12px' }}>✅</p>
-                <p style={{ fontWeight: 800, fontSize: '16px', color: '#4ade80', marginBottom: '6px' }}>Demande envoyée !</p>
-                <p style={{ fontSize: '13px', color: '#555' }}>Notre équipe vérifie tes documents sous 48h.</p>
+                <p style={{ fontWeight: 800, fontSize: '16px', color: '#4ade80', marginBottom: '6px' }}>{t('jcertif_envoyee', lang)}</p>
+                <p style={{ fontSize: '13px', color: '#555' }}>{t('jcertif_verif_48h', lang)}</p>
               </div>
             ) : (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Nouvelle demande</p>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{t('jcertif_nouvelle', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
                   <div>
-                    <label style={labelStyle}>Niveau à certifier</label>
+                    <label style={labelStyle}>{t('jcertif_niveau', lang)}</label>
                     <select value={nouvelleCertif.niveau} onChange={e => setNouvelleCertif({ ...nouvelleCertif, niveau: e.target.value })} style={inputStyle}>
-                      <option value="">— Choisir —</option>
+                      <option value="">{t('equipe_choisir', lang)}</option>
                       {['Ligue 1', 'Ligue 2', 'National 1', 'National 2', 'National 3', 'R1', 'R2', 'R3', 'D1', 'D2', 'Futsal'].map(n => <option key={n}>{n}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>Saison</label>
+                    <label style={labelStyle}>{t('profil_saison', lang)}</label>
                     <select value={nouvelleCertif.saison} onChange={e => setNouvelleCertif({ ...nouvelleCertif, saison: e.target.value })} style={inputStyle}>
-                      <option value="">— Choisir —</option>
+                      <option value="">{t('equipe_choisir', lang)}</option>
                       {['2024/2025', '2025/2026', '2026/2027'].map(s => <option key={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>Feuilles de match ({certifDocs.length}/5 minimum)</label>
-                  <p style={{ fontSize: '12px', color: '#555', marginBottom: '10px' }}>PDF ou image (JPG, PNG). Au moins 5 feuilles requises.</p>
+                  <label style={labelStyle}>{t('jcertif_feuilles', lang)} ({certifDocs.length}/5 minimum)</label>
+                  <p style={{ fontSize: '12px', color: '#555', marginBottom: '10px' }}>{t('jcertif_min5', lang)}</p>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#141414', border: '1px dashed #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                    {uploadingCertif ? 'Upload en cours...' : 'Sélectionner des fichiers'}
+                    {uploadingCertif ? t('jp_upload_cours', lang) : t('jcertif_selectionner', lang)}
                     <input type="file" accept="image/*,.pdf" multiple onChange={handleCertifDocUpload} style={{ display: 'none' }} disabled={uploadingCertif} />
                   </label>
                   {certifDocs.length > 0 && (
@@ -2800,7 +2815,7 @@ function DashboardJoueur() {
                   onClick={soumettreDemandesCertification}
                   disabled={submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5}
                   style={{ width: '100%', background: '#f0c030', color: '#1a0800', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
-                  {submittingCertif ? 'Envoi...' : `⭐ Soumettre la demande (${certifDocs.length}/5 feuilles)`}
+                  {submittingCertif ? t('etat_envoi_cours', lang) : `⭐ Soumettre la demande (${certifDocs.length}/5 feuilles)`}
                 </button>
               </div>
             )}
@@ -2810,13 +2825,13 @@ function DashboardJoueur() {
         {onglet === 'coach' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Analyse Vidéo</h2>
-              <p style={{ fontSize: '13px', color: '#555' }}>Envoie ta vidéo et reçois une analyse détaillée de notre coach analyseur.</p>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>{t('jcoach_titre', lang)}</h2>
+              <p style={{ fontSize: '13px', color: '#555' }}>{t('jcoach_desc', lang)}</p>
             </div>
             {convCoach.length > 0 && (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #141414' }}>
-                  <p style={{ fontWeight: 700, color: '#f97316', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Historique</p>
+                  <p style={{ fontWeight: 700, color: '#f97316', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jcoach_historique', lang)}</p>
                 </div>
                 <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', maxHeight: '380px', overflowY: 'auto' }}>
                   {(() => {
@@ -2824,7 +2839,7 @@ function DashboardJoueur() {
                     return messages.filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
                       <div key={i} style={msgBubble(m.sender_id === userId)}>
                         <p style={{ margin: 0 }}>{m.content}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? 'Toi' : 'Coach Analyseur'}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? t('jcoach_toi', lang) : t('jnav_coach', lang)}</p>
                       </div>
                     ))
                   })()}
@@ -2834,13 +2849,13 @@ function DashboardJoueur() {
             {coaches.length === 0 ? (
               <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center', color: '#2a2a2a' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconMic /></div>
-                <p style={{ fontSize: '13px', color: '#444' }}>Aucun coach disponible pour le moment.</p>
+                <p style={{ fontSize: '13px', color: '#444' }}>{t('jcoach_aucun', lang)}</p>
               </div>
             ) : (
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                 {coaches.length > 1 && (
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={labelStyle}>Coach</label>
+                    <label style={labelStyle}>{t('jcoach_coach', lang)}</label>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                       {coaches.map(c => (
                         <button key={c.id} onClick={() => setCoachSelectionne(c)}
@@ -2852,12 +2867,12 @@ function DashboardJoueur() {
                   </div>
                 )}
                 <label style={{ ...labelStyle, marginBottom: '10px', display: 'block' }}>
-                  {convCoach.length > 0 ? 'Nouveau message' : `Écrire à ${coachSelectionne?.prenom || 'votre coach analyseur'}`}
+                  {convCoach.length > 0 ? t('jcoach_nouveau_msg', lang) : `Écrire à ${coachSelectionne?.prenom || 'votre coach analyseur'}`}
                 </label>
                 {coachSent ? (
                   <div style={{ textAlign: 'center', padding: '36px 0', color: '#f97316' }}>
                     <p style={{ fontSize: '28px', marginBottom: '8px' }}>✓</p>
-                    <p style={{ fontWeight: 700, fontSize: '14px' }}>Message envoyé au coach</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px' }}>{t('jcoach_msg_envoye', lang)}</p>
                   </div>
                 ) : (
                   <>
@@ -2866,7 +2881,7 @@ function DashboardJoueur() {
                       style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                     <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
                       style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
-                      {sendingCoach ? 'Envoi...' : 'Envoyer au coach analyseur'}
+                      {sendingCoach ? t('etat_envoi_cours', lang) : t('jcoach_envoyer', lang)}
                     </button>
                   </>
                 )}
@@ -2883,15 +2898,15 @@ function DashboardJoueur() {
         {/* ── EXPLORER ── */}
         {onglet === 'clubs' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>🌐 Explorer</h1>
-            <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>Découvre les clubs, éducateurs et recruteurs. Note ceux avec qui tu as travaillé.</p>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t('jexp_titre', lang)}</h1>
+            <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>{t('jexp_desc', lang)}</p>
 
             {/* Filtres */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               {[
-                { id: 'tous', label: `Tous (${clubsListe.length + recruteursList.length})` },
-                { id: 'clubs', label: `🏟️ Clubs / Éducateurs (${clubsListe.length})` },
-                { id: 'recruteurs', label: `🔍 Recruteurs (${recruteursList.length})` },
+                { id: 'tous', label: `${t('jexp_filtre_tous', lang)} (${clubsListe.length + recruteursList.length})` },
+                { id: 'clubs', label: `🏟️ ${t('jexp_filtre_clubs', lang)} (${clubsListe.length})` },
+                { id: 'recruteurs', label: `🔍 ${t('jexp_filtre_rec', lang)} (${recruteursList.length})` },
               ].map(f => (
                 <button key={f.id} onClick={() => setExplorerFiltre(f.id)}
                   style={{ padding: '7px 16px', borderRadius: '20px', border: `1px solid ${explorerFiltre === f.id ? '#4ade80' : '#2a2a2a'}`, background: explorerFiltre === f.id ? '#4ade8015' : 'transparent', color: explorerFiltre === f.id ? '#4ade80' : '#555', fontSize: '12px', fontWeight: explorerFiltre === f.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -2900,7 +2915,7 @@ function DashboardJoueur() {
               ))}
             </div>
 
-            {clubsLoading && <p style={{ color: '#444', textAlign: 'center' }}>Chargement...</p>}
+            {clubsLoading && <p style={{ color: '#444', textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
@@ -2920,7 +2935,7 @@ function DashboardJoueur() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
-                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>🏟️ Club</span>
+                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>{t('jexp_club_badge', lang)}</span>
                       <BadgeNote cibleId={edu.id} />
                     </div>
                     <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
@@ -2948,7 +2963,7 @@ function DashboardJoueur() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{rec.prenom} {rec.nom}</p>
-                      <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>🔍 Recruteur</span>
+                      <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>{t('jexp_rec_badge', lang)}</span>
                       <BadgeNote cibleId={rec.id} />
                     </div>
                     <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
@@ -2962,7 +2977,7 @@ function DashboardJoueur() {
               {!clubsLoading && (explorerFiltre === 'tous' ? clubsListe.length + recruteursList.length : explorerFiltre === 'clubs' ? clubsListe.length : recruteursList.length) === 0 && (
                 <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
                   <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
-                  <p style={{ fontSize: '14px', color: '#444' }}>Aucun profil trouvé.</p>
+                  <p style={{ fontSize: '14px', color: '#444' }}>{t('jexp_aucun', lang)}</p>
                 </div>
               )}
             </div>
@@ -2972,13 +2987,13 @@ function DashboardJoueur() {
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Mon Équipe</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>Rejoins l'équipe de ton éducateur pour voir tes stats et le noter.</p>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>{t('jeq_titre', lang)}</h1>
+            <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
 
             {/* Code d'entrée */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px', marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔑 Rejoindre une équipe</p>
-              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>Demande le code d'équipe à ton éducateur et entre-le ci-dessous.</p>
+              <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔑 {t('jeq_rejoindre', lang)}</p>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>{t('jeq_rejoindre_desc', lang)}</p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '15px', fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase' }}
@@ -2989,17 +3004,17 @@ function DashboardJoueur() {
                 />
                 <button onClick={rejoindreEquipe} disabled={sendingCode || !codeEquipe.trim()}
                   style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: codeEquipe.trim() ? 1 : 0.4 }}>
-                  {sendingCode ? '...' : 'Rejoindre'}
+                  {sendingCode ? '...' : t('jeq_rejoindre_btn', lang)}
                 </button>
               </div>
               {codeError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>⚠️ {codeError}</p>}
-              {codeSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>✅ Demande envoyée ! Ton éducateur doit l'accepter.</p>}
+              {codeSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>✅ {t('jeq_demande_envoyee', lang)}</p>}
             </div>
 
             {/* Mes affiliations */}
             {mesAffiliations.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Mes éducateurs</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('jeq_mes_educateurs', lang)}</p>
                 {mesAffiliations.map(a => {
                   const pe = a.profil_educateur
                   const isAccepted = a.statut === 'accepte'
