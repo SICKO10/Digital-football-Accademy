@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text, Group, Transformer } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Line, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
@@ -214,20 +214,52 @@ export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () 
   )
 }
 
-export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, draggable = true }) {
-  const emoji = el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'
+export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onDelete = () => {}, onRotate = () => {}, draggable = true }) {
+  const [hovered, setHovered] = useState(false)
+  const isCage = el.kind === 'petite_cage' || el.kind === 'grande_cage'
+  const isPlot = el.kind === 'plot'
+  const cageW = el.kind === 'grande_cage' ? 44 : 30
+  const cageH = el.kind === 'grande_cage' ? 24 : 18
+
   return (
     <Group
-      x={el.x} y={el.y} draggable={draggable}
+      x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
+      onDblClick={() => isCage && draggable && onRotate()}
+      onDblTap={() => isCage && draggable && onRotate()}
+      onMouseEnter={() => draggable && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
-      {isSelected && <Circle radius={16} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
-      {/* Le texte porte la zone cliquable/draggable : elle ne doit jamais être
-          listening=false, sinon un objet non sélectionné n'a aucune zone
-          interactive (le cercle ci-dessus n'existe que déjà sélectionné). */}
-      <Text text={emoji} fontSize={22} x={-12} y={-13} />
+      {isSelected && <Circle radius={isCage ? cageW / 2 + 6 : 16} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
+      {isCage ? (
+        <>
+          <Rect x={-cageW / 2} y={-cageH / 2} width={cageW} height={cageH} fill="transparent" stroke="#fff" strokeWidth={2} cornerRadius={1} />
+          <Line points={[-cageW / 2, cageH / 2, -cageW / 2 + 6, cageH / 2 + 6, cageW / 2 - 6, cageH / 2 + 6, cageW / 2, cageH / 2]} stroke="#fff" strokeWidth={1.2} dash={[3, 2]} />
+        </>
+      ) : isPlot ? (
+        <>
+          <Rect x={-4} y={-9} width={8} height={16} cornerRadius={4} fill="#eab308" stroke="#ca8a04" strokeWidth={1.2} />
+          <Circle y={-9} radius={4.5} fill="#fde047" stroke="#ca8a04" strokeWidth={1} />
+        </>
+      ) : (
+        /* Le texte porte la zone cliquable/draggable : elle ne doit jamais être
+           listening=false, sinon un objet non sélectionné n'a aucune zone
+           interactive (le cercle ci-dessus n'existe que déjà sélectionné). */
+        <Text text={el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'} fontSize={22} x={-12} y={-13} />
+      )}
+      {draggable && hovered && (
+        <Group
+          x={isCage ? cageW / 2 : isPlot ? 8 : 10}
+          y={isCage ? -cageH / 2 : isPlot ? -13 : -12}
+          onClick={e => { e.cancelBubble = true; onDelete() }}
+          onTap={e => { e.cancelBubble = true; onDelete() }}
+        >
+          <Circle radius={7} fill="#ef4444" />
+          <Text text="×" fontSize={11} fontStyle="bold" fill="#fff" x={-4} y={-6} />
+        </Group>
+      )}
     </Group>
   )
 }
@@ -455,8 +487,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
     if (tool === 'select') { setSelectedId(null); return }
 
-    if (['cone', 'ballon', 'mannequin'].includes(tool)) {
-      applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y }])
+    if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot'].includes(tool)) {
+      applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y, rotation: 0 }])
       return
     }
 
@@ -782,6 +814,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     { key: 'cone', label: iconeCoupelle, title: 'Coupelle' },
     { key: 'ballon', label: '⚽', title: 'Ballon' },
     { key: 'mannequin', label: '👤', title: 'Mannequin' },
+    { key: 'petite_cage', label: '🥅', title: 'Petite cage (double-clic pour pivoter)' },
+    { key: 'grande_cage', label: '🥅', title: 'Grande cage (double-clic pour pivoter)' },
+    { key: 'plot', label: '🟡', title: 'Plot' },
   ]
 
   const btnStyle = (active) => ({
@@ -948,7 +983,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
-                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} />
+                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement}
+                  onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
+                  onRotate={() => updateElement({ ...e, rotation: (e.rotation || 0) === 0 ? 90 : 0 })}
+                />
               ))}
               {elements.filter(e => e.type === 'joueur').map(e => (
                 <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} />
