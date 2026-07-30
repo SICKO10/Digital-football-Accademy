@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 function RegisterRecruteur() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [club, setClub] = useState('')
@@ -19,7 +22,7 @@ function RegisterRecruteur() {
     setErreur('')
 
     if (!prenom || !nom || !club || !email || !password) {
-      setErreur('Veuillez remplir tous les champs')
+      setErreur(t('register_veuillez_remplir', lang))
       setLoading(false)
       return
     }
@@ -56,10 +59,10 @@ function RegisterRecruteur() {
       if (data2.url) {
         window.location.href = data2.url
       } else {
-        setErreur('Erreur lors de la création du paiement')
+        setErreur(t('register_err_paiement_creation', lang))
       }
     } catch (err) {
-      setErreur('Erreur lors de la connexion au service de paiement')
+      setErreur(t('register_err_paiement_connexion', lang))
     }
   }
 
@@ -71,19 +74,19 @@ function RegisterRecruteur() {
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
             Digital<span style={{color:'#4ade80'}}>Football</span>
           </div>
-          <h1 style={{fontSize:'24px', fontWeight:'700'}}>Espace Recruteur</h1>
-          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>Acces a la base de joueurs et aux profils</p>
+          <h1 style={{fontSize:'24px', fontWeight:'700'}}>{t('register_espace_recruteur', lang)}</h1>
+          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>{t('register_acces_base_joueurs', lang)}</p>
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1.5rem'}}>
           {[
-            {id:'recruteur', label:'🔍 Scout / Agent', desc:'Recherche de joueurs'},
-            {id:'club',      label:'🏟️ Club',          desc:'Gestion du club'},
-            {id:'educateur', label:'🎓 Éducateur',      desc:'Suivi de l\'effectif'},
-          ].map(t => (
-            <div key={t.id} onClick={() => setTypeCompte(t.id)} style={{border: typeCompte === t.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === t.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
-              <div style={{fontWeight:'700', fontSize:'13px'}}>{t.label}</div>
-              <div style={{color:'#666', fontSize:'11px', marginTop:'4px'}}>{t.desc}</div>
+            {id:'recruteur', label:`🔍 ${t('register_scout_agent', lang)}`, desc:t('register_recherche_joueurs', lang)},
+            {id:'club',      label:`🏟️ ${t('profil_club_label', lang)}`, desc:t('register_gestion_club', lang)},
+            {id:'educateur', label:`🎓 ${t('register_educateur_type', lang)}`, desc:t('register_suivi_effectif', lang)},
+          ].map(typeItem => (
+            <div key={typeItem.id} onClick={() => setTypeCompte(typeItem.id)} style={{border: typeCompte === typeItem.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === typeItem.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
+              <div style={{fontWeight:'700', fontSize:'13px'}}>{typeItem.label}</div>
+              <div style={{color:'#666', fontSize:'11px', marginTop:'4px'}}>{typeItem.desc}</div>
             </div>
           ))}
         </div>
@@ -91,7 +94,7 @@ function RegisterRecruteur() {
         <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Prenom</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_prenom', lang)}</label>
               <input
                 value={prenom}
                 onChange={(e) => setPrenom(e.target.value)}
@@ -100,7 +103,7 @@ function RegisterRecruteur() {
               />
             </div>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Nom</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_nom', lang)}</label>
               <input
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
@@ -112,7 +115,7 @@ function RegisterRecruteur() {
 
           <div>
             <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>
-              {typeCompte === 'club' ? 'Nom du club' : typeCompte === 'educateur' ? 'Nom du club / structure' : 'Nom de l agence'}
+              {typeCompte === 'club' ? t('register_nom_du_club', lang) : typeCompte === 'educateur' ? t('register_nom_club_structure', lang) : t('register_nom_agence', lang)}
             </label>
             <input
               value={club}
@@ -123,7 +126,7 @@ function RegisterRecruteur() {
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Email professionnel</label>
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('register_email_professionnel', lang)}</label>
             <input
               type="email"
               value={email}
@@ -134,12 +137,12 @@ function RegisterRecruteur() {
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Mot de passe</label>
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="minimum 6 caracteres"
+              placeholder={t('register_min_6_caracteres', lang)}
               style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
             />
           </div>
@@ -148,10 +151,10 @@ function RegisterRecruteur() {
         {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
 
         <div style={{background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'1rem', marginTop:'1.5rem', marginBottom:'1rem'}}>
-          <p style={{fontSize:'13px', color:'#aaa', margin:0}}>✅ Acces illimite aux profils joueurs PRO</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ Filtres par age, poste, region, caracteristiques</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ Messagerie avec les joueurs</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ Acces au feed video des joueurs</p>
+          <p style={{fontSize:'13px', color:'#aaa', margin:0}}>✅ {t('register_acces_illimite', lang)}</p>
+          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_filtres_age', lang)}</p>
+          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_messagerie_joueurs', lang)}</p>
+          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_acces_feed', lang)}</p>
         </div>
 
         <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginBottom:'1rem', cursor:'pointer'}}>
@@ -162,14 +165,14 @@ function RegisterRecruteur() {
             style={{marginTop:'2px', accentColor:'#4ade80', width:'16px', height:'16px', flexShrink:0}}
           />
           <span style={{fontSize:'13px', color:'#aaa', lineHeight:'1.5'}}>
-            J'ai lu et j'accepte les{' '}
+            {t('register_jai_lu_accepte', lang)}{' '}
             <span
               onClick={(e) => { e.preventDefault(); window.open('/cgu', '_blank') }}
               style={{color:'#4ade80', cursor:'pointer', textDecoration:'underline'}}
             >
-              CGU et le règlement
+              {t('register_cgu_reglement', lang)}
             </span>
-            , notamment l'absence de remboursement en cas de bannissement.
+            {t('register_pas_remboursement', lang)}
           </span>
         </label>
 
@@ -178,21 +181,21 @@ function RegisterRecruteur() {
           disabled={loading || !cguAcceptees}
           style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer'}}
         >
-          {loading ? 'Creation...' : 'Creer mon compte et payer'}
+          {loading ? t('register_creation_cours', lang) : t('register_creer_compte_payer', lang)}
         </button>
 
         <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
-          Tu seras redirige vers Stripe pour finaliser le paiement annuel
+          {t('register_redirige_stripe_annuel', lang)}
         </p>
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1rem'}}>
           <span onClick={() => navigate('/login')} style={{color:'#4ade80', cursor:'pointer'}}>
-            Deja un compte ? Se connecter
+            {t('register_deja_compte_connecter', lang)}
           </span>
         </p>
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.5rem'}}>
           <span onClick={() => navigate('/')} style={{color:'#555', cursor:'pointer'}}>
-            Retour accueil
+            {t('auth_retour_accueil', lang)}
           </span>
         </p>
 

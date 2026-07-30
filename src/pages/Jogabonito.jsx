@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 const detectType = (url) => {
   if (!url) return null
@@ -24,7 +26,7 @@ const getTikTokId = (url) => {
 }
 
 // ── Carte Reel plein écran ──────────────────────────────────────────────────
-function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
+function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
   const videoRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -141,8 +143,8 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
     const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
     setDeleting(false)
     setShowDeleteConfirm(false)
-    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
-    if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
+    if (errReel) { alert(t('feed_erreur_suppression_reel', lang) + errReel.message); return }
+    if (errProfile) { alert(t('feed_erreur_suppression_profil', lang) + errProfile.message); return }
     if (onDelete) onDelete()
   }
 
@@ -186,7 +188,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>{type === 'instagram' ? '📸' : '🎬'}</div>
           <a href={reel.video_url} target="_blank" rel="noreferrer"
             style={{ background: type === 'instagram' ? '#E1306C' : '#4ade80', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontWeight: 700, fontSize: '16px', textDecoration: 'none' }}>
-            Ouvrir sur {type === 'instagram' ? 'Instagram' : 'le lien'} →
+            {t('feed_ouvrir_sur', lang)} {type === 'instagram' ? 'Instagram' : t('jogab_le_lien', lang)} →
           </a>
         </div>
       )}
@@ -202,7 +204,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
       {/* Badge "Ma vidéo" si propriétaire */}
       {isOwner && (
         <div style={{ position: 'absolute', top: '70px', left: '16px', background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#4ade80', fontWeight: 700 }}>
-          Ma vidéo
+          {t('feed_ma_video', lang)}
         </div>
       )}
 
@@ -249,19 +251,19 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         {/* Republier */}
         <button onClick={handleRepost} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px', filter: reposted ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: reposted ? 'scale(1.15)' : 'scale(1)' }}>🔁</div>
-          <span style={{ color: reposted ? '#4ade80' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : 'Partager'}</span>
+          <span style={{ color: reposted ? '#4ade80' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : t('feed_partager', lang)}</span>
         </button>
 
         {/* Favori */}
         <button onClick={handleFavori} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px', filter: favori ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: favori ? 'scale(1.15)' : 'scale(1)' }}>⭐</div>
-          <span style={{ color: favori ? '#f59e0b' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>Save</span>
+          <span style={{ color: favori ? '#f59e0b' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{t('jogab_save', lang)}</span>
         </button>
 
         {/* Profil raccourci */}
         <button onClick={() => onOpenProfile(joueur)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px' }}>👤</div>
-          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>Profil</span>
+          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_profil', lang)}</span>
         </button>
 
         {/* Son (MP4 seulement) */}
@@ -279,7 +281,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
           >
             <div style={{ fontSize: '24px' }}>🗑️</div>
-            <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>Suppr.</span>
+            <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_suppr', lang)}</span>
           </button>
         )}
       </div>
@@ -287,7 +289,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
       {/* Indicateur scroll */}
       <div style={{ position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', opacity: 0.6 }}>
         <div style={{ width: '2px', height: '20px', background: '#fff', borderRadius: '2px', animation: 'bounce 1.5s infinite' }} />
-        <span style={{ color: '#fff', fontSize: '10px' }}>Scroll</span>
+        <span style={{ color: '#fff', fontSize: '10px' }}>{t('jogab_scroll', lang)}</span>
       </div>
 
       {/* PROMPT CONNEXION */}
@@ -298,22 +300,22 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
             style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '20px 20px 0 0', padding: '2rem', width: '100%', maxWidth: '480px', textAlign: 'center' }}>
             <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
             <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚽</div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700 }}>Rejoins la communauté</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700 }}>{t('jogab_rejoins_communaute', lang)}</h3>
             <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>
-              Crée un compte gratuit pour liker et commenter les reels
+              {t('jogab_cree_compte_liker_desc', lang)}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 onClick={() => { window.location.href = '/register' }}
                 style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
               >
-                Créer un compte gratuit
+                {t('jogab_creer_compte_gratuit', lang)}
               </button>
               <button
                 onClick={() => { window.location.href = '/login' }}
                 style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer' }}
               >
-                J'ai déjà un compte
+                {t('jogab_jai_deja_compte', lang)}
               </button>
             </div>
           </div>
@@ -325,21 +327,21 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
         <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ background: '#111', border: '1px solid #ef444440', borderRadius: '16px', padding: '2rem', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑️</div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#fff' }}>Supprimer ce reel ?</h3>
-            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>Il sera retiré de Jogabonito et ne sera plus visible.</p>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#fff' }}>{t('jogab_supprimer_ce_reel', lang)}</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>{t('jogab_reel_retire_desc', lang)}</p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
               >
-                Annuler
+                {t('clubpub_annuler', lang)}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
                 style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.6 : 1 }}
               >
-                {deleting ? 'Suppression...' : 'Supprimer'}
+                {deleting ? t('feed_suppression_cours', lang) : t('jogab_supprimer', lang)}
               </button>
             </div>
           </div>
@@ -353,10 +355,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
             onClick={e => e.stopPropagation()}
             style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#111', borderRadius: '20px 20px 0 0', padding: '1rem', maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1rem' }} />
-            <p style={{ margin: '0 0 1rem', fontWeight: 700, fontSize: '16px' }}>Commentaires</p>
+            <p style={{ margin: '0 0 1rem', fontWeight: 700, fontSize: '16px' }}>{t('jogab_commentaires', lang)}</p>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
               {comments.length === 0 ? (
-                <p style={{ color: '#555', textAlign: 'center', padding: '2rem 0', fontSize: '14px' }}>Aucun commentaire. Soyez le premier !</p>
+                <p style={{ color: '#555', textAlign: 'center', padding: '2rem 0', fontSize: '14px' }}>{t('feed_aucun_commentaire', lang)}</p>
               ) : comments.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                   <Avatar person={c.author} size={32} bg="#1a2e1a" />
@@ -373,7 +375,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleComment()}
-                  placeholder="Ajouter un commentaire..."
+                  placeholder={t('jogab_ajouter_commentaire', lang)}
                   style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '24px', color: '#fff', padding: '10px 16px', fontSize: '14px', outline: 'none' }}
                 />
                 <button onClick={handleComment} disabled={!newComment.trim()}
@@ -383,10 +385,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <p style={{ color: '#666', fontSize: '13px', margin: '0 0 10px' }}>Crée un compte gratuit pour interagir</p>
+                <p style={{ color: '#666', fontSize: '13px', margin: '0 0 10px' }}>{t('jogab_cree_compte_interagir', lang)}</p>
                 <button onClick={() => { setShowComments(false); setShowLoginPrompt(true) }}
                   style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '20px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-                  Rejoindre gratuitement
+                  {t('jogab_rejoindre_gratuitement', lang)}
                 </button>
               </div>
             )}
@@ -398,7 +400,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete }) {
 }
 
 // ── Modal profil joueur ─────────────────────────────────────────────────────
-function ProfilModal({ joueur, onClose }) {
+function ProfilModal({ joueur, onClose, lang }) {
   if (!joueur) return null
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
@@ -414,7 +416,7 @@ function ProfilModal({ joueur, onClose }) {
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-          {[['🏆 Club', joueur?.club], ['📍 Région', joueur?.region], ['🦵 Pied', joueur?.pied], ['🏟️ Niveau', joueur?.niveau_equipe]].filter(([, v]) => v).map(([label, val]) => (
+          {[[`🏆 ${t('feed_stat_club', lang)}`, joueur?.club], [`📍 ${t('profil_region', lang)}`, joueur?.region], [`🦵 ${t('feed_stat_pied', lang)}`, joueur?.pied], [`🏟️ ${t('feed_stat_niveau', lang)}`, joueur?.niveau_equipe]].filter(([, v]) => v).map(([label, val]) => (
             <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
               <p style={{ margin: 0, fontSize: '11px', color: '#666' }}>{label}</p>
               <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p>
@@ -422,7 +424,7 @@ function ProfilModal({ joueur, onClose }) {
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-          {[['Buts', joueur?.buts_total ?? 0], ['Passes déc.', joueur?.passes_decisives ?? 0], ['Matchs', joueur?.matchs_officiel ?? 0]].map(([label, val]) => (
+          {[[t('feed_stat_buts', lang), joueur?.buts_total ?? 0], [t('comp_passes_dec', lang), joueur?.passes_decisives ?? 0], [t('feed_stat_matchs', lang), joueur?.matchs_officiel ?? 0]].map(([label, val]) => (
             <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
               <p style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#4ade80' }}>{val}</p>
               <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#666' }}>{label}</p>
@@ -437,6 +439,7 @@ function ProfilModal({ joueur, onClose }) {
 // ── Page principale Reels ───────────────────────────────────────────────────
 function Jogabonito() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [reels, setReels] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
@@ -514,7 +517,7 @@ function Jogabonito() {
 
   if (loading) return (
     <div style={{ height: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontSize: '16px' }}>Chargement...</p>
+      <p style={{ color: '#4ade80', fontSize: '16px' }}>{t('jexp_chargement', lang)}</p>
     </div>
   )
 
@@ -534,12 +537,12 @@ function Jogabonito() {
           {user ? (
             <button onClick={() => navigate('/dashboard')}
               style={{ background: '#4ade80', color: '#000', border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-              Mon espace
+              {t('feed_mon_espace', lang)}
             </button>
           ) : (
             <button onClick={() => navigate('/login')}
               style={{ background: '#4ade80', color: '#000', border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-              Connexion
+              {t('jogab_connexion', lang)}
             </button>
           )}
         </div>
@@ -554,8 +557,8 @@ function Jogabonito() {
       {reels.length === 0 ? (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
           <p style={{ fontSize: '3rem' }}>🎬</p>
-          <p style={{ fontSize: '18px' }}>Aucun reel pour le moment</p>
-          <p style={{ fontSize: '14px', color: '#444', marginTop: '8px' }}>Les joueurs publient leurs clips courts depuis leur dashboard</p>
+          <p style={{ fontSize: '18px' }}>{t('jogab_aucun_reel_moment', lang)}</p>
+          <p style={{ fontSize: '14px', color: '#444', marginTop: '8px' }}>{t('jogab_joueurs_publient_desc', lang)}</p>
         </div>
       ) : (
         <div
@@ -573,6 +576,7 @@ function Jogabonito() {
                 user={user}
                 onOpenProfile={setProfilModal}
                 onDelete={handleReelDeleted}
+                lang={lang}
               />
             </div>
           ))}
@@ -580,7 +584,7 @@ function Jogabonito() {
       )}
 
       {/* Modal profil */}
-      {profilModal && <ProfilModal joueur={profilModal} onClose={() => setProfilModal(null)} />}
+      {profilModal && <ProfilModal joueur={profilModal} onClose={() => setProfilModal(null)} lang={lang} />}
 
       <style>{`
         .reels-container::-webkit-scrollbar { display: none; }

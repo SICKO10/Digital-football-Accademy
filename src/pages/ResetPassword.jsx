@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 function ResetPassword() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,18 +40,18 @@ function ResetPassword() {
     try {
       const { data, error } = await supabase.auth.setSession({ access_token: params.access_token, refresh_token: params.refresh_token })
       if (error) throw error
-      if (!data.session?.user) throw new Error('Session introuvable.')
+      if (!data.session?.user) throw new Error(t('auth_session_introuvable', lang))
       setReady(true)
     } catch (err) {
-      setErreurLien(err?.message || 'Lien invalide ou expiré.')
+      setErreurLien(err?.message || t('auth_lien_invalide_expire', lang))
     } finally {
       setVerif(false)
     }
   }
 
   const handleSubmit = async () => {
-    if (password.length < 8) { setErreur('Le mot de passe doit contenir au moins 8 caractères'); return }
-    if (password !== confirm) { setErreur('Les mots de passe ne correspondent pas'); return }
+    if (password.length < 8) { setErreur(t('auth_mdp_min_8', lang)); return }
+    if (password !== confirm) { setErreur(t('auth_mdp_ne_correspondent_pas', lang)); return }
     setLoading(true)
     setErreur('')
     const { error } = await supabase.auth.updateUser({ password })
@@ -66,58 +69,58 @@ function ResetPassword() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Nouveau mot de passe</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{t('auth_nouveau_mdp', lang)}</h1>
         </div>
 
         {done ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '3rem', margin: '0 0 1rem' }}>✅</p>
-            <p style={{ fontWeight: 700, marginBottom: '8px' }}>Mot de passe mis à jour !</p>
-            <p style={{ color: '#666', fontSize: '14px' }}>Redirection vers la connexion...</p>
+            <p style={{ fontWeight: 700, marginBottom: '8px' }}>{t('auth_mdp_maj', lang)}</p>
+            <p style={{ color: '#666', fontSize: '14px' }}>{t('auth_redirection_connexion', lang)}</p>
           </div>
         ) : erreurLien ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '1.5rem' }}>{erreurLien}</p>
             <p style={{ fontSize: '12px', color: '#444' }}>
               <span onClick={() => navigate('/forgot-password')} style={{ color: '#4ade80', cursor: 'pointer' }}>
-                Demander un nouveau lien
+                {t('auth_demander_nouveau_lien', lang)}
               </span>
             </p>
           </div>
         ) : !ready ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '1.5rem' }}>
-              Clique sur le bouton ci-dessous pour continuer.
+              {t('auth_clique_continuer', lang)}
             </p>
             <button
               onClick={finaliserSession}
               disabled={verif || !params}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
             >
-              {verif ? 'Vérification...' : 'Réinitialiser mon mot de passe'}
+              {verif ? t('auth_verification_cours', lang) : t('auth_reinitialiser_mdp', lang)}
             </button>
           </div>
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Nouveau mot de passe</label>
+                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_nouveau_mdp', lang)}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="8 caractères minimum"
+                  placeholder={t('auth_8_caracteres_min', lang)}
                   style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Confirmer le mot de passe</label>
+                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_confirmer_mdp', lang)}</label>
                 <input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  placeholder="Répète le mot de passe"
+                  placeholder={t('auth_repete_mdp', lang)}
                   style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
@@ -130,7 +133,7 @@ function ResetPassword() {
               disabled={loading}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
             >
-              {loading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+              {loading ? t('auth_mise_a_jour_cours', lang) : t('auth_mettre_a_jour_mdp', lang)}
             </button>
           </>
         )}

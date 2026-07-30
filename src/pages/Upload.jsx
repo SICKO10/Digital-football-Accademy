@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 const notifierCoachs = async (payload) => {
   const { data: coachs } = await supabase.from('profiles').select('email').eq('plan', 'coach')
@@ -19,6 +21,7 @@ const notifierCoachs = async (payload) => {
 
 export default function Upload() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [user, setUser] = useState(null)
   const [profil, setProfil] = useState(null)
   const [mode, setMode] = useState('lien')
@@ -59,7 +62,7 @@ export default function Upload() {
     if (!lien.trim() || !user) return
 
     if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
-      setErreur("Tu as utilisé toutes tes analyses ce mois-ci. Reviens le mois prochain !")
+      setErreur(t('upload_quota_utilise_ce_mois', lang))
       return
     }
 
@@ -92,7 +95,7 @@ export default function Upload() {
       await decrementerAnalyse()
       setSuccess(true)
     } catch (e) {
-      setErreur(e.message || "Erreur lors de l'envoi")
+      setErreur(e.message || t('upload_erreur_envoi', lang))
     }
     setUploading(false)
   }
@@ -101,7 +104,7 @@ export default function Upload() {
     if (!file || !user) return
 
     if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
-      setErreur("Tu as utilisé toutes tes analyses ce mois-ci. Reviens le mois prochain !")
+      setErreur(t('upload_quota_utilise_ce_mois', lang))
       return
     }
 
@@ -118,7 +121,7 @@ export default function Upload() {
 
       if (!sigRes.ok) {
         const err = await sigRes.json()
-        throw new Error(err.error || 'Erreur signature')
+        throw new Error(err.error || t('upload_erreur_signature', lang))
       }
 
       const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
@@ -172,13 +175,13 @@ export default function Upload() {
           setSuccess(true)
         } else {
           const errData = JSON.parse(xhr.responseText)
-          setErreur(errData?.error?.message || 'Erreur upload Cloudinary')
+          setErreur(errData?.error?.message || t('upload_upload_echoue', lang))
         }
         setUploading(false)
       }
 
       xhr.onerror = () => {
-        setErreur('Erreur réseau')
+        setErreur(t('upload_erreur_reseau', lang))
         setUploading(false)
       }
 
@@ -186,7 +189,7 @@ export default function Upload() {
       xhr.send(formData)
 
     } catch (e) {
-      setErreur(e.message || 'Erreur inconnue')
+      setErreur(e.message || t('invite_erreur_inconnue', lang))
       setUploading(false)
     }
   }
@@ -225,7 +228,7 @@ export default function Upload() {
 
   if (!profil) return (
     <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80' }}>Chargement...</p>
+      <p style={{ color: '#4ade80' }}>{t('jexp_chargement', lang)}</p>
     </div>
   )
 
@@ -239,46 +242,46 @@ export default function Upload() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button onClick={() => navigate('/dashboard')}
             style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-            ← Dashboard
+            {t('upload_dashboard_retour', lang)}
           </button>
           <button onClick={async () => { await supabase.auth.signOut(); navigate('/') }}
             style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', fontSize: '13px' }}>
-            Déconnexion
+            {t('btn_deconnexion', lang)}
           </button>
         </div>
       </nav>
 
       <div style={s.container}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-          Partage ta vidéo <span style={{ color: '#4ade80' }}>🎬</span>
+          {t('upload_partage_ta_video', lang)} <span style={{ color: '#4ade80' }}>🎬</span>
         </h1>
         <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '14px' }}>
-          Ton clip sera visible par les recruteurs et analysé par notre coach
+          {t('upload_clip_desc', lang)}
         </p>
 
         {/* Quota analyses */}
         <div style={s.quotaBadge(analysesRestantes)}>
-          {peutEnvoyer ? `✅ ${analysesRestantes} analyse${analysesRestantes > 1 ? 's' : ''} restante${analysesRestantes > 1 ? 's' : ''} ce mois` : '❌ Plus d\'analyses disponibles ce mois'}
+          {peutEnvoyer ? `✅ ${analysesRestantes} ${t('upload_analyses_restantes_suffix', lang)}` : `❌ ${t('upload_plus_analyses', lang)}`}
         </div>
 
         {success ? (
           <div style={{ ...s.box, border: '2px solid #4ade80', textAlign: 'center', padding: '3rem' }}>
             <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</p>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Vidéo envoyée !</h2>
-            <p style={{ color: '#666', marginBottom: '0.5rem', fontSize: '14px' }}>Ton clip est visible par les recruteurs.</p>
-            <p style={{ color: '#4ade80', marginBottom: '0.5rem', fontSize: '14px' }}>Une demande d'analyse a été créée pour le coach.</p>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_video_envoyee', lang)}</h2>
+            <p style={{ color: '#666', marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_clip_visible_recruteurs', lang)}</p>
+            <p style={{ color: '#4ade80', marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_demande_creee_coach', lang)}</p>
             <p style={{ color: '#666', marginBottom: '2rem', fontSize: '13px' }}>
-              Il te reste <strong style={{ color: '#fff' }}>{analysesRestantes}</strong> analyse{analysesRestantes > 1 ? 's' : ''} ce mois.
+              {t('upload_il_te_reste', lang)} <strong style={{ color: '#fff' }}>{analysesRestantes}</strong> {t('upload_analyses_ce_mois_suffix', lang)}
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => navigate('/dashboard')}
                 style={{ ...s.btn(false), width: 'auto', padding: '10px 24px' }}>
-                Mon dashboard
+                {t('upload_mon_dashboard', lang)}
               </button>
               {analysesRestantes > 0 && (
                 <button onClick={() => { setSuccess(false); setFile(null); setLien(''); setProgress(0) }}
                   style={{ background: '#1a1a1a', border: '1px solid #333', color: '#aaa', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                  Envoyer un autre
+                  {t('upload_envoyer_autre', lang)}
                 </button>
               )}
             </div>
@@ -286,30 +289,30 @@ export default function Upload() {
         ) : !peutEnvoyer ? (
           <div style={{ ...s.box, border: '1px solid #f9731640', textAlign: 'center', padding: '3rem' }}>
             <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</p>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Quota épuisé</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_quota_epuise', lang)}</h2>
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem' }}>
-              Tu as utilisé toutes tes analyses ce mois-ci.<br />Reviens le mois prochain ou passe au plan supérieur.
+              {t('upload_quota_epuise_desc', lang)}<br />{t('upload_reviens_ou_upgrade', lang)}
             </p>
             <button onClick={() => navigate('/dashboard')}
               style={{ ...s.btn(false), width: 'auto', padding: '10px 24px' }}>
-              Retour au dashboard
+              {t('upload_retour_dashboard', lang)}
             </button>
           </div>
         ) : (
           <>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '1.5rem' }}>
               <button style={s.modeBtn(mode === 'lien')} onClick={() => setMode('lien')}>
-                🔗 Lien vidéo (Veo, YouTube...)
+                {t('upload_lien_video_mode', lang)}
               </button>
               <button style={s.modeBtn(mode === 'fichier')} onClick={() => setMode('fichier')}>
-                📁 Upload fichier MP4
+                {t('upload_upload_fichier_mp4_mode', lang)}
               </button>
             </div>
 
             {mode === 'lien' && (
               <div style={s.box}>
                 <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
-                  Colle ton lien vidéo
+                  {t('upload_colle_ton_lien', lang)}
                 </label>
                 <input
                   style={s.input}
@@ -319,7 +322,7 @@ export default function Upload() {
                 />
                 <div style={{ background: '#0f2a1a', border: '1px solid #4ade8030', borderRadius: '10px', padding: '1rem', marginTop: '1rem' }}>
                   <p style={{ color: '#4ade80', fontWeight: 600, fontSize: '13px', margin: '0 0 8px' }}>
-                    📱 Plateformes acceptées :
+                    {t('upload_plateformes_acceptees_title', lang)}
                   </p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {['Veo ✓', 'YouTube ✓', 'Google Drive ✓', 'Hudl ✓'].map(p => (
@@ -335,7 +338,7 @@ export default function Upload() {
             {mode === 'fichier' && (
               <div style={s.box}>
                 <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
-                  Sélectionne ta vidéo
+                  {t('upload_selectionne_ta_video', lang)}
                 </label>
                 <div
                   onClick={() => document.getElementById('video-input').click()}
@@ -346,10 +349,10 @@ export default function Upload() {
                   }}>
                   <p style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{file ? '🎬' : '📁'}</p>
                   <p style={{ fontWeight: 600, marginBottom: '4px' }}>
-                    {file ? file.name : 'Cliquez pour sélectionner'}
+                    {file ? file.name : t('upload_clique_selectionner', lang)}
                   </p>
                   <p style={{ fontSize: '13px', color: '#555' }}>
-                    {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'MP4, MOV — max 500MB'}
+                    {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : t('upload_max_500mb', lang)}
                   </p>
                 </div>
                 <input id="video-input" type="file" accept="video/*"
@@ -359,7 +362,7 @@ export default function Upload() {
                 {uploading && (
                   <div style={{ marginTop: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                      <span style={{ color: '#4ade80' }}>Upload en cours...</span>
+                      <span style={{ color: '#4ade80' }}>{t('upload_upload_en_cours', lang)}</span>
                       <span style={{ fontWeight: 700 }}>{progress}%</span>
                     </div>
                     <div style={{ background: '#1a1a1a', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
@@ -372,11 +375,11 @@ export default function Upload() {
 
             <div style={s.box}>
               <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', margin: '0 0 14px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                🎽 Aide le coach à te retrouver dans la vidéo
+                {t('upload_aide_coach', lang)}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label style={s.label}>Numéro de maillot *</label>
+                  <label style={s.label}>{t('upload_numero_maillot', lang)}</label>
                   <input
                     style={s.input}
                     placeholder="Ex: 10"
@@ -387,7 +390,7 @@ export default function Upload() {
                   />
                 </div>
                 <div>
-                  <label style={s.label}>Couleur du maillot *</label>
+                  <label style={s.label}>{t('upload_couleur_maillot', lang)}</label>
                   <input
                     style={s.input}
                     placeholder="Ex: Rouge, Blanc..."
@@ -398,7 +401,7 @@ export default function Upload() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label style={s.label}>Temps de jeu *</label>
+                  <label style={s.label}>{t('upload_temps_de_jeu', lang)}</label>
                   <input
                     style={s.input}
                     placeholder="Ex: Titulaire, sorti 65ème"
@@ -407,16 +410,16 @@ export default function Upload() {
                   />
                 </div>
                 <div>
-                  <label style={s.label}>Poste joué *</label>
+                  <label style={s.label}>{t('upload_poste_joue', lang)}</label>
                   <select value={posteMatch} onChange={e => setPosteMatch(e.target.value)} style={s.input}>
-                    <option value="">— Poste —</option>
+                    <option value="">{t('upload_poste_placeholder', lang)}</option>
                     {['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant'].map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <label style={s.label}>Notes pour le coach (optionnel)</label>
+              <label style={s.label}>{t('upload_notes_coach', lang)}</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -437,12 +440,12 @@ export default function Upload() {
               onClick={mode === 'lien' ? handleSubmitLien : handleUploadFichier}
             >
               {uploading
-                ? `En cours... ${mode === 'fichier' ? progress + '%' : ''}`
-                : mode === 'lien' ? '🔗 Envoyer pour analyse' : '🚀 Envoyer ma vidéo'}
+                ? `${t('upload_en_cours', lang)} ${mode === 'fichier' ? progress + '%' : ''}`
+                : mode === 'lien' ? t('upload_envoyer_analyse', lang) : t('upload_envoyer_ma_video', lang)}
             </button>
 
             <p style={{ textAlign: 'center', fontSize: '12px', color: '#555', marginTop: '1rem' }}>
-              Visible par les recruteurs · Analysé par notre coach expert
+              {t('upload_visible_recruteurs_analyse', lang)}
             </p>
           </>
         )}

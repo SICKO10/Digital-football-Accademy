@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 export default function UploadClip() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [user, setUser] = useState(null)
   const [profil, setProfil] = useState(null)
   const [mode, setMode] = useState('lien')
@@ -54,18 +57,18 @@ export default function UploadClip() {
   }
 
   async function handleSubmitLien() {
-    if (!lien.trim()) { setErreur('Colle un lien vidéo'); return }
+    if (!lien.trim()) { setErreur(t('uploadclip_colle_lien_video', lang)); return }
     setUploading(true)
     setErreur('')
     try {
       await sauvegarderVideo(lien.trim())
       setSuccess(true)
-    } catch (e) { setErreur(e.message || 'Erreur lors de la publication') }
+    } catch (e) { setErreur(e.message || t('uploadclip_erreur_publication', lang)) }
     setUploading(false)
   }
 
   async function handleUploadFichier() {
-    if (!file) { setErreur('Sélectionne un fichier vidéo'); return }
+    if (!file) { setErreur(t('uploadclip_selectionne_fichier', lang)); return }
     setUploading(true)
     setErreur('')
     setProgress(0)
@@ -75,7 +78,7 @@ export default function UploadClip() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
       })
-      if (!sigRes.ok) { const err = await sigRes.json(); throw new Error(err.error || 'Erreur signature') }
+      if (!sigRes.ok) { const err = await sigRes.json(); throw new Error(err.error || t('upload_erreur_signature', lang)) }
       const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
       setProgress(10)
 
@@ -95,9 +98,9 @@ export default function UploadClip() {
         xhr.onload = () => {
           const res = JSON.parse(xhr.responseText)
           if (res.secure_url) resolve(res.secure_url)
-          else reject(new Error(res.error?.message || 'Upload échoué'))
+          else reject(new Error(res.error?.message || t('upload_upload_echoue', lang)))
         }
-        xhr.onerror = () => reject(new Error('Erreur réseau'))
+        xhr.onerror = () => reject(new Error(t('upload_erreur_reseau', lang)))
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
         xhr.send(formData)
       })
@@ -105,7 +108,7 @@ export default function UploadClip() {
       await sauvegarderVideo(videoUrl)
       setProgress(100)
       setSuccess(true)
-    } catch (e) { setErreur(e.message || 'Erreur inconnue') }
+    } catch (e) { setErreur(e.message || t('invite_erreur_inconnue', lang)) }
     setUploading(false)
   }
 
@@ -120,7 +123,7 @@ export default function UploadClip() {
 
   if (!profil) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80' }}>Chargement...</p>
+      <p style={{ color: '#4ade80' }}>{t('jexp_chargement', lang)}</p>
     </div>
   )
 
@@ -128,10 +131,10 @@ export default function UploadClip() {
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: '2rem' }}>
         <p style={{ fontSize: '4rem' }}>🎬</p>
-        <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Clip publié !</h2>
-        <p style={{ color: '#666', marginBottom: '2rem' }}>Ton clip est visible dans le Feed et Jogabonito.</p>
+        <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{t('uploadclip_publie_titre', lang)}</h2>
+        <p style={{ color: '#666', marginBottom: '2rem' }}>{t('uploadclip_publie_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => navigate('/feed')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Voir le Feed →</button>
+          <button onClick={() => navigate('/feed')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>{t('uploadclip_voir_feed', lang)}</button>
           <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer' }}>Dashboard</button>
         </div>
       </div>
@@ -142,58 +145,58 @@ export default function UploadClip() {
     <div style={st.page}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
         <div style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Dashboard</button>
+        <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('upload_dashboard_retour', lang)}</button>
       </nav>
 
       <div style={st.content}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>🎬 Publier un clip</h1>
-        <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>Visible par les recruteurs dans le Feed et dans Jogabonito</p>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>🎬 {t('uploadclip_titre', lang)}</h1>
+        <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>{t('uploadclip_desc', lang)}</p>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
-          <button style={st.modeBtn(mode === 'lien')} onClick={() => setMode('lien')}>🔗 Lien</button>
-          <button style={st.modeBtn(mode === 'mp4')} onClick={() => setMode('mp4')}>📁 MP4</button>
+          <button style={st.modeBtn(mode === 'lien')} onClick={() => setMode('lien')}>{t('upload_lien_mode', lang)}</button>
+          <button style={st.modeBtn(mode === 'mp4')} onClick={() => setMode('mp4')}>{t('upload_mp4_mode', lang)}</button>
         </div>
 
         <div style={st.card}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={st.label}>Titre (optionnel)</label>
+            <label style={st.label}>{t('upload_titre_optionnel', lang)}</label>
             <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex: Mon but de la semaine 🔥" style={st.input} />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={st.label}>Description (optionnel)</label>
+            <label style={st.label}>{t('upload_description_optionnel', lang)}</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Décris ton clip..." rows={2} style={{ ...st.input, resize: 'vertical', fontFamily: 'inherit' }} />
           </div>
 
           {mode === 'lien' && (
             <div>
-              <label style={st.label}>Lien YouTube / Veo / TikTok / Instagram</label>
+              <label style={st.label}>{t('uploadclip_lien_label', lang)}</label>
               <input
                 value={lien}
                 onChange={e => setLien(e.target.value)}
                 placeholder="https://www.youtube.com/... ou https://app.veo.co/..."
                 style={st.input}
               />
-              {platform && <p style={{ marginTop: '8px', fontSize: '13px', color: platform.color, fontWeight: 600 }}>{platform.label} détecté ✓</p>}
+              {platform && <p style={{ marginTop: '8px', fontSize: '13px', color: platform.color, fontWeight: 600 }}>{platform.label} {t('upload_detecte', lang)}</p>}
               <div style={{ background: '#0f1a0f', border: '1px solid #4ade8020', borderRadius: '10px', padding: '10px 14px', marginTop: '12px' }}>
-                <p style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Plateformes acceptées :</p>
-                <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>YouTube · Veo · TikTok · Instagram · Lien direct MP4</p>
+                <p style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>{t('uploadclip_plateformes_acceptees', lang)}</p>
+                <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>{t('uploadclip_plateformes_liste', lang)}</p>
               </div>
             </div>
           )}
 
           {mode === 'mp4' && (
             <div>
-              <label style={st.label}>Fichier MP4 (max 500MB)</label>
+              <label style={st.label}>{t('uploadclip_fichier_label', lang)}</label>
               <div
                 onClick={() => document.getElementById('clip-file').click()}
                 style={{ border: '2px dashed ' + (file ? '#4ade80' : '#333'), borderRadius: '12px', padding: '2.5rem', textAlign: 'center', cursor: 'pointer', background: file ? '#4ade8008' : 'transparent' }}>
                 {file ? (
                   <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>✅</p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
                 ) : (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Clique pour sélectionner</p></>
+                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: '#666', fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
                 )}
               </div>
-              <input id="clip-file" type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f && f.size > 500 * 1024 * 1024) { setErreur('Fichier trop volumineux (max 500MB)'); return } setErreur(''); setFile(f) }} />
+              <input id="clip-file" type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f && f.size > 500 * 1024 * 1024) { setErreur(t('upload_fichier_trop_volumineux_500', lang)); return } setErreur(''); setFile(f) }} />
               {uploading && progress > 0 && (
                 <div style={{ marginTop: '12px' }}>
                   <div style={{ background: '#1a1a1a', borderRadius: '8px', overflow: 'hidden', height: '8px' }}>
@@ -211,7 +214,7 @@ export default function UploadClip() {
             onClick={mode === 'lien' ? handleSubmitLien : handleUploadFichier}
             disabled={uploading || (mode === 'lien' ? !lien.trim() : !file)}
             style={{ marginTop: '1.5rem', width: '100%', background: (uploading || (mode === 'lien' ? !lien.trim() : !file)) ? '#333' : '#4ade80', color: (uploading || (mode === 'lien' ? !lien.trim() : !file)) ? '#666' : '#000', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 700, fontSize: '15px', cursor: uploading ? 'not-allowed' : 'pointer' }}>
-            {uploading ? (progress > 0 ? `Upload ${progress}%...` : 'Publication...') : '🚀 Publier mon clip'}
+            {uploading ? (progress > 0 ? `Upload ${progress}%...` : t('upload_publication_cours', lang)) : t('uploadclip_publier_btn', lang)}
           </button>
         </div>
       </div>

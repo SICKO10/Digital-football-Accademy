@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 function ForgotPassword() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [erreur, setErreur] = useState('')
 
   const handleSubmit = async () => {
-    if (!email.trim()) { setErreur('Saisis ton adresse email'); return }
+    if (!email.trim()) { setErreur(t('auth_saisis_email', lang)); return }
     setLoading(true)
     setErreur('')
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -29,27 +32,27 @@ function ForgotPassword() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>Mot de passe oublié</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{t('auth_mdp_oublie', lang)}</h1>
           <p style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-            Un lien de réinitialisation sera envoyé à ton email
+            {t('auth_lien_reinit_desc', lang)}
           </p>
         </div>
 
         {sent ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '3rem', margin: '0 0 1rem' }}>📧</p>
-            <p style={{ fontWeight: 700, marginBottom: '8px' }}>Email envoyé !</p>
+            <p style={{ fontWeight: 700, marginBottom: '8px' }}>{t('auth_email_envoye', lang)}</p>
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '2rem' }}>
-              Vérifie ta boîte mail et clique sur le lien pour réinitialiser ton mot de passe.
+              {t('auth_verifie_boite_mail', lang)}
             </p>
             <span onClick={() => navigate('/login')} style={{ color: '#4ade80', fontSize: '14px', cursor: 'pointer' }}>
-              ← Retour à la connexion
+              {t('auth_retour_connexion', lang)}
             </span>
           </div>
         ) : (
           <>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Email</label>
+              <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('aff_email', lang)}</label>
               <input
                 type="email"
                 value={email}
@@ -67,12 +70,12 @@ function ForgotPassword() {
               disabled={loading}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', marginBottom: '1rem' }}
             >
-              {loading ? 'Envoi...' : 'Envoyer le lien'}
+              {loading ? t('etat_envoi_cours', lang) : t('auth_envoyer_lien', lang)}
             </button>
 
             <p style={{ textAlign: 'center', fontSize: '13px', color: '#666' }}>
               <span onClick={() => navigate('/login')} style={{ color: '#555', cursor: 'pointer' }}>
-                ← Retour à la connexion
+                {t('auth_retour_connexion', lang)}
               </span>
             </p>
           </>

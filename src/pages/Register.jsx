@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 function Register() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [plan, setPlan] = useState('pro')
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
@@ -66,10 +69,10 @@ function Register() {
       if (data2.url) {
         window.location.href = data2.url
       } else {
-        setErreur('Erreur lors de la création du paiement')
+        setErreur(t('register_err_paiement_creation', lang))
       }
     } catch (err) {
-      setErreur('Erreur lors de la connexion au service de paiement')
+      setErreur(t('register_err_paiement_connexion', lang))
     }
   }
 
@@ -81,8 +84,8 @@ function Register() {
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
             Digital<span style={{color:'#4ade80'}}>Football</span>
           </div>
-          <h1 style={{fontSize:'24px', fontWeight:'700'}}>Creer mon compte</h1>
-          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>Commence a progresser aujourd hui</p>
+          <h1 style={{fontSize:'24px', fontWeight:'700'}}>{t('register_creer_compte', lang)}</h1>
+          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>{t('register_commence_progresser', lang)}</p>
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'0.75rem'}}>
@@ -99,37 +102,37 @@ function Register() {
 
         <div onClick={() => setPlan('fan')} style={{border: plan === 'fan' ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: plan === 'fan' ? '#4ade8010' : 'transparent', marginBottom:'1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div>
-            <div style={{fontWeight:'700', fontSize:'15px'}}>Compte Fan</div>
-            <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>Like, commente les reels Jogabonito</div>
+            <div style={{fontWeight:'700', fontSize:'15px'}}>{t('register_compte_fan', lang)}</div>
+            <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>{t('register_fan_desc', lang)}</div>
           </div>
-          <div style={{background:'#4ade8020', color:'#4ade80', fontSize:'12px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px'}}>GRATUIT</div>
+          <div style={{background:'#4ade8020', color:'#4ade80', fontSize:'12px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px'}}>{t('register_gratuit', lang)}</div>
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Prenom</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_prenom', lang)}</label>
               <input value={prenom} onChange={(e) => setPrenom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Nom</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_nom', lang)}</label>
               <input value={nom} onChange={(e) => setNom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
             </div>
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Email</label>
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('aff_email', lang)}</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Mot de passe</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="minimum 6 caracteres" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('register_min_6_caracteres', lang)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
           </div>
 
           {plan !== 'fan' && (
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Poste</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_poste', lang)}</label>
               <select value={poste} onChange={(e) => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}>
                 <option>Gardien</option>
                 <option>Defenseur</option>
@@ -141,7 +144,7 @@ function Register() {
 
           {plan !== 'fan' && (
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Mes points forts (max 4)</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>{t('jp_points_forts', lang)}</label>
               <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
                 {caracteristiquesParPoste[poste].map(c => {
                   const selected = pointsForts.includes(c)
@@ -169,7 +172,7 @@ function Register() {
 
           {plan !== 'fan' && (
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>Ce que je veux améliorer (max 4)</label>
+              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>{t('jp_ameliorer', lang)}</label>
               <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
                 {caracteristiquesParPoste[poste].map(c => {
                   const selected = aAmeliorer.includes(c)
@@ -206,14 +209,14 @@ function Register() {
             style={{marginTop:'2px', accentColor:'#4ade80', width:'16px', height:'16px', flexShrink:0}}
           />
           <span style={{fontSize:'13px', color:'#aaa', lineHeight:'1.5'}}>
-            J'ai lu et j'accepte les{' '}
+            {t('register_jai_lu_accepte', lang)}{' '}
             <span
               onClick={(e) => { e.preventDefault(); window.open('/cgu', '_blank') }}
               style={{color:'#4ade80', cursor:'pointer', textDecoration:'underline'}}
             >
-              CGU et le règlement
+              {t('register_cgu_reglement', lang)}
             </span>
-            , notamment l'absence de remboursement en cas de bannissement.
+            {t('register_pas_remboursement', lang)}
           </span>
         </label>
 
@@ -222,24 +225,24 @@ function Register() {
           disabled={loading || !cguAcceptees}
           style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer', marginTop:'1rem'}}
         >
-          {loading ? 'Creation...' : plan === 'fan' ? 'Créer mon compte gratuit' : 'Creer mon compte et payer'}
+          {loading ? t('register_creation_cours', lang) : plan === 'fan' ? t('register_creer_compte_gratuit', lang) : t('register_creer_compte_payer', lang)}
         </button>
 
         {plan !== 'fan' && (
           <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
-            Tu seras redirige vers Stripe pour finaliser le paiement
+            {t('register_redirige_stripe', lang)}
           </p>
         )}
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
-          Deja un compte ?{' '}
+          {t('register_deja_compte', lang)}{' '}
           <span onClick={() => navigate('/login')} style={{color:'#4ade80', cursor:'pointer'}}>
-            Se connecter
+            {t('auth_se_connecter', lang)}
           </span>
         </p>
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.5rem'}}>
           <span onClick={() => navigate('/')} style={{color:'#555', cursor:'pointer'}}>
-            Retour accueil
+            {t('auth_retour_accueil', lang)}
           </span>
         </p>
 

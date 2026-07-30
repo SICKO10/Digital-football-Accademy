@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 // Style partagé pour les différents écrans de cette page — fonction, pas un
 // composant, pour ne pas être remonté à chaque render.
@@ -19,6 +21,7 @@ const conteneur = (children) => (
 
 function AcceptInvite() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,7 +47,7 @@ function AcceptInvite() {
         body: { action: 'lire', token: codeB },
       })
       if (error || data?.error) {
-        setErreur(data?.error || error?.message || 'Invitation introuvable.')
+        setErreur(data?.error || error?.message || t('invite_invitation_introuvable', lang))
         setStatutB('erreur')
         return
       }
@@ -55,15 +58,15 @@ function AcceptInvite() {
   }, [codeB])
 
   const soumettreB = async () => {
-    if (password.length < 6) { setErreur('Le mot de passe doit contenir au moins 6 caractères'); return }
-    if (password !== confirm) { setErreur('Les mots de passe ne correspondent pas'); return }
+    if (password.length < 6) { setErreur(t('auth_mdp_min_6', lang)); return }
+    if (password !== confirm) { setErreur(t('auth_mdp_ne_correspondent_pas', lang)); return }
     setLoading(true)
     setErreur('')
     try {
       const { data, error } = await supabase.functions.invoke('accepter-invitation', {
         body: { action: 'accepter', token: codeB, password },
       })
-      if (error || data?.error) throw new Error(data?.error || error?.message || 'Erreur inconnue')
+      if (error || data?.error) throw new Error(data?.error || error?.message || t('invite_erreur_inconnue', lang))
 
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
       if (signInErr) throw signInErr
@@ -71,7 +74,7 @@ function AcceptInvite() {
       navigate(data.role === 'dirigeant' ? '/dashboard-dirigeant' : '/dashboard-joueur')
     } catch (err) {
       console.error('[AcceptInvite/B]', err)
-      setErreur(err?.message || 'Erreur inconnue')
+      setErreur(err?.message || t('invite_erreur_inconnue', lang))
     } finally {
       setLoading(false)
     }
@@ -122,14 +125,14 @@ function AcceptInvite() {
         if (error) throw error
         session = data.session
       } else {
-        throw new Error('Lien invalide ou incomplet.')
+        throw new Error(t('invite_lien_invalide_incomplet', lang))
       }
-      if (!session?.user) throw new Error('Session introuvable.')
+      if (!session?.user) throw new Error(t('auth_session_introuvable', lang))
       setReady(true)
       setReadyMeta(session.user.user_metadata || {})
     } catch (err) {
       console.error('[AcceptInvite/A]', err)
-      setLienExpireDetail(err?.message || err?.error_description || 'Lien invalide ou expiré.')
+      setLienExpireDetail(err?.message || err?.error_description || t('auth_lien_invalide_expire', lang))
       setLienExpire(true)
     } finally {
       setVerif(false)
@@ -137,14 +140,14 @@ function AcceptInvite() {
   }
 
   const handleSubmit = async () => {
-    if (password.length < 8) { setErreur('Le mot de passe doit contenir au moins 8 caractères'); return }
-    if (password !== confirm) { setErreur('Les mots de passe ne correspondent pas'); return }
+    if (password.length < 8) { setErreur(t('auth_mdp_min_8', lang)); return }
+    if (password !== confirm) { setErreur(t('auth_mdp_ne_correspondent_pas', lang)); return }
     setLoading(true)
     setErreur('')
 
     try {
       const { data: { user }, error: pwError } = await supabase.auth.updateUser({ password })
-      if (pwError || !user) throw new Error(pwError?.message || 'Erreur de session')
+      if (pwError || !user) throw new Error(pwError?.message || t('invite_erreur_session', lang))
 
       const meta = user.user_metadata || {}
       const clubId = meta.club_id
@@ -210,7 +213,7 @@ function AcceptInvite() {
       navigate('/')
     } catch (err) {
       console.error('[AcceptInvite/A]', err)
-      setErreur(err?.message || err?.error_description || JSON.stringify(err) || 'Erreur inconnue')
+      setErreur(err?.message || err?.error_description || JSON.stringify(err) || t('invite_erreur_inconnue', lang))
     } finally {
       setLoading(false)
     }
@@ -224,7 +227,7 @@ function AcceptInvite() {
   // ══════════════════════════════════════════════════════════════════════════
   if (codeB) {
     if (statutB === 'chargement') return conteneur(
-      <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>Vérification en cours...</p>
+      <p style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>{t('invite_verification_en_cours', lang)}</p>
     )
 
     if (statutB === 'erreur') return conteneur(
@@ -234,7 +237,7 @@ function AcceptInvite() {
           onClick={() => navigate('/')}
           style={{ width: '100%', background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
         >
-          Retour à l'accueil
+          {t('invite_retour_accueil', lang)}
         </button>
       </div>
     )
@@ -243,36 +246,41 @@ function AcceptInvite() {
     return conteneur(
       <>
         <h1 style={{ fontSize: '22px', fontWeight: '700', textAlign: 'center', marginBottom: '8px' }}>
-          {previewB?.role === 'joueur' ? '⚽ Rejoins ton équipe !' : '👔 Rejoins le staff !'}
+          {previewB?.role === 'joueur' ? t('invite_rejoins_equipe_titre', lang) : t('invite_rejoins_staff_titre', lang)}
         </h1>
         <p style={{ color: '#aaa', fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
-          {previewB?.nomEdu ? `${previewB.nomEdu} t'invite à rejoindre ${previewB.club || 'le club'}${previewB.categorie ? ` (${previewB.categorie})` : ''}.` : 'Crée ton mot de passe pour activer ton compte.'}
+          {previewB?.nomEdu
+            ? t('invite_template', lang)
+                .replace('{nom}', previewB.nomEdu)
+                .replace('{club}', previewB.club || t('invite_le_club', lang))
+                .replace('{cat}', previewB.categorie ? ` (${previewB.categorie})` : '')
+            : t('invite_cree_mdp_activer', lang)}
         </p>
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Email</label>
+          <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('aff_email', lang)}</label>
           <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: '#888', fontSize: '14px' }}>
             {previewB?.email}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
           <div>
-            <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Mot de passe</label>
+            <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_mot_de_passe', lang)}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="6 caractères minimum"
+              placeholder={t('invite_6_car_min', lang)}
               style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
             />
           </div>
           <div>
-            <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Confirmer le mot de passe</label>
+            <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_confirmer_mdp', lang)}</label>
             <input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && soumettreB()}
-              placeholder="Répète le mot de passe"
+              placeholder={t('auth_repete_mdp', lang)}
               style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
             />
           </div>
@@ -285,7 +293,7 @@ function AcceptInvite() {
           disabled={loading}
           style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
         >
-          {loading ? 'Création du compte...' : previewB?.role === 'joueur' ? "Rejoindre l'équipe" : 'Rejoindre en tant que dirigeant'}
+          {loading ? t('invite_creation_compte_cours', lang) : previewB?.role === 'joueur' ? t('invite_rejoindre_equipe', lang) : t('invite_rejoindre_dirigeant', lang)}
         </button>
       </>
     )
@@ -302,13 +310,13 @@ function AcceptInvite() {
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
             Digital<span style={{ color: '#4ade80' }}>Football</span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? 'Finaliser ton invitation' : estInvitationJoueur ? 'Rejoindre ton équipe' : estInvitationDirigeant ? 'Rejoindre en tant que dirigeant' : 'Rejoindre le staff du club'}</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{!ready ? t('invite_finaliser_invitation_titre', lang) : estInvitationJoueur ? t('invite_rejoindre_ton_equipe', lang) : estInvitationDirigeant ? t('invite_rejoindre_dirigeant', lang) : t('invite_rejoindre_staff_club', lang)}</h1>
         </div>
 
         {lienExpire ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '0.5rem' }}>
-              Une erreur s'est produite, contacte ton éducateur.
+              {t('invite_erreur_contacte_educateur', lang)}
             </p>
             {lienExpireDetail && (
               <p style={{ color: '#f87171', fontSize: '12px', marginBottom: '1.5rem', wordBreak: 'break-word' }}>
@@ -319,46 +327,46 @@ function AcceptInvite() {
               onClick={() => navigate('/')}
               style={{ width: '100%', background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
             >
-              Retour à l'accueil
+              {t('invite_retour_accueil', lang)}
             </button>
           </div>
         ) : !ready ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '1.5rem' }}>
-              Clique sur le bouton ci-dessous pour finaliser ton invitation.
+              {t('invite_clique_finaliser', lang)}
             </p>
             <button
               onClick={finaliserSession}
               disabled={verif || !params}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
             >
-              {verif ? 'Vérification...' : "⚽ Finaliser mon invitation"}
+              {verif ? t('auth_verification_cours', lang) : t('invite_finaliser_mon_invitation', lang)}
             </button>
           </div>
         ) : (
           <>
             <p style={{ color: '#aaa', fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
-              Choisis un mot de passe pour finaliser ton accès.
+              {t('invite_choisis_mdp', lang)}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Mot de passe</label>
+                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_mot_de_passe', lang)}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="8 caractères minimum"
+                  placeholder={t('auth_8_caracteres_min', lang)}
                   style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>Confirmer le mot de passe</label>
+                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_confirmer_mdp', lang)}</label>
                 <input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  placeholder="Répète le mot de passe"
+                  placeholder={t('auth_repete_mdp', lang)}
                   style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
@@ -371,7 +379,7 @@ function AcceptInvite() {
               disabled={loading}
               style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
             >
-              {loading ? 'Finalisation...' : estInvitationJoueur ? 'Rejoindre l\'équipe' : estInvitationDirigeant ? 'Rejoindre en tant que dirigeant' : 'Rejoindre le club'}
+              {loading ? t('invite_finalisation_cours', lang) : estInvitationJoueur ? t('invite_rejoindre_equipe', lang) : estInvitationDirigeant ? t('invite_rejoindre_dirigeant', lang) : t('invite_rejoindre_club', lang)}
             </button>
           </>
         )}

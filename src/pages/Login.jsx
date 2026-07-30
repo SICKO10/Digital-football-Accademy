@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import { useLang } from '../hooks/useLang'
+import { t } from '../lib/translations'
 
 function Login() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,7 +22,7 @@ function Login() {
     })
 
     if (error) {
-      setErreur('Email ou mot de passe incorrect')
+      setErreur(t('auth_email_ou_mdp_incorrect', lang))
       setLoading(false)
       return
     }
@@ -55,13 +58,13 @@ function Login() {
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
             Digital<span style={{color:'#4ade80'}}>Football</span>
           </div>
-          <h1 style={{fontSize:'24px', fontWeight:'700'}}>Connexion</h1>
-          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>Acces a ton espace joueur</p>
+          <h1 style={{fontSize:'24px', fontWeight:'700'}}>{t('auth_connexion_titre', lang)}</h1>
+          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>{t('auth_acces_espace_joueur', lang)}</p>
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Email</label>
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('aff_email', lang)}</label>
             <input
               type="email"
               value={email}
@@ -72,7 +75,7 @@ function Login() {
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>Mot de passe</label>
+            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
             <input
               type="password"
               value={password}
@@ -91,24 +94,24 @@ function Login() {
           disabled={loading}
           style={{width:'100%', background:'#4ade80', color:'#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor:'pointer', marginTop:'1.5rem'}}
         >
-          {loading ? 'Connexion...' : 'Se connecter'}
+          {loading ? t('auth_connexion_cours', lang) : t('auth_se_connecter', lang)}
         </button>
 
         <p style={{textAlign:'center', fontSize:'13px', marginTop:'1rem'}}>
           <span onClick={() => navigate('/forgot-password')} style={{color:'#666', cursor:'pointer'}}>
-            Mot de passe oublié ?
+            {t('auth_mdp_oublie_question', lang)}
           </span>
         </p>
 
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.75rem'}}>
-          Pas encore de compte ?{' '}
+          {t('auth_pas_de_compte', lang)}{' '}
           <span onClick={() => navigate('/register')} style={{color:'#4ade80', cursor:'pointer'}}>
-            S inscrire
+            {t('auth_sinscrire', lang)}
           </span>
         </p>
         <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.5rem'}}>
           <span onClick={() => navigate('/')} style={{color:'#555', cursor:'pointer'}}>
-            Retour accueil
+            {t('auth_retour_accueil', lang)}
           </span>
         </p>
 
