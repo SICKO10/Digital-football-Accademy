@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
+import { t } from '../lib/translations'
 
 const COULEURS = [
   { val: '#4ade80', label: 'Vert' },
@@ -231,7 +232,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   )
 }
 
-export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer }) {
+export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer, lang = 'fr' }) {
   const [isMobile] = useState(window.innerWidth < 768)
   const isModal = mode === 'modal'
 
@@ -802,17 +803,17 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
-          {[['football', '⚽ Football'], ['futsal', '🏟️ Futsal']].map(([v, label]) => (
+          {[['football', t('tac_football', lang)], ['futsal', t('tac_futsal', lang)]].map(([v, label]) => (
             <button key={v} onClick={() => setSport(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: sport === v ? '#4ade80' : 'transparent', color: sport === v ? '#000' : '#666' }}>{label}</button>
           ))}
         </div>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
-          {[['demi', 'Demi-terrain'], ['complet', 'Terrain complet']].map(([v, label]) => (
+          {[['demi', t('tac_demi_terrain', lang)], ['complet', t('tac_terrain_complet', lang)]].map(([v, label]) => (
             <button key={v} onClick={() => setVue(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: vue === v ? '#4ade80' : 'transparent', color: vue === v ? '#000' : '#666' }}>{label}</button>
           ))}
         </div>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
-          {[['vert', '🟢 Vert'], ['blanc', '⬜ Blanc']].map(([v, label]) => (
+          {[['vert', `🟢 ${t('tac_vert', lang)}`], ['blanc', `⬜ ${t('tac_blanc', lang)}`]].map(([v, label]) => (
             <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : '#666' }}>{label}</button>
           ))}
         </div>
@@ -821,7 +822,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           defaultValue=""
           style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
         >
-          <option value="">📋 Dispositif ({equipeActive === 'A' ? 'Équipe A' : 'Équipe B'})...</option>
+          <option value="">📋 {t('tac_dispositif', lang)} ({equipeActive === 'A' ? t('tac_equipe_a', lang) : t('tac_equipe_b', lang)})...</option>
           <optgroup label="4 défenseurs">
             <option value="4-3-3">4-3-3</option>
             <option value="4-4-2">4-4-2</option>
@@ -841,8 +842,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             <option value="5-4-1">5-4-1</option>
           </optgroup>
         </select>
-        <button onClick={() => { setEquipeActive('A'); ajouterEquipe('A') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'A' ? '1px solid #4ade80' : '1px solid #4ade8040', background: equipeActive === 'A' ? '#4ade8030' : '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 Équipe A</button>
-        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 Équipe B</button>
+        <button onClick={() => { setEquipeActive('A'); ajouterEquipe('A') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'A' ? '1px solid #4ade80' : '1px solid #4ade8040', background: equipeActive === 'A' ? '#4ade8030' : '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 {t('tac_equipe_a', lang)}</button>
+        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 {t('tac_equipe_b', lang)}</button>
       </div>
 
       {tableMissing && !isModal && (
@@ -1017,11 +1018,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-            <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ Undo</button>
-            <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ Redo</button>
-            <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 Supprimer</button>
-            <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 Tout effacer</button>
-            <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ Export PNG</button>
+            <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
+            <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ {t('tac_redo', lang)}</button>
+            <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 {t('btn_supprimer', lang)}</button>
+            <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 {t('tac_tout_effacer', lang)}</button>
+            <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ {t('tac_export_png', lang)}</button>
           </div>
 
           {/* Séquences */}
@@ -1032,15 +1033,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               {sequences.map((_, i) => (
                 <button key={i} onClick={() => allerEtape(i)} disabled={playing}
                   style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : '1px solid #222', background: i === etapeActive ? '#4ade8020' : '#111', color: i === etapeActive ? '#4ade80' : '#aaa', fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
-                  Étape {i + 1}
+                  {t('tac_etape', lang)} {i + 1}
                 </button>
               ))}
-              <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>+ Étape</button>
-              <button onClick={dupliquerEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa' }}>📋 Dupliquer</button>
+              <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>{t('tac_ajouter_etape', lang)}</button>
+              <button onClick={dupliquerEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa' }}>📋 {t('tac_dupliquer', lang)}</button>
               {sequences.length > 1 && (
                 <button onClick={() => supprimerEtape(etapeActive)} disabled={playing}
                   style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>
-                  🗑 Étape
+                  🗑 {t('tac_etape', lang)}
                 </button>
               )}
             </div>

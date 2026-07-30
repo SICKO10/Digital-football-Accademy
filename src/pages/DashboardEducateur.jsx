@@ -2094,10 +2094,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {[
-                  { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                  { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                  { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-                  { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+                  { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                  { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+                  { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                   { label: '❓ Sans poste', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                 ].map(groupe => {
                   const groupJoueurs = joueurs.filter(j => groupe.match(j.poste))
@@ -2300,19 +2300,19 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '20px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box' }}>
                       {[
-                        { title: '⚽ Buteurs', key: 'buts', color: '#4ade80' },
-                        { title: '🎯 Passes décisives', key: 'passes_dec', color: '#60a5fa' },
-                        { title: '⏱️ Minutes jouées', key: 'minutes', color: '#a78bfa', unit: "'" },
-                        { title: '📅 Matchs joués', key: 'matchs', color: '#f59e0b' },
-                        { title: '🟨 Cartons jaunes', key: 'cartons_j', color: '#fbbf24' },
-                        { title: '🟥 Cartons rouges', key: 'cartons_r', color: '#f87171' },
+                        { title: t('stats_graph_buteurs', lang), key: 'buts', color: '#4ade80' },
+                        { title: t('stats_graph_passes', lang), key: 'passes_dec', color: '#60a5fa' },
+                        { title: t('stats_graph_minutes', lang), key: 'minutes', color: '#a78bfa', unit: "'" },
+                        { title: t('stats_graph_matchs', lang), key: 'matchs', color: '#f59e0b' },
+                        { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: '#fbbf24' },
+                        { title: t('stats_graph_cartons_r', lang), key: 'cartons_r', color: '#f87171' },
                       ].map(({ title, key, color, unit = '' }) => {
                         const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
                         return (
                           <div key={key} style={st.card}>
                             <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>{title}</p>
                             {data.length === 0
-                              ? <p style={{ color: '#333', fontSize: '13px' }}>Aucune donnée</p>
+                              ? <p style={{ color: '#333', fontSize: '13px' }}>{t('msg_aucune_donnee', lang)}</p>
                               : <BarChart data={data.map(d => ({ label: d.label, value: d[key] }))} color={color} unit={unit} />
                             }
                           </div>
@@ -2362,11 +2362,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           const tauxPresenceGlobal = Math.round(totalPresents / tot * 100)
                           const tauxAbsentsGlobal = 100 - tauxPresenceGlobal
                           return [
-                            { label: '✅ Présence', val: tauxPresenceGlobal, color: '#4ade80' },
-                            { label: '❌ Absents',  val: tauxAbsentsGlobal,  color: '#ef4444', note: 'dont blessés, malades, convoqués' },
-                            { label: '🤕 Blessés',  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
-                            { label: '🤒 Malades',  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
-                            { label: '🏆 Convoqués',val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
+                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: '#4ade80' },
+                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: '#ef4444', note: t('stats_pres_dont', lang) },
+                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
+                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
+                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
                           ]
                         })().map(c => (
                           <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
@@ -2382,10 +2382,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       {/* ── Cards joueurs par poste ── */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
                         {[
-                          { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                          { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                          { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-                          { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                          { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+                          { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                          { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+                          { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                           { label: '❓ Autres', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                         ].map(groupe => {
                           const gJoueurs = joueurs.filter(j => groupe.match(j.poste))
@@ -2409,15 +2409,15 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                         />
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} séance${tx.total > 1 ? 's' : ''}` : ''}</p>
+                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
                                           {tx ? (
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
                                               {[
-                                                { emoji: '✅', label: 'Présent', val: tx.presents, color: '#4ade80' },
-                                                { emoji: '🏆', label: 'Convoqué', val: tx.convoque, color: '#60a5fa' },
-                                                { emoji: '❌', label: 'Absent', val: tx.absents, color: '#ef4444' },
-                                                { emoji: '🤕', label: 'Blessé', val: tx.blesses, color: '#f97316' },
-                                                { emoji: '🤒', label: 'Malade', val: tx.malade, color: '#a855f7' },
+                                                { emoji: '✅', label: t('stats_statut_present', lang), val: tx.presents, color: '#4ade80' },
+                                                { emoji: '🏆', label: t('stats_statut_convoqu', lang), val: tx.convoque, color: '#60a5fa' },
+                                                { emoji: '❌', label: t('stats_statut_absent', lang), val: tx.absents, color: '#ef4444' },
+                                                { emoji: '🤕', label: t('stats_statut_blesse', lang), val: tx.blesses, color: '#f97316' },
+                                                { emoji: '🤒', label: t('stats_statut_malade', lang), val: tx.malade, color: '#a855f7' },
                                               ].filter(s => s.val > 0).map(s => (
                                                 <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
                                                   {s.emoji} {s.val} {s.label}
@@ -2514,7 +2514,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
               const moisLabel = (k) => {
                 const [y, m] = k.split('-')
-                return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })
               }
 
               const getPodium = (moisKey) => {
@@ -2546,9 +2546,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {/* Mois en cours */}
                   <div style={st.card}>
-                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 Joueur du mois — {moisLabel(moisCourant)}</p>
+                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisCourant)}</p>
                     {podiumActuel.length === 0 ? (
-                      <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Aucun point ⭐ attribué ce mois-ci. Attribue des étoiles dans les séances d'entraînement !</p>
+                      <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
                     ) : (
                       <>
                         {/* Podium top 3 */}
@@ -2597,7 +2597,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   {/* Classement historique total */}
                   {topAll.length > 0 && (
                     <div style={st.card}>
-                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏅 Classement général (toutes saisons)</p>
+                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏅 {t('stats_classement_general', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {topAll.map((item, idx) => (
                           <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: '#111', borderRadius: '8px' }}>
@@ -3895,7 +3895,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>{t('tactic_optimise_grands_ecrans', lang)}</p>
               </div>
             ) : (
-              <Tactipad userId={userId} />
+              <Tactipad userId={userId} lang={lang} />
             )}
           </div>
         )}
@@ -4617,6 +4617,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             vueParDefaut="demi"
             onValider={png => { updateProcede(tactipadModal, 'schema_png', png); setTactipadModal(null) }}
             onFermer={() => setTactipadModal(null)}
+            lang={lang}
           />
         </div>
       </div>

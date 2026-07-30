@@ -648,6 +648,56 @@ export const T = {
   av_poste:                 { fr: 'Poste (ex: Milieu)',        en: 'Position (e.g. Midfielder)',pt: 'Posição (ex: Médio)',       es: 'Posición (ej: Centrocampista)',it: 'Ruolo (es: Centrocampista)',de: 'Position (z.B. Mittelfeld)' },
   av_club_adverse:          { fr: 'Nom du club adverse',       en: 'Opponent club name',       pt: 'Nome do clube adversário',  es: 'Nombre del club adversario',it: 'Nome del club avversario',  de: 'Name des Gegenvereins'      },
   av_periode_label:         { fr: 'Période analysée',         en: 'Analysed period',          pt: 'Período analisado',         es: 'Período analizado',         it: 'Periodo analizzato',        de: 'Analysierter Zeitraum'      },
+
+  // ── Stats → Mois ─────────────────────────────────────────────────────────────
+  stats_joueur_du_mois:     { fr: 'Joueur du mois',                 en: 'Player of the month',         pt: 'Jogador do mês',               es: 'Jugador del mes',              it: 'Giocatore del mese',           de: 'Spieler des Monats'            },
+  stats_aucun_point_mois:   { fr: "Aucun point ⭐ attribué ce mois-ci. Attribue des étoiles dans les séances d'entraînement !", en: "No ⭐ points awarded this month. Give stars during training sessions!", pt: "Nenhum ponto ⭐ atribuído este mês. Atribui estrelas nas sessões de treino!", es: "Ningún punto ⭐ otorgado este mes. ¡Asigna estrellas en los entrenamientos!", it: "Nessun punto ⭐ assegnato questo mese. Dai stelle nelle sessioni di allenamento!", de: "Keine ⭐ Punkte diesen Monat vergeben. Vergib Sterne in den Trainingseinheiten!" },
+  stats_classement_general: { fr: 'Classement général (toutes saisons)', en: 'Overall rankings (all seasons)', pt: 'Classificação geral (todas as épocas)', es: 'Clasificación general (todas las temporadas)', it: 'Classifica generale (tutte le stagioni)', de: 'Gesamtrangliste (alle Saisons)' },
+
+  // ── Stats → Présences ─────────────────────────────────────────────────────────
+  stats_pres_presence:      { fr: 'Présence',      en: 'Attendance',   pt: 'Presença',        es: 'Asistencia',      it: 'Presenza',        de: 'Anwesenheit'      },
+  stats_pres_absents:       { fr: 'Absents',       en: 'Absent',       pt: 'Ausentes',        es: 'Ausentes',        it: 'Assenti',         de: 'Abwesend'         },
+  stats_pres_dont:          { fr: 'dont blessés, malades, convoqués', en: 'incl. injured, sick, called up', pt: 'incl. lesionados, doentes, convocados', es: 'incl. lesionados, enfermos, convocados', it: 'incl. infortunati, malati, convocati', de: 'inkl. Verletzte, Kranke, Nominierte' },
+  stats_pres_blesses:       { fr: 'Blessés',       en: 'Injured',      pt: 'Lesionados',      es: 'Lesionados',      it: 'Infortunati',     de: 'Verletzt'         },
+  stats_pres_malades:       { fr: 'Malades',       en: 'Sick',         pt: 'Doentes',         es: 'Enfermos',        it: 'Malati',          de: 'Krank'            },
+  stats_pres_convoques:     { fr: 'Convoqués',     en: 'Called up',    pt: 'Convocados',      es: 'Convocados',      it: 'Convocati',       de: 'Nominiert'        },
+  stats_pres_gardiens:      { fr: 'Gardiens',      en: 'Goalkeepers',  pt: 'Guarda-redes',    es: 'Porteros',        it: 'Portieri',        de: 'Torhüter'         },
+  stats_pres_defenseurs:    { fr: 'Défenseurs',    en: 'Defenders',    pt: 'Defesas',         es: 'Defensas',        it: 'Difensori',       de: 'Verteidiger'      },
+  stats_pres_milieux:       { fr: 'Milieux',       en: 'Midfielders',  pt: 'Médios',          es: 'Centrocampistas', it: 'Centrocampisti',  de: 'Mittelfeldspieler'},
+  stats_pres_attaquants:    { fr: 'Attaquants',    en: 'Forwards',     pt: 'Avançados',       es: 'Delanteros',      it: 'Attaccanti',      de: 'Stürmer'          },
+  stats_statut_present:     { fr: 'Présent',       en: 'Present',      pt: 'Presente',        es: 'Presente',        it: 'Presente',        de: 'Anwesend'         },
+  stats_statut_absent:      { fr: 'Absent',        en: 'Absent',       pt: 'Ausente',         es: 'Ausente',         it: 'Assente',         de: 'Abwesend'         },
+  stats_statut_blesse:      { fr: 'Blessé',        en: 'Injured',      pt: 'Lesionado',       es: 'Lesionado',       it: 'Infortunato',     de: 'Verletzt'         },
+  stats_statut_malade:      { fr: 'Malade',        en: 'Sick',         pt: 'Doente',          es: 'Enfermo',         it: 'Malato',          de: 'Krank'            },
+  stats_statut_convoqu:     { fr: 'Convoqué',      en: 'Called up',    pt: 'Convocado',       es: 'Convocado',       it: 'Convocato',       de: 'Nominiert'        },
+  stats_seance_singular:    { fr: 'séance',        en: 'session',      pt: 'sessão',          es: 'sesión',          it: 'seduta',          de: 'Einheit'          },
+  stats_seances_plural:     { fr: 'séances',       en: 'sessions',     pt: 'sessões',         es: 'sesiones',        it: 'sedute',          de: 'Einheiten'        },
+
+  // ── Stats → Graphiques ────────────────────────────────────────────────────────
+  stats_graph_buteurs:      { fr: '⚽ Buteurs',          en: '⚽ Scorers',          pt: '⚽ Goleadores',        es: '⚽ Goleadores',        it: '⚽ Goleador',         de: '⚽ Torschützen'       },
+  stats_graph_passes:       { fr: '🎯 Passes décisives',  en: '🎯 Assists',          pt: '🎯 Assistências',      es: '🎯 Asistencias',       it: '🎯 Assist',           de: '🎯 Vorlagen'          },
+  stats_graph_minutes:      { fr: '⏱️ Minutes jouées',    en: '⏱️ Minutes played',   pt: '⏱️ Minutos jogados',   es: '⏱️ Minutos jugados',   it: '⏱️ Minuti giocati',   de: '⏱️ Gespielte Minuten' },
+  stats_graph_matchs:       { fr: '📅 Matchs joués',      en: '📅 Matches played',   pt: '📅 Jogos disputados',  es: '📅 Partidos jugados',  it: '📅 Partite giocate',  de: '📅 Gespielte Spiele'  },
+  stats_graph_cartons_j:    { fr: '🟨 Cartons jaunes',   en: '🟨 Yellow cards',     pt: '🟨 Cartões amarelos',  es: '🟨 Tarjetas amarillas',it: '🟨 Cartellini gialli',de: '🟨 Gelbe Karten'      },
+  stats_graph_cartons_r:    { fr: '🟥 Cartons rouges',   en: '🟥 Red cards',        pt: '🟥 Cartões vermelhos', es: '🟥 Tarjetas rojas',    it: '🟥 Cartellini rossi', de: '🟥 Rote Karten'       },
+
+  // ── Tacticboard (Tactipad.jsx) ───────────────────────────────────────────────
+  tac_demi_terrain:         { fr: 'Demi-terrain',    en: 'Half pitch',       pt: 'Meio-campo',      es: 'Medio campo',     it: 'Metà campo',      de: 'Halbfeld'         },
+  tac_terrain_complet:      { fr: 'Terrain complet', en: 'Full pitch',       pt: 'Campo completo',  es: 'Campo completo',  it: 'Campo intero',    de: 'Ganzes Feld'      },
+  tac_vert:                 { fr: 'Vert',            en: 'Green',            pt: 'Verde',           es: 'Verde',           it: 'Verde',           de: 'Grün'             },
+  tac_blanc:                { fr: 'Blanc',           en: 'White',            pt: 'Branco',          es: 'Blanco',          it: 'Bianco',          de: 'Weiß'             },
+  tac_dispositif:           { fr: 'Dispositif',      en: 'Formation',        pt: 'Dispositivo',     es: 'Dispositivo',     it: 'Disposizione',    de: 'Formation'        },
+  tac_equipe_a:             { fr: 'Équipe A',        en: 'Team A',           pt: 'Equipa A',        es: 'Equipo A',        it: 'Squadra A',       de: 'Team A'           },
+  tac_equipe_b:             { fr: 'Équipe B',        en: 'Team B',           pt: 'Equipa B',        es: 'Equipo B',        it: 'Squadra B',       de: 'Team B'           },
+  tac_tout_effacer:         { fr: 'Tout effacer',    en: 'Clear all',        pt: 'Limpar tudo',     es: 'Borrar todo',     it: 'Cancella tutto',  de: 'Alles löschen'    },
+  tac_export_png:           { fr: 'Export PNG',      en: 'Export PNG',       pt: 'Exportar PNG',    es: 'Exportar PNG',    it: 'Esporta PNG',     de: 'PNG exportieren'  },
+  tac_etape:                { fr: 'Étape',           en: 'Step',             pt: 'Etapa',           es: 'Etapa',           it: 'Fase',            de: 'Schritt'          },
+  tac_ajouter_etape:        { fr: '+ Étape',         en: '+ Step',           pt: '+ Etapa',         es: '+ Etapa',         it: '+ Fase',          de: '+ Schritt'        },
+  tac_dupliquer:            { fr: 'Dupliquer',       en: 'Duplicate',        pt: 'Duplicar',        es: 'Duplicar',        it: 'Duplica',         de: 'Duplizieren'      },
+  tac_undo:                 { fr: 'Undo',            en: 'Undo',             pt: 'Desfazer',        es: 'Deshacer',        it: 'Annulla',         de: 'Rückgängig'       },
+  tac_redo:                 { fr: 'Redo',            en: 'Redo',             pt: 'Refazer',         es: 'Rehacer',         it: 'Ripristina',      de: 'Wiederholen'      },
+  tac_football:              { fr: '⚽ Football',     en: '⚽ Football',      pt: '⚽ Futebol',      es: '⚽ Fútbol',       it: '⚽ Calcio',       de: '⚽ Fußball'        },
+  tac_futsal:                { fr: '🏟️ Futsal',       en: '🏟️ Futsal',        pt: '🏟️ Futsal',       es: '🏟️ Futsal',       it: '🏟️ Futsal',       de: '🏟️ Futsal'         },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'
