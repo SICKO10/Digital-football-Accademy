@@ -300,9 +300,9 @@ const getTerrainComponent = (numeroProcede, sport) => {
   return estDemi ? <DemiTerrain /> : <TerrainFoot />
 }
 
-function FicheSeancePrint({ fiche, categorieLabel }) {
-  return createPortal(
-    <div id="fiche-print">
+function FicheContenu({ fiche, categorieLabel }) {
+  return (
+    <>
       <div className="fiche-header">
         <div className="fiche-row fiche-row-1">
           <div className="fiche-champ large"><label>Thème</label>{fiche.theme || '—'}</div>
@@ -343,6 +343,14 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
           )
         })}
       </div>
+    </>
+  )
+}
+
+function FicheSeancePrint({ fiche, categorieLabel }) {
+  return createPortal(
+    <div id="fiche-print">
+      <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />
     </div>,
     document.body
   )
@@ -617,6 +625,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
   const [ficheFichierUrl, setFicheFichierUrl] = useState(null) // image du scan d'origine, portée jusqu'à la sauvegarde de la fiche
   const [ficheExtraite, setFicheExtraite] = useState(false) // bandeau "fiche extraite" affiché après un scan IA
+  const [ficheApercu, setFicheApercu] = useState(null) // fiche archivée (seances_uploadees row) affichée dans le modal aperçu
   const [scanImageFile, setScanImageFile] = useState(null)
   const [scanImagePreview, setScanImagePreview] = useState(null)
   const [scanImageBase64, setScanImageBase64] = useState(null)
@@ -3878,6 +3887,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                   )}
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <button onClick={() => setFicheApercu(s)}
+                                    style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    📋 {t('seance_voir', lang)}
+                                  </button>
                                   {eval_ ? (
                                     <>
                                       <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
@@ -4660,6 +4673,31 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     )}
 
     <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
+
+    {ficheApercu && (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+        onClick={() => setFicheApercu(null)}>
+        <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px' }}>
+            {ficheApercu.fichier_url && (
+              <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
+                style={{ background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ⬇️ {t('seance_fichier', lang)}
+              </a>
+            )}
+            <button onClick={() => setFicheApercu(null)} style={{ background: 'transparent', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              ✕ {t('btn_fermer', lang)}
+            </button>
+          </div>
+          <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
+            <FicheContenu
+              fiche={ficheApercu.fiche_seance || {}}
+              categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
+            />
+          </div>
+        </div>
+      </div>
+    )}
 
     {tactipadModal !== null && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>

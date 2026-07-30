@@ -15,14 +15,16 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-#fiche-print {
-  display: none;
+#fiche-print, .fiche-render {
   font-family: sans-serif;
   color: black;
   background: white;
   width: 800px;
   padding: 20px;
   box-sizing: border-box;
+}
+#fiche-print {
+  display: none;
 }
 .fiche-header { margin-bottom: 14px; }
 .fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
