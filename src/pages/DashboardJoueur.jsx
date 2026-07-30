@@ -11,7 +11,7 @@ import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
-import { t } from '../lib/translations'
+import { t, localeOf } from '../lib/translations'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -102,21 +102,21 @@ const IconUsers = () => (
   </svg>
 )
 
-function UpgradeCard({ titre, texte }) {
+function UpgradeCard({ titre, texte, lang = 'fr' }) {
   return (
     <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
       <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
       <p style={{ fontSize: '13px', color: '#555', maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Starter — 49,99€/mois</button>
-        <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Pro — 79,99€/mois</button>
+        <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
+        <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
   )
 }
 
-function ProfilAffilieOnglet({ profil, userId, setProfil }) {
+function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
   const [editProfil, setEditProfil] = useState(false)
   const [profilForm, setProfilForm] = useState({
     prenom: profil?.prenom || '', nom: profil?.nom || '',
@@ -149,7 +149,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil }) {
             {profil?.prenom || '—'} {profil?.nom || ''}
           </p>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4ade80' }}>
-            {profil?.poste || 'Poste non renseigné'}
+            {profil?.poste || t('aff_poste_non_renseigne', lang)}
           </p>
           {profil?.categorie && (
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{profil.categorie}{profil?.club ? ` · ${profil.club}` : ''}</p>
@@ -157,7 +157,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil }) {
         </div>
         <button onClick={() => setEditProfil(!editProfil)}
           style={{ background: editProfil ? '#4ade8020' : '#111', border: `1px solid ${editProfil ? '#4ade8060' : '#2a2a2a'}`, color: editProfil ? '#4ade80' : '#555', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
-          {editProfil ? 'Annuler' : '✏️ Modifier'}
+          {editProfil ? t('btn_annuler', lang) : `✏️ ${t('btn_modifier', lang)}`}
         </button>
       </div>
 
@@ -166,12 +166,12 @@ function ProfilAffilieOnglet({ profil, userId, setProfil }) {
         {editProfil ? (
           <>
             {[
-              { label: 'Prénom', key: 'prenom', type: 'text' },
-              { label: 'Nom', key: 'nom', type: 'text' },
-              { label: 'Club', key: 'club', type: 'text' },
-              { label: 'Région', key: 'region', type: 'text' },
-              { label: 'N° Licence', key: 'numero_licence', type: 'text' },
-              { label: 'Date de naissance', key: 'date_naissance', type: 'date' },
+              { label: t('equipe_prenom', lang), key: 'prenom', type: 'text' },
+              { label: t('equipe_nom', lang), key: 'nom', type: 'text' },
+              { label: t('profil_club_label', lang), key: 'club', type: 'text' },
+              { label: t('profil_region', lang), key: 'region', type: 'text' },
+              { label: t('aff_n_licence', lang), key: 'numero_licence', type: 'text' },
+              { label: t('aff_date_naissance', lang), key: 'date_naissance', type: 'date' },
             ].map(({ label, key, type }) => (
               <div key={key}>
                 <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
@@ -181,40 +181,40 @@ function ProfilAffilieOnglet({ profil, userId, setProfil }) {
               </div>
             ))}
             <div>
-              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Poste</label>
+              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_poste', lang)}</label>
               <select value={profilForm.poste} onChange={e => setProfilForm(prev => ({ ...prev, poste: e.target.value }))}
                 style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }}>
-                <option value="">Sélectionner...</option>
+                <option value="">{t('aff_selectionner', lang)}</option>
                 {postes.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Pied fort</label>
+              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_pied', lang)}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {['droit', 'gauche', 'les deux'].map(p => (
+                {[['droit', t('equipe_droit', lang)], ['gauche', t('equipe_gauche', lang)], ['les deux', t('equipe_les_deux', lang)]].map(([p, label]) => (
                   <button key={p} onClick={() => setProfilForm(prev => ({ ...prev, pied: p }))}
                     style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? '#4ade8060' : '#2a2a2a'}`, background: profilForm.pied === p ? '#4ade8015' : '#0a0a0a', color: profilForm.pied === p ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize' }}>
-                    {p}
+                    {label}
                   </button>
                 ))}
               </div>
             </div>
             <button onClick={sauvegarder} disabled={saving}
               style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
-              {saving ? 'Sauvegarde...' : saved ? '✅ Sauvegardé !' : 'Sauvegarder'}
+              {saving ? t('jp_sauvegarde_cours', lang) : saved ? `✅ ${t('msg_sauvegarde_ok', lang)}` : t('btn_sauvegarder', lang)}
             </button>
           </>
         ) : (
           <>
             {[
-              { label: 'Email', val: profil?.email },
-              { label: 'Poste', val: profil?.poste },
-              { label: 'Pied fort', val: profil?.pied },
-              { label: 'Catégorie', val: profil?.categorie },
-              { label: 'Club', val: profil?.club },
-              { label: 'Région', val: profil?.region },
-              { label: 'N° Licence', val: profil?.numero_licence },
-              { label: 'Date de naissance', val: profil?.date_naissance ? new Date(profil.date_naissance).toLocaleDateString('fr-FR') : null },
+              { label: t('aff_email', lang), val: profil?.email },
+              { label: t('equipe_poste', lang), val: profil?.poste },
+              { label: t('equipe_pied', lang), val: profil?.pied },
+              { label: t('equipe_categorie', lang), val: profil?.categorie },
+              { label: t('profil_club_label', lang), val: profil?.club },
+              { label: t('profil_region', lang), val: profil?.region },
+              { label: t('aff_n_licence', lang), val: profil?.numero_licence },
+              { label: t('aff_date_naissance', lang), val: profil?.date_naissance ? new Date(profil.date_naissance).toLocaleDateString(localeOf(lang)) : null },
             ].filter(r => r.val).map(({ label, val }) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', padding: '4px 0', borderBottom: '1px solid #141414' }}>
                 <span style={{ color: '#555' }}>{label}</span>
@@ -223,7 +223,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil }) {
             ))}
             {[profil?.prenom, profil?.nom, profil?.poste].every(v => !v) && (
               <p style={{ margin: 0, fontSize: '13px', color: '#333', textAlign: 'center', padding: '12px 0' }}>
-                Clique sur <strong style={{ color: '#555' }}>Modifier</strong> pour compléter ton profil.
+                {t('aff_clique_sur', lang)} <strong style={{ color: '#555' }}>{t('btn_modifier', lang)}</strong> {t('aff_clique_modifier_profil', lang)}
               </p>
             )}
           </>
@@ -1010,20 +1010,20 @@ function DashboardJoueur() {
     const edu = affiliation?.profil_educateur
     const labelSection = edu?.club
       ? (edu.club + (edu.categorie ? ` ${edu.categorie}` : '')).toUpperCase()
-      : 'MON ÉQUIPE'
+      : t('jsec_equipe', lang)
 
     const secAffilie = [
-      { id: 'accueil',       label: 'Accueil',              icon: <IconHome /> },
+      { id: 'accueil',       label: t('jnav_accueil', lang),        icon: <IconHome /> },
 
-      { id: 'equipe',        label: 'Mon Équipe',           icon: <IconUsers />, section: labelSection },
-      { id: 'stats',         label: 'Mes stats',            icon: <IconChart /> },
-      { id: 'prep_physique', label: 'Préparation physique', icon: <IconDumbbell /> },
+      { id: 'equipe',        label: t('jnav_equipe', lang),         icon: <IconUsers />, section: labelSection },
+      { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
+      { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
 
-      { id: 'jogabonito',    label: 'Jogabonito',           icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: 'EXPLORER' },
-      { id: 'feed',          label: 'Feed',                 icon: <IconGlobe />,  locked: true },
-      { id: 'recruteurs',    label: 'Recruteurs',           icon: <IconMessage />, locked: true },
+      { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
+      { id: 'feed',          label: t('recrut_feed', lang),         icon: <IconGlobe />,  locked: true },
+      { id: 'recruteurs',    label: t('jnav_recruteurs', lang),     icon: <IconMessage />, locked: true },
 
-      { id: 'profil',        label: 'Mon Profil',           icon: <IconUser />, section: 'MON COMPTE' },
+      { id: 'profil',        label: t('jnav_profil', lang),         icon: <IconUser />, section: t('section_compte', lang) },
     ]
 
     return (
@@ -1045,7 +1045,7 @@ function DashboardJoueur() {
           <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-              <div style={{ marginTop: '4px', fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>Joueur affilié</div>
+              <div style={{ marginTop: '4px', fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>{t('aff_joueur_affilie', lang)}</div>
             </div>
             {isMobile && (
               <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer' }}>✕</button>
@@ -1069,8 +1069,18 @@ function DashboardJoueur() {
               </div>
             ))}
           </nav>
+          <div style={{ padding: '16px 12px', borderTop: '1px solid #1a1a1a' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[['fr','🇫🇷'],['en','🇬🇧'],['pt','🇧🇷'],['es','🇪🇸'],['it','🇮🇹'],['de','🇩🇪']].map(([code, flag]) => (
+                <button key={code} onClick={() => setLang(code)}
+                  style={{ background: lang === code ? '#4ade8020' : 'transparent', border: `1px solid ${lang === code ? '#4ade80' : '#2a2a2a'}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? '#4ade80' : '#555' }}>
+                  {flag}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
-            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
+            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
           </div>
         </aside>
 
@@ -1083,10 +1093,10 @@ function DashboardJoueur() {
           )}
           {onglet === 'accueil' && (
             <div style={{ maxWidth: '640px' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>Bonjour, {profil?.prenom} 👋</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginBottom: '28px' }}>Voici ton espace joueur.</p>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>{t('aff_bonjour', lang)} {profil?.prenom} 👋</h1>
+              <p style={{ color: '#555', fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
               <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>TON ÉDUCATEUR</div>
+                <div style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{(edu?.prenom?.[0] || '?').toUpperCase()}</div>
                   <div>
@@ -1096,7 +1106,7 @@ function DashboardJoueur() {
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-                {[{ id: 'prep_physique', label: 'Prépa physique', emoji: '🏋️', desc: 'Tes séances et exercices' }, { id: 'stats', label: 'Mes stats', emoji: '📊', desc: 'Présences & performance' }].map(item => (
+                {[{ id: 'prep_physique', label: t('aff_prepa_physique_court', lang), emoji: '🏋️', desc: t('aff_tes_seances_exercices', lang) }, { id: 'stats', label: t('aff_mes_stats', lang), emoji: '📊', desc: t('aff_presences_performance', lang) }].map(item => (
                   <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>
                     <div style={{ fontSize: '22px', marginBottom: '8px' }}>{item.emoji}</div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.label}</p>
@@ -1106,24 +1116,24 @@ function DashboardJoueur() {
               </div>
               <div style={{ background: 'linear-gradient(135deg, #4ade8010, #0a0a0a)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Passe au niveau supérieur</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Analyses vidéo, feed recruteurs — dès 49,99€/mois</p>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('aff_passe_niveau_sup', lang)}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
                 </div>
-                <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>Voir les packs</button>
+                <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
               </div>
             </div>
           )}
           {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />}
           {onglet === 'stats' && (
             <div style={{ maxWidth: '640px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Mes stats</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>{t('aff_mes_stats', lang)}</h2>
 
               {!affiliation ? (
-                <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>Rejoins une équipe (onglet Mon Équipe) pour voir tes stats.</p>
+                <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>{t('aff_rejoins_equipe_stats', lang)}</p>
               ) : (
               <>
               {statsLoading[affiliation.id] && (
-                <p style={{ color: '#4ade80', fontSize: '13px' }}>Chargement...</p>
+                <p style={{ color: '#4ade80', fontSize: '13px' }}>{t('jexp_chargement', lang)}</p>
               )}
 
               {statsJoueur[affiliation.id] && (() => {
@@ -1133,29 +1143,29 @@ function DashboardJoueur() {
                   s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
                 if (!hasDonnees) return (
                   <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>
-                    Aucune séance ou match enregistré pour le moment.
+                    {t('aff_aucune_seance_match', lang)}
                   </p>
                 )
 
                 // ── Badges / streaks ──────────────────────────────────────
                 const badges = []
-                if (s.tauxPresence === 100) badges.push({ label: '100% ce mois', color: '#4ade80' })
-                else if (s.tauxPresence >= 80) badges.push({ label: 'Assidu', color: '#4ade80' })
-                if (s.rankPoints?.rank === 1) badges.push({ label: '⭐ Top points équipe', color: '#fbbf24' })
-                if (s.rankButs?.rank === 1) badges.push({ label: '⚽ Top buteur', color: '#f97316' })
-                if (s.buts >= 5) badges.push({ label: `${s.buts} buts`, color: '#f97316' })
+                if (s.tauxPresence === 100) badges.push({ label: t('aff_badge_100pct', lang), color: '#4ade80' })
+                else if (s.tauxPresence >= 80) badges.push({ label: t('aff_badge_assidu', lang), color: '#4ade80' })
+                if (s.rankPoints?.rank === 1) badges.push({ label: t('aff_badge_top_points', lang), color: '#fbbf24' })
+                if (s.rankButs?.rank === 1) badges.push({ label: t('aff_badge_top_buteur', lang), color: '#f97316' })
+                if (s.buts >= 5) badges.push({ label: `${s.buts} ${t('comp_buts', lang)}`, color: '#f97316' })
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
                     {/* Entraînement */}
                     <div>
-                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#fbbf24', letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ Entraînement</p>
+                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#fbbf24', letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {[
-                          { label: 'Présences', val: `${s.present ?? 0}/${s.total ?? 0}` },
-                          { label: 'Taux présence', val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' },
-                          { label: 'Points séance', val: s.points ?? 0, color: '#fbbf24' },
+                          { label: t('stats_tab_presences', lang), val: `${s.present ?? 0}/${s.total ?? 0}` },
+                          { label: t('aff_taux_presence', lang), val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' },
+                          { label: t('aff_points_seance', lang), val: s.points ?? 0, color: '#fbbf24' },
                         ].map(({ label, val, color }) => (
                           <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                             <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: color || '#4ade80' }}>{val}</p>
@@ -1179,11 +1189,11 @@ function DashboardJoueur() {
                     {/* Présence par mois */}
                     {s.presenceMensuelle?.length > 0 && (
                       <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
-                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: '#a78bfa', letterSpacing: '1px', textTransform: 'uppercase' }}>📅 Points séance par mois</p>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: '#a78bfa', letterSpacing: '1px', textTransform: 'uppercase' }}>📅 {t('aff_points_seance_par_mois', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                             const [y, m] = month.split('-')
-                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: '2-digit' })
+                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
                             const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
                             return (
                               <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1203,14 +1213,14 @@ function DashboardJoueur() {
                     {/* Stats de match */}
                     {(s.matchsJoues > 0 || s.buts > 0 || s.passes > 0) && (
                       <div>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#60a5fa', letterSpacing: '1px', textTransform: 'uppercase' }}>⚽ Stats de match</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#60a5fa', letterSpacing: '1px', textTransform: 'uppercase' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                           {[
-                            { label: 'Matchs joués', val: s.matchsJoues ?? 0, color: '#60a5fa' },
-                            { label: 'Buts', val: s.buts ?? 0, color: '#4ade80' },
-                            { label: 'Passes déc.', val: s.passes ?? 0, color: '#a78bfa' },
-                            { label: 'Minutes jouées', val: s.minutesJouees ?? 0, color: '#34d399' },
-                            { label: 'Clean sheets', val: s.cleanSheets ?? 0, color: '#34d399' },
+                            { label: t('jp_matchs_joues', lang), val: s.matchsJoues ?? 0, color: '#60a5fa' },
+                            { label: t('comp_buts', lang), val: s.buts ?? 0, color: '#4ade80' },
+                            { label: t('club_passes_dec_emoji', lang), val: s.passes ?? 0, color: '#a78bfa' },
+                            { label: t('jp_minutes', lang), val: s.minutesJouees ?? 0, color: '#34d399' },
+                            { label: t('jp_clean_sheets', lang), val: s.cleanSheets ?? 0, color: '#34d399' },
                           ].map(({ label, val, color }) => (
                             <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                               <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color }}>{val}</p>
@@ -1223,16 +1233,16 @@ function DashboardJoueur() {
 
                     {/* Avis éducateur */}
                     <div>
-                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase' }}>Avis de ton éducateur</p>
+                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_avis_ton_educateur', lang)}</p>
                       <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
                         {s.noteEdu ? (
                           <>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
                               {[
-                                { label: 'Technique', value: s.noteEdu.technique, color: '#60a5fa' },
-                                { label: 'Physique', value: s.noteEdu.physique, color: '#4ade80' },
-                                { label: 'Mental', value: s.noteEdu.mental, color: '#a78bfa' },
-                                { label: 'Tactique', value: s.noteEdu.tactique, color: '#f59e0b' },
+                                { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
+                                { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
+                                { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
                               ].map(n => (
                                 <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontSize: '11px', color: '#555', flex: 1 }}>{n.label}</span>
@@ -1252,7 +1262,7 @@ function DashboardJoueur() {
                           </>
                         ) : (
                           <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>
-                            Pas encore de note partagée par ton éducateur.
+                            {t('aff_pas_note_partagee', lang)}
                           </p>
                         )}
                       </div>
@@ -1261,11 +1271,11 @@ function DashboardJoueur() {
                     {/* Classements équipe */}
                     {(s.leaderButs?.length > 0 || s.leaderPoints?.length > 0) && (
                       <div>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f97316', letterSpacing: '1px', textTransform: 'uppercase' }}>Classements équipe</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f97316', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                           {[
-                            { title: 'Top buteurs', data: s.leaderButs },
-                            { title: 'Points séance', data: s.leaderPoints },
+                            { title: t('aff_top_buteurs', lang), data: s.leaderButs },
+                            { title: t('aff_points_seance', lang), data: s.leaderPoints },
                           ].map(({ title, data }) => data?.length > 0 && (
                             <div key={title} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
                               <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
@@ -1273,7 +1283,7 @@ function DashboardJoueur() {
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
                                   <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
                                   <span style={{ fontSize: '11px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
-                                    {row.isMe ? '→ Toi' : row.nom?.split(' ')[0] || '—'}
+                                    {row.isMe ? t('aff_fleche_toi', lang) : row.nom?.split(' ')[0] || '—'}
                                   </span>
                                   <span style={{ fontSize: '11px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
                                 </div>
@@ -1287,11 +1297,11 @@ function DashboardJoueur() {
                     {/* Prochains matchs */}
                     {s.prochainMatchs?.length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#34d399', letterSpacing: '1px', textTransform: 'uppercase' }}>Prochains matchs</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#34d399', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {s.prochainMatchs.map((m, i) => {
                             const d = new Date(m.date)
-                            const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                            const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                             return (
                               <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -1316,12 +1326,12 @@ function DashboardJoueur() {
           )}
           {onglet === 'equipe' && (
             <div style={{ maxWidth: '960px' }}>
-              <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>🏟️ Mon Équipe</h1>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>{t('jeq_titre', lang)}</h1>
 
               {/* Mes affiliations actives / en attente / refusées (l'historique archivé est plus bas) */}
               {mesAffiliations.filter(a => a.statut !== 'archive').length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Mes éducateurs</p>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('jeq_mes_educateurs', lang)}</p>
                   {mesAffiliations.filter(a => a.statut !== 'archive').map(a => {
                     const pe = a.profil_educateur
                     const isAccepted = a.statut === 'accepte'
@@ -1337,7 +1347,7 @@ function DashboardJoueur() {
                               <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
                               <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
-                                  ✅ Affilié
+                                  ✅ {t('profil_affilie', lang)}
                                 </span>
                                 {pe?.diplome && (
                                   <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
@@ -1346,7 +1356,7 @@ function DashboardJoueur() {
                               {pe?.lien_groupe && (
                                 <a href={pe.lien_groupe} target="_blank" rel="noopener noreferrer"
                                   style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#25D36615', border: '1px solid #25D36640', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#25D366', fontWeight: 700, fontSize: 13, marginTop: 12 }}>
-                                  💬 Rejoindre le groupe équipe
+                                  💬 {t('aff_rejoindre_groupe', lang)}
                                 </a>
                               )}
                             </div>
@@ -1364,7 +1374,7 @@ function DashboardJoueur() {
                               background: a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
                               color: a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
                               border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
-                              {a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
+                              {a.statut === 'en_attente' ? `⏳ ${t('etat_en_attente', lang)}` : `✕ ${t('etat_refuse', lang)}`}
                             </span>
                           </div>
                         )}
@@ -1376,12 +1386,12 @@ function DashboardJoueur() {
                                 onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
                                 disabled={!a.equipe_joueur_id || statsLoading[a.id]}
                                 style={{ background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
-                                {statsLoading[a.id] ? '...' : '📊 Mes stats'}
+                                {statsLoading[a.id] ? '...' : `📊 ${t('aff_mes_stats', lang)}`}
                               </button>
                               <button
                                 onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
                                 style={{ background: '#1f2937', color: 'white', border: '1px solid #374151', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-                                ⭐ Évaluer
+                                ⭐ {t('club_evaluer', lang)}
                               </button>
                             </div>
 
@@ -1398,13 +1408,13 @@ function DashboardJoueur() {
 
                                   {/* Stats match */}
                                   <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ Stats de match</p>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                       {[
-                                        { label: 'Matchs joués', value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                                        { label: 'Buts', value: s.buts, color: '#4ade80', rank: s.rankButs },
-                                        { label: 'Passes déc.', value: s.passes, color: '#a78bfa', rank: s.rankPasses },
-                                        { label: 'Clean sheets', value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
+                                        { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
+                                        { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
+                                        { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                        { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
                                       ].map(stat => (
                                         <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                           <div>
@@ -1425,26 +1435,26 @@ function DashboardJoueur() {
 
                                   {/* Présence + Points séance */}
                                   <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ Entraînement</p>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                       {/* Taux de présence */}
                                       <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Taux présence</p>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                           <span style={{ fontSize: '20px', fontWeight: 800, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' }}>
                                             {s.tauxPresence ?? '—'}%
                                           </span>
                                         </div>
-                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} séances</span>
+                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                       </div>
                                       {/* Points séance */}
                                       <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
-                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Points séance</p>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_points_seance', lang)}</p>
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
                                           <span style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>{s.points}</span>
                                           <RankBadge rank={s.rankPoints?.rank} total={s.rankPoints?.total} />
                                         </div>
-                                        {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 Meilleur de l'équipe</span>}
+                                        {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -1452,11 +1462,11 @@ function DashboardJoueur() {
                                   {/* Présence par mois */}
                                   {s.presenceMensuelle?.length > 0 && (
                                     <div>
-                                      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>📅 Présence par mois</p>
+                                      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>📅 {t('club_presence_par_mois', lang)}</p>
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                         {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                           const [y, m] = month.split('-')
-                                          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+                                          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
                                           const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
                                           return (
                                             <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1475,11 +1485,11 @@ function DashboardJoueur() {
 
                                   {/* Avis éducateur */}
                                   <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '12px 16px' }}>
-                                    <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 Avis de l'éducateur</p>
+                                    <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 {t('aff_avis_educateur_court', lang)}</p>
                                     {s.noteEdu ? (
                                       <>
                                         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                                          {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
+                                          {[[t('aff_technique', lang), s.noteEdu.technique], [t('aff_physique', lang), s.noteEdu.physique], [t('aff_mental', lang), s.noteEdu.mental], [t('aff_tactique', lang), s.noteEdu.tactique]].map(([label, note]) => note ? (
                                             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                               <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
                                               <span style={{ color: '#f59e0b', fontSize: 12 }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
@@ -1489,18 +1499,18 @@ function DashboardJoueur() {
                                         {s.noteEdu.commentaire && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#555', fontStyle: 'italic' }}>"{s.noteEdu.commentaire}"</p>}
                                       </>
                                     ) : (
-                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
+                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>
                                     )}
                                   </div>
 
                                   {/* Calendrier prochains matchs */}
                                   <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 Prochains matchs</p>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 {t('aff_prochains_matchs', lang)}</p>
                                     {s.prochainMatchs?.length > 0 ? (
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {s.prochainMatchs.map((m, i) => {
                                           const d = new Date(m.date)
-                                          const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                                          const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                                           return (
                                             <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
                                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -1514,19 +1524,19 @@ function DashboardJoueur() {
                                         })}
                                       </div>
                                     ) : (
-                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Aucun match programmé.</p>
+                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>{t('aff_aucun_match_programme', lang)}</p>
                                     )}
                                   </div>
 
                                   {/* Classements internes */}
                                   <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 {t('aff_classements_equipe', lang)}</p>
                                     <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                                       {[
-                                        { key: 'buteurs', label: '⚽ Top buteurs', data: s.leaderButs },
-                                        { key: 'passeurs', label: '🎯 Top passeurs', data: s.leaderPasses },
-                                        { key: 'victoires', label: '🏆 Top victoires', data: s.leaderVictoires },
-                                        { key: 'points', label: '⭐ Points séance', data: s.leaderPoints },
+                                        { key: 'buteurs', label: `⚽ ${t('aff_top_buteurs', lang)}`, data: s.leaderButs },
+                                        { key: 'passeurs', label: `🎯 ${t('aff_top_passeurs', lang)}`, data: s.leaderPasses },
+                                        { key: 'victoires', label: `🏆 ${t('aff_top_victoires', lang)}`, data: s.leaderVictoires },
+                                        { key: 'points', label: `⭐ ${t('aff_points_seance', lang)}`, data: s.leaderPoints },
                                       ].map(c => (
                                         <button key={c.key} onClick={() => setClassementActif(c.key)}
                                           style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#0a0a0a', color: classementActif === c.key ? '#000' : '#555' }}>
@@ -1541,7 +1551,7 @@ function DashboardJoueur() {
                                           {actif.length > 0 ? actif.map((row, i) => (
                                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
                                               <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? '#4ade80' : '#555', minWidth: '18px' }}>{i + 1}</span>
-                                              <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
+                                              <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? t('jcoach_toi', lang) : row.nom}</span>
                                               <span style={{ fontSize: '12px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#888' }}>{row.val}</span>
                                             </div>
                                           )) : <p style={{ margin: 0, padding: '12px', fontSize: '11px', color: '#333' }}>—</p>}
@@ -1554,7 +1564,7 @@ function DashboardJoueur() {
                                   {s.ligueUrl && (
                                     <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
                                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                                      🏆 Classement du championnat →
+                                      🏆 {t('aff_classement_championnat', lang)}
                                     </a>
                                   )}
 
@@ -1565,7 +1575,7 @@ function DashboardJoueur() {
                             {/* Joueur lié mais pas encore dans l'effectif */}
                             {!a.equipe_joueur_id && (
                               <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
-                                ⏳ Ton éducateur doit encore te lier à ton dossier dans l'effectif pour accéder à tes stats.
+                                ⏳ {t('aff_educateur_doit_lier', lang)}
                               </p>
                             )}
                           </div>
@@ -1580,7 +1590,7 @@ function DashboardJoueur() {
               {mesAffiliations.filter(a => a.statut === 'archive').length > 0 && (
                 <div style={{ marginTop: 24 }}>
                   <p style={{ fontSize: 11, color: '#333', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 10 }}>
-                    HISTORIQUE
+                    {t('jcoach_historique', lang).toUpperCase()}
                   </p>
                   {mesAffiliations.filter(a => a.statut === 'archive').map(af => {
                     const e = af.profil_educateur
@@ -1605,8 +1615,8 @@ function DashboardJoueur() {
               {mesAffiliations.filter(a => a.statut === 'accepte').length === 0 && (
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 24, textAlign: 'center', marginTop: 16 }}>
                   <p style={{ fontSize: 32, marginBottom: 12 }}>🏟️</p>
-                  <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Nouvelle saison</p>
-                  <p style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>Rejoins ton équipe avec le code de ton éducateur.</p>
+                  <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{t('aff_nouvelle_saison', lang)}</p>
+                  <p style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>{t('aff_rejoins_equipe_code', lang)}</p>
                   <input
                     placeholder="CODE ÉQUIPE"
                     value={codeEquipe}
@@ -1615,16 +1625,16 @@ function DashboardJoueur() {
                   />
                   <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
                     style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    Rejoindre
+                    {t('jeq_rejoindre_btn', lang)}
                   </button>
                 </div>
               )}
             </div>
           )}
-          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} />}
-          {onglet === 'analyses' && <UpgradeCard titre="Analyse vidéo" texte="Reçois des retours vocaux personnalisés de coachs experts. Disponible dès le plan Starter." />}
-          {onglet === 'feed' && <UpgradeCard titre="Feed" texte="Publie tes clips et sois découvert par des recruteurs et clubs. Plan Pro requis." />}
-          {onglet === 'recruteurs' && <UpgradeCard titre="Messagerie recruteurs" texte="Reçois des messages de clubs et agents directement. Plan Pro requis." />}
+          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} />}
+          {onglet === 'analyses' && <UpgradeCard titre={t('aff_analyse_video_titre', lang)} texte={t('aff_analyse_video_desc', lang)} lang={lang} />}
+          {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} />}
+          {onglet === 'recruteurs' && <UpgradeCard titre={t('aff_messagerie_recruteurs_titre', lang)} texte={t('aff_messagerie_recruteurs_desc', lang)} lang={lang} />}
         </main>
       </div>
     )
@@ -3030,7 +3040,7 @@ function DashboardJoueur() {
                             <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
                             <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                               <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
-                                ✅ Affilié
+                                ✅ {t('profil_affilie', lang)}
                               </span>
                               {pe?.diplome && (
                                 <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
@@ -3085,13 +3095,13 @@ function DashboardJoueur() {
 
                                 {/* Stats match */}
                                 <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ Stats de match</p>
+                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                     {[
-                                      { label: 'Matchs joués', value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                                      { label: 'Buts', value: s.buts, color: '#4ade80', rank: s.rankButs },
-                                      { label: 'Passes déc.', value: s.passes, color: '#a78bfa', rank: s.rankPasses },
-                                      { label: 'Clean sheets', value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
+                                      { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
+                                      { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
+                                      { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                      { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
                                     ].map(stat => (
                                       <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <div>
@@ -3112,26 +3122,26 @@ function DashboardJoueur() {
 
                                 {/* Présence + Points séance */}
                                 <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ Entraînement</p>
+                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                     {/* Taux de présence */}
                                     <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Taux présence</p>
+                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <span style={{ fontSize: '20px', fontWeight: 800, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' }}>
                                           {s.tauxPresence ?? '—'}%
                                         </span>
                                       </div>
-                                      <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} séances</span>
+                                      <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                     </div>
                                     {/* Points séance */}
                                     <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
-                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Points séance</p>
+                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_points_seance', lang)}</p>
                                       <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>{s.points}</span>
                                         <RankBadge rank={s.rankPoints?.rank} total={s.rankPoints?.total} />
                                       </div>
-                                      {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 Meilleur de l'équipe</span>}
+                                      {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
                                     </div>
                                   </div>
                                 </div>
@@ -3143,7 +3153,7 @@ function DashboardJoueur() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                       {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                         const [y, m] = month.split('-')
-                                        const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+                                        const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
                                         const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
                                         return (
                                           <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -3187,7 +3197,7 @@ function DashboardJoueur() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                       {s.prochainMatchs.map((m, i) => {
                                         const d = new Date(m.date)
-                                        const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                                        const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                                         return (
                                           <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -3241,7 +3251,7 @@ function DashboardJoueur() {
                                 {s.ligueUrl && (
                                   <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
                                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                                    🏆 Classement du championnat →
+                                    🏆 {t('aff_classement_championnat', lang)}
                                   </a>
                                 )}
 
@@ -3252,7 +3262,7 @@ function DashboardJoueur() {
                           {/* Joueur lié mais pas encore dans l'effectif */}
                           {!a.equipe_joueur_id && (
                             <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
-                              ⏳ Ton éducateur doit encore te lier à ton dossier dans l'effectif pour accéder à tes stats.
+                              ⏳ {t('aff_educateur_doit_lier', lang)}
                             </p>
                           )}
                         </div>
