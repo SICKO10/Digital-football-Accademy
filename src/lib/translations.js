@@ -617,7 +617,42 @@ export const T = {
   jeq_rejoindre_btn:        { fr: 'Rejoindre',                en: 'Join',                  pt: 'Juntar',                es: 'Unirse',                it: 'Unisciti',              de: 'Beitreten'             },
   jeq_mes_educateurs:       { fr: 'Mes éducateurs',           en: 'My coaches',            pt: 'Os meus educadores',    es: 'Mis entrenadores',      it: 'I miei educatori',      de: 'Meine Trainer'         },
   jeq_demande_envoyee:      { fr: "Demande envoyée ! Ton éducateur doit l'accepter.", en: 'Request sent! Your coach must accept it.', pt: 'Pedido enviado! O teu educador tem de o aceitar.', es: '¡Solicitud enviada! Tu entrenador debe aceptarla.', it: 'Richiesta inviata! Il tuo educatore deve accettarla.', de: 'Anfrage gesendet! Dein Trainer muss sie annehmen.' },
+
+  // ── Stats joueurs — onglets ───────────────────────────────────────────────────
+  stats_tab_tableau:        { fr: 'Tableau',        en: 'Table',          pt: 'Tabela',         es: 'Tabla',          it: 'Tabella',        de: 'Tabelle'        },
+  stats_tab_classement:     { fr: 'Classement',     en: 'Rankings',       pt: 'Classificação',  es: 'Clasificación',  it: 'Classifica',     de: 'Rangliste'      },
+  stats_tab_graphiques:     { fr: 'Graphiques',     en: 'Charts',         pt: 'Gráficos',       es: 'Gráficos',       it: 'Grafici',        de: 'Diagramme'      },
+  stats_tab_presences:      { fr: 'Présences',      en: 'Attendance',     pt: 'Presenças',      es: 'Presencias',     it: 'Presenze',       de: 'Anwesenheit'    },
+  stats_tab_mois:           { fr: 'Mois',           en: 'Month',          pt: 'Mês',            es: 'Mes',            it: 'Mese',           de: 'Monat'          },
+
+  // ── Stats joueurs — filtres classement ───────────────────────────────────────
+  stats_filtre_buteurs:     { fr: '⚽ Buteurs',     en: '⚽ Scorers',     pt: '⚽ Goleadores',  es: '⚽ Goleadores',  it: '⚽ Goleador',    de: '⚽ Torschützen' },
+  stats_filtre_passeurs:    { fr: '🎯 Passeurs',    en: '🎯 Assisters',   pt: '🎯 Assistentes', es: '🎯 Asistentes',  it: '🎯 Assistman',   de: '🎯 Vorlagengeber'},
+  stats_filtre_victoires:   { fr: '🏆 Victoires',   en: '🏆 Wins',        pt: '🏆 Vitórias',    es: '🏆 Victorias',   it: '🏆 Vittorie',    de: '🏆 Siege'       },
+  stats_filtre_temps:       { fr: '📅 Temps de jeu',en: '📅 Playing time',pt: '📅 Tempo de jogo',es: '📅 Tiempo de juego',it: '📅 Tempo di gioco',de: '📅 Spielzeit'},
+  stats_filtre_presence:    { fr: '🏃 Présence',    en: '🏃 Attendance',  pt: '🏃 Presença',    es: '🏃 Asistencia',  it: '🏃 Presenza',    de: '🏃 Anwesenheit' },
+  stats_filtre_note_edu:    { fr: '⭐ Note éducateur', en: '⭐ Coach rating', pt: '⭐ Nota do educador', es: '⭐ Nota del entrenador', it: '⭐ Voto educatore', de: '⭐ Trainerbewertung' },
+  stats_col_presence:       { fr: 'Présence',       en: 'Attendance',     pt: 'Presença',       es: 'Presencia',      it: 'Presenza',       de: 'Anwesenheit'    },
+
+  // ── Entraînements ──────────────────────────────────────────────────────────────
+  ent_sous_titre:           { fr: 'Clique sur une séance pour saisir les présences', en: 'Click on a session to enter attendance', pt: 'Clique numa sessão para registar presenças', es: 'Haz clic en una sesión para registrar asistencia', it: 'Clicca su una seduta per inserire le presenze', de: 'Klicke auf eine Einheit, um die Anwesenheit einzugeben' },
+  ent_seances_count:        { fr: 'séances',        en: 'sessions',       pt: 'sessões',        es: 'sesiones',       it: 'sedute',         de: 'Einheiten'      },
+
+  // ── Séances — placeholders formulaire ────────────────────────────────────────
+  seance_placeholder_theme: { fr: 'Thème de la séance (ex: Jeu de position 6v4)', en: 'Session theme (e.g. Positional play 6v4)', pt: 'Tema da sessão (ex: Jogo de posição 6v4)', es: 'Tema de la sesión (ej: Juego de posición 6v4)', it: 'Tema della seduta (es: Gioco di posizione 6v4)', de: 'Thema der Einheit (z.B. Positionsspiel 6v4)' },
+  seance_placeholder_video: { fr: 'Lien vidéo (Veo, YouTube...)', en: 'Video link (Veo, YouTube...)', pt: 'Link de vídeo (Veo, YouTube...)', es: 'Enlace de video (Veo, YouTube...)', it: 'Link video (Veo, YouTube...)', de: 'Videolink (Veo, YouTube...)' },
+
+  // ── AnalyseVideo — strings manqués ───────────────────────────────────────────
+  av_sous_titre:            { fr: "Lance la vidéo sur ton écran, appuie sur Enregistrer et décris l'analyse à voix haute. L'IA structure ensuite ton commentaire en rapport PDF.", en: "Play the video on your screen, press Record and describe your analysis out loud. The AI then structures your commentary into a PDF report.", pt: "Lança o vídeo no ecrã, prime Iniciar e descreve a análise em voz alta. A IA estrutura depois o teu comentário em relatório PDF.", es: "Reproduce el video en tu pantalla, pulsa Grabar y describe el análisis en voz alta. La IA estructura tu comentario en informe PDF.", it: "Riproduci il video sullo schermo, premi Registra e descrivi l'analisi ad alta voce. L'IA struttura poi il tuo commento in un report PDF.", de: "Spiele das Video auf deinem Bildschirm ab, drücke Aufnehmen und beschreibe die Analyse laut. Die KI strukturiert deinen Kommentar dann als PDF-Bericht." },
+  av_infos_joueur:          { fr: 'Informations du joueur',   en: 'Player information',      pt: 'Informações do jogador',   es: 'Información del jugador',   it: 'Informazioni giocatore',    de: 'Spielerinformationen'       },
+  av_poste:                 { fr: 'Poste (ex: Milieu)',        en: 'Position (e.g. Midfielder)',pt: 'Posição (ex: Médio)',       es: 'Posición (ej: Centrocampista)',it: 'Ruolo (es: Centrocampista)',de: 'Position (z.B. Mittelfeld)' },
+  av_club_adverse:          { fr: 'Nom du club adverse',       en: 'Opponent club name',       pt: 'Nome do clube adversário',  es: 'Nombre del club adversario',it: 'Nome del club avversario',  de: 'Name des Gegenvereins'      },
+  av_periode_label:         { fr: 'Période analysée',         en: 'Analysed period',          pt: 'Período analisado',         es: 'Período analizado',         it: 'Periodo analizzato',        de: 'Analysierter Zeitraum'      },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'
 export const t = (key, lang = 'fr') => T[key]?.[lang] ?? T[key]?.['fr'] ?? key
+
+// Helper : localeOf('en') → 'en-GB' — pour toLocaleDateString(localeOf(lang), ...)
+const LOCALES = { fr: 'fr-FR', en: 'en-GB', pt: 'pt-PT', es: 'es-ES', it: 'it-IT', de: 'de-DE' }
+export const localeOf = (lang) => LOCALES[lang] || 'fr-FR'

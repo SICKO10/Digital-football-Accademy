@@ -316,7 +316,7 @@ Instructions:
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 {t('analyse_titre', lang)}</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
-        Lance la vidéo sur ton écran, appuie sur Enregistrer et décris l'analyse à voix haute. L'IA structure ensuite ton commentaire en rapport PDF.
+        {t('av_sous_titre', lang)}
       </p>
 
       {tableMissing && (
@@ -326,24 +326,24 @@ Instructions:
       )}
 
       <div style={{ ...st.card, maxWidth: '700px', marginBottom: '2rem' }}>
-        <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Informations du joueur</p>
+        <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>{t('av_infos_joueur', lang)}</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-          <input style={st.input} placeholder="Prénom" value={playerInfo.prenom} onChange={e => setPlayerInfo(p => ({ ...p, prenom: e.target.value }))} />
-          <input style={st.input} placeholder="Nom" value={playerInfo.nom} onChange={e => setPlayerInfo(p => ({ ...p, nom: e.target.value }))} />
-          <input style={st.input} placeholder="Poste (ex: Milieu)" value={playerInfo.poste} onChange={e => setPlayerInfo(p => ({ ...p, poste: e.target.value }))} />
-          <input style={st.input} placeholder="N° maillot" value={playerInfo.numero} onChange={e => setPlayerInfo(p => ({ ...p, numero: e.target.value }))} />
+          <input style={st.input} placeholder={t('equipe_prenom', lang)} value={playerInfo.prenom} onChange={e => setPlayerInfo(p => ({ ...p, prenom: e.target.value }))} />
+          <input style={st.input} placeholder={t('equipe_nom', lang)} value={playerInfo.nom} onChange={e => setPlayerInfo(p => ({ ...p, nom: e.target.value }))} />
+          <input style={st.input} placeholder={t('av_poste', lang)} value={playerInfo.poste} onChange={e => setPlayerInfo(p => ({ ...p, poste: e.target.value }))} />
+          <input style={st.input} placeholder={t('equipe_numero', lang)} value={playerInfo.numero} onChange={e => setPlayerInfo(p => ({ ...p, numero: e.target.value }))} />
         </div>
         <input style={{ ...st.input, maxWidth: '200px' }} type="date" value={playerInfo.date} onChange={e => setPlayerInfo(p => ({ ...p, date: e.target.value }))} />
 
         <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <input style={st.input} placeholder="Nom du club adverse" value={playerInfo.nomClub} onChange={e => setPlayerInfo(p => ({ ...p, nomClub: e.target.value }))} />
+          <input style={st.input} placeholder={t('av_club_adverse', lang)} value={playerInfo.nomClub} onChange={e => setPlayerInfo(p => ({ ...p, nomClub: e.target.value }))} />
           <select style={st.input} value={playerInfo.typeMatch} onChange={e => setPlayerInfo(p => ({ ...p, typeMatch: e.target.value }))}>
             <option value="aller">{t('analyse_match_aller', lang)}</option>
             <option value="retour">{t('analyse_match_retour', lang)}</option>
           </select>
         </div>
         <div style={{ marginTop: '10px' }}>
-          <label style={st.label}>Période analysée</label>
+          <label style={st.label}>{t('av_periode_label', lang)}</label>
           <div style={{ display: 'flex', gap: '8px' }}>
             {[['complet', t('analyse_match_complet', lang)], ['premiere', t('analyse_premiere_mi', lang)], ['deuxieme', t('analyse_deuxieme_mi', lang)]].map(([val, label]) => (
               <button key={val} onClick={() => setPlayerInfo(p => ({ ...p, periodeMatch: val }))}

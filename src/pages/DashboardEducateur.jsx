@@ -7,7 +7,7 @@ import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
-import { t, LANGS } from '../lib/translations'
+import { t, LANGS, localeOf } from '../lib/translations'
 import { useLang } from '../hooks/useLang'
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
@@ -2156,12 +2156,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         {activeSection === 'stats' && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Stats joueurs</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('nav_stats', lang)}</h1>
             </div>
 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['tableau','📋 Tableau'],['classement','🏆 Classement'],['graphiques','📈 Graphiques'],['presence','🏃 Présences'],['mois','🌟 Mois']].map(([k, label]) => (
+              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`🌟 ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #4ade80' : '2px solid transparent', color: statsSubTab === k ? '#4ade80' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -2178,7 +2178,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                          {['Joueur', 'Poste', 'MJ', 'Min', 'Buts', 'Passes D.', 'CS', '🟨', '🟥', 'Présence'].map(h => (
+                          {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang)].map(h => (
                             <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
@@ -2215,12 +2215,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 {statsSubTab === 'classement' && (() => {
                   const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: notes[j.id] }))
                   const TRIS = [
-                    { key: 'buts', label: '⚽ Buteurs', get: j => j.s.buts, color: '#4ade80', unit: 'but' },
-                    { key: 'passes_dec', label: '🎯 Passeurs', get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
-                    { key: 'victoires', label: '🏆 Victoires', get: j => j.s.victoires, color: '#fbbf24', unit: 'V' },
-                    { key: 'matchs', label: '📅 Temps de jeu', get: j => j.s.matchs, color: '#a78bfa', unit: 'match' },
-                    { key: 'presence', label: '🏃 Présence', get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
-                    { key: 'note', label: '⭐ Note éducateur', get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
+                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: '#4ade80', unit: 'but' },
+                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
+                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: '#fbbf24', unit: 'V' },
+                    { key: 'matchs', label: t('stats_filtre_temps', lang), get: j => j.s.matchs, color: '#a78bfa', unit: 'match' },
+                    { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
@@ -2268,8 +2268,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           <thead>
                             <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                               <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
-                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>Joueur</th>
-                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>Poste</th>
+                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_col_joueur', lang)}</th>
+                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_poste', lang)}</th>
                               <th style={{ padding: '8px 12px', color: triActif.color, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{triActif.label}</th>
                             </tr>
                           </thead>
@@ -2717,7 +2717,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                               {m.domicile ? 'vs' : '@'} {m.adversaire}
                             </p>
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
-                              {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                               {m.competition ? ` · ${m.competition}` : ''}
                               {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                             </p>
@@ -2910,7 +2910,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('ent_titre', lang)}</h1>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{entrainements.length} séance{entrainements.length !== 1 ? 's' : ''} · Clique sur une séance pour saisir les présences</p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{entrainements.length} {t('ent_seances_count', lang)} · {t('ent_sous_titre', lang)}</p>
               </div>
               {canEdit('entrainements') && (
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -3024,7 +3024,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         {estFuture ? '📅' : '✅'}
                       </div>
                       <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                           {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
                           {!estFuture && total > 0 && (
@@ -3541,7 +3541,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 {t('seance_enregistrer_une', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input
-                  placeholder="Thème de la séance (ex: Jeu de position 6v4)"
+                  placeholder={t('seance_placeholder_theme', lang)}
                   value={uploadSeanceOuverteForm.theme}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, theme: e.target.value }))}
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
@@ -3567,7 +3567,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   ))}
                 </select>
                 <input
-                  placeholder="Lien vidéo (Veo, YouTube...)"
+                  placeholder={t('seance_placeholder_video', lang)}
                   value={uploadSeanceOuverteForm.video_url}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
