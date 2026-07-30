@@ -6,6 +6,8 @@ import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
+import { useLang } from '../hooks/useLang'
+import { t, LANGS, localeOf } from '../lib/translations'
 const EQUIPES = ['A', 'B']
 
 const ROLES_STAFF = [
@@ -57,7 +59,7 @@ const COULEURS_BUDGET = [
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
-function DonutChart({ segments, total, label, couleurCentrale = '#fff' }) {
+function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = 'fr' }) {
   const R = 70
   const STROKE = 18
   const C = 2 * Math.PI * R
@@ -96,7 +98,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff' }) {
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
         <span style={{ fontSize: 18, fontWeight: 900, color: couleurCentrale, fontFamily: 'Inter, sans-serif' }}>
-          {total.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+          {total.toLocaleString(localeOf(lang), { maximumFractionDigits: 0 })} €
         </span>
         <span style={{ fontSize: 10, color: '#555', fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
       </div>
@@ -106,6 +108,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff' }) {
 
 export default function DashboardClub() {
   const navigate = useNavigate()
+  const { lang, setLang } = useLang()
   const [club, setClub] = useState(null)
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -409,7 +412,7 @@ export default function DashboardClub() {
       setInviteMessage({ type: 'erreur', texte: error?.message || data?.error })
       return
     }
-    setInviteMessage({ type: 'ok', texte: `Invitation envoyée à ${inviteEmail}` })
+    setInviteMessage({ type: 'ok', texte: `${t('club_invitation_envoyee', lang)} ${inviteEmail}` })
     setInviteEmail('')
   }
 
@@ -509,10 +512,10 @@ export default function DashboardClub() {
   }
 
   const GROUPES_POSTE = [
-    { label: '🧤 Gardiens', color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-    { label: '🛡️ Défenseurs', color: '#60a5fa', match: p => p && ['défenseur', 'defenseur', 'latéral', 'lateral'].some(k => p.toLowerCase().includes(k)) },
-    { label: '⚙️ Milieux', color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-    { label: '⚡ Attaquants', color: '#4ade80', match: p => p && ['attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
+    { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
+    { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur', 'defenseur', 'latéral', 'lateral'].some(k => p.toLowerCase().includes(k)) },
+    { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
+    { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
     { label: '❓ Autres', color: '#555', match: p => !p || !['gardien', 'défenseur', 'defenseur', 'latéral', 'lateral', 'milieu', 'attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
   ]
 
@@ -792,9 +795,9 @@ export default function DashboardClub() {
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 
   const categoriesVisibles = [
-    { id: 'sportif', label: '⚽ SPORTIF', defaultTab: 'categories',
+    { id: 'sportif', label: `⚽ ${t('club_sportif', lang)}`, defaultTab: 'categories',
       visible: ['president', 'directeur_sportif'].includes(monRole) },
-    { id: 'administratif', label: '🏢 ADMINISTRATIF', defaultTab: 'sponsors',
+    { id: 'administratif', label: `🏢 ${t('club_administratif', lang)}`, defaultTab: 'sponsors',
       visible: ['president', 'marketing', 'secretaire'].includes(monRole) },
   ].filter(c => c.visible)
 
@@ -804,28 +807,38 @@ export default function DashboardClub() {
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
           {!isMobile && <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>}
+          {!isMobile && (
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {LANGS.map(l => (
+                <button key={l.code} onClick={() => setLang(l.code)}
+                  style={{ background: lang === l.code ? '#4ade8020' : 'transparent', border: `1px solid ${lang === l.code ? '#4ade80' : '#2a2a2a'}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
+                  {l.flag}
+                </button>
+              ))}
+            </div>
+          )}
           {autreRole === 'educateur' && (
             <button onClick={() => navigate('/educateur')}
               style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
-              {isMobile ? '🎓' : '🎓 Vue Éducateur'}
+              {isMobile ? '🎓' : `🎓 ${t('club_vue_educateur', lang)}`}
             </button>
           )}
           {autreRole === 'joueur' && (
             <button onClick={() => navigate('/dashboard-joueur')}
               style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
-              {isMobile ? '⚽' : '⚽ Vue Joueur'}
+              {isMobile ? '⚽' : `⚽ ${t('club_vue_joueur', lang)}`}
             </button>
           )}
           <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
-            {isMobile ? '⏏️' : 'Déconnexion'}
+            {isMobile ? '⏏️' : t('btn_deconnexion', lang)}
           </button>
         </div>
       </nav>
 
       <div style={st.content}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || 'Mon club'}</h1>
-          <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} catégorie{categories.length !== 1 ? 's' : ''} · {educateursAcceptes.length} éducateur{educateursAcceptes.length !== 1 ? 's' : ''} affilié{educateursAcceptes.length !== 1 ? 's' : ''}</p>
+          <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || t('club_mon_club', lang)}</h1>
+          <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
         </div>
 
         {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
@@ -849,18 +862,18 @@ export default function DashboardClub() {
         {/* Niveau 2 — sous-onglets */}
         <div style={st.tabs}>
           {(activeCategorie === 'sportif' ? [
-            { id: 'categories', label: '📋 Catégories & Équipes' },
-            { id: 'classements', label: '🏆 Classements' },
-            { id: 'recrutement', label: '🔍 Recrutement' },
-            { id: 'educateurs', label: `👥 Éducateurs${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
+            { id: 'categories', label: `📋 ${t('club_tab_categories', lang)}` },
+            { id: 'classements', label: `🏆 ${t('club_tab_classements', lang)}` },
+            { id: 'recrutement', label: `🔍 ${t('club_tab_recrutement', lang)}` },
+            { id: 'educateurs', label: `👥 ${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
           ] : [
-            { id: 'sponsors', label: '🤝 Sponsors' },
-            { id: 'profil', label: '⭐ Profil club' },
-            ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: '💰 Budget' }] : []),
-            ...(monRole === 'president' ? [{ id: 'staff', label: '👥 Staff' }] : []),
-          ]).map(t => (
-            <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>
-              {t.label}
+            { id: 'sponsors', label: `🤝 ${t('club_tab_sponsors', lang)}` },
+            { id: 'profil', label: `⭐ ${t('club_tab_profil', lang)}` },
+            ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: `💰 ${t('club_tab_budget', lang)}` }] : []),
+            ...(monRole === 'president' ? [{ id: 'staff', label: `👥 ${t('club_tab_staff', lang)}` }] : []),
+          ]).map(tab => (
+            <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -870,14 +883,14 @@ export default function DashboardClub() {
           <>
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
               <button style={{ ...st.btnSecondary, width: isMobile ? '100%' : 'auto' }} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
-                {autoAssignLoading ? '⏳ Assignation...' : '⚡ Auto-assigner les joueurs (équipe A)'}
+                {autoAssignLoading ? `⏳ ${t('club_assignation_cours', lang)}` : `⚡ ${t('club_auto_assigner', lang)}`}
               </button>
-              <button style={{ ...st.btnSolid, width: isMobile ? '100%' : 'auto' }} onClick={() => setShowAddCategorie(true)}>+ Ajouter une catégorie</button>
+              <button style={{ ...st.btnSolid, width: isMobile ? '100%' : 'auto' }} onClick={() => setShowAddCategorie(true)}>{t('club_ajouter_categorie', lang)}</button>
             </div>
 
             {autoAssignResult && (
               <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', color: '#4ade80', fontSize: '13px' }}>
-                ✅ {autoAssignResult.count} joueur{autoAssignResult.count !== 1 ? 's' : ''} assigné{autoAssignResult.count !== 1 ? 's' : ''} automatiquement (équipe A par défaut — ajuste manuellement si besoin pour l'équipe B)
+                ✅ {autoAssignResult.count} {t('club_joueur_assigne_auto', lang)}
               </div>
             )}
 
@@ -885,21 +898,21 @@ export default function DashboardClub() {
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={st.label}>Catégorie</label>
+                    <label style={st.label}>{t('equipe_categorie', lang)}</label>
                     <select style={st.input} value={newCategorie.nom} onChange={e => setNewCategorie(p => ({ ...p, nom: e.target.value }))}>
                       {CATEGORIES_STANDARD.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={st.label}>Équipe</label>
+                    <label style={st.label}>{t('club_equipe_label', lang)}</label>
                     <select style={st.input} value={newCategorie.equipe} onChange={e => setNewCategorie(p => ({ ...p, equipe: e.target.value }))}>
                       {EQUIPES.map(e => <option key={e}>{e}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={st.label}>Éducateur responsable</label>
+                    <label style={st.label}>{t('club_educateur_responsable', lang)}</label>
                     <select style={st.input} value={newCategorie.educateur_id} onChange={e => setNewCategorie(p => ({ ...p, educateur_id: e.target.value }))}>
-                      <option value="">— Aucun pour l'instant —</option>
+                      <option value="">{t('club_aucun_educateur_instant', lang)}</option>
                       {educateursAcceptes.map(e => (
                         <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>
                       ))}
@@ -907,15 +920,15 @@ export default function DashboardClub() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button style={st.btnSolid} onClick={ajouterCategorie} disabled={savingCategorie}>{savingCategorie ? 'Ajout...' : 'Ajouter'}</button>
-                  <button style={st.btnSecondary} onClick={() => setShowAddCategorie(false)}>Annuler</button>
+                  <button style={st.btnSolid} onClick={ajouterCategorie} disabled={savingCategorie}>{savingCategorie ? t('jp_ajout_cours', lang) : t('btn_ajouter', lang)}</button>
+                  <button style={st.btnSecondary} onClick={() => setShowAddCategorie(false)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
 
             {categories.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
-                Aucune catégorie créée. Commence par ajouter U13, U15... avec les équipes A/B.
+                {t('club_aucune_categorie', lang)}
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
@@ -928,13 +941,13 @@ export default function DashboardClub() {
                       {cats.map(c => (
                         <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
                           <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Équipe {c.equipe}</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{t('club_equipe_label', lang)} {c.equipe}</p>
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>
-                              {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : 'Pas d\'éducateur assigné'}
+                              {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : t('club_pas_educateur_assigne', lang)}
                             </p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 Effectif</button>
+                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 {t('club_effectif', lang)}</button>
                             <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
                           </div>
                         </div>
@@ -953,21 +966,21 @@ export default function DashboardClub() {
             {/* Code club */}
             <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔑 Ton code club</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Partage ce code à tes éducateurs — ils peuvent rejoindre depuis leur dashboard.</p>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔑 {t('club_ton_code', lang)}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{t('club_partage_code_desc', lang)}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontWeight: 800, fontSize: '18px', padding: '8px 18px', borderRadius: '10px', letterSpacing: '3px', fontFamily: 'monospace' }}>{codeClub}</span>
-                <button onClick={copierCode} style={st.btnSecondary}>📋 Copier</button>
+                <button onClick={copierCode} style={st.btnSecondary}>📋 {t('club_copier', lang)}</button>
               </div>
             </div>
 
             {/* Recherche & invitation */}
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 Inviter un éducateur</p>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 {t('club_inviter_educateur_titre', lang)}</p>
               <input
                 style={st.input}
-                placeholder="Rechercher par nom, prénom, club..."
+                placeholder={t('club_rechercher_educateur_placeholder', lang)}
                 value={searchEducateur}
                 onChange={e => rechercherEducateurs(e.target.value)}
               />
@@ -985,7 +998,7 @@ export default function DashboardClub() {
                           onClick={() => inviterEducateur(e.id)}
                           disabled={dejaInvite || invitingId === e.id}
                           style={{ ...st.btnSolid, opacity: dejaInvite ? 0.4 : 1, fontSize: '12px', padding: '6px 14px' }}>
-                          {dejaInvite ? 'Déjà invité' : invitingId === e.id ? '...' : 'Inviter'}
+                          {dejaInvite ? t('club_deja_invite', lang) : invitingId === e.id ? '...' : t('club_inviter', lang)}
                         </button>
                       </div>
                     )
@@ -997,17 +1010,17 @@ export default function DashboardClub() {
             {/* En attente */}
             {educateursEnAttente.length > 0 && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#f59e0b' }}>⏳ En attente de validation ({educateursEnAttente.length})</p>
+                <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#f59e0b' }}>⏳ {t('club_en_attente_validation', lang)} ({educateursEnAttente.length})</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {educateursEnAttente.map(e => (
                     <div key={e.id} style={{ ...st.card, borderColor: '#f59e0b30', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
                       <div>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>Méthode : {e.methode === 'code' ? 'a rejoint via code' : 'invité par le club'}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{t('club_methode_label', lang)} {e.methode === 'code' ? t('club_methode_code', lang) : t('club_methode_invite', lang)}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                        <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>✅ Accepter</button>
-                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>Refuser</button>
+                        <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>✅ {t('club_accepter', lang)}</button>
+                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>{t('club_refuser', lang)}</button>
                       </div>
                     </div>
                   ))}
@@ -1016,9 +1029,9 @@ export default function DashboardClub() {
             )}
 
             {/* Affiliés */}
-            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>✅ Éducateurs affiliés ({educateursAcceptes.length})</p>
+            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>✅ {t('club_educateurs_affilies_titre', lang)} ({educateursAcceptes.length})</p>
             {educateursAcceptes.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>Aucun éducateur affilié pour le moment.</p>
+              <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {educateursAcceptes.map(e => (
@@ -1030,8 +1043,8 @@ export default function DashboardClub() {
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ Noter</button>
-                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>Retirer</button>
+                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
+                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
                     </div>
                   </div>
                 ))}
@@ -1040,9 +1053,9 @@ export default function DashboardClub() {
 
             {/* ── Séances reçues pour évaluation ── */}
             <div style={{ marginTop: '2rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🎥 Séances reçues ({seancesRecues.length})</p>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🎥 {t('club_seances_recues_titre', lang)} ({seancesRecues.length})</p>
               {seancesRecues.length === 0 ? (
-                <p style={{ color: '#444', fontSize: '13px' }}>Aucune séance uploadée par tes éducateurs pour l'instant.</p>
+                <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucune_seance_uploadee', lang)}</p>
               ) : (() => {
                 const parSaison = seancesRecues.reduce((acc, s) => {
                   const k = s.saison || 'Non définie'
@@ -1066,9 +1079,9 @@ export default function DashboardClub() {
                           cursor: 'pointer', textAlign: 'left',
                         }}>
                         <span>{ouverte ? '📂' : '📁'}</span>
-                        <span>Saison {saison}</span>
+                        <span>{t('profil_saison', lang)} {saison}</span>
                         <span style={{ marginLeft: 'auto', color: '#666', fontSize: '12px' }}>
-                          {parSaison[saison].length} séance{parSaison[saison].length > 1 ? 's' : ''}
+                          {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
                         </span>
                         <span style={{ color: '#444' }}>{ouverte ? '▼' : '▶'}</span>
                       </button>
@@ -1078,18 +1091,18 @@ export default function DashboardClub() {
                         return (
                           <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '6px', marginLeft: '16px' }}>
                             <div>
-                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || t('seance_fallback', lang)}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
-                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 Voir</a>
+                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 {t('btn_voir', lang)}</a>
                               {s.statut === 'a_analyser' && (
                                 <>
-                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 Analyser</button>
-                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? '🎙️ Coach' : '🎙️ Transférer au coach'}</button>
+                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 {t('club_analyser', lang)}</button>
+                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? `🎙️ ${t('club_coach_mobile', lang)}` : `🎙️ ${t('club_transferer_coach', lang)}`}</button>
                                 </>
                               )}
-                              {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ Chez le coach</span>}
+                              {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ {t('club_chez_coach', lang)}</span>}
                               {s.statut === 'analyse' && eval_ && (
                                 <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
                               )}
@@ -1108,22 +1121,22 @@ export default function DashboardClub() {
 
         {activeTab === 'classements' && (() => {
           const TRIS = [
-            { key: 'buts', label: '⚽ Buteurs', color: '#4ade80' },
-            { key: 'passes', label: '🎯 Passeurs', color: '#60a5fa' },
-            { key: 'matchsJoues', label: '📅 Matchs joués', color: '#a78bfa' },
-            { key: 'tauxPresence', label: '🏃 Présence', color: '#34d399', unit: '%' },
-            { key: 'pointsSeance', label: '⭐ Points séance', color: '#fbbf24' },
-            { key: 'noteGlobale', label: '📝 Note éducateur', color: '#f59e0b', unit: '/5' },
+            { key: 'buts', label: t('stats_graph_buteurs', lang), color: '#4ade80' },
+            { key: 'passes', label: t('stats_filtre_passeurs', lang), color: '#60a5fa' },
+            { key: 'matchsJoues', label: t('stats_graph_matchs', lang), color: '#a78bfa' },
+            { key: 'tauxPresence', label: t('stats_filtre_presence', lang), color: '#34d399', unit: '%' },
+            { key: 'pointsSeance', label: t('club_points_seance', lang), color: '#fbbf24' },
+            { key: 'noteGlobale', label: t('club_note_educateur', lang), color: '#f59e0b', unit: '/5' },
           ]
           const catData = categorieActive ? statsParCategorie[categorieActive] : null
           const triActif = TRIS.find(t => t.key === triClassement) || TRIS[0]
           const sorted = catData ? [...catData.joueurs].sort((a, b) => (b.stats[triClassement] || 0) - (a.stats[triClassement] || 0)) : []
 
           if (categories.length === 0) {
-            return <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Crée d'abord des catégories dans l'onglet précédent.</div>
+            return <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>{t('club_creer_categories_dabord', lang)}</div>
           }
           if (loadingClassements) {
-            return <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement des classements...</p>
+            return <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>{t('club_chargement_classements', lang)}</p>
           }
 
           return (
@@ -1167,33 +1180,33 @@ export default function DashboardClub() {
                     {nbMatchsJoues > 0 && (
                       <div style={{ marginBottom: '1.5rem' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
-                          <StatCard label="Matchs joués" valeur={nbMatchsJoues} />
-                          <StatCard label="Taux victoire" valeur={`${tauxV}%`} couleur="green" />
-                          <StatCard label="Taux nul" valeur={`${tauxN}%`} couleur="orange" />
-                          <StatCard label="Taux défaite" valeur={`${tauxD}%`} couleur="red" />
+                          <StatCard label={t('jp_matchs_joues', lang)} valeur={nbMatchsJoues} />
+                          <StatCard label={t('club_taux_victoire', lang)} valeur={`${tauxV}%`} couleur="green" />
+                          <StatCard label={t('club_taux_nul', lang)} valeur={`${tauxN}%`} couleur="orange" />
+                          <StatCard label={t('club_taux_defaite', lang)} valeur={`${tauxD}%`} couleur="red" />
                         </div>
-                        <StatCard label="Clean sheets" valeur={`${tauxCS}%`} />
+                        <StatCard label={t('jp_clean_sheets', lang)} valeur={`${tauxCS}%`} />
                       </div>
                     )}
                     {totalPresencesEffectif > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
-                        <StatCard label="Taux présence effectif" valeur={`${tauxPresenceEffectif}%`} couleur="green" />
-                        <StatCard label="Taux absence effectif" valeur={`${tauxAbsenceEffectif}%`} couleur="red" />
+                        <StatCard label={t('club_taux_presence_effectif', lang)} valeur={`${tauxPresenceEffectif}%`} couleur="green" />
+                        <StatCard label={t('club_taux_absence_effectif', lang)} valeur={`${tauxAbsenceEffectif}%`} couleur="red" />
                       </div>
                     )}
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 Classement officiel</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🏆 {t('club_classement_officiel', lang)}</p>
                     {ligueUrls[categorieActive] ? (
                       <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '1.5rem' }}>
-                        🏆 Voir le classement sur le site de la ligue ↗
+                        🏆 {t('club_voir_classement_ligue', lang)}
                       </a>
                     ) : (
-                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>L'éducateur n'a pas encore renseigné le lien du classement officiel (dans son propre dashboard, onglet Compétition).</p>
+                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_lien_classement_manquant', lang)}</p>
                     )}
 
                     {derniersMatchs.length > 0 && (
                       <>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '10px' }}>⚽ Derniers résultats</p>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '10px' }}>⚽ {t('club_derniers_resultats', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.5rem' }}>
                           {derniersMatchs.map(m => {
                             const aScore = m.score_nous !== '' && m.score_nous !== null
@@ -1206,7 +1219,7 @@ export default function DashboardClub() {
                                 {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{resultat}</span>}
                                 <div style={{ flex: 1 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
                                 </div>
                                 {aScore && <span style={{ fontWeight: 800, fontSize: '14px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
                               </div>
@@ -1221,8 +1234,8 @@ export default function DashboardClub() {
 
               {!catData || catData.joueurs.length === 0 ? (
                 <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
-                  Aucun joueur rattaché à cette catégorie pour l'instant.<br />
-                  <span style={{ fontSize: '12px', color: '#444' }}>L'éducateur doit lier ses joueurs à cette catégorie club.</span>
+                  {t('club_aucun_joueur_categorie', lang)}<br />
+                  <span style={{ fontSize: '12px', color: '#444' }}>{t('club_educateur_doit_lier', lang)}</span>
                 </div>
               ) : (
                 <>
@@ -1240,8 +1253,8 @@ export default function DashboardClub() {
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                           <th style={{ padding: '8px 12px', textAlign: 'center', color: '#444', fontSize: '11px', width: '40px' }}>#</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>Joueur</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>Poste</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>{t('equipe_col_joueur', lang)}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>{t('equipe_poste', lang)}</th>
                           <th style={{ padding: '8px 12px', textAlign: 'right', color: triActif.color, fontSize: '11px' }}>{triActif.label}</th>
                         </tr>
                       </thead>
@@ -1299,43 +1312,43 @@ export default function DashboardClub() {
                       <span style={{ fontSize: '13px', color: '#666' }}>{moyenne.toFixed(1)} ({avisRecus.length} avis)</span>
                     </div>
                   ) : (
-                    <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>Aucun avis reçu pour l'instant</p>
+                    <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>{t('club_aucun_avis_recu', lang)}</p>
                   )}
                 </div>
               </div>
 
               {/* Formulaire */}
               <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 Informations du club</p>
+                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 {t('club_infos_club', lang)}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
-                    <label style={st.label}>Nom du club</label>
+                    <label style={st.label}>{t('club_nom_club', lang)}</label>
                     <input style={st.input} value={profilClubEdit.club} onChange={e => setProfilClubEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex: AS Cannes" />
                   </div>
                   <div>
-                    <label style={st.label}>Région</label>
+                    <label style={st.label}>{t('profil_region', lang)}</label>
                     <input style={st.input} value={profilClubEdit.region} onChange={e => setProfilClubEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex: Provence-Alpes-Côte d'Azur" />
                   </div>
                   <div>
-                    <label style={st.label}>Description</label>
+                    <label style={st.label}>{t('seance_description', lang)}</label>
                     <textarea
                       style={{ ...st.input, minHeight: '100px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }}
                       value={profilClubEdit.description}
                       onChange={e => setProfilClubEdit(p => ({ ...p, description: e.target.value }))}
-                      placeholder="Présente ton club, son histoire, ses valeurs..."
+                      placeholder={t('club_desc_placeholder', lang)}
                     />
                   </div>
                 </div>
                 <button onClick={sauvegarderProfilClub} disabled={savingProfilClub} style={{ ...st.btnSolid, marginTop: '16px' }}>
-                  {savingProfilClub ? 'Enregistrement...' : '✓ Sauvegarder'}
+                  {savingProfilClub ? t('jp_enregistrement', lang) : `✓ ${t('btn_sauvegarder', lang)}`}
                 </button>
               </div>
 
               {/* Avis reçus */}
               <div style={st.card}>
-                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ Avis reçus ({avisRecus.length})</p>
+                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('club_avis_recus_titre', lang)} ({avisRecus.length})</p>
                 {avisRecus.length === 0 ? (
-                  <p style={{ color: '#444', fontSize: '13px' }}>Aucun avis pour l'instant. Les joueurs et éducateurs affiliés pourront noter le club.</p>
+                  <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucun_avis_desc', lang)}</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {avisRecus.map(a => (
@@ -1392,64 +1405,64 @@ export default function DashboardClub() {
             <div style={{ maxWidth: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 Budget du club</h2>
-                  <p style={{ color: '#555', fontSize: 13, margin: '4px 0 0' }}>Suivi des dépenses et recettes</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 {t('club_budget_titre', lang)}</h2>
+                  <p style={{ color: '#555', fontSize: 13, margin: '4px 0 0' }}>{t('club_budget_desc', lang)}</p>
                 </div>
                 <button onClick={() => setBudgetFormOuvert(v => !v)}
                   style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {budgetFormOuvert ? '✕ Annuler' : '+ Ajouter'}
+                  {budgetFormOuvert ? `✕ ${t('btn_annuler', lang)}` : `+ ${t('btn_ajouter', lang)}`}
                 </button>
               </div>
 
               {budgetFormOuvert && (
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
-                  <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>Nouvelle entrée</p>
+                  <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                    {['depense', 'recette'].map(t => (
-                      <button key={t} onClick={() => setBudgetForm(f => ({ ...f, type: t, categorie: '' }))}
-                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === t ? (t === 'recette' ? '#4ade8020' : '#ef444420') : '#1a1a1a', color: budgetForm.type === t ? (t === 'recette' ? '#4ade80' : '#ef4444') : '#555' }}>
-                        {t === 'recette' ? '↑ Recette' : '↓ Dépense'}
+                    {['depense', 'recette'].map(bt => (
+                      <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
+                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? '#4ade8020' : '#ef444420') : '#1a1a1a', color: budgetForm.type === bt ? (bt === 'recette' ? '#4ade80' : '#ef4444') : '#555' }}>
+                        {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
                       </button>
                     ))}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>Catégorie</label>
+                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
                       <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
                         style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? '#fff' : '#555', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
-                        <option value="">Choisir...</option>
+                        <option value="">{t('club_choisir_pts', lang)}</option>
                         {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
                           <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>Montant (€)</label>
+                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_montant', lang)}</label>
                       <input type="number" min="0" step="0.01" placeholder="0,00" value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
                         style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>Libellé</label>
-                      <input type="text" placeholder="Description..." value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
+                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_libelle', lang)}</label>
+                      <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
                         style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>Date</label>
+                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('ent_date', lang)}</label>
                       <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
                         style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                   </div>
-                  <input type="text" placeholder="Note (optionnel)..." value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
+                  <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
                     style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
                   <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
                     style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
-                    {budgetSaving ? 'Enregistrement...' : 'Enregistrer'}
+                    {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
                   </button>
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                {[['mois', 'Ce mois'], ['saison', 'Cette saison'], ['tout', 'Tout']].map(([val, label]) => (
+                {[['mois', t('club_ce_mois', lang)], ['saison', t('club_cette_saison', lang)], ['tout', t('club_tout', lang)]].map(([val, label]) => (
                   <button key={val} onClick={() => setBudgetPeriode(val)}
                     style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${budgetPeriode === val ? '#4ade8040' : '#1a1a1a'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetPeriode === val ? '#4ade8020' : '#111', color: budgetPeriode === val ? '#4ade80' : '#555' }}>
                     {label}
@@ -1459,14 +1472,14 @@ export default function DashboardClub() {
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
                 {[
-                  { label: 'Recettes', val: totalRecettes, color: '#4ade80', bg: '#4ade8010', sign: '+' },
-                  { label: 'Dépenses', val: totalDepenses, color: '#ef4444', bg: '#ef444410', sign: '−' },
-                  { label: 'Solde', val: Math.abs(solde), color: solde >= 0 ? '#4ade80' : '#ef4444', bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
+                  { label: t('club_recettes', lang), val: totalRecettes, color: '#4ade80', bg: '#4ade8010', sign: '+' },
+                  { label: t('club_depenses', lang), val: totalDepenses, color: '#ef4444', bg: '#ef444410', sign: '−' },
+                  { label: t('club_solde', lang), val: Math.abs(solde), color: solde >= 0 ? '#4ade80' : '#ef4444', bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
                 ].map(({ label, val, color, bg, sign }) => (
                   <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 16, padding: '16px 18px' }}>
                     <p style={{ margin: '0 0 6px', fontSize: 11, color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>
-                      {sign}{val.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                      {sign}{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                     </p>
                   </div>
                 ))}
@@ -1475,11 +1488,11 @@ export default function DashboardClub() {
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 20, marginBottom: 20 }}>
                 {/* Donut Recettes */}
                 <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ Recettes</p>
-                  <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label="reçu" />
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
+                  <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {categoriesRecetteArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
+                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{t('club_aucune_entree', lang)}</p>
                     )}
                     {categoriesRecetteArr.slice(0, 4).map((seg, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1490,17 +1503,17 @@ export default function DashboardClub() {
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
                       </div>
                     ))}
-                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesRecetteArr.length - 4} autres</p>}
+                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesRecetteArr.length - 4} {t('club_autres_suffix', lang)}</p>}
                   </div>
                 </div>
 
                 {/* Donut Dépenses */}
                 <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ Dépenses</p>
-                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label="dépensé" />
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ {t('club_depenses', lang)}</p>
+                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label={t('club_depense_mot', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {categoriesDepenseArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>Aucune entrée.</p>
+                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{t('club_aucune_entree', lang)}</p>
                     )}
                     {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1511,41 +1524,42 @@ export default function DashboardClub() {
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
                       </div>
                     ))}
-                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} autres</p>}
+                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} {t('club_autres_suffix', lang)}</p>}
                   </div>
                 </div>
 
                 {/* Donut Global */}
                 <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ Global</p>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ {t('club_global', lang)}</p>
                   <DonutChart
                     segments={totalRecettes + totalDepenses > 0 ? [
                       { pct: (totalRecettes / (totalRecettes + totalDepenses)) * 100, color: '#4ade80' },
                       { pct: (totalDepenses / (totalRecettes + totalDepenses)) * 100, color: '#ef4444' },
                     ] : []}
                     total={Math.abs(solde)}
-                    label={solde >= 0 ? 'bénéfice' : 'déficit'}
+                    label={solde >= 0 ? t('club_benefice', lang) : t('club_deficit', lang)}
                     couleurCentrale={solde >= 0 ? '#4ade80' : '#ef4444'}
+                    lang={lang}
                   />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {[{ label: 'Recettes', color: '#4ade80', val: totalRecettes }, { label: 'Dépenses', color: '#ef4444', val: totalDepenses }].map(({ label, color, val }) => (
+                    {[{ label: t('club_recettes', lang), color: '#4ade80', val: totalRecettes }, { label: t('club_depenses', lang), color: '#ef4444', val: totalDepenses }].map(({ label, color, val }) => (
                       <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
                           <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
                           {label}
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color }}>{val.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color }}>{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <p style={{ fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Historique</p>
+              <p style={{ fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>{t('jcoach_historique', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {entriesFiltrees.length === 0 && (
                   <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: '#333', fontSize: 13 }}>
-                    Aucune entrée pour cette période.
+                    {t('club_aucune_entree_periode', lang)}
                   </div>
                 )}
                 {entriesFiltrees.map(e => {
@@ -1563,18 +1577,18 @@ export default function DashboardClub() {
                         <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{e.libelle}</p>
                         <p style={{ margin: '2px 0 0', fontSize: 11, color: '#555' }}>
                           <span style={{ color: couleur }}>{e.categorie}</span>
-                          {' · '}{new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {' · '}{new Date(e.date).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
                           {e.note ? ` · ${e.note}` : ''}
                         </p>
                       </div>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 15, flexShrink: 0, color: e.type === 'recette' ? '#4ade80' : '#ef4444' }}>
-                        {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                        {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                       </p>
                       <button onClick={() => supprimerEntreeBudget(e.id)}
                         style={{ background: 'transparent', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
                         onMouseEnter={ev => ev.target.style.color = '#ef4444'}
                         onMouseLeave={ev => ev.target.style.color = '#2a2a2a'}
-                        title="Supprimer">✕</button>
+                        title={t('btn_supprimer', lang)}>✕</button>
                     </div>
                   )
                 })}
@@ -1587,11 +1601,11 @@ export default function DashboardClub() {
         {activeTab === 'staff' && monRole === 'president' && (
           <div style={{ maxWidth: '700px' }}>
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 Ajouter un membre du staff</p>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 {t('club_ajouter_membre_staff', lang)}</p>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                 <input
                   style={{ ...st.input, flex: 1 }}
-                  placeholder="Rechercher par nom, prénom, email..."
+                  placeholder={t('club_rechercher_membre_placeholder', lang)}
                   value={searchStaff}
                   onChange={e => rechercherUtilisateurs(e.target.value)}
                 />
@@ -1613,7 +1627,7 @@ export default function DashboardClub() {
                           onClick={() => ajouterStaff(u.id)}
                           disabled={dejaMembre || addingStaffId === u.id}
                           style={{ ...st.btnSolid, opacity: dejaMembre ? 0.4 : 1, fontSize: '12px', padding: '6px 14px' }}>
-                          {dejaMembre ? 'Déjà staff' : addingStaffId === u.id ? '...' : `+ Ajouter comme ${ROLE_STAFF_LABEL(roleAAssigner)}`}
+                          {dejaMembre ? t('club_deja_staff', lang) : addingStaffId === u.id ? '...' : `${t('club_ajouter_comme', lang)} ${ROLE_STAFF_LABEL(roleAAssigner)}`}
                         </button>
                       </div>
                     )
@@ -1623,8 +1637,8 @@ export default function DashboardClub() {
             </div>
 
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>✉️ Inviter par email</p>
-              <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666' }}>Pour une personne qui n'a pas encore de compte — elle recevra un email pour créer son mot de passe et rejoindre le staff en tant que {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>✉️ {t('club_inviter_email_titre', lang)}</p>
+              <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666' }}>{t('club_inviter_email_desc_avant', lang)} {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input
                   style={{ ...st.input, flex: 1 }}
@@ -1635,7 +1649,7 @@ export default function DashboardClub() {
                   onKeyDown={e => e.key === 'Enter' && inviterStaff()}
                 />
                 <button onClick={inviterStaff} disabled={invitingStaff || !inviteEmail.trim()} style={{ ...st.btnSolid, fontSize: '12px', padding: '6px 14px', opacity: invitingStaff || !inviteEmail.trim() ? 0.5 : 1 }}>
-                  {invitingStaff ? '...' : '📨 Inviter'}
+                  {invitingStaff ? '...' : `📨 ${t('club_inviter', lang)}`}
                 </button>
               </div>
               {inviteMessage && (
@@ -1645,16 +1659,16 @@ export default function DashboardClub() {
               )}
             </div>
 
-            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👥 Membres du staff ({staffMembers.length + 1})</p>
+            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👥 {t('club_membres_staff_titre', lang)} ({staffMembers.length + 1})</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>
                     {(club?.club || club?.prenom || '?')[0]}
                   </div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: '#555', fontWeight: 400 }}>(vous)</span></p>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: '#555', fontWeight: 400 }}>{t('club_vous', lang)}</span></p>
                 </div>
-                <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>Président</span>
+                <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>{t('club_president_badge', lang)}</span>
               </div>
               {staffMembers.map(m => (
                 <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
@@ -1668,7 +1682,7 @@ export default function DashboardClub() {
                     <select style={{ ...st.input, width: 'auto' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
                       {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
                     </select>
-                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>Retirer</button>
+                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>{t('club_retirer', lang)}</button>
                   </div>
                 </div>
               ))}
@@ -1683,13 +1697,13 @@ export default function DashboardClub() {
           <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ Évaluer {eduNoteModal.educateur?.prenom} {eduNoteModal.educateur?.nom}</p>
+                <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ {t('club_evaluer', lang)} {eduNoteModal.educateur?.prenom} {eduNoteModal.educateur?.nom}</p>
               </div>
               <button onClick={() => setEduNoteModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <label style={{ fontSize: '12px', color: '#555' }}>Saison évaluée :</label>
+              <label style={{ fontSize: '12px', color: '#555' }}>{t('club_saison_evaluee', lang)}</label>
               <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px' }}>
                 {['2025-2026', '2024-2025', '2023-2024'].map(s => <option key={s}>{s}</option>)}
               </select>
@@ -1717,12 +1731,12 @@ export default function DashboardClub() {
             </div>
 
             <textarea value={eduNoteCommentaire} onChange={e => setEduNoteCommentaire(e.target.value)}
-              placeholder="Commentaire (optionnel)..."
+              placeholder={t('club_commentaire_optionnel_placeholder', lang)}
               style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
 
             <button onClick={soumettreNotationEducateur} disabled={savingEduNote || CRITERES_EDU.flatMap(c => c.criteres).some(c => !eduNoteCriteres[c.key])}
               style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
-              {savingEduNote ? '⏳ Envoi...' : '✅ Soumettre l\'évaluation'}
+              {savingEduNote ? `⏳ ${t('etat_envoi_cours', lang)}` : `✅ ${t('club_soumettre_evaluation', lang)}`}
             </button>
           </div>
         </div>
@@ -1746,10 +1760,10 @@ export default function DashboardClub() {
           <div onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 Effectif — {cat?.nom} {cat?.equipe}</p>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 {t('club_effectif', lang)} — {cat?.nom} {cat?.equipe}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
-                    {[['poste', '⊞ Postes'], ['liste', '☰ Liste']].map(([v, label]) => (
+                    {[['poste', `⊞ ${t('equipe_vue_postes', lang)}`], ['liste', `☰ ${t('equipe_vue_liste', lang)}`]].map(([v, label]) => (
                       <button key={v} onClick={() => setEffectifVue(v)}
                         style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: effectifVue === v ? '#4ade80' : 'transparent', color: effectifVue === v ? '#000' : '#555', transition: 'all 0.15s' }}>
                         {label}
@@ -1761,9 +1775,9 @@ export default function DashboardClub() {
               </div>
 
               {!catData ? (
-                <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
+                <p style={{ color: '#4ade80', textAlign: 'center', padding: '2rem' }}>{t('jexp_chargement', lang)}</p>
               ) : catData.joueurs.length === 0 ? (
-                <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>Aucun joueur dans cette catégorie.</p>
+                <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>{t('club_aucun_joueur_categorie_court', lang)}</p>
               ) : effectifVue === 'liste' ? (() => {
                 const getGroupeIndex = (poste) => {
                   const idx = GROUPES_POSTE.findIndex(g => g.match(poste))
@@ -1776,8 +1790,8 @@ export default function DashboardClub() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                          {['#', 'Joueur', 'Poste', 'Buts', 'Passes', 'Matchs', 'Présence', 'Note'].map(h => (
-                            <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Joueur' || h === 'Poste' ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                          {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('comp_buts', lang), t('recrut_passes', lang), t('recrut_matchs', lang), t('stats_col_presence', lang), t('club_note_court', lang)].map((h, hi) => (
+                            <th key={h} style={{ padding: '10px 12px', textAlign: hi === 1 || hi === 2 ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1827,9 +1841,9 @@ export default function DashboardClub() {
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                                 {[
-                                  { label: 'Buts', val: j.stats.buts, color: '#4ade80' },
-                                  { label: 'Passes', val: j.stats.passes, color: '#60a5fa' },
-                                  { label: 'Matchs', val: j.stats.matchsJoues, color: '#a78bfa' },
+                                  { label: t('comp_buts', lang), val: j.stats.buts, color: '#4ade80' },
+                                  { label: t('recrut_passes', lang), val: j.stats.passes, color: '#60a5fa' },
+                                  { label: t('recrut_matchs', lang), val: j.stats.matchsJoues, color: '#a78bfa' },
                                 ].map(s => (
                                   <div key={s.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
                                     <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: s.color }}>{s.val}</p>
@@ -1862,7 +1876,7 @@ export default function DashboardClub() {
                                   width: '100%',
                                 }}
                               >
-                                📊 Data
+                                📊 {t('club_data', lang)}
                               </button>
                             </div>
                           ))}
@@ -1890,7 +1904,7 @@ export default function DashboardClub() {
           const classement = catData.joueurs
             .map(jj => ({ id: jj.id, points: jj.stats.presenceMensuelle.find(m => m.month === month)?.points || 0 }))
             .sort((a, b) => b.points - a.points)
-          const label = new Date(month + '-02').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+          const label = new Date(month + '-02').toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
           return {
             month, label,
             rank: classement.findIndex(c => c.id === j.id) + 1,
@@ -1911,23 +1925,23 @@ export default function DashboardClub() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
-                <StatCard label="⚽ Buts" valeur={s.buts} />
-                <StatCard label="🎯 Passes déc." valeur={s.passes} />
-                <StatCard label="🏃 Matchs joués" valeur={s.matchsJoues} />
-                <StatCard label="✅ % Victoires" valeur={s.tauxVictoire !== null ? `${s.tauxVictoire}%` : '—'} />
-                <StatCard label="🧤 Clean sheets" valeur={s.cleanSheets} />
-                <StatCard label="🟨 Cartons J." valeur={s.cartonsJaunes} />
-                <StatCard label="🟥 Cartons R." valeur={s.cartonsRouges} />
-                <StatCard label="📋 Présence globale" valeur={s.tauxPresence !== null ? `${s.tauxPresence}%` : '—'} />
+                <StatCard label={`⚽ ${t('comp_buts', lang)}`} valeur={s.buts} />
+                <StatCard label={`🎯 ${t('club_passes_dec_emoji', lang)}`} valeur={s.passes} />
+                <StatCard label={`🏃 ${t('jp_matchs_joues', lang)}`} valeur={s.matchsJoues} />
+                <StatCard label={`✅ ${t('club_pct_victoires', lang)}`} valeur={s.tauxVictoire !== null ? `${s.tauxVictoire}%` : '—'} />
+                <StatCard label={`🧤 ${t('jp_clean_sheets', lang)}`} valeur={s.cleanSheets} />
+                <StatCard label={`🟨 ${t('club_cartons_j_court', lang)}`} valeur={s.cartonsJaunes} />
+                <StatCard label={`🟥 ${t('club_cartons_r_court', lang)}`} valeur={s.cartonsRouges} />
+                <StatCard label={`📋 ${t('club_presence_globale', lang)}`} valeur={s.tauxPresence !== null ? `${s.tauxPresence}%` : '—'} />
               </div>
 
               {/* Présence par mois */}
               {s.presenceMensuelle.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#a78bfa' }}>📅 Présence par mois</p>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#a78bfa' }}>📅 {t('club_presence_par_mois', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {s.presenceMensuelle.map(({ month, taux, present, total }) => {
-                      const label = new Date(month + '-02').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+                      const label = new Date(month + '-02').toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
                       const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
                       return (
                         <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1947,13 +1961,13 @@ export default function DashboardClub() {
               {/* Position points séance par mois */}
               {positionParMois.length > 0 && (
                 <div>
-                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>⭐ Position points séance par mois</p>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>⭐ {t('club_position_points_mois', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {positionParMois.map(({ month, label, rank, total, points }) => (
                       <div key={month} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#111', borderRadius: '8px', padding: '8px 12px' }}>
                         <span style={{ fontSize: '11px', color: '#555' }}>{label}</span>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: rank === 1 ? '#fbbf24' : '#888' }}>#{rank}/{total} {rank === 1 ? '🏆' : ''}</span>
-                        <span style={{ fontSize: '11px', color: '#fbbf24' }}>{points} pts</span>
+                        <span style={{ fontSize: '11px', color: '#fbbf24' }}>{points} {t('club_pts', lang)}</span>
                       </div>
                     ))}
                   </div>
