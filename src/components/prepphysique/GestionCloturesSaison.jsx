@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
+import { t } from '../../lib/translations'
 
 const st = {
   card: '#111', card2: '#1a1a1a', border: '#222',
@@ -18,7 +19,7 @@ const isApresClotureAuto = () => {
   return now.getMonth() > 5 || (now.getMonth() === 5 && now.getDate() >= 20) // après le 20 juin
 }
 
-function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSaved }) {
+function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSaved, lang = 'fr' }) {
   const [form, setForm] = useState({
     matchs_joues: joueur.matchs_officiel || 0,
     buts: joueur.buts_total || 0,
@@ -63,12 +64,12 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
       <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 28, width: 500, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ color: st.text, margin: '0 0 4px' }}>Clôturer la saison {saison}</h3>
+        <h3 style={{ color: st.text, margin: '0 0 4px' }}>{t('cloture_titre_modal', lang)} {saison}</h3>
         <p style={{ color: st.muted, fontSize: 13, margin: '0 0 24px' }}>{joueur.prenom} {joueur.nom}</p>
 
         {/* Présence auto */}
         <div style={{ background: '#0a1a0a', border: `1px solid ${st.green}30`, borderRadius: 8, padding: 12, marginBottom: 20 }}>
-          <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>PRÉSENCE ENTRAÎNEMENTS (calculée auto)</div>
+          <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>{t('cloture_presence_auto', lang).toUpperCase()}</div>
           <div style={{ color: st.green, fontWeight: 700, fontSize: 18 }}>
             {presenceAuto.total > 0 ? `${Math.round((presenceAuto.realisees / presenceAuto.total) * 100)}%` : '—'}
             <span style={{ color: st.muted, fontWeight: 400, fontSize: 13, marginLeft: 8 }}>{presenceAuto.realisees}/{presenceAuto.total} séances</span>
@@ -77,12 +78,12 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
 
         {/* Stats match */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: st.muted, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 10 }}>STATISTIQUES MATCH</div>
+          <div style={{ color: st.muted, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 10 }}>{t('cloture_stats_match', lang).toUpperCase()}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
               { key: 'matchs_joues', label: 'Matchs joués' },
-              { key: 'buts', label: 'Buts' },
-              { key: 'passes_decisives', label: 'Passes déc.' },
+              { key: 'buts', label: t('comp_buts', lang) },
+              { key: 'passes_decisives', label: t('comp_passes_dec', lang) },
               { key: 'minutes_jouees', label: 'Minutes' },
               { key: 'cleansheets', label: 'Clean sheets' },
             ].map(f => (
@@ -96,12 +97,12 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
 
         {/* Résultats */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: st.muted, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 10 }}>RÉSULTATS D'ÉQUIPE</div>
+          <div style={{ color: st.muted, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 10 }}>{t('cloture_resultats_equipe', lang).toUpperCase()}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { key: 'victoires', label: 'Victoires', color: st.green },
-              { key: 'nuls', label: 'Nuls', color: st.yellow },
-              { key: 'defaites', label: 'Défaites', color: st.red },
+              { key: 'victoires', label: t('comp_victoire', lang), color: st.green },
+              { key: 'nuls', label: t('comp_nul', lang), color: st.yellow },
+              { key: 'defaites', label: t('comp_defaite', lang), color: st.red },
             ].map(f => (
               <div key={f.key}>
                 <label style={{ color: f.color, fontSize: 11, display: 'block', marginBottom: 4 }}>{f.label}</label>
@@ -127,14 +128,14 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
 
         {/* Notes */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ color: st.muted, fontSize: 11, display: 'block', marginBottom: 6 }}>Notes (optionnel)</label>
-          <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} style={{ ...inp, resize: 'vertical' }} placeholder="Appréciation générale de la saison..." />
+          <label style={{ color: st.muted, fontSize: 11, display: 'block', marginBottom: 6 }}>{t('cloture_notes_optionnel', lang)}</label>
+          <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} style={{ ...inp, resize: 'vertical' }} placeholder={t('cloture_appreciation', lang)} />
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('btn_annuler', lang)}</button>
           <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>
-            {loading ? '...' : '✅ Clôturer la saison'}
+            {loading ? '...' : `✅ ${t('cloture_clore_saison_btn', lang)}`}
           </button>
         </div>
       </div>
@@ -142,7 +143,7 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
   )
 }
 
-export default function GestionCloturesSaison({ educateurId }) {
+export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
   const [joueurs, setJoueurs] = useState([])
   const [historiques, setHistoriques] = useState([])
   const [presences, setPresences] = useState({}) // { joueur_id: { realisees, total } }
@@ -237,12 +238,12 @@ export default function GestionCloturesSaison({ educateurId }) {
   const getHistorique = (joueurId) => historiques.find(h => h.joueur_id === joueurId)
   const getPresence = (joueurId) => presences[joueurId] || { realisees: 0, total: 0 }
 
-  if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>Chargement...</div>
+  if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>{t('btn_chargement', lang)}</div>
 
   if (error === 'tables_missing') return (
     <div style={{ background: '#1a1a00', border: '1px solid #444', borderRadius: 12, padding: 24, margin: 16 }}>
-      <div style={{ color: st.yellow, fontWeight: 700 }}>⚠️ Migration SQL requise</div>
-      <div style={{ color: st.muted, fontSize: 14, marginTop: 4 }}>Lance la migration SQL pour activer les clôtures de saison.</div>
+      <div style={{ color: st.yellow, fontWeight: 700 }}>⚠️ {t('cloture_migration_requise', lang)}</div>
+      <div style={{ color: st.muted, fontSize: 14, marginTop: 4 }}>{t('cloture_lance_migration', lang)}</div>
     </div>
   )
 
@@ -256,7 +257,7 @@ export default function GestionCloturesSaison({ educateurId }) {
         <div style={{ background: '#1a1a00', border: `1px solid ${st.yellow}50`, borderRadius: 12, padding: 16, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 24 }}>⏰</span>
           <div>
-            <div style={{ color: st.yellow, fontWeight: 700 }}>C'est l'heure de clôturer la saison {saison}</div>
+            <div style={{ color: st.yellow, fontWeight: 700 }}>{t('cloture_heure_de', lang)} {saison}</div>
             <div style={{ color: st.muted, fontSize: 13 }}>Nous sommes après le 20 juin. {joueurs.length - nbClotures} joueur(s) sans clôture.</div>
           </div>
         </div>
@@ -265,8 +266,8 @@ export default function GestionCloturesSaison({ educateurId }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ color: st.text, margin: 0 }}>📅 Clôtures de saison</h2>
-          <p style={{ color: st.muted, fontSize: 13, margin: '4px 0 0' }}>{nbClotures}/{joueurs.length} joueurs clôturés</p>
+          <h2 style={{ color: st.text, margin: 0 }}>📅 {t('cloture_titre', lang)}</h2>
+          <p style={{ color: st.muted, fontSize: 13, margin: '4px 0 0' }}>{nbClotures}/{joueurs.length} {t('cloture_joueurs_clotures', lang)}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select value={saison} onChange={e => setSaison(e.target.value)}
@@ -276,7 +277,7 @@ export default function GestionCloturesSaison({ educateurId }) {
           {joueurs.length > 0 && (
             <button onClick={archiverAffiliations} disabled={archiving}
               style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.red}60`, borderRadius: 8, color: st.red, fontWeight: 700, cursor: 'pointer', fontSize: 13, opacity: archiving ? 0.6 : 1 }}>
-              {archiving ? '...' : '🔒 Clôturer toute la saison'}
+              {archiving ? '...' : `🔒 ${t('cloture_clore_saison', lang)}`}
             </button>
           )}
         </div>
@@ -285,7 +286,7 @@ export default function GestionCloturesSaison({ educateurId }) {
       {/* Barre de progression globale */}
       <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ color: st.muted, fontSize: 13 }}>Progression clôtures</span>
+          <span style={{ color: st.muted, fontSize: 13 }}>{t('cloture_progression', lang)}</span>
           <span style={{ color: st.green, fontWeight: 700 }}>{joueurs.length > 0 ? Math.round((nbClotures / joueurs.length) * 100) : 0}%</span>
         </div>
         <div style={{ background: st.card2, borderRadius: 99, height: 8 }}>
@@ -334,17 +335,17 @@ export default function GestionCloturesSaison({ educateurId }) {
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   {cloture ? (
-                    <span style={{ background: '#14532d', color: st.green, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>✅ Clôturé</span>
+                    <span style={{ background: '#14532d', color: st.green, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>✅ {t('cloture_clotures', lang)}</span>
                   ) : (
                     <button onClick={() => setModalJoueur(j)}
                       style={{ padding: '8px 16px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
-                      Clôturer →
+                      {t('cloture_clore_arrow', lang)}
                     </button>
                   )}
                   {cloture && (
                     <button onClick={() => setModalJoueur(j)}
                       style={{ padding: '6px 12px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.muted, cursor: 'pointer', fontSize: 12 }}>
-                      Modifier
+                      {t('btn_modifier', lang)}
                     </button>
                   )}
                 </div>
@@ -355,7 +356,7 @@ export default function GestionCloturesSaison({ educateurId }) {
         {joueurs.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>👥</div>
-            <div style={{ color: st.text }}>Aucun joueur trouvé</div>
+            <div style={{ color: st.text }}>{t('cloture_aucun_joueur', lang)}</div>
           </div>
         )}
       </div>
@@ -368,6 +369,7 @@ export default function GestionCloturesSaison({ educateurId }) {
           presenceAuto={getPresence(modalJoueur.id)}
           onClose={() => setModalJoueur(null)}
           onSaved={async () => { await load(); setModalJoueur(null) }}
+          lang={lang}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
+import { t } from '../../lib/translations'
 
 const TYPES_SEANCE = [
   { value: 'course', label: '🏃 Footing / Course', icon: '🏃' },
@@ -196,7 +197,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId, readOnly = false, isMobile = false }) {
+export default function GestionPrepPhysique({ educateurId, readOnly = false, isMobile = false, lang = 'fr' }) {
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
   const [selectedProgramme, setSelectedProgramme] = useState(null)
@@ -377,12 +378,12 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
   const getSoumission = (joueurId, seanceId) =>
     soumissions.find(s => s.joueur_id === joueurId && s.seance_id === seanceId)
 
-  if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>Chargement...</div>
+  if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>{t('btn_chargement', lang)}</div>
 
   if (error === 'tables_missing') return (
     <div style={{ background: '#1a1a00', border: '1px solid #444', borderRadius: 12, padding: 24, margin: 16 }}>
-      <div style={{ color: st.yellow, fontWeight: 700, marginBottom: 8 }}>⚠️ Migration SQL requise</div>
-      <div style={{ color: st.muted, fontSize: 14 }}>Lance la migration SQL dans Supabase pour activer cette rubrique.</div>
+      <div style={{ color: st.yellow, fontWeight: 700, marginBottom: 8 }}>⚠️ {t('phys_migration_requise', lang)}</div>
+      <div style={{ color: st.muted, fontSize: 14 }}>{t('phys_lance_migration', lang)}</div>
     </div>
   )
 
@@ -391,8 +392,8 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h2 style={{ color: st.text, margin: 0 }}>🏋️ Préparation Physique</h2>
-          <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>Programmes de vos joueurs</p>
+          <h2 style={{ color: st.text, margin: 0 }}>🏋️ {t('phys_titre', lang)}</h2>
+          <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>{t('phys_programmes_joueurs', lang)}</p>
         </div>
         {!readOnly && (
           <div style={{ display: 'flex', gap: 10 }}>
@@ -401,24 +402,24 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
               borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              📷 Scanner un programme
+              📷 {t('phys_scanner_programme', lang)}
               <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
                 onChange={handleScanProgramme} disabled={scanLoading} />
             </label>
-            <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ Nouveau programme</button>
+            <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ {t('phys_nouveau_programme', lang)}</button>
           </div>
         )}
       </div>
       {readOnly && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-          👁 Mode lecture seule
+          👁 {t('equipe_mode_lecture', lang)}
         </div>
       )}
       {programmes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div>
-          <div style={{ color: st.text, marginBottom: 8 }}>Aucun programme</div>
-          <div style={{ fontSize: 14 }}>Créez votre premier programme de préparation physique</div>
+          <div style={{ color: st.text, marginBottom: 8 }}>{t('phys_aucun_programme', lang)}</div>
+          <div style={{ fontSize: 14 }}>{t('phys_creer_premier', lang)}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -434,7 +435,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                    {p.statut === 'actif' ? '● Actif' : 'Terminé'}
+                    {p.statut === 'actif' ? `● ${t('phys_actif', lang)}` : t('phys_termine', lang)}
                   </span>
                   {!readOnly && (
                     <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
@@ -532,12 +533,12 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
     return (
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setVue('programmes')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← Retour</button>
+          <button onClick={() => setVue('programmes')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← {t('phys_retour', lang)}</button>
           <h2 style={{ color: st.text, margin: 0, fontSize: isMobile ? 16 : 18, flex: isMobile ? 'none' : 1 }}>{selectedProgramme.titre}</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 Suivi</button>
-            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 Stats</button>
-            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 Classement</button>
+            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 {t('phys_suivi', lang)}</button>
+            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 {t('nav_stats', lang)}</button>
+            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 {t('phys_classement', lang)}</button>
           </div>
         </div>
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
@@ -587,7 +588,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
         {joueurs.length === 0 || seancesActives.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-            <div style={{ color: st.text, marginBottom: 8 }}>{joueurs.length === 0 ? 'Aucun joueur affilié' : 'Aucune séance dans ce programme'}</div>
+            <div style={{ color: st.text, marginBottom: 8 }}>{joueurs.length === 0 ? t('phys_aucun_joueur_affilie', lang) : t('phys_aucune_seance_prog', lang)}</div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -638,7 +639,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
       <div style={{ padding: 16 }}>
         <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
         {joueurs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>Aucun joueur affilié</div>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>{t('phys_aucun_joueur_affilie', lang)}</div>
         ) : (
           joueurs.map(j => {
             const soumJ = soumissions.filter(s => s.joueur_id === j.id)
@@ -663,7 +664,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
                       <span>📈 {allureMoy} min/km</span>
                     </div>
                     {soumJ.length === 0 ? (
-                      <div style={{ padding: '8px 16px 16px', color: st.border, fontSize: 13 }}>Aucune séance soumise</div>
+                      <div style={{ padding: '8px 16px 16px', color: st.border, fontSize: 13 }}>{t('phys_aucune_seance_soumise', lang)}</div>
                     ) : soumJ.map(s => {
                       const seance = seances.find(se => se.id === s.seance_id)
                       return (
@@ -720,7 +721,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
               <div style={{ textAlign: 'center', color: j.yoyo ? st.text : st.border }}>{j.yoyo ? `${j.yoyo}m` : '—'}</div>
             </div>
           ))}
-          {classement.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: st.muted }}>Aucun joueur</div>}
+          {classement.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: st.muted }}>{t('phys_aucun_joueur', lang)}</div>}
         </div>
       </div>
     )
