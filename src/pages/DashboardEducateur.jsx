@@ -1104,12 +1104,13 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
           ]}],
           temperature: 0.7,
-          max_completion_tokens: 2000
+          max_completion_tokens: 8000
         })
       })
       const data = await response.json()
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const text = data.choices?.[0]?.message?.content || ''
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
       const extrait = JSON.parse(jsonMatch[0])
@@ -1446,12 +1447,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
           model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: contentParts }],
           temperature: 0.7,
-          max_completion_tokens: 2000
+          max_completion_tokens: 8000
         })
       })
       const data = await response.json()
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const text = data.choices?.[0]?.message?.content || ''
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
       const result = JSON.parse(jsonMatch[0])
@@ -1512,13 +1514,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
           ]}],
           temperature: 0.7,
-          max_completion_tokens: 2000
+          max_completion_tokens: 8000
         })
       })
       const data = await response.json()
       console.log('GROQ ERROR:', JSON.stringify(data))
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const text = data.choices?.[0]?.message?.content || ''
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
       const result = JSON.parse(jsonMatch[0])
