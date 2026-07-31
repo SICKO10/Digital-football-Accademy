@@ -24,6 +24,7 @@ const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
+const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
@@ -494,7 +495,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId)])
+    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId)])
     setLoading(false)
   }
 
@@ -628,6 +629,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [dossiersOuverts, setDossiersOuverts] = useState({})
   const [modeSeance, setModeSeance] = useState('enregistrer')
   const [confirmSuppr, setConfirmSuppr] = useState(null) // id de la séance à confirmer
+
+  // Bibliothèque de procédés d'entraînement
+  const [biblio, setBiblio] = useState([])
+  const [biblioLoading, setBiblioLoading] = useState(false)
+  const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
+  const [biblioSearch, setBiblioSearch] = useState('')
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '' }
+  const [modalProcede, setModalProcede] = useState(false)
+  const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
+  const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
+  const [savingProcede, setSavingProcede] = useState(false)
+  const [modalBiblioImport, setModalBiblioImport] = useState(null) // index du procédé cible dans la fiche, ou null si fermé
   const ficheVide = {
     theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
     procedes: Array(4).fill(null).map((_, i) => ({
@@ -828,6 +841,64 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const newProcedes = [...fiche.procedes]
     newProcedes[index] = { ...newProcedes[index], [field]: value }
     setFiche({ ...fiche, procedes: newProcedes })
+  }
+
+  // ── Bibliothèque de procédés ──────────────────────────────────────────────────
+  const chargerBiblio = async (uid) => {
+    setBiblioLoading(true)
+    const { data } = await supabase.from('bibliotheque_exercices').select('*').eq('educateur_id', uid).order('type').order('nom')
+    setBiblio(data || [])
+    setBiblioLoading(false)
+  }
+
+  const sauvegarderProcede = async () => {
+    if (!procedeForm.nom.trim()) return
+    setSavingProcede(true)
+    const payload = { ...procedeForm, educateur_id: userId, duree: procedeForm.duree ? parseInt(procedeForm.duree) : null }
+    if (procedeEnEdition) {
+      await supabase.from('bibliotheque_exercices').update(payload).eq('id', procedeEnEdition.id)
+    } else {
+      await supabase.from('bibliotheque_exercices').insert(payload)
+    }
+    await chargerBiblio()
+    setModalProcede(false)
+    setProcedeEnEdition(null)
+    setProcedeForm(PROCEDE_VIDE)
+    setSavingProcede(false)
+  }
+
+  const supprimerProcede = async (id) => {
+    if (!confirm(t('biblio_confirmer_suppr', lang))) return
+    await supabase.from('bibliotheque_exercices').delete().eq('id', id)
+    setBiblio(prev => prev.filter(p => p.id !== id))
+  }
+
+  const ouvrirEditionProcede = (procede) => {
+    setProcedeEnEdition(procede)
+    setProcedeForm({ ...procede, duree: procede.duree?.toString() || '' })
+    setModalProcede(true)
+  }
+
+  // Injecte un procédé de la bibliothèque dans un bloc procédé de la fiche en cours de rédaction
+  // (n'écrase que les champs vides du bloc cible, en un seul setFiche pour éviter les updates perdus)
+  const importerProcedeDansBloc = (index, p) => {
+    setFiche(prev => {
+      const current = prev.procedes[index]
+      const merged = {
+        ...current,
+        titre: current.titre || p.nom || current.titre,
+        but: current.but || p.theme || current.but,
+        organisation: current.organisation || p.description || current.organisation,
+        consignes: current.consignes || p.consignes || current.consignes,
+        variables: current.variables || p.variables || current.variables,
+        duree: current.duree || (p.duree ? String(p.duree) : current.duree),
+        nb_joueurs: current.nb_joueurs || p.nb_joueurs || current.nb_joueurs,
+      }
+      const newProcedes = [...prev.procedes]
+      newProcedes[index] = merged
+      return { ...prev, procedes: newProcedes }
+    })
+    setModalBiblioImport(null)
   }
 
   // Capture #fiche-print (déjà stylé pour l'impression, cf. index.css) en PDF via html2canvas + jsPDF
@@ -1621,6 +1692,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     { titre: t('section_entrainement', lang), items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
       { key: 'mes_seances', label: t('nav_seances', lang), icon: <IcoFilm /> },
+      { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
     ] },
@@ -4075,6 +4147,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       >
                         🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalBiblioImport(i)}
+                        style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        📚 {t('biblio_importer_procede', lang)}
+                      </button>
                       {p.schema_png && (
                         <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
                       )}
@@ -4228,6 +4307,206 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 )
               })()
             )}
+          </div>
+        )}
+
+        {activeSection === 'bibliotheque' && (
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>📚 {t('nav_bibliotheque', lang)}</h1>
+                <p style={{ fontSize: '13px', color: '#555' }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
+              </div>
+              {canEdit('entrainements') && (
+                <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  + {t('biblio_nouveau_procede', lang)}
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'tous', label: t('biblio_tab_tous', lang), emoji: '📋' },
+                { id: 'echauffement', label: t('biblio_tab_echauffement', lang), emoji: '🔥' },
+                { id: 'jeu', label: t('biblio_tab_jeu', lang), emoji: '⚽' },
+                { id: 'exercice', label: t('biblio_tab_exercice', lang), emoji: '🔄' },
+                { id: 'situation', label: t('biblio_tab_situation', lang), emoji: '🎯' },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
+                  style={{ background: biblioTab === tab.id ? '#4ade8015' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#4ade8040' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#4ade80' : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {tab.emoji} {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
+              style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
+
+            {biblioLoading ? (
+              <p style={{ textAlign: 'center', color: '#444', padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
+            ) : (() => {
+              const TYPE_CONFIG = {
+                jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: '#4ade80', bg: '#4ade8015', border: '#4ade8030' },
+                exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: '#60a5fa', bg: '#60a5fa15', border: '#60a5fa30' },
+                situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: '#f97316', bg: '#f9731615', border: '#f9731630' },
+                echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
+              }
+              const filtres = biblio.filter(p => {
+                const matchTab = biblioTab === 'tous' || p.type === biblioTab
+                const matchSearch = !biblioSearch.trim() || `${p.nom} ${p.theme} ${p.tags} ${p.description}`.toLowerCase().includes(biblioSearch.toLowerCase())
+                return matchTab && matchSearch
+              })
+              if (filtres.length === 0) return (
+                <div style={{ textAlign: 'center', padding: '64px 0' }}>
+                  <p style={{ fontSize: '32px', marginBottom: '8px' }}>📚</p>
+                  <p style={{ fontSize: '14px', color: '#444', marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
+                  <p style={{ fontSize: '12px', color: '#333' }}>{t('biblio_creer_premier', lang)}</p>
+                </div>
+              )
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  {filtres.map(p => {
+                    const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
+                    return (
+                      <div key={p.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {cfg.emoji} {cfg.label}
+                          </span>
+                          {canEdit('entrainements') && (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
+                              <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
+                          {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
+                        </div>
+                        {p.description && (
+                          <p style={{ fontSize: '12px', color: '#666', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
+                        )}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {p.duree && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
+                          {p.nb_joueurs && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
+                        </div>
+                        {p.tags && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                              <span key={tag} style={{ fontSize: '9px', color: '#444', background: '#141414', border: '1px solid #222', padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
+        {/* ── Modal Créer / Éditer un procédé ── */}
+        {modalProcede && (
+          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+            onClick={() => setModalProcede(false)}>
+            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 800 }}>{procedeEnEdition ? t('biblio_modifier_procede_titre', lang) : t('biblio_nouveau_procede_titre', lang)}</h2>
+                <button onClick={() => setModalProcede(false)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>{t('biblio_champ_type', lang)}</label>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {[
+                    { val: 'echauffement', label: `🔥 ${t('biblio_tab_echauffement', lang)}` },
+                    { val: 'jeu', label: `⚽ ${t('biblio_tab_jeu', lang)}` },
+                    { val: 'exercice', label: `🔄 ${t('biblio_tab_exercice', lang)}` },
+                    { val: 'situation', label: `🎯 ${t('biblio_tab_situation', lang)}` },
+                  ].map(opt => (
+                    <button key={opt.val} onClick={() => setProcedeForm(f => ({ ...f, type: opt.val }))}
+                      style={{ background: procedeForm.type === opt.val ? '#4ade8015' : 'transparent', border: `1px solid ${procedeForm.type === opt.val ? '#4ade8040' : '#2a2a2a'}`, color: procedeForm.type === opt.val ? '#4ade80' : '#555', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {[
+                { key: 'nom', label: t('biblio_champ_nom', lang), placeholder: t('biblio_placeholder_nom', lang), required: true },
+                { key: 'theme', label: t('biblio_champ_theme', lang), placeholder: t('biblio_placeholder_theme', lang) },
+                { key: 'description', label: t('biblio_champ_description', lang), placeholder: t('biblio_placeholder_description', lang), multiline: true },
+                { key: 'consignes', label: t('seance_consignes', lang), placeholder: t('biblio_placeholder_consignes', lang), multiline: true },
+                { key: 'variables', label: t('seance_variables', lang), placeholder: t('biblio_placeholder_variables', lang), multiline: true },
+                { key: 'nb_joueurs', label: t('biblio_champ_nb_joueurs', lang), placeholder: t('seance_nb_joueurs', lang) },
+                { key: 'duree', label: t('biblio_champ_duree', lang), placeholder: 'Ex : 15', type: 'number' },
+                { key: 'tags', label: t('biblio_champ_tags', lang), placeholder: t('biblio_placeholder_tags', lang) },
+              ].map(field => (
+                <div key={field.key} style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
+                  {field.multiline ? (
+                    <textarea value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
+                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                  ) : (
+                    <input type={field.type || 'text'} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
+                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                  )}
+                </div>
+              ))}
+
+              <button onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()}
+                style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
+                {savingProcede ? t('biblio_enregistrement_cours', lang) : procedeEnEdition ? t('biblio_mettre_a_jour', lang) : t('biblio_enregistrer', lang)}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal import rapide depuis la bibliothèque (dans un bloc procédé de la fiche) ── */}
+        {modalBiblioImport !== null && (
+          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={() => setModalBiblioImport(null)}>
+            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📚 {t('biblio_importer_titre', lang)}</h3>
+                <button onClick={() => setModalBiblioImport(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'tous', label: t('biblio_tab_tous', lang) },
+                  { id: 'echauffement', label: t('biblio_tab_echauffement', lang) },
+                  { id: 'jeu', label: t('biblio_tab_jeu', lang) },
+                  { id: 'exercice', label: t('biblio_tab_exercice', lang) },
+                  { id: 'situation', label: t('biblio_tab_situation', lang) },
+                ].map(tab => (
+                  <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
+                    style={{ background: biblioTab === tab.id ? '#4ade8015' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#4ade8040' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#4ade80' : '#555', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('biblio_aucun_dans_categorie', lang)}</p>
+                ) : biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#141414', border: '1px solid #1f1f1f', borderRadius: '10px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
+                      <p style={{ fontSize: '11px', color: '#555' }}>{p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
+                    </div>
+                    <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
+                      style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+                      + {t('biblio_importer_action', lang)}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
