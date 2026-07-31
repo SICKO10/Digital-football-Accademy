@@ -1348,6 +1348,10 @@ export const T = {
   ent_cloturer_maintenant:      { fr: 'Clôturer maintenant',       en: 'Close now',                pt: 'Encerrar agora',          es: 'Cerrar ahora',             it: 'Chiudi ora',               de: 'Jetzt schließen'       },
   ent_rouvrir_sondage:          { fr: 'Rouvrir le sondage',        en: 'Reopen the poll',          pt: 'Reabrir a sondagem',      es: 'Reabrir la encuesta',      it: 'Riapri il sondaggio',      de: 'Umfrage wieder öffnen' },
   ent_heure_optionnel:          { fr: 'Heure (optionnel)',         en: 'Time (optional)',          pt: 'Hora (opcional)',         es: 'Hora (opcional)',          it: 'Ora (opzionale)',          de: 'Uhrzeit (optional)'    },
+
+  // ── DashboardJoueur : widget prochaines échéances (dashboard principal) ──
+  jd_prochaines_echeances:      { fr: 'Prochaines échéances',      en: 'Upcoming events',          pt: 'Próximos eventos',        es: 'Próximos eventos',         it: 'Prossimi eventi',          de: 'Nächste Termine'       },
+  jd_ta_reponse:                { fr: 'Ta réponse :',              en: 'Your response:',           pt: 'A tua resposta:',         es: 'Tu respuesta:',            it: 'La tua risposta:',         de: 'Deine Antwort:'        },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'

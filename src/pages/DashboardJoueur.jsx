@@ -310,6 +310,7 @@ function DashboardJoueur() {
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [savingDispo, setSavingDispo] = useState(false)
+  const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
   const [codeEquipe, setCodeEquipe] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
   const [codeError, setCodeError] = useState(null)
@@ -356,7 +357,7 @@ function DashboardJoueur() {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)
     }
-    if (onglet === 'accueil') {
+    if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) chargerCalendrierEtDispos(a.educateur_id)
     }
@@ -459,50 +460,51 @@ function DashboardJoueur() {
   const chargerCalendrierEtDispos = async (educateurId) => {
     if (!userId || !educateurId) return
     const aujourdHui = new Date().toISOString().split('T')[0]
-    const dans7jours = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const dans30jours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const [{ data: entrainements }, { data: matchs }] = await Promise.all([
-      supabase.from('entrainements').select('id, date, description').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans7jours).order('date', { ascending: true }),
-      supabase.from('matchs_equipe').select('id, date, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans7jours).order('date', { ascending: true }),
+      supabase.from('entrainements').select('id, date, description, heure, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
+      supabase.from('matchs_equipe').select('id, date, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
     ])
 
     const events = [
-      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date })),
-      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date })),
-    ].sort((a, b) => new Date(a.date) - new Date(b.date))
+      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, sondage_clos: e.sondage_clos })),
+      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date, heure: m.heure })),
+    ].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 4)
     setWidgetCalendrier(events)
 
-    const prochainEnt = entrainements?.[0] || null
+    const prochainEnt = events.find(e => e.type === 'entrainement') ? (entrainements || []).find(e => e.id === events.find(ev => ev.type === 'entrainement').id) : null
     setWidgetProchainEnt(prochainEnt)
-    if (prochainEnt) {
-      const { data: dispo } = await supabase.from('disponibilites').select('statut').eq('joueur_id', userId).eq('entrainement_id', prochainEnt.id).maybeSingle()
-      setWidgetDispoEnt(dispo?.statut || null)
-    } else {
-      setWidgetDispoEnt(null)
-    }
-
-    const prochainM = matchs?.[0] || null
+    const prochainM = events.find(e => e.type === 'match') ? (matchs || []).find(m => m.id === events.find(ev => ev.type === 'match').id) : null
     setWidgetProchainMatch(prochainM)
-    if (prochainM) {
-      const { data: dispo } = await supabase.from('disponibilites').select('statut').eq('joueur_id', userId).eq('match_id', prochainM.id).maybeSingle()
-      setWidgetDispoMatch(dispo?.statut || null)
-    } else {
-      setWidgetDispoMatch(null)
-    }
+
+    // Dispos déclarées par le joueur pour les événements affichés (jusqu'à 4)
+    const entrainementIds = events.filter(e => e.type === 'entrainement').map(e => e.id)
+    const matchIds = events.filter(e => e.type === 'match').map(e => e.id)
+    const [{ data: disposEnt }, { data: disposMatch }] = await Promise.all([
+      entrainementIds.length > 0 ? supabase.from('disponibilites').select('entrainement_id, statut').eq('joueur_id', userId).in('entrainement_id', entrainementIds) : Promise.resolve({ data: [] }),
+      matchIds.length > 0 ? supabase.from('disponibilites').select('match_id, statut').eq('joueur_id', userId).in('match_id', matchIds) : Promise.resolve({ data: [] }),
+    ])
+    const map = {}
+    disposEnt?.forEach(d => { map[d.entrainement_id] = d.statut })
+    disposMatch?.forEach(d => { map[d.match_id] = d.statut })
+    setDispoMap(map)
+    setWidgetDispoEnt(prochainEnt ? map[prochainEnt.id] || null : null)
+    setWidgetDispoMatch(prochainM ? map[prochainM.id] || null : null)
   }
 
-  const repondreDisponibilite = async (statut, type) => {
-    const evenementId = type === 'entrainement' ? widgetProchainEnt?.id : widgetProchainMatch?.id
-    if (!evenementId || !userId) return
+  const repondreDisponibilite = async (eventId, eventType, statut) => {
+    if (!eventId || !userId) return
     setSavingDispo(true)
+    setDispoMap(prev => ({ ...prev, [eventId]: statut }))
+    if (eventType === 'entrainement' && widgetProchainEnt?.id === eventId) setWidgetDispoEnt(statut)
+    if (eventType === 'match' && widgetProchainMatch?.id === eventId) setWidgetDispoMatch(statut)
     const payload = {
       joueur_id: userId,
       statut,
-      ...(type === 'entrainement' ? { entrainement_id: evenementId } : { match_id: evenementId }),
+      ...(eventType === 'entrainement' ? { entrainement_id: eventId } : { match_id: eventId }),
     }
-    await supabase.from('disponibilites').upsert(payload, { onConflict: type === 'entrainement' ? 'joueur_id,entrainement_id' : 'joueur_id,match_id' })
-    if (type === 'entrainement') setWidgetDispoEnt(statut)
-    else setWidgetDispoMatch(statut)
+    await supabase.from('disponibilites').upsert(payload, { onConflict: eventType === 'entrainement' ? 'joueur_id,entrainement_id' : 'joueur_id,match_id' })
     setSavingDispo(false)
   }
 
@@ -1190,7 +1192,7 @@ function DashboardJoueur() {
                         <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_seras_tu_present', lang)}</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
-                            <button key={opt.val} onClick={() => repondreDisponibilite(opt.val, 'entrainement')} disabled={savingDispo}
+                            <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainEnt.id, 'entrainement', opt.val)} disabled={savingDispo}
                               style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoEnt === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                               {opt.emoji} {opt.label}
                             </button>
@@ -1212,7 +1214,7 @@ function DashboardJoueur() {
                         <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_dispo_pour_match', lang)}</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
-                            <button key={opt.val} onClick={() => repondreDisponibilite(opt.val, 'match')} disabled={savingDispo}
+                            <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainMatch.id, 'match', opt.val)} disabled={savingDispo}
                               style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoMatch === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                               {opt.emoji} {opt.label}
                             </button>
@@ -2140,6 +2142,94 @@ function DashboardJoueur() {
                 </div>
               </div>
             </div>
+
+            {/* PROCHAINES ÉCHÉANCES (si affilié à un éducateur) */}
+            {widgetCalendrier.length > 0 && (() => {
+              const OPTIONS_SONDAGE = [
+                { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: '#4ade80' },
+                { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: '#ef4444' },
+                { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: '#f97316' },
+                { val: 'malade',   label: t('ent_malade', lang),   emoji: '🤒', color: '#a855f7' },
+                { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa' },
+              ]
+              return (
+                <div style={{ marginBottom: '20px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
+                    {t('jd_prochaines_echeances', lang)}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {widgetCalendrier.map(ev => {
+                      const date = new Date(ev.date + 'T12:00:00')
+                      const isToday = date.toDateString() === new Date().toDateString()
+                      const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
+                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })
+                      const isMatch = ev.type === 'match'
+                      const statut = dispoMap[ev.id] || null
+                      const sondageClos = ev.sondage_clos
+                      const accentColor = isMatch ? '#60a5fa' : '#4ade80'
+                      const optStatut = OPTIONS_SONDAGE.find(o => o.val === statut)
+
+                      return (
+                        <div key={ev.id} style={{
+                          background: isMatch ? 'linear-gradient(135deg, #0d1220 0%, #0f0f0f 100%)' : 'linear-gradient(135deg, #0d1a0d 0%, #0f0f0f 100%)',
+                          border: `1px solid ${isToday ? accentColor + '40' : accentColor + '20'}`,
+                          borderRadius: '16px', overflow: 'hidden',
+                        }}>
+                          <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}30`, padding: '2px 7px', borderRadius: '20px' }}>
+                                  {isMatch ? `⚽ ${t('aff_match_titre', lang)}` : `🏃 ${t('aff_entrainement_titre', lang)}`}
+                                </span>
+                                {isToday && (
+                                  <span style={{ fontSize: '9px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '2px 7px', borderRadius: '20px' }}>
+                                    {t('aff_aujourdhui', lang)}
+                                  </span>
+                                )}
+                                {sondageClos && (
+                                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '2px 7px', borderRadius: '20px' }}>
+                                    🔒 {t('ent_sondage_clos', lang)}
+                                  </span>
+                                )}
+                              </div>
+                              <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.titre}</p>
+                              <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
+                            </div>
+                            {statut && <div style={{ flexShrink: 0, fontSize: '20px' }}>{optStatut?.emoji}</div>}
+                          </div>
+
+                          {!sondageClos && (
+                            <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
+                              <p style={{ fontSize: '11px', color: '#444', marginBottom: '8px' }}>{t('aff_seras_tu_present', lang)}</p>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {OPTIONS_SONDAGE.map(opt => {
+                                  const isSelected = statut === opt.val
+                                  return (
+                                    <button key={opt.val} onClick={() => repondreDisponibilite(ev.id, ev.type, opt.val)} disabled={savingDispo}
+                                      style={{ background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: isSelected ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span>{opt.emoji}</span><span>{opt.label}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                              {statut && <p style={{ fontSize: '10px', color: '#333', marginTop: '8px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                            </div>
+                          )}
+
+                          {sondageClos && statut && (
+                            <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
+                              <p style={{ fontSize: '11px', color: '#444' }}>
+                                {t('jd_ta_reponse', lang)} <strong style={{ color: optStatut?.color }}>{optStatut?.emoji} {optStatut?.label}</strong>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* QUOTA ANALYSES */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
