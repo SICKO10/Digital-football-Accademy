@@ -641,6 +641,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
   const [savingProcede, setSavingProcede] = useState(false)
   const [modalBiblioImport, setModalBiblioImport] = useState(null) // index du procédé cible dans la fiche, ou null si fermé
+  const [modalImportFicheEntrainement, setModalImportFicheEntrainement] = useState(null) // id de l'entraînement cible, ou null si fermé
+  const [moisOuverts, setMoisOuverts] = useState(() => {
+    const now = new Date()
+    return new Set([`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`])
+  })
   const ficheVide = {
     theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
     procedes: Array(4).fill(null).map((_, i) => ({
@@ -876,6 +881,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const ouvrirEditionProcede = (procede) => {
     setProcedeEnEdition(procede)
     setProcedeForm({ ...procede, duree: procede.duree?.toString() || '' })
+    setModalProcede(true)
+  }
+
+  // Pré-remplit le formulaire bibliothèque depuis un procédé de la fiche en cours de rédaction
+  // (réutilise le modal Créer/Éditer existant — pas d'insert direct, le type doit être choisi/confirmé)
+  const sauvegarderProcedeDansBiblio = (p) => {
+    setProcedeEnEdition(null)
+    setProcedeForm({
+      type: 'exercice',
+      nom: p.titre || '',
+      theme: p.but || '',
+      description: p.organisation || '',
+      consignes: p.consignes || '',
+      variables: p.variables || '',
+      duree: p.duree ? String(p.duree) : '',
+      nb_joueurs: p.nb_joueurs || '',
+      tags: '',
+    })
     setModalProcede(true)
   }
 
@@ -1508,6 +1531,27 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
   const importerFicheDansEntrainement = (seance) => {
     setNewEntrainement(prev => ({ ...prev, description: seance.theme || prev.description, fiche_id: seance.id }))
     setShowImportFiche(false)
+  }
+
+  // Lie une fiche archivée à un entraînement déjà créé (bouton "+" sur chaque séance de la liste)
+  const importerFicheDansEntrainementExistant = async (seance) => {
+    if (!modalImportFicheEntrainement) return
+    const entrainementId = modalImportFicheEntrainement
+    await supabase.from('entrainements').update({ fiche_id: seance.id }).eq('id', entrainementId)
+    setEntrainements(prev => prev.map(e => e.id === entrainementId ? { ...e, fiche_id: seance.id } : e))
+    setModalImportFicheEntrainement(null)
+  }
+
+  const grouperParMois = (liste) => {
+    const groupes = {}
+    liste.forEach(e => {
+      const d = new Date(e.date + 'T12:00:00')
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const label = d.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })
+      if (!groupes[key]) groupes[key] = { label, items: [] }
+      groupes[key].items.push(e)
+    })
+    return Object.entries(groupes).sort((a, b) => b[0].localeCompare(a[0]))
   }
 
   const supprimerEntrainement = async (id) => {
@@ -3420,9 +3464,27 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               </div>
             )}
 
-            {/* ── Liste des séances ── */}
+            {/* ── Liste des séances (groupées par mois) ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[...entrainements].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
+              {grouperParMois(entrainements).map(([moisKey, { label, items }]) => {
+                const moisOuvert = moisOuverts.has(moisKey)
+                return (
+                  <div key={moisKey} style={{ marginBottom: '8px' }}>
+                    <div
+                      onClick={() => setMoisOuverts(prev => { const next = new Set(prev); next.has(moisKey) ? next.delete(moisKey) : next.add(moisKey); return next })}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '16px' }}>📅</span>
+                        <span style={{ color: '#fff', fontWeight: 700, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
+                        <span style={{ background: '#1a1a1a', color: '#888', fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>
+                          {items.length} {items.length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
+                        </span>
+                      </div>
+                      <span style={{ color: '#4ade80', fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: moisOuvert ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                    </div>
+                    {moisOuvert && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid #1a1a1a', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
+                        {[...items].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
                 const nbPresents = (e.presences_entrainement || []).filter(p => p.statut === 'present' || p.statut === 'convoque' || (!p.statut && p.present)).length
                 const nbBlesses = (e.presences_entrainement || []).filter(p => p.statut === 'blesse').length
@@ -3464,6 +3526,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                           <span style={{ background: nbPresents >= total * 0.8 ? '#4ade8015' : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? '#4ade8030' : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
                             {nbPresents}/{total}
                           </span>
+                        )}
+                        {canEdit('entrainements') && !e.fiche_id && (
+                          <button onClick={ev => { ev.stopPropagation(); setModalImportFicheEntrainement(e.id) }}
+                            title={t('ent_importer_fiche', lang)}
+                            style={{ background: '#1a2e1a', border: '1px solid #4ade80', borderRadius: '6px', color: '#4ade80', width: '28px', height: '28px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            +
+                          </button>
                         )}
                         {canEdit('entrainements') && (
                           <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
@@ -3530,6 +3599,11 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                             </div>
                           </>
                         )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
                       </div>
                     )}
                   </div>
@@ -4163,6 +4237,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       >
                         📚 {t('biblio_importer_procede', lang)}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => sauvegarderProcedeDansBiblio(p)}
+                        style={{ background: '#1a2e1a', border: '1px solid #4ade80', color: '#4ade80', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        💾 {t('biblio_sauvegarder_procede', lang)}
+                      </button>
                       {p.schema_png && (
                         <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
                       )}
@@ -4512,6 +4593,36 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                       style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
                       + {t('biblio_importer_action', lang)}
                     </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal import d'une fiche archivée sur un entraînement déjà créé ── */}
+        {modalImportFicheEntrainement !== null && (
+          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={() => setModalImportFicheEntrainement(null)}>
+            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📥 {t('ent_importer_fiche', lang)}</h3>
+                <button onClick={() => setModalImportFicheEntrainement(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {mesSeancesOuvertes.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                ) : mesSeancesOuvertes.map(s => (
+                  <div key={s.id} onClick={() => importerFicheDansEntrainementExistant(s)}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#141414', border: '1px solid #1f1f1f', borderRadius: '10px', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#141414'}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
+                    </div>
+                    <span style={{ color: '#4ade80', fontSize: '18px', flexShrink: 0 }}>→</span>
                   </div>
                 ))}
               </div>

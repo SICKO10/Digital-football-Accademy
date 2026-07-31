@@ -1522,6 +1522,7 @@ export const T = {
   reginsc_btn_contact:          { fr: 'Créer mon compte & nous contacter →', en: 'Create my account & contact us →', pt: 'Criar a minha conta & contactar-nos →', es: 'Crear mi cuenta & contactarnos →', it: 'Crea il mio account & contattaci →', de: 'Konto erstellen & uns kontaktieren →' },
   reginsc_btn_payer:            { fr: 'Créer mon compte & payer →', en: 'Create my account & pay →',      pt: 'Criar a minha conta & pagar →', es: 'Crear mi cuenta & pagar →', it: 'Crea il mio account & paga →', de: 'Konto erstellen & bezahlen →' },
   reginsc_btn_gratuit:          { fr: 'Créer mon compte gratuitement →', en: 'Create my free account →',  pt: 'Criar a minha conta gratuitamente →', es: 'Crear mi cuenta gratis →', it: 'Crea il mio account gratuitamente →', de: 'Kostenloses Konto erstellen →' },
+  biblio_sauvegarder_procede:   { fr: 'Sauvegarder dans ma bibliothèque', en: 'Save to my library',        pt: 'Guardar na minha biblioteca', es: 'Guardar en mi biblioteca', it: 'Salva nella mia libreria',  de: 'In meiner Bibliothek speichern' },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'
