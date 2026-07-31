@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import Home from './pages/Home'
 import Offres from './pages/Offres'
+import RegisterChoix from './pages/RegisterChoix'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import RegisterRecruteur from './pages/RegisterRecruteur'
@@ -60,6 +61,7 @@ function App() {
         <Route path="/offres" element={<Offres />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register-choix" element={<RegisterChoix />} />
         <Route path="/register-recruteur" element={<RegisterRecruteur />} />
         <Route path="/dashboard" element={<SmartDashboard />} />
         <Route path="/dashboard-joueur" element={<DashboardJoueur />} />
