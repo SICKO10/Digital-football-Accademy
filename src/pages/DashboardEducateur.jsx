@@ -26,6 +26,62 @@ const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 
+// ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
+const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    <line x1="12" y1="6" x2="16" y2="6"/>
+    <line x1="12" y1="10" x2="16" y2="10"/>
+    <line x1="12" y1="14" x2="14" y2="14"/>
+  </svg>
+)
+const IcoTypeTous = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+)
+const IcoTypeEchauffement = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+  </svg>
+)
+const IcoTypeJeu = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+  </svg>
+)
+const IcoTypeExercice = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2" x2="12" y2="8"/>
+    <line x1="12" y1="16" x2="12" y2="22"/>
+    <line x1="2" y1="12" x2="8" y2="12"/>
+    <line x1="16" y1="12" x2="22" y2="12"/>
+  </svg>
+)
+const IcoTypeSituation = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+  </svg>
+)
+const IcoBiblioVide = ({ size = 56, color = '#333' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    <line x1="12" y1="7" x2="16" y2="7"/>
+    <line x1="12" y1="11" x2="16" y2="11"/>
+    <line x1="12" y1="15" x2="14" y2="15"/>
+    <circle cx="9" cy="9" r="1" fill={color}/>
+  </svg>
+)
+
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
   { key: 'leadership', label: '👥 Leadership & Management', color: '#f59e0b', criteres: [
@@ -4404,7 +4460,10 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>📚 {t('nav_bibliotheque', lang)}</h1>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <IcoBiblioTitre size={24} color="#4ade80" />
+                  {t('nav_bibliotheque', lang)}
+                </h1>
                 <p style={{ fontSize: '13px', color: '#555' }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
               </div>
               {canEdit('entrainements') && (
@@ -4417,15 +4476,16 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
             <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
               {[
-                { id: 'tous', label: t('biblio_tab_tous', lang), emoji: '📋' },
-                { id: 'echauffement', label: t('biblio_tab_echauffement', lang), emoji: '🔥' },
-                { id: 'jeu', label: t('biblio_tab_jeu', lang), emoji: '⚽' },
-                { id: 'exercice', label: t('biblio_tab_exercice', lang), emoji: '🔄' },
-                { id: 'situation', label: t('biblio_tab_situation', lang), emoji: '🎯' },
+                { id: 'tous', label: t('biblio_tab_tous', lang), Icon: IcoTypeTous },
+                { id: 'echauffement', label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement },
+                { id: 'jeu', label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu },
+                { id: 'exercice', label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice },
+                { id: 'situation', label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                  style={{ background: biblioTab === tab.id ? '#4ade8015' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#4ade8040' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#4ade80' : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  {tab.emoji} {tab.label}
+                  style={{ background: biblioTab === tab.id ? '#4ade8015' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#4ade8040' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#4ade80' : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <tab.Icon size={14} color={biblioTab === tab.id ? '#4ade80' : '#555'} />
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -4449,7 +4509,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               })
               if (filtres.length === 0) return (
                 <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                  <p style={{ fontSize: '32px', marginBottom: '8px' }}>📚</p>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.4 }}>
+                    <IcoBiblioVide size={56} color="#4ade80" />
+                  </div>
                   <p style={{ fontSize: '14px', color: '#444', marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
                   <p style={{ fontSize: '12px', color: '#333' }}>{t('biblio_creer_premier', lang)}</p>
                 </div>
