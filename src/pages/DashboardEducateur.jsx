@@ -1473,6 +1473,17 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     finally { setCalendarLoading(false) }
   }
 
+  // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille
+  // La feuille affiche "PRENOM N." — on cherche par prénom (majuscule)
+  const matcherJoueurParNom = (nomSurFeuille, listeJoueurs) => {
+    if (!nomSurFeuille) return null
+    const prenomFeuille = nomSurFeuille.trim().split(/\s+/)[0].toUpperCase()
+    if (!prenomFeuille) return null
+    return listeJoueurs.find(j =>
+      j.prenom && j.prenom.toUpperCase() === prenomFeuille
+    ) || null
+  }
+
   const scannerMatch = async () => {
     if (!scannerImageBase64) return
     setScannerLoading(true)
@@ -1480,33 +1491,27 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `Tu es un assistant qui analyse des feuilles de match de football. Extrais toutes les informations de cette image.
+      const prompt = `Analyse cette feuille de match football et extrais les données visibles.
+Réponds UNIQUEMENT avec un objet JSON valide, aucun texte avant ou après, aucune balise markdown.
 
-Voici les joueurs de notre équipe (utilise leurs IDs exacts dans la réponse):
-${joueurs.map(j => `- "${j.prenom} ${j.nom}" (joueur_id: "${j.id}")`).join('\n')}
-
-Identifie quelle équipe sur la feuille correspond à "notre équipe" en faisant correspondre les noms.
-
-Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
+Format exact attendu :
 {
-  "equipe_nous": "nom de notre équipe",
-  "equipe_adversaire": "nom adversaire",
-  "score_nous": 0,
-  "score_adversaire": 0,
   "date": "YYYY-MM-DD ou null",
   "competition": "nom ou null",
+  "equipe_adversaire": "nom de l'équipe adverse ou null",
   "domicile": true,
-  "joueurs_identifies": [
-    {
-      "joueur_id": "uuid exact de notre liste ci-dessus",
-      "nom_sur_feuille": "comme sur la feuille",
-      "titulaire": true,
-      "buts": 0,
-      "carton_jaune": false,
-      "carton_rouge": false
-    }
-  ]
-}`
+  "score_domicile": 0,
+  "score_exterieur": 0,
+  "equipe_gauche": ["PRENOM NOM", ...],
+  "equipe_droite": ["PRENOM NOM", ...],
+  "buts_gauche": ["PRENOM NOM", ...],
+  "buts_droite": ["PRENOM NOM", ...],
+  "cartons_jaunes": ["PRENOM NOM", ...],
+  "cartons_rouges": ["PRENOM NOM", ...]
+}
+
+Lis chaque nom exactement comme écrit sur la feuille.
+Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -1520,7 +1525,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             ]}
           ],
           temperature: 0.7,
-          max_completion_tokens: 4000
+          max_completion_tokens: 2000
         })
       })
       const data = await response.json()
@@ -1530,26 +1535,43 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
-      const result = JSON.parse(jsonMatch[0])
-      setScannerResult(result)
+      const parsed = JSON.parse(jsonMatch[0])
+
+      // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
+      // le plus de noms matchent notre roster (matching JS, pas d'IA)
+      const nomsGauche = parsed.equipe_gauche || []
+      const nomsDroite = parsed.equipe_droite || []
+      const scoreGaucheMatch = nomsGauche.filter(n => matcherJoueurParNom(n, joueurs)).length
+      const scoreDroiteMatch = nomsDroite.filter(n => matcherJoueurParNom(n, joueurs)).length
+      const notreEquipeCote = scoreGaucheMatch >= scoreDroiteMatch ? 'gauche' : 'droite'
+      const nosNomsIA = notreEquipeCote === 'gauche' ? nomsGauche : nomsDroite
+      const butsIA = notreEquipeCote === 'gauche' ? (parsed.buts_gauche || []) : (parsed.buts_droite || [])
+      const scoreNous = notreEquipeCote === 'gauche' ? (parsed.score_domicile ?? 0) : (parsed.score_exterieur ?? 0)
+      const scoreAdv = notreEquipeCote === 'gauche' ? (parsed.score_exterieur ?? 0) : (parsed.score_domicile ?? 0)
+
+      setScannerResult(parsed)
       setScannerMatchData({
-        date: result.date || '',
-        adversaire: result.equipe_adversaire || '',
-        competition: result.competition || '',
-        score_nous: result.score_nous !== undefined ? String(result.score_nous) : '',
-        score_eux: result.score_adversaire !== undefined ? String(result.score_adversaire) : '',
-        domicile: result.domicile !== false
+        date: parsed.date || '',
+        adversaire: parsed.equipe_adversaire || '',
+        competition: parsed.competition || '',
+        score_nous: String(scoreNous),
+        score_eux: String(scoreAdv),
+        domicile: parsed.domicile !== false
       })
       const stats = {}
-      ;(result.joueurs_identifies || []).forEach(j => {
-        if (j.joueur_id && joueurs.find(jj => jj.id === j.joueur_id)) {
-          stats[j.joueur_id] = {
-            minutes: j.titulaire ? 90 : 20,
-            buts: j.buts || 0,
+      nosNomsIA.forEach(nom => {
+        const joueur = matcherJoueurParNom(nom, joueurs)
+        if (joueur) {
+          const buts = butsIA.filter(b => matcherJoueurParNom(b, [joueur])).length
+          const cartonJ = (parsed.cartons_jaunes || []).some(b => matcherJoueurParNom(b, [joueur]))
+          const cartonR = (parsed.cartons_rouges || []).some(b => matcherJoueurParNom(b, [joueur]))
+          stats[joueur.id] = {
+            minutes: 90,
+            buts,
             passes_dec: 0,
             clean_sheet: false,
-            carton_jaune: j.carton_jaune || false,
-            carton_rouge: j.carton_rouge || false
+            carton_jaune: cartonJ,
+            carton_rouge: cartonR
           }
         }
       })
