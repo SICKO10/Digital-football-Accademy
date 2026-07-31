@@ -1,254 +1,261 @@
-import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 
-function Register() {
+// TODO: remplacer ces placeholders par les vrais Payment Links Stripe avant mise en prod
+const STRIPE = {
+  joueur_pro_mensuel: '#todo-stripe-joueur-pro-mensuel',
+  joueur_pro_annuel: '#todo-stripe-joueur-pro-annuel',
+  edu_mensuel: '#todo-stripe-edu-mensuel',
+  edu_annuel: '#todo-stripe-edu-annuel',
+  scout_mensuel: '#todo-stripe-scout-mensuel',
+  scout_annuel: '#todo-stripe-scout-annuel',
+}
+// TODO: remplacer par le vrai lien de formulaire (Tally / Cal.com / Crisp)
+const CLUB_CONTACT_URL = '#todo-lien-contact-club'
+
+export default function Register() {
   const navigate = useNavigate()
   const { lang } = useLang()
-  const [plan, setPlan] = useState('pro')
+
+  const PROFILS = [
+    {
+      id: 'joueur_starter', emoji: '👟', label: t('regchoix_starter_titre', lang), desc: t('reginsc_starter_desc', lang),
+      gratuit: true, color: '#888',
+      features: [t('reginsc_feat_starter_1', lang), t('reginsc_feat_starter_2', lang), t('reginsc_feat_starter_3', lang), t('reginsc_feat_starter_4', lang)],
+    },
+    {
+      id: 'joueur_pro', emoji: '⚽', label: t('regchoix_pro_titre', lang), desc: t('reginsc_pro_desc', lang),
+      color: '#4ade80', badge: '10€/mois', stripe: 'joueur_pro_mensuel',
+      features: [t('reginsc_feat_pro_1', lang), t('reginsc_feat_pro_2', lang), t('reginsc_feat_pro_3', lang), t('reginsc_feat_pro_4', lang), t('reginsc_feat_pro_5', lang)],
+    },
+    {
+      id: 'educateur', emoji: '🎓', label: t('regchoix_educateur_titre', lang), desc: t('reginsc_educateur_desc', lang),
+      color: '#60a5fa', badge: '10€/mois', stripe: 'edu_mensuel',
+      features: [t('reginsc_feat_edu_1', lang), t('reginsc_feat_edu_2', lang), t('reginsc_feat_edu_3', lang), t('reginsc_feat_edu_4', lang), t('reginsc_feat_edu_5', lang)],
+    },
+    {
+      id: 'scout', emoji: '🔍', label: t('regchoix_scout_titre', lang), desc: t('reginsc_scout_desc', lang),
+      color: '#f97316', badge: '10€/mois', stripe: 'scout_mensuel',
+      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
+    },
+    {
+      id: 'club', emoji: '🏟️', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
+      color: '#a78bfa', badge: t('regchoix_sur_devis', lang), contact: true,
+      features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
+    },
+  ]
+
+  const [etape, setEtape] = useState(1) // 1 = choix profil | 2 = formulaire
+  const [profilChoisi, setProfil] = useState(null)
+
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [poste, setPoste] = useState('Attaquant')
-  const [pointsForts, setPointsForts] = useState([])
-  const [aAmeliorer, setAAmeliorer] = useState([])
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
-  const [cguAcceptees, setCguAcceptees] = useState(false)
 
-  const caracteristiquesParPoste = {
-    Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu'],
-    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1'],
-    Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre'],
-    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin'],
-  }
-
-  const toggleCaracteristique = (liste, setListe, valeur) => {
-    if (liste.includes(valeur)) {
-      setListe(liste.filter(v => v !== valeur))
-    } else if (liste.length < 2) {
-      setListe([...liste, valeur])
+  const inscrire = async () => {
+    if (!prenom.trim() || !email.trim() || !password.trim()) {
+      setErreur(t('reginsc_champs_obligatoires', lang))
+      return
     }
-  }
-
-  const handleRegister = async () => {
+    if (password.length < 6) {
+      setErreur(t('reginsc_mdp_min_6', lang))
+      return
+    }
     setLoading(true)
     setErreur('')
 
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setErreur(error.message); setLoading(false); return }
 
-    if (plan === 'fan') {
-      await supabase.from('profiles').insert({
-        id: data.user.id, email, prenom, nom,
-        plan: 'fan', analyses_restantes: 0, abonnement_actif: true,
+    const userId = data.user?.id
+    if (userId) {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        email: email.trim().toLowerCase(),
+        plan: profilChoisi.id,
+        abonnement_actif: !!profilChoisi.gratuit,
+        abonnement_debut: profilChoisi.gratuit ? new Date().toISOString() : null,
       })
-      setLoading(false)
-      navigate('/jogabonito')
-      return
     }
-
-    await supabase.from('profiles').insert({
-      id: data.user.id, email, prenom, nom, poste,
-      points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', '),
-      plan: 'pending', analyses_restantes: 0, abonnement_actif: false,
-    })
 
     setLoading(false)
 
-    try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan })
-      })
-      const data2 = await response.json()
-      if (data2.url) {
-        window.location.href = data2.url
-      } else {
-        setErreur(t('register_err_paiement_creation', lang))
-      }
-    } catch (err) {
-      setErreur(t('register_err_paiement_connexion', lang))
+    if (profilChoisi.contact) {
+      window.open(CLUB_CONTACT_URL, '_blank')
+      navigate('/login')
+    } else if (profilChoisi.stripe) {
+      window.location.href = STRIPE[profilChoisi.stripe]
+    } else {
+      navigate('/dashboard')
     }
   }
 
   return (
-    <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center'}}>
-      <div style={{background:'#111', border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'460px'}}>
+    <div style={{
+      background: '#0a0a0a', minHeight: '100vh', color: '#fff',
+      fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', padding: '40px 16px 60px',
+    }}>
 
-        <div style={{textAlign:'center', marginBottom:'2rem'}}>
-          <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
-            Digital<span style={{color:'#4ade80'}}>Football</span>
-          </div>
-          <h1 style={{fontSize:'24px', fontWeight:'700'}}>{t('register_creer_compte', lang)}</h1>
-          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>{t('register_commence_progresser', lang)}</p>
-        </div>
-
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'0.75rem'}}>
-          {[
-            {id:'starter', nom:'Starter', prix:'49,99€/mois'},
-            {id:'pro', nom:'Pro', prix:'79,99€/mois'},
-          ].map(p => (
-            <div key={p.id} onClick={() => setPlan(p.id)} style={{border: plan === p.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: plan === p.id ? '#4ade8010' : 'transparent'}}>
-              <div style={{fontWeight:'700', fontSize:'15px'}}>{p.nom}</div>
-              <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>{p.prix}</div>
-            </div>
-          ))}
-        </div>
-
-        <div onClick={() => setPlan('fan')} style={{border: plan === 'fan' ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'1rem', cursor:'pointer', background: plan === 'fan' ? '#4ade8010' : 'transparent', marginBottom:'1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div>
-            <div style={{fontWeight:'700', fontSize:'15px'}}>{t('register_compte_fan', lang)}</div>
-            <div style={{fontSize:'13px', color:'#666', marginTop:'2px'}}>{t('register_fan_desc', lang)}</div>
-          </div>
-          <div style={{background:'#4ade8020', color:'#4ade80', fontSize:'12px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px'}}>{t('register_gratuit', lang)}</div>
-        </div>
-
-        <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
-            <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_prenom', lang)}</label>
-              <input value={prenom} onChange={(e) => setPrenom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Kevin" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
-            </div>
-            <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_nom', lang)}</label>
-              <input value={nom} onChange={(e) => setNom(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1))} placeholder="Dupont" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
-            </div>
-          </div>
-
-          <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('aff_email', lang)}</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
-          </div>
-
-          <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('register_min_6_caracteres', lang)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}} />
-          </div>
-
-          {plan !== 'fan' && (
-            <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_poste', lang)}</label>
-              <select value={poste} onChange={(e) => setPoste(e.target.value)} style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}>
-                <option>Gardien</option>
-                <option>Defenseur</option>
-                <option>Milieu</option>
-                <option>Attaquant</option>
-              </select>
-            </div>
-          )}
-
-          {plan !== 'fan' && (
-            <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>{t('jp_points_forts', lang)}</label>
-              <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
-                {caracteristiquesParPoste[poste].map(c => {
-                  const selected = pointsForts.includes(c)
-                  const disabled = !selected && pointsForts.length >= 4
-                  return (
-                    <div
-                      key={c}
-                      onClick={() => !disabled && toggleCaracteristique(pointsForts, setPointsForts, c)}
-                      style={{
-                        padding:'6px 12px', borderRadius:'20px', fontSize:'13px',
-                        background: selected ? '#4ade8020' : '#1a1a1a',
-                        border: selected ? '1px solid #4ade80' : '1px solid #333',
-                        color: selected ? '#4ade80' : disabled ? '#444' : 'white',
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        opacity: disabled ? 0.5 : 1,
-                      }}
-                    >
-                      {c}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {plan !== 'fan' && (
-            <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'8px'}}>{t('jp_ameliorer', lang)}</label>
-              <div style={{display:'flex', flexWrap:'wrap', gap:'8px'}}>
-                {caracteristiquesParPoste[poste].map(c => {
-                  const selected = aAmeliorer.includes(c)
-                  const disabled = !selected && aAmeliorer.length >= 4
-                  return (
-                    <div
-                      key={c}
-                      onClick={() => !disabled && toggleCaracteristique(aAmeliorer, setAAmeliorer, c)}
-                      style={{
-                        padding:'6px 12px', borderRadius:'20px', fontSize:'13px',
-                        background: selected ? '#4ade8020' : '#1a1a1a',
-                        border: selected ? '1px solid #4ade80' : '1px solid #333',
-                        color: selected ? '#4ade80' : disabled ? '#444' : 'white',
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        opacity: disabled ? 0.5 : 1,
-                      }}
-                    >
-                      {c}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
-
-        <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginTop:'1.5rem', cursor:'pointer'}}>
-          <input
-            type="checkbox"
-            checked={cguAcceptees}
-            onChange={(e) => setCguAcceptees(e.target.checked)}
-            style={{marginTop:'2px', accentColor:'#4ade80', width:'16px', height:'16px', flexShrink:0}}
-          />
-          <span style={{fontSize:'13px', color:'#aaa', lineHeight:'1.5'}}>
-            {t('register_jai_lu_accepte', lang)}{' '}
-            <span
-              onClick={(e) => { e.preventDefault(); window.open('/cgu', '_blank') }}
-              style={{color:'#4ade80', cursor:'pointer', textDecoration:'underline'}}
-            >
-              {t('register_cgu_reglement', lang)}
-            </span>
-            {t('register_pas_remboursement', lang)}
-          </span>
-        </label>
-
-        <button
-          onClick={handleRegister}
-          disabled={loading || !cguAcceptees}
-          style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer', marginTop:'1rem'}}
-        >
-          {loading ? t('register_creation_cours', lang) : plan === 'fan' ? t('register_creer_compte_gratuit', lang) : t('register_creer_compte_payer', lang)}
-        </button>
-
-        {plan !== 'fan' && (
-          <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
-            {t('register_redirige_stripe', lang)}
-          </p>
-        )}
-
-        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1.5rem'}}>
-          {t('register_deja_compte', lang)}{' '}
-          <span onClick={() => navigate('/login')} style={{color:'#4ade80', cursor:'pointer'}}>
-            {t('auth_se_connecter', lang)}
-          </span>
+      <div style={{ marginBottom: '40px', textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <p style={{ fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', margin: 0 }}>
+          ⚽ <span style={{ color: '#4ade80' }}>Digital</span>Football
         </p>
-        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.5rem'}}>
-          <span onClick={() => navigate('/')} style={{color:'#555', cursor:'pointer'}}>
-            {t('auth_retour_accueil', lang)}
-          </span>
+        <p style={{ fontSize: '12px', color: '#444', margin: '4px 0 0' }}>
+          {etape === 1 ? t('reginsc_quel_profil', lang) : `${t('reginsc_inscription_prefix', lang)} ${profilChoisi?.label}`}
         </p>
-
       </div>
+
+      {etape === 1 && (
+        <div style={{ width: '100%', maxWidth: '540px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {PROFILS.map(p => (
+              <button key={p.id}
+                onClick={() => { setProfil(p); setEtape(2) }}
+                style={{
+                  background: '#111', border: '1px solid #1a1a1a',
+                  borderRadius: '14px', padding: '16px 18px',
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  color: '#fff', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = p.color; e.currentTarget.style.background = p.color + '08' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.background = '#111' }}>
+
+                <span style={{ fontSize: '26px', flexShrink: 0 }}>{p.emoji}</span>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '14px' }}>{p.label}</span>
+                    {p.badge && (
+                      <span style={{
+                        background: p.color + '18', color: p.color,
+                        border: `1px solid ${p.color}35`,
+                        fontSize: '10px', fontWeight: 700,
+                        padding: '2px 8px', borderRadius: '20px',
+                      }}>{p.badge}</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#555', margin: 0, lineHeight: 1.5 }}>{p.desc}</p>
+                </div>
+
+                <span style={{ color: '#2a2a2a', fontSize: '20px', flexShrink: 0 }}>›</span>
+              </button>
+            ))}
+          </div>
+
+          <p style={{ textAlign: 'center', fontSize: '13px', color: '#444', marginTop: '20px' }}>
+            {t('register_deja_compte', lang)}{' '}
+            <button onClick={() => navigate('/login')}
+              style={{ background: 'transparent', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+              {t('auth_se_connecter', lang)}
+            </button>
+          </p>
+        </div>
+      )}
+
+      {etape === 2 && profilChoisi && (
+        <div style={{ width: '100%', maxWidth: '400px' }}>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            background: profilChoisi.color + '10',
+            border: `1px solid ${profilChoisi.color}30`,
+            borderRadius: '12px', padding: '12px 16px', marginBottom: '24px',
+          }}>
+            <span style={{ fontSize: '22px' }}>{profilChoisi.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, color: profilChoisi.color }}>{profilChoisi.label}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                {profilChoisi.features.slice(0, 2).map(f => (
+                  <span key={f} style={{ fontSize: '10px', color: '#555', background: '#111', padding: '2px 7px', borderRadius: '20px', border: '1px solid #1a1a1a' }}>{f}</span>
+                ))}
+                {profilChoisi.features.length > 2 && (
+                  <span style={{ fontSize: '10px', color: '#444' }}>+{profilChoisi.features.length - 2}</span>
+                )}
+              </div>
+            </div>
+            <button onClick={() => setEtape(1)}
+              style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', textDecoration: 'underline', flexShrink: 0 }}>
+              {t('reginsc_changer', lang)}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input placeholder={t('equipe_prenom', lang) + ' *'} value={prenom} onChange={e => setPrenom(e.target.value)}
+                style={{ flex: 1, background: '#111', border: '1px solid #1f1f1f', borderRadius: '10px', color: '#fff', padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+              <input placeholder={t('equipe_nom', lang)} value={nom} onChange={e => setNom(e.target.value)}
+                style={{ flex: 1, background: '#111', border: '1px solid #1f1f1f', borderRadius: '10px', color: '#fff', padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+            </div>
+            <input placeholder={t('aff_email', lang) + ' *'} type="email" value={email} onChange={e => setEmail(e.target.value)}
+              style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '10px', color: '#fff', padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+            <input placeholder={t('reginsc_mdp_placeholder', lang)} type="password" value={password} onChange={e => setPassword(e.target.value)}
+              style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '10px', color: '#fff', padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+          </div>
+
+          {erreur && (
+            <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>
+          )}
+
+          {profilChoisi.id === 'joueur_pro' && (
+            <div style={{ background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#4ade80', margin: 0, lineHeight: 1.6 }}>{t('reginsc_pro_info', lang)}</p>
+            </div>
+          )}
+          {profilChoisi.id === 'joueur_starter' && (
+            <div style={{ background: '#ffffff05', border: '1px solid #1f1f1f', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#555', margin: 0, lineHeight: 1.6 }}>{t('reginsc_starter_info', lang)}</p>
+            </div>
+          )}
+          {profilChoisi.id === 'scout' && (
+            <div style={{ background: '#f9731610', border: '1px solid #f9731625', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#f97316', margin: 0, lineHeight: 1.6 }}>{t('reginsc_scout_info', lang)}</p>
+            </div>
+          )}
+          {profilChoisi.id === 'club' && (
+            <div style={{ background: '#a78bfa10', border: '1px solid #a78bfa25', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#a78bfa', margin: 0, lineHeight: 1.6 }}>{t('reginsc_club_info', lang)}</p>
+            </div>
+          )}
+
+          <button onClick={inscrire} disabled={loading}
+            style={{
+              width: '100%',
+              background: profilChoisi.color || '#4ade80',
+              color: profilChoisi.id === 'joueur_starter' ? '#fff' : '#000',
+              border: 'none', borderRadius: '12px', padding: '14px',
+              fontSize: '15px', fontWeight: 800,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'Inter, sans-serif', marginTop: '18px',
+              opacity: loading ? 0.7 : 1,
+              transition: 'opacity 0.15s',
+            }}>
+            {loading
+              ? t('register_creation_cours', lang)
+              : profilChoisi.contact
+                ? t('reginsc_btn_contact', lang)
+                : profilChoisi.stripe
+                  ? t('reginsc_btn_payer', lang)
+                  : t('reginsc_btn_gratuit', lang)
+            }
+          </button>
+
+          <p style={{ textAlign: 'center', fontSize: '11px', color: '#333', marginTop: '14px', lineHeight: 1.6 }}>
+            {t('register_jai_lu_accepte', lang)}{' '}
+            <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: '#444' }}>{t('register_cgu_reglement', lang)}</a>.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
-
-export default Register
