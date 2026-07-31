@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
@@ -422,10 +423,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
-  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '' })
+  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '' })
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
+  const [sousOngletEnt, setSousOngletEnt] = useState('liste') // 'liste' | 'prochaine'
+  const [savingCloture, setSavingCloture] = useState(false)
   const [showPlanificateur, setShowPlanificateur] = useState(false)
   const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
@@ -1416,7 +1419,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     if (!newEntrainement.date) return
     await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId })
     await chargerEntrainements(userId)
-    setNewEntrainement({ date: '', description: '' })
+    setNewEntrainement({ date: '', description: '', heure: '' })
     setShowAddEntrainement(false)
   }
 
@@ -1476,6 +1479,17 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     blesse:   { label: t('ent_blesse', lang),    emoji: '🤕', bg: '#f9731615', border: '#f9731640', color: '#f97316' },
     malade:   { label: t('ent_malade', lang),    emoji: '🤒', bg: '#a855f715', border: '#a855f740', color: '#a855f7' },
     convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: '#60a5fa15', border: '#60a5fa40', color: '#60a5fa' },
+  }
+
+  const sondageEstClos = (seance) => {
+    if (!seance) return false
+    if (seance.sondage_clos) return true
+    if (!seance.cloture_sondage_avant || !seance.heure) return false
+    const [h, m] = seance.heure.split(':').map(Number)
+    const dateSeance = new Date(seance.date + 'T12:00:00')
+    dateSeance.setHours(h, m, 0, 0)
+    const clotureTime = new Date(dateSeance.getTime() - seance.cloture_sondage_avant * 60 * 60 * 1000)
+    return new Date() >= clotureTime
   }
 
   const cyclerPresence = async (entrainementId, joueurId, statutActuel) => {
@@ -1771,6 +1785,49 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
+
+            {/* ── Calendrier de la semaine ── */}
+            {(() => {
+              const aujourdHui = new Date().toISOString().split('T')[0]
+              const dans7jours = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              const events = [
+                ...entrainements.filter(e => e.date >= aujourdHui && e.date <= dans7jours).map(e => ({ type: 'entrainement', id: e.id, date: e.date, heure: e.heure, sondage_clos: e.sondage_clos, titre: e.description || t('ent_seance_generique', lang) })),
+                ...matchs.filter(m => m.date >= aujourdHui && m.date <= dans7jours).map(m => ({ type: 'match', id: m.id, date: m.date, titre: m.adversaire ? `⚽ ${t('ent_vs', lang)} ${m.adversaire}` : t('ent_match_generique', lang) })),
+              ].sort((a, b) => new Date(a.date) - new Date(b.date))
+
+              if (events.length === 0) return null
+              return (
+                <div style={{ ...st.card, marginBottom: '16px' }}>
+                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '16px' }}>📅 {t('ent_cette_semaine', lang)}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {events.map((ev, i) => {
+                      const date = new Date(ev.date + 'T12:00:00')
+                      const isToday = date.toDateString() === new Date().toDateString()
+                      const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
+                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'short' })
+                      return (
+                        <div key={i}
+                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? '#4ade8008' : '#141414', border: `1px solid ${isToday ? '#4ade8025' : '#1f1f1f'}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default' }}
+                          onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: ev.type === 'match' ? '#60a5fa15' : '#4ade8015', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : '#4ade8030'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                            {ev.type === 'match' ? '⚽' : '🏃'}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{ev.titre}</p>
+                            <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
+                          </div>
+                          {ev.type === 'entrainement' && (
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: ev.sondage_clos ? '#ef4444' : '#4ade80', background: ev.sondage_clos ? '#ef444415' : '#4ade8015', border: `1px solid ${ev.sondage_clos ? '#ef444430' : '#4ade8030'}`, borderRadius: '20px', padding: '2px 8px' }}>
+                              {ev.sondage_clos ? t('ent_sondage_clos', lang) : t('ent_sondage_ouvert', lang)}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
@@ -2998,6 +3055,163 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
               )}
             </div>
 
+            {/* ── Sous-onglets ── */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {[
+                { id: 'prochaine', label: `📋 ${t('ent_sous_onglet_prochaine', lang)}` },
+                { id: 'liste', label: `📁 ${t('ent_sous_onglet_liste', lang)}` },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setSousOngletEnt(tab.id)}
+                  style={{ background: sousOngletEnt === tab.id ? '#4ade8015' : 'transparent', border: `1px solid ${sousOngletEnt === tab.id ? '#4ade8040' : '#2a2a2a'}`, color: sousOngletEnt === tab.id ? '#4ade80' : '#555', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {sousOngletEnt === 'prochaine' && (() => {
+              const aujourdHui = new Date().toISOString().split('T')[0]
+              const prochaineSeance = [...entrainements].filter(e => e.date >= aujourdHui).sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null
+
+              if (!prochaineSeance) {
+                return (
+                  <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
+                    <p style={{ color: '#555', margin: '0 0 8px' }}>{t('ent_aucune_prochaine_seance', lang)}</p>
+                  </div>
+                )
+              }
+
+              const reponses = joueurs.map(j => ({ ...j, statut: j.joueur_id ? dispoJoueurs[prochaineSeance.id]?.[j.joueur_id] || null : null }))
+              const total = reponses.length
+              const stats = { present: 0, absent: 0, blesse: 0, malade: 0, convoque: 0, sans_reponse: 0 }
+              reponses.forEach(j => { if (j.statut) stats[j.statut]++; else stats.sans_reponse++ })
+              const clos = sondageEstClos(prochaineSeance)
+              const delaiCloture = prochaineSeance.cloture_sondage_avant ?? null
+
+              const cloturerSondage = async () => {
+                setSavingCloture(true)
+                await supabase.from('entrainements').update({ sondage_clos: true }).eq('id', prochaineSeance.id)
+                setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: true } : e))
+                setSavingCloture(false)
+              }
+              const rouvrirSondage = async () => {
+                await supabase.from('entrainements').update({ sondage_clos: false }).eq('id', prochaineSeance.id)
+                setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: false } : e))
+              }
+              const sauvegarderDelaiCloture = async (heures) => {
+                await supabase.from('entrainements').update({ cloture_sondage_avant: heures }).eq('id', prochaineSeance.id)
+                setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, cloture_sondage_avant: heures } : e))
+              }
+
+              return (
+                <div>
+                  {/* En-tête séance */}
+                  <div style={{ ...st.card, marginBottom: '16px', background: 'linear-gradient(135deg, #0d1a0d, #111)', border: '1px solid #4ade8020' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{t('ent_sous_onglet_prochaine', lang)}</p>
+                        <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
+                        <p style={{ fontSize: '13px', color: '#555' }}>
+                          {new Date(prochaineSeance.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                          {prochaineSeance.heure ? ` · ${prochaineSeance.heure}` : ''}
+                        </p>
+                      </div>
+                      <span style={{ background: clos ? '#ef444415' : '#4ade8015', border: `1px solid ${clos ? '#ef444440' : '#4ade8040'}`, color: clos ? '#ef4444' : '#4ade80', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
+                        {clos ? `🔒 ${t('ent_sondage_clos', lang)}` : `🟢 ${t('ent_sondage_ouvert', lang)}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stats réponses */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                    {[
+                      { key: 'present', label: t('ent_stat_presents', lang), emoji: '✅', color: '#4ade80' },
+                      { key: 'absent', label: t('ent_stat_absents', lang), emoji: '❌', color: '#ef4444' },
+                      { key: 'blesse', label: t('ent_stat_blesses', lang), emoji: '🤕', color: '#f97316' },
+                      { key: 'malade', label: t('ent_stat_malades', lang), emoji: '🤒', color: '#a855f7' },
+                      { key: 'convoque', label: t('ent_stat_convoques', lang), emoji: '🏆', color: '#60a5fa' },
+                      { key: 'sans_reponse', label: t('ent_stat_sans_reponse', lang), emoji: '⏳', color: '#555' },
+                    ].map(s => (
+                      <div key={s.key} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                        <p style={{ fontSize: '22px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{stats[s.key] || 0}</p>
+                        <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Barre de progression */}
+                  <div style={{ ...st.card, marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <p style={{ fontSize: '12px', color: '#555' }}>{t('ent_taux_reponse', lang)}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700 }}>{total - stats.sans_reponse}/{total} {t('equipe_joueurs', lang)}</p>
+                    </div>
+                    <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${total > 0 ? ((total - stats.sans_reponse) / total * 100) : 0}%`, height: '100%', background: '#4ade80', borderRadius: '6px', transition: 'width 0.3s' }} />
+                    </div>
+                  </div>
+
+                  {/* Réponses individuelles */}
+                  <div style={{ ...st.card, marginBottom: '16px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>{t('ent_reponses_individuelles', lang)}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {reponses.map(j => {
+                        const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
+                        return (
+                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#141414', borderRadius: '10px' }}>
+                            <Avatar person={j} size={32} />
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontWeight: 600, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
+                              <p style={{ fontSize: '10px', color: '#555' }}>{j.poste}</p>
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || '#333', background: cfg?.bg || '#1a1a1a', border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                              {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Paramètres clôture */}
+                  {canEdit('entrainements') && (
+                    <div style={{ ...st.card, marginBottom: '16px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>⏱️ {t('ent_cloture_auto_titre', lang)}</p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                        {[
+                          { val: null, label: t('ent_pas_de_cloture', lang) },
+                          { val: 1, label: `1h ${t('ent_avant', lang)}` },
+                          { val: 5, label: `5h ${t('ent_avant', lang)}` },
+                          { val: 24, label: `24h ${t('ent_avant', lang)}` },
+                        ].map(opt => (
+                          <button key={String(opt.val)} onClick={() => sauvegarderDelaiCloture(opt.val)}
+                            style={{ background: delaiCloture === opt.val ? '#4ade8020' : 'transparent', border: `1px solid ${delaiCloture === opt.val ? '#4ade8050' : '#2a2a2a'}`, color: delaiCloture === opt.val ? '#4ade80' : '#555', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#444', marginBottom: '14px' }}>
+                        {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        {!clos ? (
+                          <button onClick={cloturerSondage} disabled={savingCloture}
+                            style={{ background: '#ef444415', border: '1px solid #ef444430', color: '#ef4444', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
+                            🔒 {t('ent_cloturer_maintenant', lang)}
+                          </button>
+                        ) : (
+                          <button onClick={rouvrirSondage}
+                            style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            🔓 {t('ent_rouvrir_sondage', lang)}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
+            {sousOngletEnt === 'liste' && (
+            <>
             {permissions?.entrainements === 'lecture' && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
@@ -3008,8 +3222,9 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             {showAddEntrainement && canEdit('entrainements') && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
                 <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ {t('seance_nouvelle', lang)}</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
+                  <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newEntrainement.heure} onChange={e => setNewEntrainement({ ...newEntrainement, heure: e.target.value })} /></div>
                   <div><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -3198,6 +3413,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                 </div>
               )}
             </div>
+            </>
+            )}
           </>
         )}
 
