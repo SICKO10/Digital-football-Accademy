@@ -1069,8 +1069,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `/no_think
-Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
+      const prompt = `Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
 
 Analyse cette image d'une fiche séance manuscrite ou imprimée et extrais toutes les informations visibles.
 Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
@@ -1099,12 +1098,15 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: 'qwen/qwen3.6-27b',
-          messages: [{ role: 'user', content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
-          ]}],
+          messages: [
+            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'user', content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
+            ]}
+          ],
           temperature: 0.7,
-          max_completion_tokens: 8000
+          max_completion_tokens: 4000
         })
       })
       const data = await response.json()
@@ -1420,8 +1422,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `/no_think
-Tu analyses une ou plusieurs photos d'un calendrier de football.
+      const prompt = `Tu analyses une ou plusieurs photos d'un calendrier de football.
 Extrait TOUS les matchs visibles sur les photos.
 Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
 {
@@ -1445,9 +1446,12 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: 'qwen/qwen3.6-27b',
-          messages: [{ role: 'user', content: contentParts }],
+          messages: [
+            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'user', content: contentParts }
+          ],
           temperature: 0.7,
-          max_completion_tokens: 8000
+          max_completion_tokens: 4000
         })
       })
       const data = await response.json()
@@ -1476,8 +1480,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `/no_think
-Tu es un assistant qui analyse des feuilles de match de football. Extrais toutes les informations de cette image.
+      const prompt = `Tu es un assistant qui analyse des feuilles de match de football. Extrais toutes les informations de cette image.
 
 Voici les joueurs de notre équipe (utilise leurs IDs exacts dans la réponse):
 ${joueurs.map(j => `- "${j.prenom} ${j.nom}" (joueur_id: "${j.id}")`).join('\n')}
@@ -1509,12 +1512,15 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: 'qwen/qwen3.6-27b',
-          messages: [{ role: 'user', content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
-          ]}],
+          messages: [
+            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'user', content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
+            ]}
+          ],
           temperature: 0.7,
-          max_completion_tokens: 8000
+          max_completion_tokens: 4000
         })
       })
       const data = await response.json()
