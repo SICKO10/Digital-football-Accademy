@@ -1908,8 +1908,8 @@ function DashboardJoueur() {
   }
 
   // ── DASHBOARD PRINCIPAL ──
-  const maxAnalyses = profil?.plan === 'pro' ? 3 : 2
-  const isPro = profil?.plan === 'pro'
+  const isPro = profil?.plan === 'pro' || profil?.plan === 'joueur_pro'
+  const maxAnalyses = isPro ? 3 : 2
 
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
@@ -2795,7 +2795,7 @@ function DashboardJoueur() {
         )}
 
         {/* ── MESSAGES ── */}
-        {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan') && (
+        {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan' || profil?.plan === 'joueur_starter') && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
               <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
@@ -2810,7 +2810,7 @@ function DashboardJoueur() {
           </div>
         )}
 
-        {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && (() => {
+        {onglet === 'messages' && profil?.plan !== 'starter' && profil?.plan !== 'fan' && profil?.plan !== 'joueur_starter' && (() => {
           const panelConversation = messageActif ? (
             <>
               <div style={{ padding: '14px 18px', borderBottom: '1px solid #141414', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -2935,12 +2935,12 @@ function DashboardJoueur() {
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
                 {t('jcarte_titre', lang)}
                 <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                  background: profil?.plan === 'pro' ? '#f0c03020' : '#c8c8c820',
-                  color: profil?.plan === 'pro' ? '#f0c030' : '#c8c8c8',
-                  border: `1px solid ${profil?.plan === 'pro' ? '#f0c03040' : '#c8c8c840'}`,
+                  background: isPro ? '#f0c03020' : '#c8c8c820',
+                  color: isPro ? '#f0c030' : '#c8c8c8',
+                  border: `1px solid ${isPro ? '#f0c03040' : '#c8c8c840'}`,
                   verticalAlign: 'middle',
                 }}>
-                  {profil?.plan === 'pro' ? '⭐ PRO' : 'STARTER'}
+                  {isPro ? '⭐ PRO' : 'STARTER'}
                 </span>
               </h2>
               <p style={{ fontSize: '13px', color: '#555' }}>
@@ -2967,7 +2967,7 @@ function DashboardJoueur() {
                 )}
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                   <FifaCardGenerator
-                    plan={profil.plan === 'pro' ? 'pro' : 'starter'}
+                    plan={isPro ? 'pro' : 'starter'}
                     profil={profil}
                     onSave={handleFifaCardSave}
                   />
