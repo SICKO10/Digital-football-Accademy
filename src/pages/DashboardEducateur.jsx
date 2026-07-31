@@ -1516,6 +1516,7 @@ R√©ponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr√
         })
       })
       const data = await response.json()
+      console.log('GROQ ERROR:', JSON.stringify(data))
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const text = data.choices?.[0]?.message?.content || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
