@@ -18,8 +18,6 @@ function Home() {
           <a href="#comment" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>{t('home_comment_marche', lang)}</a>
           <a href="#offres" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>{t('home_offres', lang)}</a>
           <span onClick={() => navigate('/jogabonito')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
-          <span onClick={() => navigate('/feed')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>{t('recrut_feed', lang)}</span>
-          <a href="#recruteurs" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>{t('jnav_recruteurs', lang)}</a>
           <div style={{ display: 'flex', gap: '4px' }}>
             {LANGS.map(l => (
               <button key={l.code} onClick={() => setLang(l.code)}
