@@ -1103,7 +1103,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
           ]}],
           temperature: 0.1,
-          max_tokens: 2000
+          max_completion_tokens: 2000,
+          chat_template_kwargs: { thinking_mode: 'non_thinking' }
         })
       })
       const data = await response.json()
@@ -1444,7 +1445,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
           model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: contentParts }],
           temperature: 0.1,
-          max_tokens: 2000
+          max_completion_tokens: 2000,
+          chat_template_kwargs: { thinking_mode: 'non_thinking' }
         })
       })
       const data = await response.json()
@@ -1509,7 +1511,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
           ]}],
           temperature: 0.1,
-          max_tokens: 2000
+          max_completion_tokens: 2000,
+          chat_template_kwargs: { thinking_mode: 'non_thinking' }
         })
       })
       const data = await response.json()
