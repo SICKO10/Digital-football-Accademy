@@ -2941,7 +2941,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
-                          <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
+                          <div onClick={e => e.stopPropagation()} style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {joueurs.map(j => {
@@ -2950,31 +2950,31 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 const existingStat = (m.stats_match || []).find(st => st.joueur_id === j.id) || {}
                                 const val = (field) => s[field] !== undefined ? s[field] : (existingStat[field] ?? '')
                                 return (
-                                  <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '120px 50px 50px 50px 50px 30px 30px', gap: '6px', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
+                                  <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '120px 56px 56px 56px 56px 32px 32px', gap: '6px', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
                                     <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), minutes: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
                                     <input type="number" placeholder="Buts" min="0" value={val('buts')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), buts: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
                                     <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), passes_dec: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
                                     <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: e.target.value === '1' } } }))}
-                                      style={{ ...st.input, padding: '5px 8px', fontSize: '12px', textAlign: 'center' }} />
-                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_jaune') ? 1 : 0.25 }}
-                                      onClick={e => { e.stopPropagation(); setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } })) }}>🟨</span>
-                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '16px', opacity: val('carton_rouge') ? 1 : 0.25 }}
-                                      onClick={e => { e.stopPropagation(); setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } })) }}>🟥</span>
+                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
+                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_jaune') ? 1 : 0.25 }}
+                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))}>🟨</span>
+                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_rouge') ? 1 : 0.25 }}
+                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } }))}>🟥</span>
                                   </div>
                                 )
                               })}
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
-                              <p style={{ fontSize: '10px', color: '#444', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
-                              <button onClick={e => { e.stopPropagation(); sauvegarderStatsMatch(m.id) }} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
+                              <p style={{ fontSize: '11px', color: '#444', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
+                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
                         )}
