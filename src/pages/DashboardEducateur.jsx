@@ -423,7 +423,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
-  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '' })
+  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', fiche_id: null })
+  const [showImportFiche, setShowImportFiche] = useState(false)
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
@@ -1419,8 +1420,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     if (!newEntrainement.date) return
     await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId })
     await chargerEntrainements(userId)
-    setNewEntrainement({ date: '', description: '', heure: '' })
+    setNewEntrainement({ date: '', description: '', heure: '', fiche_id: null })
     setShowAddEntrainement(false)
+    setShowImportFiche(false)
+  }
+
+  const importerFicheDansEntrainement = (seance) => {
+    setNewEntrainement(prev => ({ ...prev, description: seance.theme || prev.description, fiche_id: seance.id }))
+    setShowImportFiche(false)
   }
 
   const supprimerEntrainement = async (id) => {
@@ -3227,9 +3234,43 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                   <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newEntrainement.heure} onChange={e => setNewEntrainement({ ...newEntrainement, heure: e.target.value })} /></div>
                   <div><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
                 </div>
+
+                {/* ── Import d'une fiche archivée ── */}
+                <div style={{ marginBottom: '12px' }}>
+                  {newEntrainement.fiche_id ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#a78bfa15', border: '1px solid #a78bfa30', color: '#a78bfa', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px' }}>
+                      📄 {t('ent_fiche_importee', lang)}
+                      <span onClick={() => setNewEntrainement({ ...newEntrainement, fiche_id: null })} style={{ cursor: 'pointer', fontWeight: 900 }}>✕</span>
+                    </div>
+                  ) : (
+                    <button onClick={() => setShowImportFiche(v => !v)} style={{ background: 'transparent', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      📥 {t('ent_importer_fiche', lang)}
+                    </button>
+                  )}
+
+                  {showImportFiche && (
+                    <div style={{ marginTop: '10px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                      {mesSeancesOuvertes.length === 0 ? (
+                        <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                      ) : mesSeancesOuvertes.map(s => (
+                        <div key={s.id} onClick={() => importerFicheDansEntrainement(s)}
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
+                          </div>
+                          <span style={{ fontSize: '11px', color: '#a78bfa', flexShrink: 0 }}>{t('ent_choisir', lang)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={ajouterEntrainement} style={st.btnSolid}>{t('ent_creer_seance', lang)}</button>
-                  <button onClick={() => setShowAddEntrainement(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  <button onClick={() => { setShowAddEntrainement(false); setShowImportFiche(false) }} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -3320,6 +3361,13 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                           {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
+                          {e.fiche_id && (
+                            <span
+                              onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}
+                              style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px', cursor: 'pointer' }}>
+                              📄 {t('ent_voir_fiche', lang)}
+                            </span>
+                          )}
                           {!estFuture && total > 0 && (
                             <>
                               <span style={{ fontSize: '11px', color: '#4ade80', background: '#4ade8010', padding: '1px 7px', borderRadius: '10px' }}>✅ {nbPresents}</span>

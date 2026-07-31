@@ -1352,6 +1352,13 @@ export const T = {
   // ── DashboardJoueur : widget prochaines échéances (dashboard principal) ──
   jd_prochaines_echeances:      { fr: 'Prochaines échéances',      en: 'Upcoming events',          pt: 'Próximos eventos',        es: 'Próximos eventos',         it: 'Prossimi eventi',          de: 'Nächste Termine'       },
   jd_ta_reponse:                { fr: 'Ta réponse :',              en: 'Your response:',           pt: 'A tua resposta:',         es: 'Tu respuesta:',            it: 'La tua risposta:',         de: 'Deine Antwort:'        },
+
+  // ── Import d'une fiche archivée dans un entraînement ──
+  ent_importer_fiche:           { fr: 'Importer une séance archivée', en: 'Import an archived session', pt: 'Importar uma sessão arquivada', es: 'Importar una sesión archivada', it: 'Importa una sessione archiviata', de: 'Archivierte Einheit importieren' },
+  ent_fiche_importee:           { fr: 'Fiche importée',            en: 'Session imported',         pt: 'Ficha importada',         es: 'Ficha importada',          it: 'Scheda importata',         de: 'Einheit importiert'    },
+  ent_aucune_fiche_archivee:    { fr: 'Aucune séance archivée pour le moment.', en: 'No archived session yet.', pt: 'Nenhuma sessão arquivada por agora.', es: 'Ninguna sesión archivada por ahora.', it: 'Nessuna sessione archiviata al momento.', de: 'Noch keine archivierte Einheit.' },
+  ent_choisir:                  { fr: 'Choisir',                   en: 'Choose',                    pt: 'Escolher',                es: 'Elegir',                    it: 'Scegli',                    de: 'Wählen'                 },
+  ent_voir_fiche:                { fr: 'Voir la fiche',             en: 'View session',             pt: 'Ver a ficha',             es: 'Ver la ficha',             it: 'Vedi la scheda',           de: 'Einheit ansehen'       },
 }
 
 // Helper : t('nav_equipe', lang) → 'My team'
