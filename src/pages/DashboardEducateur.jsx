@@ -1097,7 +1097,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'llama-3.2-11b-vision-preview',
+          model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: [
             { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
@@ -1441,7 +1441,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'llama-3.2-11b-vision-preview',
+          model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: contentParts }],
           temperature: 0.1,
           max_tokens: 2000
@@ -1503,7 +1503,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'llama-3.2-11b-vision-preview',
+          model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: [
             { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
