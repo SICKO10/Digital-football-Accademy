@@ -1103,7 +1103,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
           ]}],
-          temperature: 0.1,
+          temperature: 0.7,
           max_completion_tokens: 2000
         })
       })
@@ -1445,7 +1445,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
         body: JSON.stringify({
           model: 'qwen/qwen3.6-27b',
           messages: [{ role: 'user', content: contentParts }],
-          temperature: 0.1,
+          temperature: 0.7,
           max_completion_tokens: 2000
         })
       })
@@ -1511,7 +1511,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
             { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
           ]}],
-          temperature: 0.1,
+          temperature: 0.7,
           max_completion_tokens: 2000
         })
       })
