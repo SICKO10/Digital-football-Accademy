@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import Home from './pages/Home'
+import Offres from './pages/Offres'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import RegisterRecruteur from './pages/RegisterRecruteur'
@@ -56,6 +57,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/offres" element={<Offres />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-recruteur" element={<RegisterRecruteur />} />
