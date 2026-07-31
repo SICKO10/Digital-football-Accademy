@@ -988,8 +988,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setScanningFiche(true)
     setScanFicheError(null)
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const prompt = `Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
 
 Analyse cette image d'une fiche séance manuscrite ou imprimée et extrais toutes les informations visibles.
@@ -1014,20 +1014,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 }
 
 Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: scanImageFile.type || 'image/jpeg', data: scanImageBase64 } }] }],
-            generationConfig: { temperature: 0.1 }
-          })
-        }
-      )
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
+          ]}],
+          temperature: 0.1,
+          max_tokens: 2000
+        })
+      })
       const data = await response.json()
-      if (data.error) throw new Error(data.error.message)
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const text = data.choices?.[0]?.message?.content || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
       const extrait = JSON.parse(jsonMatch[0])
@@ -1335,8 +1337,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setCalendarLoading(true)
     setCalendarError(null)
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const prompt = `Tu analyses une ou plusieurs photos d'un calendrier de football.
 Extrait TOUS les matchs visibles sur les photos.
 Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
@@ -1352,18 +1354,23 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     }
   ]
 }`
-      const parts = [
-        { text: prompt },
-        ...calendarImages.map(img => ({ inline_data: { mime_type: 'image/jpeg', data: img.base64 } }))
+      const contentParts = [
+        { type: 'text', text: prompt },
+        ...calendarImages.map(img => ({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img.base64}` } }))
       ]
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.1 } }) }
-      )
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [{ role: 'user', content: contentParts }],
+          temperature: 0.1,
+          max_tokens: 2000
+        })
+      })
       const data = await response.json()
-      if (data.error) throw new Error(data.error.message)
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const text = data.choices?.[0]?.message?.content || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
       const result = JSON.parse(jsonMatch[0])
@@ -1384,8 +1391,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     setScannerLoading(true)
     setScannerError(null)
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GEMINI_API_KEY manquante dans .env')
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const prompt = `Tu es un assistant qui analyse des feuilles de match de football. Extrais toutes les informations de cette image.
 
 Voici les joueurs de notre équipe (utilise leurs IDs exacts dans la réponse):
@@ -1413,20 +1420,22 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
     }
   ]
 }`
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: scannerImageBase64 } }] }],
-            generationConfig: { temperature: 0.1 }
-          })
-        }
-      )
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
+          ]}],
+          temperature: 0.1,
+          max_tokens: 2000
+        })
+      })
       const data = await response.json()
-      if (data.error) throw new Error(data.error.message)
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const text = data.choices?.[0]?.message?.content || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
       const result = JSON.parse(jsonMatch[0])
@@ -2432,7 +2441,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: '#4ade80', unit: 'but' },
                     { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
                     { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: '#fbbf24', unit: 'V' },
-                    { key: 'matchs', label: t('stats_filtre_temps', lang), get: j => j.s.matchs, color: '#a78bfa', unit: 'match' },
+                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: '#a78bfa', unit: "'" },
                     { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
                     { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
                   ]
@@ -2923,8 +2932,8 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                     const resultat = aScore ? (nous > eux ? 'V' : nous < eux ? 'D' : 'N') : null
                     const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#f87171' : '#f59e0b'
                     return (
-                      <div key={m.id} style={{ ...st.card, cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div key={m.id} style={{ ...st.card }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
                           {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '12px', padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>}
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
@@ -2941,7 +2950,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
-                          <div onClick={e => e.stopPropagation()} style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
+                          <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {joueurs.map(j => {
@@ -2950,20 +2959,20 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                                 const existingStat = (m.stats_match || []).find(st => st.joueur_id === j.id) || {}
                                 const val = (field) => s[field] !== undefined ? s[field] : (existingStat[field] ?? '')
                                 return (
-                                  <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '120px 56px 56px 56px 56px 32px 32px', gap: '6px', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
+                                  <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
                                     <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), minutes: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                                     <input type="number" placeholder="Buts" min="0" value={val('buts')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), buts: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                                     <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), passes_dec: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                                     <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: e.target.value === '1' } } }))}
-                                      style={{ ...st.input, padding: '6px 8px', fontSize: '14px', textAlign: 'center' }} />
+                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                                     <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_jaune') ? 1 : 0.25 }}
                                       onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))}>🟨</span>
                                     <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_rouge') ? 1 : 0.25 }}
@@ -2973,7 +2982,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
                               })}
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
-                              <p style={{ fontSize: '11px', color: '#444', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
+                              <p style={{ fontSize: '13px', color: '#555', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
                               <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
