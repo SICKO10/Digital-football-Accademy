@@ -86,8 +86,11 @@ Deno.serve(async (req) => {
           if (!profileId) break
           const cycle = montant === MONTANT_ANNUEL ? 'annuel' : 'mensuel'
           // Compat avec les verrous de fonctionnalités existants (profil.plan === 'pro'/'starter').
+          // Educateur/recruteur/club/coach : le plan ne change pas de valeur selon le cycle,
+          // seul l'abonnement (actif/cycle) est mis à jour — pas de palier de fonctionnalités.
           const { data: profilActuel } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).single()
-          const nouveauPlan = profilActuel?.plan === 'educateur' ? 'educateur' : (cycle === 'annuel' ? 'pro' : 'starter')
+          const planSansPalier = ['educateur', 'recruteur', 'club', 'coach'].includes(profilActuel?.plan)
+          const nouveauPlan = planSansPalier ? profilActuel.plan : (cycle === 'annuel' ? 'pro' : 'starter')
           await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
             abonnement_actif: true,

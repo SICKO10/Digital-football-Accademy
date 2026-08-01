@@ -543,7 +543,7 @@ function DashboardCoach() {
                                       </p>
                                       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                                         <input
-                                          placeholder="Colle ton lien YouTube ou Loom ici..."
+                                          placeholder="Colle ton lien vidéo (YouTube, Veo...) ici..."
                                           value={loomUrls[demande.id] || ''}
                                           onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
                                           style={{ flex: 1, background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}

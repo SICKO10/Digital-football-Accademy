@@ -10,6 +10,17 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 const EQUIPES = ['A', 'B']
 
+// Abonnement club — paliers selon le nombre de licenciés (vérifié manuellement
+// par le support avant activation, cf. carte "Abonnement" de l'onglet Profil).
+const STRIPE_LINKS_CLUB = {
+  c0:   { mensuel: 'https://buy.stripe.com/test_28E4gA4wkgZP4GmgGM4ko08', annuel: 'https://buy.stripe.com/test_14AfZie6UgZP2yecqw4ko09', label: '0–100 joueurs', mensuelPrix: '50€/mois', annuelPrix: '500€/an' },
+  c100: { mensuel: 'https://buy.stripe.com/test_9B67sM4wk24V3CiduA4ko0a', annuel: 'https://buy.stripe.com/test_3cIbJ22oc10R0q62PW4ko0b', label: '101–200 joueurs', mensuelPrix: '100€/mois', annuelPrix: '1000€/an' },
+  c200: { mensuel: 'https://buy.stripe.com/test_aFaaEYgf238Z8WC3U04ko0c', annuel: 'https://buy.stripe.com/test_6oUdRa8MAfVLb4Kbms4ko0d', label: '201–300 joueurs', mensuelPrix: '130€/mois', annuelPrix: '1300€/an' },
+  c300: { mensuel: 'https://buy.stripe.com/test_6oU8wQbYM6lbdcSeyE4ko0e', annuel: 'https://buy.stripe.com/test_4gMdRaaUI5h7a0G76c4ko0f', label: '301–400 joueurs', mensuelPrix: '160€/mois', annuelPrix: '1600€/an' },
+  c400: { mensuel: 'https://buy.stripe.com/test_9B628s5Ao4d36Ou76c4ko0g', annuel: 'https://buy.stripe.com/test_eVq28sbYMeRH8WC76c4ko0h', label: '401–500 joueurs', mensuelPrix: '190€/mois', annuelPrix: '1900€/an' },
+  c500: { mensuel: 'https://buy.stripe.com/test_8x24gAd2QdND0q6gGM4ko0i', annuel: 'https://buy.stripe.com/test_6oU6oI9QE10R0q6cqw4ko0j', label: '500+ joueurs', mensuelPrix: '250€/mois', annuelPrix: '2500€/an' },
+}
+
 const ROLES_STAFF = [
   { val: 'president', label: 'Président' },
   { val: 'directeur_sportif', label: 'Directeur sportif' },
@@ -1342,6 +1353,24 @@ export default function DashboardClub() {
                 <button onClick={sauvegarderProfilClub} disabled={savingProfilClub} style={{ ...st.btnSolid, marginTop: '16px' }}>
                   {savingProfilClub ? t('jp_enregistrement', lang) : `✓ ${t('btn_sauvegarder', lang)}`}
                 </button>
+              </div>
+
+              {/* Abonnement — paliers vérifiés manuellement par le support (nb. licenciés) */}
+              <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('club_abonnement_titre', lang)}</p>
+                <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555', lineHeight: 1.6 }}>{t('club_abonnement_desc', lang)}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+                  {Object.values(STRIPE_LINKS_CLUB).map(p => (
+                    <div key={p.label} style={{ background: '#141414', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: '#aaa' }}>{p.label}</span>
+                      <span style={{ fontSize: '13px', color: '#4ade80', fontWeight: 700 }}>{p.mensuelPrix} · {p.annuelPrix}</span>
+                    </div>
+                  ))}
+                </div>
+                <a href={`mailto:contact@digital-football.fr?subject=${encodeURIComponent('Activation abonnement club — ' + (profilClubEdit.club || club?.club || ''))}`}
+                  style={{ display: 'inline-block', background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                  {t('club_contacter_support', lang)}
+                </a>
               </div>
 
               {/* Avis reçus */}
