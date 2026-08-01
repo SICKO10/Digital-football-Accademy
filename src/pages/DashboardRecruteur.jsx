@@ -1374,8 +1374,8 @@ export default function DashboardRecruteur() {
               <p style={{ margin: "0 0 6px", fontWeight: 700, fontSize: "14px" }}>💳 Mon abonnement</p>
               <p style={{ margin: "0 0 14px", fontSize: "12px", color: "#555", lineHeight: 1.6 }}>Accès complet à la recherche de joueurs, aux favoris et à la messagerie.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS_RECRUTEUR.mensuel, recruteurId)} style={{ background: "transparent", color: "white", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>Mensuel — 10€/mois</button>
-                <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS_RECRUTEUR.annuel, recruteurId)} style={{ background: "#4ade80", color: "#000", border: "none", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>Annuel — 100€/an</button>
+                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.mensuel, recruteurId, recruteur?.email), '_blank')} style={{ background: "transparent", color: "white", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>Mensuel — 10€/mois</button>
+                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.annuel, recruteurId, recruteur?.email), '_blank')} style={{ background: "#4ade80", color: "#000", border: "none", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>Annuel — 100€/an</button>
               </div>
             </div>
           </div>
