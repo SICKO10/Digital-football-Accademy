@@ -15,6 +15,9 @@ const STRIPE_LINKS_EDU = {
   edu_mensuel: 'https://buy.stripe.com/test_9B66oI4wk8tjfl03U04ko04',
   edu_annuel:  'https://buy.stripe.com/test_8x28wQ4wk9xn1uaduA4ko03',
 }
+// Permet au webhook Stripe (supabase/functions/stripe-webhook) d'identifier
+// le profil à activer après paiement.
+const stripeUrl = (base, uid) => uid ? `${base}?client_reference_id=${uid}` : base
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -5072,8 +5075,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('edu_offre_titre', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555', lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <button onClick={() => window.location.href = STRIPE_LINKS_EDU.edu_mensuel} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
-                    <button onClick={() => window.location.href = STRIPE_LINKS_EDU.edu_annuel} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
+                    <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId)} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
+                    <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
                   </div>
                 </div>
               </div>

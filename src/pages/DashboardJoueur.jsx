@@ -22,6 +22,9 @@ const STRIPE_LINKS = {
   pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // annuel — 100€/an
   analyse_unite: 'https://buy.stripe.com/test_aFabJ27Iw6lbegW4Y44ko05', // analyse à l'unité — 60€
 }
+// Permet au webhook Stripe (supabase/functions/stripe-webhook) d'identifier
+// le profil à créditer/activer après paiement.
+const stripeUrl = (base, uid) => uid ? `${base}?client_reference_id=${uid}` : base
 
 const IconHome = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -103,15 +106,15 @@ const IconUsers = () => (
   </svg>
 )
 
-function UpgradeCard({ titre, texte, lang = 'fr' }) {
+function UpgradeCard({ titre, texte, lang = 'fr', userId }) {
   return (
     <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
       <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
       <p style={{ fontSize: '13px', color: '#555', maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
-        <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+        <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.starter, userId)} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
+        <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.pro, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
   )
@@ -1274,7 +1277,7 @@ function DashboardJoueur() {
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('aff_passe_niveau_sup', lang)}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
                 </div>
-                <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
+                <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.starter, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
               </div>
             </div>
           )}
@@ -1787,9 +1790,9 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} />}
-          {onglet === 'analyses' && <UpgradeCard titre={t('aff_analyse_video_titre', lang)} texte={t('aff_analyse_video_desc', lang)} lang={lang} />}
-          {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} />}
-          {onglet === 'recruteurs' && <UpgradeCard titre={t('aff_messagerie_recruteurs_titre', lang)} texte={t('aff_messagerie_recruteurs_desc', lang)} lang={lang} />}
+          {onglet === 'analyses' && <UpgradeCard titre={t('aff_analyse_video_titre', lang)} texte={t('aff_analyse_video_desc', lang)} lang={lang} userId={userId} />}
+          {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} userId={userId} />}
+          {onglet === 'recruteurs' && <UpgradeCard titre={t('aff_messagerie_recruteurs_titre', lang)} texte={t('aff_messagerie_recruteurs_desc', lang)} lang={lang} userId={userId} />}
         </main>
       </div>
     )
@@ -1883,7 +1886,7 @@ function DashboardJoueur() {
               <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Plan Pro requis</h2>
               <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
-              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+              <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.pro, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
             </div>
           )}
         </div>
@@ -1901,8 +1904,8 @@ function DashboardJoueur() {
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
           <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
-            <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
+            <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.starter, userId)} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
+            <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.pro, userId)} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
           </div>
           <span onClick={handleLogout} style={{ color: '#444', fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
@@ -1912,7 +1915,6 @@ function DashboardJoueur() {
 
   // ── DASHBOARD PRINCIPAL ──
   const isPro = profil?.plan === 'pro' || profil?.plan === 'joueur_pro'
-  const maxAnalyses = isPro ? 3 : 2
 
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
@@ -2244,11 +2246,7 @@ function DashboardJoueur() {
                   <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
                     {profil?.analyses_restantes ?? 0}
                   </span>
-                  <span style={{ fontSize: '14px', color: '#333', fontWeight: 400 }}>/{maxAnalyses}</span>
                 </div>
-              </div>
-              <div style={{ background: '#1a1a1a', borderRadius: '99px', height: '5px', overflow: 'hidden', marginBottom: '16px' }}>
-                <div style={{ height: '100%', width: `${((profil?.analyses_restantes || 0) / maxAnalyses) * 100}%`, background: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', borderRadius: '99px', transition: 'width 0.6s ease' }} />
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {(profil?.analyses_restantes || 0) > 0 ? (
@@ -2258,7 +2256,7 @@ function DashboardJoueur() {
                 ) : (
                   <p style={{ fontSize: '12px', color: '#444', margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
                 )}
-                <button onClick={() => window.location.href = STRIPE_LINKS.analyse_unite} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.analyse_unite, userId)} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {t('aff_acheter_analyse_cta', lang)}
                 </button>
               </div>
@@ -2394,7 +2392,7 @@ function DashboardJoueur() {
                   <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
                   <p style={{ fontSize: '12px', color: '#555' }}>{t('jd_upsell_desc', lang)}</p>
                 </div>
-                <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.pro, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                   {t('jd_plan_pro_cta', lang)}
                 </button>
               </div>
@@ -2810,7 +2808,7 @@ function DashboardJoueur() {
               <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
                 {t('jm_plan_pro_desc', lang)}
               </p>
-              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button onClick={() => window.location.href = stripeUrl(STRIPE_LINKS.pro, userId)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {t('jd_plan_pro_cta', lang)}
               </button>
             </div>
