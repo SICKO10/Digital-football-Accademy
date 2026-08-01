@@ -5,6 +5,11 @@ import { ModalNotation, BadgeNote } from '../components/Notation'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { notifierJoueur } from '../lib/notifications'
 import AnalyseurIA from '../components/AnalyseurIA'
+import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
+
+// Accès à l'onglet "Clubs en attente" restreint à ces comptes (pas de palier
+// de plan fiable pour ça — cf. discussion sur la confusion coach/educateur).
+const COACH_ADMIN_EMAILS = ['lagacytattidue@gmail.com', 'januariojimmy@gmail.com']
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -15,6 +20,12 @@ function DashboardCoach() {
   const [rapportPdfFiles, setRapportPdfFiles] = useState({})
   const [sending, setSending] = useState({})
   const [coachId, setCoachId] = useState(null)
+  const [coachEmail, setCoachEmail] = useState(null)
+
+  // Clubs en attente d'activation (accès restreint, cf. COACH_ADMIN_EMAILS)
+  const [clubsEnAttente, setClubsEnAttente] = useState([])
+  const [palierChoisi, setPalierChoisi] = useState({}) // { [clubId]: 'c0' | 'c100' | ... }
+  const [activatingClub, setActivatingClub] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -47,8 +58,35 @@ function DashboardCoach() {
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) setCoachId(user.id)
-    await Promise.all([getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()])
+    if (user) {
+      setCoachId(user.id)
+      setCoachEmail(user.email)
+    }
+    const taches = [getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()]
+    if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getClubsEnAttente())
+    await Promise.all(taches)
+  }
+
+  const getClubsEnAttente = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, prenom, nom, email, club, created_at')
+      .eq('plan', 'club')
+      .eq('abonnement_actif', false)
+      .order('created_at', { ascending: false })
+    setClubsEnAttente(data || [])
+  }
+
+  const activerClub = async (clubId) => {
+    setActivatingClub(clubId)
+    await supabase.from('profiles').update({ abonnement_actif: true }).eq('id', clubId)
+    await getClubsEnAttente()
+    setActivatingClub(null)
+  }
+
+  const copierLienClub = (clubId, palier, cycle) => {
+    const lien = stripeUrl(STRIPE_LINKS_CLUB[palier][cycle], clubId)
+    navigator.clipboard.writeText(lien)
   }
 
   const prendreEnCharge = async (table, id, dejaPris) => {
@@ -283,12 +321,15 @@ function DashboardCoach() {
     </div>
   )
 
+  const isAdminClubs = COACH_ADMIN_EMAILS.includes(coachEmail)
+
   const NAV_ITEMS = [
     { id: 'analyses', label: 'Demandes', icon: '📋', badge: enAttente.length },
     { id: 'certifications', label: 'Certifications', icon: '⭐', badge: 0 },
     { id: 'recruteurs', label: 'Clubs / Agents', icon: '🏢', badge: 0 },
     { id: 'seances_club', label: 'Séances club', icon: '🎥', badge: seancesTransferees.length },
     { id: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️', badge: 0 },
+    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Clubs en attente', icon: '🏟️', badge: clubsEnAttente.length }] : []),
   ]
 
   const TITRES_SECTION = {
@@ -297,6 +338,7 @@ function DashboardCoach() {
     recruteurs: '🏢 Clubs / Agents',
     seances_club: '🎥 Séances club',
     analyseur_ia: '🎙️ Analyseur IA',
+    clubs_admin: '🏟️ Clubs en attente d\'activation',
   }
 
   return (
@@ -845,6 +887,61 @@ function DashboardCoach() {
           )}
 
           {activeSection === 'analyseur_ia' && <AnalyseurIA />}
+
+          {/* ===== SECTION CLUBS EN ATTENTE (accès restreint) ===== */}
+          {activeSection === 'clubs_admin' && isAdminClubs && (
+            <>
+              <p style={{ color: '#666', fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+                Comptes club créés (via l'inscription ou /register-recruteur) en attente d'activation.
+                Vérifie le nombre de licenciés avec le club, choisis le palier correspondant, copie le lien
+                de paiement adapté et envoie-le par email. « Activer manuellement » sert uniquement si le
+                paiement se fait hors Stripe (virement...).
+              </p>
+              {clubsEnAttente.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏟️</p>
+                  <p style={{ color: '#666' }}>Aucun club en attente d'activation</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {clubsEnAttente.map(c => {
+                    const palier = palierChoisi[c.id] || 'c0'
+                    return (
+                      <div key={c.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{c.club || '(nom du club non renseigné)'}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>{c.prenom} {c.nom} · {c.email}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>Inscrit le {new Date(c.created_at).toLocaleDateString('fr-FR')}</p>
+                          </div>
+                          <button onClick={() => activerClub(c.id)} disabled={activatingClub === c.id}
+                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            {activatingClub === c.id ? 'Activation...' : '✓ Activer manuellement'}
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <select value={palier} onChange={e => setPalierChoisi(prev => ({ ...prev, [c.id]: e.target.value }))}
+                            style={{ background: '#0a0a0a', border: '1px solid #333', color: 'white', borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>
+                            {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
+                              <option key={key} value={key}>{p.label} — {p.mensuelPrix} / {p.annuelPrix}</option>
+                            ))}
+                          </select>
+                          <button onClick={() => copierLienClub(c.id, palier, 'mensuel')}
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#aaa', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                            📋 Copier lien mensuel
+                          </button>
+                          <button onClick={() => copierLienClub(c.id, palier, 'annuel')}
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#aaa', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                            📋 Copier lien annuel
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
 
         </div>
       </div>
