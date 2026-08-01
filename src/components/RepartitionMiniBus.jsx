@@ -29,21 +29,82 @@ const ALIAS = {
   equipe: ['equipe', 'team', 'categorie'],
   date_depart: ['date'],
   heure_depart: ['heuredepart', 'departure', 'depart'],
-  heure_retour_estimee: ['heureretour', 'retourestime', 'return'],
-  lieu_destination: ['lieu', 'destination', 'adversaire'],
-  nb_personnes: ['personnes', 'effectif', 'nbpersonnes', 'nbjoueurs'],
+  heure_retour_estimee: ['heureretour', 'retourestime', 'return', 'retour'],
+  lieu_destination: ['lieu', 'destination', 'adversaire', 'match'],
+  nb_personnes: ['personnes', 'effectif', 'nbpersonnes', 'nbjoueurs', 'minibus'],
+  coup_envoi: ['coupdenvoi'],
+  domicile: ['domicile', 'exterieur'],
 }
+
+// Mois français (accents optionnels) pour parser des dates textuelles type "1 aout"
+const MOIS_FR = {
+  janvier: 1, fevrier: 2, mars: 3, avril: 4, mai: 5, juin: 6,
+  juillet: 7, aout: 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12,
+}
+
+// "1 aout" / "2 août" → AAAA-MM-JJ (année en cours, ou suivante si la date est déjà passée)
+const parserDateJourMois = (val) => {
+  const s = String(val || '').trim().toLowerCase()
+  const m = s.match(/^(\d{1,2})\s+([a-zéèêûôàâïî]+)/)
+  if (!m) return ''
+  const jour = parseInt(m[1], 10)
+  const moisNom = m[2].normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const mois = MOIS_FR[moisNom]
+  if (!mois || !jour) return ''
+  const aujourdhui = new Date()
+  let annee = aujourdhui.getFullYear()
+  if (new Date(annee, mois - 1, jour) < new Date(annee, aujourdhui.getMonth(), aujourdhui.getDate())) annee += 1
+  return `${annee}-${String(mois).padStart(2, '0')}-${String(jour).padStart(2, '0')}`
+}
+
+// Timedelta Excel en secondes (ex: 46800 = 13:00) → "HH:MM". Heure zéro-paddée
+// car ces valeurs alimentent des <input type="time"> (sinon "9:00" est invalide).
+const timedeltaVersHeure = (val) => {
+  if (typeof val === 'number' && val >= 0) {
+    const h = String(Math.floor(val / 3600)).padStart(2, '0')
+    const min = String(Math.floor((val % 3600) / 60)).padStart(2, '0')
+    return `${h}:${min}`
+  }
+  return normaliserHeure(val)
+}
+
+const estDomicile = (val) => {
+  const s = String(val || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return s.includes('domicile')
+}
+
+const trouverCle = (cles, alias) => cles.find(k => alias.some(a => normaliserCle(k).includes(a)))
 
 const ligneDepuisObjet = (obj) => {
   const ligne = ligneVide()
   const cles = Object.keys(obj)
-  Object.entries(ALIAS).forEach(([champ, alias]) => {
-    const cle = cles.find(k => alias.some(a => normaliserCle(k).includes(a)))
-    if (cle == null) return
-    let val = String(obj[cle] ?? '').trim()
-    if (champ === 'heure_depart' || champ === 'heure_retour_estimee') val = normaliserHeure(val)
-    ligne[champ] = val
-  })
+
+  const cleEquipe = trouverCle(cles, ALIAS.equipe)
+  if (cleEquipe != null) ligne.equipe = String(obj[cleEquipe] ?? '').trim()
+
+  const cleDate = trouverCle(cles, ALIAS.date_depart)
+  if (cleDate != null) ligne.date_depart = parserDateJourMois(obj[cleDate]) || String(obj[cleDate] ?? '').trim()
+
+  const cleLieu = trouverCle(cles, ALIAS.lieu_destination)
+  if (cleLieu != null) ligne.lieu_destination = String(obj[cleLieu] ?? '').trim()
+
+  const cleNbPersonnes = trouverCle(cles, ALIAS.nb_personnes)
+  if (cleNbPersonnes != null) ligne.nb_personnes = String(obj[cleNbPersonnes] ?? '').trim()
+
+  // Heure de départ (parfois vide) — repli sur l'heure de coup d'envoi si absente,
+  // pour que l'algorithme de répartition (qui exige heure_depart) ait toujours une valeur.
+  const cleHeureDepart = trouverCle(cles, ALIAS.heure_depart)
+  const cleCoupEnvoi = trouverCle(cles, ALIAS.coup_envoi)
+  const heureDepart = cleHeureDepart != null ? normaliserHeure(obj[cleHeureDepart]) : ''
+  const coupEnvoi = cleCoupEnvoi != null ? timedeltaVersHeure(obj[cleCoupEnvoi]) : ''
+  ligne.heure_depart = heureDepart || coupEnvoi
+
+  const cleRetour = trouverCle(cles, ALIAS.heure_retour_estimee)
+  ligne.heure_retour_estimee = cleRetour != null ? timedeltaVersHeure(obj[cleRetour]) : ''
+
+  const cleDomicile = trouverCle(cles, ALIAS.domicile)
+  ligne._domicile = cleDomicile != null && estDomicile(obj[cleDomicile])
+
   return ligne
 }
 
@@ -111,9 +172,14 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
       const feuille = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(feuille, { defval: '' })
-      const mapped = rows.map(ligneDepuisObjet).filter(l => l.equipe || l.date_depart || l.lieu_destination)
-      if (mapped.length === 0) throw new Error("Aucune ligne exploitable trouvée dans le fichier.")
+      // Ligne 1 = titre, ligne 2 = en-têtes → on démarre à la 2e ligne (0-indexée) pour que
+      // sheet_to_json utilise les vrais en-têtes, données à partir de la ligne 3.
+      const rows = XLSX.utils.sheet_to_json(feuille, { range: 1, defval: '' })
+      const mapped = rows
+        .map(ligneDepuisObjet)
+        .filter(l => (l.equipe || l.date_depart || l.lieu_destination) && !l._domicile)
+        .map(l => { delete l._domicile; return l })
+      if (mapped.length === 0) throw new Error("Aucune ligne exploitable trouvée dans le fichier (ou tous les matchs sont à domicile).")
       setLignes(prev => [...prev, ...mapped])
       setValide(false)
     } catch (err) {
