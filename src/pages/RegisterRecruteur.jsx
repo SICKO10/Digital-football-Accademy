@@ -59,7 +59,8 @@ function RegisterRecruteur() {
     }
 
     const lien = typeCompte === 'educateur' ? STRIPE_LINKS_EDU.edu_mensuel : STRIPE_LINKS_RECRUTEUR.mensuel
-    window.location.href = stripeUrl(lien, data.user.id, email)
+    window.open(stripeUrl(lien, data.user.id, email), '_blank')
+    navigate('/login')
   }
 
   return (
