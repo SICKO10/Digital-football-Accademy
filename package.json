@@ -30,7 +30,8 @@
     "react-konva": "^19.2.5",
     "react-router-dom": "^7.17.0",
     "resend": "^6.17.2",
-    "stripe": "^22.2.1"
+    "stripe": "^22.2.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -7,6 +7,7 @@ import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
+import RepartitionMiniBus from '../components/RepartitionMiniBus'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
@@ -1046,6 +1047,7 @@ export default function DashboardClub() {
             ] : [
               { id: 'sponsors', label: `🤝 ${t('club_tab_sponsors', lang)}` },
               { id: 'deplacements', label: `🚌 ${t('nav_deplacements', lang)}` },
+              { id: 'repartition_bus', label: '🧮 Répartition mini-bus' },
               { id: 'profil', label: `⭐ ${t('club_tab_profil', lang)}` },
               ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: `💰 ${t('club_tab_budget', lang)}` }] : []),
               ...(monRole === 'president' ? [{ id: 'staff', label: `👥 ${t('club_tab_staff', lang)}` }] : []),
@@ -1478,6 +1480,9 @@ export default function DashboardClub() {
         )}
         {activeTab === 'deplacements' && (
           <Deplacements clubId={clubId} />
+        )}
+        {activeTab === 'repartition_bus' && (
+          <RepartitionMiniBus clubId={clubId} />
         )}
         {activeTab === 'recrutement' && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />

@@ -10,6 +10,7 @@ const NATURES = [
 
 const formVide = () => ({
   equipe: '', educateur_responsable: '', date_depart: '', heure_depart: '',
+  heure_retour_estimee: '', nb_personnes: '',
   lieu_destination: '', nature: 'match', vehicule: '', conducteur: '',
   km_avant: '', gasoil_avant: '',
 })
@@ -63,6 +64,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
       educateur_responsable: form.educateur_responsable.trim() || null,
       date_depart: form.date_depart,
       heure_depart: form.heure_depart || null,
+      heure_retour_estimee: form.heure_retour_estimee || null,
+      nb_personnes: form.nb_personnes !== '' ? parseInt(form.nb_personnes) : null,
       lieu_destination: form.lieu_destination.trim(),
       nature: form.nature,
       vehicule: form.vehicule.trim() || null,
@@ -126,7 +129,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
             </p>
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
               {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-              {d.heure_depart ? ` · ${d.heure_depart.slice(0, 5)}` : ''}
+              {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
+              {d.heure_retour_estimee ? ` · retour ${d.heure_retour_estimee.slice(0, 5)}` : ''}
+              {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
               {d.educateur_responsable ? ` · Resp. ${d.educateur_responsable}` : ''}
             </p>
             {(d.vehicule || d.conducteur) && (
@@ -208,6 +213,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
             <div>
               <label style={st.label}>Heure de départ</label>
               <input style={st.input} type="time" value={form.heure_depart} onChange={e => setForm(f => ({ ...f, heure_depart: e.target.value }))} />
+            </div>
+            <div>
+              <label style={st.label}>Heure de retour estimée</label>
+              <input style={st.input} type="time" value={form.heure_retour_estimee} onChange={e => setForm(f => ({ ...f, heure_retour_estimee: e.target.value }))} />
+            </div>
+            <div>
+              <label style={st.label}>Nb personnes (joueurs + staff)</label>
+              <input style={st.input} type="number" min="0" value={form.nb_personnes} onChange={e => setForm(f => ({ ...f, nb_personnes: e.target.value }))} />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={st.label}>Lieu / destination</label>
