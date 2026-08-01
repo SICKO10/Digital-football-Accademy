@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
@@ -44,9 +44,13 @@ export default function Register() {
     },
   ]
 
-  const [etape, setEtape] = useState(1) // 1 = choix profil | 2 = formulaire
-  const [profilChoisi, setProfil] = useState(null)
-  const [cycle, setCycle] = useState('mensuel') // 'mensuel' | 'annuel'
+  // Présélection depuis un lien externe (ex: page Offres) : /register?profil=joueur_pro&cycle=annuel
+  const [searchParams] = useSearchParams()
+  const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil')) || null
+
+  const [etape, setEtape] = useState(profilPresélectionné ? 2 : 1) // 1 = choix profil | 2 = formulaire
+  const [profilChoisi, setProfil] = useState(profilPresélectionné)
+  const [cycle, setCycle] = useState(searchParams.get('cycle') === 'annuel' ? 'annuel' : 'mensuel')
 
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')

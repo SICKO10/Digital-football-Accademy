@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
-import { STRIPE_LINKS } from '../lib/stripeLinks'
 
 function Home() {
   const navigate = useNavigate()
@@ -12,7 +11,7 @@ function Home() {
         <div style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
         <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <a href="#comment" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>{t('home_comment_marche', lang)}</a>
-          <a href="#offres" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>{t('home_offres', lang)}</a>
+          <span onClick={() => navigate('/offres')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>{t('home_offres', lang)}</span>
           <span onClick={() => navigate('/jogabonito')} style={{ color: '#666', fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
           <div style={{ display: 'flex', gap: '4px' }}>
             {LANGS.map(l => (
@@ -92,7 +91,7 @@ function Home() {
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[t('home_starter_feature1', lang), t('home_starter_feature2', lang), t('home_starter_feature3', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>
-            <a href={STRIPE_LINKS.starter} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: 'white', fontSize: '14px', fontWeight: 600, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</a>
+            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: 'white', fontSize: '14px', fontWeight: 600, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</button>
           </div>
 
           {/* ANNUEL */}
@@ -107,7 +106,7 @@ function Home() {
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[t('home_pro_feature1', lang), t('home_pro_feature2', lang), t('home_pro_feature3', lang), t('home_pro_feature4', lang), t('home_pro_feature5', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>
-            <a href={STRIPE_LINKS.pro} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '14px', fontWeight: 700, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</a>
+            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '14px', fontWeight: 700, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</button>
           </div>
         </div>
       </section>
