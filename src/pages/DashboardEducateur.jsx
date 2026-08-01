@@ -417,7 +417,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
 
 const STATUT_LABELS_ACCUEIL = { present: '✅ Présent', absent: '❌ Absent', blesse: '🤕 Blessé', malade: '🤒 Malade', convoque: '🏆 Convoqué' }
 
-function AccueilEducateur({ joueurs, entrainements, dispoJoueurs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
+function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -446,12 +446,9 @@ function AccueilEducateur({ joueurs, entrainements, dispoJoueurs, disposRecentes
     tauxPresenceSemaine = totalSaisies > 0 ? Math.round((totalPresents / totalSaisies) * 100) : null
   }
 
-  const joueursLiables = joueurs.filter(j => j.joueur_id).length
-  const sondagesOuverts = entrainements.filter(e => e.date >= aujourdHui && !e.sondage_clos)
-  const totalEnAttente = sondagesOuverts.reduce((sum, e) => {
-    const repondus = Object.keys(dispoJoueurs[e.id] || {}).length
-    return sum + Math.max(joueursLiables - repondus, 0)
-  }, 0)
+  const prochainMatch = [...matchs]
+    .filter(m => m.date >= aujourdHui)
+    .sort((a, b) => a.date.localeCompare(b.date))[0] || null
 
   const dernieresReponses = disposRecentes.map(d => {
     const j = joueurs.find(jj => jj.joueur_id === d.joueur_id)
@@ -497,9 +494,18 @@ function AccueilEducateur({ joueurs, entrainements, dispoJoueurs, disposRecentes
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🗳️ Sondages ouverts</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: totalEnAttente > 0 ? '#60a5fa' : '#fff' }}>{totalEnAttente}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>en attente de réponse{totalEnAttente > 1 ? 's' : ''} · {sondagesOuverts.length} sondage{sondagesOuverts.length > 1 ? 's' : ''} ouvert{sondagesOuverts.length > 1 ? 's' : ''}</p>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>⚽ Prochain match</p>
+          {prochainMatch ? (
+            <>
+              <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
+              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
+              <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? '#4ade8020' : '#f9731620', color: prochainMatch.domicile ? '#4ade80' : '#f97316', border: `1px solid ${prochainMatch.domicile ? '#4ade8040' : '#f9731640'}` }}>
+                {prochainMatch.domicile ? '🏠 Domicile' : '🚌 Déplacement'}
+              </span>
+            </>
+          ) : (
+            <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>Aucun match planifié</p>
+          )}
         </div>
       </div>
 
@@ -2161,7 +2167,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
           <AccueilEducateur
             joueurs={joueurs}
             entrainements={entrainements}
-            dispoJoueurs={dispoJoueurs}
+            matchs={matchs}
             disposRecentes={disposRecentes}
             affiliations={affiliations}
             rapportsRecents={rapportsRecents}
