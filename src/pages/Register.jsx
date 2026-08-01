@@ -97,7 +97,7 @@ export default function Register() {
       navigate('/login')
     } else if (profilChoisi.stripeMensuel) {
       const lien = cycle === 'annuel' ? profilChoisi.stripeAnnuel : profilChoisi.stripeMensuel
-      window.location.href = stripeUrl(lien, userId)
+      window.location.href = stripeUrl(lien, userId, email)
     } else {
       navigate('/dashboard')
     }
