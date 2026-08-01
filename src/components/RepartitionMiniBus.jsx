@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { repartirBus } from '../lib/repartitionBus'
+import { normaliserHeure, normaliserCle } from '../lib/excelImport'
 
 const NATURES = [
   { val: 'match', label: 'Match' },
@@ -23,17 +24,6 @@ const ligneVide = () => ({
   heure_retour_estimee: '', lieu_destination: '', nature: 'match', nb_personnes: '',
 })
 
-// Normalise une valeur d'heure éventuellement au format "8h30", "8.30", "830" en "HH:MM"
-const normaliserHeure = (val) => {
-  if (!val) return ''
-  const s = String(val).trim().replace(/[h.]/i, ':')
-  const m = s.match(/^(\d{1,2}):?(\d{2})?$/)
-  if (!m) return ''
-  const h = m[1].padStart(2, '0')
-  const min = (m[2] || '00').padStart(2, '0')
-  return `${h}:${min}`
-}
-
 // Mapping flexible des en-têtes de colonnes Excel/CSV (français, insensible à la casse/accents)
 const ALIAS = {
   equipe: ['equipe', 'team', 'categorie'],
@@ -43,7 +33,6 @@ const ALIAS = {
   lieu_destination: ['lieu', 'destination', 'adversaire'],
   nb_personnes: ['personnes', 'effectif', 'nbpersonnes', 'nbjoueurs'],
 }
-const normaliserCle = (k) => k.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '')
 
 const ligneDepuisObjet = (obj) => {
   const ligne = ligneVide()

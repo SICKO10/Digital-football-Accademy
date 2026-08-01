@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import { normaliserHeure, normaliserCle, trouverValeur } from '../lib/excelImport'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -22,6 +23,17 @@ const creneauVide = (terrainId) => ({
   id: null, terrain_id: terrainId || '', equipe: '', educateur_id: '',
   jour: 'lundi', heure_debut: '', heure_fin: '',
 })
+
+const ALIAS_IMPORT = {
+  terrain: ['terrain'],
+  equipe: ['equipe', 'team'],
+  educateur: ['educateur', 'coach', 'entraineur'],
+  jour: ['jour', 'day'],
+  heure_debut: ['heuredebut', 'debut', 'start'],
+  heure_fin: ['heurefin', 'fin', 'end'],
+}
+
+const normaliserJour = (val) => JOURS.find(j => normaliserCle(val).includes(j.val))?.val || ''
 
 const st = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
@@ -48,6 +60,11 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
   const [liberating, setLiberating] = useState({}) // { [id]: bool }
+
+  const [showImport, setShowImport] = useState(false)
+  const [importLignes, setImportLignes] = useState([])
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState(null)
 
   const chargerTerrains = async () => {
     setLoadingTerrains(true)
@@ -148,6 +165,87 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const supprimerCreneau = async (id) => {
     if (!confirm('Supprimer ce créneau ?')) return
     await supabase.from('planning_terrains').delete().eq('id', id)
+    await chargerPlanning()
+  }
+
+  // ── Import Excel/CSV (dirigeant) ─────────────────────────────────────────────
+  const telechargerTemplate = async () => {
+    const XLSX = await import('xlsx')
+    const headers = ['Terrain', 'Équipe', 'Éducateur', 'Jour (lundi-dimanche)', 'Heure début (HH:MM)', 'Heure fin (HH:MM)']
+    const exemple = [terrains[0]?.nom || 'Terrain principal', 'U15 A', 'Jean Dupont', 'mardi', '18:00', '19:30']
+    const ws = XLSX.utils.aoa_to_sheet([headers, exemple])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Planning terrains')
+    XLSX.writeFile(wb, 'template_planning_terrains.xlsx')
+  }
+
+  const nomEducateurDeLigne = (e) => `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim()
+
+  const handleFichierImport = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImportError(null)
+    setImporting(true)
+    try {
+      const ext = file.name.split('.').pop().toLowerCase()
+      if (!['xlsx', 'xls', 'csv'].includes(ext)) throw new Error('Format non supporté. Utilise un fichier .xlsx ou .csv (depuis Numbers : exporte en .xlsx ou .csv au préalable).')
+      const XLSX = await import('xlsx')
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array' })
+      const feuille = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(feuille, { defval: '' })
+
+      const mapped = rows.map(row => {
+        const terrainNom = trouverValeur(row, ALIAS_IMPORT.terrain)
+        const equipe = trouverValeur(row, ALIAS_IMPORT.equipe)
+        const educateurNom = trouverValeur(row, ALIAS_IMPORT.educateur)
+        const jourBrut = trouverValeur(row, ALIAS_IMPORT.jour)
+        const terrain = terrains.find(t => normaliserCle(t.nom) === normaliserCle(terrainNom))
+        const educateur = educateurs.find(e => normaliserCle(nomEducateurDeLigne(e)) === normaliserCle(educateurNom))
+        return {
+          _id: crypto.randomUUID(),
+          terrain_id: terrain?.id || '',
+          equipe,
+          educateur_id: educateur?.educateur_id || '',
+          jour: normaliserJour(jourBrut) || 'lundi',
+          heure_debut: normaliserHeure(trouverValeur(row, ALIAS_IMPORT.heure_debut)),
+          heure_fin: normaliserHeure(trouverValeur(row, ALIAS_IMPORT.heure_fin)),
+        }
+      }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
+
+      if (mapped.length === 0) throw new Error("Aucune ligne exploitable trouvée dans le fichier.")
+      setImportLignes(mapped)
+    } catch (err) {
+      setImportError(err.message)
+    }
+    setImporting(false)
+    e.target.value = ''
+  }
+
+  const modifierLigneImport = (id, champ, valeur) => {
+    setImportLignes(prev => prev.map(l => (l._id === id ? { ...l, [champ]: valeur } : l)))
+  }
+
+  const supprimerLigneImport = (id) => setImportLignes(prev => prev.filter(l => l._id !== id))
+
+  const validerImport = async () => {
+    const valides = importLignes.filter(l => l.terrain_id && l.heure_debut && l.heure_fin)
+    if (valides.length === 0) return
+    setImporting(true)
+    const payload = valides.map(l => ({
+      club_id: clubId,
+      terrain_id: l.terrain_id,
+      equipe: l.equipe.trim() || null,
+      educateur_id: l.educateur_id || null,
+      jour: l.jour,
+      heure_debut: l.heure_debut,
+      heure_fin: l.heure_fin,
+    }))
+    const { error } = await supabase.from('planning_terrains').insert(payload)
+    setImporting(false)
+    if (error) { alert('Erreur lors de l\'import : ' + error.message); return }
+    setImportLignes([])
+    setShowImport(false)
     await chargerPlanning()
   }
 
@@ -299,10 +397,87 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
               </div>
 
               {estDirigeant && (
-                <button onClick={() => setFormCreneau(creneauVide(terrainActif))}
-                  style={{ marginBottom: '1rem', background: accentColor, color: '#000', border: 'none', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  + Nouveau créneau
-                </button>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => setFormCreneau(creneauVide(terrainActif))}
+                    style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    + Nouveau créneau
+                  </button>
+                  <button onClick={telechargerTemplate}
+                    style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    📥 Télécharger le template
+                  </button>
+                  <button onClick={() => setShowImport(v => !v)}
+                    style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : '#333'}`, color: showImport ? accentColor : '#888', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {showImport ? '✕ Fermer' : '📊 Importer Excel / CSV'}
+                  </button>
+                </div>
+              )}
+
+              {estDirigeant && showImport && (
+                <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                  <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Import Excel / CSV</p>
+                  <p style={{ fontSize: '12px', color: '#555', margin: '0 0 12px' }}>
+                    Colonnes attendues : Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin — utilise le template pour être sûr du format. Depuis Numbers : exporte d'abord en .xlsx ou .csv.
+                  </p>
+                  <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFichierImport} style={{ display: 'none' }} id="input-import-terrains" />
+                  <label htmlFor="input-import-terrains"
+                    style={{ background: accentColor, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: importing ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: importing ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
+                    {importing ? 'Lecture en cours...' : 'Choisir un fichier'}
+                  </label>
+
+                  {importError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {importError}</p>}
+
+                  {importLignes.length > 0 && (
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ overflow: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '760px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Terrain</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Équipe</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Éducateur</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Jour</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Début</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Fin</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importLignes.map(l => (
+                              <tr key={l._id} style={{ borderBottom: '1px solid #141414', background: !l.terrain_id ? '#ef444408' : 'transparent' }}>
+                                <td style={{ padding: '6px 10px' }}>
+                                  <select style={{ ...st.input, borderColor: !l.terrain_id ? '#ef444460' : '#2a2a2a', minWidth: '130px' }} value={l.terrain_id} onChange={e => modifierLigneImport(l._id, 'terrain_id', e.target.value)}>
+                                    <option value="">— aucun —</option>
+                                    {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
+                                  </select>
+                                </td>
+                                <td style={{ padding: '6px 10px' }}><input style={{ ...st.input, minWidth: '100px' }} value={l.equipe} onChange={e => modifierLigneImport(l._id, 'equipe', e.target.value)} /></td>
+                                <td style={{ padding: '6px 10px' }}>
+                                  <select style={{ ...st.input, minWidth: '140px' }} value={l.educateur_id} onChange={e => modifierLigneImport(l._id, 'educateur_id', e.target.value)}>
+                                    <option value="">—</option>
+                                    {educateurs.map(e => <option key={e.educateur_id} value={e.educateur_id}>{nomEducateurDeLigne(e)}</option>)}
+                                  </select>
+                                </td>
+                                <td style={{ padding: '6px 10px' }}>
+                                  <select style={st.input} value={l.jour} onChange={e => modifierLigneImport(l._id, 'jour', e.target.value)}>
+                                    {JOURS.map(j => <option key={j.val} value={j.val}>{j.label}</option>)}
+                                  </select>
+                                </td>
+                                <td style={{ padding: '6px 10px' }}><input style={st.input} type="time" value={l.heure_debut} onChange={e => modifierLigneImport(l._id, 'heure_debut', e.target.value)} /></td>
+                                <td style={{ padding: '6px 10px' }}><input style={st.input} type="time" value={l.heure_fin} onChange={e => modifierLigneImport(l._id, 'heure_fin', e.target.value)} /></td>
+                                <td style={{ padding: '6px 10px' }}><button onClick={() => supprimerLigneImport(l._id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '14px' }}>✕</button></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <button onClick={validerImport} disabled={importing}
+                        style={{ marginTop: '14px', background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: importing ? 0.6 : 1 }}>
+                        {importing ? 'Import en cours...' : `✓ Valider l'import (${importLignes.filter(l => l.terrain_id && l.heure_debut && l.heure_fin).length} créneau${importLignes.length > 1 ? 'x' : ''})`}
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               {formCreneau && (
