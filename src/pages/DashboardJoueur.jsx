@@ -710,12 +710,13 @@ function DashboardJoueur() {
       map[otherId].msgs.push(msg)
     })
     const allConvs = Object.values(map)
-    setConversations(allConvs.filter(c => c.other?.plan !== 'coach'))
-    setConvCoach(allConvs.filter(c => c.other?.plan === 'coach'))
+    const isCoachAnalyseur = (plan) => plan === 'coach' || plan === 'coach_analyseur'
+    setConversations(allConvs.filter(c => !isCoachAnalyseur(c.other?.plan)))
+    setConvCoach(allConvs.filter(c => isCoachAnalyseur(c.other?.plan)))
     // Compter messages coach non lus (reçus après la dernière visite de l'onglet)
     const lastRead = localStorage.getItem(`coach_read_${uid}`) || '1970-01-01'
     const nonLus = data.filter(msg =>
-      msg.sender?.plan === 'coach' &&
+      isCoachAnalyseur(msg.sender?.plan) &&
       msg.receiver_id === uid &&
       new Date(msg.created_at) > new Date(lastRead)
     )
