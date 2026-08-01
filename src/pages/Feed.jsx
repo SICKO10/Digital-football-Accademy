@@ -394,7 +394,7 @@ function Feed() {
             </div>
           ))}
         </div>
-        <button onClick={() => window.location.href = 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01'}
+        <button onClick={() => window.location.href = 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06'}
           style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '15px', borderRadius: '10px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', marginBottom: '12px' }}>
           {t('feed_passer_plan_pro', lang)}
         </button>

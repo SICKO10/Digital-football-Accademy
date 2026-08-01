@@ -3,8 +3,8 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
 
 const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
-  pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
+  starter: 'https://buy.stripe.com/test_cNi3cw3sg10R0q6gGM4ko07', // mensuel — 10€/mois
+  pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // annuel — 100€/an
 }
 
 function Home() {
@@ -89,31 +89,25 @@ function Home() {
         <p style={{ color: '#666', fontSize: '15px', marginBottom: '2.5rem' }}>{t('home_analyses_perso_desc', lang)}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
 
-          {/* STARTER */}
+          {/* MENSUEL */}
           <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{t('home_limite', lang)}</div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Starter</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>59,99EUR{t('home_mois_suffix', lang)}</span>
-              <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '11px', padding: '2px 6px', borderRadius: '10px', fontWeight: 600 }}>-15%</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>49,99EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_mois_suffix', lang)}</span></div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{t('aff_starter_prix', lang).split(' — ')[0]}</h3>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>10EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_mois_suffix', lang)}</span></div>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[t('home_starter_feature1', lang), t('home_starter_feature2', lang), t('home_starter_feature3', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>
             <a href={STRIPE_LINKS.starter} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: 'white', fontSize: '14px', fontWeight: 600, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</a>
           </div>
 
-          {/* PRO */}
+          {/* ANNUEL */}
           <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{t('home_limite', lang)}</div>
+            <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>-17%</div>
             <div style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', display: 'inline-block', marginBottom: '8px', fontWeight: 600 }}>{t('home_plus_populaire', lang)}</div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Pro</h3>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{t('aff_pro_prix', lang).split(' — ')[0]}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>99,99EUR{t('home_mois_suffix', lang)}</span>
-              <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '11px', padding: '2px 6px', borderRadius: '10px', fontWeight: 600 }}>-19%</span>
+              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>120EUR{t('home_an_suffix', lang)}</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>79,99EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_mois_suffix', lang)}</span></div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>100EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_an_suffix', lang)}</span></div>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[t('home_pro_feature1', lang), t('home_pro_feature2', lang), t('home_pro_feature3', lang), t('home_pro_feature4', lang), t('home_pro_feature5', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
             </ul>

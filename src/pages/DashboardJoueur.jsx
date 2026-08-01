@@ -18,8 +18,9 @@ const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Vetera
 const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors']
 
 const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_eVq6oI2occJz0q68ag4ko00',
-  pro: 'https://buy.stripe.com/test_3cIeVe4wk7pfdcSaio4ko01',
+  starter: 'https://buy.stripe.com/test_cNi3cw3sg10R0q6gGM4ko07', // mensuel — 10€/mois
+  pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // annuel — 100€/an
+  analyse_unite: 'https://buy.stripe.com/test_aFabJ27Iw6lbegW4Y44ko05', // analyse à l'unité — 60€
 }
 
 const IconHome = () => (
@@ -1834,7 +1835,7 @@ function DashboardJoueur() {
                 <h2 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Expose ton talent aux recruteurs</h2>
                 <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
-                  {[{ plan: 'Starter', prix: '49,99€/mois', desc: '2 analyses / mois · Reels Jogabonito' }, { plan: 'Pro', prix: '79,99€/mois', desc: '3 analyses / mois · Feed · Visible recruteurs' }].map(p => (
+                  {[{ plan: 'Mensuel', prix: '10€/mois', desc: '2 analyses / mois · Reels Jogabonito' }, { plan: 'Annuel', prix: '100€/an', desc: '3 analyses / mois · Feed · Visible recruteurs' }].map(p => (
                     <div key={p.plan} style={{ background: '#141414', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div><p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '11px', color: '#444' }}>{p.desc}</p></div>
                       <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
@@ -1882,7 +1883,7 @@ function DashboardJoueur() {
               <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Plan Pro requis</h2>
               <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
-              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Plan Pro — 79,99€/mois</button>
+              <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
             </div>
           )}
         </div>
@@ -1900,8 +1901,8 @@ function DashboardJoueur() {
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
           <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer Starter — 49,99€/mois</button>
-            <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer Pro — 79,99€/mois</button>
+            <button onClick={() => window.location.href = STRIPE_LINKS.starter} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
+            <button onClick={() => window.location.href = STRIPE_LINKS.pro} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
           </div>
           <span onClick={handleLogout} style={{ color: '#444', fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
@@ -2249,13 +2250,18 @@ function DashboardJoueur() {
               <div style={{ background: '#1a1a1a', borderRadius: '99px', height: '5px', overflow: 'hidden', marginBottom: '16px' }}>
                 <div style={{ height: '100%', width: `${((profil?.analyses_restantes || 0) / maxAnalyses) * 100}%`, background: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', borderRadius: '99px', transition: 'width 0.6s ease' }} />
               </div>
-              {(profil?.analyses_restantes || 0) > 0 ? (
-                <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
-                  {t('jd_envoyer_video', lang)}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {(profil?.analyses_restantes || 0) > 0 ? (
+                  <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
+                    {t('jd_envoyer_video', lang)}
+                  </button>
+                ) : (
+                  <p style={{ fontSize: '12px', color: '#444', margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
+                )}
+                <button onClick={() => window.location.href = STRIPE_LINKS.analyse_unite} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {t('aff_acheter_analyse_cta', lang)}
                 </button>
-              ) : (
-                <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_quota_epuise', lang)}</p>
-              )}
+              </div>
             </div>
 
             {/* ACTION CARDS */}
