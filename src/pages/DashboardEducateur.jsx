@@ -630,9 +630,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
     const entrainementIds = (data || []).map(e => e.id)
     if (entrainementIds.length > 0) {
-      const { data: dispos } = await supabase.from('disponibilites').select('joueur_id, entrainement_id, statut').in('entrainement_id', entrainementIds)
+      const { data: dispos } = await supabase.from('disponibilites').select('joueur_id, seance_id, statut').in('seance_id', entrainementIds)
       const map = {}
-      dispos?.forEach(d => { if (!map[d.entrainement_id]) map[d.entrainement_id] = {}; map[d.entrainement_id][d.joueur_id] = d.statut })
+      dispos?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
       setDispoJoueurs(map)
     } else {
       setDispoJoueurs({})

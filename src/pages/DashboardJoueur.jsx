@@ -483,11 +483,11 @@ function DashboardJoueur() {
     const entrainementIds = events.filter(e => e.type === 'entrainement').map(e => e.id)
     const matchIds = events.filter(e => e.type === 'match').map(e => e.id)
     const [{ data: disposEnt }, { data: disposMatch }] = await Promise.all([
-      entrainementIds.length > 0 ? supabase.from('disponibilites').select('entrainement_id, statut').eq('joueur_id', userId).in('entrainement_id', entrainementIds) : Promise.resolve({ data: [] }),
+      entrainementIds.length > 0 ? supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId).in('seance_id', entrainementIds) : Promise.resolve({ data: [] }),
       matchIds.length > 0 ? supabase.from('disponibilites').select('match_id, statut').eq('joueur_id', userId).in('match_id', matchIds) : Promise.resolve({ data: [] }),
     ])
     const map = {}
-    disposEnt?.forEach(d => { map[d.entrainement_id] = d.statut })
+    disposEnt?.forEach(d => { map[d.seance_id] = d.statut })
     disposMatch?.forEach(d => { map[d.match_id] = d.statut })
     setDispoMap(map)
     setWidgetDispoEnt(prochainEnt ? map[prochainEnt.id] || null : null)
@@ -503,9 +503,9 @@ function DashboardJoueur() {
     const payload = {
       joueur_id: userId,
       statut,
-      ...(eventType === 'entrainement' ? { entrainement_id: eventId } : { match_id: eventId }),
+      ...(eventType === 'entrainement' ? { seance_id: eventId } : { match_id: eventId }),
     }
-    await supabase.from('disponibilites').upsert(payload, { onConflict: eventType === 'entrainement' ? 'joueur_id,entrainement_id' : 'joueur_id,match_id' })
+    await supabase.from('disponibilites').upsert(payload, { onConflict: eventType === 'entrainement' ? 'joueur_id,seance_id' : 'joueur_id,match_id' })
     setSavingDispo(false)
   }
 
@@ -2159,85 +2159,69 @@ function DashboardJoueur() {
                   <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
                     {t('jd_prochaines_echeances', lang)}
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '6px' }}>
                     {widgetCalendrier.map(ev => {
                       const date = new Date(ev.date + 'T12:00:00')
                       const isToday = date.toDateString() === new Date().toDateString()
                       const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
-                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })
+                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                       const isMatch = ev.type === 'match'
                       const statut = dispoMap[ev.id] || null
                       const sondageClos = ev.sondage_clos
                       const accentColor = isMatch ? '#60a5fa' : '#4ade80'
                       const optStatut = OPTIONS_SONDAGE.find(o => o.val === statut)
+                      const pending = pendingDispo[ev.id]
+                      const selected = pending !== undefined ? pending : statut
+                      const hasUnsavedChoice = pending !== undefined && pending !== statut
 
                       return (
                         <div key={ev.id} style={{
+                          flexShrink: 0, width: '150px', minHeight: '158px',
                           background: isMatch ? 'linear-gradient(135deg, #0d1220 0%, #0f0f0f 100%)' : 'linear-gradient(135deg, #0d1a0d 0%, #0f0f0f 100%)',
                           border: `1px solid ${isToday ? accentColor + '40' : accentColor + '20'}`,
-                          borderRadius: '16px', overflow: 'hidden',
+                          borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px',
                         }}>
-                          <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}30`, padding: '2px 7px', borderRadius: '20px' }}>
-                                  {isMatch ? `⚽ ${t('aff_match_titre', lang)}` : `🏃 ${t('aff_entrainement_titre', lang)}`}
-                                </span>
-                                {isToday && (
-                                  <span style={{ fontSize: '9px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '2px 7px', borderRadius: '20px' }}>
-                                    {t('aff_aujourdhui', lang)}
-                                  </span>
-                                )}
-                                {sondageClos && (
-                                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '2px 7px', borderRadius: '20px' }}>
-                                    🔒 {t('ent_sondage_clos', lang)}
-                                  </span>
-                                )}
-                              </div>
-                              <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.titre}</p>
-                              <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
-                            </div>
-                            {statut && <div style={{ flexShrink: 0, fontSize: '20px' }}>{optStatut?.emoji}</div>}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '11px' }}>{isMatch ? '⚽' : '🏃'}</span>
+                            {isToday && (
+                              <span style={{ fontSize: '8px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '1px 6px', borderRadius: '20px' }}>
+                                {t('aff_aujourdhui', lang)}
+                              </span>
+                            )}
+                            {sondageClos && <span style={{ fontSize: '10px' }} title={t('ent_sondage_clos', lang)}>🔒</span>}
                           </div>
+                          <p style={{ fontWeight: 800, fontSize: '12px', margin: 0, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.titre}</p>
+                          <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
 
-                          {!sondageClos && (() => {
-                            const pending = pendingDispo[ev.id]
-                            const selected = pending !== undefined ? pending : statut
-                            const hasUnsavedChoice = pending !== undefined && pending !== statut
-                            return (
-                              <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '8px 16px 10px', background: '#ffffff04', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                                <div style={{ display: 'flex', gap: '6px' }}>
-                                  {OPTIONS_SONDAGE.map(opt => {
-                                    const isSelected = selected === opt.val
-                                    return (
-                                      <button key={opt.val} title={opt.label}
-                                        onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
-                                        style={{ flexShrink: 0, width: '30px', height: '30px', borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '14px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        {opt.emoji}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                                {hasUnsavedChoice && (
-                                  <button disabled={savingDispo}
-                                    onClick={async () => {
-                                      await repondreDisponibilite(ev.id, ev.type, pending)
-                                      setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
-                                    }}
-                                    style={{ background: '#4ade80', color: '#000', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
-                                    {t('aff_valider', lang)}
-                                  </button>
-                                )}
-                                {statut && !hasUnsavedChoice && <p style={{ fontSize: '10px', color: '#4ade80', margin: 0, flexShrink: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                          {!sondageClos ? (
+                            <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                                {OPTIONS_SONDAGE.map(opt => {
+                                  const isSelected = selected === opt.val
+                                  return (
+                                    <button key={opt.val} title={opt.label}
+                                      onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
+                                      style={{ flexShrink: 0, width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '12px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      {opt.emoji}
+                                    </button>
+                                  )
+                                })}
                               </div>
-                            )
-                          })()}
-
-                          {sondageClos && statut && (
-                            <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
-                              <p style={{ fontSize: '11px', color: '#444' }}>
-                                {t('jd_ta_reponse', lang)} <strong style={{ color: optStatut?.color }}>{optStatut?.emoji} {optStatut?.label}</strong>
-                              </p>
+                              {hasUnsavedChoice && (
+                                <button disabled={savingDispo}
+                                  onClick={async () => {
+                                    await repondreDisponibilite(ev.id, ev.type, pending)
+                                    setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
+                                  }}
+                                  style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '5px 0', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                  {t('aff_valider', lang)}
+                                </button>
+                              )}
+                              {statut && !hasUnsavedChoice && <p style={{ fontSize: '9px', color: '#4ade80', margin: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                            </div>
+                          ) : statut && (
+                            <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
+                              <p style={{ fontSize: '10px', color: optStatut?.color, fontWeight: 700, margin: 0 }}>{optStatut?.emoji} {optStatut?.label}</p>
                             </div>
                           )}
                         </div>

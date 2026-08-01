@@ -2,13 +2,13 @@
 CREATE TABLE IF NOT EXISTS disponibilites (
   id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   joueur_id        UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  entrainement_id  UUID REFERENCES entrainements(id) ON DELETE CASCADE,
+  seance_id        UUID REFERENCES entrainements(id) ON DELETE CASCADE,
   match_id         UUID REFERENCES matchs_equipe(id) ON DELETE CASCADE,
   statut           TEXT CHECK (statut IN ('present', 'absent', 'blesse', 'malade', 'convoque')) NOT NULL,
   commentaire      TEXT DEFAULT '',
   created_at       TIMESTAMPTZ DEFAULT now(),
   updated_at       TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(joueur_id, entrainement_id),
+  UNIQUE(joueur_id, seance_id),
   UNIQUE(joueur_id, match_id)
 );
 
