@@ -9,6 +9,8 @@ import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
+import PlanningTerrains from '../components/PlanningTerrains'
+import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
@@ -438,7 +440,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
+function AccueilEducateur({ clubId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -487,6 +489,8 @@ function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affi
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
+
+      {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
@@ -2040,6 +2044,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       { key: 'stats', label: t('nav_stats', lang), icon: <IcoChart /> },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
+      { key: 'terrains', label: t('nav_terrains', lang), icon: <IcoCalendar /> },
     ] },
     { titre: t('section_entrainement', lang), items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
@@ -2192,6 +2197,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {/* ===== ACCUEIL ===== */}
         {activeSection === 'accueil' && (
           <AccueilEducateur
+            clubId={clubAffiliation?.club_id}
             joueurs={joueurs}
             entrainements={entrainements}
             matchs={matchs}
@@ -3502,6 +3508,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>
               <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.</p>
+            </div>
+          )
+        )}
+
+        {/* ===== TERRAINS ===== */}
+        {activeSection === 'terrains' && (
+          clubAffiliation?.club_id ? (
+            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor="#60a5fa" />
+          ) : (
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ {t('nav_terrains', lang)}</h1>
+              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.</p>
             </div>
           )
         )}

@@ -15,6 +15,7 @@ export const T = {
   nav_stats:            { fr: 'Stats joueurs',        en: 'Player stats',      pt: 'Estatísticas',      es: 'Estadísticas',      it: 'Statistiche',       de: 'Spielerstatistik'  },
   nav_competition:      { fr: 'Compétition',          en: 'Competition',       pt: 'Competição',        es: 'Competición',       it: 'Competizione',      de: 'Wettbewerb'        },
   nav_deplacements:     { fr: 'Déplacements',         en: 'Travel',            pt: 'Deslocações',       es: 'Desplazamientos',   it: 'Trasferte',         de: 'Fahrten'           },
+  nav_terrains:         { fr: 'Terrains',             en: 'Pitches',           pt: 'Campos',            es: 'Campos',            it: 'Campi',             de: 'Plätze'            },
   nav_entrainements:    { fr: 'Entraînements',        en: 'Training',          pt: 'Treinos',           es: 'Entrenamientos',    it: 'Allenamenti',       de: 'Training'          },
   nav_seances:          { fr: 'Séances',              en: 'Sessions',          pt: 'Sessões',           es: 'Sesiones',          it: 'Sedute',            de: 'Einheiten'         },
   nav_prep_physique:    { fr: 'Préparation physique', en: 'Physical prep',     pt: 'Preparação física', es: 'Preparación física',it: 'Prep. fisica',      de: 'Phys. Vorbereitung'},

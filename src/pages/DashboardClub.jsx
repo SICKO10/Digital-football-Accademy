@@ -8,6 +8,8 @@ import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
 import RepartitionMiniBus from '../components/RepartitionMiniBus'
+import PlanningTerrains from '../components/PlanningTerrains'
+import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
@@ -109,7 +111,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   )
 }
 
-function AccueilClub({ categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, setActiveCategorie, setActiveTab, lang }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, setActiveCategorie, setActiveTab, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -145,6 +147,8 @@ function AccueilClub({ categories, educateursAcceptes, educateursEnAttente, joue
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏠 {t('club_accueil', lang)}</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
+
+      <TerrainsLiberesWidget clubId={clubId} accentColor="#4ade80" titre="Terrains disponibles ce jour" />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
@@ -1042,6 +1046,7 @@ export default function DashboardClub() {
             {(activeCategorie === 'sportif' ? [
               { id: 'categories', label: `📋 ${t('club_tab_categories', lang)}` },
               { id: 'classements', label: `🏆 ${t('club_tab_classements', lang)}` },
+              { id: 'terrains', label: '🏟️ Planning des terrains' },
               { id: 'recrutement', label: `🔍 ${t('club_tab_recrutement', lang)}` },
               { id: 'educateurs', label: `👥 ${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
             ] : [
@@ -1062,6 +1067,7 @@ export default function DashboardClub() {
         {/* ── ACCUEIL ── */}
         {activeTab === 'accueil' && (
           <AccueilClub
+            clubId={clubId}
             categories={categories}
             educateursAcceptes={educateursAcceptes}
             educateursEnAttente={educateursEnAttente}
@@ -1153,6 +1159,11 @@ export default function DashboardClub() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── PLANNING DES TERRAINS ── */}
+        {activeTab === 'terrains' && (
+          <PlanningTerrains clubId={clubId} mode="dirigeant" />
         )}
 
         {/* ── ÉDUCATEURS ── */}
