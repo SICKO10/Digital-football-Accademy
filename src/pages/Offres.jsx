@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { STRIPE_LINKS_CLUB } from '../lib/stripeLinks'
 
@@ -19,43 +18,42 @@ function Feature({ children }) {
   return <div style={st.feature}><span style={{ color: '#4ade80', flexShrink: 0 }}>✓</span> {children}</div>
 }
 
-// Section mensuel/annuel avec une seule liste de fonctionnalités (éducateur, recruteur).
-function OffreCycle({ emoji, titre, color, features, profilId }) {
+// Cartes Mensuel + Annuel côte à côte, même liste de fonctionnalités pour les
+// deux (éducateur, recruteur) — même layout 2 colonnes que la section Joueur.
+function OffrePro({ emoji, titre, color, features, profilId }) {
   const navigate = useNavigate()
-  const [cycle, setCycle] = useState('mensuel')
   return (
-    <div style={st.card(color, true)}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
-        <span style={{ fontSize: '28px' }}>{emoji}</span>
-        <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+      {/* Mensuel */}
+      <div style={st.card(color, false)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <span style={{ fontSize: '24px' }}>{emoji}</span>
+          <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
+        </div>
+        <p style={{ fontSize: '11px', color: '#666', fontWeight: 700, margin: '0 0 10px' }}>MENSUEL</p>
+        <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: '#555', fontWeight: 400 }}>/mois</span></p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+          {features.map(f => <Feature key={f}>{f}</Feature>)}
+        </div>
+        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=mensuel`)} style={st.cta(null, false)}>Commencer — 10€/mois</button>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
-        {[
-          { key: 'mensuel', label: 'Mensuel', prix: '10€/mois', sous: null },
-          { key: 'annuel', label: 'Annuel', prix: '100€/an', sous: '2 mois offerts' },
-        ].map(opt => (
-          <button key={opt.key} onClick={() => setCycle(opt.key)}
-            style={{
-              flex: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textAlign: 'left', position: 'relative',
-              background: cycle === opt.key ? color + '15' : '#0a0a0a',
-              border: `2px solid ${cycle === opt.key ? color : '#1f1f1f'}`,
-              borderRadius: '10px', padding: '10px 12px',
-            }}>
-            {opt.sous && <span style={{ position: 'absolute', top: '-8px', right: '8px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '20px' }}>{opt.sous}</span>}
-            <p style={{ margin: 0, fontSize: '11px', color: cycle === opt.key ? color : '#666', fontWeight: 700 }}>{opt.label}</p>
-            <p style={{ margin: '2px 0 0', fontSize: '15px', fontWeight: 800, color }}>{opt.prix}</p>
-          </button>
-        ))}
+      {/* Annuel */}
+      <div style={st.card(color, true)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <span style={{ fontSize: '24px' }}>{emoji}</span>
+          <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '11px', color, fontWeight: 700, margin: 0 }}>ANNUEL</p>
+          <span style={{ background: `${color}20`, color, fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>2 mois offerts</span>
+        </div>
+        <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>100€<span style={{ fontSize: '14px', color: '#555', fontWeight: 400 }}>/an</span></p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+          {features.map(f => <Feature key={f}>{f}</Feature>)}
+        </div>
+        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=annuel`)} style={st.cta(color, true)}>Commencer — 100€/an</button>
       </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-        {features.map(f => <Feature key={f}>{f}</Feature>)}
-      </div>
-
-      <button onClick={() => navigate(`/register?profil=${profilId}&cycle=${cycle}`)} style={st.cta(color, true)}>
-        Commencer — {cycle === 'annuel' ? '100€/an' : '10€/mois'}
-      </button>
     </div>
   )
 }
@@ -145,8 +143,8 @@ export default function Offres() {
         <div style={st.eyebrow}>ÉDUCATEURS</div>
         <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
         <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques — tout au même endroit.</p>
-        <div style={{ maxWidth: '420px' }}>
-          <OffreCycle emoji="🎓" titre="Éducateur" color="#60a5fa" profilId="educateur" features={[
+        <div style={{ maxWidth: '680px' }}>
+          <OffrePro emoji="🎓" titre="Éducateur" color="#60a5fa" profilId="educateur" features={[
             'Gestion de l\'effectif',
             'Suivi des présences',
             'Analyse joueurs',
@@ -165,8 +163,8 @@ export default function Offres() {
         <div style={st.eyebrow}>SCOUTS / RECRUTEURS</div>
         <h2 style={st.titre}>Trouve tes prochains talents</h2>
         <p style={st.sousTitre}>Recherche par profil, messagerie directe avec les joueurs et statistiques automatisées.</p>
-        <div style={{ maxWidth: '420px' }}>
-          <OffreCycle emoji="🔍" titre="Scout / Recruteur" color="#f97316" profilId="scout" features={[
+        <div style={{ maxWidth: '680px' }}>
+          <OffrePro emoji="🔍" titre="Scout / Recruteur" color="#f97316" profilId="scout" features={[
             'Accès à la base de joueurs',
             'Trouver des joueurs par profil (poste, niveau, région…)',
             'Messagerie directe avec les joueurs',
