@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import PlanningWeekEnd from './PlanningWeekEnd'
 
 const NATURES = [
   { val: 'match', label: '⚽ Match', emoji: '⚽' },
@@ -24,6 +25,7 @@ const st = {
 const natureInfo = (val) => NATURES.find(n => n.val === val) || NATURES[3]
 
 export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
+  const [vue, setVue] = useState('liste') // 'liste' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
@@ -182,13 +184,26 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
           <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🚌 Déplacements</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
-        <button onClick={() => setShowForm(v => !v)}
-          style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
-        </button>
+        {vue === 'liste' && (
+          <button onClick={() => setShowForm(v => !v)}
+            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
+        {[['liste', 'Liste'], ['weekend', 'Planning week-end']].map(([val, label]) => (
+          <button key={val} onClick={() => setVue(val)}
+            style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: vue === val ? accentColor : '#1a1a1a', color: vue === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
+
+      {vue === 'liste' && showForm && (
         <div style={{ ...st.card, marginBottom: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
             <div>
@@ -262,24 +277,26 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
         </div>
       )}
 
-      {loading ? (
-        <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-      ) : (
-        <>
-          <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>📅 À venir {aVenir.length > 0 ? `(${aVenir.length})` : ''}</p>
-          {aVenir.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun déplacement à venir.</p>
-          ) : (
-            <div style={{ marginBottom: '1.5rem' }}>{aVenir.map(renderCard)}</div>
-          )}
+      {vue === 'liste' && (
+        loading ? (
+          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+        ) : (
+          <>
+            <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>📅 À venir {aVenir.length > 0 ? `(${aVenir.length})` : ''}</p>
+            {aVenir.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun déplacement à venir.</p>
+            ) : (
+              <div style={{ marginBottom: '1.5rem' }}>{aVenir.map(renderCard)}</div>
+            )}
 
-          <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>🗂️ Historique {historique.length > 0 ? `(${historique.length})` : ''}</p>
-          {historique.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement dans l'historique.</p>
-          ) : (
-            <div>{historique.map(renderCard)}</div>
-          )}
-        </>
+            <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>🗂️ Historique {historique.length > 0 ? `(${historique.length})` : ''}</p>
+            {historique.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement dans l'historique.</p>
+            ) : (
+              <div>{historique.map(renderCard)}</div>
+            )}
+          </>
+        )
       )}
     </div>
   )

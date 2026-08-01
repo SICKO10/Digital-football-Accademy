@@ -11,6 +11,7 @@ import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSai
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
+import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { useLang } from '../hooks/useLang'
@@ -441,7 +442,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -492,6 +493,7 @@ function AccueilEducateur({ clubId, joueurs, entrainements, matchs, disposRecent
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
+      <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
@@ -2201,6 +2203,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {activeSection === 'accueil' && (
           <AccueilEducateur
             clubId={clubAffiliation?.club_id}
+            userId={userId}
             joueurs={joueurs}
             entrainements={entrainements}
             matchs={matchs}

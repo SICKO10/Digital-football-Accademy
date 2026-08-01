@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import { repartirBus } from '../lib/repartitionBus'
 
 const NATURES = [
   { val: 'match', label: 'Match' },
@@ -21,13 +22,6 @@ const ligneVide = () => ({
   equipe: '', educateur_responsable: '', date_depart: '', heure_depart: '',
   heure_retour_estimee: '', lieu_destination: '', nature: 'match', nb_personnes: '',
 })
-
-const toMinutes = (hhmm) => {
-  if (!hhmm) return null
-  const [h, m] = String(hhmm).split(':').map(Number)
-  if (Number.isNaN(h)) return null
-  return h * 60 + (m || 0)
-}
 
 // Normalise une valeur d'heure éventuellement au format "8h30", "8.30", "830" en "HH:MM"
 const normaliserHeure = (val) => {
@@ -151,22 +145,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
 
   // ── Étape 2 : répartition ───────────────────────────────────────────────────
   const repartir = () => {
-    const MARGE_MIN = 30
-    const flotte = vehicules.map(v => ({ ...v, disponibleDepuis: 0 }))
-    const sorted = [...lignes].sort((a, b) => (toMinutes(a.heure_depart) ?? 0) - (toMinutes(b.heure_depart) ?? 0))
-    const resultat = sorted.map(l => {
-      const depart = toMinutes(l.heure_depart)
-      const nbPersonnes = l.nb_personnes !== '' ? parseInt(l.nb_personnes) : 0
-      const candidat = depart != null
-        ? flotte.find(v => v.capacite >= nbPersonnes && v.disponibleDepuis + MARGE_MIN <= depart)
-        : null
-      if (candidat) {
-        candidat.disponibleDepuis = toMinutes(l.heure_retour_estimee) ?? depart
-        return { ...l, vehicule: candidat.plaque, conducteur: '', statut: 'assigne' }
-      }
-      return { ...l, vehicule: '', conducteur: '', statut: 'insuffisant' }
-    })
-    setSuggestions(resultat)
+    setSuggestions(repartirBus(lignes, vehicules))
   }
 
   const modifierSuggestion = (id, champ, valeur) => {
@@ -174,6 +153,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
   }
 
   const nbInsuffisants = (suggestions || []).filter(s => s.statut === 'insuffisant' && !s.vehicule).length
+  const nbCombines = (suggestions || []).filter(s => s.statut === 'combine').length
 
   // ── Étape 3 : publication ───────────────────────────────────────────────────
   const publierPlanning = async () => {
@@ -343,6 +323,11 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
 
           {suggestions && (
             <div style={{ marginTop: '18px' }}>
+              {nbCombines > 0 && (
+                <p style={{ color: accentColor, fontSize: '13px', marginBottom: '8px' }}>
+                  🔀 {nbCombines} déplacement{nbCombines > 1 ? 's' : ''} nécessite{nbCombines > 1 ? 'nt' : ''} deux bus combinés (capacité insuffisante sur un seul véhicule).
+                </p>
+              )}
               {nbInsuffisants > 0 && (
                 <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>
                   ⚠️ Bus insuffisants pour {nbInsuffisants} déplacement{nbInsuffisants > 1 ? 's' : ''} — assigne un véhicule manuellement ci-dessous ou ajoute un bus au parc.
@@ -362,14 +347,15 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
                   </thead>
                   <tbody>
                     {suggestions.map(s => (
-                      <tr key={s._id} style={{ borderBottom: '1px solid #141414', background: s.statut === 'insuffisant' && !s.vehicule ? '#ef444408' : 'transparent' }}>
+                      <tr key={s._id} style={{ borderBottom: '1px solid #141414', background: s.statut === 'insuffisant' ? '#ef444408' : s.statut === 'combine' ? accentColor + '08' : 'transparent' }}>
                         <td style={st.td}>{s.equipe || '—'}</td>
                         <td style={st.td}>{s.heure_depart || '—'}</td>
                         <td style={st.td}>{s.heure_retour_estimee || '—'}</td>
                         <td style={st.td}>{s.lieu_destination || '—'}</td>
                         <td style={st.td}>
-                          <select style={{ ...st.input, borderColor: !s.vehicule ? '#ef444460' : '#2a2a2a' }} value={s.vehicule} onChange={e => modifierSuggestion(s._id, 'vehicule', e.target.value)}>
-                            <option value="">— aucun —</option>
+                          {s.statut === 'combine' && <p style={{ margin: '0 0 4px', fontSize: '11px', color: accentColor, fontWeight: 600 }}>🔀 {s.vehicule}</p>}
+                          <select style={{ ...st.input, borderColor: !s.vehicule ? '#ef444460' : '#2a2a2a' }} value={s.statut === 'combine' ? '' : s.vehicule} onChange={e => modifierSuggestion(s._id, 'vehicule', e.target.value)}>
+                            <option value="">{s.statut === 'combine' ? '— remplacer par un seul bus —' : '— aucun —'}</option>
                             {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
                           </select>
                         </td>
