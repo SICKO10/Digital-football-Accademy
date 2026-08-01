@@ -38,6 +38,13 @@ export const STRIPE_LINKS_CLUB = {
 
 export const CONTACT_EMAIL = 'contact@digital-football.fr'
 
-// Permet au webhook Stripe (supabase/functions/stripe-webhook) d'identifier
-// le profil à activer/créditer après paiement.
-export const stripeUrl = (base, uid) => uid ? `${base}?client_reference_id=${uid}` : base
+// client_reference_id permet au webhook Stripe (supabase/functions/stripe-webhook)
+// d'identifier le profil à activer/créditer après paiement. prefilled_email
+// pré-remplit le champ email du checkout Stripe pour éviter une ressaisie.
+export const stripeUrl = (base, uid, email) => {
+  const params = new URLSearchParams()
+  if (uid) params.set('client_reference_id', uid)
+  if (email) params.set('prefilled_email', email)
+  const qs = params.toString()
+  return qs ? `${base}?${qs}` : base
+}
