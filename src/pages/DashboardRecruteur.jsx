@@ -127,7 +127,7 @@ export default function DashboardRecruteur() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
       setRecruteurId(user.id);
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (!profile || profile.plan !== "recruteur") { navigate("/"); return; }
       setRecruteur(profile);
       setProfilEdit({ prenom: profile.prenom || '', nom: profile.nom || '', club: profile.club || '', region: profile.region || '', type_recruteur: profile.type_recruteur || '', description: profile.description || '', recherche_profil: profile.recherche_profil || '' });

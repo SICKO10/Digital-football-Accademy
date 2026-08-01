@@ -36,7 +36,7 @@ function SmartDashboard() {
       // profiles.plan n'autorise pas la valeur 'coach', cf. lib/coachAdmin.js.
       if (COACH_ADMIN_EMAILS.includes(user.email)) { setDest('/coach'); return }
       Promise.all([
-        supabase.from('profiles').select('plan').eq('id', user.id).single(),
+        supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
         supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),
         supabase.from('dirigeant_acces').select('id').eq('dirigeant_id', user.id).eq('statut', 'accepte').maybeSingle(),
       ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }]) => {

@@ -71,15 +71,23 @@ export default function Register() {
     setLoading(true)
     setErreur('')
 
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // "scout" est le libellé marketing du profil recruteur (cf. lib/stripeLinks.js) —
+    // le plan stocké reste "recruteur" partout ailleurs dans l'appli.
+    const plan = profilChoisi.id === 'scout' ? 'recruteur' : profilChoisi.id
+
+    // Passé en metadata pour que le trigger on_auth_user_created (voir
+    // supabase_profil_auto_creation.sql) puisse créer la ligne profiles
+    // même si signUp() ne renvoie pas de session active (confirmation email
+    // requise) — l'upsert ci-dessous ne s'exécuterait pas dans ce cas.
+    const { data, error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { prenom: prenom.trim(), nom: nom.trim(), plan } },
+    })
     if (error) { setErreur(error.message); setLoading(false); return }
 
     const userId = data.user?.id
     if (userId) {
-      // "scout" est le libellé marketing du profil recruteur (cf. lib/stripeLinks.js) —
-      // le plan stocké reste "recruteur" partout ailleurs dans l'appli.
-      const plan = profilChoisi.id === 'scout' ? 'recruteur' : profilChoisi.id
-      await supabase.from('profiles').upsert({
+      const { error: profilErr } = await supabase.from('profiles').upsert({
         id: userId,
         prenom: prenom.trim(),
         nom: nom.trim(),
@@ -88,6 +96,7 @@ export default function Register() {
         abonnement_actif: !!profilChoisi.gratuit,
         abonnement_debut: profilChoisi.gratuit ? new Date().toISOString() : null,
       })
+      if (profilErr) console.error('Erreur création profil (le trigger auto devrait prendre le relais):', profilErr)
     }
 
     setLoading(false)

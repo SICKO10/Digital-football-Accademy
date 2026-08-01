@@ -28,7 +28,14 @@ function RegisterRecruteur() {
       return
     }
 
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // Passé en metadata pour que le trigger on_auth_user_created (voir
+    // supabase_profil_auto_creation.sql) puisse créer la ligne profiles
+    // même si signUp() ne renvoie pas de session active (confirmation email
+    // requise) — l'upsert ci-dessous ne s'exécuterait pas dans ce cas.
+    const { data, error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { prenom, nom, plan: typeCompte, club } },
+    })
 
     if (error) {
       setErreur(error.message)
@@ -36,7 +43,7 @@ function RegisterRecruteur() {
       return
     }
 
-    await supabase.from('profiles').insert({
+    const { error: profilErr } = await supabase.from('profiles').upsert({
       id: data.user.id,
       email,
       prenom,
@@ -47,6 +54,7 @@ function RegisterRecruteur() {
       abonnement_actif: false,
       club,
     })
+    if (profilErr) console.error('Erreur création profil (le trigger auto devrait prendre le relais):', profilErr)
 
     setLoading(false)
 
