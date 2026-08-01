@@ -13,8 +13,8 @@ export const STRIPE_LINKS = {
 }
 
 export const STRIPE_LINKS_EDU = {
-  edu_mensuel: 'https://buy.stripe.com/test_9B66oI4wk8tjfl03U04ko04', // 10€/mois
-  edu_annuel: 'https://buy.stripe.com/test_8x28wQ4wk9xn1uaduA4ko03', // 100€/an
+  edu_mensuel: 'https://buy.stripe.com/test_3cI14o2oc8tj7Sy9ek4ko0p', // 10€/mois
+  edu_annuel: 'https://buy.stripe.com/test_bJeeVegf2gZPfl01LS4ko0o', // 100€/an
 }
 
 // Recruteur (interne : plan === 'recruteur'). "Scout" est le libellé marketing
