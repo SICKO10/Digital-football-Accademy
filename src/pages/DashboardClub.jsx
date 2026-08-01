@@ -107,6 +107,160 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   )
 }
 
+function AccueilClub({ categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, setActiveCategorie, setActiveTab, lang }) {
+  const aujourdHui = new Date().toISOString().split('T')[0]
+
+  const totalLicencies = joueursClub.length
+  const nbEquipes = categories.length
+  const nbEducateurs = educateursAcceptes.length
+  const nbEnAttente = educateursEnAttente.length
+
+  const catLabel = (educateurId) => {
+    const cat = categories.find(c => c.educateur_id === educateurId)
+    return cat ? `${cat.nom}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
+  }
+
+  const derniersResultats = matchsClub
+    .filter(m => m.date <= aujourdHui && m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5)
+
+  const prochainsMatchs = matchsClub
+    .filter(m => m.date > aujourdHui)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5)
+
+  const joueursRecents = joueursClub.slice(0, 5)
+
+  const ACTIONS = [
+    { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
+    { emoji: '📧', label: t('club_inviter_educateur_titre', lang), categorie: 'sportif', tab: 'educateurs' },
+    { emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' },
+    { emoji: '🏢', label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
+  ]
+
+  return (
+    <div>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏠 {t('club_accueil', lang)}</h1>
+      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
+
+      {/* Widgets résumé */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🎽 {t('club_licencies', lang)}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalLicencies}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>⚽ {t('club_equipes_actives', lang)}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{nbEquipes}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>👥 {t('club_tab_educateurs', lang)}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{nbEducateurs}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>⏳ {t('club_demandes_affiliation', lang)}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? '#4ade80' : '#fff' }}>{nbEnAttente}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
+        </div>
+      </div>
+
+      {/* Actions rapides */}
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_actions_rapides', lang)}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
+        {ACTIONS.map(a => (
+          <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#4ade8040'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            <span style={{ fontSize: '26px' }}>{a.emoji}</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Fil d'activité récente */}
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_activite_recente', lang)}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>⚽ {t('club_derniers_resultats', lang)}</p>
+          {derniersResultats.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_resultat_accueil', lang)}</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {derniersResultats.map(m => {
+                const nous = parseInt(m.score_nous)
+                const eux = parseInt(m.score_eux)
+                const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
+                const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#ef4444' : '#f59e0b'
+                const label = catLabel(m.educateur_id)
+                return (
+                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || '—'}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
+                      </div>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '13px', color: couleur, whiteSpace: 'nowrap' }}>{m.score_nous} - {m.score_eux}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>📅 {t('club_prochains_matchs', lang)}</p>
+          {prochainsMatchs.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_match_venir', lang)}</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {prochainsMatchs.map(m => {
+                const label = catLabel(m.educateur_id)
+                return (
+                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.adversaire || '—'}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.heure ? ` · ${m.heure}` : ''}</p>
+                    </div>
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? '#4ade8020' : '#60a5fa20', color: m.domicile ? '#4ade80' : '#60a5fa', border: `1px solid ${m.domicile ? '#4ade8040' : '#60a5fa40'}` }}>
+                      {m.domicile ? `🏠 ${t('comp_domicile', lang)}` : `🚌 ${t('club_deplacement', lang)}`}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>🆕 {t('club_nouveaux_joueurs', lang)}</p>
+          {joueursRecents.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_joueur_recent', lang)}</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {joueursRecents.map(j => (
+                <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}{j.poste ? ` — ${j.poste}` : ''}</p>
+                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{j.created_at ? new Date(j.created_at).toLocaleDateString(localeOf(lang)) : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardClub() {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
@@ -114,8 +268,8 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [activeTab, setActiveTab] = useState('categories')
-  const [activeCategorie, setActiveCategorie] = useState('sportif')
+  const [activeTab, setActiveTab] = useState('accueil')
+  const [activeCategorie, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
   const [autreRole, setAutreRole] = useState(null) // 'educateur' | 'joueur' | null — double accès staff + autre plan
   const [saisonActuelle] = useState(() => {
@@ -180,6 +334,10 @@ export default function DashboardClub() {
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
   const [loadingMatchs, setLoadingMatchs] = useState(false)
   const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
+
+  // Accueil (club-wide, tous éducateurs affiliés confondus)
+  const [matchsClub, setMatchsClub] = useState([])
+  const [joueursClub, setJoueursClub] = useState([])
 
   // Budget
   const [budgetEntries, setBudgetEntries] = useState([])
@@ -289,8 +447,23 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId)])
     setLoading(false)
+  }
+
+  // Auto-suffisante (ne dépend pas de l'état categories/educateursAffilies, potentiellement
+  // pas encore résolu vu qu'elle tourne en parallèle des autres chargements dans init()).
+  const chargerAccueilData = async (uid) => {
+    const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
+    const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) { setMatchsClub([]); setJoueursClub([]); return }
+
+    const [{ data: matchs }, { data: joueurs }] = await Promise.all([
+      supabase.from('matchs_equipe').select('*').in('educateur_id', educateurIds).order('date', { ascending: false }),
+      supabase.from('equipe_joueurs').select('id, prenom, nom, poste, educateur_id, created_at').in('educateur_id', educateurIds).order('created_at', { ascending: false }),
+    ])
+    setMatchsClub(matchs || [])
+    setJoueursClub(joueurs || [])
   }
 
   const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -796,6 +969,7 @@ export default function DashboardClub() {
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 
   const categoriesVisibles = [
+    { id: 'accueil', label: `🏠 ${t('club_accueil', lang)}`, defaultTab: 'accueil', visible: true },
     { id: 'sportif', label: `⚽ ${t('club_sportif', lang)}`, defaultTab: 'categories',
       visible: ['president', 'directeur_sportif'].includes(monRole) },
     { id: 'administratif', label: `🏢 ${t('club_administratif', lang)}`, defaultTab: 'sponsors',
@@ -860,24 +1034,40 @@ export default function DashboardClub() {
           ))}
         </div>
 
-        {/* Niveau 2 — sous-onglets */}
-        <div style={st.tabs}>
-          {(activeCategorie === 'sportif' ? [
-            { id: 'categories', label: `📋 ${t('club_tab_categories', lang)}` },
-            { id: 'classements', label: `🏆 ${t('club_tab_classements', lang)}` },
-            { id: 'recrutement', label: `🔍 ${t('club_tab_recrutement', lang)}` },
-            { id: 'educateurs', label: `👥 ${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
-          ] : [
-            { id: 'sponsors', label: `🤝 ${t('club_tab_sponsors', lang)}` },
-            { id: 'profil', label: `⭐ ${t('club_tab_profil', lang)}` },
-            ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: `💰 ${t('club_tab_budget', lang)}` }] : []),
-            ...(monRole === 'president' ? [{ id: 'staff', label: `👥 ${t('club_tab_staff', lang)}` }] : []),
-          ]).map(tab => (
-            <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Niveau 2 — sous-onglets (pas de sous-onglets sur l'accueil) */}
+        {activeCategorie !== 'accueil' && (
+          <div style={st.tabs}>
+            {(activeCategorie === 'sportif' ? [
+              { id: 'categories', label: `📋 ${t('club_tab_categories', lang)}` },
+              { id: 'classements', label: `🏆 ${t('club_tab_classements', lang)}` },
+              { id: 'recrutement', label: `🔍 ${t('club_tab_recrutement', lang)}` },
+              { id: 'educateurs', label: `👥 ${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
+            ] : [
+              { id: 'sponsors', label: `🤝 ${t('club_tab_sponsors', lang)}` },
+              { id: 'profil', label: `⭐ ${t('club_tab_profil', lang)}` },
+              ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: `💰 ${t('club_tab_budget', lang)}` }] : []),
+              ...(monRole === 'president' ? [{ id: 'staff', label: `👥 ${t('club_tab_staff', lang)}` }] : []),
+            ]).map(tab => (
+              <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── ACCUEIL ── */}
+        {activeTab === 'accueil' && (
+          <AccueilClub
+            categories={categories}
+            educateursAcceptes={educateursAcceptes}
+            educateursEnAttente={educateursEnAttente}
+            joueursClub={joueursClub}
+            matchsClub={matchsClub}
+            setActiveCategorie={setActiveCategorie}
+            setActiveTab={setActiveTab}
+            lang={lang}
+          />
+        )}
 
         {/* ── CATÉGORIES ── */}
         {activeTab === 'categories' && (

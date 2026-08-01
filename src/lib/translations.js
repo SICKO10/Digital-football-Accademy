@@ -708,6 +708,25 @@ export const T = {
   club_educateur_affilie_sing: { fr: 'éducateur affilié', en: 'affiliated coach', pt: 'educador afiliado', es: 'entrenador afiliado', it: 'educatore affiliato', de: 'angeschlossener Trainer' },
   club_educateur_affilie_plur: { fr: 'éducateurs affiliés', en: 'affiliated coaches', pt: 'educadores afiliados', es: 'entrenadores afiliados', it: 'educatori affiliati', de: 'angeschlossene Trainer' },
 
+  // ── Dashboard club — Accueil ──────────────────────────────────────────────────
+  club_accueil:              { fr: 'Accueil',                   en: 'Home',                   pt: 'Início',                es: 'Inicio',                  it: 'Home',                  de: 'Startseite'           },
+  club_accueil_sous_titre:   { fr: "Vue d'ensemble du club",    en: 'Club overview',          pt: 'Visão geral do clube',  es: 'Resumen del club',        it: 'Panoramica del club',   de: 'Vereinsübersicht'     },
+  club_licencies:            { fr: 'Licenciés',                 en: 'Registered players',     pt: 'Licenciados',           es: 'Licenciados',             it: 'Tesserati',             de: 'Lizenzspieler'        },
+  club_toutes_equipes:       { fr: 'toutes équipes',            en: 'all teams',              pt: 'todas as equipas',      es: 'todos los equipos',       it: 'tutte le squadre',      de: 'alle Teams'           },
+  club_equipes_actives:      { fr: 'Équipes actives',           en: 'Active teams',           pt: 'Equipas ativas',        es: 'Equipos activos',         it: 'Squadre attive',        de: 'Aktive Teams'         },
+  club_demandes_affiliation: { fr: "Demandes d'affiliation",    en: 'Affiliation requests',   pt: 'Pedidos de afiliação',  es: 'Solicitudes de afiliación', it: 'Richieste di affiliazione', de: 'Beitrittsanfragen' },
+  club_en_attente:           { fr: 'en attente',                en: 'pending',                pt: 'em espera',             es: 'en espera',               it: 'in attesa',             de: 'ausstehend'           },
+  club_actions_rapides:      { fr: 'Actions rapides',           en: 'Quick actions',          pt: 'Ações rápidas',         es: 'Acciones rápidas',        it: 'Azioni rapide',         de: 'Schnellaktionen'      },
+  club_action_ajouter_categorie: { fr: 'Ajouter une catégorie', en: 'Add a category',         pt: 'Adicionar categoria',   es: 'Agregar categoría',       it: 'Aggiungi categoria',    de: 'Kategorie hinzufügen' },
+  club_activite_recente:     { fr: 'Activité récente',          en: 'Recent activity',        pt: 'Atividade recente',     es: 'Actividad reciente',      it: 'Attività recente',      de: 'Letzte Aktivität'     },
+  club_prochains_matchs:     { fr: 'Prochains matchs',          en: 'Upcoming matches',       pt: 'Próximos jogos',        es: 'Próximos partidos',       it: 'Prossime partite',      de: 'Nächste Spiele'       },
+  club_deplacement:          { fr: 'Déplacement',               en: 'Away',                   pt: 'Fora',                  es: 'Visitante',               it: 'Trasferta',             de: 'Auswärtsspiel'        },
+  club_nouveaux_joueurs:     { fr: 'Nouveaux joueurs inscrits', en: 'Newly registered players', pt: 'Novos jogadores inscritos', es: 'Nuevos jugadores inscritos', it: 'Nuovi giocatori iscritti', de: 'Neu registrierte Spieler' },
+  club_aucun_resultat_accueil: { fr: "Aucun résultat pour l'instant.", en: 'No results yet.', pt: 'Ainda sem resultados.', es: 'Aún sin resultados.',     it: 'Ancora nessun risultato.', de: 'Noch keine Ergebnisse.' },
+  club_aucun_match_venir:    { fr: 'Aucun match à venir.',      en: 'No upcoming matches.',   pt: 'Sem jogos agendados.',  es: 'Sin partidos programados.', it: 'Nessuna partita in programma.', de: 'Keine anstehenden Spiele.' },
+  club_aucun_joueur_recent:  { fr: "Aucun joueur pour l'instant.", en: 'No players yet.',      pt: 'Ainda sem jogadores.',  es: 'Aún sin jugadores.',      it: 'Ancora nessun giocatore.', de: 'Noch keine Spieler.'  },
+  club_aucune_demande_recente: { fr: "Aucune demande en attente.", en: 'No pending requests.', pt: 'Sem pedidos pendentes.', es: 'Sin solicitudes pendientes.', it: 'Nessuna richiesta in sospeso.', de: 'Keine ausstehenden Anfragen.' },
+
   // ── Dashboard club — Onglets ──────────────────────────────────────────────────
   club_sportif:              { fr: 'SPORTIF',                  en: 'SPORTS',                 pt: 'DESPORTIVO',            es: 'DEPORTIVO',              it: 'SPORTIVO',              de: 'SPORTLICH'            },
   club_administratif:        { fr: 'ADMINISTRATIF',            en: 'ADMIN',                  pt: 'ADMINISTRATIVO',        es: 'ADMINISTRATIVO',         it: 'AMMINISTRATIVO',        de: 'VERWALTUNG'           },
