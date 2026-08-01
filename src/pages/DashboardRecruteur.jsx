@@ -5,6 +5,7 @@ import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
+import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 
 const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
@@ -884,6 +885,7 @@ export default function DashboardRecruteur() {
             { id: "feed", label: "🎬 Vidéos" },
             { id: "messages", label: `✉️ Messages${conversations.length > 0 ? ` (${conversations.length})` : ""}` },
             { id: "coach", label: "🎙️ Coach" },
+            { id: "analyse", label: "📊 Analyse rapport" },
             { id: "profil", label: "👤 Mon Profil" },
           ].map(t => (
             <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
@@ -1294,6 +1296,11 @@ export default function DashboardRecruteur() {
         {/* ── CONTACTER LE COACH ── */}
         {activeTab === "coach" && (
           <CoachContact coaches={coaches} recruteurId={recruteurId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} ouvrirConversation={ouvrirConversation} conversations={conversations} st={st} />
+        )}
+
+        {/* ── ANALYSE RAPPORT (scouting) ── */}
+        {activeTab === "analyse" && (
+          <AnalyseRapportRecruteur userId={recruteurId} />
         )}
 
         {activeTab === "profil" && (
