@@ -118,38 +118,9 @@ function Home() {
         </div>
       </section>
 
-      <section id="offres" style={{ background: '#0f0f0f', padding: '5rem 2rem', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_tarifs_joueurs', lang)}</div>
-        <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>{t('home_choisis_niveau', lang)}</h2>
-        <p style={{ color: '#666', fontSize: '15px', marginBottom: '2.5rem' }}>{t('home_analyses_perso_desc', lang)}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
-
-          {/* MENSUEL */}
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{t('aff_starter_prix', lang).split(' — ')[0]}</h3>
-            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>10EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_mois_suffix', lang)}</span></div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[t('home_starter_feature1', lang), t('home_starter_feature2', lang), t('home_starter_feature3', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
-            </ul>
-            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: 'white', fontSize: '14px', fontWeight: 600, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</button>
-          </div>
-
-          {/* ANNUEL */}
-          <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2rem', textAlign: 'left', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '-12px', left: '16px', background: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>-17%</div>
-            <div style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', display: 'inline-block', marginBottom: '8px', fontWeight: 600 }}>{t('home_plus_populaire', lang)}</div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{t('aff_pro_prix', lang).split(' — ')[0]}</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '14px', color: '#555', textDecoration: 'line-through' }}>120EUR{t('home_an_suffix', lang)}</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '12px' }}>100EUR <span style={{ fontSize: '15px', color: '#555', fontWeight: 400 }}>{t('home_an_suffix', lang)}</span></div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[t('home_pro_feature1', lang), t('home_pro_feature2', lang), t('home_pro_feature3', lang), t('home_pro_feature4', lang), t('home_pro_feature5', lang)].map(f => (<li key={f} style={{ fontSize: '14px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</li>))}
-            </ul>
-            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '14px', fontWeight: 700, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>{t('home_commencer', lang)}</button>
-          </div>
-        </div>
-      </section>
+      <div style={{ textAlign: 'center', paddingBottom: '3rem', background: '#0f0f0f', paddingTop: '3rem' }}>
+        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs joueur</button>
+      </div>
 
       <EtapesSection badge="TARIFS ÉDUCATEURS" titre="Développe tes joueurs" etapes={etapesEducateur} color="#60a5fa" />
       <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
@@ -157,29 +128,9 @@ function Home() {
       </div>
 
       <EtapesSection badge="SCOUTS / RECRUTEURS" titre="Trouve tes prochains talents" etapes={etapesRecruteur} color="#f97316" />
-
-      <section id="recruteurs" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_recruteurs_clubs_badge', lang)}</div>
-        <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>{t('home_acces_professionnel', lang)}</h2>
-        <p style={{ color: '#666', fontSize: '15px', marginBottom: '3rem' }}>{t('home_pour_clubs_desc', lang)}</p>
-        <div style={{ maxWidth: '520px', margin: '0 auto', position: 'relative' }}>
-          <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2.5rem', textAlign: 'left' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '40px' }}>🏆</div>
-              <div><h3 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>{t('home_acces_recruteur', lang)}</h3><p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0' }}>{t('home_abonnement_annuel', lang)}</p></div>
-            </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '48px', fontWeight: 800, color: '#4ade80', lineHeight: 1.1 }}>100EUR <span style={{ fontSize: '18px', color: '#555', fontWeight: 400 }}>{t('home_an_suffix', lang)}</span></div>
-              <p style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>10EUR{t('home_mois_suffix', lang)}</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '2rem' }}>
-              {[t('home_rec_feature1', lang), t('home_rec_feature2', lang), t('home_rec_feature3', lang), t('home_rec_feature4', lang), t('home_rec_feature5', lang), t('home_rec_feature6', lang), t('home_rec_feature7', lang), t('home_rec_feature8', lang)].map(f => (<div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</div>))}
-            </div>
-            <button onClick={() => navigate('/register-recruteur')} style={{ width: '100%', padding: '15px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>{t('home_commencer_pour', lang)} 100EUR{t('home_an_suffix', lang)}</button>
-            <p style={{ fontSize: '12px', color: '#555', textAlign: 'center', marginTop: '10px' }}>{t('home_facturation_annuelle', lang)}</p>
-          </div>
-        </div>
-      </section>
+      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
+        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: '#f97316', border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs recruteur</button>
+      </div>
 
       <EtapesSection badge="CLUBS" titre="Gérez votre club de A à Z" etapes={etapesClub} color="#4ade80" />
       <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
