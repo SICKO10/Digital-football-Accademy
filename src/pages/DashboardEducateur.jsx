@@ -12,6 +12,7 @@ import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
+import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 
@@ -657,6 +658,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Calendrier scanner
   const [calendarImages, setCalendarImages] = useState([])
   const [calendarLoading, setCalendarLoading] = useState(false)
+  const [calendarStatus, setCalendarStatus] = useState(null)
   const [calendarError, setCalendarError] = useState(null)
   const [calendarMatchs, setCalendarMatchs] = useState(() => {
     try { return JSON.parse(localStorage.getItem('calendarMatchs') || '[]') } catch { return [] }
@@ -671,6 +673,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerImageBase64, setScannerImageBase64] = useState(null)
   const [scannerImagePreview, setScannerImagePreview] = useState(null)
   const [scannerLoading, setScannerLoading] = useState(false)
+  const [scannerStatus, setScannerStatus] = useState(null)
   const [scannerResult, setScannerResult] = useState(null)
   const [scannerMatchData, setScannerMatchData] = useState({ date: '', adversaire: '', competition: '', score_nous: '', score_eux: '', domicile: true })
   const [scannerStats, setScannerStats] = useState({})
@@ -931,6 +934,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scanImagePreview, setScanImagePreview] = useState(null)
   const [scanImageBase64, setScanImageBase64] = useState(null)
   const [scanningFiche, setScanningFiche] = useState(false)
+  const [scanFicheStatus, setScanFicheStatus] = useState(null)
   const [scanFicheError, setScanFicheError] = useState(null)
 
   const chargerProfilEdu = async (uid) => {
@@ -1304,7 +1308,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
 }
 
 Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
@@ -1319,8 +1323,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
           temperature: 0.7,
           max_completion_tokens: 4000
         })
-      })
-      const data = await response.json()
+      }, setScanFicheStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
@@ -1358,6 +1361,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       setScanFicheError('L\'IA n\'a pas pu lire la fiche. Assure-toi que l\'image est nette et bien éclairée.')
     } finally {
       setScanningFiche(false)
+      setScanFicheStatus(null)
     }
   }
 
@@ -1652,7 +1656,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
         { type: 'text', text: prompt },
         ...calendarImages.map(img => ({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img.base64}` } }))
       ]
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
@@ -1664,8 +1668,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
           temperature: 0.7,
           max_completion_tokens: 4000
         })
-      })
-      const data = await response.json()
+      }, setCalendarStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
@@ -1681,7 +1684,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
       localStorage.setItem('calendarMatchs', JSON.stringify(merged))
       setCalendarImages([])
     } catch (e) { setCalendarError(e.message) }
-    finally { setCalendarLoading(false) }
+    finally { setCalendarLoading(false); setCalendarStatus(null) }
   }
 
   // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille
@@ -1723,7 +1726,7 @@ Format exact attendu :
 
 Lis chaque nom exactement comme écrit sur la feuille.
 Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
@@ -1738,8 +1741,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
           temperature: 0.7,
           max_completion_tokens: 4000
         })
-      })
-      const data = await response.json()
+      }, setScannerStatus)
       console.log('GROQ RESPONSE:', JSON.stringify(data))
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
@@ -1791,6 +1793,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       setScannerError(e.message)
     } finally {
       setScannerLoading(false)
+      setScannerStatus(null)
     }
   }
 
@@ -3412,7 +3415,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={scannerCalendrier} disabled={calendarLoading || !calendarImages.length}
                       style={{ ...st.btnSolid, opacity: calendarImages.length ? 1 : 0.4 }}>
-                      {calendarLoading ? '⏳ Analyse en cours...' : `🤖 ${t('comp_extraire_matchs', lang)}${calendarImages.length ? ` (${calendarImages.length} photo${calendarImages.length > 1 ? 's' : ''})` : ''}`}
+                      {calendarLoading ? `⏳ ${libelleStatutGroq(calendarStatus)}` : `🤖 ${t('comp_extraire_matchs', lang)}${calendarImages.length ? ` (${calendarImages.length} photo${calendarImages.length > 1 ? 's' : ''})` : ''}`}
                     </button>
                     {calendarMatchs.length > 0 && (
                       <button onClick={() => { setCalendarMatchs([]); localStorage.removeItem('calendarMatchs') }}
@@ -4392,7 +4395,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 disabled={!scanImageFile || scanningFiche}
                 style={{ ...st.btnSolid, marginTop: '16px', opacity: !scanImageFile || scanningFiche ? 0.5 : 1 }}
               >
-                {scanningFiche ? '🔄 Analyse en cours...' : `🤖 ${t('seance_analyser_ia', lang)}`}
+                {scanningFiche ? `🔄 ${libelleStatutGroq(scanFicheStatus)}` : `🤖 ${t('seance_analyser_ia', lang)}`}
               </button>
               {scanningFiche && (
                 <div style={{ marginTop: '14px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
@@ -5604,7 +5607,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               {scannerError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '12px' }}>⚠️ {scannerError}</p>}
               <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
                 <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
-                  {scannerLoading ? '🔍 Analyse en cours...' : `✨ ${t('seance_analyser_ia', lang)}`}
+                  {scannerLoading ? `🔍 ${libelleStatutGroq(scannerStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
                 </button>
                 <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
               </div>

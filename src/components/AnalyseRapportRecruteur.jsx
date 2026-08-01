@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
+import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 
 const playerInfoVide = () => ({
   prenom: '',
@@ -107,6 +108,7 @@ export default function AnalyseRapportRecruteur({ userId }) {
   const [isRecording, setIsRecording] = useState(false)
   const [rapport, setRapport] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState(null)
   const [step, setStep] = useState('input') // 'input' | 'transcript' | 'rapport'
   const [supported, setSupported] = useState(true)
   const [erreurIA, setErreurIA] = useState(null)
@@ -254,7 +256,7 @@ Instructions:
 - La note est sur 10
 - Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication`
 
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -265,8 +267,7 @@ Instructions:
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.1,
         }),
-      })
-      const data = await res.json()
+      }, setLoadingStatus)
       if (data.error) throw new Error(data.error.message)
       const text = data.choices?.[0]?.message?.content
       if (!text) throw new Error('Réponse Groq vide')
@@ -278,6 +279,7 @@ Instructions:
       setErreurIA(err.message)
     } finally {
       setLoading(false)
+      setLoadingStatus(null)
     }
   }
 
@@ -406,7 +408,7 @@ Instructions:
             {transcript.trim() && !isRecording && (
               <button onClick={handleGenerateRapport} disabled={loading}
                 style={{ ...st.btnSolid('#f97316', '#000'), width: '100%', marginTop: '16px', opacity: loading ? 0.6 : 1 }}>
-                {loading ? '⏳ Génération en cours...' : '✨ Générer le rapport'}
+                {loading ? `⏳ ${libelleStatutGroq(loadingStatus)}` : '✨ Générer le rapport'}
               </button>
             )}
           </div>
