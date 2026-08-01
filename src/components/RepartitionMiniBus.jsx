@@ -115,10 +115,8 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
     const ext = file.name.split('.').pop().toLowerCase()
     if (['xlsx', 'xls', 'csv'].includes(ext)) {
       await parseTableur(file)
-    } else if (file.type.startsWith('image/')) {
-      await scannerImage(file)
     } else {
-      setScanError('Format non supporté. Utilise une image, un fichier .xlsx ou .csv.')
+      setScanError('Format non supporté. Utilise un fichier .xlsx ou .csv.')
     }
     e.target.value = ''
   }
@@ -137,73 +135,6 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
       setValide(false)
     } catch (err) {
       setScanError('Erreur de lecture du fichier : ' + err.message)
-    }
-    setScanning(false)
-  }
-
-  const scannerImage = async (file) => {
-    setScanning(true)
-    try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result).split(',')[1])
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
-
-      const prompt = `Tu analyses une photo ou capture d'écran d'un planning de déplacements d'équipes de football (tableau papier, tableur affiché à l'écran, planning manuscrit...).
-
-Extrait CHAQUE déplacement/ligne visible avec : équipe, date, heure de départ, heure de retour estimée, lieu de destination, nombre de personnes (joueurs + staff).
-
-Réponds uniquement avec du JSON valide, EXACTEMENT dans ce format :
-{
-  "deplacements": [
-    { "equipe": "ex: U15 A", "date_depart": "AAAA-MM-JJ", "heure_depart": "HH:MM", "heure_retour_estimee": "HH:MM", "lieu_destination": "ville ou lieu", "nb_personnes": 18 }
-  ]
-}
-
-Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou null pour nb_personnes). Si l'année n'est pas précisée dans le document, utilise ${new Date().getFullYear()}. Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication.`
-
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
-          messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-            ] },
-          ],
-          temperature: 0.3,
-          max_completion_tokens: 4000,
-        }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error("Réponse invalide de l'IA")
-      const parsed = JSON.parse(jsonMatch[0])
-      const extraits = (parsed.deplacements || []).map(d => ({
-        ...ligneVide(),
-        equipe: d.equipe || '',
-        date_depart: d.date_depart || '',
-        heure_depart: normaliserHeure(d.heure_depart),
-        heure_retour_estimee: normaliserHeure(d.heure_retour_estimee),
-        lieu_destination: d.lieu_destination || '',
-        nb_personnes: d.nb_personnes != null ? String(d.nb_personnes) : '',
-      }))
-      if (extraits.length === 0) throw new Error("Aucun déplacement détecté sur l'image.")
-      setLignes(prev => [...prev, ...extraits])
-      setValide(false)
-    } catch (err) {
-      setScanError(err.message)
     }
     setScanning(false)
   }
@@ -284,7 +215,7 @@ Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou nu
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 Répartition mini-bus</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
-        Scanne un planning de déplacements, laisse l'algorithme proposer une répartition des bus, puis publie.
+        Importe un planning de déplacements, laisse l'algorithme proposer une répartition des bus, puis publie.
       </p>
 
       {publishSuccess && (
@@ -337,15 +268,10 @@ Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou nu
         <p style={{ fontSize: '12px', color: '#555', margin: '0 0 14px' }}>Fichier Excel/CSV, ou photo d'un tableau.</p>
 
         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-excel" />
-        <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-image" />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <label htmlFor="input-scan-excel"
             style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
             {scanning ? '⏳ Import en cours...' : '📊 Importer un fichier Excel / CSV'}
-          </label>
-          <label htmlFor="input-scan-image"
-            style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
-            {scanning ? '⏳ Analyse en cours...' : '📷 Scanner une photo'}
           </label>
           {lignes.length > 0 && (
             <button onClick={ajouterLigneManuelle}
@@ -356,7 +282,7 @@ Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou nu
         </div>
 
         <p style={{ fontSize: '11px', color: '#666', marginTop: '10px', marginBottom: 0 }}>
-          💡 Privilégie le fichier Excel/CSV si plusieurs personnes scannent en même temps — il n'y a pas de limite de débit contrairement à la reconnaissance photo. Depuis Apple Numbers : exporte d'abord en .xlsx ou .csv (Fichier → Exporter vers), le format .numbers natif ne peut pas être lu directement.
+          💡 Le scan photo est temporairement retiré (limite de débit sur le modèle vision partagé entre utilisateurs) en attendant une solution. Depuis Apple Numbers : exporte d'abord en .xlsx ou .csv (Fichier → Exporter vers), le format .numbers natif ne peut pas être lu directement.
         </p>
 
         {scanError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {scanError}</p>}
