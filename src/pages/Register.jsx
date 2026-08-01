@@ -5,11 +5,6 @@ import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 
-const STRIPE = {
-  joueur_pro_mensuel: STRIPE_LINKS.starter,
-  edu_mensuel: STRIPE_LINKS_EDU.edu_mensuel,
-  scout_mensuel: STRIPE_LINKS_RECRUTEUR.mensuel,
-}
 // Club : pas de paiement en libre-service — le support vérifie le nombre de
 // licenciés avant d'envoyer le lien de paiement adapté au palier.
 const CLUB_CONTACT_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Inscription club — activation abonnement')}`
@@ -26,17 +21,20 @@ export default function Register() {
     },
     {
       id: 'joueur_pro', emoji: '⚽', label: t('regchoix_pro_titre', lang), desc: t('reginsc_pro_desc', lang),
-      color: '#4ade80', badge: '10€/mois', stripe: 'joueur_pro_mensuel',
+      color: '#4ade80', badge: 'Dès 10€/mois',
+      stripeMensuel: STRIPE_LINKS.starter, stripeAnnuel: STRIPE_LINKS.pro,
       features: [t('reginsc_feat_pro_1', lang), t('reginsc_feat_pro_2', lang), t('reginsc_feat_pro_3', lang), t('reginsc_feat_pro_4', lang), t('reginsc_feat_pro_5', lang)],
     },
     {
       id: 'educateur', emoji: '🎓', label: t('regchoix_educateur_titre', lang), desc: t('reginsc_educateur_desc', lang),
-      color: '#60a5fa', badge: '10€/mois', stripe: 'edu_mensuel',
+      color: '#60a5fa', badge: 'Dès 10€/mois',
+      stripeMensuel: STRIPE_LINKS_EDU.edu_mensuel, stripeAnnuel: STRIPE_LINKS_EDU.edu_annuel,
       features: [t('reginsc_feat_edu_1', lang), t('reginsc_feat_edu_2', lang), t('reginsc_feat_edu_3', lang), t('reginsc_feat_edu_4', lang), t('reginsc_feat_edu_5', lang)],
     },
     {
       id: 'scout', emoji: '🔍', label: t('regchoix_scout_titre', lang), desc: t('reginsc_scout_desc', lang),
-      color: '#f97316', badge: '10€/mois', stripe: 'scout_mensuel',
+      color: '#f97316', badge: 'Dès 10€/mois',
+      stripeMensuel: STRIPE_LINKS_RECRUTEUR.mensuel, stripeAnnuel: STRIPE_LINKS_RECRUTEUR.annuel,
       features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
     },
     {
@@ -48,6 +46,7 @@ export default function Register() {
 
   const [etape, setEtape] = useState(1) // 1 = choix profil | 2 = formulaire
   const [profilChoisi, setProfil] = useState(null)
+  const [cycle, setCycle] = useState('mensuel') // 'mensuel' | 'annuel'
 
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
@@ -92,8 +91,9 @@ export default function Register() {
     if (profilChoisi.contact) {
       window.open(CLUB_CONTACT_URL, '_blank')
       navigate('/login')
-    } else if (profilChoisi.stripe) {
-      window.location.href = stripeUrl(STRIPE[profilChoisi.stripe], userId)
+    } else if (profilChoisi.stripeMensuel) {
+      const lien = cycle === 'annuel' ? profilChoisi.stripeAnnuel : profilChoisi.stripeMensuel
+      window.location.href = stripeUrl(lien, userId)
     } else {
       navigate('/dashboard')
     }
@@ -120,7 +120,7 @@ export default function Register() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {PROFILS.map(p => (
               <button key={p.id}
-                onClick={() => { setProfil(p); setEtape(2) }}
+                onClick={() => { setProfil(p); setCycle('mensuel'); setEtape(2) }}
                 style={{
                   background: '#111', border: '1px solid #1a1a1a',
                   borderRadius: '14px', padding: '16px 18px',
@@ -204,6 +204,30 @@ export default function Register() {
               style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '10px', color: '#fff', padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
           </div>
 
+          {profilChoisi.stripeMensuel && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+              {[
+                { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: '10€/mois', desc: t('reginsc_cycle_mensuel_desc', lang) },
+                { key: 'annuel', titre: t('reginsc_cycle_annuel_titre', lang), prix: '100€/an', desc: t('reginsc_cycle_annuel_desc', lang), badge: t('reginsc_cycle_2mois_offerts', lang) },
+              ].map(opt => (
+                <button key={opt.key} type="button" onClick={() => setCycle(opt.key)}
+                  style={{
+                    flex: 1, textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: cycle === opt.key ? profilChoisi.color + '15' : '#111',
+                    border: `2px solid ${cycle === opt.key ? profilChoisi.color : '#1f1f1f'}`,
+                    borderRadius: '10px', padding: '12px 14px', position: 'relative',
+                  }}>
+                  {opt.badge && (
+                    <span style={{ position: 'absolute', top: '-9px', right: '10px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{opt.badge}</span>
+                  )}
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: cycle === opt.key ? profilChoisi.color : '#fff' }}>{opt.titre}</p>
+                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px' }}>{opt.prix}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#666', lineHeight: 1.4 }}>{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
           {erreur && (
             <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>
           )}
@@ -221,6 +245,11 @@ export default function Register() {
           {profilChoisi.id === 'scout' && (
             <div style={{ background: '#f9731610', border: '1px solid #f9731625', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
               <p style={{ fontSize: '12px', color: '#f97316', margin: 0, lineHeight: 1.6 }}>{t('reginsc_scout_info', lang)}</p>
+            </div>
+          )}
+          {profilChoisi.id === 'educateur' && (
+            <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa25', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#60a5fa', margin: 0, lineHeight: 1.6 }}>{t('reginsc_educateur_info', lang)}</p>
             </div>
           )}
           {profilChoisi.id === 'club' && (
@@ -245,7 +274,7 @@ export default function Register() {
               ? t('register_creation_cours', lang)
               : profilChoisi.contact
                 ? t('reginsc_btn_contact', lang)
-                : profilChoisi.stripe
+                : profilChoisi.stripeMensuel
                   ? t('reginsc_btn_payer', lang)
                   : t('reginsc_btn_gratuit', lang)
             }
