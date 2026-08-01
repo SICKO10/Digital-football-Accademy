@@ -45,8 +45,8 @@ function RadarChart({ j, size = 180 }) {
         <polygon key={l} points={poly(l)} fill="none" stroke={l === 1 ? "#333" : "#1e1e1e"} strokeWidth={l === 1 ? 1 : 0.5} />
       ))}
       {stats.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#2a2a2a" strokeWidth="1" />; })}
-      <polygon points={stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return `${p.x},${p.y}`; }).join(" ")} fill="#4ade8025" stroke="#4ade80" strokeWidth="1.5" />
-      {stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#4ade80" />; })}
+      <polygon points={stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return `${p.x},${p.y}`; }).join(" ")} fill="#f9731625" stroke="#f97316" strokeWidth="1.5" />
+      {stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#f97316" />; })}
       {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill="#666" fontSize="9" fontFamily="Inter,sans-serif">{s.label}</text>; })}
     </svg>
   );
@@ -56,7 +56,7 @@ function RadarChart({ j, size = 180 }) {
 function Toast({ message, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
   return (
-    <div style={{ position: "fixed", bottom: "2rem", right: "2rem", background: "#4ade80", color: "#000", padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "14px", zIndex: 9999, boxShadow: "0 4px 24px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: "8px", animation: "slideIn 0.3s ease" }}>
+    <div style={{ position: "fixed", bottom: "2rem", right: "2rem", background: "#f97316", color: "#000", padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "14px", zIndex: 9999, boxShadow: "0 4px 24px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: "8px", animation: "slideIn 0.3s ease" }}>
       ✓ {message}
     </div>
   );
@@ -426,7 +426,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   };
 
   const posteColor = (p) => {
-    const map = { "Attaquant": { bg: "#1a0a00", text: "#f97316" }, "Milieu": { bg: "#001a0a", text: "#4ade80" }, "Défenseur": { bg: "#00061a", text: "#60a5fa" }, "Gardien": { bg: "#1a001a", text: "#a855f7" } };
+    const map = { "Attaquant": { bg: "#1a0a00", text: "#f97316" }, "Milieu": { bg: "#001a0a", text: "#f97316" }, "Défenseur": { bg: "#00061a", text: "#60a5fa" }, "Gardien": { bg: "#1a001a", text: "#a855f7" } };
     return map[p] || { bg: "#1a1a1a", text: "#aaa" };
   };
   const getInitials = (j) => `${(j.prenom || "?")[0]}${(j.nom || "?")[0]}`.toUpperCase();
@@ -437,38 +437,38 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   const st = {
     page: { background: "#0a0a0a", minHeight: "100vh", color: "#fff", fontFamily: "Inter, sans-serif" },
     navbar: { background: "#111", borderBottom: "1px solid #222", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" },
-    logo: { color: "#4ade80", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
+    logo: { color: "#f97316", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
     logoutBtn: { background: "transparent", border: "1px solid #333", color: "#aaa", padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
     content: { padding: isMobile ? "1rem" : "2rem", maxWidth: "1200px", margin: "0 auto" },
     tabs: { display: "flex", gap: "8px", marginBottom: "1.5rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: "2px" },
-    tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#4ade80" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
+    tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#f97316" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
     filterBar: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: isMobile ? "1rem" : "1.25rem", marginBottom: "1.5rem", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" },
     filterLabel: { fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" },
     select: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px" },
     searchInput: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
     grid: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
     card: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem" },
-    avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "16px" },
+    avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px" },
     posteBadge: (p) => ({ background: posteColor(p).bg, color: posteColor(p).text, fontSize: "11px", padding: "3px 10px", borderRadius: "20px", fontWeight: 500 }),
     statsRow: { display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "8px", marginTop: "12px", borderTop: "1px solid #1e1e1e", paddingTop: "12px" },
     stat: { textAlign: "center" },
-    statVal: { fontSize: "18px", fontWeight: 700, color: "#4ade80" },
+    statVal: { fontSize: "18px", fontWeight: 700, color: "#f97316" },
     statLabel: { fontSize: "10px", color: "#555", textTransform: "uppercase" },
     cardActions: { display: "flex", gap: "8px", marginTop: "12px" },
-    btnPrimary: { flex: 1, background: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
+    btnPrimary: { flex: 1, background: "#f97316", color: "#000", border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
     btnSecondary: { background: "transparent", border: "1px solid #333", color: "#aaa", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
-    favoriBtnActive: { background: "transparent", border: "1px solid #4ade80", color: "#4ade80", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
+    favoriBtnActive: { background: "transparent", border: "1px solid #f97316", color: "#f97316", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
     overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" },
     modal: { background: "#111", border: "1px solid #333", borderRadius: "16px", padding: "2rem", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto" },
-    sectionTitle: { fontSize: "11px", color: "#4ade80", textTransform: "uppercase", letterSpacing: "1px", margin: "1.5rem 0 0.75rem" },
+    sectionTitle: { fontSize: "11px", color: "#f97316", textTransform: "uppercase", letterSpacing: "1px", margin: "1.5rem 0 0.75rem" },
     statsGrid: { display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "12px" },
     statBox: { background: "#1a1a1a", borderRadius: "8px", padding: "12px", textAlign: "center" },
-    statBoxVal: { fontSize: "22px", fontWeight: 700, color: "#4ade80" },
+    statBoxVal: { fontSize: "22px", fontWeight: 700, color: "#f97316" },
     statBoxLabel: { fontSize: "11px", color: "#555", marginTop: "2px" },
     textarea: { width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "120px", boxSizing: "border-box", marginTop: "8px", fontFamily: "inherit" },
     emptyState: { textAlign: "center", padding: "4rem 2rem", color: "#444" },
     videoBox: { background: "#1a1a1a", borderRadius: "8px", padding: "1rem", marginTop: "8px" },
-    msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#4ade80" : "#1a1a1a", color: mine ? "#000" : "#fff", fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
+    msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#f97316" : "#1a1a1a", color: mine ? "#000" : "#fff", fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
   };
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
@@ -494,7 +494,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     if (userId) await chargerValidations(j.id)
   }
 
-  if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#4ade80" }}>Chargement...</div></div>;
+  if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#f97316" }}>Chargement...</div></div>;
 
   // ── Profil joueur ──────────────────────────────────────────────────────────
   if (selectedJoueur) {
@@ -508,13 +508,13 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
         </nav>
         <div style={{ ...st.content, maxWidth: "700px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-            <Avatar person={j} size={72} bg="#1a2e1a" border="2px solid #4ade8060" />
+            <Avatar person={j} size={72} bg="#1a2e1a" border="2px solid #f9731660" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
                 <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
-                <span style={{ background: "#4ade8020", color: "#4ade80", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>PRO</span>
+                <span style={{ background: "#f9731620", color: "#f97316", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>PRO</span>
                 {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "11px", fontWeight: 700, padding: "2px 10px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau} {certifications[j.id].saison}</span>}
-                {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>NEW</span>}
+                {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px" }}>NEW</span>}
                 {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓ Contacté</span>}
               </div>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -533,7 +533,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <p style={{ ...st.sectionTitle, margin: "0 0 1rem" }}>Performance globale</p>
               {[
                 { label: "Buts", val: j.buts_total || 0, max: 20, color: "#f97316" },
-                { label: "Passes déc.", val: j.passes_decisives || 0, max: 15, color: "#4ade80" },
+                { label: "Passes déc.", val: j.passes_decisives || 0, max: 15, color: "#f97316" },
                 { label: "Matchs officiels", val: j.matchs_officiel || 0, max: 30, color: "#60a5fa" },
                 { label: "Clean sheets", val: j.cleansheets || 0, max: 10, color: "#a855f7" },
               ].map(s => (
@@ -579,7 +579,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <p style={st.sectionTitle}>Points forts</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                 {j.points_forts.split(", ").filter(Boolean).map(tag => (
-                  <span key={tag} style={{ background: "#4ade8020", color: "#4ade80", border: "1px solid #4ade8040", fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "20px" }}>{tag}</span>
+                  <span key={tag} style={{ background: "#f9731620", color: "#f97316", border: "1px solid #f9731640", fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "20px" }}>{tag}</span>
                 ))}
               </div>
             </>
@@ -603,7 +603,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 {joueurParcours.map((p, i) => (
                   <div key={p.id} style={{ display: "flex", gap: "14px" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                      <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#4ade80", marginTop: "5px", flexShrink: 0 }} />
+                      <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#f97316", marginTop: "5px", flexShrink: 0 }} />
                       {i < joueurParcours.length - 1 && <div style={{ width: "1px", flex: 1, background: "#222", marginTop: "2px" }} />}
                     </div>
                     <div style={{ flex: 1, paddingBottom: i < joueurParcours.length - 1 ? "18px" : 0, display: "flex", alignItems: "center", gap: "10px" }}>
@@ -616,7 +616,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                         <p style={{ fontSize: "11px", color: "#555", margin: "2px 0 4px" }}>{[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
                         {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
                           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                            {p.matchs_joues > 0 && <span style={{ fontSize: "11px", color: "#4ade80" }}>⚽ {p.matchs_joues} matchs</span>}
+                            {p.matchs_joues > 0 && <span style={{ fontSize: "11px", color: "#f97316" }}>⚽ {p.matchs_joues} matchs</span>}
                             {p.buts > 0 && <span style={{ fontSize: "11px", color: "#f97316" }}>🥅 {p.buts} buts</span>}
                             {p.passes_decisives > 0 && <span style={{ fontSize: "11px", color: "#60a5fa" }}>🎯 {p.passes_decisives} passes</span>}
                             {p.cleansheets > 0 && <span style={{ fontSize: "11px", color: "#a855f7" }}>🧤 {p.cleansheets} CS</span>}
@@ -654,18 +654,18 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <div style={st.videoBox}>
                 {isVeo(videoUrl) || isYoutube(videoUrl) ? (
                   <a href={videoUrl} target="_blank" rel="noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#4ade8015", border: "1px solid #4ade8040", color: "#4ade80", padding: "10px 20px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#f9731615", border: "1px solid #f9731640", color: "#f97316", padding: "10px 20px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>
                     🎬 {isVeo(videoUrl) ? "Ouvrir sur Veo" : "Ouvrir sur YouTube"}
                   </a>
                 ) : isCloudinary(videoUrl) ? (
                   <>
                     <video src={videoUrl} controls style={{ width: "100%", borderRadius: "8px", maxHeight: "300px", background: "#000" }} />
-                    <a href={videoUrl} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: "8px", color: "#4ade80", fontSize: "12px", textDecoration: "none" }}>
+                    <a href={videoUrl} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: "8px", color: "#f97316", fontSize: "12px", textDecoration: "none" }}>
                       🔗 Ouvrir dans un nouvel onglet
                     </a>
                   </>
                 ) : (
-                  <a href={videoUrl} target="_blank" rel="noreferrer" style={{ color: "#4ade80", fontSize: "14px", textDecoration: "none" }}>🎬 Voir la vidéo →</a>
+                  <a href={videoUrl} target="_blank" rel="noreferrer" style={{ color: "#f97316", fontSize: "14px", textDecoration: "none" }}>🎬 Voir la vidéo →</a>
                 )}
               </div>
             </>
@@ -675,12 +675,12 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           <div style={{ marginTop: "2rem", background: "#0d1a0d", border: "1px solid #1e3a1e", borderRadius: "14px", padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: "#4ade80" }}>✅ Notes de saison validées par votre club</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: "#f97316" }}>✅ Notes de saison validées par votre club</p>
                 <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#555" }}>Prouvez que le joueur a joué pour vous (5 feuilles de match ou numéro de licence)</p>
               </div>
               <button
                 onClick={() => { setValSaison('2024-2025'); setValNote(0); setValJustif('feuilles'); setValLicence(''); setValFeuilles(['','','','','']); setShowValidationModal(true); }}
-                style={{ background: "#4ade80", color: "#000", border: "none", padding: "10px 18px", borderRadius: "10px", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{ background: "#f97316", color: "#000", border: "none", padding: "10px 18px", borderRadius: "10px", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
               >+ Valider une note</button>
             </div>
 
@@ -746,7 +746,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Justification</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem" }}>
                   {[{ val: 'feuilles', label: '📄 5 feuilles de match' }, { val: 'licence', label: '🪪 Numéro de licence' }].map(opt => (
-                    <button key={opt.val} onClick={() => setValJustif(opt.val)} style={{ flex: 1, background: valJustif === opt.val ? "#4ade8015" : "#1a1a1a", border: `1px solid ${valJustif === opt.val ? "#4ade80" : "#333"}`, color: valJustif === opt.val ? "#4ade80" : "#aaa", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                    <button key={opt.val} onClick={() => setValJustif(opt.val)} style={{ flex: 1, background: valJustif === opt.val ? "#f9731615" : "#1a1a1a", border: `1px solid ${valJustif === opt.val ? "#f97316" : "#333"}`, color: valJustif === opt.val ? "#f97316" : "#aaa", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                       {opt.label}
                     </button>
                   ))}
@@ -758,16 +758,16 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       {valFeuilles.map((url, i) => (
                         <label key={i} style={{ cursor: "pointer", gridColumn: i === 4 ? "1 / -1" : "auto" }}>
-                          <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#4ade8008" : "#1a1a1a", borderColor: url ? "#4ade8060" : "#2a2a2a", transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#f9731608" : "#1a1a1a", borderColor: url ? "#f9731660" : "#2a2a2a", transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                             {valFeuillesUploading[i] ? (
-                              <p style={{ margin: 0, fontSize: "12px", color: "#4ade80" }}>⏳ Upload...</p>
+                              <p style={{ margin: 0, fontSize: "12px", color: "#f97316" }}>⏳ Upload...</p>
                             ) : url ? (
                               <div style={{ width: "100%" }}>
                                 {url.match(/\.(jpg|jpeg|png|webp)$/i)
                                   ? <img src={url} alt="" style={{ maxHeight: "70px", maxWidth: "100%", borderRadius: "6px", objectFit: "cover" }} />
                                   : <p style={{ margin: "0 0 4px", fontSize: "20px" }}>📄</p>
                                 }
-                                <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#4ade80", fontWeight: 700 }}>✓ Feuille #{i+1}</p>
+                                <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#f97316", fontWeight: 700 }}>✓ Feuille #{i+1}</p>
                                 <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#444" }}>Changer</p>
                               </div>
                             ) : (
@@ -794,12 +794,12 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
                     {/* Zone upload */}
                     <label style={{ display: "block", cursor: "pointer" }}>
-                      <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "20px", textAlign: "center", background: valLicenceUrl ? "#4ade8008" : "#1a1a1a", borderColor: valLicenceUrl ? "#4ade8060" : "#2a2a2a", transition: "all 0.2s" }}>
+                      <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "20px", textAlign: "center", background: valLicenceUrl ? "#f9731608" : "#1a1a1a", borderColor: valLicenceUrl ? "#f9731660" : "#2a2a2a", transition: "all 0.2s" }}>
                         {valLicenceUploading ? (
-                          <p style={{ margin: 0, fontSize: "13px", color: "#4ade80" }}>⏳ Upload en cours...</p>
+                          <p style={{ margin: 0, fontSize: "13px", color: "#f97316" }}>⏳ Upload en cours...</p>
                         ) : valLicenceUrl ? (
                           <div>
-                            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#4ade80", fontWeight: 700 }}>✓ Document uploadé</p>
+                            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#f97316", fontWeight: 700 }}>✓ Document uploadé</p>
                             {valLicenceUrl.match(/\.(jpg|jpeg|png|webp)$/i) && (
                               <img src={valLicenceUrl} alt="licence" style={{ maxHeight: "120px", maxWidth: "100%", borderRadius: "8px", marginTop: "6px" }} />
                             )}
@@ -835,7 +835,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                   <button
                     onClick={soumettreValidation}
                     disabled={valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)}
-                    style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
+                    style={{ flex: 1, background: "#f97316", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
                   >{valSending ? "Validation..." : "✅ Valider cette note"}</button>
                   <button onClick={() => setShowValidationModal(false)} style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
                 </div>
@@ -854,7 +854,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
       {!embedded && (
         <nav style={st.navbar}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "32px", height: "32px", background: "#4ade80", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
+            <div style={{ width: "32px", height: "32px", background: "#f97316", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
             <div>
               <div style={{ ...st.logo, fontSize: "1rem", letterSpacing: "2px" }}>DIGITAL FOOTBALL</div>
               <div style={{ fontSize: "10px", color: "#555", letterSpacing: "1px", textTransform: "uppercase" }}>Scout Center</div>
@@ -904,7 +904,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 { label: "Messages", val: conversations.length, sub: "conversations" },
               ].map(s => (
                 <div key={s.label} style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", textAlign: "center" }}>
-                  <p style={{ fontSize: "32px", fontWeight: 800, color: "#4ade80", margin: "0 0 4px" }}>{s.val}</p>
+                  <p style={{ fontSize: "32px", fontWeight: 800, color: "#f97316", margin: "0 0 4px" }}>{s.val}</p>
                   <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{s.label}</p>
                   <p style={{ fontSize: "12px", color: "#555", margin: "2px 0 0" }}>{s.sub}</p>
                 </div>
@@ -918,7 +918,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Reels courts des joueurs</p>
               </button>
               <button onClick={() => navigate("/feed")}
-                style={{ background: "#111", border: "1px solid #4ade8040", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
+                style={{ background: "#111", border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
                 <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>📋</p>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Feed Scout</p>
                 <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Clips + stats des joueurs Pro</p>
@@ -995,7 +995,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <div style={{ display: "flex", gap: "4px" }}>
                 {["grille", "liste"].map(m => (
                   <button key={m} onClick={() => setModeAffichage(m)}
-                    style={{ background: modeAffichage === m ? "#4ade80" : "transparent", border: "1px solid #333", color: modeAffichage === m ? "#000" : "#666", padding: "5px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
+                    style={{ background: modeAffichage === m ? "#f97316" : "transparent", border: "1px solid #333", color: modeAffichage === m ? "#000" : "#666", padding: "5px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
                     {m === "grille" ? "⊞" : "☰"}
                   </button>
                 ))}
@@ -1015,7 +1015,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                             <p style={{ fontSize: "15px", fontWeight: 700, margin: 0 }}>{j.prenom} {j.nom}</p>
-                            {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
+                            {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
                             {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "10px", padding: "1px 6px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>Contacté</span>}
                             {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "10px", fontWeight: 700, padding: "1px 7px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau}</span>}
                           </div>
@@ -1030,7 +1030,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
                       {[
                         { label: "Buts", val: j.buts_total || 0, max: maxButs, color: "#f97316" },
-                        { label: "Passes déc.", val: j.passes_decisives || 0, max: maxPasses, color: "#4ade80" },
+                        { label: "Passes déc.", val: j.passes_decisives || 0, max: maxPasses, color: "#f97316" },
                         { label: "Matchs", val: j.matchs_officiel || 0, max: maxMatchs, color: "#60a5fa" },
                       ].map(s => (
                         <div key={s.label}>
@@ -1045,11 +1045,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                       ))}
                     </div>
 
-                    {j.clip_url && <p style={{ fontSize: "11px", color: "#4ade80", margin: "0 0 10px" }}>🎬 Vidéo disponible</p>}
+                    {j.clip_url && <p style={{ fontSize: "11px", color: "#f97316", margin: "0 0 10px" }}>🎬 Vidéo disponible</p>}
                     <div style={st.cardActions}>
                       <button style={st.btnPrimary} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
                       <button
-                        style={isFavori(j.id) ? { ...st.favoriBtnActive, background: "#4ade8015" } : st.btnSecondary}
+                        style={isFavori(j.id) ? { ...st.favoriBtnActive, background: "#f9731615" } : st.btnSecondary}
                         onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}>
                         {isFavori(j.id) ? "★ Favori" : "☆ Favori"}
                       </button>
@@ -1067,14 +1067,14 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: "14px" }}>{j.prenom} {j.nom}</p>
-                        {isNouveau(j) && <span style={{ background: "#4ade80", color: "#000", fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "20px" }}>NEW</span>}
+                        {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "20px" }}>NEW</span>}
                         {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "9px", padding: "1px 5px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓</span>}
                       </div>
                       <p style={{ margin: "1px 0 0", fontSize: "11px", color: "#555" }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
                     </div>
                     <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: "#666" }}>
                       <span style={{ color: "#f97316", fontWeight: 700 }}>{j.buts_total || 0} <span style={{ color: "#555", fontWeight: 400 }}>buts</span></span>
-                      <span style={{ color: "#4ade80", fontWeight: 700 }}>{j.passes_decisives || 0} <span style={{ color: "#555", fontWeight: 400 }}>passes</span></span>
+                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.passes_decisives || 0} <span style={{ color: "#555", fontWeight: 400 }}>passes</span></span>
                       <span style={{ color: "#60a5fa", fontWeight: 700 }}>{j.matchs_officiel || 0} <span style={{ color: "#555", fontWeight: 400 }}>matchs</span></span>
                     </div>
                     <div style={{ display: "flex", gap: "6px" }}>
@@ -1096,7 +1096,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               {["Tous", ...dossiers].map(d => (
                 <button key={d} onClick={() => setDossierActif(d)}
-                  style={{ padding: "6px 14px", borderRadius: "20px", border: dossierActif === d ? "none" : "1px solid #333", background: dossierActif === d ? "#4ade80" : "transparent", color: dossierActif === d ? "#000" : "#aaa", fontWeight: dossierActif === d ? 600 : 400, cursor: "pointer", fontSize: "13px" }}>
+                  style={{ padding: "6px 14px", borderRadius: "20px", border: dossierActif === d ? "none" : "1px solid #333", background: dossierActif === d ? "#f97316" : "transparent", color: dossierActif === d ? "#000" : "#aaa", fontWeight: dossierActif === d ? 600 : 400, cursor: "pointer", fontSize: "13px" }}>
                   {d} {d !== "Tous" ? `(${favoris.filter(f => f.dossier === d).length})` : `(${favoris.length})`}
                 </button>
               ))}
@@ -1116,7 +1116,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                           <p style={{ fontSize: "15px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
                           <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
                         </div>
-                        <span style={{ background: "#4ade8020", color: "#4ade80", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", flexShrink: 0 }}>{fav?.dossier || "Général"}</span>
+                        <span style={{ background: "#f9731620", color: "#f97316", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", flexShrink: 0 }}>{fav?.dossier || "Général"}</span>
                       </div>
 
                       {/* Déplacer vers un dossier */}
@@ -1172,7 +1172,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                           ) : isVeoUrl ? (
                             <div style={{ textAlign: "center" }}>
                               <p style={{ margin: "0 0 4px", fontSize: "1.8rem" }}>🎥</p>
-                              <p style={{ margin: 0, fontSize: "11px", color: "#4ade80", fontWeight: 700, letterSpacing: "1px" }}>VEO</p>
+                              <p style={{ margin: 0, fontSize: "11px", color: "#f97316", fontWeight: 700, letterSpacing: "1px" }}>VEO</p>
                             </div>
                           ) : isYtUrl ? (
                             <div style={{ textAlign: "center" }}>
@@ -1213,7 +1213,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             {/* Sidebar conversations */}
             <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", overflow: "hidden" }}>
               <div style={{ padding: "1rem", borderBottom: "1px solid #222" }}>
-                <p style={{ margin: 0, fontWeight: 600, color: "#4ade80", fontSize: "14px" }}>💬 Conversations</p>
+                <p style={{ margin: 0, fontWeight: 600, color: "#f97316", fontSize: "14px" }}>💬 Conversations</p>
               </div>
               {conversations.length === 0 ? (
                 <div style={{ padding: "2rem", textAlign: "center", color: "#555", fontSize: "13px" }}>
@@ -1223,14 +1223,14 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               ) : (
                 conversations.map(conv => (
                   <div key={conv.otherId} onClick={() => ouvrirConversation(conv)}
-                    style={{ padding: "12px 1rem", borderBottom: "1px solid #1a1a1a", cursor: "pointer", background: convActive?.otherId === conv.otherId ? "#4ade8010" : "transparent", borderLeft: convActive?.otherId === conv.otherId ? "2px solid #4ade80" : "2px solid transparent" }}>
+                    style={{ padding: "12px 1rem", borderBottom: "1px solid #1a1a1a", cursor: "pointer", background: convActive?.otherId === conv.otherId ? "#f9731610" : "transparent", borderLeft: convActive?.otherId === conv.otherId ? "2px solid #f97316" : "2px solid transparent" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "11px", flexShrink: 0 }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "11px", flexShrink: 0 }}>
                         {(conv.other?.prenom || "?")[0]}{(conv.other?.nom || "?")[0]}
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                        <p style={{ margin: "1px 0 0", fontSize: "11px", color: conv.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
+                        <p style={{ margin: "1px 0 0", fontSize: "11px", color: conv.other?.plan === "coach" ? "#f97316" : "#f97316" }}>
                           {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "joueur_pro" ? "Joueur PRO" : conv.other?.plan}
                         </p>
                       </div>
@@ -1246,12 +1246,12 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               {convActive ? (
                 <>
                   <div style={{ padding: "1rem", borderBottom: "1px solid #222", display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80", fontWeight: 700, fontSize: "13px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "13px" }}>
                       {(convActive.other?.prenom || "?")[0]}{(convActive.other?.nom || "?")[0]}
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 600 }}>{convActive.other?.prenom} {convActive.other?.nom}</p>
-                      <p style={{ margin: 0, fontSize: "12px", color: convActive.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
+                      <p style={{ margin: 0, fontSize: "12px", color: convActive.other?.plan === "coach" ? "#f97316" : "#f97316" }}>
                         {convActive.other?.plan === "coach" ? "🎙️ Coach" : "⚽ Joueur PRO"}
                       </p>
                     </div>
@@ -1282,7 +1282,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                       onChange={e => setNewMessage(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && envoyerMessage()}
                     />
-                    <button onClick={envoyerMessage} style={{ background: "#4ade80", color: "#000", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>Envoyer</button>
+                    <button onClick={envoyerMessage} style={{ background: "#f97316", color: "#000", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>Envoyer</button>
                   </div>
                 </>
               ) : (
@@ -1309,19 +1309,19 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "20px" }}>
               <div style={{ position: "relative", flexShrink: 0 }}>
                 {profilLocal?.avatar_url
-                  ? <img src={profilLocal.avatar_url} alt="" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid #4ade8040" }} />
-                  : <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 800, color: "#4ade80" }}>
+                  ? <img src={profilLocal.avatar_url} alt="" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid #f9731640" }} />
+                  : <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 800, color: "#f97316" }}>
                       {(profilEdit.prenom || "?")[0]}{(profilEdit.nom || "?")[0]}
                     </div>
                 }
-                <label style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", background: "#4ade80", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: avatarUploading ? "wait" : "pointer", border: "2px solid #0a0a0a", fontSize: "11px" }}>
+                <label style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", background: "#f97316", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: avatarUploading ? "wait" : "pointer", border: "2px solid #0a0a0a", fontSize: "11px" }}>
                   {avatarUploading ? "…" : "✎"}
                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
               </div>
               <div>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>{profilEdit.prenom} {profilEdit.nom}</p>
-                <p style={{ fontSize: "13px", color: "#4ade80", margin: 0 }}>{profilEdit.type_recruteur || "Recruteur"} · {profilEdit.club || profilEdit.region || "—"}</p>
+                <p style={{ fontSize: "13px", color: "#f97316", margin: 0 }}>{profilEdit.type_recruteur || "Recruteur"} · {profilEdit.club || profilEdit.region || "—"}</p>
               </div>
             </div>
 
@@ -1368,7 +1368,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               </div>
 
               <button onClick={handleSaveProfil} disabled={savingProfil}
-                style={{ background: savingProfil ? "#333" : "#4ade80", color: savingProfil ? "#666" : "#000", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: savingProfil ? "not-allowed" : "pointer", alignSelf: "flex-start" }}>
+                style={{ background: savingProfil ? "#333" : "#f97316", color: savingProfil ? "#666" : "#000", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: savingProfil ? "not-allowed" : "pointer", alignSelf: "flex-start" }}>
                 {savingProfil ? "Enregistrement..." : "✓ Sauvegarder"}
               </button>
             </div>
@@ -1386,7 +1386,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Contacter {messageModal.prenom} {messageModal.nom}</h2>
             <p style={{ fontSize: "13px", color: "#666", margin: "0 0 1.5rem" }}>{messageModal.poste} · {messageModal.categorie}</p>
             {messageSent ? (
-              <div style={{ textAlign: "center", padding: "2rem", color: "#4ade80" }}><p style={{ fontSize: "2rem" }}>✓</p><p>Message envoyé !</p></div>
+              <div style={{ textAlign: "center", padding: "2rem", color: "#f97316" }}><p style={{ fontSize: "2rem" }}>✓</p><p>Message envoyé !</p></div>
             ) : (
               <>
                 <label style={st.filterLabel}>Votre message</label>
@@ -1449,7 +1449,7 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
         {coaches.map(coach => (
           <div key={coach.id}
             onClick={() => setSelectedCoach(coach)}
-            style={{ background: "#111", border: `1px solid ${selectedCoach?.id === coach.id ? "#4ade80" : "#222"}`, borderRadius: "12px", padding: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+            style={{ background: "#111", border: `1px solid ${selectedCoach?.id === coach.id ? "#f97316" : "#222"}`, borderRadius: "12px", padding: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#1a1a0a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px", flexShrink: 0 }}>
               {(coach.prenom || "C")[0]}{(coach.nom || "")[0]}
             </div>
@@ -1458,7 +1458,7 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
               <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f97316" }}>🎙️ Coach Expert</p>
               {coach.club && <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#666" }}>{coach.club}</p>}
             </div>
-            {selectedCoach?.id === coach.id && <span style={{ marginLeft: "auto", color: "#4ade80", fontSize: "18px" }}>✓</span>}
+            {selectedCoach?.id === coach.id && <span style={{ marginLeft: "auto", color: "#f97316", fontSize: "18px" }}>✓</span>}
           </div>
         ))}
       </div>
@@ -1470,7 +1470,7 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
             Votre message à {selectedCoach.prenom}
           </label>
           {sent ? (
-            <div style={{ textAlign: "center", padding: "2rem", color: "#4ade80" }}>
+            <div style={{ textAlign: "center", padding: "2rem", color: "#f97316" }}>
               <p style={{ fontSize: "2rem" }}>✓</p>
               <p>Message envoyé ! Redirection vers vos messages...</p>
             </div>
@@ -1485,7 +1485,7 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
               <button
                 onClick={handleSend}
                 disabled={sending || !message.trim()}
-                style={{ marginTop: "12px", width: "100%", background: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", opacity: (sending || !message.trim()) ? 0.6 : 1 }}>
+                style={{ marginTop: "12px", width: "100%", background: "#f97316", color: "#000", border: "none", borderRadius: "8px", padding: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", opacity: (sending || !message.trim()) ? 0.6 : 1 }}>
                 {sending ? "Envoi en cours..." : `Envoyer à ${selectedCoach.prenom} ✉️`}
               </button>
             </>
