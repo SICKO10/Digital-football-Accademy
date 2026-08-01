@@ -3497,7 +3497,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id ? (
-            <Deplacements clubId={clubAffiliation.club_id} />
+            <Deplacements clubId={clubAffiliation.club_id} accentColor="#60a5fa" />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>

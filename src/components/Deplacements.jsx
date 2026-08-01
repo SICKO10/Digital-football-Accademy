@@ -22,7 +22,7 @@ const st = {
 
 const natureInfo = (val) => NATURES.find(n => n.val === val) || NATURES[3]
 
-export default function Deplacements({ clubId }) {
+export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
@@ -135,7 +135,7 @@ export default function Deplacements({ clubId }) {
               </p>
             )}
           </div>
-          <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>
+          <span style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>
             {natureInfo(d.nature).label}
           </span>
         </div>
@@ -163,7 +163,7 @@ export default function Deplacements({ clubId }) {
           </div>
         </div>
         <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-          style={{ marginTop: '10px', background: retourComplet ? '#1a1a1a' : '#4ade8015', border: `1px solid ${retourComplet ? '#2a2a2a' : '#4ade8040'}`, color: retourComplet ? '#666' : '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          style={{ marginTop: '10px', background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
         </button>
       </div>
@@ -178,7 +178,7 @@ export default function Deplacements({ clubId }) {
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
         <button onClick={() => setShowForm(v => !v)}
-          style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
         </button>
       </div>
@@ -238,7 +238,7 @@ export default function Deplacements({ clubId }) {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={creerDeplacement} disabled={saving || !form.date_depart || !form.lieu_destination.trim()}
-              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
+              style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Création...' : 'Créer le déplacement'}
             </button>
             <button onClick={() => { setShowForm(false); setForm(formVide()) }}
