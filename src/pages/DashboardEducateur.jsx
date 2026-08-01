@@ -29,6 +29,19 @@ const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 
+// ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
+const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+const IcoZap         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+const IcoActivity    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+const IcoPoll        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+const IcoLink        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+const IcoXCircle     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
 const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -417,7 +430,13 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
-const STATUT_LABELS_ACCUEIL = { present: '✅ Présent', absent: '❌ Absent', blesse: '🤕 Blessé', malade: '🤒 Malade', convoque: '🏆 Convoqué' }
+const STATUT_CONFIG_ACCUEIL = {
+  present:  { label: 'Présent',  Icon: IcoCheckCircle },
+  absent:   { label: 'Absent',   Icon: IcoXCircle },
+  blesse:   { label: 'Blessé',   Icon: IcoActivity },
+  malade:   { label: 'Malade',   Icon: IcoAlertCircle },
+  convoque: { label: 'Convoqué', Icon: IcoStar },
+}
 
 function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
@@ -466,19 +485,19 @@ function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affi
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏠 Accueil</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>👥 Effectif</p>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🏃 Prochain entraînement</p>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochain entraînement</p>
           {prochainEnt ? (
             <>
               <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainEnt.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
@@ -490,19 +509,19 @@ function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affi
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>📊 Présence cette semaine</p>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoChart /> Présence cette semaine</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#60a5fa' }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>⚽ Prochain match</p>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> Prochain match</p>
           {prochainMatch ? (
             <>
               <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
               <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
-              <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? '#4ade8020' : '#f9731620', color: prochainMatch.domicile ? '#4ade80' : '#f97316', border: `1px solid ${prochainMatch.domicile ? '#4ade8040' : '#f9731640'}` }}>
-                {prochainMatch.domicile ? '🏠 Domicile' : '🚌 Déplacement'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? '#4ade8020' : '#f9731620', color: prochainMatch.domicile ? '#4ade80' : '#f97316', border: `1px solid ${prochainMatch.domicile ? '#4ade8040' : '#f9731640'}` }}>
+                {prochainMatch.domicile ? <IcoHome /> : <IcoBus />} {prochainMatch.domicile ? 'Domicile' : 'Déplacement'}
               </span>
             </>
           ) : (
@@ -512,48 +531,53 @@ function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affi
       </div>
 
       {/* Actions rapides */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>Actions rapides</p>
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
         {[
-          { emoji: '➕', label: 'Ajouter un joueur', section: 'equipe' },
-          { emoji: '🏃', label: 'Créer un entraînement', section: 'entrainements' },
-          { emoji: '📊', label: 'Analyse rapport', section: 'analyse_video' },
-          { emoji: '🎨', label: 'Tacticboard', section: 'tactipad' },
+          { Icon: IcoPlus, label: 'Ajouter un joueur', section: 'equipe' },
+          { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
+          { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
+          { Icon: IcoLayout, label: 'Tacticboard', section: 'tactipad' },
         ].map(a => (
           <button key={a.section} onClick={() => setActiveSection(a.section)}
             style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
             onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
-            <span style={{ fontSize: '26px' }}>{a.emoji}</span>
+            <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><a.Icon /></span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
           </button>
         ))}
       </div>
 
       {/* Fil d'activité récente */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>Activité récente</p>
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoActivity /> Activité récente</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>🗳️ Dernières réponses aux sondages</p>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoPoll /> Dernières réponses aux sondages</p>
           {dernieresReponses.length === 0 ? (
             <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune réponse pour l'instant.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {dernieresReponses.map(d => (
-                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.joueurNom}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{d.seanceLabel}</p>
+              {dernieresReponses.map(d => {
+                const cfg = STATUT_CONFIG_ACCUEIL[d.statut]
+                return (
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.joueurNom}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{d.seanceLabel}</p>
+                    </div>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: '#60a5fa', whiteSpace: 'nowrap' }}>
+                      {cfg ? <><cfg.Icon /> {cfg.label}</> : d.statut}
+                    </span>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#60a5fa', whiteSpace: 'nowrap' }}>{STATUT_LABELS_ACCUEIL[d.statut] || d.statut}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>🔗 Comptes liés récemment</p>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> Comptes liés récemment</p>
           {joueursLiesRecemment.length === 0 ? (
             <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun compte lié pour l'instant.</p>
           ) : (
@@ -569,7 +593,7 @@ function AccueilEducateur({ joueurs, entrainements, matchs, disposRecentes, affi
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>📄 Derniers rapports générés</p>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoFileText /> Derniers rapports générés</p>
           {rapportsRecents.length === 0 ? (
             <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
           ) : (
