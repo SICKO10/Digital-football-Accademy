@@ -33,13 +33,13 @@ function Login() {
       .from('profiles')
       .select('plan, abonnement_actif')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     setLoading(false)
 
     if (profil?.plan === 'club') {
       navigate('/club')
-    } else if (profil?.plan === 'recruteur') {
+    } else if (profil?.plan === 'scout') {
       navigate('/recruteur')
     } else if (profil?.plan === 'coach') {
       navigate('/coach')

@@ -128,17 +128,22 @@ Deno.serve(async (req) => {
           const profileId = await trouverProfilId({ clientReferenceId: session.client_reference_id, email })
           if (!profileId) { console.error('[stripe-webhook] checkout.session.completed (abonnement): profil introuvable', { clientReferenceId: session.client_reference_id, email }); break }
 
-          const { data: profilActuel, error: profilErr } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).single()
+          const { data: profilActuel, error: profilErr } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).maybeSingle()
           if (profilErr) console.error('[stripe-webhook] erreur lecture profil', profilErr)
 
           const cycle = resoudreCycle(montant, profilActuel?.plan)
           if (!cycle) { console.error('[stripe-webhook] checkout.session.completed: montant non reconnu', { montant, plan: profilActuel?.plan }); break }
 
-          // Compat avec les verrous de fonctionnalités existants (profil.plan === 'pro'/'starter').
-          // Educateur/recruteur/club/coach : le plan ne change pas de valeur selon le cycle,
-          // seul l'abonnement (actif/cycle) est mis à jour — pas de palier de fonctionnalités.
-          const planSansPalier = ['educateur', 'recruteur', 'club', 'coach'].includes(profilActuel?.plan ?? '')
-          const nouveauPlan = planSansPalier ? profilActuel!.plan : (cycle === 'annuel' ? 'pro' : 'starter')
+          // profiles.plan est contraint par une CHECK constraint côté base à :
+          // 'joueur_starter' | 'joueur_pro' | 'educateur' | 'scout' | 'club' | 'dirigeant'
+          // (vérifié directement : 'pro', 'starter', 'recruteur', 'coach', 'fan' sont
+          // TOUS rejetés). Le joueur n'a donc qu'un palier gratuit/payant, pas de
+          // distinction mensuel/mannuel au niveau du plan — 'joueur_pro' dans les deux
+          // cas, la différence vit uniquement dans abonnement_cycle.
+          // Educateur/scout/club : le plan ne change pas de valeur selon le cycle, seul
+          // l'abonnement (actif/cycle) est mis à jour — pas de palier de fonctionnalités.
+          const planSansPalier = ['educateur', 'scout', 'club'].includes(profilActuel?.plan ?? '')
+          const nouveauPlan = planSansPalier ? profilActuel!.plan : 'joueur_pro'
 
           const { error: updateErr } = await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
@@ -166,7 +171,7 @@ Deno.serve(async (req) => {
         })
         if (!profileId) { console.error('[stripe-webhook] invoice.paid: profil introuvable', { stripeCustomerId, email: invoice.customer_email }); break }
 
-        const { data: profil, error: profilErr } = await supabaseAdmin.from('profiles').select('plan, abonnement_mois_payes').eq('id', profileId).single()
+        const { data: profil, error: profilErr } = await supabaseAdmin.from('profiles').select('plan, abonnement_mois_payes').eq('id', profileId).maybeSingle()
         if (profilErr) console.error('[stripe-webhook] erreur lecture profil (invoice.paid)', profilErr)
 
         const cycle = resoudreCycle(montant, profil?.plan)

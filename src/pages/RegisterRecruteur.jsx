@@ -11,7 +11,9 @@ function RegisterRecruteur() {
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [club, setClub] = useState('')
-  const [typeCompte, setTypeCompte] = useState('recruteur')
+  // 'scout' est la valeur stockée dans profiles.plan (la CHECK constraint
+  // côté base rejette 'recruteur' — vérifié directement contre la base).
+  const [typeCompte, setTypeCompte] = useState('scout')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -49,7 +51,7 @@ function RegisterRecruteur() {
       prenom,
       nom,
       poste: typeCompte,
-      plan: typeCompte, // 'recruteur' | 'club' | 'educateur'
+      plan: typeCompte, // 'scout' | 'club' | 'educateur'
       analyses_restantes: 0,
       abonnement_actif: false,
       club,
@@ -85,7 +87,7 @@ function RegisterRecruteur() {
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1.5rem'}}>
           {[
-            {id:'recruteur', label:`🔍 ${t('register_scout_agent', lang)}`, desc:t('register_recherche_joueurs', lang)},
+            {id:'scout', label:`🔍 ${t('register_scout_agent', lang)}`, desc:t('register_recherche_joueurs', lang)},
             {id:'club',      label:`🏟️ ${t('profil_club_label', lang)}`, desc:t('register_gestion_club', lang)},
             {id:'educateur', label:`🎓 ${t('register_educateur_type', lang)}`, desc:t('register_suivi_effectif', lang)},
           ].map(typeItem => (

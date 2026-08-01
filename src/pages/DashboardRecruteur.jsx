@@ -128,10 +128,10 @@ export default function DashboardRecruteur() {
       if (!user) { navigate("/login"); return; }
       setRecruteurId(user.id);
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-      if (!profile || profile.plan !== "recruteur") { navigate("/"); return; }
+      if (!profile || profile.plan !== "scout") { navigate("/"); return; }
       setRecruteur(profile);
       setProfilEdit({ prenom: profile.prenom || '', nom: profile.nom || '', club: profile.club || '', region: profile.region || '', type_recruteur: profile.type_recruteur || '', description: profile.description || '', recherche_profil: profile.recherche_profil || '' });
-      const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "pro").eq("abonnement_actif", true);
+      const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "joueur_pro").eq("abonnement_actif", true);
       const { data: coachData } = await supabase.from("profiles").select("*").eq("plan", "coach");
       setJoueurs(joueursData || []);
       setFiltered(joueursData || []);
@@ -1227,7 +1227,7 @@ export default function DashboardRecruteur() {
                       <div style={{ minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.other?.prenom} {conv.other?.nom}</p>
                         <p style={{ margin: "1px 0 0", fontSize: "11px", color: conv.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
-                          {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "pro" ? "Joueur PRO" : conv.other?.plan}
+                          {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "joueur_pro" ? "Joueur PRO" : conv.other?.plan}
                         </p>
                       </div>
                     </div>

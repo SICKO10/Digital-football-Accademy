@@ -133,7 +133,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     const chargerDonnees = async () => {
       if (!userId) return;
       setProfilEdit({ prenom: profil?.prenom || '', nom: profil?.nom || '', club: profil?.club || '', region: profil?.region || '', type_recruteur: profil?.type_recruteur || '', description: profil?.description || '', recherche_profil: profil?.recherche_profil || '' });
-      const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "pro").eq("abonnement_actif", true);
+      const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "joueur_pro").eq("abonnement_actif", true);
       const { data: coachData } = await supabase.from("profiles").select("*").eq("plan", "coach");
       setJoueurs(joueursData || []);
       setFiltered(joueursData || []);
@@ -1231,7 +1231,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                       <div style={{ minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.other?.prenom} {conv.other?.nom}</p>
                         <p style={{ margin: "1px 0 0", fontSize: "11px", color: conv.other?.plan === "coach" ? "#f97316" : "#4ade80" }}>
-                          {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "pro" ? "Joueur PRO" : conv.other?.plan}
+                          {conv.other?.plan === "coach" ? "Coach" : conv.other?.plan === "joueur_pro" ? "Joueur PRO" : conv.other?.plan}
                         </p>
                       </div>
                     </div>

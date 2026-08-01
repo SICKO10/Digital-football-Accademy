@@ -1906,7 +1906,7 @@ function DashboardJoueur() {
   }
 
   // ── DASHBOARD PRINCIPAL ──
-  const isPro = profil?.plan === 'pro' || profil?.plan === 'joueur_pro'
+  const isPro = profil?.plan === 'joueur_pro'
 
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },

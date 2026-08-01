@@ -111,7 +111,7 @@ function DashboardCoach() {
     const { data } = await supabase
       .from('profiles')
       .select('id, prenom, nom, email, club, region, type_recruteur, description, recherche_profil, avatar_url, plan')
-      .eq('plan', 'recruteur')
+      .eq('plan', 'scout')
       .order('created_at', { ascending: false })
     if (data) setRecruteurs(data)
   }

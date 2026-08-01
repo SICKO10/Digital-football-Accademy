@@ -46,7 +46,7 @@ function SmartDashboard() {
         if (dirigeant) { setDest('/dashboard-dirigeant'); return }
         const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
-        else if (plan === 'recruteur') setDest('/recruteur')
+        else if (plan === 'scout') setDest('/recruteur')
         else if (plan === 'club') setDest('/club')
         else if (plan === 'coach') setDest('/coach')
         else setDest('/dashboard-joueur')

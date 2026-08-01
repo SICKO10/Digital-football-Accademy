@@ -784,7 +784,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       .select('id, club, prenom, nom')
       .ilike('code_club', codeClubInput.trim())
       .eq('plan', 'club')
-      .single()
+      .maybeSingle()
     if (!clubProfile) {
       setCodeClubError('Code invalide — vérifie auprès du club.')
       setSendingCodeClub(false)
@@ -1874,7 +1874,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
   const chargerRecrutJoueurs = async () => {
     if (recrutLoaded) return
-    const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'pro').eq('abonnement_actif', true)
+    const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'joueur_pro').eq('abonnement_actif', true)
     setRecrutJoueurs(data || [])
     setRecrutLoaded(true)
   }

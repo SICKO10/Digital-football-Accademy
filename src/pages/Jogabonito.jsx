@@ -468,7 +468,7 @@ function Jogabonito() {
       const { data: joueurs } = await supabase
         .from('profiles')
         .select('*')
-        .eq('plan', 'pro')
+        .eq('plan', 'joueur_pro')
         .eq('abonnement_actif', true)
         .not('clip_url', 'is', null)
         .order('created_at', { ascending: false })

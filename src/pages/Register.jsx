@@ -71,9 +71,11 @@ export default function Register() {
     setLoading(true)
     setErreur('')
 
-    // "scout" est le libellé marketing du profil recruteur (cf. lib/stripeLinks.js) —
-    // le plan stocké reste "recruteur" partout ailleurs dans l'appli.
-    const plan = profilChoisi.id === 'scout' ? 'recruteur' : profilChoisi.id
+    // "scout" est à la fois le libellé marketing ET la valeur stockée dans
+    // profiles.plan — la CHECK constraint côté base n'autorise que
+    // 'joueur_starter' | 'joueur_pro' | 'educateur' | 'scout' | 'club' | 'dirigeant'
+    // ('recruteur' est rejeté, vérifié directement contre la base).
+    const plan = profilChoisi.id
 
     // Passé en metadata pour que le trigger on_auth_user_created (voir
     // supabase_profil_auto_creation.sql) puisse créer la ligne profiles

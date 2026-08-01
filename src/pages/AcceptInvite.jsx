@@ -155,11 +155,14 @@ function AcceptInvite() {
       const equipeJoueurId = meta.equipe_joueur_id
 
       if (clubId) {
-        // Invitation staff
+        // Invitation staff — profil minimal, le vrai rôle vit dans staff_club.
+        // 'dirigeant' car la CHECK constraint sur profiles.plan n'autorise que
+        // joueur_starter/joueur_pro/educateur/scout/club/dirigeant ('fan' est
+        // rejeté, vérifié directement contre la base).
         const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
         if (errProfilSelect) throw new Error(errProfilSelect.message)
         if (!profilExistant) {
-          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
+          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'dirigeant' })
           if (errProfilInsert) throw new Error(errProfilInsert.message)
         }
         const { data: staffExistant, error: errStaffSelect } = await supabase.from('staff_club').select('id').eq('club_id', clubId).eq('user_id', user.id).maybeSingle()
@@ -177,7 +180,7 @@ function AcceptInvite() {
         const { data: profilExistant, error: errProfilSelect } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
         if (errProfilSelect) throw new Error(errProfilSelect.message)
         if (!profilExistant) {
-          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'fan' })
+          const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, plan: 'dirigeant' })
           if (errProfilInsert) throw new Error(errProfilInsert.message)
         }
         const { error: errDirigeantUpdate } = await supabase

@@ -184,7 +184,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
             </span>
           )}
           <button onClick={() => onOpenProfile(j)} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('feed_profil_fleche', lang)}</button>
-          {profil?.plan === 'recruteur' && !isOwner && (
+          {profil?.plan === 'scout' && !isOwner && (
             <button
               onClick={() => navigate(isClub ? '/club' : '/scout-club', { state: { contactJoueur: j } })}
               style={{ background: '#4ade80', color: '#000', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
@@ -309,11 +309,11 @@ function Feed() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     setProfil(p)
 
-    if (p?.plan === 'starter' || p?.plan === 'fan') { setAcces(false); setLoading(false); return }
+    if (p?.plan === 'starter' || p?.plan === 'fan' || p?.plan === 'joueur_starter') { setAcces(false); setLoading(false); return }
 
     setAcces(true)
 
-    const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
     await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
     setLoading(false)
@@ -348,7 +348,7 @@ function Feed() {
   }
 
   const refresh = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('plan', 'pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
     await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
   }
@@ -369,7 +369,7 @@ function Feed() {
   const joueursFiltres = joueursPro.filter(appliquerFiltres)
   const joueursAvecClipFiltres = joueursAvecClip.filter(appliquerFiltres)
   const feedVideos = joueursAvecClipFiltres
-  const isRecruteur = profil?.plan === 'recruteur'
+  const isRecruteur = profil?.plan === 'scout'
   const isClub = profil?.plan === 'club'
 
   const st = {
