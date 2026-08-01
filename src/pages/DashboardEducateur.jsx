@@ -415,6 +415,171 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
+const STATUT_LABELS_ACCUEIL = { present: '✅ Présent', absent: '❌ Absent', blesse: '🤕 Blessé', malade: '🤒 Malade', convoque: '🏆 Convoqué' }
+
+function AccueilEducateur({ joueurs, entrainements, dispoJoueurs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
+  const aujourdHui = new Date().toISOString().split('T')[0]
+
+  const totalJoueurs = joueurs.length
+
+  const prochainEnt = [...entrainements]
+    .filter(e => e.date >= aujourdHui)
+    .sort((a, b) => a.date.localeCompare(b.date))[0] || null
+
+  // Fenêtre lundi → dimanche de la semaine en cours
+  const now = new Date()
+  const joursDepuisLundi = (now.getDay() + 6) % 7
+  const lundi = new Date(now); lundi.setDate(now.getDate() - joursDepuisLundi)
+  const dimanche = new Date(lundi); dimanche.setDate(lundi.getDate() + 6)
+  const lundiStr = lundi.toISOString().split('T')[0]
+  const dimancheStr = dimanche.toISOString().split('T')[0]
+  const seancesSemaine = entrainements.filter(e => e.date >= lundiStr && e.date <= dimancheStr && e.date <= aujourdHui && (e.presences_entrainement || []).length > 0)
+  let tauxPresenceSemaine = null
+  if (seancesSemaine.length > 0) {
+    const getStatut = (p) => p.statut || (p.present ? 'present' : 'absent')
+    let totalSaisies = 0, totalPresents = 0
+    seancesSemaine.forEach(e => {
+      const saisies = e.presences_entrainement || []
+      totalSaisies += saisies.length
+      totalPresents += saisies.filter(p => { const s = getStatut(p); return s === 'present' || s === 'convoque' }).length
+    })
+    tauxPresenceSemaine = totalSaisies > 0 ? Math.round((totalPresents / totalSaisies) * 100) : null
+  }
+
+  const joueursLiables = joueurs.filter(j => j.joueur_id).length
+  const sondagesOuverts = entrainements.filter(e => e.date >= aujourdHui && !e.sondage_clos)
+  const totalEnAttente = sondagesOuverts.reduce((sum, e) => {
+    const repondus = Object.keys(dispoJoueurs[e.id] || {}).length
+    return sum + Math.max(joueursLiables - repondus, 0)
+  }, 0)
+
+  const dernieresReponses = disposRecentes.map(d => {
+    const j = joueurs.find(jj => jj.joueur_id === d.joueur_id)
+    const seance = entrainements.find(e => e.id === d.seance_id)
+    return {
+      ...d,
+      joueurNom: j ? `${j.prenom} ${j.nom}` : 'Joueur',
+      seanceLabel: seance?.description || (seance?.date ? new Date(seance.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''),
+    }
+  })
+
+  const joueursLiesRecemment = affiliations.filter(a => a.statut === 'accepte').slice(0, 5)
+
+  return (
+    <div>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏠 Accueil</h1>
+      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
+
+      {/* Widgets résumé */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>👥 Effectif</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🏃 Prochain entraînement</p>
+          {prochainEnt ? (
+            <>
+              <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainEnt.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{prochainEnt.description || 'Séance'}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''}</p>
+            </>
+          ) : (
+            <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>Aucune séance planifiée</p>
+          )}
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>📊 Présence cette semaine</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#60a5fa' }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🗳️ Sondages ouverts</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: totalEnAttente > 0 ? '#60a5fa' : '#fff' }}>{totalEnAttente}</p>
+          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>en attente de réponse{totalEnAttente > 1 ? 's' : ''} · {sondagesOuverts.length} sondage{sondagesOuverts.length > 1 ? 's' : ''} ouvert{sondagesOuverts.length > 1 ? 's' : ''}</p>
+        </div>
+      </div>
+
+      {/* Actions rapides */}
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>Actions rapides</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
+        {[
+          { emoji: '➕', label: 'Ajouter un joueur', section: 'equipe' },
+          { emoji: '🏃', label: 'Créer un entraînement', section: 'entrainements' },
+          { emoji: '📊', label: 'Analyse rapport', section: 'analyse_video' },
+          { emoji: '🎨', label: 'Tacticboard', section: 'tactipad' },
+        ].map(a => (
+          <button key={a.section} onClick={() => setActiveSection(a.section)}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            <span style={{ fontSize: '26px' }}>{a.emoji}</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Fil d'activité récente */}
+      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>Activité récente</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>🗳️ Dernières réponses aux sondages</p>
+          {dernieresReponses.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune réponse pour l'instant.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {dernieresReponses.map(d => (
+                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.joueurNom}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{d.seanceLabel}</p>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#60a5fa', whiteSpace: 'nowrap' }}>{STATUT_LABELS_ACCUEIL[d.statut] || d.statut}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>🔗 Comptes liés récemment</p>
+          {joueursLiesRecemment.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun compte lié pour l'instant.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {joueursLiesRecemment.map(a => (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{a.joueur?.prenom} {a.joueur?.nom}</p>
+                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString('fr-FR') : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px' }}>📄 Derniers rapports générés</p>
+          {rapportsRecents.length === 0 ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {rapportsRecents.map(r => (
+                <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{r.prenom_joueur || 'Sans nom'}{r.poste ? ` — ${r.poste}` : ''}</p>
+                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap' }}>{r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // educateurIdOverride/permissions : utilisés quand ce dashboard est rendu pour un
 // dirigeant délégué (DashboardDirigeant.jsx) plutôt que pour l'éducateur lui-même —
 // voir canEdit()/canView() et sidebarSections plus bas pour le gating par section.
@@ -424,7 +589,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
-  const [activeSection, setActiveSection] = useState('equipe')
+  const [activeSection, setActiveSection] = useState('accueil')
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -486,6 +651,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
+  const [disposRecentes, setDisposRecentes] = useState([]) // dernières réponses aux sondages, pour le fil d'activité de l'accueil
+  const [rapportsRecents, setRapportsRecents] = useState([]) // derniers rapports d'analyse, pour le fil d'activité de l'accueil
   const [sousOngletEnt, setSousOngletEnt] = useState('liste') // 'liste' | 'prochaine'
   const [savingCloture, setSavingCloture] = useState(false)
   const [showPlanificateur, setShowPlanificateur] = useState(false)
@@ -552,7 +719,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId)])
+    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
     setLoading(false)
   }
 
@@ -631,13 +798,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
     const entrainementIds = (data || []).map(e => e.id)
     if (entrainementIds.length > 0) {
-      const { data: dispos } = await supabase.from('disponibilites').select('joueur_id, seance_id, statut').in('seance_id', entrainementIds)
+      const { data: dispos } = await supabase.from('disponibilites').select('id, joueur_id, seance_id, statut, created_at').in('seance_id', entrainementIds)
       const map = {}
       dispos?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
       setDispoJoueurs(map)
+      setDisposRecentes([...(dispos || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5))
     } else {
       setDispoJoueurs({})
+      setDisposRecentes([])
     }
+  }
+
+  const chargerRapportsRecents = async (uid) => {
+    const { data } = await supabase.from('rapports_analyse').select('id, prenom_joueur, poste, created_at, date_analyse').eq('educateur_id', uid).order('created_at', { ascending: false }).limit(5)
+    setRapportsRecents(data || [])
   }
 
   const chargerNotes = async (uid) => {
@@ -1908,6 +2082,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
           {profil?.club && <p style={{ fontSize: '12px', color: '#555', margin: '8px 0 0' }}>{profil.club}</p>}
         </div>
 
+        <div style={{ padding: '0 10px' }}>
+          <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            <span>🏠</span><span style={{ flex: 1 }}>Accueil</span>
+          </button>
+        </div>
+
         <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
           {sidebarSectionsVisibles.map(section => (
             <div key={section.titre}>
@@ -1973,6 +2154,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
             ☰
           </button>
+        )}
+
+        {/* ===== ACCUEIL ===== */}
+        {activeSection === 'accueil' && (
+          <AccueilEducateur
+            joueurs={joueurs}
+            entrainements={entrainements}
+            dispoJoueurs={dispoJoueurs}
+            disposRecentes={disposRecentes}
+            affiliations={affiliations}
+            rapportsRecents={rapportsRecents}
+            setActiveSection={setActiveSection}
+          />
         )}
 
         {/* ===== MON ÉQUIPE ===== */}
