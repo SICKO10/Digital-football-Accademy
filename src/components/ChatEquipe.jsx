@@ -234,7 +234,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
         })
         setAuteurs(prev => {
           if (!payload.new.auteur_id || prev[payload.new.auteur_id]) return prev
-          supabase.from('profiles').select('id, prenom, nom').eq('id', payload.new.auteur_id).single()
+          supabase.from('profiles').select('id, prenom, nom').eq('id', payload.new.auteur_id).maybeSingle()
             .then(({ data: p }) => { if (p) setAuteurs(cur => ({ ...cur, [p.id]: p })) })
           return prev
         })

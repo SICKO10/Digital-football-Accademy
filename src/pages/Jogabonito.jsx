@@ -90,7 +90,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       await supabase.from('likes').insert({ user_id: user.id, clip_id: reel.joueur_id })
       setLikeCount(c => c + 1)
       if (reel.joueur_id !== user.id) {
-        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).maybeSingle()
         await notifierJoueur({ type: 'like', userId: reel.joueur_id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
       }
     }
@@ -125,7 +125,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
     setNewComment('')
     chargerInteractions()
     if (reel.joueur_id !== user.id) {
-      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).maybeSingle()
       await notifierJoueur({ type: 'commentaire', userId: reel.joueur_id, titre: 'Nouveau commentaire', contenu: { auteur: auteur?.prenom, texte: newComment.trim() }, lien: '/dashboard' })
     }
   }

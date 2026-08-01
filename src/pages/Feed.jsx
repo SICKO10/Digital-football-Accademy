@@ -111,7 +111,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
     else {
       await supabase.from('likes').insert({ user_id: user.id, clip_id: j.id })
       if (j.id !== user.id) {
-        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+        const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).maybeSingle()
         await notifierJoueur({ type: 'like', userId: j.id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
       }
     }
@@ -130,7 +130,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
     setSendingComment(true)
     await supabase.from('comments').insert({ user_id: user.id, joueur_id: j.id, content: newComment.trim() })
     if (j.id !== user.id) {
-      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+      const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).maybeSingle()
       await notifierJoueur({ type: 'commentaire', userId: j.id, titre: 'Nouveau commentaire', contenu: { auteur: auteur?.prenom, texte: newComment.trim() }, lien: '/dashboard' })
     }
     setNewComment('')
@@ -306,7 +306,7 @@ function Feed() {
 
     if (!user) { navigate('/login'); return }
 
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     setProfil(p)
 
     if (p?.plan === 'starter' || p?.plan === 'fan') { setAcces(false); setLoading(false); return }
@@ -573,7 +573,7 @@ function Feed() {
                     ? supabase.from('likes').delete().eq('user_id', user.id).eq('clip_id', joueurModal.id)
                     : supabase.from('likes').insert({ user_id: user.id, clip_id: joueurModal.id }))
                   if (!dejaLike && joueurModal.id !== user.id) {
-                    const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).single()
+                    const { data: auteur } = await supabase.from('profiles').select('prenom').eq('id', user.id).maybeSingle()
                     await notifierJoueur({ type: 'like', userId: joueurModal.id, titre: 'Nouveau like', contenu: { auteur: auteur?.prenom }, lien: '/dashboard' })
                   }
                   refresh()

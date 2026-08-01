@@ -374,7 +374,7 @@ function DashboardJoueur() {
     setUserId(user.id)
     await chargerNotifications(user.id)
     await chargerNotifPrefs(user.id)
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
     const { data: coachData } = await supabase.from('profiles').select('*').eq('plan', 'coach')
     setProfil(data)
@@ -2817,7 +2817,7 @@ function DashboardJoueur() {
                   <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
                 </div>
                 <button onClick={async () => {
-                  const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).single()
+                  const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).maybeSingle()
                   if (data) setRecruteurModal(data)
                 }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   {t('jm_voir_profil', lang)}

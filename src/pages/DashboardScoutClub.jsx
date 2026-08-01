@@ -13,7 +13,7 @@ export default function DashboardScoutClub() {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (!profile || profile.plan !== "club") { navigate("/"); return; }
       setUserId(user.id);
       setProfil(profile);

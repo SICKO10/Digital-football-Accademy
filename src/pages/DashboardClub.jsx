@@ -249,7 +249,7 @@ export default function DashboardClub() {
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     if (!profile) { navigate('/'); return }
 
     let resolvedClubId, clubProfile, role
@@ -263,7 +263,7 @@ export default function DashboardClub() {
       // Sinon, cherche un rattachement staff vers un club
       const { data: staffRow } = await supabase.from('staff_club').select('role, club_id').eq('user_id', user.id).maybeSingle()
       if (!staffRow) { navigate('/'); return }
-      const { data: cp } = await supabase.from('profiles').select('*').eq('id', staffRow.club_id).single()
+      const { data: cp } = await supabase.from('profiles').select('*').eq('id', staffRow.club_id).maybeSingle()
       if (!cp) { navigate('/'); return }
       resolvedClubId = staffRow.club_id
       clubProfile = cp

@@ -24,7 +24,7 @@ export default function UploadClip() {
   async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     if (!p || p.plan !== 'pro' || !p.abonnement_actif) { navigate('/dashboard'); return }
     setUser(user)
     setProfil(p)

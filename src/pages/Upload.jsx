@@ -42,7 +42,7 @@ export default function Upload() {
   async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-    const { data: profil } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data: profil } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     if (!profil || !profil.abonnement_actif || profil.plan === 'recruteur' || profil.plan === 'coach') {
       navigate('/dashboard'); return
     }

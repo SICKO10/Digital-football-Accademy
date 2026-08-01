@@ -55,7 +55,7 @@ export default function ClubPublic() {
       setUserId(user.id)
 
       // Profil éducateur
-      const { data: edu } = await supabase.from('profiles').select('*').eq('id', id).single()
+      const { data: edu } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
       setEducateur(edu)
 
       // Joueurs de l'équipe

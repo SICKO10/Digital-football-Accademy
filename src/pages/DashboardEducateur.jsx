@@ -548,7 +548,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // ciblé, pas celui du compte connecté. chargerStaffClub reste sur le compte connecté
     // (bouton "Vue Club" propre à qui est réellement staff, pas au dirigeant délégué).
     const targetId = educateurIdOverride || user.id
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId).single()
+    const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
