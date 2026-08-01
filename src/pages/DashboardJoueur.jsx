@@ -2205,15 +2205,14 @@ function DashboardJoueur() {
                             const selected = pending !== undefined ? pending : statut
                             const hasUnsavedChoice = pending !== undefined && pending !== statut
                             return (
-                              <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
-                                <p style={{ fontSize: '11px', color: '#444', marginBottom: '8px' }}>{t('aff_seras_tu_present', lang)}</p>
-                                <div style={{ display: 'flex', flexDirection: 'row-reverse', overflowX: 'auto', gap: '10px', paddingBottom: '4px' }}>
+                              <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '8px 16px 10px', background: '#ffffff04', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '6px' }}>
                                   {OPTIONS_SONDAGE.map(opt => {
                                     const isSelected = selected === opt.val
                                     return (
                                       <button key={opt.val} title={opt.label}
                                         onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
-                                        style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '20px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        style={{ flexShrink: 0, width: '30px', height: '30px', borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '14px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {opt.emoji}
                                       </button>
                                     )
@@ -2225,11 +2224,11 @@ function DashboardJoueur() {
                                       await repondreDisponibilite(ev.id, ev.type, pending)
                                       setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
                                     }}
-                                    style={{ marginTop: '10px', background: '#4ade80', color: '#000', border: 'none', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                    style={{ background: '#4ade80', color: '#000', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
                                     {t('aff_valider', lang)}
                                   </button>
                                 )}
-                                {statut && !hasUnsavedChoice && <p style={{ fontSize: '10px', color: '#4ade80', marginTop: '8px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                                {statut && !hasUnsavedChoice && <p style={{ fontSize: '10px', color: '#4ade80', margin: 0, flexShrink: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
                               </div>
                             )
                           })()}
