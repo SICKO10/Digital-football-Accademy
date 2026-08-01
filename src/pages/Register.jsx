@@ -225,7 +225,7 @@ export default function Register() {
                     <span style={{ position: 'absolute', top: '-9px', right: '10px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{opt.badge}</span>
                   )}
                   <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: cycle === opt.key ? profilChoisi.color : '#fff' }}>{opt.titre}</p>
-                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px' }}>{opt.prix}</p>
+                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: '#fff' }}>{opt.prix}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#666', lineHeight: 1.4 }}>{opt.desc}</p>
                 </button>
               ))}

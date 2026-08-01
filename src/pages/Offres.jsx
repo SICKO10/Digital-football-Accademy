@@ -44,7 +44,7 @@ function OffreCycle({ emoji, titre, color, features, profilId }) {
             }}>
             {opt.sous && <span style={{ position: 'absolute', top: '-8px', right: '8px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '20px' }}>{opt.sous}</span>}
             <p style={{ margin: 0, fontSize: '11px', color: cycle === opt.key ? color : '#666', fontWeight: 700 }}>{opt.label}</p>
-            <p style={{ margin: '2px 0 0', fontSize: '15px', fontWeight: 800 }}>{opt.prix}</p>
+            <p style={{ margin: '2px 0 0', fontSize: '15px', fontWeight: 800, color }}>{opt.prix}</p>
           </button>
         ))}
       </div>
