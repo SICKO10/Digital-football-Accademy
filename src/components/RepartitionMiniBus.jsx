@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
 const NATURES = [
@@ -80,7 +80,6 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
   const [publishing, setPublishing] = useState(false)
   const [publishSuccess, setPublishSuccess] = useState(false)
 
-  const fileInputRef = useRef(null)
 
   const chargerVehicules = async () => {
     setLoadingVehicules(true)
@@ -121,7 +120,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
     } else {
       setScanError('Format non supporté. Utilise une image, un fichier .xlsx ou .csv.')
     }
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    e.target.value = ''
   }
 
   const parseTableur = async (file) => {
@@ -335,13 +334,18 @@ Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou nu
       {/* ── Étape 1 — Upload ── */}
       <div style={{ ...st.card, marginBottom: '1.5rem' }}>
         <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>Étape 1 — Planning de déplacements</p>
-        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 14px' }}>Photo/capture d'un tableau, ou fichier Excel/CSV.</p>
+        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 14px' }}>Fichier Excel/CSV, ou photo d'un tableau.</p>
 
-        <input ref={fileInputRef} type="file" accept="image/*,.xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-planning" />
+        <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-excel" />
+        <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-image" />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <label htmlFor="input-scan-planning"
+          <label htmlFor="input-scan-excel"
             style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
-            {scanning ? '⏳ Analyse en cours...' : '📷 Scanner un planning de déplacements'}
+            {scanning ? '⏳ Import en cours...' : '📊 Importer un fichier Excel / CSV'}
+          </label>
+          <label htmlFor="input-scan-image"
+            style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
+            {scanning ? '⏳ Analyse en cours...' : '📷 Scanner une photo'}
           </label>
           {lignes.length > 0 && (
             <button onClick={ajouterLigneManuelle}
@@ -350,6 +354,10 @@ Si une information n'est pas visible ou lisible, mets une chaîne vide "" (ou nu
             </button>
           )}
         </div>
+
+        <p style={{ fontSize: '11px', color: '#666', marginTop: '10px', marginBottom: 0 }}>
+          💡 Privilégie le fichier Excel/CSV si plusieurs personnes scannent en même temps — il n'y a pas de limite de débit contrairement à la reconnaissance photo. Depuis Apple Numbers : exporte d'abord en .xlsx ou .csv (Fichier → Exporter vers), le format .numbers natif ne peut pas être lu directement.
+        </p>
 
         {scanError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {scanError}</p>}
 
