@@ -5,15 +5,7 @@ import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
-
-// Scout et Recruteur partagent les mêmes offres.
-const STRIPE_LINKS_RECRUTEUR = {
-  mensuel: 'https://buy.stripe.com/test_eVqfZiaUIbFvc8OfCI4ko0k', // 10€/mois
-  annuel:  'https://buy.stripe.com/test_bJedRad2Q8tj3CieyE4ko0l', // 100€/an
-};
-// Permet au webhook Stripe (supabase/functions/stripe-webhook) d'identifier
-// le profil à activer après paiement.
-const stripeUrl = (base, uid) => uid ? `${base}?client_reference_id=${uid}` : base;
+import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 
 const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];

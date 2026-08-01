@@ -12,19 +12,11 @@ import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
+import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
 const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors']
-
-const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_cNi3cw3sg10R0q6gGM4ko07', // mensuel — 10€/mois
-  pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // annuel — 100€/an
-  analyse_unite: 'https://buy.stripe.com/test_aFabJ27Iw6lbegW4Y44ko05', // analyse à l'unité — 60€
-}
-// Permet au webhook Stripe (supabase/functions/stripe-webhook) d'identifier
-// le profil à créditer/activer après paiement.
-const stripeUrl = (base, uid) => uid ? `${base}?client_reference_id=${uid}` : base
 
 const IconHome = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

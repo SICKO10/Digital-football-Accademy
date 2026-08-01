@@ -1,11 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
-
-const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_cNi3cw3sg10R0q6gGM4ko07', // mensuel — 10€/mois
-  pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // annuel — 100€/an
-}
+import { STRIPE_LINKS } from '../lib/stripeLinks'
 
 function Home() {
   const navigate = useNavigate()
@@ -121,24 +117,19 @@ function Home() {
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>{t('home_acces_professionnel', lang)}</h2>
         <p style={{ color: '#666', fontSize: '15px', marginBottom: '3rem' }}>{t('home_pour_clubs_desc', lang)}</p>
         <div style={{ maxWidth: '520px', margin: '0 auto', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '-14px', right: '20px', background: '#ef4444', color: 'white', fontSize: '12px', fontWeight: 700, padding: '4px 14px', borderRadius: '20px', zIndex: 1 }}>{t('home_offre_limitee_pct', lang)}</div>
           <div style={{ background: '#111', border: '2px solid #4ade80', borderRadius: '16px', padding: '2.5rem', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '40px' }}>🏆</div>
               <div><h3 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>{t('home_acces_recruteur', lang)}</h3><p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0' }}>{t('home_abonnement_annuel', lang)}</p></div>
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '18px', color: '#555', textDecoration: 'line-through' }}>500EUR{t('home_an_suffix', lang)}</span>
-                <span style={{ background: '#ef444420', color: '#ef4444', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{t('home_offre_lancement', lang)}</span>
-              </div>
-              <div style={{ fontSize: '48px', fontWeight: 800, color: '#4ade80', lineHeight: 1.1 }}>200EUR <span style={{ fontSize: '18px', color: '#555', fontWeight: 400 }}>{t('home_an_suffix', lang)}</span></div>
-              <p style={{ fontSize: '13px', color: '#ef4444', marginTop: '4px' }}>{t('home_offre_limitee_places', lang)}</p>
+              <div style={{ fontSize: '48px', fontWeight: 800, color: '#4ade80', lineHeight: 1.1 }}>100EUR <span style={{ fontSize: '18px', color: '#555', fontWeight: 400 }}>{t('home_an_suffix', lang)}</span></div>
+              <p style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>10EUR{t('home_mois_suffix', lang)}</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '2rem' }}>
               {[t('home_rec_feature1', lang), t('home_rec_feature2', lang), t('home_rec_feature3', lang), t('home_rec_feature4', lang), t('home_rec_feature5', lang), t('home_rec_feature6', lang), t('home_rec_feature7', lang), t('home_rec_feature8', lang)].map(f => (<div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa' }}><span style={{ color: '#4ade80' }}>✓</span> {f}</div>))}
             </div>
-            <button onClick={() => navigate('/register-recruteur')} style={{ width: '100%', padding: '15px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>{t('home_commencer_pour', lang)} 200EUR{t('home_an_suffix', lang)}</button>
+            <button onClick={() => navigate('/register-recruteur')} style={{ width: '100%', padding: '15px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>{t('home_commencer_pour', lang)} 100EUR{t('home_an_suffix', lang)}</button>
             <p style={{ fontSize: '12px', color: '#555', textAlign: 'center', marginTop: '10px' }}>{t('home_facturation_annuelle', lang)}</p>
           </div>
         </div>

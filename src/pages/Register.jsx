@@ -3,18 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 
-// TODO: remplacer ces placeholders par les vrais Payment Links Stripe avant mise en prod
 const STRIPE = {
-  joueur_pro_mensuel: '#todo-stripe-joueur-pro-mensuel',
-  joueur_pro_annuel: '#todo-stripe-joueur-pro-annuel',
-  edu_mensuel: '#todo-stripe-edu-mensuel',
-  edu_annuel: '#todo-stripe-edu-annuel',
-  scout_mensuel: '#todo-stripe-scout-mensuel',
-  scout_annuel: '#todo-stripe-scout-annuel',
+  joueur_pro_mensuel: STRIPE_LINKS.starter,
+  edu_mensuel: STRIPE_LINKS_EDU.edu_mensuel,
+  scout_mensuel: STRIPE_LINKS_RECRUTEUR.mensuel,
 }
-// TODO: remplacer par le vrai lien de formulaire (Tally / Cal.com / Crisp)
-const CLUB_CONTACT_URL = '#todo-lien-contact-club'
+// Club : pas de paiement en libre-service — le support vérifie le nombre de
+// licenciés avant d'envoyer le lien de paiement adapté au palier.
+const CLUB_CONTACT_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Inscription club — activation abonnement')}`
 
 export default function Register() {
   const navigate = useNavigate()
@@ -75,12 +73,15 @@ export default function Register() {
 
     const userId = data.user?.id
     if (userId) {
+      // "scout" est le libellé marketing du profil recruteur (cf. lib/stripeLinks.js) —
+      // le plan stocké reste "recruteur" partout ailleurs dans l'appli.
+      const plan = profilChoisi.id === 'scout' ? 'recruteur' : profilChoisi.id
       await supabase.from('profiles').upsert({
         id: userId,
         prenom: prenom.trim(),
         nom: nom.trim(),
         email: email.trim().toLowerCase(),
-        plan: profilChoisi.id,
+        plan,
         abonnement_actif: !!profilChoisi.gratuit,
         abonnement_debut: profilChoisi.gratuit ? new Date().toISOString() : null,
       })
@@ -92,7 +93,7 @@ export default function Register() {
       window.open(CLUB_CONTACT_URL, '_blank')
       navigate('/login')
     } else if (profilChoisi.stripe) {
-      window.location.href = STRIPE[profilChoisi.stripe]
+      window.location.href = stripeUrl(STRIPE[profilChoisi.stripe], userId)
     } else {
       navigate('/dashboard')
     }

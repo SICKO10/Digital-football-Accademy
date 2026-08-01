@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 
 function RegisterRecruteur() {
   const navigate = useNavigate()
@@ -41,7 +42,7 @@ function RegisterRecruteur() {
       prenom,
       nom,
       poste: typeCompte,
-      plan: 'pending', // sera mis à jour par Stripe webhook (recruteur, club, ou educateur)
+      plan: typeCompte, // 'recruteur' | 'club' | 'educateur'
       analyses_restantes: 0,
       abonnement_actif: false,
       club,
@@ -49,21 +50,16 @@ function RegisterRecruteur() {
 
     setLoading(false)
 
-    try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan: typeCompte })
-      })
-      const data2 = await response.json()
-      if (data2.url) {
-        window.location.href = data2.url
-      } else {
-        setErreur(t('register_err_paiement_creation', lang))
-      }
-    } catch (err) {
-      setErreur(t('register_err_paiement_connexion', lang))
+    if (typeCompte === 'club') {
+      // Pas de paiement en libre-service — le support vérifie le nombre de
+      // licenciés avant d'envoyer le lien de paiement adapté au palier.
+      window.open(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Inscription club — ' + club)}`, '_blank')
+      navigate('/login')
+      return
     }
+
+    const lien = typeCompte === 'educateur' ? STRIPE_LINKS_EDU.edu_mensuel : STRIPE_LINKS_RECRUTEUR.mensuel
+    window.location.href = stripeUrl(lien, data.user.id)
   }
 
   return (
