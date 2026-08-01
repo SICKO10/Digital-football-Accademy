@@ -8,6 +8,7 @@ import { CATEGORIES } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
+import Deplacements from '../components/Deplacements'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
@@ -26,6 +27,7 @@ const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
 const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
@@ -2013,6 +2015,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       { key: 'equipe', label: t('nav_equipe', lang), icon: <IcoUsers /> },
       { key: 'stats', label: t('nav_stats', lang), icon: <IcoChart /> },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
+      { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
     ] },
     { titre: t('section_entrainement', lang), items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
@@ -3465,6 +3468,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               </div>
             )}
           </>
+        )}
+
+        {/* ===== DÉPLACEMENTS ===== */}
+        {activeSection === 'deplacements' && (
+          clubAffiliation?.club_id ? (
+            <Deplacements clubId={clubAffiliation.club_id} />
+          ) : (
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>
+              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.</p>
+            </div>
+          )
         )}
 
         {/* ===== ENTRAÎNEMENTS ===== */}

@@ -6,6 +6,7 @@ import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
+import Deplacements from '../components/Deplacements'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
@@ -1044,6 +1045,7 @@ export default function DashboardClub() {
               { id: 'educateurs', label: `👥 ${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}` },
             ] : [
               { id: 'sponsors', label: `🤝 ${t('club_tab_sponsors', lang)}` },
+              { id: 'deplacements', label: `🚌 ${t('nav_deplacements', lang)}` },
               { id: 'profil', label: `⭐ ${t('club_tab_profil', lang)}` },
               ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: `💰 ${t('club_tab_budget', lang)}` }] : []),
               ...(monRole === 'president' ? [{ id: 'staff', label: `👥 ${t('club_tab_staff', lang)}` }] : []),
@@ -1473,6 +1475,9 @@ export default function DashboardClub() {
         })()}
         {activeTab === 'sponsors' && (
           <GestionSponsors clubId={clubId} saison={saisonActuelle} />
+        )}
+        {activeTab === 'deplacements' && (
+          <Deplacements clubId={clubId} />
         )}
         {activeTab === 'recrutement' && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />
