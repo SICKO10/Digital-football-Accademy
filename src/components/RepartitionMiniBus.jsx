@@ -200,12 +200,20 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
 
   // ── Étape 2 : répartition ───────────────────────────────────────────────────
   const repartir = () => {
-    setSuggestions(repartirBus(lignes, vehicules))
+    const resultat = repartirBus(lignes, vehicules)
+    setSuggestions(resultat.map(s => (
+      s.statut === 'combine'
+        ? { ...s, vehicule1: s.vehicules[0] || '', vehicule2: s.vehicules[1] || '', conducteur1: '', conducteur2: '' }
+        : s
+    )))
   }
 
   const modifierSuggestion = (id, champ, valeur) => {
     setSuggestions(prev => prev.map(s => (s._id === id ? { ...s, [champ]: valeur } : s)))
   }
+
+  // Combine deux valeurs (bus ou conducteurs) en une chaîne "A + B" pour la publication.
+  const libelleCombine = (a, b) => [a, b].filter(Boolean).join(' + ')
 
   const nbInsuffisants = (suggestions || []).filter(s => s.statut === 'insuffisant' && !s.vehicule).length
   const nbCombines = (suggestions || []).filter(s => s.statut === 'combine').length
@@ -224,8 +232,8 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
       heure_retour_estimee: s.heure_retour_estimee || null,
       lieu_destination: s.lieu_destination || null,
       nature: s.nature || 'match',
-      vehicule: s.vehicule || null,
-      conducteur: s.conducteur || null,
+      vehicule: s.statut === 'combine' ? (libelleCombine(s.vehicule1, s.vehicule2) || null) : (s.vehicule || null),
+      conducteur: s.statut === 'combine' ? (libelleCombine(s.conducteur1, s.conducteur2) || null) : (s.conducteur || null),
       nb_personnes: s.nb_personnes !== '' ? parseInt(s.nb_personnes) : null,
       created_by: user?.id || null,
     }))
@@ -389,7 +397,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
                 </p>
               )}
               <div style={{ overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '780px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '920px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                       <th style={st.th}>Équipe</th>
@@ -408,13 +416,34 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
                         <td style={st.td}>{s.heure_retour_estimee || '—'}</td>
                         <td style={st.td}>{s.lieu_destination || '—'}</td>
                         <td style={st.td}>
-                          {s.statut === 'combine' && <p style={{ margin: '0 0 4px', fontSize: '11px', color: accentColor, fontWeight: 600 }}>🔀 {s.vehicule}</p>}
-                          <select style={{ ...st.input, borderColor: !s.vehicule ? '#ef444460' : '#2a2a2a' }} value={s.statut === 'combine' ? '' : s.vehicule} onChange={e => modifierSuggestion(s._id, 'vehicule', e.target.value)}>
-                            <option value="">{s.statut === 'combine' ? '— remplacer par un seul bus —' : '— aucun —'}</option>
-                            {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
-                          </select>
+                          {s.statut === 'combine' ? (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <select style={{ ...st.input, minWidth: '110px', borderColor: !s.vehicule1 ? '#ef444460' : '#2a2a2a' }} value={s.vehicule1 || ''} onChange={e => modifierSuggestion(s._id, 'vehicule1', e.target.value)}>
+                                <option value="">— Bus 1 —</option>
+                                {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
+                              </select>
+                              <select style={{ ...st.input, minWidth: '110px', borderColor: !s.vehicule2 ? '#ef444460' : '#2a2a2a' }} value={s.vehicule2 || ''} onChange={e => modifierSuggestion(s._id, 'vehicule2', e.target.value)}>
+                                <option value="">— Bus 2 —</option>
+                                {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
+                              </select>
+                            </div>
+                          ) : (
+                            <select style={{ ...st.input, borderColor: !s.vehicule ? '#ef444460' : '#2a2a2a' }} value={s.vehicule} onChange={e => modifierSuggestion(s._id, 'vehicule', e.target.value)}>
+                              <option value="">— aucun —</option>
+                              {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
+                            </select>
+                          )}
                         </td>
-                        <td style={st.td}><input style={st.input} placeholder="Nom du conducteur" value={s.conducteur} onChange={e => modifierSuggestion(s._id, 'conducteur', e.target.value)} /></td>
+                        <td style={st.td}>
+                          {s.statut === 'combine' ? (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <input style={st.input} placeholder="Conducteur bus 1" value={s.conducteur1 || ''} onChange={e => modifierSuggestion(s._id, 'conducteur1', e.target.value)} />
+                              <input style={st.input} placeholder="Conducteur bus 2" value={s.conducteur2 || ''} onChange={e => modifierSuggestion(s._id, 'conducteur2', e.target.value)} />
+                            </div>
+                          ) : (
+                            <input style={st.input} placeholder="Nom du conducteur" value={s.conducteur} onChange={e => modifierSuggestion(s._id, 'conducteur', e.target.value)} />
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
