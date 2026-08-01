@@ -23,6 +23,10 @@ function DashboardCoach() {
   const [clubsEnAttente, setClubsEnAttente] = useState([])
   const [palierChoisi, setPalierChoisi] = useState({}) // { [clubId]: 'c0' | 'c100' | ... }
   const [activatingClub, setActivatingClub] = useState(null)
+
+  // Demandes de contact club envoyées depuis /offres (accès restreint, cf. COACH_ADMIN_EMAILS)
+  const [demandesClub, setDemandesClub] = useState([])
+  const [traitantDemande, setTraitantDemande] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -60,8 +64,23 @@ function DashboardCoach() {
       setCoachEmail(user.email)
     }
     const taches = [getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()]
-    if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getClubsEnAttente())
+    if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getClubsEnAttente(), getDemandesClub())
     await Promise.all(taches)
+  }
+
+  const getDemandesClub = async () => {
+    const { data } = await supabase
+      .from('demandes_club')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setDemandesClub(data || [])
+  }
+
+  const marquerDemandeTraitee = async (id) => {
+    setTraitantDemande(id)
+    await supabase.from('demandes_club').update({ statut: 'traite' }).eq('id', id)
+    await getDemandesClub()
+    setTraitantDemande(null)
   }
 
   const getClubsEnAttente = async () => {
@@ -326,7 +345,10 @@ function DashboardCoach() {
     { id: 'recruteurs', label: 'Clubs / Agents', icon: '🏢', badge: 0 },
     { id: 'seances_club', label: 'Séances club', icon: '🎥', badge: seancesTransferees.length },
     { id: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️', badge: 0 },
-    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Clubs en attente', icon: '🏟️', badge: clubsEnAttente.length }] : []),
+    ...(isAdminClubs ? [
+      { id: 'clubs_admin', label: 'Clubs en attente', icon: '🏟️', badge: clubsEnAttente.length },
+      { id: 'demandes_club', label: 'Demandes Club', icon: '📨', badge: demandesClub.filter(d => d.statut === 'nouveau').length },
+    ] : []),
   ]
 
   const TITRES_SECTION = {
@@ -336,6 +358,7 @@ function DashboardCoach() {
     seances_club: '🎥 Séances club',
     analyseur_ia: '🎙️ Analyseur IA',
     clubs_admin: '🏟️ Clubs en attente d\'activation',
+    demandes_club: '📨 Demandes Club',
   }
 
   return (
@@ -935,6 +958,54 @@ function DashboardCoach() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ===== SECTION DEMANDES CLUB (accès restreint) ===== */}
+          {activeSection === 'demandes_club' && isAdminClubs && (
+            <>
+              <p style={{ color: '#666', fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+                Demandes de contact envoyées depuis la page /offres (formulaire club — pas de paiement en
+                libre-service). Recontacte sous 24-48h, puis marque comme traité une fois le club activé
+                ou la demande close.
+              </p>
+              {demandesClub.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📨</p>
+                  <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {demandesClub.map(d => (
+                    <div key={d.id} style={{ background: '#111', border: `1px solid ${d.statut === 'nouveau' ? '#f9731640' : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{d.prenom} {d.nom}</p>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
+                            {d.statut === 'nouveau' && (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: '#f9731615', border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>NOUVEAU</span>
+                            )}
+                          </div>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
+                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                        {d.statut === 'nouveau' ? (
+                          <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
+                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            {traitantDemande === d.id ? 'Mise à jour...' : '✓ Marquer comme traité'}
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>✓ Traité</span>
+                        )}
+                      </div>
+                      {d.message && (
+                        <p style={{ margin: 0, fontSize: '13px', color: '#aaa', lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{d.message}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </>

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabase'
 import { STRIPE_LINKS_CLUB } from '../lib/stripeLinks'
 
 const st = {
@@ -54,6 +56,76 @@ function OffrePro({ emoji, titre, color, features, profilId }) {
         </div>
         <button onClick={() => navigate(`/register?profil=${profilId}&cycle=annuel`)} style={st.cta(color, true)}>Commencer — 100€/an</button>
       </div>
+    </div>
+  )
+}
+
+const inputStyle = { width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '11px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }
+const ROLES_CLUB = ['Président', 'Directeur sportif', 'Dirigeant', 'Autre']
+
+// Formulaire de contact club — pas de paiement en libre-service, une vente
+// humaine convient mieux pour des contrats B2B à 50-250€/mois.
+function FormulaireClub() {
+  const [ouvert, setOuvert] = useState(false)
+  const [envoye, setEnvoye] = useState(false)
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+  const [form, setForm] = useState({ prenom: '', nom: '', role: ROLES_CLUB[0], email: '', telephone: '', message: '' })
+
+  const champ = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
+
+  const soumettre = async () => {
+    if (!form.prenom.trim() || !form.nom.trim() || !form.email.trim()) {
+      setErreur('Prénom, nom et email sont obligatoires.')
+      return
+    }
+    setEnvoi(true)
+    setErreur('')
+    const { error } = await supabase.from('demandes_club').insert({
+      prenom: form.prenom.trim(),
+      nom: form.nom.trim(),
+      role: form.role,
+      email: form.email.trim().toLowerCase(),
+      telephone: form.telephone.trim(),
+      message: form.message.trim(),
+      statut: 'nouveau',
+    })
+    setEnvoi(false)
+    if (error) { setErreur("Une erreur est survenue, réessaie ou écris-nous directement à contact@digital-football.fr."); return }
+    setEnvoye(true)
+  }
+
+  if (envoye) {
+    return (
+      <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+        <p style={{ fontSize: '32px', margin: '0 0 0.75rem' }}>✅</p>
+        <p style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>Demande envoyée</p>
+        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Nous vous recontactons sous 24-48h.</p>
+      </div>
+    )
+  }
+
+  if (!ouvert) {
+    return <button onClick={() => setOuvert(true)} style={st.cta('#a78bfa', true)}>Nous contacter</button>
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <input placeholder="Prénom *" value={form.prenom} onChange={champ('prenom')} style={inputStyle} />
+        <input placeholder="Nom *" value={form.nom} onChange={champ('nom')} style={inputStyle} />
+      </div>
+      <select value={form.role} onChange={champ('role')} style={inputStyle}>
+        {ROLES_CLUB.map(r => <option key={r} value={r}>{r}</option>)}
+      </select>
+      <input type="email" placeholder="Email de contact *" value={form.email} onChange={champ('email')} style={inputStyle} />
+      <input type="tel" placeholder="Numéro de téléphone" value={form.telephone} onChange={champ('telephone')} style={inputStyle} />
+      <textarea placeholder="Nombre de licenciés, besoins, questions…" value={form.message} onChange={champ('message')} rows={3}
+        style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+      {erreur && <p style={{ color: '#f87171', fontSize: '12px', margin: 0 }}>{erreur}</p>}
+      <button onClick={soumettre} disabled={envoi} style={{ ...st.cta('#a78bfa', true), opacity: envoi ? 0.7 : 1, cursor: envoi ? 'not-allowed' : 'pointer' }}>
+        {envoi ? 'Envoi...' : 'Envoyer la demande'}
+      </button>
     </div>
   )
 }
@@ -218,7 +290,7 @@ export default function Offres() {
           <blockquote style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: '10px', fontSize: '13px', color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
             « Invitez vos dirigeants, directeurs sportifs et secrétaires — chacun accède à son espace dédié. »
           </blockquote>
-          <button onClick={() => navigate('/register?profil=club')} style={st.cta('#a78bfa', true)}>Nous contacter</button>
+          <FormulaireClub />
         </div>
       </section>
 
