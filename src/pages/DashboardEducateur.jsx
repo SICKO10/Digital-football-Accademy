@@ -1530,7 +1530,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         })
       })
       const data = await response.json()
-      console.log('GROQ ERROR:', JSON.stringify(data))
+      console.log('GROQ RESPONSE:', JSON.stringify(data))
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
