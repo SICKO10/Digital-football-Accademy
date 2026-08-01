@@ -1525,7 +1525,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             ]}
           ],
           temperature: 0.7,
-          max_completion_tokens: 800
+          max_completion_tokens: 4000
         })
       })
       const data = await response.json()
