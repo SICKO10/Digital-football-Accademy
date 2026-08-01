@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
+import { STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
 
 function RegisterRecruteur() {
   const navigate = useNavigate()
@@ -60,14 +60,6 @@ function RegisterRecruteur() {
 
     setLoading(false)
 
-    if (typeCompte === 'club') {
-      // Pas de paiement en libre-service — le support vérifie le nombre de
-      // licenciés avant d'envoyer le lien de paiement adapté au palier.
-      window.open(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Inscription club — ' + club)}`, '_blank')
-      navigate('/login')
-      return
-    }
-
     const lien = typeCompte === 'educateur' ? STRIPE_LINKS_EDU.edu_mensuel : STRIPE_LINKS_RECRUTEUR.mensuel
     window.open(stripeUrl(lien, data.user.id, email), '_blank')
     navigate('/login')
@@ -91,7 +83,9 @@ function RegisterRecruteur() {
             {id:'club',      label:`🏟️ ${t('profil_club_label', lang)}`, desc:t('register_gestion_club', lang)},
             {id:'educateur', label:`🎓 ${t('register_educateur_type', lang)}`, desc:t('register_suivi_effectif', lang)},
           ].map(typeItem => (
-            <div key={typeItem.id} onClick={() => setTypeCompte(typeItem.id)} style={{border: typeCompte === typeItem.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === typeItem.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
+            <div key={typeItem.id}
+              onClick={() => typeItem.id === 'club' ? navigate('/offres') : setTypeCompte(typeItem.id)}
+              style={{border: typeCompte === typeItem.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === typeItem.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
               <div style={{fontWeight:'700', fontSize:'13px'}}>{typeItem.label}</div>
               <div style={{color:'#666', fontSize:'11px', marginTop:'4px'}}>{typeItem.desc}</div>
             </div>

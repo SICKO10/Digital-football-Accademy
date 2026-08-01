@@ -912,10 +912,10 @@ function DashboardCoach() {
           {activeSection === 'clubs_admin' && isAdminClubs && (
             <>
               <p style={{ color: '#666', fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-                Comptes club créés (via l'inscription ou /register-recruteur) en attente d'activation.
-                Vérifie le nombre de licenciés avec le club, choisis le palier correspondant, copie le lien
-                de paiement adapté et envoie-le par email. « Activer manuellement » sert uniquement si le
-                paiement se fait hors Stripe (virement...).
+                Comptes club (créés manuellement après un premier contact — voir aussi l'onglet
+                "Demandes Club") en attente d'activation. Vérifie le nombre de licenciés avec le club,
+                choisis le palier correspondant, copie le lien de paiement adapté et envoie-le par email.
+                « Activer manuellement » sert uniquement si le paiement se fait hors Stripe (virement...).
               </p>
               {clubsEnAttente.length === 0 ? (
                 <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>

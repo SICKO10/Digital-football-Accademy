@@ -3,11 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
-
-// Club : pas de paiement en libre-service — le support vérifie le nombre de
-// licenciés avant d'envoyer le lien de paiement adapté au palier.
-const CLUB_CONTACT_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Inscription club — activation abonnement')}`
+import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -45,8 +41,9 @@ export default function Register() {
   ]
 
   // Présélection depuis un lien externe (ex: page Offres) : /register?profil=joueur_pro&cycle=annuel
+  // Club exclu : plus de compte à créer pour ce profil, cf. onClick des cartes plus bas.
   const [searchParams] = useSearchParams()
-  const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil')) || null
+  const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil') && !pr.contact) || null
 
   const [etape, setEtape] = useState(profilPresélectionné ? 2 : 1) // 1 = choix profil | 2 = formulaire
   const [profilChoisi, setProfil] = useState(profilPresélectionné)
@@ -103,10 +100,7 @@ export default function Register() {
 
     setLoading(false)
 
-    if (profilChoisi.contact) {
-      window.open(CLUB_CONTACT_URL, '_blank')
-      navigate('/login')
-    } else if (profilChoisi.stripeMensuel) {
+    if (profilChoisi.stripeMensuel) {
       const lien = cycle === 'annuel' ? profilChoisi.stripeAnnuel : profilChoisi.stripeMensuel
       window.open(stripeUrl(lien, userId, email), '_blank')
       navigate('/login')
@@ -136,7 +130,12 @@ export default function Register() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {PROFILS.map(p => (
               <button key={p.id}
-                onClick={() => { setProfil(p); setCycle('mensuel'); setEtape(2) }}
+                onClick={() => {
+                  // Club : pas de création de compte — vente humaine via le
+                  // formulaire de contact de la page Offres (voir demandes_club).
+                  if (p.contact) { navigate('/offres'); return }
+                  setProfil(p); setCycle('mensuel'); setEtape(2)
+                }}
                 style={{
                   background: '#111', border: '1px solid #1a1a1a',
                   borderRadius: '14px', padding: '16px 18px',
