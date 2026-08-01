@@ -463,7 +463,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Matchs
   const [matchs, setMatchs] = useState([])
   const [showAddMatch, setShowAddMatch] = useState(false)
-  const [newMatch, setNewMatch] = useState({ date: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+  const [newMatch, setNewMatch] = useState({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
   const [savingMatch, setSavingMatch] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [scannerImageBase64, setScannerImageBase64] = useState(null)
@@ -480,7 +480,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
-  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', fiche_id: null })
+  const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
   const [showImportFiche, setShowImportFiche] = useState(false)
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
@@ -1396,7 +1396,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setSavingMatch(true)
     await supabase.from('matchs_equipe').insert({ ...newMatch, educateur_id: userId, domicile: newMatch.domicile })
     await chargerMatchs(userId)
-    setNewMatch({ date: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+    setNewMatch({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
     setSavingMatch(false)
   }
@@ -1614,7 +1614,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     if (!newEntrainement.date) return
     await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId })
     await chargerEntrainements(userId)
-    setNewEntrainement({ date: '', description: '', heure: '', fiche_id: null })
+    setNewEntrainement({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
     setShowAddEntrainement(false)
     setShowImportFiche(false)
   }
@@ -3038,8 +3038,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                       <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
+                      <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newMatch.heure} onChange={e => setNewMatch({ ...newMatch, heure: e.target.value })} /></div>
                       <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
                       <div><label style={st.label}>{t('comp_competition', lang)}</label><input style={st.input} placeholder="Championnat, Coupe..." value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })} /></div>
+                      <div><label style={st.label}>{t('comp_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newMatch.lieu} onChange={e => setNewMatch({ ...newMatch, lieu: e.target.value })} /></div>
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
                         <span style={{ color: '#555', paddingBottom: '10px', fontWeight: 700 }}>-</span>
@@ -3076,8 +3078,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             </p>
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
                               {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
+                              {m.heure ? ` · ${m.heure}` : ''}
                               {m.competition ? ` · ${m.competition}` : ''}
                               {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
+                              {m.lieu ? ` · 📍 ${m.lieu}` : ''}
                             </p>
                           </div>
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
@@ -3449,6 +3453,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
                   <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newEntrainement.heure} onChange={e => setNewEntrainement({ ...newEntrainement, heure: e.target.value })} /></div>
                   <div><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
+                  <div><label style={st.label}>{t('ent_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newEntrainement.lieu} onChange={e => setNewEntrainement({ ...newEntrainement, lieu: e.target.value })} /></div>
                 </div>
 
                 {/* ── Import d'une fiche archivée ── */}
@@ -3594,7 +3599,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                          {e.heure && <span style={{ fontSize: '12px', color: '#555' }}>{e.heure}</span>}
                           {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
+                          {e.lieu && <span style={{ fontSize: '12px', color: '#555' }}>📍 {e.lieu}</span>}
                           {e.fiche_id && (
                             <span
                               onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}

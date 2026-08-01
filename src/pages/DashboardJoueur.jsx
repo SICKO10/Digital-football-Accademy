@@ -464,13 +464,13 @@ function DashboardJoueur() {
     const dans30jours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const [{ data: entrainements }, { data: matchs }] = await Promise.all([
-      supabase.from('entrainements').select('id, date, description, heure, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
-      supabase.from('matchs_equipe').select('id, date, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
+      supabase.from('entrainements').select('id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
+      supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
     ])
 
     const events = [
-      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, sondage_clos: e.sondage_clos })),
-      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date, heure: m.heure })),
+      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, lieu: e.lieu, sondage_clos: e.sondage_clos })),
+      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date, heure: m.heure, lieu: m.lieu })),
     ].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 4)
     setWidgetCalendrier(events)
 
@@ -2182,7 +2182,7 @@ function DashboardJoueur() {
                           borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px',
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '11px' }}>{isMatch ? '⚽' : '🏃'}</span>
+                            {isMatch && <span style={{ fontSize: '11px' }}>⚽</span>}
                             {isToday && (
                               <span style={{ fontSize: '8px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '1px 6px', borderRadius: '20px' }}>
                                 {t('aff_aujourdhui', lang)}
@@ -2192,6 +2192,7 @@ function DashboardJoueur() {
                           </div>
                           <p style={{ fontWeight: 800, fontSize: '12px', margin: 0, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.titre}</p>
                           <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
+                          {ev.lieu && <p style={{ fontSize: '10px', color: '#555', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {ev.lieu}</p>}
 
                           {!sondageClos ? (
                             <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
