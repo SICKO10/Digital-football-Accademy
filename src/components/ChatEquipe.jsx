@@ -307,6 +307,8 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
           ],
         }
       })
+    } else {
+      console.error('Erreur vote sondage:', error)
     }
   }
 
