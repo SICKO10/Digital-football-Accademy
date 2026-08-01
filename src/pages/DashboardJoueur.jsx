@@ -311,6 +311,7 @@ function DashboardJoueur() {
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
+  const [pendingDispo, setPendingDispo] = useState({}) // { [eventId]: statut } — choix pas encore validé (avant clic sur "Valider")
   const [codeEquipe, setCodeEquipe] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
   const [codeError, setCodeError] = useState(null)
@@ -2150,7 +2151,7 @@ function DashboardJoueur() {
                 { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: '#4ade80' },
                 { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: '#ef4444' },
                 { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: '#f97316' },
-                { val: 'malade',   label: t('ent_malade', lang),   emoji: '🤒', color: '#a855f7' },
+                { val: 'malade',   label: t('ent_malade', lang),   emoji: '😷', color: '#a855f7' },
                 { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa' },
               ]
               return (
@@ -2199,23 +2200,39 @@ function DashboardJoueur() {
                             {statut && <div style={{ flexShrink: 0, fontSize: '20px' }}>{optStatut?.emoji}</div>}
                           </div>
 
-                          {!sondageClos && (
-                            <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
-                              <p style={{ fontSize: '11px', color: '#444', marginBottom: '8px' }}>{t('aff_seras_tu_present', lang)}</p>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {OPTIONS_SONDAGE.map(opt => {
-                                  const isSelected = statut === opt.val
-                                  return (
-                                    <button key={opt.val} onClick={() => repondreDisponibilite(ev.id, ev.type, opt.val)} disabled={savingDispo}
-                                      style={{ background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', padding: '5px 11px', borderRadius: '8px', fontSize: '11px', fontWeight: isSelected ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <span>{opt.emoji}</span><span>{opt.label}</span>
-                                    </button>
-                                  )
-                                })}
+                          {!sondageClos && (() => {
+                            const pending = pendingDispo[ev.id]
+                            const selected = pending !== undefined ? pending : statut
+                            const hasUnsavedChoice = pending !== undefined && pending !== statut
+                            return (
+                              <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
+                                <p style={{ fontSize: '11px', color: '#444', marginBottom: '8px' }}>{t('aff_seras_tu_present', lang)}</p>
+                                <div style={{ display: 'flex', flexDirection: 'row-reverse', overflowX: 'auto', gap: '10px', paddingBottom: '4px' }}>
+                                  {OPTIONS_SONDAGE.map(opt => {
+                                    const isSelected = selected === opt.val
+                                    return (
+                                      <button key={opt.val} title={opt.label}
+                                        onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
+                                        style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '20px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {opt.emoji}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                                {hasUnsavedChoice && (
+                                  <button disabled={savingDispo}
+                                    onClick={async () => {
+                                      await repondreDisponibilite(ev.id, ev.type, pending)
+                                      setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
+                                    }}
+                                    style={{ marginTop: '10px', background: '#4ade80', color: '#000', border: 'none', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                    {t('aff_valider', lang)}
+                                  </button>
+                                )}
+                                {statut && !hasUnsavedChoice && <p style={{ fontSize: '10px', color: '#4ade80', marginTop: '8px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
                               </div>
-                              {statut && <p style={{ fontSize: '10px', color: '#333', marginTop: '8px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
-                            </div>
-                          )}
+                            )
+                          })()}
 
                           {sondageClos && statut && (
                             <div style={{ borderTop: `1px solid ${accentColor}12`, padding: '10px 16px', background: '#ffffff04' }}>
