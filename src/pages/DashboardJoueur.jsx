@@ -470,7 +470,7 @@ function DashboardJoueur() {
 
     const events = [
       ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, lieu: e.lieu, sondage_clos: e.sondage_clos })),
-      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: `⚽ ${m.adversaire || t('aff_match_titre', lang)}`, date: m.date, heure: m.heure, lieu: m.lieu })),
+      ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: m.adversaire || t('aff_match_titre', lang), date: m.date, heure: m.heure, lieu: m.lieu })),
     ].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 4)
     setWidgetCalendrier(events)
 
@@ -2182,7 +2182,6 @@ function DashboardJoueur() {
                           borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px',
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                            {isMatch && <span style={{ fontSize: '11px' }}>⚽</span>}
                             {isToday && (
                               <span style={{ fontSize: '8px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '1px 6px', borderRadius: '20px' }}>
                                 {t('aff_aujourdhui', lang)}
