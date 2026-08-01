@@ -2,6 +2,46 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
 
+const etapesEducateur = [
+  { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil éducateur en 2 minutes' },
+  { num: 'ÉTAPE 2', titre: 'Tu construis ton équipe', desc: "Invite gratuitement tes joueurs avec un code d'équipe" },
+  { num: 'ÉTAPE 3', titre: 'Tu analyses', desc: 'Suis les présences, stats et progrès de chaque joueur' },
+  { num: 'ÉTAPE 4', titre: 'Tu développes', desc: 'Prépare tes séances, analyse, tactique et connecte tes joueurs' },
+]
+
+const etapesRecruteur = [
+  { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil scout en 2 minutes' },
+  { num: 'ÉTAPE 2', titre: 'Tu cherches', desc: 'Filtre les joueurs par poste, niveau, région' },
+  { num: 'ÉTAPE 3', titre: 'Tu analyses', desc: 'Consulte les stats et vidéos des joueurs' },
+  { num: 'ÉTAPE 4', titre: 'Tu recrutes', desc: "Contacte directement les talents qui t'intéressent" },
+]
+
+const etapesClub = [
+  { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton espace club selon ta taille' },
+  { num: 'ÉTAPE 2', titre: 'Tu organises', desc: 'Invite gratuitement tes éducateurs, dirigeants et secrétaires' },
+  { num: 'ÉTAPE 3', titre: 'Tu gères', desc: 'Budget, sponsors, multi-équipes, tout au même endroit' },
+  { num: 'ÉTAPE 4', titre: 'Tu te développes', desc: 'Connecte tes éducateurs et scouts aux joueurs pour trouver le bon profil' },
+]
+
+function EtapesSection({ badge, titre, etapes, color }) {
+  return (
+    <section style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+      <div style={{ display: 'inline-block', background: `${color}15`, border: `1px solid ${color}40`, color, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{badge}</div>
+      <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '3rem' }}>{titre}</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
+        {etapes.map(step => (
+          <div key={step.num} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.5rem', textAlign: 'left' }}>
+            <div style={{ width: '44px', height: '44px', background: `${color}15`, border: `1px solid ${color}40`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color, marginBottom: '1rem' }}>{step.num.match(/\d+/)?.[0]}</div>
+            <div style={{ fontSize: '11px', color, fontWeight: 700, marginBottom: '6px' }}>{step.num}</div>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{step.titre}</h3>
+            <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function Home() {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
@@ -111,6 +151,13 @@ function Home() {
         </div>
       </section>
 
+      <EtapesSection badge="TARIFS ÉDUCATEURS" titre="Développe tes joueurs" etapes={etapesEducateur} color="#60a5fa" />
+      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
+        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: '#60a5fa', border: '1px solid #60a5fa40', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs éducateur</button>
+      </div>
+
+      <EtapesSection badge="SCOUTS / RECRUTEURS" titre="Trouve tes prochains talents" etapes={etapesRecruteur} color="#f97316" />
+
       <section id="recruteurs" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_recruteurs_clubs_badge', lang)}</div>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.5rem' }}>{t('home_acces_professionnel', lang)}</h2>
@@ -133,6 +180,11 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <EtapesSection badge="CLUBS" titre="Gérez votre club de A à Z" etapes={etapesClub} color="#4ade80" />
+      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
+        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs club</button>
+      </div>
 
       <section style={{ background: '#0f0f0f', padding: '5rem 2rem', textAlign: 'center' }}>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>{t('home_pret_niveau_sup', lang)}</h2>
