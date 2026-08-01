@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { COACH_ADMIN_EMAILS } from './lib/coachAdmin'
 import Home from './pages/Home'
 import Offres from './pages/Offres'
 import RegisterChoix from './pages/RegisterChoix'
@@ -31,6 +32,9 @@ function SmartDashboard() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setDest('/login'); return }
+      // Comptes coach analyseur reconnus par email — la contrainte CHECK de
+      // profiles.plan n'autorise pas la valeur 'coach', cf. lib/coachAdmin.js.
+      if (COACH_ADMIN_EMAILS.includes(user.email)) { setDest('/coach'); return }
       Promise.all([
         supabase.from('profiles').select('plan').eq('id', user.id).single(),
         supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),

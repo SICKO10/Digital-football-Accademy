@@ -6,10 +6,7 @@ import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { notifierJoueur } from '../lib/notifications'
 import AnalyseurIA from '../components/AnalyseurIA'
 import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
-
-// Accès à l'onglet "Clubs en attente" restreint à ces comptes (pas de palier
-// de plan fiable pour ça — cf. discussion sur la confusion coach/educateur).
-const COACH_ADMIN_EMAILS = ['lagacytattidue@gmail.com', 'januariojimmy@gmail.com']
+import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 
 function DashboardCoach() {
   const navigate = useNavigate()
