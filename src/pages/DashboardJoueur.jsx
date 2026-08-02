@@ -440,17 +440,27 @@ function DashboardJoueur() {
       .order('date_fin', { ascending: false, nullsFirst: true })
     if (!afData || afData.length === 0) { setMesAffiliations([]); return }
 
-    // Charger les profils éducateurs séparément
+    // Charger les profils éducateurs séparément — planning_semaine_url vit sur
+    // profiles (pas profil_educateur), fetch séparé et fusionné.
     const educateurIds = [...new Set(afData.map(a => a.educateur_id))]
-    const { data: peData } = await supabase
-      .from('profil_educateur')
-      .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe, lien_groupe, planning_semaine_url, planning_semaine_publie_le')
-      .in('user_id', educateurIds)
+    const [{ data: peData }, { data: profData }] = await Promise.all([
+      supabase.from('profil_educateur')
+        .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe, lien_groupe')
+        .in('user_id', educateurIds),
+      supabase.from('profiles').select('id, planning_semaine_url').in('id', educateurIds),
+    ])
+
+    const planningMap = {}
+    profData?.forEach(p => { planningMap[p.id] = p.planning_semaine_url })
 
     const peMap = {}
-    peData?.forEach(pe => { peMap[pe.user_id] = pe })
+    peData?.forEach(pe => { peMap[pe.user_id] = { ...pe, planning_semaine_url: planningMap[pe.user_id] || null } })
 
-    setMesAffiliations(afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null })))
+    setMesAffiliations(afData.map(a => {
+      const pe = peMap[a.educateur_id]
+      const planningUrl = planningMap[a.educateur_id] || null
+      return { ...a, profil_educateur: pe || (planningUrl ? { planning_semaine_url: planningUrl } : null) }
+    }))
   }
 
   // Widget accueil : prochain entraînement + prochain match de l'éducateur, avec ma dispo déclarée
@@ -1172,11 +1182,6 @@ function DashboardJoueur() {
                 <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '14px', boxShadow: '0 0 0 1px #4ade8010' }}>
                   <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
                   <img src={edu.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
-                  {edu.planning_semaine_publie_le && (
-                    <p style={{ fontSize: '11px', color: '#444', margin: '8px 0 0' }}>
-                      {t('planning_semaine_publie_le', lang)} {new Date(edu.planning_semaine_publie_le).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -2160,11 +2165,6 @@ function DashboardJoueur() {
                 <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
                   <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
                   <img src={eduAffilie.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
-                  {eduAffilie.planning_semaine_publie_le && (
-                    <p style={{ fontSize: '11px', color: '#444', margin: '8px 0 0' }}>
-                      {t('planning_semaine_publie_le', lang)} {new Date(eduAffilie.planning_semaine_publie_le).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  )}
                 </div>
               )
             })()}

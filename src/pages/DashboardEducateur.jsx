@@ -447,7 +447,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, planningError, onUploadPlanning, onSupprimerPlanning, lang }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profil, uploadingPlanning, planningError, onUploadPlanning, onSupprimerPlanning, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -523,14 +523,16 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
           <div>
             <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-            <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('planning_semaine_desc_edu', lang)}</p>
+            {!profil?.planning_semaine_url && (
+              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('planning_semaine_desc_edu', lang)}</p>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
             <label style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: uploadingPlanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: uploadingPlanning ? 0.6 : 1 }}>
-              {uploadingPlanning ? t('planning_semaine_envoi', lang) : profilEdu?.planning_semaine_url ? t('planning_semaine_remplacer', lang) : t('planning_semaine_ajouter', lang)}
+              {uploadingPlanning ? t('planning_semaine_envoi', lang) : profil?.planning_semaine_url ? t('planning_semaine_remplacer', lang) : t('planning_semaine_ajouter', lang)}
               <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingPlanning} onChange={e => onUploadPlanning?.(e.target.files?.[0])} />
             </label>
-            {profilEdu?.planning_semaine_url && (
+            {profil?.planning_semaine_url && (
               <button onClick={onSupprimerPlanning} style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {t('planning_semaine_retirer', lang)}
               </button>
@@ -538,15 +540,8 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           </div>
         </div>
         {planningError && <p style={{ color: '#f87171', fontSize: '12px', margin: '0 0 10px' }}>⚠️ {planningError}</p>}
-        {profilEdu?.planning_semaine_url && (
-          <>
-            <img src={profilEdu.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
-            {profilEdu.planning_semaine_publie_le && (
-              <p style={{ fontSize: '11px', color: '#444', margin: '8px 0 0' }}>
-                {t('planning_semaine_publie_le', lang)} {new Date(profilEdu.planning_semaine_publie_le).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-              </p>
-            )}
-          </>
+        {profil?.planning_semaine_url && (
+          <img src={profil.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
         )}
       </div>
 
@@ -1479,15 +1474,14 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setUploadingPlanning(true)
     setPlanningError(null)
     try {
-      const url = await uploaderFichierSeance(file)
-      if (!url) throw new Error('Échec de l\'upload de l\'image (Cloudinary n\'a pas renvoyé d\'URL).')
-      const { error } = await supabase.from('profil_educateur').upsert({
-        ...profilEduEdit, user_id: userId,
-        planning_semaine_url: url,
-        planning_semaine_publie_le: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${userId}/planning.${ext}`
+      const { error: uploadError } = await supabase.storage.from('planning-semaine').upload(path, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('planning-semaine').getPublicUrl(path)
+      const { error } = await supabase.from('profiles').update({ planning_semaine_url: publicUrl }).eq('id', userId)
       if (error) throw error
-      await chargerProfilEdu(userId)
+      setProfil(prev => ({ ...prev, planning_semaine_url: publicUrl }))
     } catch (e) {
       console.error('Erreur upload planning semaine:', e)
       setPlanningError(e.message || 'Erreur inconnue lors de l\'upload.')
@@ -1498,9 +1492,9 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const supprimerPlanningSemaine = async () => {
     if (!window.confirm(t('planning_semaine_confirm_retrait', lang))) return
-    const { error } = await supabase.from('profil_educateur').update({ planning_semaine_url: null, planning_semaine_publie_le: null }).eq('user_id', userId)
+    const { error } = await supabase.from('profiles').update({ planning_semaine_url: null }).eq('id', userId)
     if (error) { setPlanningError(error.message); return }
-    await chargerProfilEdu(userId)
+    setProfil(prev => ({ ...prev, planning_semaine_url: null }))
   }
 
   const ajouterParcours = async () => {
@@ -2450,7 +2444,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             disposRecentes={disposRecentes}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
-            profilEdu={profilEdu}
+            profil={profil}
             uploadingPlanning={uploadingPlanning}
             planningError={planningError}
             onUploadPlanning={uploadPlanningSemaine}
