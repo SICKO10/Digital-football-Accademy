@@ -12,6 +12,7 @@ import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
+import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { useLang } from '../hooks/useLang'
@@ -448,7 +449,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profil, uploadingPlanning, planningError, onUploadPlanning, onSupprimerPlanning, lang }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -519,31 +520,15 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
 
-      {/* ── Planning de la semaine — encadré, visible automatiquement chez les joueurs affiliés ── */}
+      {/* ── Planning de la semaine — dynamique, généré depuis entrainements + matchs ── */}
       <div style={{ background: '#111', border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
-          <div>
-            <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-            {!profil?.planning_semaine_url && (
-              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('planning_semaine_desc_edu', lang)}</p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-            <label style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: uploadingPlanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: uploadingPlanning ? 0.6 : 1 }}>
-              {uploadingPlanning ? t('planning_semaine_envoi', lang) : profil?.planning_semaine_url ? t('planning_semaine_remplacer', lang) : t('planning_semaine_ajouter', lang)}
-              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingPlanning} onChange={e => onUploadPlanning?.(e.target.files?.[0])} />
-            </label>
-            {profil?.planning_semaine_url && (
-              <button onClick={onSupprimerPlanning} style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                {t('planning_semaine_retirer', lang)}
-              </button>
-            )}
-          </div>
-        </div>
-        {planningError && <p style={{ color: '#f87171', fontSize: '12px', margin: '0 0 10px' }}>⚠️ {planningError}</p>}
-        {profil?.planning_semaine_url && (
-          <img src={profil.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
-        )}
+        <p style={{ fontWeight: 800, fontSize: '14px', margin: '0 0 12px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+        <PlanningSemaineWidget
+          entrainements={entrainements}
+          matchs={matchs}
+          onClickEntrainement={() => setActiveSection('entrainements')}
+          onClickMatch={() => setActiveSection('matchs')}
+        />
       </div>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
@@ -784,8 +769,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [parcoursEdu, setParcoursEdu] = useState([])
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
-  const [uploadingPlanning, setUploadingPlanning] = useState(false)
-  const [planningError, setPlanningError] = useState(null)
   const [showAddParcours, setShowAddParcours] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
@@ -1470,33 +1453,6 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setUploadingDiplome(false)
   }
 
-  const uploadPlanningSemaine = async (file) => {
-    if (!file) return
-    setUploadingPlanning(true)
-    setPlanningError(null)
-    try {
-      const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${userId}/planning.${ext}`
-      const { error: uploadError } = await supabase.storage.from('planning-semaine').upload(path, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { data: { publicUrl } } = supabase.storage.from('planning-semaine').getPublicUrl(path)
-      const { error } = await supabase.from('profiles').update({ planning_semaine_url: publicUrl }).eq('id', userId)
-      if (error) throw error
-      setProfil(prev => ({ ...prev, planning_semaine_url: publicUrl }))
-    } catch (e) {
-      console.error('Erreur upload planning semaine:', e)
-      setPlanningError(e.message || 'Erreur inconnue lors de l\'upload.')
-    } finally {
-      setUploadingPlanning(false)
-    }
-  }
-
-  const supprimerPlanningSemaine = async () => {
-    if (!window.confirm(t('planning_semaine_confirm_retrait', lang))) return
-    const { error } = await supabase.from('profiles').update({ planning_semaine_url: null }).eq('id', userId)
-    if (error) { setPlanningError(error.message); return }
-    setProfil(prev => ({ ...prev, planning_semaine_url: null }))
-  }
 
   const ajouterParcours = async () => {
     if (!newParcours.club) return
@@ -2445,11 +2401,6 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             disposRecentes={disposRecentes}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
-            profil={profil}
-            uploadingPlanning={uploadingPlanning}
-            planningError={planningError}
-            onUploadPlanning={uploadPlanningSemaine}
-            onSupprimerPlanning={supprimerPlanningSemaine}
             lang={lang}
           />
         )}

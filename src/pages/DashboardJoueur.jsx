@@ -13,6 +13,7 @@ import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
+import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -322,6 +323,20 @@ function DashboardJoueur() {
 
   const { lang, setLang } = useLang()
 
+  // Calendrier hebdomadaire (widget PlanningSemaineWidget, lecture seule) — tous les
+  // entrainements/matchs de l'éducateur, sans limite de date (navigation ← → dans le widget).
+  const [planningEntrainements, setPlanningEntrainements] = useState([])
+  const [planningMatchs, setPlanningMatchs] = useState([])
+  const chargerPlanningSemaine = async (educateurId) => {
+    if (!educateurId) return
+    const [{ data: ents }, { data: mts }] = await Promise.all([
+      supabase.from('entrainements').select('id, date, description, heure').eq('educateur_id', educateurId),
+      supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile').eq('educateur_id', educateurId),
+    ])
+    setPlanningEntrainements(ents || [])
+    setPlanningMatchs(mts || [])
+  }
+
   useEffect(() => { getProfil() }, [])
 
   useEffect(() => {
@@ -356,7 +371,7 @@ function DashboardJoueur() {
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) chargerCalendrierEtDispos(a.educateur_id)
+      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id) }
     }
   }, [onglet, userId, mesAffiliations])
 
@@ -440,27 +455,17 @@ function DashboardJoueur() {
       .order('date_fin', { ascending: false, nullsFirst: true })
     if (!afData || afData.length === 0) { setMesAffiliations([]); return }
 
-    // Charger les profils éducateurs séparément — planning_semaine_url vit sur
-    // profiles (pas profil_educateur), fetch séparé et fusionné.
+    // Charger les profils éducateurs séparément
     const educateurIds = [...new Set(afData.map(a => a.educateur_id))]
-    const [{ data: peData }, { data: profData }] = await Promise.all([
-      supabase.from('profil_educateur')
-        .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe, lien_groupe')
-        .in('user_id', educateurIds),
-      supabase.from('profiles').select('id, planning_semaine_url').in('id', educateurIds),
-    ])
-
-    const planningMap = {}
-    profData?.forEach(p => { planningMap[p.id] = p.planning_semaine_url })
+    const { data: peData } = await supabase
+      .from('profil_educateur')
+      .select('user_id, prenom, nom, club, categorie, niveau_championnat, diplome, diplome_verifie, code_equipe, lien_groupe')
+      .in('user_id', educateurIds)
 
     const peMap = {}
-    peData?.forEach(pe => { peMap[pe.user_id] = { ...pe, planning_semaine_url: planningMap[pe.user_id] || null } })
+    peData?.forEach(pe => { peMap[pe.user_id] = pe })
 
-    setMesAffiliations(afData.map(a => {
-      const pe = peMap[a.educateur_id]
-      const planningUrl = planningMap[a.educateur_id] || null
-      return { ...a, profil_educateur: pe || (planningUrl ? { planning_semaine_url: planningUrl } : null) }
-    }))
+    setMesAffiliations(afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null })))
   }
 
   // Widget accueil : prochain entraînement + prochain match de l'éducateur, avec ma dispo déclarée
@@ -1178,10 +1183,10 @@ function DashboardJoueur() {
                 </div>
               </div>
 
-              {edu?.planning_semaine_url && (
+              {edu && (
                 <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '14px', boxShadow: '0 0 0 1px #4ade8010' }}>
                   <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-                  <img src={edu.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
+                  <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
                 </div>
               )}
 
@@ -2157,17 +2162,13 @@ function DashboardJoueur() {
               </div>
             </div>
 
-            {/* PLANNING DE LA SEMAINE (si affilié à un éducateur qui en a publié un) */}
-            {(() => {
-              const eduAffilie = mesAffiliations.find(a => a.statut === 'accepte')?.profil_educateur
-              if (!eduAffilie?.planning_semaine_url) return null
-              return (
-                <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
-                  <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-                  <img src={eduAffilie.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
-                </div>
-              )
-            })()}
+            {/* PLANNING DE LA SEMAINE (si affilié à un éducateur) */}
+            {mesAffiliations.some(a => a.statut === 'accepte') && (
+              <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
+                <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+                <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
+              </div>
+            )}
 
             {/* PROCHAINES ÉCHÉANCES (si affilié à un éducateur) */}
             {widgetCalendrier.length > 0 && (() => {
