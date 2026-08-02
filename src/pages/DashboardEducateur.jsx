@@ -447,7 +447,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, onUploadPlanning, onSupprimerPlanning, lang }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, planningError, onUploadPlanning, onSupprimerPlanning, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -525,6 +525,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
             )}
           </div>
         </div>
+        {planningError && <p style={{ color: '#f87171', fontSize: '12px', margin: '0 0 10px' }}>⚠️ {planningError}</p>}
         {profilEdu?.planning_semaine_url && (
           <>
             <img src={profilEdu.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
@@ -776,6 +777,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
   const [uploadingPlanning, setUploadingPlanning] = useState(false)
+  const [planningError, setPlanningError] = useState(null)
   const [showAddParcours, setShowAddParcours] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
@@ -1463,21 +1465,29 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
   const uploadPlanningSemaine = async (file) => {
     if (!file) return
     setUploadingPlanning(true)
-    const url = await uploaderFichierSeance(file)
-    if (url) {
-      await supabase.from('profil_educateur').upsert({
+    setPlanningError(null)
+    try {
+      const url = await uploaderFichierSeance(file)
+      if (!url) throw new Error('Échec de l\'upload de l\'image (Cloudinary n\'a pas renvoyé d\'URL).')
+      const { error } = await supabase.from('profil_educateur').upsert({
         ...profilEduEdit, user_id: userId,
         planning_semaine_url: url,
         planning_semaine_publie_le: new Date().toISOString(),
       }, { onConflict: 'user_id' })
+      if (error) throw error
       await chargerProfilEdu(userId)
+    } catch (e) {
+      console.error('Erreur upload planning semaine:', e)
+      setPlanningError(e.message || 'Erreur inconnue lors de l\'upload.')
+    } finally {
+      setUploadingPlanning(false)
     }
-    setUploadingPlanning(false)
   }
 
   const supprimerPlanningSemaine = async () => {
     if (!window.confirm(t('planning_semaine_confirm_retrait', lang))) return
-    await supabase.from('profil_educateur').update({ planning_semaine_url: null, planning_semaine_publie_le: null }).eq('user_id', userId)
+    const { error } = await supabase.from('profil_educateur').update({ planning_semaine_url: null, planning_semaine_publie_le: null }).eq('user_id', userId)
+    if (error) { setPlanningError(error.message); return }
     await chargerProfilEdu(userId)
   }
 
@@ -2430,6 +2440,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             setActiveSection={setActiveSection}
             profilEdu={profilEdu}
             uploadingPlanning={uploadingPlanning}
+            planningError={planningError}
             onUploadPlanning={uploadPlanningSemaine}
             onSupprimerPlanning={supprimerPlanningSemaine}
             lang={lang}
