@@ -39,7 +39,6 @@ const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fil
 const IcoZap         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 const IcoActivity    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 const IcoPoll        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-const IcoLink        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
 const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -448,7 +447,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, onUploadPlanning, onSupprimerPlanning, lang }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, onUploadPlanning, onSupprimerPlanning, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -456,6 +455,17 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   const prochainEnt = [...entrainements]
     .filter(e => e.date >= aujourdHui)
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
+
+  const STATUTS_PRESENCE = [
+    { val: 'present', label: 'Présent' },
+    { val: 'absent', label: 'Absent' },
+    { val: 'convoque', label: 'Convoqué' },
+    { val: 'malade', label: 'Malade' },
+    { val: 'blesse', label: 'Blessé' },
+  ]
+  const presencesProchainEnt = prochainEnt?.presences_entrainement || []
+  const getStatutPresence = (p) => p.statut || (p.present ? 'present' : 'absent')
+  const compterStatutPresence = (val) => presencesProchainEnt.filter(p => getStatutPresence(p) === val).length
 
   // Fenêtre lundi → dimanche de la semaine en cours
   const now = new Date()
@@ -490,8 +500,6 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       seanceLabel: seance?.description || (seance?.date ? new Date(seance.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''),
     }
   })
-
-  const joueursLiesRecemment = affiliations.filter(a => a.statut === 'accepte').slice(0, 5)
 
   return (
     <div>
@@ -621,15 +629,15 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> Comptes liés récemment</p>
-          {joueursLiesRecemment.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun compte lié pour l'instant.</p>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
+          {!prochainEnt ? (
+            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {joueursLiesRecemment.map(a => (
-                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{a.joueur?.prenom} {a.joueur?.nom}</p>
-                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString('fr-FR') : ''}</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {STATUTS_PRESENCE.map((s, i) => (
+                <div key={s.val} style={{ flex: 1, textAlign: 'center', borderLeft: i > 0 ? '1px solid #1a1a1a' : 'none' }}>
+                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#60a5fa' }}>{compterStatutPresence(s.val)}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</p>
                 </div>
               ))}
             </div>
@@ -2418,7 +2426,6 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             entrainements={entrainements}
             matchs={matchs}
             disposRecentes={disposRecentes}
-            affiliations={affiliations}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
             profilEdu={profilEdu}
