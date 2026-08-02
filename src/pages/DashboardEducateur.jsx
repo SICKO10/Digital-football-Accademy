@@ -719,6 +719,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
   const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
+  const [scannerModalImageBase64, setScannerModalImageBase64] = useState(null)
+  const [scannerModalImagePreview, setScannerModalImagePreview] = useState(null)
+  const [scannerModalLoading, setScannerModalLoading] = useState(false)
+  const [scannerModalStatus, setScannerModalStatus] = useState(null)
+  const [scannerModalError, setScannerModalError] = useState(null)
 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
@@ -1694,9 +1699,19 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       .map(([key, g]) => [key, { ...g, items: [...g.items].sort((x, y) => moisDesc ? y.date.localeCompare(x.date) : x.date.localeCompare(y.date)) }])
   }
 
+  const fermerModalMatchJoue = () => {
+    setModalMatchJoue(null)
+    setScannerModalImageBase64(null)
+    setScannerModalImagePreview(null)
+    setScannerModalError(null)
+  }
+
   const ouvrirModalMatchJoue = (m) => {
     setModalMatchJoue(m)
     setScoreJoueForm({ score_nous: m.score_nous || '', score_eux: m.score_eux || '' })
+    setScannerModalImageBase64(null)
+    setScannerModalImagePreview(null)
+    setScannerModalError(null)
   }
 
   const marquerMatchJoue = async () => {
@@ -1831,14 +1846,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     ) || null
   }
 
-  const scannerMatch = async () => {
-    if (!scannerImageBase64) return
-    setScannerLoading(true)
-    setScannerError(null)
-    try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `Analyse cette feuille de match football et extrais les données visibles.
+  // Cœur du scan de feuille de match (appel Groq + matching JS contre le roster) —
+  // partagé entre le scanner "nouveau match" (scannerMatch) et le scanner de la
+  // modale "Marquer comme joué" (scannerFeuilleModal), pour ne pas dupliquer la
+  // logique d'extraction/matching.
+  const scannerFeuilleDeMatch = async (imageBase64, setStatus) => {
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY
+    if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
+    const prompt = `Analyse cette feuille de match football et extrais les données visibles.
 Réponds UNIQUEMENT avec un objet JSON valide, aucun texte avant ou après, aucune balise markdown.
 
 Format exact attendu :
@@ -1859,42 +1874,69 @@ Format exact attendu :
 
 Lis chaque nom exactement comme écrit sur la feuille.
 Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
-          messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${scannerImageBase64}` } }
-            ]}
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 4000
-        })
-      }, setScannerStatus)
-      console.log('GROQ RESPONSE:', JSON.stringify(data))
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
-      const parsed = JSON.parse(jsonMatch[0])
+    const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'qwen/qwen3.6-27b',
+        messages: [
+          { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+          { role: 'user', content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+          ]}
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 4000
+      })
+    }, setStatus)
+    console.log('GROQ RESPONSE:', JSON.stringify(data))
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+    const raw = data.choices?.[0]?.message?.content || ''
+    const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
+    const parsed = JSON.parse(jsonMatch[0])
 
-      // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
-      // le plus de noms matchent notre roster (matching JS, pas d'IA)
-      const nomsGauche = parsed.equipe_gauche || []
-      const nomsDroite = parsed.equipe_droite || []
-      const scoreGaucheMatch = nomsGauche.filter(n => matcherJoueurParNom(n, joueurs)).length
-      const scoreDroiteMatch = nomsDroite.filter(n => matcherJoueurParNom(n, joueurs)).length
-      const notreEquipeCote = scoreGaucheMatch >= scoreDroiteMatch ? 'gauche' : 'droite'
-      const nosNomsIA = notreEquipeCote === 'gauche' ? nomsGauche : nomsDroite
-      const butsIA = notreEquipeCote === 'gauche' ? (parsed.buts_gauche || []) : (parsed.buts_droite || [])
-      const scoreNous = notreEquipeCote === 'gauche' ? (parsed.score_domicile ?? 0) : (parsed.score_exterieur ?? 0)
-      const scoreAdv = notreEquipeCote === 'gauche' ? (parsed.score_exterieur ?? 0) : (parsed.score_domicile ?? 0)
+    // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
+    // le plus de noms matchent notre roster (matching JS, pas d'IA)
+    const nomsGauche = parsed.equipe_gauche || []
+    const nomsDroite = parsed.equipe_droite || []
+    const scoreGaucheMatch = nomsGauche.filter(n => matcherJoueurParNom(n, joueurs)).length
+    const scoreDroiteMatch = nomsDroite.filter(n => matcherJoueurParNom(n, joueurs)).length
+    const notreEquipeCote = scoreGaucheMatch >= scoreDroiteMatch ? 'gauche' : 'droite'
+    const nosNomsIA = notreEquipeCote === 'gauche' ? nomsGauche : nomsDroite
+    const butsIA = notreEquipeCote === 'gauche' ? (parsed.buts_gauche || []) : (parsed.buts_droite || [])
+    const scoreNous = notreEquipeCote === 'gauche' ? (parsed.score_domicile ?? 0) : (parsed.score_exterieur ?? 0)
+    const scoreAdv = notreEquipeCote === 'gauche' ? (parsed.score_exterieur ?? 0) : (parsed.score_domicile ?? 0)
 
+    const statsParJoueur = {}
+    nosNomsIA.forEach(nom => {
+      const joueur = matcherJoueurParNom(nom, joueurs)
+      if (joueur) {
+        const buts = butsIA.filter(b => matcherJoueurParNom(b, [joueur])).length
+        const cartonJ = (parsed.cartons_jaunes || []).some(b => matcherJoueurParNom(b, [joueur]))
+        const cartonR = (parsed.cartons_rouges || []).some(b => matcherJoueurParNom(b, [joueur]))
+        statsParJoueur[joueur.id] = {
+          minutes: 90,
+          buts,
+          passes_dec: 0,
+          clean_sheet: false,
+          carton_jaune: cartonJ,
+          carton_rouge: cartonR
+        }
+      }
+    })
+
+    return { parsed, scoreNous, scoreAdv, statsParJoueur }
+  }
+
+  const scannerMatch = async () => {
+    if (!scannerImageBase64) return
+    setScannerLoading(true)
+    setScannerError(null)
+    try {
+      const { parsed, scoreNous, scoreAdv, statsParJoueur } = await scannerFeuilleDeMatch(scannerImageBase64, setScannerStatus)
       setScannerResult(parsed)
       setScannerMatchData({
         date: parsed.date || '',
@@ -1904,29 +1946,28 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         score_eux: String(scoreAdv),
         domicile: parsed.domicile !== false
       })
-      const stats = {}
-      nosNomsIA.forEach(nom => {
-        const joueur = matcherJoueurParNom(nom, joueurs)
-        if (joueur) {
-          const buts = butsIA.filter(b => matcherJoueurParNom(b, [joueur])).length
-          const cartonJ = (parsed.cartons_jaunes || []).some(b => matcherJoueurParNom(b, [joueur]))
-          const cartonR = (parsed.cartons_rouges || []).some(b => matcherJoueurParNom(b, [joueur]))
-          stats[joueur.id] = {
-            minutes: 90,
-            buts,
-            passes_dec: 0,
-            clean_sheet: false,
-            carton_jaune: cartonJ,
-            carton_rouge: cartonR
-          }
-        }
-      })
-      setScannerStats(stats)
+      setScannerStats(statsParJoueur)
     } catch (e) {
       setScannerError(e.message)
     } finally {
       setScannerLoading(false)
       setScannerStatus(null)
+    }
+  }
+
+  const scannerFeuilleModal = async () => {
+    if (!scannerModalImageBase64 || !modalMatchJoue) return
+    setScannerModalLoading(true)
+    setScannerModalError(null)
+    try {
+      const { scoreNous, scoreAdv, statsParJoueur } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
+      setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
+      setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
+    } catch (e) {
+      setScannerModalError(e.message)
+    } finally {
+      setScannerModalLoading(false)
+      setScannerModalStatus(null)
     }
   }
 
@@ -3693,7 +3734,33 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✅ {t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
-                    <button onClick={() => setModalMatchJoue(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+
+                  {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
+                  <div style={{ border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '18px', background: '#050505' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      {scannerModalImagePreview
+                        ? <img src={scannerModalImagePreview} alt="Feuille" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
+                        : <span style={{ fontSize: '26px' }}>📄</span>
+                      }
+                      <div style={{ flex: 1, minWidth: '180px' }}>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>📸 {t('scan_feuille_titre', lang)}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{t('scan_feuille_desc', lang)}</p>
+                      </div>
+                      <input id="scanner-modal-input" type="file" accept="image/*" style={{ display: 'none' }}
+                        onChange={e => {
+                          const file = e.target.files[0]; if (!file) return
+                          const reader = new FileReader()
+                          reader.onload = ev => { setScannerModalImageBase64(ev.target.result.split(',')[1]); setScannerModalImagePreview(ev.target.result) }
+                          reader.readAsDataURL(file)
+                        }} />
+                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn('#60a5fa')}>📁 {t('seance_scanner', lang)}</button>
+                      <button onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...st.btnSolid, opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
+                        {scannerModalLoading ? `🔍 ${libelleStatutGroq(scannerModalStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
+                      </button>
+                    </div>
+                    {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>⚠️ {scannerModalError}</p>}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
@@ -3735,7 +3802,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
                     <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={() => setModalMatchJoue(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={fermerModalMatchJoue} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
