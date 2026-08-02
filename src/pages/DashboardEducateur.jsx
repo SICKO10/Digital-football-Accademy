@@ -1660,9 +1660,9 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setImportPreview(null)
   }
 
-  const afficherToast = (msg) => {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(null), 3000)
+  const afficherToast = (msg, type = 'succes') => {
+    setToastMsg({ msg, type })
+    setTimeout(() => setToastMsg(null), type === 'erreur' ? 5000 : 3000)
   }
 
   // Crée automatiquement une ligne Déplacements pour un match Extérieur nouvellement
@@ -2016,7 +2016,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
   const ajouterEntrainement = async () => {
     if (!newEntrainement.date) return
-    await supabase.from('entrainements').insert({ ...newEntrainement, educateur_id: userId })
+    if (!userId) {
+      console.error('ajouterEntrainement: userId manquant au moment du submit', { newEntrainement, userId })
+      afficherToast('Impossible de créer la séance : utilisateur non chargé, réessaie dans un instant.', 'erreur')
+      return
+    }
+    const payload = { ...newEntrainement, educateur_id: userId }
+    console.log('ajouterEntrainement: insert payload', payload)
+    const { data, error } = await supabase.from('entrainements').insert(payload).select()
+    console.log('ajouterEntrainement: résultat insert', { data, error })
+    if (error) {
+      afficherToast(`Erreur lors de la création de la séance : ${error.message}`, 'erreur')
+      return
+    }
     await chargerEntrainements(userId)
     setNewEntrainement({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
     setShowAddEntrainement(false)
@@ -2297,8 +2309,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   return (
     <>
     {toastMsg && (
-      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: '#4ade80', color: '#000', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        ✓ {toastMsg}
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toastMsg.type === 'erreur' ? '#ef4444' : '#4ade80', color: toastMsg.type === 'erreur' ? '#fff' : '#000', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '360px' }}>
+        {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
