@@ -460,8 +460,8 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
     { val: 'present', label: 'Présent', color: '#4ade80' },
     { val: 'absent', label: 'Absent', color: '#ef4444' },
     { val: 'malade', label: 'Malade', color: '#60a5fa' },
-    { val: 'blesse', label: 'Blessé', color: '#f97316' },
-    { val: 'convoque', label: 'Convoqué', color: '#facc15' },
+    { val: 'blesse', label: 'Blessé', color: '#60a5fa' },
+    { val: 'convoque', label: 'Convoqué', color: '#60a5fa' },
   ]
 
   // Les réponses des joueurs au sondage "seras-tu présent ?" du prochain entraînement
