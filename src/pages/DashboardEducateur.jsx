@@ -641,16 +641,16 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
 
-        <div style={{ gridColumn: '1 / -1', background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
           {!prochainEnt ? (
             <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {STATUTS_PRESENCE.map(s => (
-                <div key={s.val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: s.color }}>{compterStatutPresence(s.val)}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</p>
+                <div key={s.val} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{s.label}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{compterStatutPresence(s.val)}</span>
                 </div>
               ))}
             </div>
