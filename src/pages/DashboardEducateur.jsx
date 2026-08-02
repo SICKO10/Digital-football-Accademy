@@ -16,6 +16,7 @@ import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
+import { normaliserCle } from '../lib/excelImport'
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -691,6 +692,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Calendrier scanner
   const [calendarImages, setCalendarImages] = useState([])
   const [calendarLoading, setCalendarLoading] = useState(false)
+  const [publishingCalendrier, setPublishingCalendrier] = useState(false)
   const [calendarStatus, setCalendarStatus] = useState(null)
   const [calendarError, setCalendarError] = useState(null)
   const [calendarMatchs, setCalendarMatchs] = useState(() => {
@@ -1740,6 +1742,43 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
       setCalendarImages([])
     } catch (e) { setCalendarError(e.message) }
     finally { setCalendarLoading(false); setCalendarStatus(null) }
+  }
+
+  // Publie les matchs scannés (locaux, localStorage) dans matchs_equipe pour qu'ils
+  // apparaissent partout (Accueil, Résultats, stats) — jusque là ils n'existaient
+  // qu'en cache navigateur, invisibles du reste de l'app.
+  // "Nous" est déterminé en comparant chaque équipe au nom du club (profilEdu.club) ;
+  // si aucune des deux ne correspond, on part du principe qu'on est à domicile (à
+  // corriger manuellement dans Résultats si besoin — le nom du club n'est pas fiable
+  // à 100%, mieux vaut un défaut simple qu'une logique de matching plus fragile ici).
+  const publierCalendrierVersMatchs = async () => {
+    const clubNorm = normaliserCle(profilEdu?.club || '')
+    const publiables = calendarMatchs.filter(m => m.date)
+    if (publiables.length === 0) return
+    setPublishingCalendrier(true)
+    const payload = publiables.map(m => {
+      const domNorm = normaliserCle(m.equipe_domicile || '')
+      const extNorm = normaliserCle(m.equipe_exterieur || '')
+      const estNousExterieur = clubNorm && extNorm.includes(clubNorm) && !domNorm.includes(clubNorm)
+      return {
+        educateur_id: userId,
+        date: m.date,
+        heure: m.heure || null,
+        adversaire: estNousExterieur ? (m.equipe_domicile || '') : (m.equipe_exterieur || m.equipe_domicile || ''),
+        competition: m.competition || null,
+        domicile: !estNousExterieur,
+      }
+    })
+    const { error } = await supabase.from('matchs_equipe').insert(payload)
+    if (!error) {
+      const restants = calendarMatchs.filter(m => !m.date)
+      setCalendarMatchs(restants)
+      localStorage.setItem('calendarMatchs', JSON.stringify(restants))
+      await chargerMatchs(userId)
+    } else {
+      setCalendarError(error.message)
+    }
+    setPublishingCalendrier(false)
   }
 
   // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille
@@ -3488,7 +3527,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* Calendrier extrait */}
                 {calendarMatchs.length > 0 && (
                   <div style={st.card}>
-                    <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🗓️ {t('comp_calendrier', lang)} — {calendarMatchs.length} match{calendarMatchs.length > 1 ? 's' : ''}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🗓️ {t('comp_calendrier', lang)} — {calendarMatchs.length} match{calendarMatchs.length > 1 ? 's' : ''}</p>
+                      {calendarMatchs.some(m => m.date) && (
+                        <button onClick={publierCalendrierVersMatchs} disabled={publishingCalendrier} style={st.btnSolid}>
+                          {publishingCalendrier ? '⏳ Publication...' : `📤 ${t('comp_publier_calendrier', lang)} (${calendarMatchs.filter(m => m.date).length})`}
+                        </button>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {calendarMatchs.map((m, i) => {
                         const isPast = m.date && new Date(m.date) < new Date()
