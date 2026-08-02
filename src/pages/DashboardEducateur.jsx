@@ -457,15 +457,27 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
 
   const STATUTS_PRESENCE = [
-    { val: 'present', label: 'Présent' },
-    { val: 'absent', label: 'Absent' },
-    { val: 'convoque', label: 'Convoqué' },
-    { val: 'malade', label: 'Malade' },
-    { val: 'blesse', label: 'Blessé' },
+    { val: 'present', label: 'Présent', color: '#4ade80' },
+    { val: 'absent', label: 'Absent', color: '#ef4444' },
+    { val: 'malade', label: 'Malade', color: '#60a5fa' },
+    { val: 'blesse', label: 'Blessé', color: '#f97316' },
+    { val: 'convoque', label: 'Convoqué', color: '#facc15' },
   ]
-  const presencesProchainEnt = prochainEnt?.presences_entrainement || []
-  const getStatutPresence = (p) => p.statut || (p.present ? 'present' : 'absent')
-  const compterStatutPresence = (val) => presencesProchainEnt.filter(p => getStatutPresence(p) === val).length
+
+  // Les réponses des joueurs au sondage "seras-tu présent ?" du prochain entraînement
+  // sont dans `disponibilites` (seance_id), pas dans presences_entrainement (qui sert
+  // à la prise de présence a posteriori par l'éducateur, après la séance).
+  const [dispoProchainEnt, setDispoProchainEnt] = useState([])
+  useEffect(() => {
+    if (!prochainEnt?.id) { Promise.resolve().then(() => setDispoProchainEnt([])); return }
+    supabase.from('disponibilites').select('*').eq('seance_id', prochainEnt.id).then(({ data, error }) => {
+      console.log('[Présences prochain entraînement] entrainement_id:', prochainEnt.id)
+      console.log('[Présences prochain entraînement] lignes disponibilites:', data, error)
+      setDispoProchainEnt(data || [])
+    })
+  }, [prochainEnt?.id])
+
+  const compterStatutPresence = (val) => dispoProchainEnt.filter(d => d.statut === val).length
 
   // Fenêtre lundi → dimanche de la semaine en cours
   const now = new Date()
@@ -629,15 +641,15 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ gridColumn: '1 / -1', background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
           {!prochainEnt ? (
             <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {STATUTS_PRESENCE.map((s, i) => (
-                <div key={s.val} style={{ flex: 1, textAlign: 'center', borderLeft: i > 0 ? '1px solid #1a1a1a' : 'none' }}>
-                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#60a5fa' }}>{compterStatutPresence(s.val)}</p>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
+              {STATUTS_PRESENCE.map(s => (
+                <div key={s.val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: s.color }}>{compterStatutPresence(s.val)}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</p>
                 </div>
               ))}
