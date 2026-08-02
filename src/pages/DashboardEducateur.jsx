@@ -36,6 +36,7 @@ const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+const IcoUser        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IcoZap         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 const IcoActivity    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 const IcoPoll        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -2362,7 +2363,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         <div style={{ padding: '0 10px' }}>
           <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span>🏠</span><span style={{ flex: 1 }}>Accueil</span>
+            <span style={{ flexShrink: 0 }}><IcoHome /></span><span style={{ flex: 1 }}>Accueil</span>
           </button>
         </div>
 
@@ -2390,7 +2391,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
           <button onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span>👤</span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
+            <span style={{ flexShrink: 0 }}><IcoUser /></span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
           </button>
           {staffClub && (
             <button onClick={() => navigate('/club')}
