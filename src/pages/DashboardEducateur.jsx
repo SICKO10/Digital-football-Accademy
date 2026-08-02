@@ -473,7 +473,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   }
 
   const prochainMatch = [...matchs]
-    .filter(m => m.date >= aujourdHui)
+    .filter(m => m.date >= aujourdHui && (m.score_nous === '' || m.score_nous === null || m.score_nous === undefined))
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
 
   const dernieresReponses = disposRecentes.map(d => {
@@ -716,6 +716,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerError, setScannerError] = useState(null)
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
+  const [modalMatchJoue, setModalMatchJoue] = useState(null)
+  const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
+  const [savingMatchJoue, setSavingMatchJoue] = useState(false)
 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
@@ -1671,6 +1674,42 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setNewMatch({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
     setSavingMatch(false)
+  }
+
+  // Un match est "joué" dès qu'un score (même 0-0) a été saisi — matchs_equipe.score_nous
+  // est une colonne texte, jamais SQL NULL en pratique (toujours '' par défaut à la création).
+  const matchJoue = (m) => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined
+
+  const grouperMatchsParMois = (liste, moisDesc = true) => {
+    const groupes = {}
+    liste.forEach(m => {
+      const d = new Date(m.date + 'T12:00:00')
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const label = d.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })
+      if (!groupes[key]) groupes[key] = { label, items: [] }
+      groupes[key].items.push(m)
+    })
+    return Object.entries(groupes)
+      .sort((a, b) => moisDesc ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0]))
+      .map(([key, g]) => [key, { ...g, items: [...g.items].sort((x, y) => moisDesc ? y.date.localeCompare(x.date) : x.date.localeCompare(y.date)) }])
+  }
+
+  const ouvrirModalMatchJoue = (m) => {
+    setModalMatchJoue(m)
+    setScoreJoueForm({ score_nous: m.score_nous || '', score_eux: m.score_eux || '' })
+  }
+
+  const marquerMatchJoue = async () => {
+    if (!modalMatchJoue) return
+    setSavingMatchJoue(true)
+    await supabase.from('matchs_equipe').update({
+      score_nous: scoreJoueForm.score_nous,
+      score_eux: scoreJoueForm.score_eux,
+    }).eq('id', modalMatchJoue.id)
+    await sauvegarderStatsMatch(modalMatchJoue.id) // upsert stats_match + recharge matchs
+    setModalMatchJoue(null)
+    setScoreJoueForm({ score_nous: '', score_eux: '' })
+    setSavingMatchJoue(false)
   }
 
   const sauvegarderStatsMatch = async (matchId) => {
@@ -3398,14 +3437,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {matchs.map(m => {
-                    const aScore = m.score_nous !== '' && m.score_nous !== null
-                    const nous = parseInt(m.score_nous)
-                    const eux = parseInt(m.score_eux)
-                    const resultat = aScore ? (nous > eux ? 'V' : nous < eux ? 'D' : 'N') : null
-                    const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#f87171' : '#f59e0b'
-                    return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                  {grouperMatchsParMois(matchs.filter(matchJoue), true).map(([moisKey, { label, items }]) => (
+                    <div key={moisKey}>
+                      <p style={{ fontSize: '11px', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {items.map(m => {
+                          const aScore = true
+                          const nous = parseInt(m.score_nous)
+                          const eux = parseInt(m.score_eux)
+                          const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
+                          const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#f87171' : '#f59e0b'
+                          return (
                       <div key={m.id} style={{ ...st.card }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
                           {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '12px', padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>}
@@ -3464,9 +3507,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           </div>
                         )}
                       </div>
-                    )
-                  })}
-                  {matchs.length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>{t('comp_aucun_match', lang)}</p></div>}
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  {matchs.filter(matchJoue).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>{t('comp_aucun_match', lang)}</p></div>}
                 </div>
               </div>
             )}
@@ -3573,6 +3619,39 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>{t('comp_aucun_calendrier', lang)}</p>
                   </div>
                 )}
+
+                {/* ── Matchs à venir (sans score) — publiés dans matchs_equipe ── */}
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>⚽ {t('comp_matchs_a_venir', lang)}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                    {grouperMatchsParMois(matchs.filter(m => !matchJoue(m)), false).map(([moisKey, { label, items }]) => (
+                      <div key={moisKey}>
+                        <p style={{ fontSize: '11px', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {items.map(m => (
+                            <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                                  {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
+                                  {m.heure ? ` · ${m.heure}` : ''}
+                                  {m.competition ? ` · ${m.competition}` : ''}
+                                  {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
+                                </p>
+                              </div>
+                              {canEdit('stats') && (
+                                <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {matchs.filter(m => !matchJoue(m)).length === 0 && (
+                      <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3605,6 +3684,60 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   )}
                 </div>
 
+              </div>
+            )}
+
+            {/* ── Modale "Marquer comme joué" ── */}
+            {modalMatchJoue && (
+              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✅ {t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
+                    <button onClick={() => setModalMatchJoue(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
+                    <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
+                    <span style={{ color: '#555', paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                    <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
+                  </div>
+
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {joueurs.map(j => {
+                      const key = modalMatchJoue.id
+                      const s = (statsMatch[key] || {})[j.id] || {}
+                      const val = (field) => s[field] !== undefined ? s[field] : ''
+                      return (
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
+                          <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
+                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), minutes: parseInt(e.target.value) || 0 } } }))}
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                          <input type="number" placeholder="Buts" min="0" value={val('buts')}
+                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), buts: parseInt(e.target.value) || 0 } } }))}
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                          <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
+                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), passes_dec: parseInt(e.target.value) || 0 } } }))}
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                          <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
+                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: e.target.value === '1' } } }))}
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                          <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_jaune') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))}>🟨</span>
+                          <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_rouge') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_rouge: !val('carton_rouge') } } }))}>🟥</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#555', margin: '10px 0 0' }}>Min · Buts · PD · CS</p>
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
+                    <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
+                    <button onClick={() => setModalMatchJoue(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  </div>
+                </div>
               </div>
             )}
           </>
