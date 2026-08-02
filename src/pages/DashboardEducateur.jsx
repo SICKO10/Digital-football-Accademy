@@ -57,6 +57,11 @@ const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
     <line x1="12" y1="14" x2="14" y2="14"/>
   </svg>
 )
+const IcoDossier = ({ size = 32, color = '#60a5fa' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+  </svg>
+)
 const IcoTypeTous = ({ size = 16, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -5015,18 +5020,33 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   return acc
                 }, {})
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {Object.entries(seancesParCategorie).map(([categorie, items]) => {
-                      const ouvert = !!dossiersOuverts[categorie]
+                  <>
+                    {/* Grille de cartes dossiers */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                      {Object.entries(seancesParCategorie).map(([categorie, items]) => {
+                        const ouvert = !!dossiersOuverts[categorie]
+                        return (
+                          <div key={categorie}
+                            onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
+                            style={{ background: '#1a1a1a', border: `1px solid ${ouvert ? '#60a5fa' : '#2a2a2a'}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#60a5fa' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? '#60a5fa' : '#2a2a2a' }}
+                          >
+                            <IcoDossier size={36} color={ouvert ? '#60a5fa' : '#666'} />
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: '#fff' }}>{categorie}</p>
+                            <span style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Séances des dossiers ouverts, affichées en dessous */}
+                    {Object.entries(seancesParCategorie).filter(([categorie]) => dossiersOuverts[categorie]).map(([categorie, items]) => {
                       return (
-                      <div key={categorie}>
-                        <p
-                          onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
-                          style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px', cursor: 'pointer', userSelect: 'none' }}
-                        >
-                          {ouvert ? '▼' : '▶'} 📁 {categorie} ({items.length})
+                      <div key={categorie} style={{ marginBottom: '20px' }}>
+                        <p style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px' }}>
+                          📁 {categorie} ({items.length})
                         </p>
-                        {ouvert && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(s => {
                             const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
@@ -5088,11 +5108,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             )
                           })}
                         </div>
-                        )}
                       </div>
                       )
                     })}
-                  </div>
+                  </>
                 )
               })()
             )}
