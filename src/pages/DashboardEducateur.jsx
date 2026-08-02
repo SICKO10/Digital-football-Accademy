@@ -737,6 +737,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [entrainements, setEntrainements] = useState([])
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
+  const [entrainementEnEdition, setEntrainementEnEdition] = useState(null)
+  const [savingEntrainementEdit, setSavingEntrainementEdit] = useState(false)
   const [showImportFiche, setShowImportFiche] = useState(false)
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
@@ -2019,6 +2021,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     setNewEntrainement({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
     setShowAddEntrainement(false)
     setShowImportFiche(false)
+  }
+
+  const sauvegarderEntrainementEdite = async () => {
+    if (!entrainementEnEdition?.date) return
+    setSavingEntrainementEdit(true)
+    const { id, date, heure, description, lieu } = entrainementEnEdition
+    const { error } = await supabase.from('entrainements').update({ date, heure, description, lieu }).eq('id', id)
+    if (!error) setEntrainements(prev => prev.map(e => e.id === id ? { ...e, date, heure, description, lieu } : e))
+    setSavingEntrainementEdit(false)
+    setEntrainementEnEdition(null)
   }
 
   const importerFicheDansEntrainement = (seance) => {
@@ -4215,6 +4227,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           </button>
                         )}
                         {canEdit('entrainements') && (
+                          <button onClick={ev => { ev.stopPropagation(); setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' }) }}
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
+                        )}
+                        {canEdit('entrainements') && (
                           <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
                         )}
                         <span style={{ color: '#444', cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
@@ -4297,6 +4313,28 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               )}
             </div>
             </>
+            )}
+
+            {/* ── Modale "Modifier la séance" ── */}
+            {entrainementEnEdition && (
+              <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ {t('ent_modifier_seance', lang)}</p>
+                    <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={entrainementEnEdition.date} onChange={e => setEntrainementEnEdition(p => ({ ...p, date: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={entrainementEnEdition.heure} onChange={e => setEntrainementEnEdition(p => ({ ...p, heure: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} value={entrainementEnEdition.description} onChange={e => setEntrainementEnEdition(p => ({ ...p, description: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('ent_lieu', lang)}</label><input style={st.input} value={entrainementEnEdition.lieu} onChange={e => setEntrainementEnEdition(p => ({ ...p, lieu: e.target.value }))} /></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={sauvegarderEntrainementEdite} disabled={savingEntrainementEdit} style={st.btnSolid}>{savingEntrainementEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
+                    <button onClick={() => setEntrainementEnEdition(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  </div>
+                </div>
+              </div>
             )}
           </>
         )}
