@@ -693,6 +693,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [calendarImages, setCalendarImages] = useState([])
   const [calendarLoading, setCalendarLoading] = useState(false)
   const [publishingCalendrier, setPublishingCalendrier] = useState(false)
+  const [toastMsg, setToastMsg] = useState(null)
   const [calendarStatus, setCalendarStatus] = useState(null)
   const [calendarError, setCalendarError] = useState(null)
   const [calendarMatchs, setCalendarMatchs] = useState(() => {
@@ -1671,10 +1672,36 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setImportPreview(null)
   }
 
+  const afficherToast = (msg) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 3000)
+  }
+
+  // Crée automatiquement une ligne Déplacements pour un match Extérieur nouvellement
+  // ajouté au calendrier (les champs restants — heure de départ, véhicule, conducteur,
+  // km — restent vides, à compléter manuellement dans l'onglet Déplacements).
+  // Nécessite un club affilié : deplacements.club_id est NOT NULL en base.
+  const creerDeplacementAutoMatch = async (m) => {
+    if (m.domicile || !m.date) return
+    if (!clubAffiliation?.club_id) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const equipe = [profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')
+    const { error } = await supabase.from('deplacements').insert({
+      club_id: clubAffiliation.club_id,
+      equipe: equipe || null,
+      date_depart: m.date,
+      lieu_destination: m.lieu || m.adversaire || null,
+      nature: 'match',
+      created_by: user?.id || null,
+    })
+    if (!error) afficherToast('Déplacement créé automatiquement')
+  }
+
   const ajouterMatch = async () => {
     if (!newMatch.adversaire || !newMatch.date) return
     setSavingMatch(true)
     await supabase.from('matchs_equipe').insert({ ...newMatch, educateur_id: userId, domicile: newMatch.domicile })
+    await creerDeplacementAutoMatch(newMatch)
     await chargerMatchs(userId)
     setNewMatch({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
@@ -1825,6 +1852,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     })
     const { error } = await supabase.from('matchs_equipe').insert(payload)
     if (!error) {
+      for (const m of payload) { await creerDeplacementAutoMatch(m) }
       const restants = calendarMatchs.filter(m => !m.date)
       setCalendarMatchs(restants)
       localStorage.setItem('calendarMatchs', JSON.stringify(restants))
@@ -2270,6 +2298,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
   return (
     <>
+    {toastMsg && (
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: '#4ade80', color: '#000', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        ✓ {toastMsg}
+      </div>
+    )}
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 
       {/* Overlay mobile */}
