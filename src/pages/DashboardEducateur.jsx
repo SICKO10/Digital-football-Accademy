@@ -442,7 +442,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, affiliations, rapportsRecents, setActiveSection, profilEdu, uploadingPlanning, onUploadPlanning, onSupprimerPlanning, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -491,6 +491,37 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
+
+      {/* ── Planning de la semaine — encadré, visible automatiquement chez les joueurs affiliés ── */}
+      <div style={{ background: '#111', border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+            <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('planning_semaine_desc_edu', lang)}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <label style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: uploadingPlanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: uploadingPlanning ? 0.6 : 1 }}>
+              {uploadingPlanning ? t('planning_semaine_envoi', lang) : profilEdu?.planning_semaine_url ? t('planning_semaine_remplacer', lang) : t('planning_semaine_ajouter', lang)}
+              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingPlanning} onChange={e => onUploadPlanning?.(e.target.files?.[0])} />
+            </label>
+            {profilEdu?.planning_semaine_url && (
+              <button onClick={onSupprimerPlanning} style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {t('planning_semaine_retirer', lang)}
+              </button>
+            )}
+          </div>
+        </div>
+        {profilEdu?.planning_semaine_url && (
+          <>
+            <img src={profilEdu.planning_semaine_url} alt={t('planning_semaine_titre', lang)} style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'block' }} />
+            {profilEdu.planning_semaine_publie_le && (
+              <p style={{ fontSize: '11px', color: '#444', margin: '8px 0 0' }}>
+                {t('planning_semaine_publie_le', lang)} {new Date(profilEdu.planning_semaine_publie_le).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </>
+        )}
+      </div>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
       <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" />
@@ -720,6 +751,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [parcoursEdu, setParcoursEdu] = useState([])
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
+  const [uploadingPlanning, setUploadingPlanning] = useState(false)
   const [showAddParcours, setShowAddParcours] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
@@ -1402,6 +1434,27 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       await chargerProfilEdu(userId)
     }
     setUploadingDiplome(false)
+  }
+
+  const uploadPlanningSemaine = async (file) => {
+    if (!file) return
+    setUploadingPlanning(true)
+    const url = await uploaderFichierSeance(file)
+    if (url) {
+      await supabase.from('profil_educateur').upsert({
+        ...profilEduEdit, user_id: userId,
+        planning_semaine_url: url,
+        planning_semaine_publie_le: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      await chargerProfilEdu(userId)
+    }
+    setUploadingPlanning(false)
+  }
+
+  const supprimerPlanningSemaine = async () => {
+    if (!window.confirm(t('planning_semaine_confirm_retrait', lang))) return
+    await supabase.from('profil_educateur').update({ planning_semaine_url: null, planning_semaine_publie_le: null }).eq('user_id', userId)
+    await chargerProfilEdu(userId)
   }
 
   const ajouterParcours = async () => {
@@ -2211,6 +2264,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             affiliations={affiliations}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
+            profilEdu={profilEdu}
+            uploadingPlanning={uploadingPlanning}
+            onUploadPlanning={uploadPlanningSemaine}
+            onSupprimerPlanning={supprimerPlanningSemaine}
+            lang={lang}
           />
         )}
 
