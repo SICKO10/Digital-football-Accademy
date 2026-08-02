@@ -725,6 +725,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
+  const [modalMatchForm, setModalMatchForm] = useState(null)
+  const [savingMatchForm, setSavingMatchForm] = useState(false)
   const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
   const [scannerModalImageBase64, setScannerModalImageBase64] = useState(null)
@@ -1740,6 +1742,42 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setModalMatchJoue(null)
     setScoreJoueForm({ score_nous: '', score_eux: '' })
     setSavingMatchJoue(false)
+  }
+
+  const matchFormVide = () => ({ id: null, adversaire: '', date: '', heure: '', competition: '', domicile: true, lieu: '' })
+
+  const ouvrirModalCreerMatch = () => setModalMatchForm(matchFormVide())
+
+  const ouvrirModalModifierMatch = (m) => setModalMatchForm({
+    id: m.id,
+    adversaire: m.adversaire || '',
+    date: m.date || '',
+    heure: m.heure || '',
+    competition: m.competition || '',
+    domicile: m.domicile !== false,
+    lieu: m.lieu || '',
+  })
+
+  const sauvegarderMatchForm = async () => {
+    if (!modalMatchForm?.adversaire || !modalMatchForm?.date) return
+    setSavingMatchForm(true)
+    const { id, ...champs } = modalMatchForm
+    if (id) {
+      const { error } = await supabase.from('matchs_equipe').update(champs).eq('id', id)
+      if (error) { afficherToast(`Erreur lors de la modification du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
+      setMatchs(prev => prev.map(m => m.id === id ? { ...m, ...champs } : m))
+    } else {
+      const { data, error } = await supabase.from('matchs_equipe').insert({
+        ...champs, educateur_id: userId, score_nous: '', score_eux: '',
+      }).select().single()
+      if (error) { afficherToast(`Erreur lors de la création du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
+      if (data) {
+        setMatchs(prev => [data, ...prev])
+        await creerDeplacementAutoMatch(data)
+      }
+    }
+    setSavingMatchForm(false)
+    setModalMatchForm(null)
   }
 
   const sauvegarderStatsMatch = async (matchId) => {
@@ -3701,7 +3739,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 {/* ── Matchs à venir (sans score) — publiés dans matchs_equipe ── */}
                 <div>
-                  <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>⚽ {t('comp_matchs_a_venir', lang)}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>⚽ {t('comp_matchs_a_venir', lang)}</p>
+                    {canEdit('competition') && (
+                      <button onClick={ouvrirModalCreerMatch} style={st.btnSolid}>+ {t('comp_ajouter_match', lang)}</button>
+                    )}
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                     {grouperMatchsParMois(matchs.filter(m => !matchJoue(m)), false).map(([moisKey, { label, items }]) => (
                       <div key={moisKey}>
@@ -3718,6 +3761,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                   {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                                 </p>
                               </div>
+                              {canEdit('competition') && (
+                                <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
+                              )}
                               {canEdit('stats') && (
                                 <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
                               )}
@@ -3841,6 +3887,50 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
                     <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
                     <button onClick={fermerModalMatchJoue} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Modale "Ajouter / Modifier un match" ── */}
+            {modalMatchForm && (
+              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
+                      {modalMatchForm.id ? `✏️ ${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
+                    </p>
+                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={modalMatchForm.adversaire} onChange={e => setModalMatchForm(f => ({ ...f, adversaire: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={modalMatchForm.date} onChange={e => setModalMatchForm(f => ({ ...f, date: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={modalMatchForm.heure} onChange={e => setModalMatchForm(f => ({ ...f, heure: e.target.value }))} /></div>
+                    <div>
+                      <label style={st.label}>{t('comp_type_match', lang)}</label>
+                      <select style={st.input} value={modalMatchForm.competition} onChange={e => setModalMatchForm(f => ({ ...f, competition: e.target.value }))}>
+                        <option value="">—</option>
+                        <option value="Championnat">{t('comp_type_championnat', lang)}</option>
+                        <option value="Coupe">{t('comp_type_coupe', lang)}</option>
+                        <option value="Amical">{t('comp_type_amical', lang)}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={st.label}>{t('comp_lieu', lang)}</label>
+                      <input style={st.input} placeholder="Ex: Stade municipal" value={modalMatchForm.lieu} onChange={e => setModalMatchForm(f => ({ ...f, lieu: e.target.value }))} />
+                    </div>
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
+                        <input type="checkbox" checked={modalMatchForm.domicile} onChange={e => setModalMatchForm(f => ({ ...f, domicile: e.target.checked }))} />
+                        {t('comp_domicile', lang)}
+                      </label>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={sauvegarderMatchForm} disabled={savingMatchForm || !modalMatchForm.adversaire || !modalMatchForm.date} style={st.btnSolid}>
+                      {savingMatchForm ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}
+                    </button>
+                    <button onClick={() => setModalMatchForm(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
