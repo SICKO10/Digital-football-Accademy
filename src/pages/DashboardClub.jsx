@@ -296,6 +296,7 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('accueil')
   const [activeCategorie, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
@@ -1006,6 +1007,23 @@ export default function DashboardClub() {
       visible: ['president', 'marketing', 'secretaire'].includes(monRole) },
   ].filter(c => c.visible)
 
+  // Sous-onglets de la catégorie active (niveau 2) — calculés une fois, réutilisés par
+  // l'affichage desktop (st.tabs) et le drawer mobile.
+  const sousOnglets = activeCategorie === 'sportif' ? [
+    { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
+    { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
+    { id: 'terrains', label: iconLabel(IcoTerrain, 'Planning des terrains') },
+    { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
+    { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
+  ] : activeCategorie === 'administratif' ? [
+    { id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) },
+    { id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) },
+    { id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') },
+    { id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) },
+    ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
+    ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
+  ] : []
+
   return (
     <div style={st.page}>
       <nav style={st.navbar}>
@@ -1046,47 +1064,103 @@ export default function DashboardClub() {
           <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
         </div>
 
-        {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' }}>
-          {categoriesVisibles.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
-              style={{
-                padding: isMobile ? '10px 18px' : '12px 28px', borderRadius: '10px', border: 'none',
-                background: activeCategorie === cat.id ? '#4ade80' : '#1a1a1a',
-                color: activeCategorie === cat.id ? '#000' : '#666',
-                fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        {!isMobile ? (
+          <>
+            {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+              {categoriesVisibles.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
+                  style={{
+                    padding: '12px 28px', borderRadius: '10px', border: 'none',
+                    background: activeCategorie === cat.id ? '#4ade80' : '#1a1a1a',
+                    color: activeCategorie === cat.id ? '#000' : '#666',
+                    fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Niveau 2 — sous-onglets (pas de sous-onglets sur l'accueil) */}
-        {activeCategorie !== 'accueil' && (
-          <div style={st.tabs}>
-            {(activeCategorie === 'sportif' ? [
-              { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
-              { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
-              { id: 'terrains', label: iconLabel(IcoTerrain, 'Planning des terrains') },
-              { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
-              { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
-            ] : [
-              { id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) },
-              { id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) },
-              { id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') },
-              { id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) },
-              ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
-              ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
-            ]).map(tab => (
-              <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
+            {/* Niveau 2 — sous-onglets (pas de sous-onglets sur l'accueil) */}
+            {activeCategorie !== 'accueil' && (
+              <div style={st.tabs}>
+                {sousOnglets.map(tab => (
+                  <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Mobile : bouton hamburger + fil d'ariane (catégorie › sous-onglet actifs) */}
+            <button onClick={() => setSidebarOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: '#fff', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, flex: 1, textAlign: 'left' }}>
+                {categoriesVisibles.find(c => c.id === activeCategorie)?.label}
+                {activeCategorie !== 'accueil' && sousOnglets.find(t => t.id === activeTab) && (
+                  <span style={{ color: '#555', fontWeight: 400 }}> › {sousOnglets.find(t => t.id === activeTab)?.label}</span>
+                )}
+              </span>
+            </button>
+
+            {/* Overlay + drawer */}
+            {sidebarOpen && (
+              <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 90 }} />
+            )}
+            <div style={{
+              position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-85%', width: '85%', maxWidth: '320px', height: '100%',
+              background: '#0d0d0d', borderRight: '1px solid #1a1a1a', zIndex: 100, transition: 'left 0.25s ease',
+              overflowY: 'auto', padding: '1.25rem 1rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: '#4ade80' }}>⬡ Menu</span>
+                <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.25rem' }}>
+                {categoriesVisibles.map(cat => (
+                  <button key={cat.id}
+                    onClick={() => {
+                      setActiveCategorie(cat.id)
+                      setActiveTab(cat.defaultTab)
+                      if (cat.id === 'accueil') setSidebarOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
+                      background: activeCategorie === cat.id ? '#4ade8015' : 'transparent',
+                      color: activeCategorie === cat.id ? '#4ade80' : '#aaa',
+                      fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
+                    }}>
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {activeCategorie !== 'accueil' && sousOnglets.length > 0 && (
+                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {sousOnglets.map(tab => (
+                    <button key={tab.id}
+                      onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
+                      style={{
+                        display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
+                        background: activeTab === tab.id ? '#60a5fa15' : 'transparent',
+                        color: activeTab === tab.id ? '#60a5fa' : '#888',
+                        fontWeight: activeTab === tab.id ? 700 : 400, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      }}>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* ── ACCUEIL ── */}
