@@ -44,7 +44,7 @@ function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch 
             background: '#ef444420', border: '1px solid #ef444450', color: '#ef4444',
             borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
             cursor: onClickEntrainement ? 'pointer' : 'default',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
           }}>
           {compact ? (data.description || 'Entraînement') : `${data.heure ? `${data.heure} · ` : ''}${data.description || 'Entraînement'}`}
         </div>
@@ -53,7 +53,7 @@ function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch 
           style={{
             background: '#262626', border: '1px solid #333', color: '#ddd',
             borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
-            cursor: onClickMatch ? 'pointer' : 'default',
+            cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
           }}>
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {compact ? (data.adversaire || 'Match') : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
@@ -164,7 +164,7 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
           })}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: vue === 'mois' ? '4px' : '6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: vue === 'mois' ? '4px' : '6px', minWidth: 0 }}>
           {jours.map((d, i) => {
             const s = dateStr(d)
             const ents = entrainements.filter(e => e.date === s)
@@ -178,6 +178,8 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
                 border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
                 display: 'flex', flexDirection: 'column', gap: '3px',
                 opacity: horsMois ? 0.35 : 1,
+                minWidth: 0, // sans ça, une grille à 1fr respecte quand même la largeur "min-content"
+                // du contenu (texte nowrap des chips) et déborde — piège classique de CSS Grid.
               }}>
                 <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : vide ? '#333' : '#555' }}>
                   {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}

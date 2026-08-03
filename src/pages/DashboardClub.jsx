@@ -1047,16 +1047,17 @@ export default function DashboardClub() {
         </div>
 
         {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' }}>
           {categoriesVisibles.map(cat => (
             <button
               key={cat.id}
               onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
               style={{
-                padding: '12px 28px', borderRadius: '10px', border: 'none',
+                padding: isMobile ? '10px 18px' : '12px 28px', borderRadius: '10px', border: 'none',
                 background: activeCategorie === cat.id ? '#4ade80' : '#1a1a1a',
                 color: activeCategorie === cat.id ? '#000' : '#666',
                 fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {cat.label}
