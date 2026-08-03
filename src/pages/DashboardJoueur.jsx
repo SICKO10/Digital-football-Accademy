@@ -14,6 +14,8 @@ import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
+import OnboardingGuide from '../components/OnboardingGuide'
+import FloatingHelper from '../components/FloatingHelper'
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
@@ -297,6 +299,8 @@ function DashboardJoueur() {
   const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [onboardingKey, setOnboardingKey] = useState(0)
+  const replayOnboarding = () => setOnboardingKey(k => k + 1)
 
   // Mon Équipe (affiliation éducateur)
   const [mesAffiliations, setMesAffiliations] = useState([])
@@ -1958,6 +1962,10 @@ function DashboardJoueur() {
         .dj-bottom-nav-btn:hover { color: #ccc !important; }
       `}</style>
 
+      {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
+      <OnboardingGuide key={onboardingKey} userId={userId} />
+      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} />
+
       {/* ── SIDEBAR ── */}
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
@@ -1988,7 +1996,9 @@ function DashboardJoueur() {
                   {item.section}
                 </div>
               )}
-              <button className="dj-nav-btn" onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
+              <button className="dj-nav-btn"
+                id={item.id === 'profil' ? 'profile-section' : item.id === 'analyses' ? 'analyses-section' : undefined}
+                onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
@@ -2313,7 +2323,7 @@ function DashboardJoueur() {
                 </button>
               )}
 
-              <button className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
+              <button id="upload-section" className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
                 style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
                 <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#60a5fa' }}>
                   <IconUpload />
