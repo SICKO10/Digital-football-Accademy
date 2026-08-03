@@ -2220,7 +2220,7 @@ function DashboardJoueur() {
 
                           {!sondageClos ? (
                             <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '4px' }}>
                                 {OPTIONS_SONDAGE.map(opt => {
                                   const isSelected = selected === opt.val
                                   return (
@@ -2232,6 +2232,13 @@ function DashboardJoueur() {
                                   )
                                 })}
                               </div>
+                              {/* Sur mobile, le title="" (infobulle) ne s'affiche jamais — pas de hover
+                                  au tactile. On montre donc l'intitulé de l'option choisie dès le clic. */}
+                              {selected && (
+                                <p style={{ fontSize: '9px', fontWeight: 700, color: OPTIONS_SONDAGE.find(o => o.val === selected)?.color || '#555', margin: '0 0 6px' }}>
+                                  {OPTIONS_SONDAGE.find(o => o.val === selected)?.label}
+                                </p>
+                              )}
                               {hasUnsavedChoice && (
                                 <button disabled={savingDispo}
                                   onClick={async () => {
