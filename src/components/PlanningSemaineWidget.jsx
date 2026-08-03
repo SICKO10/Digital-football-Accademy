@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -78,11 +78,21 @@ function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch 
 // Widget Planning lecture/navigation, généré depuis entrainements + matchs_equipe déjà
 // chargés (pas de requête ici) — réutilisé par le dashboard éducateur (cliquable, navigue
 // vers les sections) et le dashboard joueur (lecture seule, pas de callbacks). Vue semaine
-// (par défaut) ou mois, togglées dans le header.
+// (par défaut) ou mois, togglées dans le header. Responsive en interne (pas de prop
+// isMobile requise du parent) : sous 640px, la vue semaine passe en liste verticale
+// (une grille à 7 colonnes serait illisible sur un téléphone) ; la vue mois garde sa
+// grille (attendu même en mobile pour un calendrier mensuel) avec des cellules resserrées.
 export default function PlanningSemaineWidget({ entrainements = [], matchs = [], onClickEntrainement, onClickMatch }) {
   const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
   const aujourdhuiStr = dateStr(new Date())
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const changerVue = (v) => { setVue(v); setOffset(0) }
 
@@ -99,6 +109,8 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
     const nomMois = jours.find(d => d.getMonth() === moisCourant).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     label = nomMois.charAt(0).toUpperCase() + nomMois.slice(1)
   }
+
+  const listeVerticale = vue === 'semaine' && isMobile
 
   return (
     <div>
@@ -122,29 +134,60 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: vue === 'mois' ? '4px' : '6px' }}>
-        {jours.map((d, i) => {
-          const s = dateStr(d)
-          const ents = entrainements.filter(e => e.date === s)
-          const mts = matchs.filter(m => m.date === s)
-          const estAujourdhui = s === aujourdhuiStr
-          const vide = ents.length === 0 && mts.length === 0
-          const horsMois = vue === 'mois' && d.getMonth() !== moisCourant
-          return (
-            <div key={s} style={{
-              minHeight: vue === 'mois' ? '56px' : '90px', background: '#0a0a0a', borderRadius: '10px', padding: '5px',
-              border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
-              display: 'flex', flexDirection: 'column', gap: '3px',
-              opacity: horsMois ? 0.35 : 1,
-            }}>
-              <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : vide ? '#333' : '#555' }}>
-                {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
-              </p>
-              <EvenementsJour ents={ents} mts={mts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} />
-            </div>
-          )
-        })}
-      </div>
+      {listeVerticale ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {jours.map((d, i) => {
+            const s = dateStr(d)
+            const ents = entrainements.filter(e => e.date === s)
+            const mts = matchs.filter(m => m.date === s)
+            const estAujourdhui = s === aujourdhuiStr
+            const vide = ents.length === 0 && mts.length === 0
+            return (
+              <div key={s} style={{
+                display: 'flex', gap: '10px', alignItems: vide ? 'center' : 'flex-start',
+                background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px',
+                border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
+              }}>
+                <div style={{ width: '46px', flexShrink: 0, textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : '#555' }}>{JOURS[i]}</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: estAujourdhui ? '#60a5fa' : '#fff' }}>{d.getDate()}</p>
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {vide ? (
+                    <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>
+                  ) : (
+                    <EvenementsJour ents={ents} mts={mts} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: vue === 'mois' ? '4px' : '6px' }}>
+          {jours.map((d, i) => {
+            const s = dateStr(d)
+            const ents = entrainements.filter(e => e.date === s)
+            const mts = matchs.filter(m => m.date === s)
+            const estAujourdhui = s === aujourdhuiStr
+            const vide = ents.length === 0 && mts.length === 0
+            const horsMois = vue === 'mois' && d.getMonth() !== moisCourant
+            return (
+              <div key={s} style={{
+                minHeight: vue === 'mois' ? (isMobile ? '44px' : '56px') : '90px', background: '#0a0a0a', borderRadius: '10px', padding: isMobile && vue === 'mois' ? '3px' : '5px',
+                border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
+                display: 'flex', flexDirection: 'column', gap: '3px',
+                opacity: horsMois ? 0.35 : 1,
+              }}>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : vide ? '#333' : '#555' }}>
+                  {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
+                </p>
+                <EvenementsJour ents={ents} mts={mts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} />
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
