@@ -1419,7 +1419,7 @@ export default function DashboardClub() {
                       </div>
                     )}
                     {totalPresencesEffectif > 0 && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
                         <StatCard label={t('club_taux_presence_effectif', lang)} valeur={`${tauxPresenceEffectif}%`} couleur="green" />
                         <StatCard label={t('club_taux_absence_effectif', lang)} valeur={`${tauxAbsenceEffectif}%`} couleur="red" />
                       </div>
@@ -1679,7 +1679,7 @@ export default function DashboardClub() {
                       </button>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
                     <div>
                       <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
                       <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
@@ -2093,7 +2093,7 @@ export default function DashboardClub() {
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}</p>
                                 </div>
                               </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px' }}>
                                 {[
                                   { label: t('comp_buts', lang), val: j.stats.buts, color: '#4ade80' },
                                   { label: t('recrut_passes', lang), val: j.stats.passes, color: '#60a5fa' },
@@ -2178,7 +2178,7 @@ export default function DashboardClub() {
                 <button onClick={() => setJoueurDetail(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
                 <StatCard label={`⚽ ${t('comp_buts', lang)}`} valeur={s.buts} />
                 <StatCard label={`🎯 ${t('club_passes_dec_emoji', lang)}`} valeur={s.passes} />
                 <StatCard label={`🏃 ${t('jp_matchs_joues', lang)}`} valeur={s.matchsJoues} />
