@@ -13,6 +13,17 @@ import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
+import OnboardingGuide from '../components/OnboardingGuide'
+import FloatingHelper from '../components/FloatingHelper'
+
+const CLUB_FAQ = [
+  { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
+  { q: "Comment affilier un éducateur à mon club ?", a: "Dans Sportif → Éducateurs, recherche-le par nom ou envoie une invitation par email. Il doit accepter pour rejoindre officiellement le club." },
+  { q: "Comment gérer le planning des terrains ?", a: "Dans Sportif → Planning des terrains, importe ton fichier Excel/CSV ou saisis les créneaux manuellement pour chaque catégorie." },
+  { q: "Comment répartir les joueurs dans les mini-bus ?", a: "Dans Administratif → Répartition mini-bus, ajoute tes véhicules et l'outil répartit automatiquement les joueurs inscrits au déplacement." },
+  { q: "Qui peut voir le budget du club ?", a: "L'onglet Budget est réservé aux rôles Président et Secrétaire." },
+];
+
 
 // ── Icônes SVG menu/widgets (même convention que DashboardEducateur.jsx :
 // 16x16, viewBox 0 0 24 24, stroke=currentColor, strokeWidth=2, round caps/joins) ──
@@ -297,6 +308,8 @@ export default function DashboardClub() {
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [onboardingKey, setOnboardingKey] = useState(0)
+  const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [activeTab, setActiveTab] = useState('accueil')
   const [activeCategorie, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
@@ -1024,8 +1037,21 @@ export default function DashboardClub() {
     ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
   ] : []
 
+  const sportifVisible = ['president', 'directeur_sportif'].includes(monRole)
+  const administratifVisible = ['president', 'marketing', 'secretaire'].includes(monRole)
+
+  const clubOnboardingSteps = [
+    { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Alex, ton guide. Je vais te montrer les grandes sections de l'espace club en 2 minutes.", targetId: null, position: "center" },
+    { id: 2, title: "Accueil", message: "Vue d'ensemble : stats du club, actions rapides et activité récente.", targetId: "cat-accueil", position: "bottom" },
+    ...(sportifVisible ? [{ id: 3, title: "Sportif", message: "Catégories (tes équipes), Classements, Planning des terrains, Recrutement et Éducateurs affiliés — tout le suivi sportif du club.", targetId: "cat-sportif", position: "bottom" }] : []),
+    ...(administratifVisible ? [{ id: 4, title: "Administratif", message: "Sponsors, Déplacements, Répartition mini-bus, Profil du club, Budget et Staff — toute la gestion administrative.", targetId: "cat-administratif", position: "bottom" }] : []),
+    { id: 5, title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
+  ]
+
   return (
     <div style={st.page}>
+      <OnboardingGuide key={onboardingKey} userId={clubId} steps={clubOnboardingSteps} />
+      <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} />
       <nav style={st.navbar}>
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
@@ -1071,6 +1097,7 @@ export default function DashboardClub() {
               {categoriesVisibles.map(cat => (
                 <button
                   key={cat.id}
+                  id={`cat-${cat.id}`}
                   onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
                   style={{
                     padding: '12px 28px', borderRadius: '10px', border: 'none',
@@ -1127,6 +1154,7 @@ export default function DashboardClub() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.25rem' }}>
                 {categoriesVisibles.map(cat => (
                   <button key={cat.id}
+                    id={`cat-${cat.id}`}
                     onClick={() => {
                       setActiveCategorie(cat.id)
                       setActiveTab(cat.defaultTab)
