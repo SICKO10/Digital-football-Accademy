@@ -7,7 +7,7 @@ create table if not exists role_permissions (
   id uuid primary key default gen_random_uuid(),
   club_id uuid not null references profiles(id) on delete cascade,
   role text not null check (role in ('president', 'directeur_sportif', 'marketing', 'secretaire', 'coach_adjoint', 'kine', 'intendant', 'preparateur_physique', 'comptable')),
-  section text not null check (section in ('sportif', 'terrains', 'deplacements', 'budget', 'sponsors', 'repartition_bus', 'profil')),
+  section text not null check (section in ('sportif', 'terrains', 'deplacements', 'budget', 'sponsors', 'repartition_bus', 'profil', 'evenements')),
   can_view boolean not null default false,
   can_edit boolean not null default false,
   created_at timestamptz not null default now(),

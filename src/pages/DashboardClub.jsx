@@ -10,6 +10,7 @@ import Deplacements from '../components/Deplacements'
 import RepartitionMiniBus from '../components/RepartitionMiniBus'
 import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
+import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
@@ -73,11 +74,14 @@ const PERMISSION_SECTIONS = [
   { id: 'sponsors', label: 'Sponsors' },
   { id: 'repartition_bus', label: 'Mini-bus' },
   { id: 'profil', label: 'Profil club' },
+  { id: 'evenements', label: 'Événements & Projets' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
 // en base pour ce club/rôle/section) — reproduit les règles d'accès qui existaient
-// avant ce système, pour ne rien casser pour les clubs déjà en production.
+// avant ce système, pour ne rien casser pour les clubs déjà en production. Section
+// toute nouvelle (evenements) : pas de règle historique à préserver, donc personne
+// d'autre que le président n'y a accès tant qu'il ne l'accorde pas explicitement.
 const PERMISSION_DEFAULTS = {
   sportif: ['president', 'directeur_sportif'],
   terrains: ['president', 'directeur_sportif'],
@@ -86,6 +90,26 @@ const PERMISSION_DEFAULTS = {
   sponsors: ['president', 'marketing', 'secretaire'],
   repartition_bus: ['president', 'marketing', 'secretaire'],
   profil: ['president', 'marketing', 'secretaire'],
+  evenements: [],
+}
+
+const TYPES_EVENEMENT = [
+  { val: 'tournoi', label: 'Tournoi', emoji: '🏆' },
+  { val: 'soiree', label: 'Soirée', emoji: '🎉' },
+  { val: 'reunion', label: 'Réunion', emoji: '📋' },
+  { val: 'autre', label: 'Autre', emoji: '📌' },
+]
+const TYPE_EVENEMENT_INFO = (val) => TYPES_EVENEMENT.find(t => t.val === val) || TYPES_EVENEMENT[3]
+
+const STATUTS_PROJET = [
+  { val: 'en_attente', label: 'En attente', color: '#f59e0b' },
+  { val: 'en_cours', label: 'En cours', color: '#60a5fa' },
+  { val: 'termine', label: 'Terminé', color: '#4ade80' },
+]
+const MOIS_LABEL = (dateStr) => {
+  const d = new Date(dateStr + 'T12:00:00')
+  const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
@@ -176,7 +200,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, setActiveCategorie, setActiveTab, lang }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -214,6 +238,14 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
 
       <TerrainsLiberesWidget clubId={clubId} accentColor="#4ade80" titre="Terrains disponibles ce jour" />
+
+      {/* Planning club : matchs de toutes les équipes affiliées + événements club
+          (tournois, soirées, réunions...) — volontairement pas les séances
+          d'entraînement, qui restent une vue éducateur. */}
+      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
+        <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
+        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+      </div>
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
@@ -513,6 +545,21 @@ export default function DashboardClub() {
   const [matchsClub, setMatchsClub] = useState([])
   const [joueursClub, setJoueursClub] = useState([])
 
+  // Événements & Projets (onglet Administratif)
+  const [evenementsClub, setEvenementsClub] = useState([])
+  const [showEvenementForm, setShowEvenementForm] = useState(false)
+  const [editingEvenementId, setEditingEvenementId] = useState(null)
+  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [] })
+  const [savingEvenement, setSavingEvenement] = useState(false)
+
+  const [projetsClub, setProjetsClub] = useState([])
+  const [showProjetForm, setShowProjetForm] = useState(false)
+  const [editingProjetId, setEditingProjetId] = useState(null)
+  const [projetForm, setProjetForm] = useState({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente' })
+  const [savingProjet, setSavingProjet] = useState(false)
+  const [nouvelleTache, setNouvelleTache] = useState({}) // { [projetId]: titre en cours de saisie }
+  const [sousVueEvenements, setSousVueEvenements] = useState('evenements') // 'evenements' | 'projets'
+
   // Budget
   const [budgetEntries, setBudgetEntries] = useState([])
   const [budgetPeriode, setBudgetPeriode] = useState('mois') // 'mois' | 'saison' | 'tout'
@@ -575,7 +622,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget']
+    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements']
     const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection)
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
@@ -648,7 +695,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId)])
     setLoading(false)
   }
 
@@ -730,6 +777,130 @@ export default function DashboardClub() {
     if (!confirm('Supprimer cette entrée ?')) return
     await supabase.from('budget_club').delete().eq('id', id)
     await chargerBudget(clubId)
+  }
+
+  // ── Événements club ──────────────────────────────────────────────────────────
+  const chargerEvenements = async (uid) => {
+    const { data } = await supabase.from('evenements_club').select('*').eq('club_id', uid).order('date')
+    setEvenementsClub(data || [])
+  }
+
+  const ouvrirNouvelEvenement = () => {
+    setEditingEvenementId(null)
+    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [] })
+    setShowEvenementForm(true)
+  }
+
+  const ouvrirEditionEvenement = (ev) => {
+    setEditingEvenementId(ev.id)
+    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [] })
+    setShowEvenementForm(true)
+  }
+
+  const toggleParticipant = (participant) => {
+    setEvenementForm(f => {
+      const existe = f.participants.some(p => p.id === participant.id && p.type === participant.type)
+      return { ...f, participants: existe ? f.participants.filter(p => !(p.id === participant.id && p.type === participant.type)) : [...f.participants, participant] }
+    })
+  }
+
+  const sauvegarderEvenement = async () => {
+    if (!evenementForm.titre.trim() || !evenementForm.date) return
+    setSavingEvenement(true)
+    const payload = {
+      club_id: clubId,
+      titre: evenementForm.titre.trim(),
+      date: evenementForm.date,
+      heure: evenementForm.heure || null,
+      lieu: evenementForm.lieu.trim() || null,
+      type: evenementForm.type,
+      description: evenementForm.description.trim() || null,
+      participants: evenementForm.participants,
+    }
+    const { error } = editingEvenementId
+      ? await supabase.from('evenements_club').update(payload).eq('id', editingEvenementId)
+      : await supabase.from('evenements_club').insert(payload)
+    setSavingEvenement(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setShowEvenementForm(false)
+    setEditingEvenementId(null)
+    await chargerEvenements(clubId)
+  }
+
+  const supprimerEvenement = async (id) => {
+    if (!confirm("Supprimer cet événement ?")) return
+    await supabase.from('evenements_club').delete().eq('id', id)
+    await chargerEvenements(clubId)
+  }
+
+  // ── Projets club ─────────────────────────────────────────────────────────────
+  const chargerProjets = async (uid) => {
+    const { data } = await supabase.from('projets_club').select('*, taches_projet(*)').eq('club_id', uid).order('created_at', { ascending: false })
+    setProjetsClub(data || [])
+  }
+
+  const ouvrirNouveauProjet = () => {
+    setEditingProjetId(null)
+    setProjetForm({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente' })
+    setShowProjetForm(true)
+  }
+
+  const ouvrirEditionProjet = (p) => {
+    setEditingProjetId(p.id)
+    setProjetForm({ nom: p.nom || '', description: p.description || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente' })
+    setShowProjetForm(true)
+  }
+
+  const sauvegarderProjet = async () => {
+    if (!projetForm.nom.trim()) return
+    setSavingProjet(true)
+    const payload = {
+      club_id: clubId,
+      nom: projetForm.nom.trim(),
+      description: projetForm.description.trim() || null,
+      date_debut: projetForm.date_debut || null,
+      date_fin: projetForm.date_fin || null,
+      responsable_id: projetForm.responsable_id || null,
+      responsable_nom: projetForm.responsable_nom || null,
+      statut: projetForm.statut,
+    }
+    const { error } = editingProjetId
+      ? await supabase.from('projets_club').update(payload).eq('id', editingProjetId)
+      : await supabase.from('projets_club').insert(payload)
+    setSavingProjet(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setShowProjetForm(false)
+    setEditingProjetId(null)
+    await chargerProjets(clubId)
+  }
+
+  const changerStatutProjet = async (id, statut) => {
+    await supabase.from('projets_club').update({ statut }).eq('id', id)
+    await chargerProjets(clubId)
+  }
+
+  const supprimerProjet = async (id) => {
+    if (!confirm('Supprimer ce projet et toutes ses tâches ?')) return
+    await supabase.from('projets_club').delete().eq('id', id)
+    await chargerProjets(clubId)
+  }
+
+  const ajouterTache = async (projetId) => {
+    const titre = (nouvelleTache[projetId] || '').trim()
+    if (!titre) return
+    await supabase.from('taches_projet').insert({ projet_id: projetId, titre })
+    setNouvelleTache(prev => ({ ...prev, [projetId]: '' }))
+    await chargerProjets(clubId)
+  }
+
+  const toggleTache = async (tache) => {
+    await supabase.from('taches_projet').update({ fait: !tache.fait }).eq('id', tache.id)
+    await chargerProjets(clubId)
+  }
+
+  const supprimerTache = async (id) => {
+    await supabase.from('taches_projet').delete().eq('id', id)
+    await chargerProjets(clubId)
   }
 
   const chargerSeancesRecues = async (uid) => {
@@ -1208,7 +1379,7 @@ export default function DashboardClub() {
   })()
 
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget'].some(canViewSection)
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements'].some(canViewSection)
 
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
@@ -1236,6 +1407,7 @@ export default function DashboardClub() {
     ...(canViewSection('repartition_bus') ? [{ id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') }] : []),
     ...(canViewSection('profil') ? [{ id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) }] : []),
     ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
+    ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
     ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
   ] : []
 
@@ -1413,6 +1585,7 @@ export default function DashboardClub() {
             educateursEnAttente={educateursEnAttente}
             joueursClub={joueursClub}
             matchsClub={matchsClub}
+            evenementsClub={evenementsClub}
             setActiveCategorie={setActiveCategorie}
             setActiveTab={setActiveTab}
             lang={lang}
@@ -2174,6 +2347,293 @@ export default function DashboardClub() {
                   )
                 })}
               </div>
+            </div>
+          )
+        })()}
+
+        {/* ── ÉVÉNEMENTS & PROJETS ── */}
+        {activeTab === 'evenements' && canViewSection('evenements') && (() => {
+          const aujourdHuiStr = new Date().toISOString().split('T')[0]
+          const evenementsAVenir = evenementsClub.filter(ev => ev.date >= aujourdHuiStr).sort((a, b) => a.date.localeCompare(b.date))
+          const evenementsParMois = evenementsAVenir.reduce((acc, ev) => {
+            const cle = ev.date.slice(0, 7)
+            if (!acc[cle]) acc[cle] = []
+            acc[cle].push(ev)
+            return acc
+          }, {})
+
+          const groupesParticipants = [
+            { type: 'educateur', titre: 'Éducateurs', liste: educateursAcceptes.map(e => ({ id: e.educateur_id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim() })) },
+            { type: 'staff', titre: 'Staff', liste: staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })) },
+            { type: 'joueur', titre: 'Joueurs', liste: joueursClub.map(j => ({ id: j.id, nom: `${j.prenom || ''} ${j.nom || ''}`.trim() })) },
+          ]
+
+          const responsablesOptions = [
+            { id: clubId, nom: `${club?.club || club?.prenom || 'Le club'} (Président)` },
+            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })),
+          ]
+
+          const projetsParStatut = (statut) => projetsClub.filter(p => p.statut === statut)
+
+          return (
+            <div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
+                {[['evenements', '📅 Événements'], ['projets', '📊 Projets']].map(([val, label]) => (
+                  <button key={val} onClick={() => setSousVueEvenements(val)}
+                    style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: sousVueEvenements === val ? '#4ade80' : '#1a1a1a', color: sousVueEvenements === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ═══ ÉVÉNEMENTS ═══ */}
+              {sousVueEvenements === 'evenements' && (
+                <div>
+                  {canEditSection('evenements') && (
+                    <button onClick={showEvenementForm ? () => setShowEvenementForm(false) : ouvrirNouvelEvenement}
+                      style={{ ...st.btnSolid, marginBottom: '1.25rem' }}>
+                      {showEvenementForm ? `✕ ${t('btn_annuler', lang)}` : '+ Événement'}
+                    </button>
+                  )}
+
+                  {showEvenementForm && canEditSection('evenements') && (
+                    <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>{editingEvenementId ? "Modifier l'événement" : 'Nouvel événement'}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={st.label}>Titre</label>
+                          <input style={st.input} value={evenementForm.titre} onChange={e => setEvenementForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex: Tournoi U13" />
+                        </div>
+                        <div>
+                          <label style={st.label}>Date</label>
+                          <input style={st.input} type="date" value={evenementForm.date} onChange={e => setEvenementForm(f => ({ ...f, date: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Heure</label>
+                          <input style={st.input} type="time" value={evenementForm.heure} onChange={e => setEvenementForm(f => ({ ...f, heure: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={st.label}>Lieu</label>
+                          <input style={st.input} value={evenementForm.lieu} onChange={e => setEvenementForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Ex: Stade municipal" />
+                        </div>
+                        <div>
+                          <label style={st.label}>Type</label>
+                          <select style={st.input} value={evenementForm.type} onChange={e => setEvenementForm(f => ({ ...f, type: e.target.value }))}>
+                            {TYPES_EVENEMENT.map(ty => <option key={ty.val} value={ty.val}>{ty.emoji} {ty.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={st.label}>Description</label>
+                        <textarea style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} value={evenementForm.description} onChange={e => setEvenementForm(f => ({ ...f, description: e.target.value }))} />
+                      </div>
+
+                      <label style={st.label}>Participants invités</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                        {groupesParticipants.map(g => (
+                          <div key={g.type}>
+                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#666', fontWeight: 700 }}>{g.titre} ({g.liste.length})</p>
+                            {g.liste.length === 0 ? (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#333' }}>—</p>
+                            ) : (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
+                                {g.liste.map(p => {
+                                  const actif = evenementForm.participants.some(pp => pp.id === p.id && pp.type === g.type)
+                                  return (
+                                    <button key={`${g.type}-${p.id}`} onClick={() => toggleParticipant({ id: p.id, nom: p.nom, type: g.type })}
+                                      style={{ padding: '4px 10px', borderRadius: '20px', border: actif ? 'none' : '1px solid #333', background: actif ? '#4ade80' : 'transparent', color: actif ? '#000' : '#888', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      {p.nom || '—'}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={sauvegarderEvenement} disabled={savingEvenement || !evenementForm.titre.trim() || !evenementForm.date} style={st.btnSolid}>
+                          {savingEvenement ? t('jp_enregistrement', lang) : editingEvenementId ? t('btn_sauvegarder', lang) : t('btn_ajouter', lang)}
+                        </button>
+                        <button onClick={() => setShowEvenementForm(false)} style={st.btnSecondary}>{t('btn_annuler', lang)}</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {Object.keys(evenementsParMois).length === 0 ? (
+                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Aucun événement à venir.</div>
+                  ) : (
+                    Object.entries(evenementsParMois).map(([mois, evs]) => (
+                      <div key={mois} style={{ marginBottom: '1.5rem' }}>
+                        <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80', margin: '0 0 10px' }}>{MOIS_LABEL(`${mois}-01`)}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {evs.map(ev => {
+                            const info = TYPE_EVENEMENT_INFO(ev.type)
+                            return (
+                              <div key={ev.id} style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span style={{ background: '#a855f720', border: '1px solid #a855f750', color: '#a855f7', fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px' }}>{info.emoji} {info.label}</span>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ev.titre}</p>
+                                  </div>
+                                  <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+                                    {new Date(ev.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    {ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}{ev.lieu ? ` · ${ev.lieu}` : ''}
+                                  </p>
+                                  {ev.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>{ev.description}</p>}
+                                  {ev.participants?.length > 0 && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>👥 {ev.participants.map(p => p.nom).join(', ')}</p>
+                                  )}
+                                </div>
+                                {canEditSection('evenements') && (
+                                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                    <button onClick={() => ouvrirEditionEvenement(ev)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px' }}>{t('btn_modifier', lang)}</button>
+                                    <button onClick={() => supprimerEvenement(ev.id)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', color: '#ef4444', borderColor: '#ef444440' }}>{t('btn_supprimer', lang)}</button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* ═══ PROJETS ═══ */}
+              {sousVueEvenements === 'projets' && (
+                <div>
+                  {canEditSection('evenements') && (
+                    <button onClick={showProjetForm ? () => setShowProjetForm(false) : ouvrirNouveauProjet}
+                      style={{ ...st.btnSolid, marginBottom: '1.25rem' }}>
+                      {showProjetForm ? `✕ ${t('btn_annuler', lang)}` : '+ Projet'}
+                    </button>
+                  )}
+
+                  {showProjetForm && canEditSection('evenements') && (
+                    <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>{editingProjetId ? 'Modifier le projet' : 'Nouveau projet'}</p>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={st.label}>Nom du projet</label>
+                        <input style={st.input} value={projetForm.nom} onChange={e => setProjetForm(f => ({ ...f, nom: e.target.value }))} placeholder="Ex: Rénovation vestiaires" />
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={st.label}>Description</label>
+                        <textarea style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} value={projetForm.description} onChange={e => setProjetForm(f => ({ ...f, description: e.target.value }))} />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={st.label}>Date de début</label>
+                          <input style={st.input} type="date" value={projetForm.date_debut} onChange={e => setProjetForm(f => ({ ...f, date_debut: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Date de fin</label>
+                          <input style={st.input} type="date" value={projetForm.date_fin} onChange={e => setProjetForm(f => ({ ...f, date_fin: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                        <div>
+                          <label style={st.label}>Responsable</label>
+                          <select style={st.input} value={projetForm.responsable_id} onChange={e => { const opt = responsablesOptions.find(r => r.id === e.target.value); setProjetForm(f => ({ ...f, responsable_id: e.target.value, responsable_nom: opt?.nom || '' })) }}>
+                            <option value="">— Aucun —</option>
+                            {responsablesOptions.map(r => <option key={r.id} value={r.id}>{r.nom}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Statut</label>
+                          <select style={st.input} value={projetForm.statut} onChange={e => setProjetForm(f => ({ ...f, statut: e.target.value }))}>
+                            {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={sauvegarderProjet} disabled={savingProjet || !projetForm.nom.trim()} style={st.btnSolid}>
+                          {savingProjet ? t('jp_enregistrement', lang) : editingProjetId ? t('btn_sauvegarder', lang) : t('btn_ajouter', lang)}
+                        </button>
+                        <button onClick={() => setShowProjetForm(false)} style={st.btnSecondary}>{t('btn_annuler', lang)}</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {projetsClub.length === 0 ? (
+                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Aucun projet pour l'instant.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '14px', alignItems: 'start' }}>
+                      {STATUTS_PROJET.map(colonne => (
+                        <div key={colonne.val}>
+                          <p style={{ fontSize: '12px', fontWeight: 700, color: colonne.color, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {colonne.label} ({projetsParStatut(colonne.val).length})
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {projetsParStatut(colonne.val).map(p => {
+                              const taches = p.taches_projet || []
+                              const fait = taches.filter(t => t.fait).length
+                              return (
+                                <div key={p.id} style={{ ...st.card, borderLeft: `3px solid ${colonne.color}` }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{p.nom}</p>
+                                    {canEditSection('evenements') && (
+                                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                        <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✎</button>
+                                        <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {p.description && <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#888' }}>{p.description}</p>}
+                                  {(p.date_debut || p.date_fin) && (
+                                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666' }}>
+                                      {p.date_debut ? new Date(p.date_debut + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
+                                      {' → '}
+                                      {p.date_fin ? new Date(p.date_fin + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
+                                    </p>
+                                  )}
+                                  {p.responsable_nom && <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#4ade80' }}>👤 {p.responsable_nom}</p>}
+
+                                  {canEditSection('evenements') && (
+                                    <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
+                                      style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#ccc', padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
+                                      {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
+                                    </select>
+                                  )}
+
+                                  {taches.length > 0 && (
+                                    <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#555' }}>{fait}/{taches.length} tâches terminées</p>
+                                  )}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                                    {taches.map(tc => (
+                                      <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? '#4ade80' : '#555' }}>
+                                          {tc.fait ? '☑' : '☐'}
+                                        </span>
+                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? '#555' : '#ccc', textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
+                                        {canEditSection('evenements') && (
+                                          <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {canEditSection('evenements') && (
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                      <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                        onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
+                                        placeholder="+ Tâche..." style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#fff', padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                            {projetsParStatut(colonne.val).length === 0 && <p style={{ fontSize: '11px', color: '#333' }}>—</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         })()}

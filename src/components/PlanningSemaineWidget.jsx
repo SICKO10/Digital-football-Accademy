@@ -27,10 +27,11 @@ const grilleDuMois = (offset) => {
   return { jours, moisCourant: premier.getMonth() }
 }
 
-function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch }) {
+function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClickMatch, onClickEvenement }) {
   const items = [
     ...ents.map(e => ({ type: 'entrainement', data: e })),
     ...mts.map(m => ({ type: 'match', data: m })),
+    ...evts.map(v => ({ type: 'evenement', data: v })),
   ]
   const max = compact ? 2 : items.length
   const visibles = items.slice(0, max)
@@ -38,38 +39,52 @@ function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch 
 
   return (
     <>
-      {visibles.map(({ type, data }) => type === 'entrainement' ? (
-        <div key={`e-${data.id}`} onClick={() => onClickEntrainement?.(data)}
-          style={{
-            background: '#ef444420', border: '1px solid #ef444450', color: '#ef4444',
-            borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
-            cursor: onClickEntrainement ? 'pointer' : 'default',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
-          }}>
-          {compact ? (data.description || 'Entraînement') : `${data.heure ? `${data.heure} · ` : ''}${data.description || 'Entraînement'}`}
-        </div>
-      ) : (
-        <div key={`m-${data.id}`} onClick={() => onClickMatch?.(data)}
-          style={{
-            background: '#262626', border: '1px solid #333', color: '#ddd',
-            borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
-            cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
-          }}>
-          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {compact ? (data.adversaire || 'Match') : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
-          </div>
-          {!compact && (
-            <span style={{
-              display: 'inline-block', marginTop: '2px', fontSize: '9px', fontWeight: 700,
-              padding: '1px 6px', borderRadius: '10px',
-              background: data.domicile ? '#4ade8020' : '#f9731620',
-              color: data.domicile ? '#4ade80' : '#f97316',
+      {visibles.map(({ type, data }) => {
+        if (type === 'entrainement') return (
+          <div key={`e-${data.id}`} onClick={() => onClickEntrainement?.(data)}
+            style={{
+              background: '#ef444420', border: '1px solid #ef444450', color: '#ef4444',
+              borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
+              cursor: onClickEntrainement ? 'pointer' : 'default',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
             }}>
-              {data.domicile ? 'Domicile' : 'Extérieur'}
-            </span>
-          )}
-        </div>
-      ))}
+            {compact ? (data.description || 'Entraînement') : `${data.heure ? `${data.heure} · ` : ''}${data.description || 'Entraînement'}`}
+          </div>
+        )
+        if (type === 'evenement') return (
+          <div key={`v-${data.id}`} onClick={() => onClickEvenement?.(data)}
+            style={{
+              background: '#a855f720', border: '1px solid #a855f750', color: '#a855f7',
+              borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
+              cursor: onClickEvenement ? 'pointer' : 'default',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            }}>
+            {compact ? (data.titre || 'Événement') : `${data.heure ? `${data.heure} · ` : ''}${data.titre || 'Événement'}`}
+          </div>
+        )
+        return (
+          <div key={`m-${data.id}`} onClick={() => onClickMatch?.(data)}
+            style={{
+              background: '#262626', border: '1px solid #333', color: '#ddd',
+              borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
+              cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
+            }}>
+            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {compact ? (data.adversaire || 'Match') : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
+            </div>
+            {!compact && (
+              <span style={{
+                display: 'inline-block', marginTop: '2px', fontSize: '9px', fontWeight: 700,
+                padding: '1px 6px', borderRadius: '10px',
+                background: data.domicile ? '#4ade8020' : '#f9731620',
+                color: data.domicile ? '#4ade80' : '#f97316',
+              }}>
+                {data.domicile ? 'Domicile' : 'Extérieur'}
+              </span>
+            )}
+          </div>
+        )
+      })}
       {reste > 0 && <p style={{ margin: 0, fontSize: '9px', color: '#555' }}>+{reste}</p>}
     </>
   )
@@ -82,7 +97,7 @@ function EvenementsJour({ ents, mts, compact, onClickEntrainement, onClickMatch 
 // isMobile requise du parent) : sous 640px, la vue semaine passe en liste verticale
 // (une grille à 7 colonnes serait illisible sur un téléphone) ; la vue mois garde sa
 // grille (attendu même en mobile pour un calendrier mensuel) avec des cellules resserrées.
-export default function PlanningSemaineWidget({ entrainements = [], matchs = [], onClickEntrainement, onClickMatch }) {
+export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], onClickEntrainement, onClickMatch, onClickEvenement }) {
   const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
@@ -140,8 +155,9 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             const s = dateStr(d)
             const ents = entrainements.filter(e => e.date === s)
             const mts = matchs.filter(m => m.date === s)
+            const evts = evenements.filter(v => v.date === s)
             const estAujourdhui = s === aujourdhuiStr
-            const vide = ents.length === 0 && mts.length === 0
+            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0
             return (
               <div key={s} style={{
                 display: 'flex', gap: '10px', alignItems: vide ? 'center' : 'flex-start',
@@ -156,7 +172,7 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
                   {vide ? (
                     <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>
                   ) : (
-                    <EvenementsJour ents={ents} mts={mts} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} />
+                    <EvenementsJour ents={ents} mts={mts} evts={evts} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
                   )}
                 </div>
               </div>
@@ -169,8 +185,9 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             const s = dateStr(d)
             const ents = entrainements.filter(e => e.date === s)
             const mts = matchs.filter(m => m.date === s)
+            const evts = evenements.filter(v => v.date === s)
             const estAujourdhui = s === aujourdhuiStr
-            const vide = ents.length === 0 && mts.length === 0
+            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0
             const horsMois = vue === 'mois' && d.getMonth() !== moisCourant
             return (
               <div key={s} style={{
@@ -184,7 +201,7 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
                 <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : vide ? '#333' : '#555' }}>
                   {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
                 </p>
-                <EvenementsJour ents={ents} mts={mts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} />
+                <EvenementsJour ents={ents} mts={mts} evts={evts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
               </div>
             )
           })}
