@@ -96,7 +96,7 @@ function StatutBadge({ statut }) {
   )
 }
 
-function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie }) {
+function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false }) {
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
   const total = Number(sponsor.montant_contrat) || 0
@@ -127,11 +127,13 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button onClick={() => onAjouterPaiement(sponsor)} style={st.btn('#60a5fa')}>+ Paiement</button>
-          <button onClick={() => onEdit(sponsor)} style={st.btnSecondary}>Modifier</button>
-          <button onClick={() => onDelete(sponsor)} style={st.btn('#ef4444')}>Supprimer</button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => onAjouterPaiement(sponsor)} style={st.btn('#60a5fa')}>+ Paiement</button>
+            <button onClick={() => onEdit(sponsor)} style={st.btnSecondary}>Modifier</button>
+            <button onClick={() => onDelete(sponsor)} style={st.btn('#ef4444')}>Supprimer</button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px' }}>
@@ -164,8 +166,8 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
             {contrepartiesNiveau.map((c, i) => {
               const livree = contrepartiesLivrees.includes(c)
               return (
-                <button key={i} onClick={() => onToggleContrepartie(sponsor, c)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#4ade80' : '#666', cursor: 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
+                <button key={i} onClick={() => !readOnly && onToggleContrepartie(sponsor, c)} disabled={readOnly}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#4ade80' : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
                   <span>{livree ? '✓' : '○'}</span> {c}
                 </button>
               )
@@ -177,7 +179,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
   )
 }
 
-function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete }) {
+function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOnly = false }) {
   return (
     <div style={{ ...st.card, borderLeft: `4px solid ${niveau.couleur}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
@@ -185,10 +187,12 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete }) {
           <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{niveau.nom}</p>
           <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{Number(niveau.montant_annuel || 0).toLocaleString('fr-FR')} € / an indicatif</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          <button onClick={() => onEdit(niveau)} style={st.btnSecondary}>Modifier</button>
-          <button onClick={() => onDelete(niveau)} style={st.btn('#ef4444')}>Supprimer</button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <button onClick={() => onEdit(niveau)} style={st.btnSecondary}>Modifier</button>
+            <button onClick={() => onDelete(niveau)} style={st.btn('#ef4444')}>Supprimer</button>
+          </div>
+        )}
       </div>
       {niveau.contreparties?.length > 0 && (
         <ul style={{ margin: '10px 0 0', paddingLeft: '18px', color: '#aaa', fontSize: '12px' }}>
@@ -454,7 +458,7 @@ function ModalNiveau({ niveau, onClose, onSave, saving }) {
 }
 
 // ── Composant principal ──────────────────────────────────────────────────────
-export default function GestionSponsors({ clubId, saison }) {
+export default function GestionSponsors({ clubId, saison, readOnly = false }) {
   const [vue, setVue] = useState('dashboard')
   const [saisonActive, setSaisonActive] = useState(saison)
   const [niveaux, setNiveaux] = useState([])
@@ -658,7 +662,9 @@ export default function GestionSponsors({ clubId, saison }) {
 
       {vue === 'sponsors' && (
         <div>
-          <button onClick={() => setModalSponsor('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Nouveau sponsor</button>
+          {!readOnly && (
+            <button onClick={() => setModalSponsor('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Nouveau sponsor</button>
+          )}
           {sponsors.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
               Aucun sponsor pour la saison {saisonActive}. Clique sur "+ Nouveau sponsor" pour commencer.
@@ -671,6 +677,7 @@ export default function GestionSponsors({ clubId, saison }) {
                   onDelete={supprimerSponsor}
                   onAjouterPaiement={setModalPaiement}
                   onToggleContrepartie={toggleContrepartie}
+                  readOnly={readOnly}
                 />
               ))}
             </div>
@@ -680,7 +687,9 @@ export default function GestionSponsors({ clubId, saison }) {
 
       {vue === 'niveaux' && (
         <div>
-          <button onClick={() => setModalNiveau('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Ajouter un niveau</button>
+          {!readOnly && (
+            <button onClick={() => setModalNiveau('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Ajouter un niveau</button>
+          )}
           {niveaux.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
               Commence par créer tes niveaux de partenariat (ex: Bronze 500€, Silver 1000€, Gold 2000€).
@@ -692,7 +701,7 @@ export default function GestionSponsors({ clubId, saison }) {
                 const montant = sponsorsNiveau.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
                 return (
                   <NiveauCard key={n.id} niveau={n} nbSponsors={sponsorsNiveau.length} montantTotal={montant}
-                    onEdit={setModalNiveau} onDelete={supprimerNiveau} />
+                    onEdit={setModalNiveau} onDelete={supprimerNiveau} readOnly={readOnly} />
                 )
               })}
             </div>
@@ -700,7 +709,7 @@ export default function GestionSponsors({ clubId, saison }) {
         </div>
       )}
 
-      {modalSponsor && (
+      {modalSponsor && !readOnly && (
         <ModalSponsor
           sponsor={modalSponsor === 'new' ? null : modalSponsor}
           niveaux={niveaux}
@@ -709,7 +718,7 @@ export default function GestionSponsors({ clubId, saison }) {
           saving={saving}
         />
       )}
-      {modalNiveau && (
+      {modalNiveau && !readOnly && (
         <ModalNiveau
           niveau={modalNiveau === 'new' ? null : modalNiveau}
           onClose={() => setModalNiveau(null)}

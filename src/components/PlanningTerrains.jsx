@@ -41,8 +41,8 @@ const st = {
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
 }
 
-export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, accentColor = '#4ade80' }) {
-  const estDirigeant = mode === 'dirigeant'
+export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, accentColor = '#4ade80', readOnly = false }) {
+  const estDirigeant = mode === 'dirigeant' && !readOnly
   const [vue, setVue] = useState('planning') // 'configuration' | 'planning'
 
   const [terrains, setTerrains] = useState([])

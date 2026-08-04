@@ -108,7 +108,7 @@ const ligneDepuisObjet = (obj) => {
   return ligne
 }
 
-export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) {
+export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', readOnly = false }) {
   const [lignes, setLignes] = useState([])
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState(null)
@@ -252,6 +252,17 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80' }) 
     setSuggestions(null)
     setPublishSuccess(false)
     setScanError(null)
+  }
+
+  if (readOnly) {
+    return (
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 Répartition mini-bus</h1>
+        <div style={{ ...st.card, textAlign: 'center', color: '#555', padding: '3rem' }}>
+          Tu peux voir cette rubrique mais pas y apporter de modifications — demande au président du club de t'accorder le droit « Modifier » si besoin.
+        </div>
+      </div>
+    )
   }
 
   return (

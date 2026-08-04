@@ -24,7 +24,7 @@ const st = {
 
 const natureInfo = (val) => NATURES.find(n => n.val === val) || NATURES[3]
 
-export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
+export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -158,21 +158,23 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
           </div>
           <div>
             <p style={st.label}>Km après (retour)</p>
-            <input type="number" value={edit.km_apres} placeholder="—"
+            <input type="number" value={edit.km_apres} placeholder="—" disabled={readOnly}
               onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
               style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
           </div>
           <div>
             <p style={st.label}>Gasoil après (retour)</p>
-            <input type="text" value={edit.gasoil_apres} placeholder="ex: 2/4"
+            <input type="text" value={edit.gasoil_apres} placeholder="ex: 2/4" disabled={readOnly}
               onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
               style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
           </div>
         </div>
-        <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-          style={{ marginTop: '10px', background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
-        </button>
+        {!readOnly && (
+          <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
+            style={{ marginTop: '10px', background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
+          </button>
+        )}
       </div>
     )
   }
@@ -184,7 +186,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
           <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🚌 Déplacements</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
-        {vue === 'liste' && (
+        {vue === 'liste' && !readOnly && (
           <button onClick={() => setShowForm(v => !v)}
             style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
@@ -203,7 +205,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80' }) {
 
       {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
 
-      {vue === 'liste' && showForm && (
+      {vue === 'liste' && showForm && !readOnly && (
         <div style={{ ...st.card, marginBottom: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
             <div>

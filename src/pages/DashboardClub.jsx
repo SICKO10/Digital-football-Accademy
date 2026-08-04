@@ -56,6 +56,33 @@ const ROLES_STAFF = [
 ]
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
+// Sections pilotables par la matrice de permissions (role_permissions). 'terrains'
+// est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
+// permettre de déléguer le planning des terrains indépendamment du reste (équipes,
+// classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
+const PERMISSION_SECTIONS = [
+  { id: 'sportif', label: 'Sportif' },
+  { id: 'terrains', label: 'Planning terrains' },
+  { id: 'deplacements', label: 'Déplacements' },
+  { id: 'budget', label: 'Budget' },
+  { id: 'sponsors', label: 'Sponsors' },
+  { id: 'repartition_bus', label: 'Mini-bus' },
+  { id: 'profil', label: 'Profil club' },
+]
+
+// Comportement avant toute configuration explicite par le président (aucune ligne
+// en base pour ce club/rôle/section) — reproduit les règles d'accès qui existaient
+// avant ce système, pour ne rien casser pour les clubs déjà en production.
+const PERMISSION_DEFAULTS = {
+  sportif: ['president', 'directeur_sportif'],
+  terrains: ['president', 'directeur_sportif'],
+  deplacements: ['president', 'marketing', 'secretaire'],
+  budget: ['president', 'secretaire'],
+  sponsors: ['president', 'marketing', 'secretaire'],
+  repartition_bus: ['president', 'marketing', 'secretaire'],
+  profil: ['president', 'marketing', 'secretaire'],
+}
+
 const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
 function StatCard({ label, valeur, couleur }) {
   const color = STAT_CARD_COLORS[couleur] || '#fff'
@@ -300,6 +327,101 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   )
 }
 
+// ── Matrice de permissions par rôle (Staff → "Gérer les permissions") ────────
+// Grille : colonnes = PERMISSION_SECTIONS, lignes = ROLES_STAFF (hors président,
+// qui a tout et n'apparaît pas ici). Édite une copie locale, ne touche la base
+// qu'au clic sur "Enregistrer" via onSave (upsert complet de la matrice).
+function PermissionsModal({ rolePermissions, saving, onSave, onClose }) {
+  const rolesConfigurables = ROLES_STAFF.filter(r => r.val !== 'president')
+
+  const initMatrice = () => {
+    const m = {}
+    for (const role of rolesConfigurables) {
+      m[role.val] = {}
+      for (const section of PERMISSION_SECTIONS) {
+        const row = rolePermissions.find(p => p.role === role.val && p.section === section.id)
+        m[role.val][section.id] = row
+          ? { can_view: row.can_view, can_edit: row.can_edit }
+          : { can_view: (PERMISSION_DEFAULTS[section.id] || []).includes(role.val), can_edit: (PERMISSION_DEFAULTS[section.id] || []).includes(role.val) }
+      }
+    }
+    return m
+  }
+
+  const [matrice, setMatrice] = useState(initMatrice)
+
+  const toggle = (role, section, cle) => {
+    setMatrice(prev => {
+      const cell = prev[role][section]
+      const next = { ...cell, [cle]: !cell[cle] }
+      // Voir désactivé ⇒ Modifier n'a plus de sens ; Modifier activé ⇒ Voir est requis.
+      if (cle === 'can_view' && !next.can_view) next.can_edit = false
+      if (cle === 'can_edit' && next.can_edit) next.can_view = true
+      return { ...prev, [role]: { ...prev[role], [section]: next } }
+    })
+  }
+
+  const cellBtn = (active, label, color) => ({
+    padding: '3px 9px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    background: active ? `${color}20` : '#1a1a1a', color: active ? color : '#3a3a3a',
+  })
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🔐 Permissions par rôle</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        </div>
+        <p style={{ margin: '0 0 18px', fontSize: '12px', color: '#666' }}>
+          Le Président voit et modifie tout, ce n'est pas configurable. Pour les autres rôles : « Voir » affiche l'onglet, « Modifier » autorise les actions d'écriture (ajout/suppression) dans cet onglet.
+        </p>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '640px' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rôle</th>
+                {PERMISSION_SECTIONS.map(s => (
+                  <th key={s.id} style={{ textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rolesConfigurables.map(role => (
+                <tr key={role.val} style={{ borderTop: '1px solid #1a1a1a' }}>
+                  <td style={{ padding: '10px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>{role.label}</td>
+                  {PERMISSION_SECTIONS.map(section => {
+                    const cell = matrice[role.val][section.id]
+                    return (
+                      <td key={section.id} style={{ padding: '10px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                          <button onClick={() => toggle(role.val, section.id, 'can_view')} style={cellBtn(cell.can_view, 'Voir', '#60a5fa')}>👁 Voir</button>
+                          <button onClick={() => toggle(role.val, section.id, 'can_edit')} style={cellBtn(cell.can_edit, 'Modifier', '#4ade80')}>✏️ Modifier</button>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <button onClick={() => onSave(matrice)} disabled={saving}
+            style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
+            {saving ? 'Enregistrement...' : '✓ Enregistrer'}
+          </button>
+          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardClub() {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
@@ -329,6 +451,11 @@ export default function DashboardClub() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [invitingStaff, setInvitingStaff] = useState(false)
   const [inviteMessage, setInviteMessage] = useState(null) // { type: 'ok' | 'erreur', texte }
+
+  // Permissions par rôle (section Staff → "Gérer les permissions")
+  const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
+  const [savingPermissions, setSavingPermissions] = useState(false)
 
   // Catégories & équipes
   const [categories, setCategories] = useState([])
@@ -397,6 +524,24 @@ export default function DashboardClub() {
     setLigueUrls(prev => ({ ...prev, [categorieId]: data?.ligue_url || null }))
   }
 
+  // Le président a toujours tout, et ne peut pas être restreint (cf. sauvegarderPermissions
+  // qui n'écrit jamais de ligne pour 'president'). Pour les autres rôles : la ligne explicite
+  // configurée par le président fait foi ; à défaut, on retombe sur PERMISSION_DEFAULTS pour
+  // ne rien changer au comportement des clubs qui n'ont pas encore ouvert la matrice.
+  const permissionRow = (section) => rolePermissions.find(p => p.role === monRole && p.section === section)
+  const canViewSection = (section) => {
+    if (monRole === 'president') return true
+    const row = permissionRow(section)
+    if (row) return row.can_view
+    return (PERMISSION_DEFAULTS[section] || []).includes(monRole)
+  }
+  const canEditSection = (section) => {
+    if (monRole === 'president') return true
+    const row = permissionRow(section)
+    if (row) return row.can_view && row.can_edit
+    return (PERMISSION_DEFAULTS[section] || []).includes(monRole)
+  }
+
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
     navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? '0 1rem' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '8px' },
@@ -418,20 +563,29 @@ export default function DashboardClub() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  // Corrige la catégorie/onglet actifs si le rôle détecté ne peut pas voir le défaut
-  // ('sportif' + 'categories' par défaut, ce qui exclut par ex. un rôle 'marketing').
+  // Corrige la catégorie/onglet actifs si le rôle (ou les permissions configurées par
+  // le président) ne permet(tent) plus de voir la sélection courante — au chargement
+  // initial, mais aussi si le président modifie la matrice pendant que ce membre est
+  // connecté (rolePermissions en dépendance).
   useEffect(() => {
     if (!monRole) return
-    const sportifVisible = ['president', 'directeur_sportif'].includes(monRole)
-    const administratifVisible = ['president', 'marketing', 'secretaire'].includes(monRole)
+    const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
+    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget']
+    const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection)
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
-      setActiveTab('sponsors')
+      setActiveTab(administratifSections.find(canViewSection) || 'sponsors')
     } else if (activeCategorie === 'administratif' && !administratifVisible && sportifVisible) {
       setActiveCategorie('sportif')
-      setActiveTab('categories')
+      setActiveTab(canViewSection('sportif') ? 'categories' : 'terrains')
+    } else if (activeCategorie === 'sportif' && sportifVisible) {
+      const sportifOnglets = ['categories', 'classements', 'recrutement', 'educateurs'].filter(() => canViewSection('sportif')).concat(canViewSection('terrains') ? ['terrains'] : [])
+      if (!sportifOnglets.includes(activeTab)) setActiveTab(sportifOnglets[0])
+    } else if (activeCategorie === 'administratif' && administratifVisible) {
+      const adminOnglets = administratifSections.filter(canViewSection).concat(monRole === 'president' ? ['staff'] : [])
+      if (!adminOnglets.includes(activeTab)) setActiveTab(adminOnglets[0])
     }
-  }, [monRole])
+  }, [monRole, rolePermissions])
 
   useEffect(() => {
     if (activeTab === 'classements' && Object.keys(statsParCategorie).length === 0) {
@@ -489,7 +643,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId)])
     setLoading(false)
   }
 
@@ -590,6 +744,32 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
     setStaffMembers(data || [])
+  }
+
+  const chargerRolePermissions = async (uid) => {
+    const { data } = await supabase
+      .from('role_permissions')
+      .select('role, section, can_view, can_edit')
+      .eq('club_id', uid)
+    setRolePermissions(data || [])
+  }
+
+  // Sauvegarde toute la matrice en une fois (upsert ligne par ligne, clé (club_id, role, section)).
+  // Le président n'a jamais de ligne : il garde tout, en dur, quoi qu'il arrive (cf. canViewSection).
+  const sauvegarderPermissions = async (matrice) => {
+    if (!clubId) return
+    setSavingPermissions(true)
+    const rows = []
+    for (const role of Object.keys(matrice)) {
+      if (role === 'president') continue
+      for (const section of Object.keys(matrice[role])) {
+        rows.push({ club_id: clubId, role, section, can_view: matrice[role][section].can_view, can_edit: matrice[role][section].can_edit })
+      }
+    }
+    const { error } = await supabase.from('role_permissions').upsert(rows, { onConflict: 'club_id,role,section' })
+    if (!error) await chargerRolePermissions(clubId)
+    setSavingPermissions(false)
+    if (!error) setShowPermissionsModal(false)
   }
 
   const rechercherUtilisateurs = async (query) => {
@@ -1012,33 +1192,37 @@ export default function DashboardClub() {
 
   const iconLabel = (Icon, texte) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icon /> {texte}</span>
 
+  const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget'].some(canViewSection)
+
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
-    { id: 'sportif', label: iconLabel(IcoGear, t('club_sportif', lang)), defaultTab: 'categories',
-      visible: ['president', 'directeur_sportif'].includes(monRole) },
+    { id: 'sportif', label: iconLabel(IcoGear, t('club_sportif', lang)), defaultTab: canViewSection('sportif') ? 'categories' : 'terrains',
+      visible: sportifVisible },
     { id: 'administratif', label: iconLabel(IcoBuilding, t('club_administratif', lang)), defaultTab: 'sponsors',
-      visible: ['president', 'marketing', 'secretaire'].includes(monRole) },
+      visible: administratifVisible },
   ].filter(c => c.visible)
 
   // Sous-onglets de la catégorie active (niveau 2) — calculés une fois, réutilisés par
-  // l'affichage desktop (st.tabs) et le drawer mobile.
+  // l'affichage desktop (st.tabs) et le drawer mobile. Filtrés par la matrice de
+  // permissions (role_permissions) : 'categories'/'classements'/'recrutement'/'educateurs'
+  // partagent le droit 'sportif', 'terrains' est indépendant (cf. PERMISSION_SECTIONS).
   const sousOnglets = activeCategorie === 'sportif' ? [
-    { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
-    { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
-    { id: 'terrains', label: iconLabel(IcoTerrain, 'Planning des terrains') },
-    { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
-    { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
+    ...(canViewSection('sportif') ? [
+      { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
+      { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
+      { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
+      { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
+    ] : []),
+    ...(canViewSection('terrains') ? [{ id: 'terrains', label: iconLabel(IcoTerrain, 'Planning des terrains') }] : []),
   ] : activeCategorie === 'administratif' ? [
-    { id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) },
-    { id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) },
-    { id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') },
-    { id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) },
-    ...(['president', 'secretaire'].includes(monRole) ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
+    ...(canViewSection('sponsors') ? [{ id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) }] : []),
+    ...(canViewSection('deplacements') ? [{ id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) }] : []),
+    ...(canViewSection('repartition_bus') ? [{ id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') }] : []),
+    ...(canViewSection('profil') ? [{ id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) }] : []),
+    ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
     ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
   ] : []
-
-  const sportifVisible = ['president', 'directeur_sportif'].includes(monRole)
-  const administratifVisible = ['president', 'marketing', 'secretaire'].includes(monRole)
 
   const clubOnboardingSteps = [
     { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de l'espace club en 2 minutes.", targetId: null, position: "center" },
@@ -1207,14 +1391,16 @@ export default function DashboardClub() {
         )}
 
         {/* ── CATÉGORIES ── */}
-        {activeTab === 'categories' && (
+        {activeTab === 'categories' && canViewSection('sportif') && (
           <>
+            {canEditSection('sportif') && (
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
               <button style={{ ...st.btnSecondary, width: isMobile ? '100%' : 'auto' }} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
                 {autoAssignLoading ? `⏳ ${t('club_assignation_cours', lang)}` : `⚡ ${t('club_auto_assigner', lang)}`}
               </button>
               <button style={{ ...st.btnSolid, width: isMobile ? '100%' : 'auto' }} onClick={() => setShowAddCategorie(true)}>{t('club_ajouter_categorie', lang)}</button>
             </div>
+            )}
 
             {autoAssignResult && (
               <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', color: '#4ade80', fontSize: '13px' }}>
@@ -1276,7 +1462,9 @@ export default function DashboardClub() {
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 {t('club_effectif', lang)}</button>
-                            <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                            {canEditSection('sportif') && (
+                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1289,12 +1477,12 @@ export default function DashboardClub() {
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}
-        {activeTab === 'terrains' && (
-          <PlanningTerrains clubId={clubId} mode="dirigeant" />
+        {activeTab === 'terrains' && canViewSection('terrains') && (
+          <PlanningTerrains clubId={clubId} mode="dirigeant" readOnly={!canEditSection('terrains')} />
         )}
 
         {/* ── ÉDUCATEURS ── */}
-        {activeTab === 'educateurs' && (
+        {activeTab === 'educateurs' && canViewSection('sportif') && (
           <>
             {/* Code club */}
             <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
@@ -1452,7 +1640,7 @@ export default function DashboardClub() {
           </>
         )}
 
-        {activeTab === 'classements' && (() => {
+        {activeTab === 'classements' && canViewSection('sportif') && (() => {
           const TRIS = [
             { key: 'buts', label: t('stats_graph_buteurs', lang), color: '#4ade80' },
             { key: 'passes', label: t('stats_filtre_passeurs', lang), color: '#60a5fa' },
@@ -1613,19 +1801,19 @@ export default function DashboardClub() {
             </div>
           )
         })()}
-        {activeTab === 'sponsors' && (
-          <GestionSponsors clubId={clubId} saison={saisonActuelle} />
+        {activeTab === 'sponsors' && canViewSection('sponsors') && (
+          <GestionSponsors clubId={clubId} saison={saisonActuelle} readOnly={!canEditSection('sponsors')} />
         )}
-        {activeTab === 'deplacements' && (
-          <Deplacements clubId={clubId} />
+        {activeTab === 'deplacements' && canViewSection('deplacements') && (
+          <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} />
         )}
-        {activeTab === 'repartition_bus' && (
-          <RepartitionMiniBus clubId={clubId} />
+        {activeTab === 'repartition_bus' && canViewSection('repartition_bus') && (
+          <RepartitionMiniBus clubId={clubId} readOnly={!canEditSection('repartition_bus')} />
         )}
-        {activeTab === 'recrutement' && (
+        {activeTab === 'recrutement' && canViewSection('sportif') && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />
         )}
-        {activeTab === 'profil' && (() => {
+        {activeTab === 'profil' && canViewSection('profil') && (() => {
           const moyenne = avisRecus.length ? avisRecus.reduce((s, a) => s + (a.note || 0), 0) / avisRecus.length : null
           return (
             <div style={{ maxWidth: '700px' }}>
@@ -1662,11 +1850,11 @@ export default function DashboardClub() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
                     <label style={st.label}>{t('club_nom_club', lang)}</label>
-                    <input style={st.input} value={profilClubEdit.club} onChange={e => setProfilClubEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex: AS Cannes" />
+                    <input style={st.input} value={profilClubEdit.club} onChange={e => setProfilClubEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex: AS Cannes" disabled={!canEditSection('profil')} />
                   </div>
                   <div>
                     <label style={st.label}>{t('profil_region', lang)}</label>
-                    <input style={st.input} value={profilClubEdit.region} onChange={e => setProfilClubEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex: Provence-Alpes-Côte d'Azur" />
+                    <input style={st.input} value={profilClubEdit.region} onChange={e => setProfilClubEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex: Provence-Alpes-Côte d'Azur" disabled={!canEditSection('profil')} />
                   </div>
                   <div>
                     <label style={st.label}>{t('seance_description', lang)}</label>
@@ -1675,12 +1863,15 @@ export default function DashboardClub() {
                       value={profilClubEdit.description}
                       onChange={e => setProfilClubEdit(p => ({ ...p, description: e.target.value }))}
                       placeholder={t('club_desc_placeholder', lang)}
+                      disabled={!canEditSection('profil')}
                     />
                   </div>
                 </div>
-                <button onClick={sauvegarderProfilClub} disabled={savingProfilClub} style={{ ...st.btnSolid, marginTop: '16px' }}>
-                  {savingProfilClub ? t('jp_enregistrement', lang) : `✓ ${t('btn_sauvegarder', lang)}`}
-                </button>
+                {canEditSection('profil') && (
+                  <button onClick={sauvegarderProfilClub} disabled={savingProfilClub} style={{ ...st.btnSolid, marginTop: '16px' }}>
+                    {savingProfilClub ? t('jp_enregistrement', lang) : `✓ ${t('btn_sauvegarder', lang)}`}
+                  </button>
+                )}
               </div>
 
               {/* Abonnement — paliers vérifiés manuellement par le support (nb. licenciés) */}
@@ -1725,7 +1916,7 @@ export default function DashboardClub() {
         })()}
 
         {/* ── BUDGET (président + secrétaire) ── */}
-        {activeTab === 'budget' && ['president', 'secretaire'].includes(monRole) && (() => {
+        {activeTab === 'budget' && canViewSection('budget') && (() => {
           const maintenant = new Date()
           const entriesFiltrees = budgetEntries.filter(e => {
             if (budgetPeriode === 'tout') return true
@@ -1765,13 +1956,15 @@ export default function DashboardClub() {
                   <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 {t('club_budget_titre', lang)}</h2>
                   <p style={{ color: '#555', fontSize: 13, margin: '4px 0 0' }}>{t('club_budget_desc', lang)}</p>
                 </div>
+                {canEditSection('budget') && (
                 <button onClick={() => setBudgetFormOuvert(v => !v)}
                   style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {budgetFormOuvert ? `✕ ${t('btn_annuler', lang)}` : `+ ${t('btn_ajouter', lang)}`}
                 </button>
+                )}
               </div>
 
-              {budgetFormOuvert && (
+              {budgetFormOuvert && canEditSection('budget') && (
                 <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
                   <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
@@ -1941,11 +2134,13 @@ export default function DashboardClub() {
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 15, flexShrink: 0, color: e.type === 'recette' ? '#4ade80' : '#ef4444' }}>
                         {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                       </p>
-                      <button onClick={() => supprimerEntreeBudget(e.id)}
-                        style={{ background: 'transparent', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
-                        onMouseEnter={ev => ev.target.style.color = '#ef4444'}
-                        onMouseLeave={ev => ev.target.style.color = '#2a2a2a'}
-                        title={t('btn_supprimer', lang)}>✕</button>
+                      {canEditSection('budget') && (
+                        <button onClick={() => supprimerEntreeBudget(e.id)}
+                          style={{ background: 'transparent', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
+                          onMouseEnter={ev => ev.target.style.color = '#ef4444'}
+                          onMouseLeave={ev => ev.target.style.color = '#2a2a2a'}
+                          title={t('btn_supprimer', lang)}>✕</button>
+                      )}
                     </div>
                   )
                 })}
@@ -1957,6 +2152,14 @@ export default function DashboardClub() {
         {/* ── STAFF (président uniquement) ── */}
         {activeTab === 'staff' && monRole === 'president' && (
           <div style={{ maxWidth: '700px' }}>
+            <div style={{ ...st.card, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔐 Permissions par rôle</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+              </div>
+              <button onClick={() => setShowPermissionsModal(true)} style={st.btnSolid}>Gérer les permissions</button>
+            </div>
+
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 {t('club_ajouter_membre_staff', lang)}</p>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
@@ -2047,6 +2250,16 @@ export default function DashboardClub() {
           </div>
         )}
       </div>
+
+      {/* Modal gestion des permissions par rôle */}
+      {showPermissionsModal && (
+        <PermissionsModal
+          rolePermissions={rolePermissions}
+          saving={savingPermissions}
+          onSave={sauvegarderPermissions}
+          onClose={() => setShowPermissionsModal(false)}
+        />
+      )}
 
       {/* Modal notation éducateur */}
       {eduNoteModal && (
