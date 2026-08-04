@@ -1,7 +1,9 @@
 import { useState } from "react";
 
 // ─── FAQ RAPIDE ──────────────────────────────────────────────────────────────
-const FAQ = [
+// FAQ par défaut (dashboard joueur) — passe une prop `faq` personnalisée pour
+// réutiliser ce composant sur un autre dashboard (éducateur, club...).
+const DEFAULT_FAQ = [
   {
     q: "Comment uploader une vidéo ?",
     a: "Va dans ton dashboard → section 'Upload'. Formats acceptés : MP4, MOV. Taille max : 500 Mo.",
@@ -142,7 +144,7 @@ const S = {
 };
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
-export default function FloatingHelper({ userId, onReplayOnboarding }) {
+export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ }) {
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
@@ -180,7 +182,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding }) {
         <div style={S.body} className="helper-scroll">
           <p style={S.sectionTitle}>Questions fréquentes</p>
 
-          {FAQ.map((item, i) => (
+          {faq.map((item, i) => (
             <div
               key={i}
               className="faq-item"
