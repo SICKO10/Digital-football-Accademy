@@ -29,6 +29,7 @@ export const T = {
   recrut_axes_progression: { fr: 'Axes de progression', en: 'Areas for improvement', pt: 'Áreas a melhorar', es: 'Áreas de mejora', it: 'Aree di miglioramento', de: 'Verbesserungsbereiche' },
   recrut_parcours:      { fr: 'Parcours',              en: 'Career path',       pt: 'Percurso',          es: 'Trayectoria',       it: 'Percorso',          de: 'Werdegang'         },
   recrut_video:         { fr: 'Vidéo',                 en: 'Video',             pt: 'Vídeo',             es: 'Vídeo',             it: 'Video',             de: 'Video'             },
+  recrut_voir_sur_veo:  { fr: 'Voir sur Veo',          en: 'View on Veo',       pt: 'Ver no Veo',        es: 'Ver en Veo',        it: 'Guarda su Veo',     de: 'Auf Veo ansehen'   },
   recrut_feed:          { fr: 'Feed',                  en: 'Feed',              pt: 'Feed',              es: 'Feed',              it: 'Feed',              de: 'Feed'              },
   recrut_recherche:     { fr: 'Recherche',             en: 'Search',            pt: 'Pesquisa',          es: 'Búsqueda',          it: 'Ricerca',           de: 'Suche'             },
   recrut_style_jeu:     { fr: 'Style de jeu',          en: 'Playing style',     pt: 'Estilo de jogo',    es: 'Estilo de juego',   it: 'Stile di gioco',    de: 'Spielstil'         },
