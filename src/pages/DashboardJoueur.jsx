@@ -1947,6 +1947,20 @@ function DashboardJoueur() {
     { id: 'messages', label: t('jnav_recruteurs', lang), icon: <IconMessage />, badge: conversations.length, section: t('jsec_reseau', lang) },
   ]
 
+  // Ids DOM sur les boutons de nav (toujours montés, contrairement au contenu des
+  // onglets) — cibles utilisées par OnboardingGuide pour surligner chaque rubrique.
+  const NAV_SECTION_IDS = {
+    equipe: 'equipe-section',
+    prep_physique: 'prep-physique-section',
+    analyses: 'analyses-section',
+    coach: 'coach-section',
+    profil: 'profile-section',
+    carte: 'carte-section',
+    certif: 'certif-section',
+    clubs: 'clubs-section',
+    messages: 'messages-section',
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
       <style>{`
@@ -1997,7 +2011,7 @@ function DashboardJoueur() {
                 </div>
               )}
               <button className="dj-nav-btn"
-                id={item.id === 'profil' ? 'profile-section' : item.id === 'analyses' ? 'analyses-section' : undefined}
+                id={NAV_SECTION_IDS[item.id]}
                 onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>

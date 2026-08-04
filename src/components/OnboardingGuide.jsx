@@ -15,12 +15,44 @@ const STEPS = [
     id: 2,
     title: "Uploade ta vidéo",
     message:
-      "C'est ici que tout commence. Envoie ta vidéo de match ou d'entraînement et notre coach l'analyse pour toi.",
+      "C'est ici que tout commence. Envoie ta vidéo de match ou d'entraînement, notre équipe l'analyse pour toi.",
     targetId: "upload-section",
     position: "bottom",
   },
   {
     id: 3,
+    title: "Mon Équipe",
+    message:
+      "Rejoins l'équipe de ton éducateur avec le code qu'il t'a donné : tu accèdes à tes stats de présence et à tes coéquipiers.",
+    targetId: "equipe-section",
+    position: "bottom",
+  },
+  {
+    id: 4,
+    title: "Préparation physique",
+    message:
+      "Des programmes d'entraînement physique adaptés à ton poste, à faire à ton rythme.",
+    targetId: "prep-physique-section",
+    position: "bottom",
+  },
+  {
+    id: 5,
+    title: "Tes analyses vidéo",
+    message:
+      "Retrouve ici tes analyses dès qu'elles sont prêtes — tu reçois une notification et un email. Écoute, applique, progresse.",
+    targetId: "analyses-section",
+    position: "bottom",
+  },
+  {
+    id: 6,
+    title: "Coach analyseur",
+    message:
+      "Discute directement avec un coach pro pour des conseils personnalisés sur ton jeu.",
+    targetId: "coach-section",
+    position: "bottom",
+  },
+  {
+    id: 7,
     title: "Ton profil joueur",
     message:
       "Ton profil est visible par les recruteurs (abonnement Pro). Remplis-le bien — c'est ta vitrine !",
@@ -28,15 +60,39 @@ const STEPS = [
     position: "bottom",
   },
   {
-    id: 4,
-    title: "Tes analyses vidéo",
+    id: 8,
+    title: "Carte FIFA",
     message:
-      "Retrouve ici tous les retours vocaux de ton coach. Écoute, applique, progresse.",
-    targetId: "analyses-section",
+      "Génère ta propre carte de joueur façon FIFA à partir de tes stats, et partage-la sur les réseaux.",
+    targetId: "carte-section",
     position: "bottom",
   },
   {
-    id: 5,
+    id: 9,
+    title: "Certification",
+    message:
+      "Envoie tes feuilles de match pour faire certifier ton niveau réel par notre équipe — ça renforce la crédibilité de ton profil.",
+    targetId: "certif-section",
+    position: "bottom",
+  },
+  {
+    id: 10,
+    title: "Explorer",
+    message:
+      "Découvre les clubs et recruteurs présents sur la plateforme.",
+    targetId: "clubs-section",
+    position: "bottom",
+  },
+  {
+    id: 11,
+    title: "Messages",
+    message:
+      "Échange directement avec les recruteurs qui s'intéressent à ton profil.",
+    targetId: "messages-section",
+    position: "bottom",
+  },
+  {
+    id: 12,
     title: "C'est parti ! 🚀",
     message:
       "Tu es prêt. Si tu as une question, clique sur le ballon en bas à droite — je suis toujours là.",
