@@ -8,7 +8,7 @@ const FAQ = [
   },
   {
     q: "Quand vais-je recevoir mon analyse ?",
-    a: "Ton coach te répond sous 48h avec un retour vocal détaillé via Loom.",
+    a: "Ton analyse est réalisée par notre équipe et disponible directement dans la rubrique Analyses de ton dashboard. Tu reçois une notification sur la plateforme et un email dès qu'elle est prête.",
   },
   {
     q: "Comment les recruteurs voient mon profil ?",
@@ -16,7 +16,7 @@ const FAQ = [
   },
   {
     q: "Combien d'analyses par mois ?",
-    a: "Starter : 2 analyses/mois. Pro : 3 analyses + compile. Tu peux upgrader à tout moment.",
+    a: "Offre mensuelle : 1 analyse offerte tous les 6 mois. Offre annuelle : 2 analyses offertes dès le paiement. Pour toute analyse supplémentaire : 60€ l'unité, quelle que soit ton offre.",
   },
   {
     q: "Comment changer mon abonnement ?",
