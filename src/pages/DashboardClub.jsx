@@ -1197,6 +1197,16 @@ export default function DashboardClub() {
 
   const iconLabel = (Icon, texte) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icon /> {texte}</span>
 
+  // Initiales du club pour l'avatar par défaut (même logique que getClubInitials
+  // dans DashboardRecruteur.jsx, dupliquée localement — usage ponctuel ici).
+  const clubInitiales = (() => {
+    const nom = (club?.club || '').trim()
+    if (!nom) return '?'
+    const mots = nom.split(/\s+/).filter(w => !['AS', 'FC', 'OC', 'US', 'SC', 'AC', 'RC', 'ES', 'OGC', 'SM', 'EA'].includes(w))
+    if (mots.length === 0) return nom.slice(0, 2).toUpperCase()
+    return mots.length >= 2 ? (mots[0][0] + mots[1][0]).toUpperCase() : mots[0].slice(0, 2).toUpperCase()
+  })()
+
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
   const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget'].some(canViewSection)
 
@@ -1274,9 +1284,23 @@ export default function DashboardClub() {
       </nav>
 
       <div style={st.content}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || t('club_mon_club', lang)}</h1>
-          <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            {club?.avatar_url
+              ? <img src={club.avatar_url} alt="" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
+              : <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#4ade80' }}>
+                  {clubInitiales}
+                </div>
+            }
+            <label style={{ position: 'absolute', bottom: 0, right: 0, width: '20px', height: '20px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '10px' }}>
+              {avatarClubUploading ? '…' : '✎'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
+            </label>
+          </div>
+          <div>
+            <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || t('club_mon_club', lang)}</h1>
+            <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+          </div>
         </div>
 
         {!isMobile ? (
