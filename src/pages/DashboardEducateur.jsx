@@ -13,11 +13,126 @@ import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
+import OnboardingGuide from '../components/OnboardingGuide'
+import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
+
+// Parcours d'onboarding du dashboard éducateur (guide "Alex") — chaque étape
+// cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
+// l'onglet actif). Voir OnboardingGuide.jsx pour le composant générique.
+const EDUCATEUR_ONBOARDING_STEPS = [
+  {
+    id: 1,
+    title: "Bienvenue sur Digital Football ! ⚽",
+    message: "Je suis Alex, ton guide. Je vais te montrer les grandes sections de ton espace éducateur en 2 minutes.",
+    targetId: null,
+    position: "center",
+  },
+  {
+    id: 2,
+    title: "Mon Équipe",
+    message: "Gère ton effectif, ajoute des joueurs, invite-les à rejoindre leur compte avec un code.",
+    targetId: "nav-equipe",
+    position: "bottom",
+  },
+  {
+    id: 3,
+    title: "Entraînements",
+    message: "Planifie tes séances, envoie un sondage de présence à tes joueurs et suis qui a répondu.",
+    targetId: "nav-entrainements",
+    position: "bottom",
+  },
+  {
+    id: 4,
+    title: "Compétition",
+    message: "Enregistre tes résultats, gère ton calendrier de matchs à venir et consulte le classement.",
+    targetId: "nav-matchs",
+    position: "bottom",
+  },
+  {
+    id: 5,
+    title: "Mes séances",
+    message: "Rédige tes fiches de séance, scanne-les si tu les as sur papier, et archive-les pour les réutiliser.",
+    targetId: "nav-mes_seances",
+    position: "bottom",
+  },
+  {
+    id: 6,
+    title: "Bibliothèque",
+    message: "Retrouve tous tes procédés d'entraînement enregistrés — jeux, exercices, situations, échauffements.",
+    targetId: "nav-bibliotheque",
+    position: "bottom",
+  },
+  {
+    id: 7,
+    title: "Analyse vidéo",
+    message: "Envoie et suis les analyses vidéo demandées pour tes joueurs.",
+    targetId: "nav-analyse_video",
+    position: "bottom",
+  },
+  {
+    id: 8,
+    title: "Évaluations",
+    message: "Note chacun de tes joueurs sur des critères clés, saison après saison.",
+    targetId: "nav-notes",
+    position: "bottom",
+  },
+  {
+    id: 9,
+    title: "Recrutement",
+    message: "Explore les profils de joueurs disponibles et repère de nouveaux talents pour ton équipe.",
+    targetId: "nav-recrutement",
+    position: "bottom",
+  },
+  {
+    id: 10,
+    title: "Déplacements",
+    message: "Organise les trajets pour les matchs à l'extérieur et répartis les joueurs dans les mini-bus.",
+    targetId: "nav-deplacements",
+    position: "bottom",
+  },
+  {
+    id: 11,
+    title: "Mon profil",
+    message: "Renseigne ton diplôme, ton parcours et rejoins un club avec un code — ça renforce ta crédibilité.",
+    targetId: "nav-profil",
+    position: "bottom",
+  },
+  {
+    id: 12,
+    title: "C'est parti ! 🚀",
+    message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.",
+    targetId: null,
+    position: "center",
+  },
+]
+
+const EDUCATEUR_FAQ = [
+  {
+    q: "Comment ajouter un joueur à mon effectif ?",
+    a: "Dans Mon Équipe → \"+ Ajouter\". Tu peux aussi importer un fichier Excel/CSV, ou envoyer un code à tes joueurs pour qu'ils rejoignent l'équipe eux-mêmes.",
+  },
+  {
+    q: "Comment envoyer un sondage de présence ?",
+    a: "Crée un entraînement dans l'onglet Entraînements — le sondage est automatique dès que la séance existe, chaque joueur répond depuis son compte.",
+  },
+  {
+    q: "Comment enregistrer un résultat de match ?",
+    a: "Dans Compétition → Calendrier, marque le match comme joué et renseigne le score et les stats — ou scanne directement la feuille de match, l'IA extrait les infos pour toi.",
+  },
+  {
+    q: "Comment rejoindre un club ?",
+    a: "Dans Mon profil, entre le code club que t'a donné ton club. Une fois accepté, tu accèdes au planning des terrains et à la répartition des mini-bus.",
+  },
+  {
+    q: "Comment créer une fiche de séance ?",
+    a: "Dans Mes séances, rédige-la directement ou scanne une fiche papier — l'IA remplit les champs automatiquement, tu n'as plus qu'à vérifier.",
+  },
+]
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -679,6 +794,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [onboardingKey, setOnboardingKey] = useState(0)
+  const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
   const [statsTri, setStatsTri] = useState('buts') // pour classement
 
@@ -2359,6 +2476,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
+    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} />
+    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} />
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 
       {/* Overlay mobile */}
@@ -2400,7 +2519,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {section.titre}
               </div>
               {section.items.map(item => (
-                <button key={item.key} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }}
+                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? '#60a5fa' : item.locked ? '#333' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -2415,7 +2534,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         </nav>
 
         <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
-          <button onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
+          <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span style={{ flexShrink: 0 }}><IcoUser /></span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
           </button>
