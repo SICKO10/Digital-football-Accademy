@@ -1287,12 +1287,12 @@ export default function DashboardClub() {
         <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             {club?.avatar_url
-              ? <img src={club.avatar_url} alt="" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
-              : <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#4ade80' }}>
+              ? <img src={club.avatar_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
+              : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: '#4ade80' }}>
                   {clubInitiales}
                 </div>
             }
-            <label style={{ position: 'absolute', bottom: 0, right: 0, width: '20px', height: '20px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '10px' }}>
+            <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '13px' }}>
               {avatarClubUploading ? '…' : '✎'}
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
             </label>
