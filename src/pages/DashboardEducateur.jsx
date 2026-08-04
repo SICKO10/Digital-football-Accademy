@@ -2477,7 +2477,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       </div>
     )}
     <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor="#60a5fa" />
-    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} />
+    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor="#60a5fa" />
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 
       {/* Overlay mobile */}

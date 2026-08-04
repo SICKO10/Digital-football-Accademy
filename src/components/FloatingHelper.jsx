@@ -27,19 +27,21 @@ const DEFAULT_FAQ = [
 ];
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
+// Couleurs paramétrées par accentColor (défaut vert) via des fonctions plutôt que
+// des valeurs figées — même approche que l'accentColor d'OnboardingGuide.jsx.
 const S = {
-  btn: (open) => ({
+  btn: (open, color) => ({
     position: "fixed",
     bottom: "28px",
     right: "28px",
     width: "56px",
     height: "56px",
     borderRadius: "50%",
-    background: open ? "#166534" : "linear-gradient(135deg, #4ade80, #22c55e)",
+    background: open ? color : `linear-gradient(135deg, ${color}, ${color}cc)`,
     border: "none",
     cursor: "pointer",
     fontSize: "24px",
-    boxShadow: "0 4px 20px rgba(74,222,128,0.4)",
+    boxShadow: `0 4px 20px ${color}66`,
     zIndex: 900,
     transition: "all 0.25s ease",
     display: "flex",
@@ -63,34 +65,34 @@ const S = {
     transition: "all 0.25s ease",
     transformOrigin: "bottom right",
   }),
-  header: {
-    background: "linear-gradient(135deg, #166534, #14532d)",
+  header: (color) => ({
+    background: `linear-gradient(135deg, ${color}, ${color}99)`,
     padding: "16px 20px",
     display: "flex",
     alignItems: "center",
     gap: "12px",
-  },
-  headerAvatar: {
+  }),
+  headerAvatar: (color) => ({
     width: "36px",
     height: "36px",
     borderRadius: "50%",
-    background: "#4ade80",
+    background: color,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "18px",
     flexShrink: 0,
-  },
+  }),
   headerText: {
     color: "#ffffff",
     fontSize: "14px",
     fontWeight: "600",
   },
-  headerSub: {
-    color: "#86efac",
+  headerSub: (color) => ({
+    color,
     fontSize: "12px",
     marginTop: "2px",
-  },
+  }),
   body: {
     padding: "16px",
     maxHeight: "360px",
@@ -127,24 +129,27 @@ const S = {
     paddingTop: "8px",
     borderTop: "1px solid #2a2a2a",
   },
-  replayBtn: {
+  replayBtn: (color) => ({
     display: "block",
     width: "100%",
     marginTop: "12px",
     padding: "10px",
     background: "transparent",
-    border: "1px solid #4ade80",
+    border: `1px solid ${color}`,
     borderRadius: "8px",
-    color: "#4ade80",
+    color,
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
     transition: "all 0.2s",
-  },
+  }),
 };
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
-export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ }) {
+// accentColor : couleur du dashboard hôte, passée explicitement par chaque
+// Dashboard*.jsx (Éducateur #60a5fa, Recruteur #f97316, Joueur/Club #4ade80) —
+// même logique que la prop accentColor d'OnboardingGuide.jsx.
+export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80" }) {
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
@@ -159,8 +164,8 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
   return (
     <>
       <style>{`
-        .faq-item:hover { border-color: #4ade80 !important; }
-        .replay-btn:hover { background: rgba(74,222,128,0.1) !important; }
+        .faq-item:hover { border-color: ${accentColor} !important; }
+        .replay-btn:hover { background: ${accentColor}1a !important; }
         .float-btn:hover { transform: scale(1.1); }
         .helper-scroll::-webkit-scrollbar { width: 4px; }
         .helper-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
@@ -170,11 +175,11 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
       {/* Panneau d'aide */}
       <div style={S.panel(open)}>
         {/* Header */}
-        <div style={S.header}>
-          <div style={S.headerAvatar}>⚽</div>
+        <div style={S.header(accentColor)}>
+          <div style={S.headerAvatar(accentColor)}>⚽</div>
           <div>
             <div style={S.headerText}>Cedinho — Ton guide</div>
-            <div style={S.headerSub}>Comment puis-je t'aider ?</div>
+            <div style={S.headerSub(accentColor)}>Comment puis-je t'aider ?</div>
           </div>
         </div>
 
@@ -197,7 +202,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
           {/* Rejouer le guide */}
           <button
             className="replay-btn"
-            style={S.replayBtn}
+            style={S.replayBtn(accentColor)}
             onClick={handleReplay}
           >
             ▶ Revoir le guide de démarrage
@@ -208,7 +213,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
       {/* Bouton flottant */}
       <button
         className="float-btn"
-        style={S.btn(open)}
+        style={S.btn(open, accentColor)}
         onClick={() => setOpen((o) => !o)}
         title="Aide"
       >

@@ -1978,7 +1978,7 @@ function DashboardJoueur() {
 
       {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
       <OnboardingGuide key={onboardingKey} userId={userId} accentColor="#4ade80" />
-      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} />
+      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor="#4ade80" />
 
       {/* ── SIDEBAR ── */}
       {isMobile && sidebarOpen && (

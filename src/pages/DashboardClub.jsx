@@ -1422,7 +1422,7 @@ export default function DashboardClub() {
   return (
     <div style={st.page}>
       <OnboardingGuide key={onboardingKey} userId={clubId} steps={clubOnboardingSteps} accentColor="#4ade80" />
-      <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} />
+      <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} accentColor="#4ade80" />
       <nav style={st.navbar}>
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
