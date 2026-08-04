@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 
 // ─── ÉTAPES DU GUIDE ────────────────────────────────────────────────────────
-// Personnalise les étapes selon les sections de ton dashboard
-const STEPS = [
+// Étapes par défaut (dashboard joueur) — passe une prop `steps` personnalisée
+// pour réutiliser ce composant sur un autre dashboard (éducateur, club...).
+const DEFAULT_STEPS = [
   {
     id: 1,
     title: "Bienvenue sur Digital Football ! ⚽",
@@ -228,7 +229,7 @@ const styles = {
 };
 
 // ─── COMPOSANT PRINCIPAL ─────────────────────────────────────────────────────
-export default function OnboardingGuide({ userId }) {
+export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightRect, setHighlightRect] = useState(null);
@@ -246,7 +247,7 @@ export default function OnboardingGuide({ userId }) {
 
   // Calcule la position du highlight à chaque changement d'étape
   useEffect(() => {
-    const currentStep = STEPS[step];
+    const currentStep = steps[step];
     if (!currentStep?.targetId) {
       Promise.resolve().then(() => setHighlightRect(null));
       return;
@@ -272,10 +273,10 @@ export default function OnboardingGuide({ userId }) {
     });
     // Scroll vers l'élément
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [step]);
+  }, [step, steps]);
 
   const handleNext = () => {
-    if (step < STEPS.length - 1) {
+    if (step < steps.length - 1) {
       setStep((s) => s + 1);
     } else {
       handleClose();
@@ -290,7 +291,7 @@ export default function OnboardingGuide({ userId }) {
 
   if (!visible) return null;
 
-  const currentStep = STEPS[step];
+  const currentStep = steps[step];
   const isCenter = !currentStep.targetId;
 
   return (
@@ -327,7 +328,7 @@ export default function OnboardingGuide({ userId }) {
 
             {/* Barre de progression */}
             <div style={styles.progressBar}>
-              {STEPS.map((s, i) => (
+              {steps.map((s, i) => (
                 <div key={s.id} style={styles.dot(i === step, i < step)} />
               ))}
             </div>
@@ -347,7 +348,7 @@ export default function OnboardingGuide({ userId }) {
                 style={styles.btnNext}
                 onClick={handleNext}
               >
-                {step === STEPS.length - 1 ? "Commencer !" : "Suivant →"}
+                {step === steps.length - 1 ? "Commencer !" : "Suivant →"}
               </button>
             </div>
           </div>
@@ -360,12 +361,12 @@ export default function OnboardingGuide({ userId }) {
             onClick={(e) => e.stopPropagation()}
           >
             <p style={styles.tooltipTitle}>
-              Étape {step}/{STEPS.length - 1} — {currentStep.title}
+              Étape {step}/{steps.length - 1} — {currentStep.title}
             </p>
             <p style={styles.tooltipMessage}>{currentStep.message}</p>
 
             <div style={styles.progressBar}>
-              {STEPS.map((s, i) => (
+              {steps.map((s, i) => (
                 <div key={s.id} style={styles.dot(i === step, i < step)} />
               ))}
             </div>
@@ -383,7 +384,7 @@ export default function OnboardingGuide({ userId }) {
                 style={styles.btnNext}
                 onClick={handleNext}
               >
-                {step === STEPS.length - 1 ? "Commencer !" : "Suivant →"}
+                {step === steps.length - 1 ? "Commencer !" : "Suivant →"}
               </button>
             </div>
           </div>
