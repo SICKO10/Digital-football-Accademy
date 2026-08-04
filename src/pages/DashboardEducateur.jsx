@@ -69,7 +69,7 @@ const EDUCATEUR_ONBOARDING_STEPS = [
   },
   {
     id: 7,
-    title: "Analyse vidéo",
+    title: "Analyse rapport",
     message: "Envoie et suis les analyses vidéo demandées pour tes joueurs.",
     targetId: "nav-analyse_video",
     position: "bottom",
