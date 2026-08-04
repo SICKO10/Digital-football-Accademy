@@ -97,7 +97,12 @@ function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClick
 // isMobile requise du parent) : sous 640px, la vue semaine passe en liste verticale
 // (une grille à 7 colonnes serait illisible sur un téléphone) ; la vue mois garde sa
 // grille (attendu même en mobile pour un calendrier mensuel) avec des cellules resserrées.
-export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], onClickEntrainement, onClickMatch, onClickEvenement }) {
+// accentColor : couleur de la nav (‹ ›), du toggle Semaine/Mois et du surlignage
+// "aujourd'hui" — défaut bleu (dashboard éducateur/joueur), passée en vert par le
+// dashboard club. Les couleurs des puces entraînement/match/événement restent
+// fixes (rouge/gris/violet) pour rester distinguables entre elles quel que soit
+// le dashboard hôte.
+export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], onClickEntrainement, onClickMatch, onClickEvenement, accentColor = '#60a5fa' }) {
   const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
@@ -131,18 +136,18 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
         <button onClick={() => setOffset(o => o - 1)}
-          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
           ‹
         </button>
         <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#888', flex: 1, textAlign: 'center' }}>{label}</p>
         <button onClick={() => setOffset(o => o + 1)}
-          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
           ›
         </button>
         <div style={{ display: 'flex', background: '#1a1a1a', borderRadius: '8px', padding: '2px', gap: '2px' }}>
           {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
             <button key={v} onClick={() => changerVue(v)}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? '#60a5fa' : 'transparent', color: vue === v ? '#000' : '#888' }}>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? '#000' : '#888' }}>
               {lbl}
             </button>
           ))}
@@ -162,11 +167,11 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
               <div key={s} style={{
                 display: 'flex', gap: '10px', alignItems: vide ? 'center' : 'flex-start',
                 background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px',
-                border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
+                border: `1px solid ${estAujourdhui ? accentColor : '#1a1a1a'}`,
               }}>
                 <div style={{ width: '46px', flexShrink: 0, textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : '#555' }}>{JOURS[i]}</p>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: estAujourdhui ? '#60a5fa' : '#fff' }}>{d.getDate()}</p>
+                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : '#555' }}>{JOURS[i]}</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: estAujourdhui ? accentColor : '#fff' }}>{d.getDate()}</p>
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {vide ? (
@@ -192,13 +197,13 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             return (
               <div key={s} style={{
                 minHeight: vue === 'mois' ? (isMobile ? '44px' : '56px') : '90px', background: '#0a0a0a', borderRadius: '10px', padding: isMobile && vue === 'mois' ? '3px' : '5px',
-                border: `1px solid ${estAujourdhui ? '#60a5fa' : '#1a1a1a'}`,
+                border: `1px solid ${estAujourdhui ? accentColor : '#1a1a1a'}`,
                 display: 'flex', flexDirection: 'column', gap: '3px',
                 opacity: horsMois ? 0.35 : 1,
                 minWidth: 0, // sans ça, une grille à 1fr respecte quand même la largeur "min-content"
                 // du contenu (texte nowrap des chips) et déborde — piège classique de CSS Grid.
               }}>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? '#60a5fa' : vide ? '#333' : '#555' }}>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : vide ? '#333' : '#555' }}>
                   {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
                 </p>
                 <EvenementsJour ents={ents} mts={mts} evts={evts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />

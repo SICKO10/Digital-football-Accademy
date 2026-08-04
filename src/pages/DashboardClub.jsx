@@ -200,7 +200,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -242,13 +242,13 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       {/* Planning club : matchs de toutes les équipes affiliées + événements club
           (tournois, soirées, réunions...) — volontairement pas les séances
           d'entraînement, qui restent une vue éducateur. */}
-      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
+      <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} accentColor="#4ade80" onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '2rem' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalLicencies}</p>
@@ -290,7 +290,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 
       {/* Fil d'activité récente */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_activite_recente', lang)}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
           {derniersResultats.length === 0 ? (
@@ -598,7 +598,7 @@ export default function DashboardClub() {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
     navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? '0 1rem' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '8px' },
     logo: { color: '#4ade80', fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
-    content: { padding: isMobile ? '1rem' : '2rem', maxWidth: '1100px', margin: '0 auto' },
+    content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
     tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
     card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
@@ -1589,6 +1589,7 @@ export default function DashboardClub() {
             setActiveCategorie={setActiveCategorie}
             setActiveTab={setActiveTab}
             lang={lang}
+            isMobile={isMobile}
           />
         )}
 
