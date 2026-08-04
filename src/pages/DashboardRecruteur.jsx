@@ -11,7 +11,7 @@ import OnboardingGuide from "../components/OnboardingGuide";
 import FloatingHelper from "../components/FloatingHelper";
 
 const RECRUTEUR_ONBOARDING_STEPS = [
-  { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Alex, ton guide. Je vais te montrer les grandes sections de ton Scout Center en 2 minutes.", targetId: null, position: "center" },
+  { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de ton Scout Center en 2 minutes.", targetId: null, position: "center" },
   { id: 2, title: "Joueurs", message: "Explore tous les profils de joueurs Pro, filtre par poste, catégorie, région ou style de jeu pour trouver la perle rare.", targetId: "nav-joueurs", position: "bottom" },
   { id: 3, title: "Favoris", message: "Enregistre les joueurs qui t'intéressent et organise-les par dossier pour les retrouver facilement.", targetId: "nav-favoris", position: "bottom" },
   { id: 4, title: "Vidéos", message: "Parcours les vidéos de match ou d'entraînement envoyées par les joueurs Pro.", targetId: "nav-feed", position: "bottom" },

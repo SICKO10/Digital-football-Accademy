@@ -21,14 +21,14 @@ import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 
-// Parcours d'onboarding du dashboard éducateur (guide "Alex") — chaque étape
+// Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
 // l'onglet actif). Voir OnboardingGuide.jsx pour le composant générique.
 const EDUCATEUR_ONBOARDING_STEPS = [
   {
     id: 1,
     title: "Bienvenue sur Digital Football ! ⚽",
-    message: "Je suis Alex, ton guide. Je vais te montrer les grandes sections de ton espace éducateur en 2 minutes.",
+    message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de ton espace éducateur en 2 minutes.",
     targetId: null,
     position: "center",
   },

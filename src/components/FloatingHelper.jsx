@@ -173,7 +173,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
         <div style={S.header}>
           <div style={S.headerAvatar}>⚽</div>
           <div>
-            <div style={S.headerText}>Alex — Ton guide</div>
+            <div style={S.headerText}>Cedinho — Ton guide</div>
             <div style={S.headerSub}>Comment puis-je t'aider ?</div>
           </div>
         </div>
