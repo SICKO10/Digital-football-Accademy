@@ -53,6 +53,11 @@ const ROLES_STAFF = [
   { val: 'directeur_sportif', label: 'Directeur sportif' },
   { val: 'marketing', label: 'Marketing' },
   { val: 'secretaire', label: 'Secrétaire' },
+  { val: 'coach_adjoint', label: 'Coach adjoint' },
+  { val: 'kine', label: 'Kinésithérapeute' },
+  { val: 'intendant', label: 'Intendant' },
+  { val: 'preparateur_physique', label: 'Préparateur physique' },
+  { val: 'comptable', label: 'Comptable' },
 ]
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
