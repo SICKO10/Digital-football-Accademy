@@ -7,6 +7,28 @@ import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
 import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
+import OnboardingGuide from "../components/OnboardingGuide";
+import FloatingHelper from "../components/FloatingHelper";
+
+const RECRUTEUR_ONBOARDING_STEPS = [
+  { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Alex, ton guide. Je vais te montrer les grandes sections de ton Scout Center en 2 minutes.", targetId: null, position: "center" },
+  { id: 2, title: "Joueurs", message: "Explore tous les profils de joueurs Pro, filtre par poste, catégorie, région ou style de jeu pour trouver la perle rare.", targetId: "nav-joueurs", position: "bottom" },
+  { id: 3, title: "Favoris", message: "Enregistre les joueurs qui t'intéressent et organise-les par dossier pour les retrouver facilement.", targetId: "nav-favoris", position: "bottom" },
+  { id: 4, title: "Vidéos", message: "Parcours les vidéos de match ou d'entraînement envoyées par les joueurs Pro.", targetId: "nav-feed", position: "bottom" },
+  { id: 5, title: "Messages", message: "Échange directement avec les joueurs que tu as contactés.", targetId: "nav-messages", position: "bottom" },
+  { id: 6, title: "Coach", message: "Contacte notre coach expert pour un avis complémentaire sur un joueur.", targetId: "nav-coach", position: "bottom" },
+  { id: 7, title: "Analyse rapport", message: "Demande une analyse de scouting détaillée pour affiner ta décision de recrutement.", targetId: "nav-analyse", position: "bottom" },
+  { id: 8, title: "Mon Profil", message: "Renseigne ton club, ta région et ce que tu recherches — ça t'aide à attirer les bons profils.", targetId: "nav-profil", position: "bottom" },
+  { id: 9, title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
+];
+
+const RECRUTEUR_FAQ = [
+  { q: "Comment trouver un joueur qui correspond à mon besoin ?", a: "Dans l'onglet Joueurs, utilise les filtres (poste, catégorie, pied fort, région, style de jeu) et le champ de recherche pour affiner la liste." },
+  { q: "Comment contacter un joueur ?", a: "Depuis sa fiche profil ou sa carte, clique sur ✉️ Contacter — le joueur reçoit ton message directement sur la plateforme." },
+  { q: "Comment organiser mes favoris ?", a: "Ajoute un joueur en favori avec ☆, puis classe-le dans un dossier (ex : \"Attaquants U19\") depuis l'onglet Favoris." },
+  { q: "À quoi sert l'Analyse rapport ?", a: "C'est un rapport de scouting détaillé réalisé par notre équipe sur un joueur de ton choix, pour t'aider à affiner ta décision." },
+  { q: "Quel est le prix de l'abonnement Scout ?", a: "Mensuel : 10€/mois. Annuel : 100€/an. Tu peux gérer ton abonnement depuis l'onglet Mon Profil." },
+];
 
 const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
@@ -122,6 +144,9 @@ export default function DashboardRecruteur() {
   const [profilEdit, setProfilEdit] = useState({ prenom: '', nom: '', club: '', region: '', type_recruteur: '', description: '', recherche_profil: '' });
   const [savingProfil, setSavingProfil] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const [onboardingKey, setOnboardingKey] = useState(0);
+  const replayOnboarding = () => setOnboardingKey(k => k + 1);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -850,6 +875,8 @@ export default function DashboardRecruteur() {
   return (
     <div style={st.page}>
       <style>{`@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+      <OnboardingGuide key={onboardingKey} userId={recruteurId} steps={RECRUTEUR_ONBOARDING_STEPS} />
+      <FloatingHelper userId={recruteurId} onReplayOnboarding={replayOnboarding} faq={RECRUTEUR_FAQ} />
       <nav style={st.navbar}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "32px", height: "32px", background: "#f97316", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
@@ -888,7 +915,7 @@ export default function DashboardRecruteur() {
             { id: "analyse", label: "📊 Analyse rapport" },
             { id: "profil", label: "👤 Mon Profil" },
           ].map(t => (
-            <button key={t.id} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
+            <button key={t.id} id={`nav-${t.id}`} style={st.tab(activeTab === t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
           ))}
         </div>
 
