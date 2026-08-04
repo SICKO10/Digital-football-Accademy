@@ -202,6 +202,8 @@ const styles = {
     borderRadius: "12px",
     padding: "20px",
     maxWidth: "300px",
+    maxHeight: "80vh",
+    overflowY: "auto",
     zIndex: 1001,
     boxShadow: "0 0 30px rgba(74,222,128,0.2)",
     animation: "slideUp 0.2s ease",
@@ -249,7 +251,7 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightRect, setHighlightRect] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, side: "bottom" });
 
   // Vérifie si l'utilisateur a déjà vu l'onboarding
   useEffect(() => {
@@ -272,18 +274,30 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
       Promise.resolve().then(() => setHighlightRect(null));
       return;
     }
-    const rects = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean)
-      .map((el) => el.getBoundingClientRect());
-    if (rects.length === 0) {
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (els.length === 0) {
       Promise.resolve().then(() => setHighlightRect(null));
       return;
     }
+    // Scroll AVANT de mesurer, en instantané (pas "smooth") : un scroll animé
+    // continue de bouger la page après la mesure du rect, donc le surlignage
+    // devient caduc dès que le scroll atteint sa position finale — l'anneau
+    // reste figé sur les anciennes coordonnées et illumine un autre élément
+    // (typiquement dans une nav qui scrolle dans son propre conteneur interne).
+    els[0].scrollIntoView({ behavior: "auto", block: "center" });
+    const rects = els.map((el) => el.getBoundingClientRect());
     const top = Math.min(...rects.map((r) => r.top));
     const left = Math.min(...rects.map((r) => r.left));
     const bottom = Math.max(...rects.map((r) => r.bottom));
     const right = Math.max(...rects.map((r) => r.right));
+    // Place la bulle au-dessus de la cible si en dessous ne laisse pas assez
+    // de place pour l'afficher entièrement (ex : cible en bas de page) —
+    // sinon en dessous par défaut. La hauteur réelle de la bulle dépend du
+    // contenu (pas connue à l'avance), donc estimation généreuse + repli sur
+    // max-height/overflow-y en dernier recours (cf. styles.tooltip).
+    const ESTIMATION_HAUTEUR_BULLE = 260;
+    const espaceEnDessous = window.innerHeight - bottom;
+    const placerAuDessus = espaceEnDessous < ESTIMATION_HAUTEUR_BULLE + 16 && top > espaceEnDessous;
     Promise.resolve().then(() => {
       setHighlightRect({
         top: top - 6,
@@ -291,15 +305,12 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
         width: (right - left) + 12,
         height: (bottom - top) + 12,
       });
-      // Positionne le tooltip en dessous de la zone illuminée
-      setTooltipPos({
-        top: bottom + 16,
-        left: Math.max(12, left),
-      });
+      setTooltipPos(
+        placerAuDessus
+          ? { side: "top", bottom: window.innerHeight - top + 16, left: Math.max(12, left) }
+          : { side: "bottom", top: bottom + 16, left: Math.max(12, left) }
+      );
     });
-    // Scroll vers le premier élément ciblé
-    const firstEl = document.getElementById(ids[0]);
-    if (firstEl) firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [step, steps]);
 
   const handleNext = () => {
@@ -408,7 +419,13 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
           <div style={{ ...styles.ring(ringColor), ...highlightRect }} />
 
           <div
-            style={{ ...styles.tooltip, top: tooltipPos.top, left: tooltipPos.left, borderColor: accentColor, boxShadow: `0 0 30px ${accentColor}33` }}
+            style={{
+              ...styles.tooltip,
+              left: tooltipPos.left,
+              ...(tooltipPos.side === "top" ? { bottom: tooltipPos.bottom } : { top: tooltipPos.top }),
+              borderColor: accentColor,
+              boxShadow: `0 0 30px ${accentColor}33`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <p style={{ ...styles.tooltipTitle, color: accentColor }}>
