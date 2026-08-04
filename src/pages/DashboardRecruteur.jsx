@@ -875,7 +875,7 @@ export default function DashboardRecruteur() {
   return (
     <div style={st.page}>
       <style>{`@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
-      <OnboardingGuide key={onboardingKey} userId={recruteurId} steps={RECRUTEUR_ONBOARDING_STEPS} />
+      <OnboardingGuide key={onboardingKey} userId={recruteurId} steps={RECRUTEUR_ONBOARDING_STEPS} accentColor="#f97316" />
       <FloatingHelper userId={recruteurId} onReplayOnboarding={replayOnboarding} faq={RECRUTEUR_FAQ} />
       <nav style={st.navbar}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

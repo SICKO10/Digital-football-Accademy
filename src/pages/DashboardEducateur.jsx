@@ -2476,7 +2476,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
-    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} />
+    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor="#60a5fa" />
     <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} />
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
 

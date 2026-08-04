@@ -161,11 +161,11 @@ const styles = {
     justifyContent: "center",
     marginBottom: "24px",
   },
-  dot: (active, passed) => ({
+  dot: (active, passed, color) => ({
     width: active ? "24px" : "8px",
     height: "8px",
     borderRadius: "4px",
-    background: active ? "#4ade80" : passed ? "#166534" : "#2a2a2a",
+    background: active ? color : passed ? `${color}59` : "#2a2a2a",
     transition: "all 0.3s ease",
   }),
   btnRow: {
@@ -242,7 +242,10 @@ const styles = {
 };
 
 // ─── COMPOSANT PRINCIPAL ─────────────────────────────────────────────────────
-export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
+// accentColor : couleur du dashboard hôte (chaque Dashboard*.jsx la passe explicitement
+// selon son propre code couleur — Éducateur #60a5fa, Recruteur #f97316, Joueur/Club
+// #4ade80) — teinte l'anneau spotlight, la bulle d'aide et le bouton "Suivant".
+export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentColor = "#4ade80" }) {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightRect, setHighlightRect] = useState(null);
@@ -317,14 +320,14 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
 
   const currentStep = steps[step];
   const isCenter = !currentStep.targetId && !currentStep.targetIds;
-  const ringColor = currentStep.ringColor || "#4ade80";
+  const ringColor = currentStep.ringColor || accentColor;
 
   const navButtons = (
     <div style={styles.btnRow}>
       <button className="onb-btn-skip" style={styles.btnSkip} onClick={handleClose}>
         Passer
       </button>
-      <button className="onb-btn-next" style={styles.btnNext} onClick={handleNext}>
+      <button className="onb-btn-next" style={{ ...styles.btnNext, background: accentColor }} onClick={handleNext}>
         {step === steps.length - 1 ? "Commencer !" : "Suivant →"}
       </button>
     </div>
@@ -332,30 +335,32 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
 
   return (
     <>
-      {/* CSS animations */}
+      {/* CSS animations — accentColor interpolée directement dans le texte CSS
+          (plus simple qu'une custom property ici, une seule couleur pour tout
+          le composant contrairement à l'anneau qui varie par étape) */}
       <style>{`
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(74,222,128,0.4); }
-          50%       { box-shadow: 0 0 35px rgba(74,222,128,0.7); }
+          0%, 100% { box-shadow: 0 0 20px ${accentColor}66; }
+          50%       { box-shadow: 0 0 35px ${accentColor}b3; }
         }
         @keyframes onbSpotlightPulse {
           0%, 100% { box-shadow: 0 0 0 4px var(--onb-ring-color), 0 0 16px 2px var(--onb-ring-color); }
           50%       { box-shadow: 0 0 0 9px var(--onb-ring-color), 0 0 28px 8px var(--onb-ring-color); }
         }
-        .onb-btn-skip:hover { border-color: #4ade80 !important; color: #4ade80 !important; }
-        .onb-btn-next:hover  { background: #22c55e !important; transform: scale(1.02); }
+        .onb-btn-skip:hover { border-color: ${accentColor} !important; color: ${accentColor} !important; }
+        .onb-btn-next:hover  { background: ${accentColor}cc !important; transform: scale(1.02); }
       `}</style>
 
       {isCenter ? (
         /* ── Modal centré (étapes sans target) ── */
         <div style={styles.overlay} onClick={handleClose}>
-          <div style={styles.card} onClick={(e) => e.stopPropagation()}>
+          <div style={{ ...styles.card, boxShadow: `0 0 40px ${accentColor}26` }} onClick={(e) => e.stopPropagation()}>
             <div style={styles.avatarWrapper}>
-              <div style={styles.avatar}>⚽</div>
+              <div style={{ ...styles.avatar, background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`, boxShadow: `0 0 20px ${accentColor}66` }}>⚽</div>
             </div>
 
             <h2 style={styles.title}>{currentStep.title}</h2>
@@ -364,7 +369,7 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
             {/* Barre de progression */}
             <div style={styles.progressBar}>
               {steps.map((s, i) => (
-                <div key={s.id} style={styles.dot(i === step, i < step)} />
+                <div key={s.id} style={styles.dot(i === step, i < step, accentColor)} />
               ))}
             </div>
 
@@ -374,7 +379,7 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
                   Passer
                 </button>
               ) : null}
-              <button className="onb-btn-next" style={styles.btnNext} onClick={handleNext}>
+              <button className="onb-btn-next" style={{ ...styles.btnNext, background: accentColor }} onClick={handleNext}>
                 {step === steps.length - 1 ? "Commencer !" : "Suivant →"}
               </button>
             </div>
@@ -403,16 +408,16 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
           <div style={{ ...styles.ring(ringColor), ...highlightRect }} />
 
           <div
-            style={{ ...styles.tooltip, top: tooltipPos.top, left: tooltipPos.left }}
+            style={{ ...styles.tooltip, top: tooltipPos.top, left: tooltipPos.left, borderColor: accentColor, boxShadow: `0 0 30px ${accentColor}33` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p style={styles.tooltipTitle}>
+            <p style={{ ...styles.tooltipTitle, color: accentColor }}>
               Étape {step}/{steps.length - 1} — {currentStep.title}
             </p>
             <p style={styles.tooltipMessage}>{currentStep.message}</p>
             <div style={styles.progressBar}>
               {steps.map((s, i) => (
-                <div key={s.id} style={styles.dot(i === step, i < step)} />
+                <div key={s.id} style={styles.dot(i === step, i < step, accentColor)} />
               ))}
             </div>
             {navButtons}
@@ -423,16 +428,16 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS }) {
            on retombe sur un simple overlay pour que le guide reste utilisable ── */
         <div style={styles.overlay} onClick={handleClose}>
           <div
-            style={{ ...styles.tooltip, position: "relative", top: 0, left: 0 }}
+            style={{ ...styles.tooltip, position: "relative", top: 0, left: 0, borderColor: accentColor, boxShadow: `0 0 30px ${accentColor}33` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p style={styles.tooltipTitle}>
+            <p style={{ ...styles.tooltipTitle, color: accentColor }}>
               Étape {step}/{steps.length - 1} — {currentStep.title}
             </p>
             <p style={styles.tooltipMessage}>{currentStep.message}</p>
             <div style={styles.progressBar}>
               {steps.map((s, i) => (
-                <div key={s.id} style={styles.dot(i === step, i < step)} />
+                <div key={s.id} style={styles.dot(i === step, i < step, accentColor)} />
               ))}
             </div>
             {navButtons}
