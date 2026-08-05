@@ -1540,28 +1540,41 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       console.log('Réponse brute Groq (génération séance) :', raw)
-      // Nettoyage robuste : qwen3.6 (thinking) ne ferme pas toujours son bloc
-      // <think> par </think> — on le retire d'abord dans le cas normal (fermé),
-      // puis, s'il reste un <think> ouvert, tout le reste de la réponse à partir
-      // de là (le modèle n'a alors jamais atteint le JSON demandé).
-      const cleaned = raw
-        .replace(/<think>[\s\S]*?<\/think>/gi, '') // cas normal avec </think>
-        .replace(/<think>[\s\S]*/gi, '')             // cas où </think> est absent
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim()
-      const start = cleaned.indexOf('{')
-      const end = cleaned.lastIndexOf('}')
-      if (start === -1 || end === -1) {
-        console.error('Contenu après nettoyage (génération séance) :', cleaned.slice(0, 200))
-        throw new Error('JSON non trouvé dans la réponse')
-      }
+      // Stratégie : ignorer le <think> et chercher le JSON directement dans le
+      // texte brut, ancré sur la clé racine connue ("phases") pour ne pas se
+      // faire piéger par une accolade incidente dans le raisonnement du modèle
+      // — plus fiable qu'un simple "premier {" quand le <think> n'est pas fermé
+      // et contient lui-même des accolades. Si ce premier essai échoue, repli
+      // sur un nettoyage plus agressif (retrait du bloc <think>, fermé ou non,
+      // et des balises markdown) avant un nouvel essai.
       let resultat
+      const start = raw.lastIndexOf('{"phases"') !== -1 ? raw.lastIndexOf('{"phases"') : raw.indexOf('{')
+      const end = raw.lastIndexOf('}')
+      if (start === -1 || end === -1 || end < start) {
+        console.error('Pas de JSON détecté. Début réponse :', raw.slice(0, 300))
+        throw new Error("L'IA n'a pas renvoyé de JSON valide")
+      }
       try {
-        resultat = JSON.parse(cleaned.slice(start, end + 1))
-      } catch (parseErr) {
-        console.error('Réponse Groq non-JSON (génération séance) :', raw)
-        throw new Error("L'IA a renvoyé une réponse mal formée, réessaie.", { cause: parseErr })
+        resultat = JSON.parse(raw.slice(start, end + 1))
+      } catch (err) {
+        const cleaned = raw
+          .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .replace(/<think>[\s\S]*/gi, '')
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '')
+          .trim()
+        const s2 = cleaned.indexOf('{')
+        const e2 = cleaned.lastIndexOf('}')
+        if (s2 === -1 || e2 === -1) {
+          console.error('Réponse Groq non-JSON même après nettoyage (génération séance) :', raw)
+          throw new Error('JSON introuvable après nettoyage', { cause: err })
+        }
+        try {
+          resultat = JSON.parse(cleaned.slice(s2, e2 + 1))
+        } catch (err2) {
+          console.error('Réponse Groq non-JSON (génération séance) :', raw)
+          throw new Error("L'IA a renvoyé une réponse mal formée, réessaie.", { cause: err2 })
+        }
       }
 
       const exercices = (resultat.phases || []).flatMap(ph => (ph.exercices || []).map(ex => ({ ...ex, phase: ph.phase })))
