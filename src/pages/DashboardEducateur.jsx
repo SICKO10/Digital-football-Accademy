@@ -1523,18 +1523,19 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          // qwen3.6-27b (même modèle que le scan de fiche/vision ailleurs dans ce
-          // fichier) plutôt que llama-3.1-8b-instant : nécessaire pour un contenu
-          // pédagogique de ce niveau d'exigence. C'est un modèle "thinking" — il
-          // préfixe sa réponse d'un bloc <think>, géré via /no_think ci-dessous +
-          // le nettoyage regex après coup (ceinture et bretelles).
-          model: 'qwen/qwen3.6-27b',
+          // llama-3.3-70b-versatile plutôt que qwen3.6-27b : qwen3.6 est un modèle
+          // de raisonnement qui continue de "penser" longuement même avec
+          // /no_think (jusqu'à ~3000 tokens de <think>), au point de ne parfois
+          // plus laisser assez de budget pour produire le JSON demandé — c'est un
+          // problème de modèle, pas de parsing. llama-3.3-70b-versatile ne
+          // "réfléchit" pas avant de répondre, donc /no_think est inutile ici.
+          model: 'llama-3.3-70b-versatile',
           messages: [
-            { role: 'system', content: `/no_think\n${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après. Aucune réflexion préalable.` },
-            { role: 'user', content: `/no_think\n${userPrompt}` },
+            { role: 'system', content: `${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après.` },
+            { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
-          max_completion_tokens: 4000,
+          max_completion_tokens: 6000,
         }),
       }, setGenerationIAStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
