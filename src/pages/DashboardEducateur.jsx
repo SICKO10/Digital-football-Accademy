@@ -1501,9 +1501,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
+          // llama-3.1-8b-instant plutôt qu'un modèle "thinking" (qwen3.6, utilisé
+          // ailleurs dans ce fichier pour la vision) : pas de bloc <think> à filtrer,
+          // et la génération de séance n'a pas besoin de raisonnement approfondi.
+          model: 'llama-3.1-8b-instant',
           messages: [
-            { role: 'system', content: `/no_think\n${systemPrompt}\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.` },
+            { role: 'system', content: `${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après.` },
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
