@@ -2941,8 +2941,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
-            ☰
+            style={{
+              padding: '12px', minWidth: '48px', minHeight: '48px', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
+              marginBottom: '8px',
+            }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           </button>
         )}
 
