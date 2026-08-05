@@ -1531,7 +1531,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           model: 'qwen/qwen3.6-27b',
           messages: [
             { role: 'system', content: `/no_think\n${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après. Aucune réflexion préalable.` },
-            { role: 'user', content: userPrompt },
+            { role: 'user', content: `/no_think\n${userPrompt}` },
           ],
           temperature: 0.7,
           max_completion_tokens: 4000,
@@ -1540,21 +1540,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       console.log('Réponse brute Groq (génération séance) :', raw)
-      // Le modèle qwen3.6 (thinking) ne ferme pas toujours son bloc <think> —
-      // le nettoyage par balise fermante ne suffit donc pas. On retire d'abord
-      // les balises markdown et tout bloc <think> bien formé, PUIS on ignore
-      // tout ce qui précède la toute première "{" (peu importe sa forme : think
-      // non fermé, texte libre...) avant de découper strictement entre la
-      // première "{" et la dernière "}".
+      // Nettoyage robuste : qwen3.6 (thinking) ne ferme pas toujours son bloc
+      // <think> par </think> — on le retire d'abord dans le cas normal (fermé),
+      // puis, s'il reste un <think> ouvert, tout le reste de la réponse à partir
+      // de là (le modèle n'a alors jamais atteint le JSON demandé).
       const cleaned = raw
-        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<think>[\s\S]*?<\/think>/gi, '') // cas normal avec </think>
+        .replace(/<think>[\s\S]*/gi, '')             // cas où </think> est absent
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
-        .replace(/[\s\S]*?(?=\{)/, '')
         .trim()
       const start = cleaned.indexOf('{')
       const end = cleaned.lastIndexOf('}')
-      if (start === -1 || end === -1) throw new Error('JSON non trouvé dans la réponse')
+      if (start === -1 || end === -1) {
+        console.error('Contenu après nettoyage (génération séance) :', cleaned.slice(0, 200))
+        throw new Error('JSON non trouvé dans la réponse')
+      }
       let resultat
       try {
         resultat = JSON.parse(cleaned.slice(start, end + 1))
