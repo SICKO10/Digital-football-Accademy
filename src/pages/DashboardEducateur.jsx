@@ -1117,6 +1117,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scanFicheStatus, setScanFicheStatus] = useState(null)
   const [scanFicheError, setScanFicheError] = useState(null)
 
+  // Générateur IA de séance (modale déclenchée depuis "Mes séances")
+  const [modalGenerationIA, setModalGenerationIA] = useState(false)
+  const GENERATION_IA_VIDE = { objectif: '', duree: '60', nb_joueurs: '', categorie_age: 'U13', niveau: 'Intermédiaire' }
+  const [generationIAForm, setGenerationIAForm] = useState(GENERATION_IA_VIDE)
+  const [generatingIA, setGeneratingIA] = useState(false)
+  const [generationIAStatus, setGenerationIAStatus] = useState(null)
+  const [generationIAError, setGenerationIAError] = useState(null)
+
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
     if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }); setLienGroupe(pe.lien_groupe || '') }
@@ -1454,6 +1462,94 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setFicheFichierUrl(null)
     setFicheExtraite(false)
     await chargerMesSeancesOuvertes(userId)
+  }
+
+  // Génère une séance complète avec l'IA à partir d'un objectif tactique + quelques
+  // paramètres (durée, effectif, catégorie d'âge, niveau) et pré-remplit le formulaire
+  // "Rédiger" — même finalité que le scan de fiche papier, mais à partir de texte
+  // plutôt que d'une image.
+  const PHASE_LABEL_IA = { echauffement: 'Échauffement', corps_de_seance: 'Corps de séance', retour_au_calme: 'Retour au calme' }
+  const genererSeanceIA = async () => {
+    if (!generationIAForm.objectif.trim()) return
+    setGeneratingIA(true)
+    setGenerationIAError(null)
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
+      const systemPrompt = `Tu es un expert en entraînement football. Génère une séance structurée en 3 phases :
+1. Échauffement (20% du temps)
+2. Corps de séance (65% du temps)
+3. Retour au calme (15% du temps)
+
+Pour chaque exercice : nom, durée, nombre de joueurs, description courte, consignes coach, variante possible.
+Réponds en JSON structuré.`
+      const userPrompt = `Objectif tactique : ${generationIAForm.objectif}
+Durée totale : ${generationIAForm.duree} minutes
+Nombre de joueurs : ${generationIAForm.nb_joueurs || 'non précisé'}
+Catégorie d'âge : ${generationIAForm.categorie_age}
+Niveau : ${generationIAForm.niveau}
+
+Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
+{
+  "phases": [
+    { "phase": "echauffement", "exercices": [ { "nom": "...", "duree": "...", "nb_joueurs": "...", "description": "...", "consignes_coach": "...", "variante": "..." } ] },
+    { "phase": "corps_de_seance", "exercices": [ ... ] },
+    { "phase": "retour_au_calme", "exercices": [ ... ] }
+  ]
+}`
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'qwen/qwen3.6-27b',
+          messages: [
+            { role: 'system', content: `/no_think\n${systemPrompt}\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.` },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.7,
+          max_completion_tokens: 4000,
+        }),
+      }, setGenerationIAStatus)
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
+      const resultat = JSON.parse(jsonMatch[0])
+
+      const exercices = (resultat.phases || []).flatMap(ph => (ph.exercices || []).map(ex => ({ ...ex, phase: ph.phase })))
+      if (exercices.length === 0) throw new Error("Aucun exercice généré")
+
+      setFiche({
+        ...ficheVide,
+        theme: generationIAForm.objectif,
+        nb_joueurs: generationIAForm.nb_joueurs,
+        duree_totale: generationIAForm.duree,
+        objectif_general: `${generationIAForm.objectif} — ${generationIAForm.categorie_age}, niveau ${generationIAForm.niveau}`,
+        procedes: exercices.map((ex, i) => ({
+          numero: i + 1,
+          titre: [PHASE_LABEL_IA[ex.phase], ex.nom].filter(Boolean).join(' — '),
+          duree: ex.duree != null ? String(ex.duree) : '',
+          nb_joueurs: ex.nb_joueurs != null ? String(ex.nb_joueurs) : '',
+          but: PHASE_LABEL_IA[ex.phase] || '',
+          organisation: ex.description || '',
+          consignes: ex.consignes_coach || '',
+          variables: ex.variante || '',
+        })),
+      })
+      setSport('football')
+      setFicheFichierUrl(null)
+      setFicheExtraite(false)
+      setModeSeance('rediger')
+      setModalGenerationIA(false)
+      setGenerationIAForm(GENERATION_IA_VIDE)
+    } catch (e) {
+      console.error('Erreur génération IA séance:', e)
+      setGenerationIAError("L'IA n'a pas pu générer la séance. Réessaie dans un instant.")
+    } finally {
+      setGeneratingIA(false)
+      setGenerationIAStatus(null)
+    }
   }
 
   // Scanner IA : lit une photo de fiche papier (Gemini Vision) et pré-remplit le formulaire "Rédiger"
@@ -4831,6 +4927,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
               <button
+                onClick={() => setModalGenerationIA(true)}
+                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                🤖 Générer avec l'IA
+              </button>
+              <button
                 onClick={() => setModeSeance('rediger')}
                 style={{ background: modeSeance === 'rediger' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'rediger' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
               >
@@ -4849,6 +4951,63 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 🏟️ {t('seance_eval_club', lang)}
               </button>
             </div>
+
+            {modalGenerationIA && (
+              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                onClick={() => !generatingIA && setModalGenerationIA(false)}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px' }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🤖 Générer une séance avec l'IA</p>
+                    {!generatingIA && (
+                      <button onClick={() => setModalGenerationIA(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                    <div>
+                      <label style={st.label}>Objectif tactique</label>
+                      <input style={st.input} placeholder="Ex: pressing, conservation, transition..." value={generationIAForm.objectif}
+                        onChange={e => setGenerationIAForm(f => ({ ...f, objectif: e.target.value }))} disabled={generatingIA} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label style={st.label}>Durée totale</label>
+                        <select style={st.input} value={generationIAForm.duree} onChange={e => setGenerationIAForm(f => ({ ...f, duree: e.target.value }))} disabled={generatingIA}>
+                          {['45', '60', '90'].map(d => <option key={d} value={d}>{d} min</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={st.label}>Nombre de joueurs</label>
+                        <input style={st.input} type="number" min="1" placeholder="Ex: 16" value={generationIAForm.nb_joueurs}
+                          onChange={e => setGenerationIAForm(f => ({ ...f, nb_joueurs: e.target.value }))} disabled={generatingIA} />
+                      </div>
+                      <div>
+                        <label style={st.label}>Catégorie d'âge</label>
+                        <select style={st.input} value={generationIAForm.categorie_age} onChange={e => setGenerationIAForm(f => ({ ...f, categorie_age: e.target.value }))} disabled={generatingIA}>
+                          {['U10', 'U13', 'U15', 'U18', 'Senior'].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={st.label}>Niveau</label>
+                        <select style={st.input} value={generationIAForm.niveau} onChange={e => setGenerationIAForm(f => ({ ...f, niveau: e.target.value }))} disabled={generatingIA}>
+                          {['Débutant', 'Intermédiaire', 'Compétitif'].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {generationIAError && (
+                    <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>❌ {generationIAError}</p>
+                  )}
+
+                  <button onClick={genererSeanceIA} disabled={generatingIA || !generationIAForm.objectif.trim()}
+                    style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (generatingIA || !generationIAForm.objectif.trim()) ? 0.6 : 1 }}>
+                    {generatingIA ? libelleStatutGroq(generationIAStatus) : '✨ Générer la séance'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {modeSeance === 'club' && (
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
