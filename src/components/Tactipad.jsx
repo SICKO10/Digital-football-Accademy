@@ -848,13 +848,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
     </svg>
   )
-  const iconeCoupelle = (
-    <svg width="18" height="14" viewBox="0 0 22 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2 11 Q11 1 20 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
-      <ellipse cx="11" cy="11.5" rx="9" ry="2.5" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  )
-
   const outilsFlêches = [
     { key: 'fleche-droite', label: '→', title: 'Flèche droite' },
     { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe' },
@@ -866,13 +859,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     { key: 'zone-cercle', label: '○', title: 'Zone cercle' },
     { key: 'texte', label: 'T', title: 'Texte libre' },
   ]
+  // Coupelle générique (cone), mannequin et plot retirés de la palette — le
+  // nouveau panneau Matériel (coupelles colorées, cônes, cerceau, échelles)
+  // les remplace. Rendu conservé côté ObjetNode pour ne pas casser l'affichage
+  // des schémas déjà enregistrés qui contiennent encore ces kind.
   const outilsObjets = [
-    { key: 'cone', label: iconeCoupelle, title: 'Coupelle' },
     { key: 'ballon', label: '⚽', title: 'Ballon' },
-    { key: 'mannequin', label: '👤', title: 'Mannequin' },
     { key: 'petite_cage', label: '🥅', title: 'Petite cage (double-clic pour pivoter)' },
     { key: 'grande_cage', label: '🥅', title: 'Grande cage (double-clic pour pivoter)' },
-    { key: 'plot', label: '🟡', title: 'Plot' },
   ]
 
   // Matériel tactique : cliquer une vignette active l'outil (comme les autres
