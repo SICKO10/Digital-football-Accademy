@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Line, Text, Group, Transformer } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Ellipse, Rect, Arrow, Line, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
@@ -214,12 +214,43 @@ export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () 
   )
 }
 
+// Matériel tactique (coupelles/cônes colorés, cerceau, échelles de coordination)
+// — rendu en formes Konva natives (pas de <img>/SVG externe) pour rester cohérent
+// avec le reste des objets du plateau (plot, cages...) : sélection/drag/suppression
+// génériques déjà gérés par ObjetNode pour tout élément type:'objet', quel que soit
+// son kind.
+const MATERIEL_COULEURS = {
+  coupelle_rouge: { fill: '#e53e3e', dark: '#c53030' },
+  coupelle_jaune: { fill: '#ecc94b', dark: '#d69e2e' },
+  coupelle_bleue: { fill: '#3182ce', dark: '#2b6cb0' },
+  cone_orange: { fill: '#ed8936', dark: '#c05621' },
+  cone_rouge: { fill: '#e53e3e', dark: '#c53030' },
+}
+
 export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onDelete = () => {}, onRotate = () => {}, draggable = true }) {
   const [hovered, setHovered] = useState(false)
   const isCage = el.kind === 'petite_cage' || el.kind === 'grande_cage'
   const isPlot = el.kind === 'plot'
+  const isCoupelle = el.kind === 'coupelle_rouge' || el.kind === 'coupelle_jaune' || el.kind === 'coupelle_bleue'
+  const isConeMateriel = el.kind === 'cone_orange' || el.kind === 'cone_rouge'
+  const isCerceau = el.kind === 'cerceau'
+  const isEchelleV = el.kind === 'echelle'
+  const isEchelleH = el.kind === 'echelle_h'
   const cageW = el.kind === 'grande_cage' ? 44 : 30
   const cageH = el.kind === 'grande_cage' ? 24 : 18
+
+  // Décalage du bouton × et rayon de l'anneau de sélection — dépendent de la
+  // taille de chaque forme, faute d'une bounding box générique côté Konva ici.
+  let delX = 10, delY = -12, selRadius = 16
+  if (isCage) { delX = cageW / 2; delY = -cageH / 2; selRadius = cageW / 2 + 6 }
+  else if (isPlot) { delX = 8; delY = -13 }
+  else if (isCoupelle) { delX = 11; delY = -6; selRadius = 13 }
+  else if (isConeMateriel) { delX = 9; delY = -13; selRadius = 16 }
+  else if (isCerceau) { delX = 15; delY = -15; selRadius = 19 }
+  else if (isEchelleV) { delX = 11; delY = -33; selRadius = 36 }
+  else if (isEchelleH) { delX = 33; delY = -11; selRadius = 36 }
+
+  const rungsV = [-27, -18, -9, 0, 9, 18, 27]
 
   return (
     <Group
@@ -232,7 +263,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
       onMouseLeave={() => setHovered(false)}
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
-      {isSelected && <Circle radius={isCage ? cageW / 2 + 6 : 16} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
+      {isSelected && <Circle radius={selRadius} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
       {isCage ? (
         <>
           <Rect x={-cageW / 2} y={-cageH / 2} width={cageW} height={cageH} fill="transparent" stroke="#fff" strokeWidth={2} cornerRadius={1} />
@@ -243,6 +274,30 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
           <Rect x={-4} y={-9} width={8} height={16} cornerRadius={4} fill="#eab308" stroke="#ca8a04" strokeWidth={1.2} />
           <Circle y={-9} radius={4.5} fill="#fde047" stroke="#ca8a04" strokeWidth={1} />
         </>
+      ) : isCoupelle ? (
+        <Ellipse radiusX={11} radiusY={5} fill={MATERIEL_COULEURS[el.kind].fill} stroke={MATERIEL_COULEURS[el.kind].dark} strokeWidth={1} />
+      ) : isConeMateriel ? (
+        <>
+          <Line points={[0, -13, -9, 13, 9, 13]} closed fill={MATERIEL_COULEURS[el.kind].fill} stroke={MATERIEL_COULEURS[el.kind].dark} strokeWidth={1} />
+          <Ellipse y={13} radiusX={9} radiusY={2.5} fill={MATERIEL_COULEURS[el.kind].dark} />
+        </>
+      ) : isCerceau ? (
+        <>
+          <Circle radius={15} stroke="#38a169" strokeWidth={3} />
+          <Circle radius={15} stroke="#68d391" strokeWidth={1.2} dash={[3, 3]} opacity={0.6} />
+        </>
+      ) : isEchelleV ? (
+        <>
+          <Rect x={-11} y={-33} width={3} height={66} cornerRadius={1.5} fill="#805ad5" />
+          <Rect x={8} y={-33} width={3} height={66} cornerRadius={1.5} fill="#805ad5" />
+          {rungsV.map(by => <Rect key={by} x={-11} y={by - 1.2} width={22} height={2.5} fill="#b794f4" />)}
+        </>
+      ) : isEchelleH ? (
+        <>
+          <Rect x={-33} y={-11} width={66} height={3} cornerRadius={1.5} fill="#805ad5" />
+          <Rect x={-33} y={8} width={66} height={3} cornerRadius={1.5} fill="#805ad5" />
+          {rungsV.map(bx => <Rect key={bx} x={bx - 1.2} y={-11} width={2.5} height={22} fill="#b794f4" />)}
+        </>
       ) : (
         /* Le texte porte la zone cliquable/draggable : elle ne doit jamais être
            listening=false, sinon un objet non sélectionné n'a aucune zone
@@ -251,8 +306,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
       )}
       {draggable && hovered && (
         <Group
-          x={isCage ? cageW / 2 : isPlot ? 8 : 10}
-          y={isCage ? -cageH / 2 : isPlot ? -13 : -12}
+          x={delX}
+          y={delY}
           onClick={e => { e.cancelBubble = true; onDelete() }}
           onTap={e => { e.cancelBubble = true; onDelete() }}
         >
@@ -276,6 +331,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [selectedId, setSelectedId] = useState(null)
   const [equipeActive, setEquipeActive] = useState('A')
   const [tool, setTool] = useState('select')
+  const [showMaterielPanel, setShowMaterielPanel] = useState(false)
   const [arrowColor, setArrowColor] = useState('#ffffff')
   const [pendingStart, setPendingStart] = useState(null)
   // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
@@ -487,7 +543,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
     if (tool === 'select') { setSelectedId(null); return }
 
-    if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot'].includes(tool)) {
+    if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h'].includes(tool)) {
       applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y, rotation: 0 }])
       return
     }
@@ -819,6 +875,20 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     { key: 'plot', label: '🟡', title: 'Plot' },
   ]
 
+  // Matériel tactique : cliquer une vignette active l'outil (comme les autres
+  // objets ci-dessus), puis un clic sur le terrain le pose — même logique de
+  // placement que le reste du plateau, pas de drag & drop natif depuis ce panneau.
+  const outilsMateriel = [
+    { key: 'coupelle_rouge', title: 'Coupelle rouge', apercu: <svg width="26" height="14" viewBox="0 0 24 12"><ellipse cx="12" cy="6" rx="11" ry="5" fill="#e53e3e" stroke="#c53030" strokeWidth="1"/></svg> },
+    { key: 'coupelle_jaune', title: 'Coupelle jaune', apercu: <svg width="26" height="14" viewBox="0 0 24 12"><ellipse cx="12" cy="6" rx="11" ry="5" fill="#ecc94b" stroke="#d69e2e" strokeWidth="1"/></svg> },
+    { key: 'coupelle_bleue', title: 'Coupelle bleue', apercu: <svg width="26" height="14" viewBox="0 0 24 12"><ellipse cx="12" cy="6" rx="11" ry="5" fill="#3182ce" stroke="#2b6cb0" strokeWidth="1"/></svg> },
+    { key: 'cone_orange', title: 'Cône orange', apercu: <svg width="18" height="26" viewBox="0 0 20 28"><polygon points="10,2 0,26 20,26" fill="#ed8936" stroke="#c05621" strokeWidth="1"/><ellipse cx="10" cy="26" rx="10" ry="3" fill="#c05621"/></svg> },
+    { key: 'cone_rouge', title: 'Cône rouge', apercu: <svg width="18" height="26" viewBox="0 0 20 28"><polygon points="10,2 0,26 20,26" fill="#e53e3e" stroke="#c53030" strokeWidth="1"/><ellipse cx="10" cy="26" rx="10" ry="3" fill="#c53030"/></svg> },
+    { key: 'cerceau', title: 'Cerceau', apercu: <svg width="26" height="26" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="none" stroke="#38a169" strokeWidth="3.5"/></svg> },
+    { key: 'echelle', title: 'Échelle', apercu: <svg width="14" height="30" viewBox="0 0 30 80"><rect x="3" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="23" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="3" y="8" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="30" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="52" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="74" width="24" height="3" rx="1" fill="#b794f4"/></svg> },
+    { key: 'echelle_h', title: 'Échelle (horizontal)', apercu: <svg width="30" height="14" viewBox="0 0 80 30"><rect x="2" y="3" width="76" height="4" rx="2" fill="#805ad5"/><rect x="2" y="23" width="76" height="4" rx="2" fill="#805ad5"/><rect x="8" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="30" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="52" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="74" y="3" width="3" height="24" rx="1" fill="#b794f4"/></svg> },
+  ]
+
   const btnStyle = (active) => ({
     width: '38px', height: '38px', borderRadius: '8px', border: active ? '1px solid #4ade80' : '1px solid #222',
     background: active ? '#4ade8020' : '#111', color: active ? '#4ade80' : '#aaa', fontSize: '16px',
@@ -903,6 +973,42 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           {outilsObjets.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
+          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowMaterielPanel(v => !v)}
+              title="Matériel"
+              style={btnStyle(showMaterielPanel || outilsMateriel.some(o => o.key === tool))}
+            >
+              🧰
+            </button>
+            {showMaterielPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '12px',
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '260px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                <div style={{ gridColumn: '1 / -1', fontSize: '10px', color: '#666', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '2px' }}>
+                  MATÉRIEL — clique puis pose sur le terrain
+                </div>
+                {outilsMateriel.map(o => (
+                  <button
+                    key={o.key}
+                    onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowMaterielPanel(false) }}
+                    title={o.title}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      background: tool === o.key ? '#4ade8020' : '#1a1a1a', border: tool === o.key ? '1px solid #4ade80' : '1px solid #2a2a2a',
+                      borderRadius: '8px', padding: '8px 4px', cursor: 'pointer', color: '#ccc', height: '52px',
+                    }}
+                  >
+                    {o.apercu}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={{ height: '1px', background: '#222' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {COULEURS.map(c => (
