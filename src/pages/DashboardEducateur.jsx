@@ -1540,18 +1540,24 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
       console.log('Réponse brute Groq (génération séance) :', raw)
-      // Groq renvoie parfois le JSON enveloppé dans des balises markdown (```json ... ```)
-      // en plus du <think> du modèle — on retire les deux avant de chercher le bloc JSON.
+      // Le modèle qwen3.6 (thinking) ne ferme pas toujours son bloc <think> —
+      // le nettoyage par balise fermante ne suffit donc pas. On retire d'abord
+      // les balises markdown et tout bloc <think> bien formé, PUIS on ignore
+      // tout ce qui précède la toute première "{" (peu importe sa forme : think
+      // non fermé, texte libre...) avant de découper strictement entre la
+      // première "{" et la dernière "}".
       const cleaned = raw
-        .replace(/<think>[\s\S]*?<\/think>/g, '')
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
+        .replace(/[\s\S]*?(?=\{)/, '')
         .trim()
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
+      const start = cleaned.indexOf('{')
+      const end = cleaned.lastIndexOf('}')
+      if (start === -1 || end === -1) throw new Error('JSON non trouvé dans la réponse')
       let resultat
       try {
-        resultat = JSON.parse(jsonMatch[0])
+        resultat = JSON.parse(cleaned.slice(start, end + 1))
       } catch (parseErr) {
         console.error('Réponse Groq non-JSON (génération séance) :', raw)
         throw new Error("L'IA a renvoyé une réponse mal formée, réessaie.", { cause: parseErr })
