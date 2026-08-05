@@ -1125,6 +1125,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [generatingIA, setGeneratingIA] = useState(false)
   const [generationIAStatus, setGenerationIAStatus] = useState(null)
   const [generationIAError, setGenerationIAError] = useState(null)
+  // Snapshot de la dernière génération IA réussie (phases brutes + paramètres du
+  // formulaire) — conservé pour l'export PDF format FFF, qui a besoin du détail
+  // par phase (organisation/règles/consignes/critères séparés) alors que
+  // fiche.procedes consolide déjà certains de ces champs pour l'écran "Rédiger".
+  // generationIAForm est remis à vide juste après la génération, d'où ce
+  // snapshot séparé plutôt que de relire generationIAForm au moment de l'export.
+  const [derniereGenerationIA, setDerniereGenerationIA] = useState(null)
 
   const chargerProfilEdu = async (uid) => {
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
@@ -1581,6 +1588,13 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       const exercices = (resultat.phases || []).flatMap(ph => (ph.exercices || []).map(ex => ({ ...ex, phase: ph.phase })))
       if (exercices.length === 0) throw new Error("Aucun exercice généré")
 
+      setDerniereGenerationIA({
+        objectif: generationIAForm.objectif,
+        duree: generationIAForm.duree,
+        categorie_age: generationIAForm.categorie_age,
+        phases: resultat.phases || [],
+      })
+
       setFiche({
         ...ficheVide,
         theme: generationIAForm.objectif,
@@ -1612,6 +1626,201 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       setGeneratingIA(false)
       setGenerationIAStatus(null)
     }
+  }
+
+  // Export PDF au format FFF (Fédération Française de Football) de la dernière
+  // séance générée par l'IA — utilise derniereGenerationIA (phases brutes, avant
+  // consolidation dans fiche.procedes) pour retrouver le détail complet par
+  // exercice (organisation/règles/consignes/critères/variante séparés).
+  const exportFFF = async (seance) => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const W = 210
+    const margin = 12
+    let y = 10
+
+    // ── Couleurs FFF ──────────────────────────────────────────
+    const BLEU = [0, 56, 147]
+    const GRIS = [245, 245, 245]
+    const NOIR = [30, 30, 30]
+
+    const ligne = (texte, x, posY, maxW, taille = 9, couleur = NOIR, style = 'normal') => {
+      doc.setFontSize(taille)
+      doc.setFont('helvetica', style)
+      doc.setTextColor(...couleur)
+      const lines = doc.splitTextToSize(texte || '', maxW)
+      doc.text(lines, x, posY)
+      return posY + lines.length * (taille * 0.4)
+    }
+
+    const rect = (x, posY, w, h, fill = BLEU) => {
+      doc.setFillColor(...fill)
+      doc.rect(x, posY, w, h, 'F')
+    }
+
+    // ── HEADER FFF ────────────────────────────────────────────
+    rect(margin, y, W - margin * 2, 14)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('FICHE DE SÉANCE — FÉDÉRATION FRANÇAISE DE FOOTBALL', W / 2, y + 9, { align: 'center' })
+    y += 18
+
+    // ── Infos club / éducateur ─────────────────────────────────
+    rect(margin, y, W - margin * 2, 22, GRIS)
+    doc.setDrawColor(200, 200, 200)
+    doc.rect(margin, y, W - margin * 2, 22, 'S')
+
+    const col1 = margin + 3
+    const col2 = W / 2 + 3
+    const col3 = W * 0.75 + 3
+
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(100, 100, 100)
+    doc.text('CLUB', col1, y + 5)
+    doc.text('ÉDUCATEUR', col2, y + 5)
+    doc.text('DATE', col3, y + 5)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...NOIR)
+    doc.text(seance.club || '___________________', col1, y + 11)
+    doc.text(seance.educateur || '___________________', col2, y + 11)
+    doc.text(seance.date || new Date().toLocaleDateString('fr-FR'), col3, y + 11)
+
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(100, 100, 100)
+    doc.text('CATÉGORIE', col1, y + 17)
+    doc.text('OBJECTIF TACTIQUE', col2, y + 17)
+    doc.text('DURÉE TOTALE', col3, y + 17)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...NOIR)
+    doc.text(seance.categorie || '___', col1, y + 22)
+    doc.text(seance.objectif || '___________________', col2, y + 22)
+    doc.text(seance.duree ? `${seance.duree} min` : '90 min', col3, y + 22)
+    y += 28
+
+    // ── Phases ────────────────────────────────────────────────
+    const phaseLabels = {
+      echauffement: '⬤  ÉCHAUFFEMENT',
+      corps_de_seance: '⬤  CORPS DE SÉANCE',
+      retour_au_calme: '⬤  RETOUR AU CALME',
+    }
+    const phaseColors = {
+      echauffement: [255, 140, 0],
+      corps_de_seance: [0, 56, 147],
+      retour_au_calme: [34, 139, 34],
+    }
+
+    const phases = seance.phases || []
+
+    phases.forEach((phase) => {
+      if (y > 265) { doc.addPage(); y = 15 }
+
+      const couleurPhase = phaseColors[phase.phase] || BLEU
+      rect(margin, y, W - margin * 2, 8, couleurPhase)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(255, 255, 255)
+      doc.text(phaseLabels[phase.phase] || (phase.phase || '').toUpperCase(), margin + 3, y + 5.5)
+      y += 10
+
+      const exercices = phase.exercices || []
+      exercices.forEach((ex, idx) => {
+        if (y > 255) { doc.addPage(); y = 15 }
+
+        // Titre exercice
+        rect(margin, y, W - margin * 2, 7, [230, 230, 230])
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...NOIR)
+        doc.text(`Exercice ${idx + 1} — ${ex.nom || ''}`, margin + 3, y + 5)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(100, 100, 100)
+        doc.text(`${ex.duree || ''}  |  ${ex.format_equipes || ''}`, W - margin - 3, y + 5, { align: 'right' })
+        y += 9
+
+        // Corps exercice : 2 colonnes
+        const colW = (W - margin * 2 - 4) / 2
+        const xGauche = margin
+        const xDroite = margin + colW + 4
+        const yStart = y
+
+        // Colonne gauche
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLEU)
+        doc.text('ORGANISATION', xGauche, y + 4)
+        y = ligne(ex.organisation_spatiale, xGauche, y + 8, colW) + 2
+
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLEU)
+        doc.text('RÈGLES DU JEU', xGauche, y + 1)
+        y = ligne(ex.regles_du_jeu, xGauche, y + 5, colW) + 2
+
+        // Colonne droite (reset y)
+        let yD = yStart
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLEU)
+        doc.text('CONSIGNES COACH', xDroite, yD + 4)
+        yD = ligne(ex.consignes_coach, xDroite, yD + 8, colW) + 2
+
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLEU)
+        doc.text('CRITÈRES DE RÉUSSITE', xDroite, yD + 1)
+        yD = ligne(ex.criteres_reussite, xDroite, yD + 5, colW) + 2
+
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLEU)
+        doc.text('VARIANTE', xDroite, yD + 1)
+        yD = ligne(ex.variante, xDroite, yD + 5, colW)
+
+        y = Math.max(y, yD) + 4
+
+        // Zone schéma (terrain)
+        if (y < 250) {
+          rect(margin, y, W - margin * 2, 35, [245, 248, 255])
+          doc.setDrawColor(200, 215, 240)
+          doc.rect(margin, y, W - margin * 2, 35, 'S')
+          // Terrain simplifié
+          const tx = margin + 10, ty = y + 5, tw = W - margin * 2 - 20, th = 25
+          doc.setDrawColor(150, 180, 220)
+          doc.setLineWidth(0.3)
+          doc.rect(tx, ty, tw, th)
+          doc.line(tx + tw / 2, ty, tx + tw / 2, ty + th) // ligne médiane
+          // Cercle central
+          doc.circle(tx + tw / 2, ty + th / 2, 4, 'S')
+          // Surfaces de réparation
+          doc.rect(tx, ty + th / 2 - 6, 12, 12, 'S')
+          doc.rect(tx + tw - 12, ty + th / 2 - 6, 12, 12, 'S')
+          doc.setFontSize(6)
+          doc.setTextColor(150, 150, 150)
+          doc.text('Schéma à compléter', tx + tw / 2, ty + th / 2 + 1, { align: 'center' })
+          y += 40
+        }
+
+        // Séparateur
+        doc.setDrawColor(220, 220, 220)
+        doc.setLineWidth(0.2)
+        doc.line(margin, y, W - margin, y)
+        y += 4
+      })
+
+      y += 3
+    })
+
+    // ── Footer ────────────────────────────────────────────────
+    if (y > 270) { doc.addPage(); y = 15 }
+    rect(margin, y, W - margin * 2, 8, [240, 240, 240])
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(150, 150, 150)
+    doc.text('Document généré par Digital Football Academy — digitalfootball.academy', W / 2, y + 5, { align: 'center' })
+
+    doc.save(`seance_fff_${(seance.objectif || 'seance').replace(/\s+/g, '_').toLowerCase()}.pdf`)
   }
 
   // Scanner IA : lit une photo de fiche papier (Gemini Vision) et pré-remplit le formulaire "Rédiger"
@@ -5478,8 +5687,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 >
                   🖨️ {t('seance_imprimer_fiche', lang)}
                 </button>
+                {derniereGenerationIA && (
+                  <button
+                    onClick={() => exportFFF({
+                      objectif: derniereGenerationIA.objectif,
+                      duree: derniereGenerationIA.duree,
+                      categorie: derniereGenerationIA.categorie_age,
+                      club: profilEdu?.club || '',
+                      educateur: `${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim(),
+                      phases: derniereGenerationIA.phases,
+                    })}
+                    style={{ background: '#003893', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    📋 Format FFF
+                  </button>
+                )}
                 <button
-                  onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); window.print() }}
+                  onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); setDerniereGenerationIA(null); window.print() }}
                   style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   📄 {t('seance_fiche_vierge', lang)}
