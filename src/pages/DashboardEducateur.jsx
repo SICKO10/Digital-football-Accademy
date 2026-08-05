@@ -17,6 +17,7 @@ import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
@@ -1476,12 +1477,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const systemPrompt = `Tu es un expert en entraînement football. Génère une séance structurée en 3 phases :
+      const systemPrompt = `Tu es un entraîneur UEFA A spécialisé football de formation.
+Tes séances respectent OBLIGATOIREMENT :
+- La progression pédagogique : analytique → synthétique → global
+- Des situations jouées réelles (jeux réduits, jeux de position)
+- Des ratios travail/repos adaptés à la catégorie d'âge
+- Des exercices avec opposition réelle (pas juste des passes en ligne)
+- Des indicateurs de performance mesurables pour l'éducateur
+- La logique interne du football (prise d'information, décision, action)
+
+INTERDIT : exercices sans ballon majoritaires, slaloms de cônes sans opposition, passes en ligne statiques.
+
+Génère une séance structurée en 3 phases :
 1. Échauffement (20% du temps)
 2. Corps de séance (65% du temps)
 3. Retour au calme (15% du temps)
 
-Pour chaque exercice : nom, durée, nombre de joueurs, description courte, consignes coach, variante possible.
+Chaque exercice DOIT contenir : nom, durée, organisation spatiale précise (dimensions du
+terrain, dispositif), nombre de joueurs par équipe (format de jeu), règles du jeu,
+consignes coach, critères de réussite mesurables, variante (facilitation ET complexification).
 Réponds en JSON structuré.`
       const userPrompt = `Objectif tactique : ${generationIAForm.objectif}
 Durée totale : ${generationIAForm.duree} minutes
@@ -1492,7 +1506,15 @@ Niveau : ${generationIAForm.niveau}
 Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 {
   "phases": [
-    { "phase": "echauffement", "exercices": [ { "nom": "...", "duree": "...", "nb_joueurs": "...", "description": "...", "consignes_coach": "...", "variante": "..." } ] },
+    { "phase": "echauffement", "exercices": [ {
+      "nom": "...", "duree": "...",
+      "format_equipes": "nombre de joueurs par équipe / format de jeu, ex: 2 équipes de 4 + 2 jokers",
+      "organisation_spatiale": "dimensions du terrain et dispositif précis",
+      "regles_du_jeu": "...",
+      "consignes_coach": "...",
+      "criteres_reussite": "indicateurs de performance mesurables",
+      "variante": "variante plus facile ET variante plus difficile"
+    } ] },
     { "phase": "corps_de_seance", "exercices": [ ... ] },
     { "phase": "retour_au_calme", "exercices": [ ... ] }
   ]
@@ -1501,12 +1523,14 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          // llama-3.1-8b-instant plutôt qu'un modèle "thinking" (qwen3.6, utilisé
-          // ailleurs dans ce fichier pour la vision) : pas de bloc <think> à filtrer,
-          // et la génération de séance n'a pas besoin de raisonnement approfondi.
-          model: 'llama-3.1-8b-instant',
+          // qwen3.6-27b (même modèle que le scan de fiche/vision ailleurs dans ce
+          // fichier) plutôt que llama-3.1-8b-instant : nécessaire pour un contenu
+          // pédagogique de ce niveau d'exigence. C'est un modèle "thinking" — il
+          // préfixe sa réponse d'un bloc <think>, géré via /no_think ci-dessous +
+          // le nettoyage regex après coup (ceinture et bretelles).
+          model: 'qwen/qwen3.6-27b',
           messages: [
-            { role: 'system', content: `${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après.` },
+            { role: 'system', content: `/no_think\n${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après. Aucune réflexion préalable.` },
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
@@ -1546,11 +1570,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           numero: i + 1,
           titre: [PHASE_LABEL_IA[ex.phase], ex.nom].filter(Boolean).join(' — '),
           duree: ex.duree != null ? String(ex.duree) : '',
-          nb_joueurs: ex.nb_joueurs != null ? String(ex.nb_joueurs) : '',
-          but: PHASE_LABEL_IA[ex.phase] || '',
-          organisation: ex.description || '',
-          consignes: ex.consignes_coach || '',
+          nb_joueurs: ex.format_equipes != null ? String(ex.format_equipes) : '',
+          but: ex.criteres_reussite || PHASE_LABEL_IA[ex.phase] || '',
+          organisation: ex.organisation_spatiale || '',
+          consignes: [ex.regles_du_jeu, ex.consignes_coach ? `Consignes coach : ${ex.consignes_coach}` : null].filter(Boolean).join('\n\n'),
           variables: ex.variante || '',
+          schema_png: schemaExerciceIA(ex.nom, `${ex.organisation_spatiale || ''} ${ex.regles_du_jeu || ''}`),
         })),
       })
       setSport('football')
