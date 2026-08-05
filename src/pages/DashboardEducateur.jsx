@@ -1512,10 +1512,23 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       }, setGenerationIAStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      console.log('Réponse brute Groq (génération séance) :', raw)
+      // Groq renvoie parfois le JSON enveloppé dans des balises markdown (```json ... ```)
+      // en plus du <think> du modèle — on retire les deux avant de chercher le bloc JSON.
+      const cleaned = raw
+        .replace(/<think>[\s\S]*?<\/think>/g, '')
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim()
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
-      const resultat = JSON.parse(jsonMatch[0])
+      let resultat
+      try {
+        resultat = JSON.parse(jsonMatch[0])
+      } catch (parseErr) {
+        console.error('Réponse Groq non-JSON (génération séance) :', raw)
+        throw new Error("L'IA a renvoyé une réponse mal formée, réessaie.", { cause: parseErr })
+      }
 
       const exercices = (resultat.phases || []).flatMap(ph => (ph.exercices || []).map(ex => ({ ...ex, phase: ph.phase })))
       if (exercices.length === 0) throw new Error("Aucun exercice généré")
