@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import { normaliserHeure, normaliserCle, trouverValeur, lignesVersObjets } from '../lib/excelImport'
+import { normaliserHeure, normaliserCle, trouverValeur, lignesVersObjets, trouverFeuilleAvecDonnees } from '../lib/excelImport'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -192,7 +192,9 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       const XLSX = await import('xlsx')
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
-      const feuille = wb.Sheets[wb.SheetNames[0]]
+      const { sheet: feuille, sheetName } = trouverFeuilleAvecDonnees(wb, s => XLSX.utils.sheet_to_json(s, { header: 1, defval: '' }))
+      if (!feuille) throw new Error('Aucun onglet avec des données trouvé dans le fichier.')
+      console.log('Onglet utilisé :', sheetName)
       const rowsBrutes = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
       const { lignes: rows, headerRow } = lignesVersObjets(rowsBrutes)
       console.log('Import planning terrains — headers détectés :', headerRow)

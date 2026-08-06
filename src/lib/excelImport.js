@@ -40,6 +40,25 @@ export const trouverLigneEnTetes = (rows, motsCles = MOTS_CLES_ENTETES_DEFAUT) =
   return -1
 }
 
+// Cherche, parmi les onglets d'un classeur (workbook SheetJS), le premier qui
+// contient des données exploitables (plus de 2 lignes) — certains fichiers
+// clients ont un onglet "Instructions"/"Notes" vide ou quasi-vide avant
+// l'onglet réel, qu'on prendrait à tort en lisant toujours le premier onglet.
+// `sheetToRows(sheet)` doit renvoyer les lignes brutes de l'onglet (array de
+// arrays, ex. XLSX.utils.sheet_to_json(sheet, { header: 1 })) — passé en
+// paramètre pour ne pas dépendre de XLSX ici (lib volontairement sans
+// dépendance externe). Renvoie { sheet: null, sheetName: null } si aucun
+// onglet n'a de données.
+export const trouverFeuilleAvecDonnees = (workbook, sheetToRows) => {
+  console.log('Onglets disponibles :', workbook.SheetNames)
+  for (const name of workbook.SheetNames) {
+    const rows = sheetToRows(workbook.Sheets[name])
+    console.log(`Onglet "${name}" : ${rows.length} lignes`)
+    if (rows.length > 2) return { sheet: workbook.Sheets[name], sheetName: name }
+  }
+  return { sheet: null, sheetName: null }
+}
+
 // Convertit un tableau de lignes brutes (array-of-arrays) en tableau d'objets
 // { enTete: valeur }, en localisant automatiquement la ligne d'en-têtes via
 // trouverLigneEnTetes plutôt que de supposer que c'est la première ligne.
