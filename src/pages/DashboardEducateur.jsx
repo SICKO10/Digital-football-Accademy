@@ -574,7 +574,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang, isMobile }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -662,7 +662,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" />
 
       {/* Widgets résumé */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
@@ -2956,18 +2956,25 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: isMobile ? '16px 14px' : '2rem' }}>
 
         {isMobile && (
-          <button onClick={() => setSidebarOpen(true)}
-            style={{
-              padding: '12px', minWidth: '48px', minHeight: '48px', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
-              marginBottom: '8px',
-            }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', marginLeft: '-12px' }}>
+            <button onClick={() => setSidebarOpen(true)}
+              style={{
+                padding: '12px', minWidth: '48px', minHeight: '48px', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
+              }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>
+              Digital<span style={{ color: '#4ade80' }}>Football</span>
+            </span>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#60a5fa', color: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, marginRight: '2px' }}>
+              {profil?.prenom?.[0] || profil?.nom?.[0] || 'E'}
+            </div>
+          </div>
         )}
 
         {/* ===== ACCUEIL ===== */}
@@ -2982,6 +2989,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
             lang={lang}
+            isMobile={isMobile}
           />
         )}
 
