@@ -194,6 +194,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       const wb = XLSX.read(buf, { type: 'array' })
       const feuille = wb.Sheets[wb.SheetNames[0]]
       const rows = XLSX.utils.sheet_to_json(feuille, { defval: '' })
+      const headersDetectes = rows[0] ? Object.keys(rows[0]) : []
+      console.log('Import planning terrains — headers détectés :', headersDetectes)
 
       const mapped = rows.map(row => {
         const terrainNom = trouverValeur(row, ALIAS_IMPORT.terrain)
@@ -213,7 +215,10 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
         }
       }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
 
-      if (mapped.length === 0) throw new Error("Aucune ligne exploitable trouvée dans le fichier.")
+      if (mapped.length === 0) {
+        const colonnes = headersDetectes.length ? headersDetectes.join(', ') : 'aucune'
+        throw new Error(`Aucune ligne exploitable trouvée. Colonnes détectées dans le fichier : ${colonnes}. Vérifie qu'elles correspondent au modèle (Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin) et que la première ligne du fichier contient bien les en-têtes.`)
+      }
       setImportLignes(mapped)
     } catch (err) {
       setImportError(err.message)
