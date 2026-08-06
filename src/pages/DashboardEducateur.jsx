@@ -574,7 +574,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang, isMobile }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang, isMobile, mesSeancesOuvertes }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -687,7 +687,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                       {idx + 1}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || 'Séance'}</p>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || mesSeancesOuvertes.find(s => s.id === entr.fiche_id)?.theme || 'Séance'}</p>
                       <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
                     </div>
                     {!sondageEstClos(entr) && (
@@ -2990,6 +2990,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             setActiveSection={setActiveSection}
             lang={lang}
             isMobile={isMobile}
+            mesSeancesOuvertes={mesSeancesOuvertes}
           />
         )}
 
