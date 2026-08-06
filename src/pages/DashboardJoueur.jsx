@@ -1119,7 +1119,7 @@ function DashboardJoueur() {
         <aside style={{
           width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
           ...(isMobile ? {
-            position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+            position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
           } : {
             position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
           }),
@@ -1166,7 +1166,7 @@ function DashboardJoueur() {
           </div>
         </aside>
 
-        <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '32px 36px', overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto' }}>
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)}
               style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
@@ -1989,7 +1989,7 @@ function DashboardJoueur() {
       <aside style={{
         width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
         ...(isMobile ? {
-          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
           position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
         }),
@@ -2098,7 +2098,7 @@ function DashboardJoueur() {
       </aside>
 
       {isMobile && (
-        <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 150 }}>
+        <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 150 }}>
           <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#111', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <span style={{ fontSize: '18px' }}>🔔</span>
           {notifications.filter(n => !n.lu).length > 0 && (
@@ -2136,7 +2136,7 @@ function DashboardJoueur() {
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '20px 16px 0', display: 'block' }}>
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 'calc(20px + env(safe-area-inset-top, 0px)) 16px 0', display: 'block' }}>
             ☰
           </button>
         )}

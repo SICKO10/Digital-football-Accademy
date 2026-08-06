@@ -2881,7 +2881,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       <aside style={{
         width: '220px', background: '#0d0d0d', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
         ...(isMobile ? {
-          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto',
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
           position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
         }),
@@ -2959,7 +2959,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         </div>
       </aside>
 
-      <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: isMobile ? '16px 14px' : '2rem' }}>
+      <div style={{ flex: 1, maxWidth: '960px', margin: '0 auto', padding: isMobile ? '16px 14px' : '2rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '2rem' }}>
 
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', marginLeft: '-12px' }}>

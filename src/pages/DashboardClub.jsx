@@ -596,7 +596,7 @@ export default function DashboardClub() {
 
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
-    navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? '0 1rem' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '8px' },
+    navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
     logo: { color: '#4ade80', fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
@@ -1529,7 +1529,7 @@ export default function DashboardClub() {
             <div style={{
               position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-85%', width: '85%', maxWidth: '320px', height: '100%',
               background: '#0d0d0d', borderRight: '1px solid #1a1a1a', zIndex: 100, transition: 'left 0.25s ease',
-              overflowY: 'auto', padding: '1.25rem 1rem',
+              overflowY: 'auto', padding: '1.25rem 1rem', paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <span style={{ fontWeight: 800, fontSize: '14px', color: '#4ade80' }}>⬡ Menu</span>
