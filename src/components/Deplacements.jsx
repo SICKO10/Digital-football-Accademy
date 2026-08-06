@@ -24,6 +24,21 @@ const st = {
 
 const natureInfo = (val) => NATURES.find(n => n.val === val) || NATURES[3]
 
+const grouperParSemaine = (deplacements) => {
+  const groupes = {}
+  deplacements.forEach(d => {
+    const date = new Date(d.date_depart + 'T12:00:00')
+    const lundi = new Date(date)
+    lundi.setDate(date.getDate() - ((date.getDay() + 6) % 7))
+    const dimanche = new Date(lundi)
+    dimanche.setDate(lundi.getDate() + 6)
+    const label = `${lundi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${dimanche.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
+    if (!groupes[label]) groupes[label] = []
+    groupes[label].push(d)
+  })
+  return groupes
+}
+
 export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
@@ -288,7 +303,21 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             {aVenir.length === 0 ? (
               <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun déplacement à venir.</p>
             ) : (
-              <div style={{ marginBottom: '1.5rem' }}>{aVenir.map(renderCard)}</div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                {Object.entries(grouperParSemaine(aVenir)).map(([semaine, items]) => (
+                  <div key={semaine}>
+                    <div style={{
+                      fontSize: '12px', fontWeight: '700', color: accentColor,
+                      textTransform: 'uppercase', letterSpacing: '0.08em',
+                      padding: '8px 0 6px', borderBottom: '1px solid #1f2937',
+                      marginBottom: '12px'
+                    }}>
+                      📅 Semaine du {semaine} · {items.length} déplacement{items.length > 1 ? 's' : ''}
+                    </div>
+                    {items.map(renderCard)}
+                  </div>
+                ))}
+              </div>
             )}
 
             <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>🗂️ Historique {historique.length > 0 ? `(${historique.length})` : ''}</p>
