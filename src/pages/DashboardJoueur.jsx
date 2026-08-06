@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
+import { sondageEstClos } from '../lib/sondage'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
@@ -484,7 +485,7 @@ function DashboardJoueur() {
     ])
 
     const events = [
-      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, lieu: e.lieu, sondage_clos: e.sondage_clos })),
+      ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, lieu: e.lieu, sondage_clos: e.sondage_clos, cloture_sondage_avant: e.cloture_sondage_avant })),
       ...(matchs || []).map(m => ({ type: 'match', id: m.id, titre: m.adversaire || t('aff_match_titre', lang), date: m.date, heure: m.heure, lieu: m.lieu })),
     ].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 4)
     setWidgetCalendrier(events)
@@ -2216,7 +2217,7 @@ function DashboardJoueur() {
                       const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                       const isMatch = ev.type === 'match'
                       const statut = dispoMap[ev.id] || null
-                      const sondageClos = ev.sondage_clos
+                      const sondageClos = sondageEstClos(ev)
                       const accentColor = isMatch ? '#60a5fa' : '#4ade80'
                       const optStatut = OPTIONS_SONDAGE.find(o => o.val === statut)
                       const pending = pendingDispo[ev.id]

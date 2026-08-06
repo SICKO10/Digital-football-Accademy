@@ -18,6 +18,7 @@ import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
+import { sondageEstClos } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
@@ -578,9 +579,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
   const totalJoueurs = joueurs.length
 
-  const prochainEnt = [...entrainements]
+  const prochainesEntrainements = [...entrainements]
     .filter(e => e.date >= aujourdHui)
-    .sort((a, b) => a.date.localeCompare(b.date))[0] || null
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 3)
+  const prochainEnt = prochainesEntrainements[0] || null
 
   const STATUTS_PRESENCE = [
     { val: 'present', label: 'Présent', color: '#4ade80' },
@@ -667,14 +670,33 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochain entraînement</p>
-          {prochainEnt ? (
-            <>
-              <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainEnt.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{prochainEnt.description || 'Séance'}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''}</p>
-            </>
-          ) : (
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
+          {prochainesEntrainements.length === 0 ? (
             <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>Aucune séance planifiée</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {prochainesEntrainements.map((entr, idx) => {
+                const dateEntr = new Date(entr.date + 'T12:00:00')
+                const estAujourdHui = entr.date === aujourdHui
+                const demain = new Date(); demain.setDate(demain.getDate() + 1)
+                const estDemain = entr.date === demain.toISOString().split('T')[0]
+                const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                return (
+                  <div key={entr.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: idx === 0 ? '#60a5fa0f' : '#0a0a0a', borderRadius: '10px', border: `1px solid ${idx === 0 ? '#60a5fa30' : '#1a1a1a'}` }}>
+                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: idx === 0 ? '#60a5fa' : '#2a2a2a', color: idx === 0 ? '#0a0a0a' : '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || 'Séance'}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
+                    </div>
+                    {!sondageEstClos(entr) && (
+                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: '#4ade8015', color: '#4ade80', flexShrink: 0 }}>Sondage ouvert</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
 
@@ -2659,16 +2681,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: '#60a5fa15', border: '#60a5fa40', color: '#60a5fa' },
   }
 
-  const sondageEstClos = (seance) => {
-    if (!seance) return false
-    if (seance.sondage_clos) return true
-    if (!seance.cloture_sondage_avant || !seance.heure) return false
-    const [h, m] = seance.heure.split(':').map(Number)
-    const dateSeance = new Date(seance.date + 'T12:00:00')
-    dateSeance.setHours(h, m, 0, 0)
-    const clotureTime = new Date(dateSeance.getTime() - seance.cloture_sondage_avant * 60 * 60 * 1000)
-    return new Date() >= clotureTime
-  }
+  // sondageEstClos importée de ../lib/sondage — partagée avec DashboardJoueur.jsx
+  // (avant ce partage, seul ce fichier calculait la clôture en direct ; le
+  // dashboard joueur se fiait au champ sondage_clos brut, jamais mis à jour
+  // automatiquement, donc les joueurs pouvaient répondre après le délai).
 
   const cyclerPresence = async (entrainementId, joueurId, statutActuel) => {
     if (statutActuel === 'convoque') {
