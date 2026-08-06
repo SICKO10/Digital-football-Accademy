@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import { normaliserHeure, normaliserCle, trouverValeur } from '../lib/excelImport'
+import { normaliserHeure, normaliserCle, trouverValeur, lignesVersObjets } from '../lib/excelImport'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -193,9 +193,12 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
       const feuille = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(feuille, { defval: '' })
-      const headersDetectes = rows[0] ? Object.keys(rows[0]) : []
-      console.log('Import planning terrains — headers détectés :', headersDetectes)
+      const rowsBrutes = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
+      const { lignes: rows, headerRow } = lignesVersObjets(rowsBrutes)
+      console.log('Import planning terrains — headers détectés :', headerRow)
+      if (headerRow.length === 0) {
+        throw new Error("En-têtes non trouvées dans les 20 premières lignes du fichier. Vérifie qu'il contient bien des colonnes comme Terrain, Équipe, Jour, Heure début, Heure fin.")
+      }
 
       const mapped = rows.map(row => {
         const terrainNom = trouverValeur(row, ALIAS_IMPORT.terrain)
@@ -216,8 +219,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
 
       if (mapped.length === 0) {
-        const colonnes = headersDetectes.length ? headersDetectes.join(', ') : 'aucune'
-        throw new Error(`Aucune ligne exploitable trouvée. Colonnes détectées dans le fichier : ${colonnes}. Vérifie qu'elles correspondent au modèle (Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin) et que la première ligne du fichier contient bien les en-têtes.`)
+        throw new Error(`Aucune ligne exploitable trouvée. Colonnes détectées : ${headerRow.join(', ')}. Vérifie qu'elles correspondent au modèle (Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin) et que les lignes de données sous les en-têtes sont bien remplies.`)
       }
       setImportLignes(mapped)
     } catch (err) {
