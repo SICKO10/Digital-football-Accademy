@@ -3283,7 +3283,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modal édition joueur ── */}
             {joueurEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
                     <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -4032,9 +4032,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             )}
 
             {/* Sous-onglets */}
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a' }}>
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['resultats',`⚽ ${t('comp_resultats', lang)}`],['calendrier',`🗓️ ${t('comp_calendrier', lang)}`],['classement',`🏆 ${t('comp_classement', lang)}`]].map(([k, label]) => (
-                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? '#60a5fa' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{label}</button>
+                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? '#60a5fa' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
 
@@ -4421,7 +4421,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modale "Ajouter / Modifier un match" ── */}
             {modalMatchForm && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
                       {modalMatchForm.id ? `✏️ ${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
@@ -4946,7 +4946,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modale "Modifier la séance" ── */}
             {entrainementEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px' }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ {t('ent_modifier_seance', lang)}</p>
                     <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -5222,34 +5222,34 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               <button
                 onClick={() => setModeSeance('enregistrer')}
-                style={{ background: modeSeance === 'enregistrer' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'enregistrer' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                style={{ background: modeSeance === 'enregistrer' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'enregistrer' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
               <button
                 onClick={() => setModalGenerationIA(true)}
-                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 🤖 Générer avec l'IA
               </button>
               <button
                 onClick={() => setModeSeance('rediger')}
-                style={{ background: modeSeance === 'rediger' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'rediger' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                style={{ background: modeSeance === 'rediger' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'rediger' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 ✏️ {t('seance_rediger_fiche', lang)}
               </button>
               <button
                 onClick={() => setModeSeance('scanner')}
-                style={{ background: modeSeance === 'scanner' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'scanner' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                style={{ background: modeSeance === 'scanner' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'scanner' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📷 {t('seance_scanner', lang)}
               </button>
               <button
                 onClick={() => setModeSeance('club')}
-                style={{ background: modeSeance === 'club' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'club' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                style={{ background: modeSeance === 'club' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'club' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 🏟️ {t('seance_eval_club', lang)}
               </button>
@@ -5258,7 +5258,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {modalGenerationIA && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 onClick={() => !generatingIA && setModalGenerationIA(false)}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px' }}
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
                   onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🤖 Générer une séance avec l'IA</p>
@@ -6790,7 +6790,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     {/* ===== MODAL LIAISON JOUEUR AFFILIÉ ===== */}
     {affiliationEnCours && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
           <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ {t('liaison_accepter_demande', lang)}</p>
           <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>
             {t('liaison_lier_joueur', lang)} <strong style={{ color: '#aaa' }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> {t('liaison_a_joueur_effectif', lang)}
