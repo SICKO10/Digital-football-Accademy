@@ -1998,7 +1998,9 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const supprimerJoueur = async (id) => {
     if (!confirm('Supprimer ce joueur ?')) return
-    await supabase.from('equipe_joueurs').delete().eq('id', id)
+    console.log('Suppression ID:', id)
+    const { error } = await supabase.from('equipe_joueurs').delete().eq('id', id)
+    if (error) { console.error('Erreur suppression joueur :', error); alert('Erreur lors de la suppression : ' + error.message); return }
     setJoueurs(prev => prev.filter(j => j.id !== id))
     if (joueurActif?.id === id) setJoueurActif(null)
   }
