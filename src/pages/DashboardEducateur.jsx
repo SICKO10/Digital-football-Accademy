@@ -4115,6 +4115,24 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             </p>
                           </div>
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
+                          {canEdit('competition') && (
+                            <button
+                              onClick={async ev => {
+                                ev.stopPropagation()
+                                if (!confirm('Supprimer ce résultat ?')) return
+                                const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                if (errStats) { alert('Erreur : ' + errStats.message); return }
+                                const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                if (error) { alert('Erreur : ' + error.message); return }
+                                setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                if (matchActif?.id === m.id) setMatchActif(null)
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
+                              title="Supprimer ce résultat"
+                            >
+                              🗑
+                            </button>
+                          )}
                         </div>
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
