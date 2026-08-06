@@ -1999,6 +1999,10 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
   const supprimerJoueur = async (id) => {
     if (!confirm('Supprimer ce joueur ?')) return
     console.log('Suppression ID:', id)
+    // equipe_joueurs est référencé par affiliations.equipe_joueur_id (FK) — la
+    // suppression du joueur échoue tant que ses affiliations existent encore.
+    const { error: errAff } = await supabase.from('affiliations').delete().eq('equipe_joueur_id', id)
+    if (errAff) { console.error('Erreur suppression affiliation :', errAff); alert('Erreur lors de la suppression : ' + errAff.message); return }
     const { error } = await supabase.from('equipe_joueurs').delete().eq('id', id)
     if (error) { console.error('Erreur suppression joueur :', error); alert('Erreur lors de la suppression : ' + error.message); return }
     setJoueurs(prev => prev.filter(j => j.id !== id))
