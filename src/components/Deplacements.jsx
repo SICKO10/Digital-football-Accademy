@@ -40,11 +40,12 @@ const grouperParSemaine = (deplacements) => {
 }
 
 export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
-  const [vue, setVue] = useState('liste') // 'liste' | 'weekend'
+  const [vue, setVue] = useState('liste') // 'liste' | 'mois' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
   const [equipesOptions, setEquipesOptions] = useState([])
+  const [vehicules, setVehicules] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(formVide)
   const [saving, setSaving] = useState(false)
@@ -69,7 +70,24 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setEquipesOptions(data || [])
   }
 
-  useEffect(() => { if (clubId) { charger(); chargerEquipes() } }, [clubId])
+  const chargerVehicules = async () => {
+    const { data } = await supabase.from('vehicules').select('*').eq('club_id', clubId)
+    setVehicules(data || [])
+  }
+
+  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules() } }, [clubId])
+
+  // Capacité totale couverte par le(s) véhicule(s) assigné(s) à un déplacement —
+  // d.vehicule peut être une seule plaque ou "PLAQUE1 + PLAQUE2" (bus combinés,
+  // cf. libelleCombine dans RepartitionMiniBus.jsx). null si aucun véhicule
+  // assigné ou si une plaque ne correspond à aucun véhicule du parc actuel.
+  const capaciteVehicule = (d) => {
+    if (!d.vehicule) return null
+    const plaques = d.vehicule.split('+').map(p => p.trim()).filter(Boolean)
+    const capacites = plaques.map(p => vehicules.find(v => v.plaque === p)?.capacite)
+    if (capacites.some(c => c == null)) return null
+    return capacites.reduce((sum, c) => sum + c, 0)
+  }
 
   const creerDeplacement = async () => {
     if (!form.date_depart || !form.lieu_destination.trim()) return
@@ -210,7 +228,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
-        {[['liste', 'Liste'], ['weekend', 'Planning week-end']].map(([val, label]) => (
+        {[['liste', 'Liste'], ['mois', 'Vue mois'], ['weekend', 'Planning week-end']].map(([val, label]) => (
           <button key={val} onClick={() => setVue(val)}
             style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: vue === val ? accentColor : '#1a1a1a', color: vue === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {label}
@@ -219,6 +237,79 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       </div>
 
       {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
+
+      {vue === 'mois' && (
+        loading ? (
+          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+        ) : (() => {
+          const parMois = {}
+          ;[...deplacements].sort((a, b) => a.date_depart.localeCompare(b.date_depart)).forEach(d => {
+            const cle = d.date_depart.slice(0, 7) // AAAA-MM, pour trier les mois correctement
+            if (!parMois[cle]) parMois[cle] = []
+            parMois[cle].push(d)
+          })
+          const cles = Object.keys(parMois)
+          if (cles.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement enregistré.</p>
+          return cles.map(cle => {
+            const deps = parMois[cle]
+            const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            const aVerifier = deps.filter(d => {
+              const cap = capaciteVehicule(d)
+              return !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+            }).length
+            return (
+              <div key={cle} style={{ marginBottom: '2rem' }}>
+                <div style={{
+                  fontSize: '13px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em',
+                  padding: '6px 0 12px', borderBottom: '1px solid #1a1a1a', marginBottom: '14px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
+                }}>
+                  <span>📅 {label} · {deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
+                  {aVerifier > 0 ? (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>⚠️ {aVerifier} à vérifier</span>
+                  ) : (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor }}>✅ Bus OK</span>
+                  )}
+                </div>
+                {deps.map(d => {
+                  const cap = capaciteVehicule(d)
+                  const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+                  return (
+                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : '1px solid #1a1a1a' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
+                            {natureInfo(d.nature).emoji} {d.lieu_destination}
+                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#666', fontWeight: 600 }}>· {d.equipe}</span>}
+                          </p>
+                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
+                            {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
+                            {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
+                          </p>
+                        </div>
+                        <span style={{
+                          fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
+                          background: !d.vehicule ? '#6b728020' : insuffisant ? '#f59e0b15' : accentColor + '15',
+                          color: !d.vehicule ? '#9ca3af' : insuffisant ? '#f59e0b' : accentColor,
+                        }}>
+                          {!d.vehicule
+                            ? 'Aucun véhicule assigné'
+                            : cap == null
+                              ? `🚐 ${d.vehicule} (hors parc actuel)`
+                              : insuffisant
+                                ? `⚠️ Capacité insuffisante (${d.nb_personnes}p / ${cap} places)`
+                                : `✅ ${d.vehicule} · ${d.nb_personnes ?? '?'}/${cap} places`}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })
+        })()
+      )}
 
       {vue === 'liste' && showForm && !readOnly && (
         <div style={{ ...st.card, marginBottom: '1.5rem' }}>
