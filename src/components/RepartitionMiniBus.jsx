@@ -116,6 +116,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
 
   const [vehicules, setVehicules] = useState([])
   const [loadingVehicules, setLoadingVehicules] = useState(true)
+  const [categories, setCategories] = useState([])
   const [showAddVehicule, setShowAddVehicule] = useState(false)
   const [newVehicule, setNewVehicule] = useState({ plaque: '', capacite: '' })
   const [savingVehicule, setSavingVehicule] = useState(false)
@@ -132,7 +133,12 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
     setLoadingVehicules(false)
   }
 
-  useEffect(() => { if (clubId) chargerVehicules() }, [clubId])
+  const chargerCategories = async () => {
+    const { data } = await supabase.from('club_categories').select('id, nom, equipe, educateur_id').eq('club_id', clubId)
+    setCategories(data || [])
+  }
+
+  useEffect(() => { if (clubId) { chargerVehicules(); chargerCategories() } }, [clubId])
 
   const ajouterVehicule = async () => {
     if (!newVehicule.plaque.trim() || !newVehicule.capacite) return
@@ -223,9 +229,14 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
     if (!suggestions || suggestions.length === 0) return
     setPublishing(true)
     const { data: { user } } = await supabase.auth.getUser()
+    // educateur_id résolu depuis l'équipe (texte importé) matchée contre les
+    // catégories du club — nécessaire pour le widget "Mes déplacements" de
+    // l'éducateur sur son Accueil, qui filtre par educateur_id.
+    const educateurIdDeEquipe = (equipeTexte) => categories.find(c => `${c.nom} ${c.equipe || ''}`.trim() === (equipeTexte || '').trim())?.educateur_id || null
     const payload = suggestions.map(s => ({
       club_id: clubId,
       equipe: s.equipe || null,
+      educateur_id: educateurIdDeEquipe(s.equipe),
       educateur_responsable: s.educateur_responsable || null,
       date_depart: s.date_depart || null,
       heure_depart: s.heure_depart || null,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import PlanningWeekEnd from './PlanningWeekEnd'
 import RepartitionBus from './RepartitionBus'
+import { repartirBus } from '../lib/repartitionBus'
 
 const NATURES = [
   { val: 'match', label: '⚽ Match', emoji: '⚽' },
@@ -67,6 +68,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [assignationBusOuverte, setAssignationBusOuverte] = useState(null)
   const [savingAssignation, setSavingAssignation] = useState(null)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [semaineOuverte, setSemaineOuverte] = useState({}) // { 'AAAA-MM_semaine-label': true }
+  const [alertesLocation, setAlertesLocation] = useState([])
+  const [repartitionAutoEnCours, setRepartitionAutoEnCours] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -82,7 +86,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   }
 
   const chargerEquipes = async () => {
-    const { data } = await supabase.from('club_categories').select('id, nom, equipe').eq('club_id', clubId).order('nom')
+    const { data } = await supabase.from('club_categories').select('id, nom, equipe, educateur_id').eq('club_id', clubId).order('nom')
     setEquipesOptions(data || [])
   }
 
@@ -222,13 +226,60 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     }
   }
 
+  // Assigne automatiquement les véhicules du parc aux déplacements qui n'en
+  // ont pas encore (ne touche jamais une assignation déjà faite manuellement).
+  // Traite chaque date séparément avec repartirBus (le même algorithme que
+  // Planning week-end / Répartition mini-bus — horaires-aware, réutilise un
+  // bus qui revient à temps), et exclut du parc dispo, pour cette date, les
+  // plaques déjà prises par un déplacement existant (manuel ou auto) pour
+  // garantir qu'aucun bus n'est doublement réservé le même jour.
+  const repartirAutomatiquement = async () => {
+    setRepartitionAutoEnCours(true)
+    const aTraiter = deplacements.filter(d => !d.vehicule)
+    const parDate = {}
+    aTraiter.forEach(d => { if (!parDate[d.date_depart]) parDate[d.date_depart] = []; parDate[d.date_depart].push(d) })
+
+    const alertes = []
+    const updates = []
+    Object.entries(parDate).forEach(([date, deps]) => {
+      const plaquesDejaPrises = new Set(
+        deplacements.filter(d => d.date_depart === date && d.vehicule)
+          .flatMap(d => d.vehicule.split('+').map(p => p.trim()))
+      )
+      const vehiculesDispos = vehicules.filter(v => !plaquesDejaPrises.has(v.plaque))
+      const resultats = repartirBus(deps, vehiculesDispos)
+      resultats.forEach(r => {
+        if (r.statut === 'insuffisant') {
+          alertes.push(`${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}) — bus insuffisant, prévoir une location`)
+        } else if (r.vehicule) {
+          updates.push({ id: r.id, vehicule: r.vehicule })
+        }
+      })
+    })
+
+    for (const u of updates) {
+      await supabase.from('deplacements').update({ vehicule: u.vehicule }).eq('id', u.id)
+    }
+    setDeplacements(prev => prev.map(d => {
+      const maj = updates.find(u => u.id === d.id)
+      return maj ? { ...d, vehicule: maj.vehicule } : d
+    }))
+    setAlertesLocation(alertes)
+    setRepartitionAutoEnCours(false)
+  }
+
   const creerDeplacement = async () => {
     if (!form.date_depart || !form.lieu_destination.trim()) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
+    // educateur_id résolu depuis la catégorie sélectionnée (pas seulement le nom
+    // en texte libre educateur_responsable) — nécessaire pour que le widget "Mes
+    // déplacements" de l'éducateur sur son Accueil puisse filtrer de façon fiable.
+    const categorieMatch = equipesOptions.find(c => `${c.nom} ${c.equipe || ''}`.trim() === form.equipe)
     const { error } = await supabase.from('deplacements').insert({
       club_id: clubId,
       equipe: form.equipe || null,
+      educateur_id: categorieMatch?.educateur_id || null,
       educateur_responsable: form.educateur_responsable.trim() || null,
       date_depart: form.date_depart,
       heure_depart: form.heure_depart || null,
@@ -384,11 +435,29 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
 
       {vue === 'mois' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          {!readOnly && (
+            <button onClick={repartirAutomatiquement} disabled={repartitionAutoEnCours || loading || vehicules.length === 0}
+              title={vehicules.length === 0 ? 'Ajoute au moins un véhicule au parc' : 'Assigne un bus aux déplacements qui n\'en ont pas encore'}
+              style={{ background: accentColor, color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: repartitionAutoEnCours || vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
+              {repartitionAutoEnCours ? '⏳ Répartition...' : '⚡ Répartition automatique'}
+            </button>
+          )}
           <button onClick={exporterPlanningPDF} disabled={exportingPdf || loading || deplacements.length === 0}
             style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
             {exportingPdf ? '⏳ Génération...' : '📄 Exporter planning annuel PDF'}
           </button>
+        </div>
+      )}
+
+      {vue === 'mois' && alertesLocation.length > 0 && (
+        <div style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
+          <div style={{ fontWeight: 700, color: '#fb923c', marginBottom: '8px', fontSize: '13px' }}>
+            ⚠️ {alertesLocation.length} déplacement{alertesLocation.length > 1 ? 's' : ''} nécessite{alertesLocation.length > 1 ? 'nt' : ''} un bus de location
+          </div>
+          {alertesLocation.map((msg, i) => (
+            <div key={i} style={{ fontSize: '12px', color: '#fbbf24', marginTop: '4px' }}>• {msg}</div>
+          ))}
         </div>
       )}
 
@@ -420,7 +489,24 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                     <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor }}>✅ Bus OK</span>
                   )}
                 </div>
-                {deps.map(d => {
+                {Object.entries(grouperParSemaine(deps)).map(([semaineLabel, depsSemaine]) => {
+                  const semaineKey = `${cle}_${semaineLabel}`
+                  const ouvert = semaineOuverte[semaineKey]
+                  return (
+                    <div key={semaineLabel} style={{ marginTop: '10px' }}>
+                      <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [semaineKey]: !ouvert }))}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 14px', background: ouvert ? '#161616' : '#0d0d0d',
+                          border: '1px solid #1a1a1a', borderRadius: '8px', color: '#ccc', cursor: 'pointer',
+                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
+                        }}>
+                        <span>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</span>
+                        <span style={{ color: '#666' }}>{ouvert ? '▲' : '▼'}</span>
+                      </button>
+                      {ouvert && (
+                        <div style={{ paddingTop: '10px' }}>
+                          {depsSemaine.map(d => {
                   const cap = capaciteVehicule(d)
                   const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
                   const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
@@ -492,6 +578,11 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                               })}
                             </div>
                           )}
+                        </div>
+                      )}
+                    </div>
+                          )
+                        })}
                         </div>
                       )}
                     </div>

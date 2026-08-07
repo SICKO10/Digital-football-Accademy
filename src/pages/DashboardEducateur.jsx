@@ -608,6 +608,51 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
   const compterStatutPresence = (val) => dispoProchainEnt.filter(d => d.statut === val).length
 
+  // Déplacements à venir assignés à cet éducateur (educateur_id résolu à la
+  // création dans Deplacements.jsx/RepartitionMiniBus.jsx/PlanningWeekEnd.jsx
+  // depuis la catégorie choisie) — les déplacements créés avant ce câblage
+  // n'auront pas educateur_id renseigné et n'apparaîtront pas ici.
+  const [mesDeplacements, setMesDeplacements] = useState([])
+  useEffect(() => {
+    if (!clubId || !userId) { Promise.resolve().then(() => setMesDeplacements([])); return }
+    const aujourdHuiStr = new Date().toISOString().split('T')[0]
+    supabase.from('deplacements').select('*').eq('club_id', clubId).eq('educateur_id', userId)
+      .gte('date_depart', aujourdHuiStr).order('date_depart', { ascending: true }).limit(5)
+      .then(({ data }) => setMesDeplacements(data || []))
+  }, [clubId, userId])
+
+  const [deplacementFicheOuverte, setDeplacementFicheOuverte] = useState(null)
+  const [fiche, setFiche] = useState({})
+  const [savingFiche, setSavingFiche] = useState(false)
+
+  const ouvrirFicheDeplacement = (dep) => {
+    setFiche({
+      km_avant: dep.km_avant ?? '', km_apres: dep.km_apres ?? '',
+      gasoil_avant: dep.gasoil_avant ?? '', gasoil_apres: dep.gasoil_apres ?? '',
+      conducteur: dep.conducteur ?? '', remarques_vehicule: dep.remarques_vehicule ?? '', remarques: dep.remarques ?? '',
+    })
+    setDeplacementFicheOuverte(dep.id)
+  }
+
+  const sauvegarderFiche = async () => {
+    setSavingFiche(true)
+    const { error } = await supabase.from('deplacements').update({
+      km_avant: fiche.km_avant !== '' ? parseFloat(fiche.km_avant) : null,
+      km_apres: fiche.km_apres !== '' ? parseFloat(fiche.km_apres) : null,
+      gasoil_avant: fiche.gasoil_avant.trim() || null,
+      gasoil_apres: fiche.gasoil_apres.trim() || null,
+      conducteur: fiche.conducteur.trim() || null,
+      remarques_vehicule: fiche.remarques_vehicule.trim() || null,
+      remarques: fiche.remarques.trim() || null,
+      fiche_completee: true,
+      fiche_completee_le: new Date().toISOString(),
+    }).eq('id', deplacementFicheOuverte)
+    setSavingFiche(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setMesDeplacements(prev => prev.map(d => (d.id === deplacementFicheOuverte ? { ...d, ...fiche, fiche_completee: true } : d)))
+    setDeplacementFicheOuverte(null)
+  }
+
   // Fenêtre lundi → dimanche de la semaine en cours
   const now = new Date()
   const joursDepuisLundi = (now.getDay() + 6) % 7
@@ -722,6 +767,38 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         </div>
       </div>
 
+      {/* Déplacements assignés à cet éducateur */}
+      {mesDeplacements.length > 0 && (
+        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
+          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBus /> Mes déplacements à venir</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {mesDeplacements.map(dep => (
+              <div key={dep.id} style={{ padding: '12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dep.lieu_destination}{dep.equipe ? ` · ${dep.equipe}` : ''}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>
+                      {new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {dep.heure_depart ? ` · départ ${dep.heure_depart.slice(0, 5)}` : ''}
+                    </p>
+                  </div>
+                  {dep.vehicule && <span style={{ fontSize: '11px', color: '#60a5fa', fontWeight: 600, whiteSpace: 'nowrap' }}>🚌 {dep.vehicule}</span>}
+                </div>
+                {dep.vehicule && (
+                  <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#666' }}>
+                    {dep.nb_personnes != null ? `${dep.nb_personnes} personnes` : ''}{dep.conducteur ? ` · Conducteur : ${dep.conducteur}` : ''}
+                  </p>
+                )}
+                <button onClick={() => ouvrirFicheDeplacement(dep)}
+                  style={{ marginTop: '10px', background: 'transparent', border: '1px solid #2a2a2a', color: dep.fiche_completee ? '#4ade80' : '#9ca3af', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {dep.fiche_completee ? '✅ Fiche remplie — modifier' : '✏️ Remplir la fiche'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Actions rapides */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
@@ -800,6 +877,70 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
       </div>
+
+      {deplacementFicheOuverte && (() => {
+        const dep = mesDeplacements.find(d => d.id === deplacementFicheOuverte)
+        if (!dep) return null
+        const inputSt = { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
+        return (
+          <div onClick={() => setDeplacementFicheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
+              <p style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '16px' }}>📋 Fiche déplacement — {dep.lieu_destination}</p>
+
+              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
+                <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 700 }}>Données automatiques</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '12px', color: '#ccc' }}>
+                  <div>📍 <strong>{dep.lieu_destination || '—'}</strong></div>
+                  <div>👥 <strong>{dep.equipe || '—'}</strong></div>
+                  <div>🎯 <strong>{{ match: 'Match', tournoi: 'Tournoi', stage: 'Stage', autre: 'Autre' }[dep.nature] || 'Match'}</strong></div>
+                  <div>🚌 <strong>{dep.vehicule || '—'}</strong></div>
+                  <div>📅 <strong>{new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}</strong></div>
+                  <div>🕐 <strong>{dep.heure_depart || '—'}</strong></div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <label style={{ fontSize: '11px', color: '#888' }}>Km avant
+                    <input type="number" placeholder="ex: 45230" value={fiche.km_avant} onChange={e => setFiche(p => ({ ...p, km_avant: e.target.value }))} style={inputSt} />
+                  </label>
+                  <label style={{ fontSize: '11px', color: '#888' }}>Km après
+                    <input type="number" placeholder="ex: 45380" value={fiche.km_apres} onChange={e => setFiche(p => ({ ...p, km_apres: e.target.value }))} style={inputSt} />
+                  </label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <label style={{ fontSize: '11px', color: '#888' }}>Gasoil avant
+                    <input type="text" placeholder="ex: 4/4" value={fiche.gasoil_avant} onChange={e => setFiche(p => ({ ...p, gasoil_avant: e.target.value }))} style={inputSt} />
+                  </label>
+                  <label style={{ fontSize: '11px', color: '#888' }}>Gasoil après
+                    <input type="text" placeholder="ex: 2/4" value={fiche.gasoil_apres} onChange={e => setFiche(p => ({ ...p, gasoil_apres: e.target.value }))} style={inputSt} />
+                  </label>
+                </div>
+                <label style={{ fontSize: '11px', color: '#888' }}>Nom du conducteur
+                  <input type="text" placeholder="Prénom Nom" value={fiche.conducteur} onChange={e => setFiche(p => ({ ...p, conducteur: e.target.value }))} style={inputSt} />
+                </label>
+                <label style={{ fontSize: '11px', color: '#888' }}>Remarques sur le véhicule
+                  <textarea placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={fiche.remarques_vehicule} onChange={e => setFiche(p => ({ ...p, remarques_vehicule: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+                </label>
+                <label style={{ fontSize: '11px', color: '#888' }}>Remarques générales
+                  <textarea placeholder="Observations sur le déplacement..." value={fiche.remarques} onChange={e => setFiche(p => ({ ...p, remarques: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+                <button onClick={sauvegarderFiche} disabled={savingFiche}
+                  style={{ flex: 1, background: '#4ade80', color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, cursor: savingFiche ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingFiche ? 0.6 : 1 }}>
+                  {savingFiche ? 'Enregistrement...' : '💾 Enregistrer la fiche'}
+                </button>
+                <button onClick={() => setDeplacementFicheOuverte(null)}
+                  style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
