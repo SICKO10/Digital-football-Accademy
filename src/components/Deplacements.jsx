@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import PlanningWeekEnd from './PlanningWeekEnd'
+import RepartitionBus from './RepartitionBus'
 
 const NATURES = [
   { val: 'match', label: '⚽ Match', emoji: '⚽' },
@@ -51,6 +52,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [saving, setSaving] = useState(false)
   const [retourEdits, setRetourEdits] = useState({}) // { [id]: { km_apres, gasoil_apres } }
   const [savingRetour, setSavingRetour] = useState({}) // { [id]: bool }
+  const [clubJoueurs, setClubJoueurs] = useState([])
+  const [deplacementBusOuvert, setDeplacementBusOuvert] = useState(null)
 
   const charger = async () => {
     setLoading(true)
@@ -75,7 +78,28 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setVehicules(data || [])
   }
 
-  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules() } }, [clubId])
+  // Tous les joueurs du club (toutes équipes/éducateurs confondus), pour la
+  // répartition bus — même chaîne club_educateurs → equipe_joueurs que
+  // DashboardClub.jsx (un club n'a pas de table joueurs propre : chaque
+  // éducateur affilié garde son propre roster equipe_joueurs).
+  const chargerClubJoueurs = async () => {
+    const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', clubId).eq('statut', 'accepte')
+    const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) { setClubJoueurs([]); return }
+    const { data } = await supabase.from('equipe_joueurs').select('id, prenom, nom, poste, club_categorie_id').in('educateur_id', educateurIds)
+    setClubJoueurs(data || [])
+  }
+
+  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules(); chargerClubJoueurs() } }, [clubId])
+
+  // Roster par défaut d'un déplacement : tous les joueurs de la catégorie dont
+  // le libellé (nom + equipe) correspond au champ texte deplacements.equipe —
+  // pas d'étape de sélection des convoqués pour l'instant (chantier séparé).
+  const joueursDuDeplacement = (d) => {
+    const cat = equipesOptions.find(c => `${c.nom} ${c.equipe || ''}`.trim() === d.equipe)
+    if (!cat) return []
+    return clubJoueurs.filter(j => j.club_categorie_id === cat.id)
+  }
 
   // Capacité totale couverte par le(s) véhicule(s) assigné(s) à un déplacement —
   // d.vehicule peut être une seule plaque ou "PLAQUE1 + PLAQUE2" (bus combinés,
@@ -203,10 +227,22 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           </div>
         </div>
         {!readOnly && (
-          <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-            style={{ marginTop: '10px', background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+            <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
+              style={{ background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
+            </button>
+            <button onClick={() => setDeplacementBusOuvert(deplacementBusOuvert === d.id ? null : d.id)}
+              style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              🚌 {deplacementBusOuvert === d.id ? 'Fermer' : 'Répartir les bus'}
+            </button>
+          </div>
+        )}
+
+        {deplacementBusOuvert === d.id && (
+          <div style={{ marginTop: '14px', padding: '16px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+            <RepartitionBus deplacementId={d.id} joueurs={joueursDuDeplacement(d)} onSaved={() => setDeplacementBusOuvert(null)} />
+          </div>
         )}
       </div>
     )
