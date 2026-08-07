@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import PlanningWeekEnd from './PlanningWeekEnd'
 import { repartirBus } from '../lib/repartitionBus'
 
 const NATURES = [
@@ -51,7 +50,6 @@ const grouperParSemaine = (deplacements) => {
 }
 
 export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
-  const [vue, setVue] = useState('liste') // 'liste' | 'mois' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
@@ -306,72 +304,6 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     )
   }
 
-  const aujourdHui = new Date().toISOString().split('T')[0]
-  const aVenir = deplacements.filter(d => d.date_depart >= aujourdHui).sort((a, b) => a.date_depart.localeCompare(b.date_depart))
-  const historique = deplacements.filter(d => d.date_depart < aujourdHui).sort((a, b) => b.date_depart.localeCompare(a.date_depart))
-
-  const renderCard = (d) => {
-    const edit = retourEdits[d.id] || { km_apres: d.km_apres ?? '', gasoil_apres: d.gasoil_apres ?? '' }
-    const retourComplet = d.km_apres != null && d.gasoil_apres
-    return (
-      <div key={d.id} style={{ ...st.card, marginBottom: '10px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-          <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
-              {natureInfo(d.nature).emoji} {d.lieu_destination}
-              {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#666', fontWeight: 600 }}>· {d.equipe}</span>}
-            </p>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
-              {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-              {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
-              {d.heure_retour_estimee ? ` · retour ${d.heure_retour_estimee.slice(0, 5)}` : ''}
-              {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
-              {d.educateur_responsable ? ` · Resp. ${d.educateur_responsable}` : ''}
-            </p>
-            {(d.vehicule || d.conducteur) && (
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#777' }}>
-                {d.vehicule ? `🚐 ${d.vehicule}` : ''}{d.vehicule && d.conducteur ? ' · ' : ''}{d.conducteur ? `👤 ${d.conducteur}` : ''}
-              </p>
-            )}
-          </div>
-          <span style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>
-            {natureInfo(d.nature).label}
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #1a1a1a' }}>
-          <div>
-            <p style={st.label}>Km avant</p>
-            <p style={{ margin: 0, fontSize: '13px', color: d.km_avant != null ? '#fff' : '#444' }}>{d.km_avant != null ? `${d.km_avant} km` : '—'}</p>
-          </div>
-          <div>
-            <p style={st.label}>Gasoil avant</p>
-            <p style={{ margin: 0, fontSize: '13px', color: d.gasoil_avant ? '#fff' : '#444' }}>{d.gasoil_avant || '—'}</p>
-          </div>
-          <div>
-            <p style={st.label}>Km après (retour)</p>
-            <input type="number" value={edit.km_apres} placeholder="—" disabled={readOnly}
-              onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
-              style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
-          </div>
-          <div>
-            <p style={st.label}>Gasoil après (retour)</p>
-            <input type="text" value={edit.gasoil_apres} placeholder="ex: 2/4" disabled={readOnly}
-              onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
-              style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
-          </div>
-        </div>
-        {!readOnly && (
-          <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
-            <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-              style={{ background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   return (
     <div>
@@ -380,7 +312,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🚌 Déplacements</h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
-        {vue === 'liste' && !readOnly && (
+        {!readOnly && (
           <button onClick={() => setShowForm(v => !v)}
             style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
@@ -388,34 +320,21 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
-        {[['liste', 'Liste'], ['mois', 'Vue mois'], ['weekend', 'Planning week-end']].map(([val, label]) => (
-          <button key={val} onClick={() => setVue(val)}
-            style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: vue === val ? accentColor : '#1a1a1a', color: vue === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {label}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {!readOnly && (
+          <button onClick={repartirAutomatiquement} disabled={repartitionAutoEnCours || loading || vehicules.length === 0}
+            title={vehicules.length === 0 ? 'Ajoute au moins un véhicule au parc' : 'Assigne un bus aux déplacements qui n\'en ont pas encore'}
+            style={{ background: accentColor, color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: repartitionAutoEnCours || vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
+            {repartitionAutoEnCours ? '⏳ Répartition...' : '⚡ Répartition automatique'}
           </button>
-        ))}
+        )}
+        <button onClick={exporterPlanningPDF} disabled={exportingPdf || loading || deplacements.length === 0}
+          style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
+          {exportingPdf ? '⏳ Génération...' : '📄 Exporter planning annuel PDF'}
+        </button>
       </div>
 
-      {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
-
-      {vue === 'mois' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          {!readOnly && (
-            <button onClick={repartirAutomatiquement} disabled={repartitionAutoEnCours || loading || vehicules.length === 0}
-              title={vehicules.length === 0 ? 'Ajoute au moins un véhicule au parc' : 'Assigne un bus aux déplacements qui n\'en ont pas encore'}
-              style={{ background: accentColor, color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: repartitionAutoEnCours || vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
-              {repartitionAutoEnCours ? '⏳ Répartition...' : '⚡ Répartition automatique'}
-            </button>
-          )}
-          <button onClick={exporterPlanningPDF} disabled={exportingPdf || loading || deplacements.length === 0}
-            style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
-            {exportingPdf ? '⏳ Génération...' : '📄 Exporter planning annuel PDF'}
-          </button>
-        </div>
-      )}
-
-      {vue === 'mois' && alertesLocation.length > 0 && (
+      {alertesLocation.length > 0 && (
         <div style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
           <div style={{ fontWeight: 700, color: '#fb923c', marginBottom: '8px', fontSize: '13px' }}>
             ⚠️ {alertesLocation.length} déplacement{alertesLocation.length > 1 ? 's' : ''} nécessite{alertesLocation.length > 1 ? 'nt' : ''} un bus de location
@@ -426,140 +345,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         </div>
       )}
 
-      {vue === 'mois' && (
-        loading ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-        ) : (() => {
-          const parMois = grouperParMois(deplacements)
-          const cles = Object.keys(parMois)
-          if (cles.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement enregistré.</p>
-          return cles.map(cle => {
-            const deps = parMois[cle]
-            const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-            const aVerifier = deps.filter(d => {
-              const cap = capaciteVehicule(d)
-              return !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
-            }).length
-            return (
-              <div key={cle} style={{ marginBottom: '2rem' }}>
-                <div style={{
-                  fontSize: '13px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em',
-                  padding: '6px 0 12px', borderBottom: '1px solid #1a1a1a', marginBottom: '14px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
-                }}>
-                  <span>📅 {label} · {deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
-                  {aVerifier > 0 ? (
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>⚠️ {aVerifier} à vérifier</span>
-                  ) : (
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor }}>✅ Bus OK</span>
-                  )}
-                </div>
-                {Object.entries(grouperParSemaine(deps)).map(([semaineLabel, depsSemaine]) => {
-                  const semaineKey = `${cle}_${semaineLabel}`
-                  const ouvert = semaineOuverte[semaineKey]
-                  return (
-                    <div key={semaineLabel} style={{ marginTop: '10px' }}>
-                      <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [semaineKey]: !ouvert }))}
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 14px', background: ouvert ? '#161616' : '#0d0d0d',
-                          border: '1px solid #1a1a1a', borderRadius: '8px', color: '#ccc', cursor: 'pointer',
-                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
-                        }}>
-                        <span>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</span>
-                        <span style={{ color: '#666' }}>{ouvert ? '▲' : '▼'}</span>
-                      </button>
-                      {ouvert && (
-                        <div style={{ paddingTop: '10px' }}>
-                          {depsSemaine.map(d => {
-                  const cap = capaciteVehicule(d)
-                  const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
-                  const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
-                  return (
-                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : '1px solid #1a1a1a' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-                        <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
-                            {natureInfo(d.nature).emoji} {d.lieu_destination}
-                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#666', fontWeight: 600 }}>· {d.equipe}</span>}
-                          </p>
-                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
-                            {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
-                            {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
-                          </p>
-                        </div>
-                        <span style={{
-                          fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
-                          background: !d.vehicule ? '#6b728020' : insuffisant ? '#f59e0b15' : accentColor + '15',
-                          color: !d.vehicule ? '#9ca3af' : insuffisant ? '#f59e0b' : accentColor,
-                        }}>
-                          {!d.vehicule
-                            ? 'Aucun véhicule assigné'
-                            : cap == null
-                              ? `🚐 ${d.vehicule} (hors parc actuel)`
-                              : insuffisant
-                                ? `⚠️ Capacité insuffisante (${d.nb_personnes}p / ${cap} places)`
-                                : `✅ ${d.vehicule} · ${d.nb_personnes ?? '?'}/${cap} places`}
-                        </span>
-                      </div>
-
-                      {!readOnly && (
-                        <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
-                          style={{ marginTop: '12px', background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          🚌 {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
-                        </button>
-                      )}
-
-                      {assignationBusOuverte === d.id && (
-                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
-                          {vehicules.length === 0 ? (
-                            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              {vehicules.map(v => {
-                                const coche = plaquesActuelles.includes(v.plaque)
-                                const dejaUtilise = deplacements.some(autre =>
-                                  autre.id !== d.id && autre.date_depart === d.date_depart &&
-                                  (autre.vehicule || '').split('+').map(p => p.trim()).includes(v.plaque)
-                                )
-                                return (
-                                  <label key={v.plaque} style={{
-                                    display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
-                                    cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
-                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : '#1a1a1a',
-                                    border: coche ? `1px solid ${accentColor}50` : '1px solid #2a2a2a',
-                                    opacity: dejaUtilise && !coche ? 0.4 : 1,
-                                  }}>
-                                    <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
-                                      onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
-                                      style={{ accentColor, width: '15px', height: '15px' }} />
-                                    <span style={{ fontSize: '12px', color: coche ? accentColor : '#d1d5db', fontWeight: coche ? 600 : 400 }}>
-                                      {v.plaque} ({v.capacite} pl.)
-                                    </span>
-                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: '#6b7280', marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
-                                  </label>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                          )
-                        })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })
-        })()
-      )}
-
-      {vue === 'liste' && showForm && !readOnly && (
+      {showForm && !readOnly && (
         <div style={{ ...st.card, marginBottom: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
             <div>
@@ -633,41 +419,170 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         </div>
       )}
 
-      {vue === 'liste' && (
+      {(
         loading ? (
           <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-        ) : (
-          <>
-            <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>📅 À venir {aVenir.length > 0 ? `(${aVenir.length})` : ''}</p>
-            {aVenir.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>Aucun déplacement à venir.</p>
-            ) : (
-              <div style={{ marginBottom: '1.5rem' }}>
-                {Object.entries(grouperParSemaine(aVenir)).map(([semaine, items]) => (
-                  <div key={semaine}>
-                    <div style={{
-                      fontSize: '12px', fontWeight: '700', color: accentColor,
-                      textTransform: 'uppercase', letterSpacing: '0.08em',
-                      padding: '8px 0 6px', borderBottom: '1px solid #1f2937',
-                      marginBottom: '12px'
-                    }}>
-                      📅 Semaine du {semaine} · {items.length} déplacement{items.length > 1 ? 's' : ''}
-                    </div>
-                    {items.map(renderCard)}
-                  </div>
-                ))}
-              </div>
-            )}
+        ) : (() => {
+          const parMois = grouperParMois(deplacements)
+          const cles = Object.keys(parMois)
+          if (cles.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement enregistré.</p>
+          return cles.map(cle => {
+            const deps = parMois[cle]
+            const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            const aVerifier = deps.filter(d => {
+              const cap = capaciteVehicule(d)
+              return !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+            }).length
+            return (
+              <div key={cle} style={{ marginBottom: '2rem' }}>
+                <div style={{
+                  fontSize: '13px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em',
+                  padding: '6px 0 12px', borderBottom: '1px solid #1a1a1a', marginBottom: '14px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
+                }}>
+                  <span>📅 {label} · {deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
+                  {aVerifier > 0 ? (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>⚠️ {aVerifier} à vérifier</span>
+                  ) : (
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor }}>✅ Bus OK</span>
+                  )}
+                </div>
+                {Object.entries(grouperParSemaine(deps)).map(([semaineLabel, depsSemaine]) => {
+                  const semaineKey = `${cle}_${semaineLabel}`
+                  const ouvert = semaineOuverte[semaineKey]
+                  return (
+                    <div key={semaineLabel} style={{ marginTop: '10px' }}>
+                      <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [semaineKey]: !ouvert }))}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 14px', background: ouvert ? '#161616' : '#0d0d0d',
+                          border: '1px solid #1a1a1a', borderRadius: '8px', color: '#ccc', cursor: 'pointer',
+                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
+                        }}>
+                        <span>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</span>
+                        <span style={{ color: '#666' }}>{ouvert ? '▲' : '▼'}</span>
+                      </button>
+                      {ouvert && (
+                        <div style={{ paddingTop: '10px' }}>
+                          {depsSemaine.map(d => {
+                  const cap = capaciteVehicule(d)
+                  const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+                  const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
+                  const editRetour = retourEdits[d.id] || { km_apres: d.km_apres ?? '', gasoil_apres: d.gasoil_apres ?? '' }
+                  const retourComplet = d.km_apres != null && d.gasoil_apres
+                  return (
+                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : '1px solid #1a1a1a' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
+                            {natureInfo(d.nature).emoji} {d.lieu_destination}
+                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#666', fontWeight: 600 }}>· {d.equipe}</span>}
+                          </p>
+                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
+                            {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
+                            {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
+                          </p>
+                        </div>
+                        <span style={{
+                          fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
+                          background: !d.vehicule ? '#6b728020' : insuffisant ? '#f59e0b15' : accentColor + '15',
+                          color: !d.vehicule ? '#9ca3af' : insuffisant ? '#f59e0b' : accentColor,
+                        }}>
+                          {!d.vehicule
+                            ? 'Aucun véhicule assigné'
+                            : cap == null
+                              ? `🚐 ${d.vehicule} (hors parc actuel)`
+                              : insuffisant
+                                ? `⚠️ Capacité insuffisante (${d.nb_personnes}p / ${cap} places)`
+                                : `✅ ${d.vehicule} · ${d.nb_personnes ?? '?'}/${cap} places`}
+                        </span>
+                      </div>
 
-            <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>🗂️ Historique {historique.length > 0 ? `(${historique.length})` : ''}</p>
-            {historique.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement dans l'historique.</p>
-            ) : (
-              <div>{historique.map(renderCard)}</div>
-            )}
-          </>
-        )
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
+                        <div>
+                          <p style={st.label}>Km avant</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: d.km_avant != null ? '#fff' : '#444' }}>{d.km_avant != null ? `${d.km_avant} km` : '—'}</p>
+                        </div>
+                        <div>
+                          <p style={st.label}>Gasoil avant</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: d.gasoil_avant ? '#fff' : '#444' }}>{d.gasoil_avant || '—'}</p>
+                        </div>
+                        <div>
+                          <p style={st.label}>Km après (retour)</p>
+                          <input type="number" value={editRetour.km_apres} placeholder="—" disabled={readOnly}
+                            onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
+                            style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
+                        </div>
+                        <div>
+                          <p style={st.label}>Gasoil après (retour)</p>
+                          <input type="text" value={editRetour.gasoil_apres} placeholder="ex: 2/4" disabled={readOnly}
+                            onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
+                            style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
+                        </div>
+                      </div>
+
+                      {!readOnly && (
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                          <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
+                            style={{ background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
+                          </button>
+                          <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
+                            style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            🚌 {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
+                          </button>
+                        </div>
+                      )}
+
+                      {assignationBusOuverte === d.id && (
+                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                          {vehicules.length === 0 ? (
+                            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {vehicules.map(v => {
+                                const coche = plaquesActuelles.includes(v.plaque)
+                                const dejaUtilise = deplacements.some(autre =>
+                                  autre.id !== d.id && autre.date_depart === d.date_depart &&
+                                  (autre.vehicule || '').split('+').map(p => p.trim()).includes(v.plaque)
+                                )
+                                return (
+                                  <label key={v.plaque} style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
+                                    cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
+                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : '#1a1a1a',
+                                    border: coche ? `1px solid ${accentColor}50` : '1px solid #2a2a2a',
+                                    opacity: dejaUtilise && !coche ? 0.4 : 1,
+                                  }}>
+                                    <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
+                                      onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
+                                      style={{ accentColor, width: '15px', height: '15px' }} />
+                                    <span style={{ fontSize: '12px', color: coche ? accentColor : '#d1d5db', fontWeight: coche ? 600 : 400 }}>
+                                      {v.plaque} ({v.capacite} pl.)
+                                    </span>
+                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: '#6b7280', marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                          )
+                        })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })
+        })()
       )}
+
     </div>
   )
 }
