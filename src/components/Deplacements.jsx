@@ -321,8 +321,13 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     // sur la suppression de joueur : la carte disparaît de l'UI en optimiste, mais
     // réapparaît au rechargement car rien n'a vraiment été supprimé en base).
     const { data, error } = await supabase.from('deplacements').delete().eq('id', dep.id).select()
-    if (error) { alert('Erreur : ' + error.message); return }
+    if (error) {
+      console.error('❌ Suppression déplacement échouée :', error.code, error.message, error.details)
+      alert('Erreur : ' + error.message)
+      return
+    }
     if (!data || data.length === 0) {
+      console.warn('⚠️ Suppression déplacement : 0 ligne affectée sans erreur Postgres — bloquée par une policy RLS (voir supabase_deplacements_delete_policy.sql).')
       alert("La suppression n'a pas pu être appliquée (probablement une restriction de permissions côté base). Vérifie tes droits ou contacte le président du club.")
       return
     }
