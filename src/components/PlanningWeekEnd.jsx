@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import { repartirBus } from '../lib/repartitionBus'
+import { repartirBus, toMinutes, MARGE_MIN_DEFAUT } from '../lib/repartitionBus'
 
 const st = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
@@ -40,6 +40,7 @@ export default function PlanningWeekEnd({ clubId, accentColor = '#4ade80' }) {
   const [suggestions, setSuggestions] = useState(null)
   const [publishing, setPublishing] = useState(false)
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [busSelectionnes, setBusSelectionnes] = useState({}) // { [suggestion._id]: ['AB-123-CD', ...] }
 
   const charger = async () => {
     setLoadingRef(true)
@@ -72,17 +73,44 @@ export default function PlanningWeekEnd({ clubId, accentColor = '#4ade80' }) {
     const valides = lignes.filter(l => l.club_categorie_id && l.heure_depart)
     const samedi = repartirBus(valides.filter(l => l.jour === 'samedi'), vehicules)
     const dimanche = repartirBus(valides.filter(l => l.jour === 'dimanche'), vehicules)
-    setSuggestions([...samedi, ...dimanche].map(s => ({
+    const nouvellesSuggestions = [...samedi, ...dimanche].map(s => ({
       ...s,
       equipe: categorieLabel(s.club_categorie_id),
       date_depart: ajourJoursSelonJour(s.jour),
-    })))
+    }))
+    setSuggestions(nouvellesSuggestions)
+    // Pré-coche les bus déjà suggérés par l'algorithme — l'utilisateur ajuste
+    // ensuite manuellement via les cases à cocher.
+    const busInit = {}
+    nouvellesSuggestions.forEach(s => { busInit[s._id] = s.vehicules || [] })
+    setBusSelectionnes(busInit)
   }
 
   const ajourJoursSelonJour = (jour) => (jour === 'dimanche' ? ajouterJours(weekendDate, 1) : weekendDate)
 
   const modifierSuggestion = (id, champ, valeur) => {
     setSuggestions(prev => prev.map(s => (s._id === id ? { ...s, [champ]: valeur } : s)))
+  }
+
+  const toggleBus = (suggId, plaque) => {
+    setBusSelectionnes(prev => {
+      const actuel = prev[suggId] || []
+      return { ...prev, [suggId]: actuel.includes(plaque) ? actuel.filter(p => p !== plaque) : [...actuel, plaque] }
+    })
+  }
+
+  // Deux déplacements se chevauchent seulement s'ils sont le même jour et que
+  // leurs créneaux [départ, retour estimé] se recoupent (+ marge) — un même
+  // bus peut couvrir deux déplacements successifs dans la journée, ce n'est
+  // un vrai doublon que s'ils tombent en même temps.
+  const seChevauchent = (a, b) => {
+    if (a.jour !== b.jour) return false
+    const aDebut = toMinutes(a.heure_depart)
+    const bDebut = toMinutes(b.heure_depart)
+    if (aDebut == null || bDebut == null) return true
+    const aFin = toMinutes(a.heure_retour_estimee) ?? aDebut
+    const bFin = toMinutes(b.heure_retour_estimee) ?? bDebut
+    return aDebut < bFin + MARGE_MIN_DEFAUT && bDebut < aFin + MARGE_MIN_DEFAUT
   }
 
   const nbInsuffisants = (suggestions || []).filter(s => s.statut === 'insuffisant' && !s.vehicule).length
@@ -106,7 +134,7 @@ export default function PlanningWeekEnd({ clubId, accentColor = '#4ade80' }) {
         heure_retour_estimee: s.heure_retour_estimee || null,
         lieu_destination: s.lieu_destination || null,
         nature: 'match',
-        vehicule: s.vehicule || null,
+        vehicule: (busSelectionnes[s._id] || []).join(' + ') || null,
         conducteur: s.conducteur || null,
         nb_personnes: s.nb_personnes !== '' ? parseInt(s.nb_personnes) : null,
         created_by: user?.id || null,
@@ -145,11 +173,13 @@ export default function PlanningWeekEnd({ clubId, accentColor = '#4ade80' }) {
     setPublishSuccess(true)
     setLignes([ligneVide()])
     setSuggestions(null)
+    setBusSelectionnes({})
   }
 
   const recommencer = () => {
     setLignes([ligneVide()])
     setSuggestions(null)
+    setBusSelectionnes({})
     setPublishSuccess(false)
   }
 
@@ -273,11 +303,37 @@ export default function PlanningWeekEnd({ clubId, accentColor = '#4ade80' }) {
                           <td style={st.td}>{s.heure_retour_estimee || '—'}</td>
                           <td style={st.td}>{s.lieu_destination || '—'}</td>
                           <td style={st.td}>
-                            {s.statut === 'combine' && <p style={{ margin: '0 0 4px', fontSize: '11px', color: accentColor, fontWeight: 600 }}>🔀 {s.vehicule}</p>}
-                            <select style={{ ...st.input, borderColor: !s.vehicule ? '#ef444460' : '#2a2a2a' }} value={s.statut === 'combine' ? '' : s.vehicule} onChange={e => modifierSuggestion(s._id, 'vehicule', e.target.value)}>
-                              <option value="">{s.statut === 'combine' ? '— remplacer par un seul bus —' : '— aucun —'}</option>
-                              {vehicules.map(v => <option key={v.id} value={v.plaque}>{v.plaque} ({v.capacite} pl.)</option>)}
-                            </select>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '170px' }}>
+                              {vehicules.map(v => {
+                                const selectionnes = busSelectionnes[s._id] || []
+                                const coche = selectionnes.includes(v.plaque)
+                                const dejaUtilise = (suggestions || []).some(autre =>
+                                  autre._id !== s._id && (busSelectionnes[autre._id] || []).includes(v.plaque) && seChevauchent(s, autre)
+                                )
+                                return (
+                                  <label key={v.plaque} style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '6px',
+                                    cursor: dejaUtilise && !coche ? 'not-allowed' : 'pointer',
+                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : '#1a1a1a',
+                                    border: coche ? `1px solid ${accentColor}50` : '1px solid #2a2a2a',
+                                    opacity: dejaUtilise && !coche ? 0.4 : 1,
+                                  }}>
+                                    <input type="checkbox" checked={coche} disabled={dejaUtilise && !coche}
+                                      onChange={() => toggleBus(s._id, v.plaque)}
+                                      style={{ accentColor, width: '14px', height: '14px' }} />
+                                    <span style={{ fontSize: '11px', color: coche ? accentColor : '#ccc', fontWeight: coche ? 600 : 400 }}>
+                                      {v.plaque} ({v.capacite} pl.)
+                                    </span>
+                                    {dejaUtilise && !coche && <span style={{ fontSize: '9px', color: '#666', marginLeft: 'auto' }}>déjà pris</span>}
+                                  </label>
+                                )
+                              })}
+                              {(busSelectionnes[s._id]?.length > 0) && (
+                                <div style={{ fontSize: '10px', color: accentColor, marginTop: '2px' }}>
+                                  ✅ {busSelectionnes[s._id].join(' + ')} · {busSelectionnes[s._id].reduce((sum, p) => sum + (vehicules.find(v => v.plaque === p)?.capacite || 0), 0)} places
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td style={st.td}><input style={st.input} placeholder="Nom du conducteur" value={s.conducteur} onChange={e => modifierSuggestion(s._id, 'conducteur', e.target.value)} /></td>
                         </tr>
