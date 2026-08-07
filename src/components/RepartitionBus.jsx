@@ -13,7 +13,7 @@ const BUS_LABELS = {
 }
 const CAPACITE_BUS = 9
 
-export default function RepartitionBus({ deplacementId, joueurs, onSaved, readOnly = false }) {
+export default function RepartitionBus({ deplacementId, joueurs, onSaved }) {
   const [repartition, setRepartition] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,44 +64,38 @@ export default function RepartitionBus({ deplacementId, joueurs, onSaved, readOn
         })}
       </div>
 
-      {readOnly ? (
-        <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>La répartition nominative des joueurs par bus est gérée par l'éducateur de l'équipe.</p>
-      ) : (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
-            {joueurs.map(j => {
-              const busActuel = repartition[j.id] || 1
-              const { color: couleurBus } = BUS_LABELS[busActuel]
-              return (
-                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: '#151515', borderRadius: '8px', border: '1px solid #262626' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: couleurBus + '30', color: couleurBus, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                    {(j.prenom?.[0] || '') + (j.nom?.[0] || '')}
-                  </div>
-                  <span style={{ flex: 1, fontSize: '13px', color: '#fff', fontWeight: 500 }}>{j.prenom} {j.nom}</span>
-                  {j.poste && <span style={{ fontSize: '11px', color: '#666' }}>{j.poste}</span>}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {[1, 2, 3].map(busNum => {
-                      const { color, bg } = BUS_LABELS[busNum]
-                      const actif = busActuel === busNum
-                      return (
-                        <button key={busNum} onClick={() => assignerBus(j.id, busNum)}
-                          style={{ padding: '4px 9px', borderRadius: '6px', border: actif ? `2px solid ${color}` : '2px solid #333', background: actif ? bg : 'transparent', color: actif ? color : '#666', fontSize: '11px', fontWeight: 700, cursor: 'pointer', minWidth: '50px', fontFamily: 'Inter, sans-serif' }}>
-                          {busNum === 3 ? '🚐 Loc.' : `🚌 B${busNum}`}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+        {joueurs.map(j => {
+          const busActuel = repartition[j.id] || 1
+          const { color: couleurBus } = BUS_LABELS[busActuel]
+          return (
+            <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: '#151515', borderRadius: '8px', border: '1px solid #262626' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: couleurBus + '30', color: couleurBus, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
+                {(j.prenom?.[0] || '') + (j.nom?.[0] || '')}
+              </div>
+              <span style={{ flex: 1, fontSize: '13px', color: '#fff', fontWeight: 500 }}>{j.prenom} {j.nom}</span>
+              {j.poste && <span style={{ fontSize: '11px', color: '#666' }}>{j.poste}</span>}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[1, 2, 3].map(busNum => {
+                  const { color, bg } = BUS_LABELS[busNum]
+                  const actif = busActuel === busNum
+                  return (
+                    <button key={busNum} onClick={() => assignerBus(j.id, busNum)}
+                      style={{ padding: '4px 9px', borderRadius: '6px', border: actif ? `2px solid ${color}` : '2px solid #333', background: actif ? bg : 'transparent', color: actif ? color : '#666', fontSize: '11px', fontWeight: 700, cursor: 'pointer', minWidth: '50px', fontFamily: 'Inter, sans-serif' }}>
+                      {busNum === 3 ? '🚐 Loc.' : `🚌 B${busNum}`}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
-          <button onClick={sauvegarder} disabled={saving}
-            style={{ width: '100%', padding: '11px', background: saving ? '#333' : '#4ade80', color: saving ? '#999' : '#0a0a0a', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {saving ? 'Sauvegarde...' : '💾 Enregistrer la répartition'}
-          </button>
-        </>
-      )}
+      <button onClick={sauvegarder} disabled={saving}
+        style={{ width: '100%', padding: '11px', background: saving ? '#333' : '#4ade80', color: saving ? '#999' : '#0a0a0a', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+        {saving ? 'Sauvegarde...' : '💾 Enregistrer la répartition'}
+      </button>
     </div>
   )
 }

@@ -51,7 +51,7 @@ const grouperParSemaine = (deplacements) => {
   return groupes
 }
 
-export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false, repartitionNominativeReadOnly = false }) {
+export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false, masquerRepartitionBus = false }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'mois' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -392,16 +392,18 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               style={{ background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? '✅ Retour enregistré — modifier' : '💾 Enregistrer le retour'}
             </button>
-            <button onClick={() => setDeplacementBusOuvert(deplacementBusOuvert === d.id ? null : d.id)}
-              style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              🚌 {deplacementBusOuvert === d.id ? 'Fermer' : repartitionNominativeReadOnly ? 'Voir la répartition' : 'Répartir les bus'}
-            </button>
+            {!masquerRepartitionBus && (
+              <button onClick={() => setDeplacementBusOuvert(deplacementBusOuvert === d.id ? null : d.id)}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                🚌 {deplacementBusOuvert === d.id ? 'Fermer' : 'Répartir les bus'}
+              </button>
+            )}
           </div>
         )}
 
-        {deplacementBusOuvert === d.id && (
+        {!masquerRepartitionBus && deplacementBusOuvert === d.id && (
           <div style={{ marginTop: '14px', padding: '16px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
-            <RepartitionBus deplacementId={d.id} joueurs={joueursDuDeplacement(d)} onSaved={() => setDeplacementBusOuvert(null)} readOnly={repartitionNominativeReadOnly} />
+            <RepartitionBus deplacementId={d.id} joueurs={joueursDuDeplacement(d)} onSaved={() => setDeplacementBusOuvert(null)} />
           </div>
         )}
       </div>

@@ -2008,7 +2008,7 @@ export default function DashboardClub() {
           <GestionSponsors clubId={clubId} saison={saisonActuelle} readOnly={!canEditSection('sponsors')} />
         )}
         {activeTab === 'deplacements' && canViewSection('deplacements') && (
-          <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} repartitionNominativeReadOnly />
+          <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} />
         )}
         {activeTab === 'repartition_bus' && canViewSection('repartition_bus') && (
           <RepartitionMiniBus clubId={clubId} readOnly={!canEditSection('repartition_bus')} />
