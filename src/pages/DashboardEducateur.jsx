@@ -608,19 +608,10 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
   const compterStatutPresence = (val) => dispoProchainEnt.filter(d => d.statut === val).length
 
-  // Déplacements à venir assignés à cet éducateur (educateur_id résolu à la
-  // création dans Deplacements.jsx/RepartitionMiniBus.jsx/PlanningWeekEnd.jsx
-  // depuis la catégorie choisie) — les déplacements créés avant ce câblage
-  // n'auront pas educateur_id renseigné et n'apparaîtront pas ici.
-  const [mesDeplacements, setMesDeplacements] = useState([])
-  useEffect(() => {
-    if (!clubId || !userId) { Promise.resolve().then(() => setMesDeplacements([])); return }
-    const aujourdHuiStr = new Date().toISOString().split('T')[0]
-    supabase.from('deplacements').select('*').eq('club_id', clubId).eq('educateur_id', userId)
-      .gte('date_depart', aujourdHuiStr).order('date_depart', { ascending: true }).limit(5)
-      .then(({ data }) => setMesDeplacements(data || []))
-  }, [clubId, userId])
-
+  // Fiche déplacement — les déplacements eux-mêmes sont chargés (et tenus à
+  // jour en temps réel) par DeplacementsAssignesWidget, affiché plus haut sur
+  // cette page ; on garde ici seulement l'état du formulaire, ouvert avec
+  // l'objet déplacement complet passé par le widget (onOuvrirFiche).
   const [deplacementFicheOuverte, setDeplacementFicheOuverte] = useState(null)
   const [fiche, setFiche] = useState({})
   const [savingFiche, setSavingFiche] = useState(false)
@@ -631,7 +622,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       gasoil_avant: dep.gasoil_avant ?? '', gasoil_apres: dep.gasoil_apres ?? '',
       conducteur: dep.conducteur ?? '', remarques_vehicule: dep.remarques_vehicule ?? '', remarques: dep.remarques ?? '',
     })
-    setDeplacementFicheOuverte(dep.id)
+    setDeplacementFicheOuverte(dep)
   }
 
   const sauvegarderFiche = async () => {
@@ -646,10 +637,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       remarques: fiche.remarques.trim() || null,
       fiche_completee: true,
       fiche_completee_le: new Date().toISOString(),
-    }).eq('id', deplacementFicheOuverte)
+    }).eq('id', deplacementFicheOuverte.id)
     setSavingFiche(false)
     if (error) { alert('Erreur : ' + error.message); return }
-    setMesDeplacements(prev => prev.map(d => (d.id === deplacementFicheOuverte ? { ...d, ...fiche, fiche_completee: true } : d)))
     setDeplacementFicheOuverte(null)
   }
 
@@ -704,7 +694,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       </div>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
-      <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" />
+      <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" onOuvrirFiche={ouvrirFicheDeplacement} />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
@@ -766,38 +756,6 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
       </div>
-
-      {/* Déplacements assignés à cet éducateur */}
-      {mesDeplacements.length > 0 && (
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBus /> Mes déplacements à venir</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {mesDeplacements.map(dep => (
-              <div key={dep.id} style={{ padding: '12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dep.lieu_destination}{dep.equipe ? ` · ${dep.equipe}` : ''}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>
-                      {new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {dep.heure_depart ? ` · départ ${dep.heure_depart.slice(0, 5)}` : ''}
-                    </p>
-                  </div>
-                  {dep.vehicule && <span style={{ fontSize: '11px', color: '#60a5fa', fontWeight: 600, whiteSpace: 'nowrap' }}>🚌 {dep.vehicule}</span>}
-                </div>
-                {dep.vehicule && (
-                  <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#666' }}>
-                    {dep.nb_personnes != null ? `${dep.nb_personnes} personnes` : ''}{dep.conducteur ? ` · Conducteur : ${dep.conducteur}` : ''}
-                  </p>
-                )}
-                <button onClick={() => ouvrirFicheDeplacement(dep)}
-                  style={{ marginTop: '10px', background: 'transparent', border: '1px solid #2a2a2a', color: dep.fiche_completee ? '#4ade80' : '#9ca3af', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {dep.fiche_completee ? '✅ Fiche remplie — modifier' : '✏️ Remplir la fiche'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Actions rapides */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
@@ -879,8 +837,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       </div>
 
       {deplacementFicheOuverte && (() => {
-        const dep = mesDeplacements.find(d => d.id === deplacementFicheOuverte)
-        if (!dep) return null
+        const dep = deplacementFicheOuverte
         const inputSt = { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
         return (
           <div onClick={() => setDeplacementFicheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
