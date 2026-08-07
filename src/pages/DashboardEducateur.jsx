@@ -1395,6 +1395,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return acc
   }, {})
 
+  // Après l'enregistrement d'une fiche (Rédiger ou Enregistrer), lie
+  // automatiquement l'entraînement du calendrier qui tombe à la même date —
+  // sans ça, une fiche rédigée/uploadée avec une date ne s'attache à rien tant
+  // que l'éducateur ne va pas cliquer "Attacher une fiche" manuellement sur cet
+  // entraînement (ex: le bouton de la carte "Prochaine séance"). Ne touche
+  // jamais un entraînement qui a déjà une fiche liée par ailleurs.
+  const lierFicheAEntrainementCorrespondant = async (ficheId, dateSeance) => {
+    if (!ficheId || !dateSeance) return
+    const cible = entrainements.find(e => e.date === dateSeance && !e.fiche_id)
+    if (!cible) return
+    await supabase.from('entrainements').update({ fiche_id: ficheId }).eq('id', cible.id)
+    setEntrainements(prev => prev.map(e => (e.id === cible.id ? { ...e, fiche_id: ficheId } : e)))
+  }
+
   const uploaderFichierSeance = async (file) => {
     const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
     const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
@@ -1412,7 +1426,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const uploaderMaSeance = async () => {
     setUploadingSeanceOuverte(true)
-    const { error } = await supabase.from('seances_uploadees').insert({
+    const { data: inserted, error } = await supabase.from('seances_uploadees').insert({
       educateur_id: userId,
       theme: uploadSeanceOuverteForm.theme || null,
       date_seance: uploadSeanceOuverteForm.date_seance || null,
@@ -1423,13 +1437,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       origine: 'ouvert',
       statut: 'en_attente',
       saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-    })
+    }).select().single()
     setUploadingSeanceOuverte(false)
     if (error) {
       console.error('Erreur insertion séance:', error)
       alert('Erreur lors de l\'enregistrement : ' + error.message)
       return
     }
+    await lierFicheAEntrainementCorrespondant(inserted.id, uploadSeanceOuverteForm.date_seance)
     setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
     await chargerMesSeancesOuvertes(userId)
   }
@@ -1574,6 +1589,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       alert('Erreur lors de l\'enregistrement : ' + error.message)
       return
     }
+
+    await lierFicheAEntrainementCorrespondant(inserted.id, fiche.date)
 
     try {
       const pdfBlob = await genererPdfFiche()
