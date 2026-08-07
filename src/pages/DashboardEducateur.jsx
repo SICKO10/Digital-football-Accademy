@@ -2845,6 +2845,32 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     await chargerEntrainements(userId)
   }
 
+  // Convertit en vraies présences les réponses au sondage (dispoJoueurs, table
+  // disponibilites) des joueurs pas encore saisis manuellement pour cet
+  // entraînement — sans ça, "Stats joueurs" (basée uniquement sur
+  // presences_entrainement) reste à 0%/vide pour un joueur qui a pourtant
+  // répondu au sondage, tant que l'éducateur n'a pas cliqué manuellement sur
+  // chacun. Les valeurs de statut sont déjà identiques entre les deux tables
+  // (present/absent/blesse/malade/convoque), aucune conversion nécessaire.
+  const importerReponsesSondage = async (entrainementId) => {
+    const ent = entrainements.find(e => e.id === entrainementId)
+    if (!ent) return
+    const aImporter = joueurs.filter(j => {
+      const p = (ent.presences_entrainement || []).find(p => p.joueur_id === j.id)
+      const nonSaisi = !p || (!p.statut && !p.present)
+      return nonSaisi && j.joueur_id && dispoJoueurs[entrainementId]?.[j.joueur_id]
+    })
+    if (aImporter.length === 0) { afficherToast('Aucune réponse au sondage à importer.', 'erreur'); return }
+    const payload = aImporter.map(j => {
+      const statut = dispoJoueurs[entrainementId][j.joueur_id]
+      return { entrainement_id: entrainementId, joueur_id: j.id, educateur_id: userId, statut, present: statut === 'present' || statut === 'convoque' }
+    })
+    const { error } = await supabase.from('presences_entrainement').upsert(payload, { onConflict: 'entrainement_id,joueur_id' })
+    if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
+    await chargerEntrainements(userId)
+    afficherToast(`${payload.length} présence${payload.length > 1 ? 's' : ''} importée${payload.length > 1 ? 's' : ''} depuis le sondage`)
+  }
+
   const togglePointSeance = async (entrainementId, joueurId, current) => {
     await supabase.from('presences_entrainement').upsert(
       { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, point_seance: !current },
@@ -5053,6 +5079,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               ))}
                               <span style={{ fontSize: '11px', color: '#333' }}>· {t('ent_clique_statut', lang)}</span>
                             </div>
+                            {canEdit('entrainements') && (
+                              <button onClick={() => importerReponsesSondage(e.id)}
+                                style={{ background: 'transparent', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
+                                📥 Importer les réponses au sondage
+                              </button>
+                            )}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '7px' }}>
                               {joueurs.map(j => {
                                 const p = (e.presences_entrainement || []).find(p => p.joueur_id === j.id)
