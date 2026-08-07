@@ -58,6 +58,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(formVide)
   const [saving, setSaving] = useState(false)
+  const [deplacementEnEdition, setDeplacementEnEdition] = useState(null) // id du déplacement en cours d'édition, ou null si création
   const [retourEdits, setRetourEdits] = useState({}) // { [id]: { km_apres, gasoil_apres } }
   const [savingRetour, setSavingRetour] = useState({}) // { [id]: bool }
   const [assignationBusOuverte, setAssignationBusOuverte] = useState(null)
@@ -76,7 +77,12 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       return
     }
     setTableMissing(false)
-    setDeplacements(data || [])
+    // Filet de sécurité si jamais le même id apparaissait deux fois dans une
+    // seule réponse (ne peut pas arriver avec ce select plat sans jointure,
+    // donc n'a aucun effet sur deux lignes distinctes qui partagent juste la
+    // même destination — voir supprimerDeplacement plus bas pour ce cas).
+    const uniques = (data || []).filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)
+    setDeplacements(uniques)
     setLoading(false)
   }
 
@@ -241,16 +247,16 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setRepartitionAutoEnCours(false)
   }
 
-  const creerDeplacement = async () => {
+  // Crée un nouveau déplacement, ou met à jour deplacementEnEdition si défini
+  // (formulaire partagé entre création et édition — mêmes champs des deux côtés).
+  const sauvegarderDeplacement = async () => {
     if (!form.date_depart || !form.lieu_destination.trim()) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
     // educateur_id résolu depuis la catégorie sélectionnée (pas seulement le nom
     // en texte libre educateur_responsable) — nécessaire pour que le widget "Mes
     // déplacements" de l'éducateur sur son Accueil puisse filtrer de façon fiable.
     const categorieMatch = equipesOptions.find(c => `${c.nom} ${c.equipe || ''}`.trim() === form.equipe)
-    const { error } = await supabase.from('deplacements').insert({
-      club_id: clubId,
+    const champs = {
       equipe: form.equipe || null,
       educateur_id: categorieMatch?.educateur_id || null,
       educateur_responsable: form.educateur_responsable.trim() || null,
@@ -264,13 +270,38 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       conducteur: form.conducteur.trim() || null,
       km_avant: form.km_avant !== '' ? parseFloat(form.km_avant) : null,
       gasoil_avant: form.gasoil_avant.trim() || null,
-      created_by: user?.id || null,
-    })
+    }
+    let error
+    if (deplacementEnEdition) {
+      ;({ error } = await supabase.from('deplacements').update(champs).eq('id', deplacementEnEdition))
+    } else {
+      const { data: { user } } = await supabase.auth.getUser()
+      ;({ error } = await supabase.from('deplacements').insert({ ...champs, club_id: clubId, created_by: user?.id || null }))
+    }
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     setForm(formVide())
+    setDeplacementEnEdition(null)
     setShowForm(false)
     await charger()
+  }
+
+  const ouvrirEditionDeplacement = (dep) => {
+    setForm({
+      equipe: dep.equipe || '', educateur_responsable: dep.educateur_responsable || '', date_depart: dep.date_depart || '',
+      heure_depart: dep.heure_depart || '', heure_retour_estimee: dep.heure_retour_estimee || '', nb_personnes: dep.nb_personnes ?? '',
+      lieu_destination: dep.lieu_destination || '', nature: dep.nature || 'match', vehicule: dep.vehicule || '', conducteur: dep.conducteur || '',
+      km_avant: dep.km_avant ?? '', gasoil_avant: dep.gasoil_avant || '',
+    })
+    setDeplacementEnEdition(dep.id)
+    setShowForm(true)
+  }
+
+  const supprimerDeplacement = async (dep) => {
+    if (!confirm(`Supprimer le déplacement vers ${dep.lieu_destination} ?`)) return
+    const { error } = await supabase.from('deplacements').delete().eq('id', dep.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setDeplacements(prev => prev.filter(d => d.id !== dep.id))
   }
 
   const setRetourField = (id, field, value) => {
@@ -313,7 +344,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
         {!readOnly && (
-          <button onClick={() => setShowForm(v => !v)}
+          <button onClick={() => { if (showForm) { setShowForm(false) } else { setForm(formVide()); setDeplacementEnEdition(null); setShowForm(true) } }}
             style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
           </button>
@@ -407,11 +438,11 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={creerDeplacement} disabled={saving || !form.date_depart || !form.lieu_destination.trim()}
+            <button onClick={sauvegarderDeplacement} disabled={saving || !form.date_depart || !form.lieu_destination.trim()}
               style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
-              {saving ? 'Création...' : 'Créer le déplacement'}
+              {saving ? 'Enregistrement...' : deplacementEnEdition ? 'Enregistrer les modifications' : 'Créer le déplacement'}
             </button>
-            <button onClick={() => { setShowForm(false); setForm(formVide()) }}
+            <button onClick={() => { setShowForm(false); setForm(formVide()); setDeplacementEnEdition(null) }}
               style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Annuler
             </button>
@@ -531,6 +562,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                           <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
                             style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             🚌 {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
+                          </button>
+                          <button onClick={() => ouvrirEditionDeplacement(d)}
+                            style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            ✏️ Modifier
+                          </button>
+                          <button onClick={() => supprimerDeplacement(d)}
+                            style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            🗑️ Supprimer
                           </button>
                         </div>
                       )}
