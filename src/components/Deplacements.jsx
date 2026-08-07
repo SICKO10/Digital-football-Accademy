@@ -247,10 +247,26 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setRepartitionAutoEnCours(false)
   }
 
+  // Un bus est en conflit s'il est déjà utilisé par un AUTRE déplacement à la
+  // même date_depart — même règle que le cochage manuel dans "Assigner les
+  // bus" (Vue mois). Le champ Véhicule de ce formulaire est du texte libre
+  // (permet un bus de location hors parc), donc pas de blocage strict ici,
+  // juste un avertissement avant d'enregistrer.
+  const busEnConflitMemeJour = (plaque, date, excludeId) => deplacements.some(d =>
+    d.id !== excludeId && d.date_depart === date &&
+    (d.vehicule || '').split('+').map(p => p.trim()).includes(plaque)
+  )
+
   // Crée un nouveau déplacement, ou met à jour deplacementEnEdition si défini
   // (formulaire partagé entre création et édition — mêmes champs des deux côtés).
   const sauvegarderDeplacement = async () => {
     if (!form.date_depart || !form.lieu_destination.trim()) return
+    const plaquesSaisies = form.vehicule.trim().split('+').map(p => p.trim()).filter(Boolean)
+    const conflits = plaquesSaisies.filter(p => busEnConflitMemeJour(p, form.date_depart, deplacementEnEdition))
+    if (conflits.length > 0) {
+      const suite = confirm(`⚠️ ${conflits.join(', ')} déjà assigné(s) à un autre déplacement le ${new Date(form.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}. Continuer quand même ?`)
+      if (!suite) return
+    }
     setSaving(true)
     // educateur_id résolu depuis la catégorie sélectionnée (pas seulement le nom
     // en texte libre educateur_responsable) — nécessaire pour que le widget "Mes
@@ -299,8 +315,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
 
   const supprimerDeplacement = async (dep) => {
     if (!confirm(`Supprimer le déplacement vers ${dep.lieu_destination} ?`)) return
-    const { error } = await supabase.from('deplacements').delete().eq('id', dep.id)
+    // .select() pour détecter un DELETE silencieusement bloqué par une policy RLS —
+    // Postgres/Supabase renvoie alors error: null avec 0 ligne supprimée, pas une
+    // erreur, donc juste vérifier `error` ne suffit pas (même piège déjà rencontré
+    // sur la suppression de joueur : la carte disparaît de l'UI en optimiste, mais
+    // réapparaît au rechargement car rien n'a vraiment été supprimé en base).
+    const { data, error } = await supabase.from('deplacements').delete().eq('id', dep.id).select()
     if (error) { alert('Erreur : ' + error.message); return }
+    if (!data || data.length === 0) {
+      alert("La suppression n'a pas pu être appliquée (probablement une restriction de permissions côté base). Vérifie tes droits ou contacte le président du club.")
+      return
+    }
     setDeplacements(prev => prev.filter(d => d.id !== dep.id))
   }
 
