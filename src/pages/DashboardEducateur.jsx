@@ -371,7 +371,7 @@ function DonutPresence({ taux }) {
 // ── Camembert multi-segment (présence / absence / blessure / maladie / convoc) ─
 function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
   const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
-  const taux = total ? Math.round((presents || 0) / total * 100) : 0
+  const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
   const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
   if (!total) return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2947,7 +2947,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     const blesses   = saisies.filter(e => getStatut(e) === 'blesse').length
     const malade    = saisies.filter(e => getStatut(e) === 'malade').length
     const total     = saisies.length
-    return { taux: Math.round((presents / total) * 100), presents, convoque, absents, blesses, malade, total }
+    return { taux: Math.round(((presents + convoque) / total) * 100), presents, convoque, absents, blesses, malade, total }
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
@@ -3904,8 +3904,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', width: '100%', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box', marginBottom: '1.5rem' }}>
                         {(() => {
                           const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
-                          const tauxPresenceGlobal = Math.round(totalPresents / tot * 100)
-                          const tauxAbsentsGlobal = 100 - tauxPresenceGlobal
+                          // Convoqués comptent comme présents (comme dans tauxPresence et
+                          // presenceParMois) — donc "Absents" est calculé directement sur
+                          // totalAbsents, pas en complément de la présence (100 - X), sinon
+                          // les convoqués (et blessés/malades) se retrouveraient à tort
+                          // inclus dans le taux d'absence.
+                          const tauxPresenceGlobal = Math.round((totalPresents + totalConvoques) / tot * 100)
+                          const tauxAbsentsGlobal = Math.round(totalAbsents / tot * 100)
                           return [
                             { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: '#4ade80' },
                             { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: '#ef4444', note: t('stats_pres_dont', lang) },

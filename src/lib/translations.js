@@ -671,7 +671,7 @@ export const T = {
   // ── Stats → Présences ─────────────────────────────────────────────────────────
   stats_pres_presence:      { fr: 'Présence',      en: 'Attendance',   pt: 'Presença',        es: 'Asistencia',      it: 'Presenza',        de: 'Anwesenheit'      },
   stats_pres_absents:       { fr: 'Absents',       en: 'Absent',       pt: 'Ausentes',        es: 'Ausentes',        it: 'Assenti',         de: 'Abwesend'         },
-  stats_pres_dont:          { fr: 'dont blessés, malades, convoqués', en: 'incl. injured, sick, called up', pt: 'incl. lesionados, doentes, convocados', es: 'incl. lesionados, enfermos, convocados', it: 'incl. infortunati, malati, convocati', de: 'inkl. Verletzte, Kranke, Nominierte' },
+  stats_pres_dont:          { fr: 'dont blessés, malades', en: 'incl. injured, sick', pt: 'incl. lesionados, doentes', es: 'incl. lesionados, enfermos', it: 'incl. infortunati, malati', de: 'inkl. Verletzte, Kranke' },
   stats_pres_blesses:       { fr: 'Blessés',       en: 'Injured',      pt: 'Lesionados',      es: 'Lesionados',      it: 'Infortunati',     de: 'Verletzt'         },
   stats_pres_malades:       { fr: 'Malades',       en: 'Sick',         pt: 'Doentes',         es: 'Enfermos',        it: 'Malati',          de: 'Krank'            },
   stats_pres_convoques:     { fr: 'Convoqués',     en: 'Called up',    pt: 'Convocados',      es: 'Convocados',      it: 'Convocati',       de: 'Nominiert'        },
