@@ -613,28 +613,37 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   // cette page ; on garde ici seulement l'état du formulaire, ouvert avec
   // l'objet déplacement complet passé par le widget (onOuvrirFiche).
   const [deplacementFicheOuverte, setDeplacementFicheOuverte] = useState(null)
-  const [fiche, setFiche] = useState({})
+  const [fichesBus, setFichesBus] = useState([])
+  const [remarquesGenerales, setRemarquesGenerales] = useState('')
   const [savingFiche, setSavingFiche] = useState(false)
 
+  // Une section par bus réellement assigné (dep.vehicule, "PLAQUE1 + PLAQUE2"
+  // — pas de colonne bus_assignes séparée, ça désynchroniserait de la seule
+  // source de vérité déjà utilisée partout ailleurs pour l'assignation bus).
   const ouvrirFicheDeplacement = (dep) => {
-    setFiche({
-      km_avant: dep.km_avant ?? '', km_apres: dep.km_apres ?? '',
-      gasoil_avant: dep.gasoil_avant ?? '', gasoil_apres: dep.gasoil_apres ?? '',
-      conducteur: dep.conducteur ?? '', remarques_vehicule: dep.remarques_vehicule ?? '', remarques: dep.remarques ?? '',
-    })
+    const busAssignes = (dep.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
+    setFichesBus(busAssignes.map(immat => {
+      const existant = (dep.fiches_bus || []).find(f => f.immat === immat) || {}
+      return {
+        immat,
+        km_avant: existant.km_avant ?? '', km_apres: existant.km_apres ?? '',
+        gasoil_avant: existant.gasoil_avant ?? '', gasoil_apres: existant.gasoil_apres ?? '',
+        conducteur: existant.conducteur ?? '', remarques_vehicule: existant.remarques_vehicule ?? '',
+      }
+    }))
+    setRemarquesGenerales(dep.remarques ?? '')
     setDeplacementFicheOuverte(dep)
+  }
+
+  const modifierFicheBus = (idx, champ, valeur) => {
+    setFichesBus(prev => prev.map((f, i) => (i === idx ? { ...f, [champ]: valeur } : f)))
   }
 
   const sauvegarderFiche = async () => {
     setSavingFiche(true)
     const { error } = await supabase.from('deplacements').update({
-      km_avant: fiche.km_avant !== '' ? parseFloat(fiche.km_avant) : null,
-      km_apres: fiche.km_apres !== '' ? parseFloat(fiche.km_apres) : null,
-      gasoil_avant: fiche.gasoil_avant.trim() || null,
-      gasoil_apres: fiche.gasoil_apres.trim() || null,
-      conducteur: fiche.conducteur.trim() || null,
-      remarques_vehicule: fiche.remarques_vehicule.trim() || null,
-      remarques: fiche.remarques.trim() || null,
+      fiches_bus: fichesBus,
+      remarques: remarquesGenerales.trim() || null,
       fiche_completee: true,
       fiche_completee_le: new Date().toISOString(),
     }).eq('id', deplacementFicheOuverte.id)
@@ -861,33 +870,39 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <label style={{ fontSize: '11px', color: '#888' }}>Km avant
-                    <input type="number" placeholder="ex: 45230" value={fiche.km_avant} onChange={e => setFiche(p => ({ ...p, km_avant: e.target.value }))} style={inputSt} />
-                  </label>
-                  <label style={{ fontSize: '11px', color: '#888' }}>Km après
-                    <input type="number" placeholder="ex: 45380" value={fiche.km_apres} onChange={e => setFiche(p => ({ ...p, km_apres: e.target.value }))} style={inputSt} />
-                  </label>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <label style={{ fontSize: '11px', color: '#888' }}>Gasoil avant
-                    <input type="text" placeholder="ex: 4/4" value={fiche.gasoil_avant} onChange={e => setFiche(p => ({ ...p, gasoil_avant: e.target.value }))} style={inputSt} />
-                  </label>
-                  <label style={{ fontSize: '11px', color: '#888' }}>Gasoil après
-                    <input type="text" placeholder="ex: 2/4" value={fiche.gasoil_apres} onChange={e => setFiche(p => ({ ...p, gasoil_apres: e.target.value }))} style={inputSt} />
-                  </label>
-                </div>
-                <label style={{ fontSize: '11px', color: '#888' }}>Nom du conducteur
-                  <input type="text" placeholder="Prénom Nom" value={fiche.conducteur} onChange={e => setFiche(p => ({ ...p, conducteur: e.target.value }))} style={inputSt} />
-                </label>
-                <label style={{ fontSize: '11px', color: '#888' }}>Remarques sur le véhicule
-                  <textarea placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={fiche.remarques_vehicule} onChange={e => setFiche(p => ({ ...p, remarques_vehicule: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
-                </label>
-                <label style={{ fontSize: '11px', color: '#888' }}>Remarques générales
-                  <textarea placeholder="Observations sur le déplacement..." value={fiche.remarques} onChange={e => setFiche(p => ({ ...p, remarques: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
-                </label>
-              </div>
+              {fichesBus.length === 0 ? (
+                <p style={{ color: '#555', fontSize: '12px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
+              ) : (
+                fichesBus.map((f, idx) => (
+                  <div key={f.immat} style={{ background: '#111', borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid #1a1a1a' }}>
+                    <div style={{ fontWeight: 700, color: '#4ade80', marginBottom: '10px', fontSize: '13px' }}>🚌 {f.immat}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <label style={{ fontSize: '11px', color: '#888' }}>Km avant
+                        <input type="number" placeholder="ex: 45230" value={f.km_avant} onChange={e => modifierFicheBus(idx, 'km_avant', e.target.value)} style={inputSt} />
+                      </label>
+                      <label style={{ fontSize: '11px', color: '#888' }}>Km après
+                        <input type="number" placeholder="ex: 45380" value={f.km_apres} onChange={e => modifierFicheBus(idx, 'km_apres', e.target.value)} style={inputSt} />
+                      </label>
+                      <label style={{ fontSize: '11px', color: '#888' }}>Gasoil avant
+                        <input type="text" placeholder="ex: 4/4" value={f.gasoil_avant} onChange={e => modifierFicheBus(idx, 'gasoil_avant', e.target.value)} style={inputSt} />
+                      </label>
+                      <label style={{ fontSize: '11px', color: '#888' }}>Gasoil après
+                        <input type="text" placeholder="ex: 2/4" value={f.gasoil_apres} onChange={e => modifierFicheBus(idx, 'gasoil_apres', e.target.value)} style={inputSt} />
+                      </label>
+                    </div>
+                    <label style={{ fontSize: '11px', color: '#888', display: 'block', marginTop: '10px' }}>Nom du conducteur
+                      <input type="text" placeholder="Prénom Nom" value={f.conducteur} onChange={e => modifierFicheBus(idx, 'conducteur', e.target.value)} style={inputSt} />
+                    </label>
+                    <label style={{ fontSize: '11px', color: '#888', display: 'block', marginTop: '10px' }}>Remarques sur le véhicule
+                      <textarea placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={f.remarques_vehicule} onChange={e => modifierFicheBus(idx, 'remarques_vehicule', e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+                    </label>
+                  </div>
+                ))
+              )}
+
+              <label style={{ fontSize: '11px', color: '#888', display: 'block' }}>Remarques générales
+                <textarea placeholder="Observations sur le déplacement..." value={remarquesGenerales} onChange={e => setRemarquesGenerales(e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+              </label>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
                 <button onClick={sauvegarderFiche} disabled={savingFiche}
