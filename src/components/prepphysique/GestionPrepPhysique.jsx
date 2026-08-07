@@ -197,7 +197,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId, readOnly = false, isMobile = false, lang = 'fr' }) {
+export default function GestionPrepPhysique({ educateurId, clubId, readOnly = false, isMobile = false, lang = 'fr' }) {
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
   const [selectedProgramme, setSelectedProgramme] = useState(null)
@@ -213,6 +213,8 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
   const [scanLoading, setScanLoading] = useState(false)
   const [scanResultat, setScanResultat] = useState(null)
   const [joueurOuvert, setJoueurOuvert] = useState(null) // id du joueur déplié dans l'onglet Stats
+  const [testForm, setTestForm] = useState({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', yoyo_ir1_m: '', notes: '' })
+  const [savingTest, setSavingTest] = useState(false)
 
   const loadProgrammes = async () => {
     setLoading(true)
@@ -248,14 +250,60 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
     setJoueurs((data || []).map(a => a.profiles).filter(Boolean))
   }
 
-  const loadTests = async (programmeId) => {
-    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('programme_id', programmeId)
+  // Les tests physiques ne sont plus scopés à un programme (colonne
+  // tests_physiques.programme_id supprimée) — chargés pour tout le roster de
+  // cet éducateur, réutilisés à la fois par le classement (dans un programme)
+  // et par l'onglet autonome "Tests physiques".
+  const loadTests = async () => {
+    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
     setTests(data || [])
   }
 
   const ouvrirProgramme = async (p) => {
     setSelectedProgramme(p); setVue('detail')
     await Promise.all([loadSeances(p.id), loadJoueurs()])
+  }
+
+  // Vue autonome, pas liée à un programme (contrairement aux vues detail/
+  // suivi/stats/classement, qui nécessitent selectedProgramme).
+  const ouvrirTests = async () => {
+    setVue('tests')
+    await Promise.all([loadJoueurs(), loadTests()])
+  }
+
+  const objectifsTests = {
+    cmj_cm: { label: 'CMJ — Saut vertical', unit: 'cm', cible: 38, gt: true, placeholder: '38' },
+    sprint_10m_s: { label: 'Sprint 10m', unit: 's', cible: 1.80, gt: false, placeholder: '1.80' },
+    sprint_30m_s: { label: 'Sprint 30m', unit: 's', cible: 4.30, gt: false, placeholder: '4.30' },
+    yoyo_ir1_m: { label: 'Yo-Yo IR1', unit: 'm', cible: 1800, gt: true, placeholder: '1800' },
+  }
+
+  const objectifAtteint = (cle, valeur) => {
+    if (valeur === '' || valeur == null) return null
+    const o = objectifsTests[cle]
+    const v = parseFloat(valeur)
+    return o.gt ? v >= o.cible : v <= o.cible
+  }
+
+  const enregistrerTest = async () => {
+    if (!testForm.joueur_id || !testForm.date_test) return
+    setSavingTest(true)
+    const payload = {
+      joueur_id: testForm.joueur_id,
+      educateur_id: educateurId,
+      club_id: clubId || null,
+      date_test: testForm.date_test,
+      cmj_cm: testForm.cmj_cm !== '' ? parseFloat(testForm.cmj_cm) : null,
+      sprint_10m_s: testForm.sprint_10m_s !== '' ? parseFloat(testForm.sprint_10m_s) : null,
+      sprint_30m_s: testForm.sprint_30m_s !== '' ? parseFloat(testForm.sprint_30m_s) : null,
+      yoyo_ir1_m: testForm.yoyo_ir1_m !== '' ? parseInt(testForm.yoyo_ir1_m) : null,
+      notes: testForm.notes.trim() || null,
+    }
+    const { error } = await supabase.from('tests_physiques').insert(payload)
+    setSavingTest(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setTestForm({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', yoyo_ir1_m: '', notes: '' })
+    await loadTests()
   }
 
   const ouvrirSuivi = async () => {
@@ -265,7 +313,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
 
   const ouvrirClassement = async () => {
     setVue('classement')
-    await Promise.all([loadSoumissions(selectedProgramme.id), loadTests(selectedProgramme.id), loadJoueurs()])
+    await Promise.all([loadSoumissions(selectedProgramme.id), loadTests(), loadJoueurs()])
   }
 
   const ouvrirStats = async () => {
@@ -368,7 +416,7 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
       const points = sj.reduce((acc, s) => acc + (s.bonus ? 2 : 1), 0)
       const nbBonus = sj.filter(s => s.bonus).length
       const t = tests.find(t => t.joueur_id === j.id)
-      return { ...j, validees, total: nbTotal, taux, points, nbBonus, cmj: t?.cmj_cm, s10: t?.sprint_10m, s30: t?.sprint_30m, yoyo: t?.yoyo_ir1_m }
+      return { ...j, validees, total: nbTotal, taux, points, nbBonus, cmj: t?.cmj_cm, s10: t?.sprint_10m_s, s30: t?.sprint_30m_s, yoyo: t?.yoyo_ir1_m }
     }).sort((a, b) => b.points - a.points)
   }
 
@@ -395,20 +443,23 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
           <h2 style={{ color: st.text, margin: 0 }}>🏋️ {t('phys_titre', lang)}</h2>
           <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>{t('phys_programmes_joueurs', lang)}</p>
         </div>
-        {!readOnly && (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <label style={{
-              padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
-              borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              📷 {t('phys_scanner_programme', lang)}
-              <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
-                onChange={handleScanProgramme} disabled={scanLoading} />
-            </label>
-            <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ {t('phys_nouveau_programme', lang)}</button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>🏃 Tests physiques</button>
+          {!readOnly && (
+            <>
+              <label style={{
+                padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
+                borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                📷 {t('phys_scanner_programme', lang)}
+                <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
+                  onChange={handleScanProgramme} disabled={scanLoading} />
+              </label>
+              <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ {t('phys_nouveau_programme', lang)}</button>
+            </>
+          )}
+        </div>
       </div>
       {readOnly && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
@@ -522,6 +573,99 @@ export default function GestionPrepPhysique({ educateurId, readOnly = false, isM
           <div style={{ color: st.green, fontSize: 18, fontWeight: 700 }}>
             🔍 Analyse du programme en cours...
           </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // VUE TESTS PHYSIQUES — autonome, pas liée à un programme
+  if (vue === 'tests') return (
+    <div style={{ padding: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <h2 style={{ color: st.text, margin: 0 }}>🏃 Tests physiques</h2>
+        <button onClick={() => setVue('programmes')} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer', fontSize: 13 }}>← Retour</button>
+      </div>
+
+      {!readOnly && (
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <h3 style={{ color: st.text, margin: '0 0 16px', fontSize: 15 }}>Nouveau test</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Joueur</label>
+              <select value={testForm.joueur_id} onChange={e => setTestForm(f => ({ ...f, joueur_id: e.target.value }))}
+                style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }}>
+                <option value="">— Choisir —</option>
+                {joueurs.map(j => <option key={j.id} value={j.id}>{j.prenom} {j.nom}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date du test</label>
+              <input type="date" value={testForm.date_test} onChange={e => setTestForm(f => ({ ...f, date_test: e.target.value }))}
+                style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
+            {Object.entries(objectifsTests).map(([cle, o]) => {
+              const atteint = objectifAtteint(cle, testForm[cle])
+              return (
+                <div key={cle}>
+                  <label style={{ color: st.muted, fontSize: 11, display: 'block', marginBottom: 6 }}>{o.label} ({o.unit})</label>
+                  <input type="number" step="0.01" value={testForm[cle]} onChange={e => setTestForm(f => ({ ...f, [cle]: e.target.value }))}
+                    placeholder={`Objectif : ${o.gt ? '≥' : '≤'} ${o.placeholder}`}
+                    style={{ width: '100%', background: st.card2, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
+                  {atteint != null && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: atteint ? st.green : st.red }}>{atteint ? '✅ Objectif atteint' : '❌ Objectif non atteint'}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Notes / ressenti</label>
+          <textarea value={testForm.notes} onChange={e => setTestForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+            style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', marginBottom: 16 }} />
+          <button onClick={enregistrerTest} disabled={savingTest || !testForm.joueur_id || !testForm.date_test}
+            style={{ padding: '10px 24px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer', opacity: (savingTest || !testForm.joueur_id || !testForm.date_test) ? 0.5 : 1 }}>
+            {savingTest ? 'Enregistrement...' : '💾 Enregistrer'}
+          </button>
+        </div>
+      )}
+
+      <h3 style={{ color: st.text, margin: '0 0 12px', fontSize: 15 }}>Historique de l'équipe</h3>
+      {tests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 30, color: st.muted, background: st.card, border: `1px solid ${st.border}`, borderRadius: 12 }}>Aucun test enregistré pour le moment.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${st.border}` }}>
+                {['Date', 'Joueur', 'CMJ', 'Sprint 10m', 'Sprint 30m', 'Yo-Yo IR1', 'Notes'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '8px 10px', color: st.muted, fontSize: 11, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tests.map(test => (
+                <tr key={test.id} style={{ borderBottom: `1px solid ${st.border}` }}>
+                  <td style={{ padding: '8px 10px', color: st.text, whiteSpace: 'nowrap' }}>{new Date(test.date_test).toLocaleDateString('fr-FR')}</td>
+                  <td style={{ padding: '8px 10px', color: st.text, whiteSpace: 'nowrap' }}>{test.joueur ? `${test.joueur.prenom} ${test.joueur.nom}` : '—'}</td>
+                  {['cmj_cm', 'sprint_10m_s', 'sprint_30m_s', 'yoyo_ir1_m'].map(cle => {
+                    const valeur = test[cle]
+                    const atteint = objectifAtteint(cle, valeur)
+                    return (
+                      <td key={cle} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                        {valeur != null ? (
+                          <span style={{ color: atteint ? st.green : st.red, fontWeight: 600 }}>
+                            {atteint ? '✅' : '❌'} {valeur}{objectifsTests[cle].unit}
+                          </span>
+                        ) : <span style={{ color: st.muted }}>—</span>}
+                      </td>
+                    )
+                  })}
+                  <td style={{ padding: '8px 10px', color: st.muted, fontStyle: 'italic', maxWidth: 200 }}>{test.notes || ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

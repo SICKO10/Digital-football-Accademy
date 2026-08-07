@@ -232,60 +232,47 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
   )
 }
 
-function ModalTests({ joueurId, programmeId, testExistant, onClose, onSaved }) {
-  const [form, setForm] = useState({
-    date_test: testExistant?.date_test || new Date().toISOString().split('T')[0],
-    cmj_cm: testExistant?.cmj_cm || '',
-    sprint_10m: testExistant?.sprint_10m || '',
-    sprint_30m: testExistant?.sprint_30m || '',
-    yoyo_ir1_m: testExistant?.yoyo_ir1_m || '',
-    notes: testExistant?.notes || '',
-  })
-  const [loading, setLoading] = useState(false)
+// Carte lecture seule pour un test physique — saisi exclusivement par
+// l'éducateur (voir GestionPrepPhysique.jsx) ; le joueur ne peut ni
+// modifier ni supprimer. `precedent` sert à afficher l'évolution (↑/↓)
+// par métrique par rapport au test juste avant celui-ci.
+const METRIQUES_TESTS = [
+  { key: 'cmj_cm', label: 'CMJ', unit: 'cm', cible: 38, gt: true },
+  { key: 'sprint_10m_s', label: 'Sprint 10m', unit: 's', cible: 1.80, gt: false },
+  { key: 'sprint_30m_s', label: 'Sprint 30m', unit: 's', cible: 4.30, gt: false },
+  { key: 'yoyo_ir1_m', label: 'Yo-Yo IR1', unit: 'm', cible: 1800, gt: true },
+]
 
-  const handleSave = async () => {
-    setLoading(true)
-    const payload = { joueur_id: joueurId, programme_id: programmeId, date_test: form.date_test, cmj_cm: form.cmj_cm ? parseFloat(form.cmj_cm) : null, sprint_10m: form.sprint_10m ? parseFloat(form.sprint_10m) : null, sprint_30m: form.sprint_30m ? parseFloat(form.sprint_30m) : null, yoyo_ir1_m: form.yoyo_ir1_m ? parseInt(form.yoyo_ir1_m) : null, notes: form.notes || null }
-    const { error } = testExistant?.id
-      ? await supabase.from('tests_physiques').update(payload).eq('id', testExistant.id)
-      : await supabase.from('tests_physiques').insert(payload)
-    setLoading(false)
-    if (!error) onSaved()
-  }
-
-  const tests = [
-    { key: 'cmj_cm', label: 'CMJ — Saut vertical', unit: 'cm', placeholder: '38', icon: '⬆️', cible: '> 38 cm' },
-    { key: 'sprint_10m', label: 'Sprint 10m', unit: 's', placeholder: '1.80', icon: '⚡', cible: '< 1,80 s' },
-    { key: 'sprint_30m', label: 'Sprint 30m', unit: 's', placeholder: '4.30', icon: '💨', cible: '< 4,30 s' },
-    { key: 'yoyo_ir1_m', label: 'Yo-Yo IR1', unit: 'm', placeholder: '1800', icon: '🔄', cible: '> 1800 m' },
-  ]
-
+function CarteTest({ test, precedent }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ color: st.text, marginBottom: 4 }}>🏆 Tests physiques</h3>
-        <p style={{ color: st.muted, fontSize: 14, marginBottom: 20 }}>Saisis tes résultats des tests du 5 août</p>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date des tests</label>
-          <input type="date" value={form.date_test} onChange={e => setForm(f => ({ ...f, date_test: e.target.value }))} style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-          {tests.map(t => (
-            <div key={t.key} style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 10, alignItems: 'center' }}>
-              <div style={{ background: st.card2, borderRadius: 8, padding: '10px 14px' }}>
-                <div style={{ color: st.text, fontSize: 14, fontWeight: 600 }}>{t.icon} {t.label}</div>
-                <div style={{ color: st.muted, fontSize: 11, marginTop: 2 }}>Objectif : {t.cible}</div>
+    <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 12 }}>
+      <h3 style={{ color: st.text, margin: '0 0 16px', fontSize: 15 }}>🏆 Tests du {new Date(test.date_test).toLocaleDateString('fr-FR')}</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+        {METRIQUES_TESTS.map(m => {
+          const value = test[m.key]
+          const atteint = value != null ? (m.gt ? value >= m.cible : value <= m.cible) : null
+          const prevValue = precedent?.[m.key]
+          const delta = value != null && prevValue != null ? Math.round((value - prevValue) * 100) / 100 : null
+          return (
+            <div key={m.key} style={{ background: st.card2, borderRadius: 8, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ color: st.muted, fontSize: 11 }}>{m.label}</span>
+                {atteint != null && <span style={{ fontSize: 13 }}>{atteint ? '✅' : '❌'}</span>}
               </div>
-              <input type="number" step="0.01" value={form[t.key]} onChange={e => setForm(f => ({ ...f, [t.key]: e.target.value }))} placeholder={`${t.placeholder} ${t.unit}`} style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
+              <div style={{ color: st.text, fontWeight: 700, fontSize: 20 }}>{value != null ? `${value}${m.unit}` : '—'}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                <span style={{ color: st.muted, fontSize: 10 }}>Objectif : {m.gt ? '≥' : '≤'} {m.cible}{m.unit}</span>
+                {delta != null && delta !== 0 && (
+                  <span style={{ color: delta > 0 ? '#60a5fa' : '#f97316', fontSize: 10, fontWeight: 700 }}>
+                    {delta > 0 ? '↑' : '↓'} {delta > 0 ? '+' : ''}{delta}{m.unit}
+                  </span>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-        <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Notes, ressenti..." style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', marginBottom: 16 }} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Enregistrer'}</button>
-        </div>
+          )
+        })}
       </div>
+      {test.notes && <p style={{ color: st.muted, fontSize: 12, fontStyle: 'italic', margin: '12px 0 0' }}>💬 {test.notes}</p>}
     </div>
   )
 }
@@ -298,39 +285,36 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [modalSeance, setModalSeance] = useState(null)
-  const [showTests, setShowTests] = useState(false)
   const [accordeonOuvert, setAccordeonOuvert] = useState(true)
 
   const load = async () => {
     setLoading(true)
-    console.log('[DEBUG] joueurId reçu:', joueurId)
-    console.log('[DEBUG] attendu:', '147846d3-71e6-4c35-a84e-21084a9ea20a')
+    // Les tests physiques sont saisis par l'éducateur, indépendamment de tout
+    // programme (colonne tests_physiques.programme_id supprimée) — chargés à
+    // part, pour rester visibles même sans programme actif.
+    const { data: testsData } = await supabase.from('tests_physiques').select('*').eq('joueur_id', joueurId).order('date_test', { ascending: false })
+    setTests(testsData || [])
+
     // Un joueur ne doit voir que les programmes de ses éducateurs affiliés (table
     // `affiliations`, statut 'accepte') — pas le programme actif le plus récent
     // tous éducateurs confondus.
     const { data: afData, error: afError } = await supabase.from('affiliations').select('educateur_id').eq('joueur_id', joueurId).eq('statut', 'accepte')
-    console.log('[DEBUG PrepPhysique] joueurId:', joueurId)
-    console.log('[DEBUG PrepPhysique] affiliations trouvées:', afData, 'erreur:', afError)
     if (afError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     const educateurIds = [...new Set((afData || []).map(a => a.educateur_id))]
-    console.log('[DEBUG PrepPhysique] educateurIds:', educateurIds)
     if (educateurIds.length === 0) { setProgramme(null); setLoading(false); return }
 
     // maybeSingle (pas single) : si un éducateur a plusieurs programmes actifs à la fois,
     // single() lève une erreur ("multiple rows") et masque tout au joueur.
     const { data, error } = await supabase.from('programmes_prep').select('*').in('educateur_id', educateurIds).eq('statut', 'actif').order('created_at', { ascending: false }).limit(1).maybeSingle()
-    console.log('[DEBUG PrepPhysique] programmes trouvés:', data, 'erreur:', error)
     if (error?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     if (!data) { setProgramme(null); setLoading(false); return }
     setProgramme(data)
-    const [s, sub, t] = await Promise.all([
+    const [s, sub] = await Promise.all([
       supabase.from('seances_prep').select('*').eq('programme_id', data.id).order('semaine').order('jour'),
       supabase.from('soumissions_prep').select('*').eq('joueur_id', joueurId),
-      supabase.from('tests_physiques').select('*').eq('joueur_id', joueurId).eq('programme_id', data.id).order('date_test', { ascending: false }),
     ])
     setSeances(s.data || [])
     setSoumissions(sub.data || [])
-    setTests(t.data || [])
     setLoading(false)
   }
 
@@ -344,18 +328,36 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
     </div>
   )
 
+  const sectionTests = (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h3 style={{ color: st.text, margin: 0, fontSize: 15 }}>🏆 Tests physiques</h3>
+        <span style={{ color: st.muted, fontSize: 11, fontStyle: 'italic' }}>Résultats saisis par votre éducateur</span>
+      </div>
+      {tests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 16px', color: st.muted, background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, fontSize: 13 }}>
+          Aucun test enregistré pour le moment.
+        </div>
+      ) : (
+        tests.map((test, i) => <CarteTest key={test.id} test={test} precedent={tests[i + 1]} />)
+      )}
+    </div>
+  )
+
   if (!programme) return (
-    <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div>
-      <div style={{ color: st.text, marginBottom: 8 }}>Aucun programme actif</div>
-      <div style={{ fontSize: 14 }}>Ton éducateur n'a pas encore créé de programme.</div>
+    <div style={{ padding: 16 }}>
+      <div style={{ textAlign: 'center', padding: '40px 20px', color: st.muted }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div>
+        <div style={{ color: st.text, marginBottom: 8 }}>Aucun programme actif</div>
+        <div style={{ fontSize: 14 }}>Ton éducateur n'a pas encore créé de programme.</div>
+      </div>
+      {sectionTests}
     </div>
   )
 
   const nbTotal = seances.filter(s => s.type_seance !== 'repos').length
   const nbValides = soumissions.filter(s => s.statut === 'valide').length
   const progression = nbTotal > 0 ? Math.round((nbValides / nbTotal) * 100) : 0
-  const testActuel = tests[0]
   const mesSoumissions = soumissions
     .map(s => ({ ...s, seance: seances.find(se => se.id === s.seance_id) }))
     .filter(s => s.seance)
@@ -373,7 +375,6 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
             </p>
             {programme.description && <p style={{ color: st.muted, fontSize: 13, margin: '8px 0 0' }}>{programme.description}</p>}
           </div>
-          <button onClick={() => setShowTests(true)} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer', fontSize: 13 }}>🏆 Mes tests</button>
         </div>
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -464,35 +465,9 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
         </div>
       )}
 
-      {/* Résultats tests */}
-      {testActuel && (
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ color: st.text, margin: 0, fontSize: 15 }}>🏆 Tests physiques</h3>
-            <span style={{ color: st.muted, fontSize: 12 }}>{new Date(testActuel.date_test).toLocaleDateString('fr-FR')}</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            {[
-              { label: 'CMJ', value: testActuel.cmj_cm, unit: 'cm', cible: 38, gt: true },
-              { label: 'Sprint 10m', value: testActuel.sprint_10m, unit: 's', cible: 1.80, gt: false },
-              { label: 'Sprint 30m', value: testActuel.sprint_30m, unit: 's', cible: 4.30, gt: false },
-              { label: 'Yo-Yo IR1', value: testActuel.yoyo_ir1_m, unit: 'm', cible: 1800, gt: true },
-            ].map(t => {
-              const atteint = t.value != null ? (t.gt ? t.value >= t.cible : t.value <= t.cible) : null
-              return (
-                <div key={t.label} style={{ background: st.card2, borderRadius: 8, padding: 12 }}>
-                  <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>{t.label}</div>
-                  <div style={{ color: atteint === true ? st.green : atteint === false ? st.red : st.muted, fontWeight: 700, fontSize: 20 }}>{t.value != null ? `${t.value}${t.unit}` : '—'}</div>
-                  <div style={{ color: st.muted, fontSize: 10 }}>Objectif : {t.gt ? '>' : '<'} {t.cible}{t.unit}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {sectionTests}
 
       {modalSeance && <ModalSoumettre seance={modalSeance.seance} joueurId={joueurId} soumissionExistante={modalSeance.soumission} onClose={() => setModalSeance(null)} onSaved={async () => { await load(); setModalSeance(null) }} />}
-      {showTests && <ModalTests joueurId={joueurId} programmeId={programme.id} testExistant={testActuel} onClose={() => setShowTests(false)} onSaved={async () => { await load(); setShowTests(false) }} />}
     </div>
   )
 }

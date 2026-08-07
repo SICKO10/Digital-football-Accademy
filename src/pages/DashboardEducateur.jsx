@@ -6305,7 +6305,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
+          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
         )}
 
         {activeSection === 'clotures_saison' && (
