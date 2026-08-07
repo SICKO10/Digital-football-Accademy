@@ -177,7 +177,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <button onClick={onBack} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer', fontSize: 13 }}>← Programme</button>
-        <span style={{ color: st.muted, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{programmeTitre}</span>
+        <span style={{ flex: 1, minWidth: 0, color: st.muted, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{programmeTitre}</span>
       </div>
       <div style={{ display: 'flex', gap: 6, background: st.card2, borderRadius: 10, padding: 4 }}>
         {[

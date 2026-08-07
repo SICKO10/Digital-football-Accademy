@@ -1109,7 +1109,7 @@ function DashboardJoueur() {
     ]
 
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; } .af-nav-btn:hover { background: #141414 !important; color: #ccc !important; }`}</style>
 
         {isMobile && sidebarOpen && (
@@ -1166,7 +1166,7 @@ function DashboardJoueur() {
           </div>
         </aside>
 
-        <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto' }}>
+        <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto' }}>
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)}
               style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
@@ -1963,7 +1963,7 @@ function DashboardJoueur() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2132,7 +2132,7 @@ function DashboardJoueur() {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh' }}>
+      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh' }}>
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
