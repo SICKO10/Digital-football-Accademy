@@ -274,7 +274,10 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           // importé automatiquement sans heure) ressemble à tort à un vrai
           // besoin de location.
           const label = `${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')})`
-          alertes.push(r.heure_depart ? `${label} — bus insuffisant, prévoir une location` : `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement`)
+          alertes.push({
+            dep: r,
+            msg: r.heure_depart ? `${label} — bus insuffisant, prévoir une location` : `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement`,
+          })
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
         }
@@ -452,8 +455,16 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           <div style={{ fontWeight: 700, color: '#fb923c', marginBottom: '8px', fontSize: '13px' }}>
             ⚠️ {alertesLocation.length} déplacement{alertesLocation.length > 1 ? 's' : ''} nécessite{alertesLocation.length > 1 ? 'nt' : ''} un bus de location
           </div>
-          {alertesLocation.map((msg, i) => (
-            <div key={i} style={{ fontSize: '12px', color: '#fbbf24', marginTop: '4px' }}>• {msg}</div>
+          {alertesLocation.map((alerte, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color: '#fbbf24', marginTop: '4px' }}>
+              <span>• {alerte.msg}</span>
+              {!readOnly && (
+                <button onClick={() => ouvrirEditionDeplacement(alerte.dep)}
+                  style={{ flexShrink: 0, background: 'transparent', border: '1px solid #fb923c60', color: '#fb923c', padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ✏️ Compléter
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
