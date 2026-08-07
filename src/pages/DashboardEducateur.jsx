@@ -725,8 +725,13 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || mesSeancesOuvertes.find(s => s.id === entr.fiche_id)?.theme || 'Séance'}</p>
                       <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
                     </div>
-                    {!sondageEstClos(entr) && (
-                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: '#4ade8015', color: '#4ade80', flexShrink: 0 }}>Sondage ouvert</span>
+                    {isMobile ? (
+                      <span title={sondageEstClos(entr) ? 'Sondage clôturé' : 'Sondage ouvert'}
+                        style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? '#ef4444' : '#4ade80', flexShrink: 0 }} />
+                    ) : (
+                      !sondageEstClos(entr) && (
+                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: '#4ade8015', color: '#4ade80', flexShrink: 0 }}>Sondage ouvert</span>
+                      )
                     )}
                   </div>
                 )
