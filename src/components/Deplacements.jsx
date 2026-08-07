@@ -51,7 +51,7 @@ const grouperParSemaine = (deplacements) => {
   return groupes
 }
 
-export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
+export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false, repartitionNominativeReadOnly = false }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'mois' | 'weekend'
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -394,14 +394,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             </button>
             <button onClick={() => setDeplacementBusOuvert(deplacementBusOuvert === d.id ? null : d.id)}
               style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              🚌 {deplacementBusOuvert === d.id ? 'Fermer' : 'Répartir les bus'}
+              🚌 {deplacementBusOuvert === d.id ? 'Fermer' : repartitionNominativeReadOnly ? 'Voir la répartition' : 'Répartir les bus'}
             </button>
           </div>
         )}
 
         {deplacementBusOuvert === d.id && (
           <div style={{ marginTop: '14px', padding: '16px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
-            <RepartitionBus deplacementId={d.id} joueurs={joueursDuDeplacement(d)} onSaved={() => setDeplacementBusOuvert(null)} />
+            <RepartitionBus deplacementId={d.id} joueurs={joueursDuDeplacement(d)} onSaved={() => setDeplacementBusOuvert(null)} readOnly={repartitionNominativeReadOnly} />
           </div>
         )}
       </div>
