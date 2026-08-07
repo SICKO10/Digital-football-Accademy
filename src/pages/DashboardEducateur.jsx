@@ -4696,11 +4696,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         {clos ? `🔒 ${t('ent_sondage_clos', lang)}` : `🟢 ${t('ent_sondage_ouvert', lang)}`}
                       </span>
                     </div>
-                    {prochaineSeance.fiche_id && (
+                    {prochaineSeance.fiche_id ? (
                       <button
                         onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) setFicheApercu(s) }}
                         style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         📄 Voir la fiche
+                      </button>
+                    ) : canEdit('entrainements') && (
+                      <button
+                        onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)}
+                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        🔗 Attacher une fiche
                       </button>
                     )}
                   </div>
