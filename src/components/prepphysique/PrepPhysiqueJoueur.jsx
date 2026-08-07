@@ -240,7 +240,7 @@ const METRIQUES_TESTS = [
   { key: 'cmj_cm', label: 'CMJ', unit: 'cm', cible: 38, gt: true },
   { key: 'sprint_10m_s', label: 'Sprint 10m', unit: 's', cible: 1.80, gt: false },
   { key: 'sprint_30m_s', label: 'Sprint 30m', unit: 's', cible: 4.30, gt: false },
-  { key: 'yoyo_ir1_m', label: 'Yo-Yo IR1', unit: 'm', cible: 1800, gt: true },
+  { key: 'test_30_15_kmh', label: '30-15 IFT', unit: ' km/h', cible: 18, gt: true },
 ]
 
 function CarteTest({ test, precedent }) {

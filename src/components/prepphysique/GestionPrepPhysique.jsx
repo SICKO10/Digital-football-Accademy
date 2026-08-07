@@ -213,7 +213,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
   const [scanLoading, setScanLoading] = useState(false)
   const [scanResultat, setScanResultat] = useState(null)
   const [joueurOuvert, setJoueurOuvert] = useState(null) // id du joueur déplié dans l'onglet Stats
-  const [testForm, setTestForm] = useState({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', yoyo_ir1_m: '', notes: '' })
+  const [testForm, setTestForm] = useState({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', test_30_15_kmh: '', notes: '' })
   const [savingTest, setSavingTest] = useState(false)
 
   const loadProgrammes = async () => {
@@ -275,7 +275,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
     cmj_cm: { label: 'CMJ — Saut vertical', unit: 'cm', cible: 38, gt: true, placeholder: '38' },
     sprint_10m_s: { label: 'Sprint 10m', unit: 's', cible: 1.80, gt: false, placeholder: '1.80' },
     sprint_30m_s: { label: 'Sprint 30m', unit: 's', cible: 4.30, gt: false, placeholder: '4.30' },
-    yoyo_ir1_m: { label: 'Yo-Yo IR1', unit: 'm', cible: 1800, gt: true, placeholder: '1800' },
+    test_30_15_kmh: { label: '30-15 IFT (VIFT)', unit: ' km/h', cible: 18, gt: true, placeholder: '18.5' },
   }
 
   const objectifAtteint = (cle, valeur) => {
@@ -296,13 +296,13 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
       cmj_cm: testForm.cmj_cm !== '' ? parseFloat(testForm.cmj_cm) : null,
       sprint_10m_s: testForm.sprint_10m_s !== '' ? parseFloat(testForm.sprint_10m_s) : null,
       sprint_30m_s: testForm.sprint_30m_s !== '' ? parseFloat(testForm.sprint_30m_s) : null,
-      yoyo_ir1_m: testForm.yoyo_ir1_m !== '' ? parseInt(testForm.yoyo_ir1_m) : null,
+      test_30_15_kmh: testForm.test_30_15_kmh !== '' ? parseFloat(testForm.test_30_15_kmh) : null,
       notes: testForm.notes.trim() || null,
     }
     const { error } = await supabase.from('tests_physiques').insert(payload)
     setSavingTest(false)
     if (error) { alert('Erreur : ' + error.message); return }
-    setTestForm({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', yoyo_ir1_m: '', notes: '' })
+    setTestForm({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', test_30_15_kmh: '', notes: '' })
     await loadTests()
   }
 
@@ -416,7 +416,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
       const points = sj.reduce((acc, s) => acc + (s.bonus ? 2 : 1), 0)
       const nbBonus = sj.filter(s => s.bonus).length
       const t = tests.find(t => t.joueur_id === j.id)
-      return { ...j, validees, total: nbTotal, taux, points, nbBonus, cmj: t?.cmj_cm, s10: t?.sprint_10m_s, s30: t?.sprint_30m_s, yoyo: t?.yoyo_ir1_m }
+      return { ...j, validees, total: nbTotal, taux, points, nbBonus, cmj: t?.cmj_cm, s10: t?.sprint_10m_s, s30: t?.sprint_30m_s, ift: t?.test_30_15_kmh }
     }).sort((a, b) => b.points - a.points)
   }
 
@@ -638,7 +638,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${st.border}` }}>
-                {['Date', 'Joueur', 'CMJ', 'Sprint 10m', 'Sprint 30m', 'Yo-Yo IR1', 'Notes'].map(h => (
+                {['Date', 'Joueur', 'CMJ', 'Sprint 10m', 'Sprint 30m', '30-15 IFT', 'Notes'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '8px 10px', color: st.muted, fontSize: 11, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -648,7 +648,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 <tr key={test.id} style={{ borderBottom: `1px solid ${st.border}` }}>
                   <td style={{ padding: '8px 10px', color: st.text, whiteSpace: 'nowrap' }}>{new Date(test.date_test).toLocaleDateString('fr-FR')}</td>
                   <td style={{ padding: '8px 10px', color: st.text, whiteSpace: 'nowrap' }}>{test.joueur ? `${test.joueur.prenom} ${test.joueur.nom}` : '—'}</td>
-                  {['cmj_cm', 'sprint_10m_s', 'sprint_30m_s', 'yoyo_ir1_m'].map(cle => {
+                  {['cmj_cm', 'sprint_10m_s', 'sprint_30m_s', 'test_30_15_kmh'].map(cle => {
                     const valeur = test[cle]
                     const atteint = objectifAtteint(cle, valeur)
                     return (
@@ -847,7 +847,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
             <div>#</div><div>JOUEUR</div><div style={{ textAlign: 'center' }}>POINTS</div><div style={{ textAlign: 'center' }}>RÉGULARITÉ</div>
             <div style={{ textAlign: 'center' }}>BONUS</div>
             <div style={{ textAlign: 'center' }}>CMJ</div><div style={{ textAlign: 'center' }}>10m</div>
-            <div style={{ textAlign: 'center' }}>30m</div><div style={{ textAlign: 'center' }}>Yo-Yo</div>
+            <div style={{ textAlign: 'center' }}>30m</div><div style={{ textAlign: 'center' }}>30-15</div>
           </div>
           {classement.map((j, idx) => (
             <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? '#0a1a0a' : 'transparent' }}>
@@ -862,7 +862,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
               <div style={{ textAlign: 'center', color: j.cmj ? st.text : st.border }}>{j.cmj ? `${j.cmj}cm` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s10 ? st.text : st.border }}>{j.s10 ? `${j.s10}s` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s30 ? st.text : st.border }}>{j.s30 ? `${j.s30}s` : '—'}</div>
-              <div style={{ textAlign: 'center', color: j.yoyo ? st.text : st.border }}>{j.yoyo ? `${j.yoyo}m` : '—'}</div>
+              <div style={{ textAlign: 'center', color: j.ift ? st.text : st.border }}>{j.ift ? `${j.ift}km/h` : '—'}</div>
             </div>
           ))}
           {classement.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: st.muted }}>{t('phys_aucun_joueur', lang)}</div>}
