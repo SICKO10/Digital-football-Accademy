@@ -6991,17 +6991,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
 
     {ficheApercu && (
-      <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+      <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
         onClick={() => setFicheApercu(null)}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
             {ficheApercu.fichier_url && (
               <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
                 style={{ background: '#60a5fa', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 ⬇️ {t('seance_fichier', lang)}
               </a>
             )}
-            <button onClick={() => setFicheApercu(null)} style={{ background: 'transparent', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={() => setFicheApercu(null)} style={{ background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               ✕ {t('btn_fermer', lang)}
             </button>
           </div>
