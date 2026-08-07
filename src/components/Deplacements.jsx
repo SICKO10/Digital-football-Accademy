@@ -67,6 +67,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [semaineOuverte, setSemaineOuverte] = useState({}) // { 'AAAA-MM_semaine-label': true }
   const [alertesLocation, setAlertesLocation] = useState([])
   const [repartitionAutoEnCours, setRepartitionAutoEnCours] = useState(false)
+  const [recuperationMatchsEnCours, setRecuperationMatchsEnCours] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -97,6 +98,43 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   }
 
   useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules() } }, [clubId])
+
+  // Récupère les matchs Extérieur (matchs_equipe.domicile = false) des éducateurs
+  // du club qui n'ont pas encore de déplacement correspondant. Un déplacement
+  // est déjà créé automatiquement à chaque nouveau match Extérieur ajouté
+  // (creerDeplacementAutoMatch, DashboardEducateur.jsx) — ce bouton ne sert
+  // qu'à rattraper les matchs créés AVANT que ce mécanisme existe, en créant
+  // de vrais déplacements (pas des entrées virtuelles) pour rester compatible
+  // avec tout le reste (suppression, retour, assignation bus...).
+  const recupererMatchsExterieur = async () => {
+    setRecuperationMatchsEnCours(true)
+    const educateurIds = [...new Set(equipesOptions.map(c => c.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) { setRecuperationMatchsEnCours(false); return }
+    const { data: matchsExt } = await supabase.from('matchs_equipe').select('*')
+      .in('educateur_id', educateurIds).eq('domicile', false)
+    const datesDejaCouvertes = new Set(deplacements.map(d => d.date_depart))
+    const aCreer = (matchsExt || []).filter(m => m.date && !datesDejaCouvertes.has(m.date))
+    if (aCreer.length === 0) { setRecuperationMatchsEnCours(false); alert('Aucun match Extérieur manquant à récupérer.'); return }
+    const { data: { user } } = await supabase.auth.getUser()
+    const payload = aCreer.map(m => {
+      const cat = equipesOptions.find(c => c.educateur_id === m.educateur_id)
+      return {
+        club_id: clubId,
+        equipe: cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : null,
+        educateur_id: m.educateur_id,
+        date_depart: m.date,
+        heure_depart: m.heure || null,
+        lieu_destination: m.lieu || m.adversaire || 'Extérieur',
+        nature: 'match',
+        created_by: user?.id || null,
+      }
+    })
+    const { error } = await supabase.from('deplacements').insert(payload)
+    setRecuperationMatchsEnCours(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    alert(`${payload.length} déplacement${payload.length > 1 ? 's' : ''} créé${payload.length > 1 ? 's' : ''} pour des matchs Extérieur.`)
+    await charger()
+  }
 
   // Capacité totale couverte par le(s) véhicule(s) assigné(s) à un déplacement —
   // d.vehicule peut être une seule plaque ou "PLAQUE1 + PLAQUE2" (bus combinés,
@@ -382,6 +420,13 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {!readOnly && (
+          <button onClick={recupererMatchsExterieur} disabled={recuperationMatchsEnCours || loading}
+            title="Crée un déplacement pour chaque match Extérieur qui n'en a pas encore (ex: matchs ajoutés avant que la création automatique existe)"
+            style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: recuperationMatchsEnCours ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {recuperationMatchsEnCours ? '⏳ Recherche...' : '🔄 Récupérer les matchs Extérieur'}
+          </button>
+        )}
         {!readOnly && (
           <button onClick={repartirAutomatiquement} disabled={repartitionAutoEnCours || loading || vehicules.length === 0}
             title={vehicules.length === 0 ? 'Ajoute au moins un véhicule au parc' : 'Assigne un bus aux déplacements qui n\'en ont pas encore'}
