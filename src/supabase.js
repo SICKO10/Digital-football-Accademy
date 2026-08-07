@@ -11,3 +11,13 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { detectSessionInUrl: false },
 })
+
+// supabase.auth.signOut() renvoie une 403 si appelée sans session valide (déjà
+// expirée, ou déjà déconnectée par un double-clic/un autre onglet) — vérifier
+// la session avant l'appel évite cette erreur bruyante en console sans
+// changer le comportement pour l'utilisateur (il est de toute façon déjà
+// déconnecté dans ce cas).
+export const signOutSafe = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session) await supabase.auth.signOut()
+}

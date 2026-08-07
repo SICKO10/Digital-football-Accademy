@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase'
+import { supabase, signOutSafe } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES } from '../lib/categories'
@@ -3113,7 +3113,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             </div>
           </div>
 
-          <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
+          <button onClick={() => { signOutSafe(); navigate('/') }}
             style={{ width: '100%', marginTop: '4px', background: 'transparent', color: '#555', border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
             {t('btn_deconnexion', lang)}
           </button>

@@ -267,7 +267,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       const resultats = repartirBus(deps, vehiculesDispos)
       resultats.forEach(r => {
         if (r.statut === 'insuffisant') {
-          alertes.push(`${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}) — bus insuffisant, prévoir une location`)
+          // repartirBus renvoie "insuffisant" à la fois quand aucun bus n'a la
+          // capacité requise ET quand heure_depart manque (impossible de
+          // calculer la disponibilité). Deux causes différentes, deux messages
+          // différents — sinon un déplacement juste incomplet (ex: un match
+          // importé automatiquement sans heure) ressemble à tort à un vrai
+          // besoin de location.
+          const label = `${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')})`
+          alertes.push(r.heure_depart ? `${label} — bus insuffisant, prévoir une location` : `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement`)
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
         }

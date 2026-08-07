@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { supabase } from '../supabase'
+import { supabase, signOutSafe } from '../supabase'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
@@ -759,7 +759,7 @@ function DashboardJoueur() {
     setTimeout(() => setCoachSent(false), 3000)
   }
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
+  const handleLogout = async () => { await signOutSafe(); navigate('/') }
 
   const handleCertifDocUpload = async (e) => {
     const files = Array.from(e.target.files || [])

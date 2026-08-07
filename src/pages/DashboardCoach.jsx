@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabase'
+import { supabase, signOutSafe } from '../supabase'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { notifierJoueur } from '../lib/notifications'
@@ -378,7 +378,7 @@ function DashboardCoach() {
         <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: '1px solid #4ade8040' }}>
           COACH
         </span>
-        <button onClick={() => { supabase.auth.signOut(); navigate('/') }}
+        <button onClick={() => { signOutSafe(); navigate('/') }}
           style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           Déconnexion
         </button>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase'
+import { supabase, signOutSafe } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
@@ -1359,7 +1359,7 @@ export default function DashboardClub() {
     setSeanceEvalModal(null)
   }
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/') }
+  const handleLogout = async () => { await signOutSafe(); navigate('/') }
 
   if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#4ade80' }}>Chargement...</p></div>
 

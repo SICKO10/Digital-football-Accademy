@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabase'
+import { supabase, signOutSafe } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 
@@ -244,7 +244,7 @@ export default function Upload() {
             style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
             {t('upload_dashboard_retour', lang)}
           </button>
-          <button onClick={async () => { await supabase.auth.signOut(); navigate('/') }}
+          <button onClick={async () => { await signOutSafe(); navigate('/') }}
             style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', fontSize: '13px' }}>
             {t('btn_deconnexion', lang)}
           </button>

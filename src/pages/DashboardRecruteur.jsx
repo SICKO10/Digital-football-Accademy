@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase";
+import { supabase, signOutSafe } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
@@ -495,7 +495,7 @@ export default function DashboardRecruteur() {
     msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#f97316" : "#1a1a1a", color: mine ? "#000" : "#fff", fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
   };
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
+  const handleLogout = async () => { await signOutSafe(); navigate("/"); };
 
   const getClubInitials = (name) => {
     const words = (name || '').trim().split(/\s+/).filter(w => !['AS','FC','OC','US','SC','AC','RC','ES','OGC','SM','EA'].includes(w))
