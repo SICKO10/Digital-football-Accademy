@@ -25,6 +25,16 @@ const st = {
 
 const natureInfo = (val) => NATURES.find(n => n.val === val) || NATURES[3]
 
+const grouperParMois = (deplacements) => {
+  const groupes = {}
+  ;[...deplacements].sort((a, b) => a.date_depart.localeCompare(b.date_depart)).forEach(d => {
+    const cle = d.date_depart.slice(0, 7) // AAAA-MM, pour trier les mois correctement
+    if (!groupes[cle]) groupes[cle] = []
+    groupes[cle].push(d)
+  })
+  return groupes
+}
+
 const grouperParSemaine = (deplacements) => {
   const groupes = {}
   deplacements.forEach(d => {
@@ -54,6 +64,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [savingRetour, setSavingRetour] = useState({}) // { [id]: bool }
   const [clubJoueurs, setClubJoueurs] = useState([])
   const [deplacementBusOuvert, setDeplacementBusOuvert] = useState(null)
+  const [assignationBusOuverte, setAssignationBusOuverte] = useState(null)
+  const [savingAssignation, setSavingAssignation] = useState(null)
+  const [exportingPdf, setExportingPdf] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -111,6 +124,102 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const capacites = plaques.map(p => vehicules.find(v => v.plaque === p)?.capacite)
     if (capacites.some(c => c == null)) return null
     return capacites.reduce((sum, c) => sum + c, 0)
+  }
+
+  // Bascule une plaque pour un déplacement (Vue mois) et persiste immédiatement
+  // — pas de bouton "Enregistrer" séparé ici, contrairement au volet nominatif
+  // "Répartir les bus" (RepartitionBus) qui gère une répartition par joueur.
+  const toggleVehiculeDeplacement = async (d, plaque) => {
+    const actuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
+    const nouvelles = actuelles.includes(plaque) ? actuelles.filter(p => p !== plaque) : [...actuelles, plaque]
+    const vehiculeStr = nouvelles.join(' + ') || null
+    setSavingAssignation(d.id)
+    const { error } = await supabase.from('deplacements').update({ vehicule: vehiculeStr }).eq('id', d.id)
+    setSavingAssignation(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setDeplacements(prev => prev.map(x => (x.id === d.id ? { ...x, vehicule: vehiculeStr } : x)))
+  }
+
+  // Exporte tous les déplacements de la saison en PDF, groupés mois puis
+  // semaine (mêmes regroupements que la Vue mois / la liste "À venir").
+  const exporterPlanningPDF = async () => {
+    setExportingPdf(true)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const margin = 14
+      const largeurPage = doc.internal.pageSize.getWidth()
+      const hauteurPage = doc.internal.pageSize.getHeight()
+      const NOIR = [30, 30, 30]
+      const GRIS = [110, 110, 110]
+      const ORANGE = [217, 119, 6]
+      let y = 18
+
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...NOIR)
+      doc.text('Planning annuel des déplacements', margin, y)
+      y += 10
+
+      const parMoisPdf = grouperParMois(deplacements)
+      const clesMois = Object.keys(parMoisPdf)
+
+      if (clesMois.length === 0) {
+        doc.setFontSize(11)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(...GRIS)
+        doc.text('Aucun déplacement enregistré.', margin, y)
+      }
+
+      clesMois.forEach(cleMois => {
+        if (y > hauteurPage - 30) { doc.addPage(); y = 18 }
+        const labelMois = new Date(cleMois + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        doc.setFontSize(13)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...NOIR)
+        doc.text(labelMois.charAt(0).toUpperCase() + labelMois.slice(1), margin, y)
+        y += 6
+        doc.setDrawColor(200, 200, 200)
+        doc.line(margin, y, largeurPage - margin, y)
+        y += 6
+
+        const parSemaine = grouperParSemaine(parMoisPdf[cleMois])
+        Object.entries(parSemaine).forEach(([semaine, items]) => {
+          if (y > hauteurPage - 25) { doc.addPage(); y = 18 }
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(...GRIS)
+          doc.text(`Semaine du ${semaine}`, margin + 2, y)
+          y += 6
+
+          items.forEach(d => {
+            if (y > hauteurPage - 18) { doc.addPage(); y = 18 }
+            const cap = capaciteVehicule(d)
+            const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+            const dateLabel = new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+            const busLabel = insuffisant ? 'A VERIFIER' : d.vehicule
+
+            doc.setFontSize(9)
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(...NOIR)
+            const texte = `${dateLabel}  ·  ${d.equipe || '—'}  ·  ${d.lieu_destination || '—'}  ·  ${d.nb_personnes != null ? d.nb_personnes + ' pers.' : '—'}`
+            doc.text(texte, margin + 4, y)
+
+            doc.setFont('helvetica', 'bold')
+            doc.setTextColor(...(insuffisant ? ORANGE : NOIR))
+            doc.text(busLabel, largeurPage - margin - doc.getTextWidth(busLabel), y)
+
+            y += 5.5
+          })
+          y += 3
+        })
+        y += 4
+      })
+
+      doc.save(`planning-deplacements-${new Date().getFullYear()}.pdf`)
+    } finally {
+      setExportingPdf(false)
+    }
   }
 
   const creerDeplacement = async () => {
@@ -275,15 +384,19 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       {vue === 'weekend' && <PlanningWeekEnd clubId={clubId} accentColor={accentColor} />}
 
       {vue === 'mois' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <button onClick={exporterPlanningPDF} disabled={exportingPdf || loading || deplacements.length === 0}
+            style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
+            {exportingPdf ? '⏳ Génération...' : '📄 Exporter planning annuel PDF'}
+          </button>
+        </div>
+      )}
+
+      {vue === 'mois' && (
         loading ? (
           <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
         ) : (() => {
-          const parMois = {}
-          ;[...deplacements].sort((a, b) => a.date_depart.localeCompare(b.date_depart)).forEach(d => {
-            const cle = d.date_depart.slice(0, 7) // AAAA-MM, pour trier les mois correctement
-            if (!parMois[cle]) parMois[cle] = []
-            parMois[cle].push(d)
-          })
+          const parMois = grouperParMois(deplacements)
           const cles = Object.keys(parMois)
           if (cles.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement enregistré.</p>
           return cles.map(cle => {
@@ -310,6 +423,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                 {deps.map(d => {
                   const cap = capaciteVehicule(d)
                   const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
+                  const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
                   return (
                     <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : '1px solid #1a1a1a' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
@@ -338,6 +452,48 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                                 : `✅ ${d.vehicule} · ${d.nb_personnes ?? '?'}/${cap} places`}
                         </span>
                       </div>
+
+                      {!readOnly && (
+                        <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
+                          style={{ marginTop: '12px', background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          🚌 {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
+                        </button>
+                      )}
+
+                      {assignationBusOuverte === d.id && (
+                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                          {vehicules.length === 0 ? (
+                            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {vehicules.map(v => {
+                                const coche = plaquesActuelles.includes(v.plaque)
+                                const dejaUtilise = deplacements.some(autre =>
+                                  autre.id !== d.id && autre.date_depart === d.date_depart &&
+                                  (autre.vehicule || '').split('+').map(p => p.trim()).includes(v.plaque)
+                                )
+                                return (
+                                  <label key={v.plaque} style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
+                                    cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
+                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : '#1a1a1a',
+                                    border: coche ? `1px solid ${accentColor}50` : '1px solid #2a2a2a',
+                                    opacity: dejaUtilise && !coche ? 0.4 : 1,
+                                  }}>
+                                    <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
+                                      onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
+                                      style={{ accentColor, width: '15px', height: '15px' }} />
+                                    <span style={{ fontSize: '12px', color: coche ? accentColor : '#d1d5db', fontWeight: coche ? 600 : 400 }}>
+                                      {v.plaque} ({v.capacite} pl.)
+                                    </span>
+                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: '#6b7280', marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
