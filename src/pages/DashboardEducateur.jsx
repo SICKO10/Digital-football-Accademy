@@ -1110,13 +1110,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const chargerClubAffiliation = async (uid) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('club_educateurs')
       .select('*, club:club_id(club, prenom, nom, avatar_url, ville)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
+    // Debug temporaire — affiliation non détectée alors que la ligne existe côté
+    // club (statut accepte confirmé) : besoin de voir l'erreur Postgres réelle
+    // (RLS bloque error:null-mais-0-ligne côté delete, mais côté select un refus
+    // de policy/grant remonte normalement un vrai code d'erreur ici).
+    if (error) console.error('❌ chargerClubAffiliation error:', error.code, error.message, error.details, error.hint)
+    console.log('🔍 chargerClubAffiliation uid=', uid, 'data=', data)
     setClubAffiliation(data || null)
   }
 
