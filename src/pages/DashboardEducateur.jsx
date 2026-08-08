@@ -772,6 +772,82 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         </div>
       </div>
 
+      {/* Classement séances — version compacte de Stats > Joueur du mois (mêmes
+          données : point_seance par entrainement, groupé par mois via entrainements.date
+          déjà chargé — pas de nouvelle requête, pas de colonne "points"/equipe_id qui
+          n'existent pas dans ce schéma). Pas de "3 derniers" façon palmarès inversé :
+          la version complète (Stats > Joueur du mois) ne le fait pas non plus, et
+          afficher publiquement qui a le moins d'étoiles n'apporte rien de bon ici. */}
+      {(() => {
+        const now = new Date()
+        const moisPrecedentDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const moisKeyDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        const moisCourantKey = moisKeyDe(now)
+        const moisPrecedentKey = moisKeyDe(moisPrecedentDate)
+
+        const podiumDuMois = (moisKey) => {
+          const pts = {}
+          entrainements.forEach(e => {
+            if (!e.date || moisKeyDe(new Date(e.date)) !== moisKey) return
+            ;(e.presences_entrainement || []).forEach(p => {
+              if (!p.point_seance) return
+              pts[p.joueur_id] = (pts[p.joueur_id] || 0) + 1
+            })
+          })
+          return Object.entries(pts)
+            .map(([jid, count]) => ({ joueur: joueurs.find(j => j.id === jid), count }))
+            .filter(x => x.joueur)
+            .sort((a, b) => b.count - a.count)
+        }
+
+        const podiumActuel = podiumDuMois(moisCourantKey)
+        const podiumPrecedent = podiumDuMois(moisPrecedentKey)
+
+        return (
+          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <p style={{ fontWeight: 700, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>🏅 Classement séances</p>
+              <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
+                style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Voir tout →
+              </button>
+            </div>
+
+            <p style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
+              {now.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })}
+            </p>
+            {podiumActuel.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {podiumActuel.slice(0, 3).map((item, idx) => (
+                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: '#0a0a0a', borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? '#fbbf24' : idx === 1 ? '#9ca3af' : '#cd7f32', color: '#0a0a0a', fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {idx + 1}
+                    </span>
+                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{item.joueur.prenom} {item.joueur.nom}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#fbbf24' }}>{item.count} ⭐</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {podiumPrecedent.length > 0 && (
+              <>
+                <p style={{ fontSize: '10px', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
+                  {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.75 }}>
+                  <span style={{ fontSize: '14px' }}>🥇</span>
+                  <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#fbbf24' }}>{podiumPrecedent[0].count} ⭐</span>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Actions rapides */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
