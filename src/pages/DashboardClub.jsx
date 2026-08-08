@@ -62,6 +62,22 @@ const ROLES_STAFF = [
 ]
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
+// Rôles de l'organigramme (annuaire de contacts) — texte libre, distinct de
+// ROLES_STAFF (rôles d'accès à l'app, valeurs contraintes utilisées par la RLS).
+const ROLES_ORGANIGRAMME = [
+  'Président', 'Vice-Président', 'Secrétaire', 'Trésorier',
+  'Directeur Sportif', 'Éducateur', 'Éducateur Gardiens',
+  'Kinésithérapeute', 'Médecin', 'Préparateur Physique',
+  'Responsable Mini-Bus', 'Responsable Buvette',
+  'Responsable Marketing', 'Responsable Réseaux Sociaux',
+  'Responsable Recrutement', 'Délégué', 'Autre',
+]
+const CATEGORIES_ORGANIGRAMME = {
+  'Direction': ['Président', 'Vice-Président', 'Secrétaire', 'Trésorier'],
+  'Staff Sportif': ['Directeur Sportif', 'Éducateur', 'Éducateur Gardiens', 'Kinésithérapeute', 'Médecin', 'Préparateur Physique'],
+  'Organisation': ['Responsable Mini-Bus', 'Responsable Buvette', 'Responsable Marketing', 'Responsable Réseaux Sociaux', 'Responsable Recrutement', 'Délégué', 'Autre'],
+}
+
 // Sections pilotables par la matrice de permissions (role_permissions). 'terrains'
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
@@ -75,6 +91,7 @@ const PERMISSION_SECTIONS = [
   { id: 'repartition_bus', label: 'Mini-bus' },
   { id: 'profil', label: 'Profil club' },
   { id: 'evenements', label: 'Événements & Projets' },
+  { id: 'organigramme', label: 'Organigramme' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -91,6 +108,7 @@ const PERMISSION_DEFAULTS = {
   repartition_bus: ['president', 'marketing', 'secretaire'],
   profil: ['president', 'marketing', 'secretaire'],
   evenements: [],
+  organigramme: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -489,6 +507,14 @@ export default function DashboardClub() {
   const [invitingStaff, setInvitingStaff] = useState(false)
   const [inviteMessage, setInviteMessage] = useState(null) // { type: 'ok' | 'erreur', texte }
 
+  // Organigramme du club (annuaire de contacts, table organigramme_club — distincte de staff_club)
+  const [organigramme, setOrganigramme] = useState([])
+  const [modalOrganigramme, setModalOrganigramme] = useState(false)
+  const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
+  const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0 })
+  const [roleOrganigrammeLibre, setRoleOrganigrammeLibre] = useState('')
+  const [savingOrganigramme, setSavingOrganigramme] = useState(false)
+
   // Permissions par rôle (section Staff → "Gérer les permissions")
   const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
@@ -622,7 +648,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements']
+    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements', 'organigramme']
     const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection)
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
@@ -695,7 +721,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId)])
     setLoading(false)
   }
 
@@ -997,6 +1023,50 @@ export default function DashboardClub() {
     if (!confirm('Retirer ce membre du staff ?')) return
     await supabase.from('staff_club').delete().eq('id', staffId)
     setStaffMembers(prev => prev.filter(m => m.id !== staffId))
+  }
+
+  // ── Organigramme du club (annuaire de contacts) ──
+  const chargerOrganigramme = async (uid) => {
+    const { data } = await supabase
+      .from('organigramme_club')
+      .select('*')
+      .eq('club_id', uid)
+      .order('ordre', { ascending: true })
+    setOrganigramme(data || [])
+  }
+
+  const ouvrirModalOrganigramme = (membre) => {
+    setMembreOrganigrammeEdite(membre)
+    if (membre) {
+      const roleConnu = ROLES_ORGANIGRAMME.includes(membre.role)
+      setFormOrganigramme({ prenom: membre.prenom || '', nom: membre.nom || '', role: roleConnu ? membre.role : 'Autre', telephone: membre.telephone || '', email: membre.email || '', ordre: membre.ordre || 0 })
+      setRoleOrganigrammeLibre(roleConnu ? '' : (membre.role || ''))
+    } else {
+      setFormOrganigramme({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0 })
+      setRoleOrganigrammeLibre('')
+    }
+    setModalOrganigramme(true)
+  }
+
+  const sauvegarderMembreOrganigramme = async () => {
+    const role = formOrganigramme.role === 'Autre' ? (roleOrganigrammeLibre.trim() || 'Autre') : formOrganigramme.role
+    if (!role || !formOrganigramme.prenom.trim()) return
+    setSavingOrganigramme(true)
+    const payload = { ...formOrganigramme, role, club_id: clubId, ordre: Number(formOrganigramme.ordre) || 0 }
+    if (membreOrganigrammeEdite) {
+      await supabase.from('organigramme_club').update(payload).eq('id', membreOrganigrammeEdite.id)
+    } else {
+      await supabase.from('organigramme_club').insert(payload)
+    }
+    setSavingOrganigramme(false)
+    setModalOrganigramme(false)
+    await chargerOrganigramme(clubId)
+  }
+
+  const supprimerMembreOrganigramme = async (id) => {
+    if (!confirm('Supprimer ce membre de l\'organigramme ?')) return
+    await supabase.from('organigramme_club').delete().eq('id', id)
+    setOrganigramme(prev => prev.filter(m => m.id !== id))
   }
 
   const chargerClassements = async () => {
@@ -1379,7 +1449,7 @@ export default function DashboardClub() {
   })()
 
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements'].some(canViewSection)
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection)
 
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
@@ -1408,6 +1478,7 @@ export default function DashboardClub() {
     ...(canViewSection('profil') ? [{ id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) }] : []),
     ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
     ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
+    ...(canViewSection('organigramme') ? [{ id: 'organigramme', label: iconLabel(IcoCarteBadge, t('club_tab_organigramme', lang)) }] : []),
     ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
   ] : []
 
@@ -2638,6 +2709,127 @@ export default function DashboardClub() {
             </div>
           )
         })()}
+
+        {/* ── ORGANIGRAMME ── */}
+        {activeTab === 'organigramme' && canViewSection('organigramme') && (
+          <div>
+            {canEditSection('organigramme') && (
+              <button onClick={() => ouvrirModalOrganigramme(null)} style={{ ...st.btnSolid, marginBottom: '24px' }}>+ Ajouter un membre</button>
+            )}
+
+            {Object.entries(CATEGORIES_ORGANIGRAMME).map(([categorie, roles]) => {
+              const membres = organigramme.filter(m => roles.includes(m.role) || (categorie === 'Organisation' && !ROLES_ORGANIGRAMME.includes(m.role)))
+              if (!membres.length) return null
+              return (
+                <div key={categorie} style={{ marginBottom: '32px' }}>
+                  <h3 style={{ color: '#4ade80', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
+                    {categorie}
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '12px' }}>
+                    {membres.map(membre => (
+                      <div key={membre.id} style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', flexShrink: 0, overflow: 'hidden' }}>
+                            {membre.photo_url
+                              ? <img src={membre.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : (membre.prenom?.[0] || '') + (membre.nom?.[0] || '')}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: '700', color: 'white', fontSize: '14px' }}>{membre.prenom} {membre.nom}</div>
+                            <div style={{ fontSize: '11px', color: '#4ade80', fontWeight: '600' }}>{membre.role}</div>
+                          </div>
+                        </div>
+
+                        {(membre.telephone || membre.email) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                            {membre.telephone && (
+                              <a href={`tel:${membre.telephone}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af', textDecoration: 'none' }}>
+                                📞 {membre.telephone}
+                              </a>
+                            )}
+                            {membre.email && (
+                              <a href={`mailto:${membre.email}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af', textDecoration: 'none', wordBreak: 'break-all' }}>
+                                ✉️ {membre.email}
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {canEditSection('organigramme') && (
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                            <button onClick={() => ouvrirModalOrganigramme(membre)} style={{ flex: 1, padding: '6px', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
+                              ✏️ Modifier
+                            </button>
+                            <button onClick={() => supprimerMembreOrganigramme(membre.id)} style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
+                              🗑️
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+
+            {organigramme.length === 0 && (
+              <p style={{ color: '#666', fontSize: '13px' }}>Aucun membre dans l'organigramme pour l'instant.</p>
+            )}
+          </div>
+        )}
+
+        {/* ── Modale ajout/modification organigramme ── */}
+        {modalOrganigramme && (
+          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{membreOrganigrammeEdite ? '✏️ Modifier le membre' : '+ Ajouter un membre'}</p>
+                <button onClick={() => setModalOrganigramme(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={st.label}>Prénom</label>
+                  <input style={st.input} value={formOrganigramme.prenom} onChange={e => setFormOrganigramme(f => ({ ...f, prenom: e.target.value }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={st.label}>Nom</label>
+                  <input style={st.input} value={formOrganigramme.nom} onChange={e => setFormOrganigramme(f => ({ ...f, nom: e.target.value }))} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={st.label}>Rôle</label>
+                <select style={st.input} value={formOrganigramme.role} onChange={e => setFormOrganigramme(f => ({ ...f, role: e.target.value }))}>
+                  <option value="">— Choisir —</option>
+                  {ROLES_ORGANIGRAMME.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                {formOrganigramme.role === 'Autre' && (
+                  <input style={{ ...st.input, marginTop: '8px' }} placeholder="Préciser le rôle" value={roleOrganigrammeLibre} onChange={e => setRoleOrganigrammeLibre(e.target.value)} />
+                )}
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={st.label}>Téléphone</label>
+                <input style={st.input} type="tel" value={formOrganigramme.telephone} onChange={e => setFormOrganigramme(f => ({ ...f, telephone: e.target.value }))} />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={st.label}>Email</label>
+                <input style={st.input} type="email" value={formOrganigramme.email} onChange={e => setFormOrganigramme(f => ({ ...f, email: e.target.value }))} />
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={st.label}>Ordre d'affichage</label>
+                <input style={st.input} type="number" value={formOrganigramme.ordre} onChange={e => setFormOrganigramme(f => ({ ...f, ordre: e.target.value }))} />
+              </div>
+
+              <button onClick={sauvegarderMembreOrganigramme} disabled={savingOrganigramme || !formOrganigramme.prenom.trim() || !formOrganigramme.role} style={{ ...st.btnSolid, width: '100%', opacity: (savingOrganigramme || !formOrganigramme.prenom.trim() || !formOrganigramme.role) ? 0.5 : 1 }}>
+                {savingOrganigramme ? 'Enregistrement...' : membreOrganigrammeEdite ? 'Enregistrer' : 'Ajouter'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── STAFF (président uniquement) ── */}
         {activeTab === 'staff' && monRole === 'president' && (

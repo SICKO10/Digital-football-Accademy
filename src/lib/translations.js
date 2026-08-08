@@ -752,6 +752,7 @@ export const T = {
   club_tab_profil:           { fr: 'Profil club',               en: 'Club profile',           pt: 'Perfil do clube',       es: 'Perfil del club',        it: 'Profilo club',          de: 'Vereinsprofil'        },
   club_tab_budget:           { fr: 'Budget',                    en: 'Budget',                 pt: 'Orçamento',             es: 'Presupuesto',            it: 'Budget',                de: 'Budget'               },
   club_tab_staff:            { fr: 'Staff',                     en: 'Staff',                  pt: 'Equipa técnica',        es: 'Equipo directivo',       it: 'Staff',                 de: 'Team'                 },
+  club_tab_organigramme:     { fr: 'Organigramme',              en: 'Directory',              pt: 'Organograma',           es: 'Organigrama',            it: 'Organigramma',          de: 'Organigramm'          },
 
   // ── Dashboard club — Catégories & Équipes ────────────────────────────────────
   club_assignation_cours:    { fr: 'Assignation...',            en: 'Assigning...',           pt: 'A atribuir...',         es: 'Asignando...',           it: 'Assegnazione...',       de: 'Zuweisung...'         },
