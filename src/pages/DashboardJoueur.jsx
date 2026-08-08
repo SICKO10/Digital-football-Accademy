@@ -2438,6 +2438,39 @@ function DashboardJoueur() {
               </div>
             </div>
 
+            {/* TEASER MON ÉQUIPE */}
+            {(() => {
+              const aff = mesAffiliations.find(a => a.statut === 'accepte')
+              const pending = !aff && mesAffiliations.find(a => a.statut === 'en_attente')
+              if (aff) {
+                const pe = aff.profil_educateur
+                return (
+                  <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: '#fff' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
+                      {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#86efac' }}>{t('jeq_titre', lang)}</p>
+                    </div>
+                    <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
+                  </button>
+                )
+              }
+              if (pending) {
+                return (
+                  <div style={{ background: '#1f150a', border: '1px solid #f9731630', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#f97316', fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
+                  </div>
+                )
+              }
+              return (
+                <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                  🔑 Rejoins ton équipe avec le code fourni par ton éducateur
+                </button>
+              )
+            })()}
+
             {/* PLANNING DE LA SEMAINE (si affilié à un éducateur) */}
             {mesAffiliations.some(a => a.statut === 'accepte') && (
               <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
@@ -3751,15 +3784,23 @@ function DashboardJoueur() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                       {s.prochainMatchs.map((m, i) => {
                                         const d = new Date(m.date)
-                                        const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
+                                        const jour = d.toLocaleDateString(localeOf(lang), { weekday: 'short' })
+                                        const mois = d.toLocaleDateString(localeOf(lang), { month: 'short' })
                                         return (
-                                          <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                              <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
-                                              {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                          <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ flexShrink: 0, width: '42px', textAlign: 'center', background: '#34d39915', border: '1px solid #34d39930', borderRadius: '8px', padding: '4px 0', textTransform: 'uppercase' }}>
+                                              <div style={{ fontSize: '8px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{jour}</div>
+                                              <div style={{ fontSize: '16px', color: 'white', fontWeight: 800, lineHeight: 1.3 }}>{d.getDate()}</div>
+                                              <div style={{ fontSize: '8px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{mois}</div>
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
-                                            {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                                <span style={{ fontSize: '10px', color: '#555' }}>{m.heure || ''}</span>
+                                                {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                              </div>
+                                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
+                                              {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                            </div>
                                           </div>
                                         )
                                       })}
