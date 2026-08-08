@@ -851,8 +851,38 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       {/* Actions rapides */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
+        {prochainEnt ? (() => {
+          const presents = compterStatutPresence('present') + compterStatutPresence('convoque')
+          const absents = compterStatutPresence('absent') + compterStatutPresence('blesse') + compterStatutPresence('malade')
+          const enAttente = Math.max(0, totalJoueurs - dispoProchainEnt.length)
+          const clos = sondageEstClos(prochainEnt)
+          return (
+            <button onClick={() => setActiveSection('entrainements')}
+              style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : '#4ade80'}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+              <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
+              <div style={{ fontSize: '13px', color: 'white', fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                📋 {prochainEnt.description || 'Entraînement'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
+                <span style={{ color: '#4ade80' }}>✅ {presents}</span>
+                <span style={{ color: '#ef4444' }}>❌ {absents}</span>
+                <span style={{ color: '#6b7280' }}>⏳ {enAttente}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? '#374151' : 'rgba(74,222,128,0.15)', color: clos ? '#6b7280' : '#4ade80' }}>
+                  {clos ? '🔒 Fermé' : '🟢 Ouvert'}
+                </span>
+              </div>
+            </button>
+          )
+        })() : (
+          <button onClick={() => setActiveSection('equipe')}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><IcoPlus /></span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>Ajouter un joueur</span>
+          </button>
+        )}
         {[
-          { Icon: IcoPlus, label: 'Ajouter un joueur', section: 'equipe' },
           { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
           { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
           { Icon: IcoLayout, label: 'Tacticboard', section: 'tactipad' },
