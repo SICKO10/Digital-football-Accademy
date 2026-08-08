@@ -101,6 +101,15 @@ const IconUsers = () => (
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 )
+const IconTrophy = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+    <path d="M4 22h16"/>
+    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+  </svg>
+)
 
 function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
   return (
@@ -387,7 +396,7 @@ function DashboardJoueur() {
   // compte que present/convoque comme "présent" (même convention que
   // tauxPresence côté DashboardEducateur.jsx — un joueur convoqué en équipe
   // sup n'est pas un absent).
-  const chargerTauxPresence = async (equipeJoueurId) => {
+  async function chargerTauxPresence(equipeJoueurId) {
     if (!equipeJoueurId) { setTauxPresenceAccueil(null); return }
     const { data } = await supabase.from('presences_entrainement').select('statut').eq('joueur_id', equipeJoueurId)
     if (!data || data.length === 0) { setTauxPresenceAccueil(null); return }
@@ -422,7 +431,7 @@ function DashboardJoueur() {
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id) }
+      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id) }
     }
     if (onglet === 'competition') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
@@ -528,11 +537,6 @@ function DashboardJoueur() {
     if (!userId || !educateurId) return
     const aujourdHui = new Date().toISOString().split('T')[0]
     const dans30jours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-
-    // Widget "taux de présence" affiché juste à côté — même déclencheur que le
-    // reste de ce chargement (onglet accueil + affiliation acceptée connue ici).
-    const equipeJoueurId = mesAffiliations.find(af => af.statut === 'accepte' && af.educateur_id === educateurId)?.equipe_joueur_id
-    chargerTauxPresence(equipeJoueurId)
 
     const [{ data: entrainements }, { data: matchs }] = await Promise.all([
       supabase.from('entrainements').select('id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
