@@ -17,6 +17,9 @@ ALTER TABLE distances_cache ENABLE ROW LEVEL SECURITY;
 -- Pas de donnée sensible (juste ville → ville → distance), et alimentée côté
 -- client à la volée (pas d'edge function dédiée) : lecture/écriture ouvertes
 -- à tout utilisateur connecté.
+DROP POLICY IF EXISTS "distances_cache_select" ON distances_cache;
+DROP POLICY IF EXISTS "distances_cache_insert" ON distances_cache;
+DROP POLICY IF EXISTS "distances_cache_update" ON distances_cache;
 CREATE POLICY "distances_cache_select" ON distances_cache FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "distances_cache_insert" ON distances_cache FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "distances_cache_update" ON distances_cache FOR UPDATE USING (auth.uid() IS NOT NULL);
