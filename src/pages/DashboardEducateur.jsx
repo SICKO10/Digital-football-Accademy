@@ -1117,12 +1117,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    // Debug temporaire — affiliation non détectée alors que la ligne existe côté
-    // club (statut accepte confirmé) : besoin de voir l'erreur Postgres réelle
-    // (RLS bloque error:null-mais-0-ligne côté delete, mais côté select un refus
-    // de policy/grant remonte normalement un vrai code d'erreur ici).
-    if (error) console.error('❌ chargerClubAffiliation error:', error.code, error.message, error.details, error.hint)
-    console.log('🔍 chargerClubAffiliation uid=', uid, 'data=', data)
+    if (error) console.error('❌ chargerClubAffiliation error:', error.code, error.message)
     setClubAffiliation(data || null)
   }
 
