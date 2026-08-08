@@ -4814,24 +4814,32 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
-          clubAffiliation?.club_id ? (
+          clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
             <Deplacements clubId={clubAffiliation.club_id} accentColor="#60a5fa" />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.</p>
+              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>
+                {clubAffiliation?.statut === 'en_attente'
+                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
+                  : 'Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.'}
+              </p>
             </div>
           )
         )}
 
         {/* ===== TERRAINS ===== */}
         {activeSection === 'terrains' && (
-          clubAffiliation?.club_id ? (
+          clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
             <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor="#60a5fa" />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ {t('nav_terrains', lang)}</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.</p>
+              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>
+                {clubAffiliation?.statut === 'en_attente'
+                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
+                  : 'Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.'}
+              </p>
             </div>
           )
         )}
