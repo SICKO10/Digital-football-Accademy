@@ -13,7 +13,7 @@ const NATURES = [
 const formVide = () => ({
   equipe: '', educateur_responsable: '', date_depart: '', heure_depart: '',
   heure_retour_estimee: '', nb_personnes: '',
-  lieu_destination: '', nature: 'match', vehicule: '', conducteur: '',
+  lieu_destination: '', ville_destination: '', nature: 'match', vehicule: '', conducteur: '',
   km_avant: '', gasoil_avant: '',
   distance_km: null, duree_trajet_min: null,
 })
@@ -146,6 +146,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         distance_km: horaires?.distance_km ?? null,
         duree_trajet_min: horaires?.duree_trajet_min ?? null,
         lieu_destination: m.lieu || m.adversaire || 'Extérieur',
+        ville_destination: m.ville || null,
         nature: 'match',
         created_by: user?.id || null,
       }
@@ -326,19 +327,18 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     (d.vehicule || '').split('+').map(p => p.trim()).includes(plaque)
   )
 
-  // Estime la distance/durée du trajet vers la destination saisie, déclenché
-  // à la sortie du champ (onBlur) plutôt qu'à chaque frappe : "lieu_destination"
-  // est un texte libre (nom de stade, adresse...), pas une ville seule, donc
-  // interroger Mapbox sur une saisie partielle serait à la fois inutile (peu
-  // de chances de géocoder correctement un texte en cours de frappe) et
-  // gourmand en appels. Purement informatif ici — n'écrase pas heure_depart,
-  // qui n'a pas d'heure de coup d'envoi de référence dans ce formulaire
-  // générique (utilisé aussi pour tournois/stages, cf. estimerEtAppliquerHoraires
-  // dans DashboardEducateur.jsx pour l'estimation automatique liée à un match).
+  // Estime la distance/durée du trajet vers la ville saisie, déclenché à la
+  // sortie du champ (onBlur) plutôt qu'à chaque frappe. Un champ "Ville de
+  // destination" dédié — distinct de "lieu_destination" qui contient souvent
+  // le nom de l'adversaire/du stade (ex: "USCA FOOTBALL 2"), pas une ville
+  // géocodable. Purement informatif ici — n'écrase pas heure_depart, qui n'a
+  // pas d'heure de coup d'envoi de référence dans ce formulaire générique
+  // (utilisé aussi pour tournois/stages, cf. estimerEtAppliquerHoraires dans
+  // DashboardEducateur.jsx pour l'estimation automatique liée à un match).
   const estimerDistanceDestination = async () => {
-    if (!clubVille || !form.lieu_destination.trim() || estimationEnCours) return
+    if (!clubVille || !form.ville_destination.trim() || estimationEnCours) return
     setEstimationEnCours(true)
-    const trajet = await calculerTrajet(clubVille, form.lieu_destination.trim())
+    const trajet = await calculerTrajet(clubVille, form.ville_destination.trim())
     setEstimationEnCours(false)
     if (trajet) setForm(f => ({ ...f, distance_km: trajet.distance_km, duree_trajet_min: trajet.duree_trajet_min }))
   }
@@ -367,6 +367,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       heure_retour_estimee: form.heure_retour_estimee || null,
       nb_personnes: form.nb_personnes !== '' ? parseInt(form.nb_personnes) : null,
       lieu_destination: form.lieu_destination.trim(),
+      ville_destination: form.ville_destination.trim() || null,
       nature: form.nature,
       vehicule: form.vehicule.trim() || null,
       conducteur: form.conducteur.trim() || null,
@@ -394,7 +395,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setForm({
       equipe: dep.equipe || '', educateur_responsable: dep.educateur_responsable || '', date_depart: dep.date_depart || '',
       heure_depart: dep.heure_depart || '', heure_retour_estimee: dep.heure_retour_estimee || '', nb_personnes: dep.nb_personnes ?? '',
-      lieu_destination: dep.lieu_destination || '', nature: dep.nature || 'match', vehicule: dep.vehicule || '', conducteur: dep.conducteur || '',
+      lieu_destination: dep.lieu_destination || '', ville_destination: dep.ville_destination || '', nature: dep.nature || 'match', vehicule: dep.vehicule || '', conducteur: dep.conducteur || '',
       km_avant: dep.km_avant ?? '', gasoil_avant: dep.gasoil_avant || '',
       distance_km: dep.distance_km ?? null, duree_trajet_min: dep.duree_trajet_min ?? null,
     })
@@ -544,12 +545,18 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               <label style={st.label}>Nb personnes (joueurs + staff)</label>
               <input style={st.input} type="number" min="0" value={form.nb_personnes} onChange={e => setForm(f => ({ ...f, nb_personnes: e.target.value }))} />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div>
               <label style={st.label}>Lieu / destination</label>
               <input style={st.input} value={form.lieu_destination}
-                onChange={e => setForm(f => ({ ...f, lieu_destination: e.target.value, distance_km: null, duree_trajet_min: null }))}
+                onChange={e => setForm(f => ({ ...f, lieu_destination: e.target.value }))}
+                placeholder="Ex: Stade municipal, adversaire..." />
+            </div>
+            <div>
+              <label style={st.label}>Ville de destination (pour calcul trajet)</label>
+              <input style={st.input} value={form.ville_destination}
+                onChange={e => setForm(f => ({ ...f, ville_destination: e.target.value, distance_km: null, duree_trajet_min: null }))}
                 onBlur={estimerDistanceDestination}
-                placeholder="Ex: Stade municipal, Lyon" />
+                placeholder="Ex: Nice, Marseille, Lyon..." />
               {estimationEnCours && <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>🗺️ Estimation du trajet...</p>}
               {!estimationEnCours && form.distance_km != null && (
                 <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: '#9ca3af' }}>

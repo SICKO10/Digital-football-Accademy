@@ -2366,6 +2366,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       equipe: equipe || null,
       date_depart: m.date,
       lieu_destination: m.lieu || m.adversaire || null,
+      ville_destination: m.ville || null,
       nature: 'match',
       created_by: user?.id || null,
     })
@@ -2385,7 +2386,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!resultat) return
     await supabase.from('matchs_equipe').update({ distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min }).eq('id', m.id)
     await supabase.from('deplacements')
-      .update({ heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee })
+      .update({ heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, ville_destination: m.ville, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
       .eq('club_id', clubAffiliation.club_id).eq('date_depart', m.date).is('heure_depart', null)
   }
 
