@@ -3585,7 +3585,7 @@ function DashboardJoueur() {
 
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ maxWidth: '1120px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>{t('jeq_titre', lang)}</h1>
             <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
 
@@ -3675,180 +3675,176 @@ function DashboardJoueur() {
                           {statsJoueur[a.id] && (() => {
                             const s = statsJoueur[a.id]
                             const RankBadge = ({ rank, total }) => rank && total > 1 ? (
-                              <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', background: rank === 1 ? '#fbbf2420' : '#ffffff10', color: rank === 1 ? '#fbbf24' : '#555', marginLeft: '4px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '8px', background: rank === 1 ? '#fbbf2420' : '#ffffff10', color: rank === 1 ? '#fbbf24' : '#666', marginLeft: '6px' }}>
                                 #{rank}/{total}
                               </span>
                             ) : null
-                            return (
-                              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                                {/* Stats match */}
+                            const statCards = [
+                              { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
+                              { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
+                              { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                              { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
+                              { label: t('aff_points_seance', lang), value: s.points, color: '#fbbf24', rank: s.rankPoints, badge: s.rankPoints?.rank === 1 },
+                            ]
+
+                            return (
+                              <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '18px', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                                {/* Vue d'ensemble */}
                                 <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
-                                    {[
-                                      { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                                      { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
-                                      { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
-                                      { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
-                                    ].map(stat => (
-                                      <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div>
-                                          <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
+                                  <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 800, color: '#e5e7eb', letterSpacing: '0.3px' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
+                                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+                                    <div style={{ flexShrink: 0, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: '16px', minWidth: '220px' }}>
+                                      <AnneauTaux taux={s.tauxPresence ?? 0} size={72} strokeWidth={7} fontSize={15} />
+                                      <div>
+                                        <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 700 }}>{t('aff_taux_presence', lang)}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#aaa' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</p>
+                                      </div>
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: '260px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+                                      {statCards.map(stat => (
+                                        <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '12px', padding: '14px 16px', border: '1px solid #1a1a1a' }}>
+                                          <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{stat.label}</p>
                                           <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '20px', fontWeight: 800, color: stat.color }}>{stat.value}</span>
+                                            <span style={{ fontSize: '26px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
+                                            <RankBadge rank={stat.rank?.rank} total={stat.rank?.total} />
                                           </div>
+                                          {stat.badge && <span style={{ fontSize: '10px', color: '#fbbf24', marginTop: '4px', display: 'block' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '4px 12px', borderRadius: '10px' }}>⏱ {s.minutesJouees} min</span>
+                                    {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', padding: '4px 12px', borderRadius: '10px' }}>🟨 {s.jaunes}</span>}
+                                    {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '4px 12px', borderRadius: '10px' }}>🟥 {s.rouges}</span>}
+                                  </div>
+                                </div>
+
+                                {/* Deux colonnes sur desktop pour occuper la largeur */}
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Présence par mois */}
+                                    {s.presenceMensuelle?.length > 0 && (
+                                      <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
+                                        <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#a78bfa' }}>📅 Présence par mois</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                                          {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                            const [y, m] = month.split('-')
+                                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
+                                            const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
+                                            return (
+                                              <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontSize: '11px', color: '#666', width: '48px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
+                                                <div style={{ flex: 1, height: '8px', background: '#1a1a1a', borderRadius: '4px' }}>
+                                                  <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.5s' }} />
+                                                </div>
+                                                <span style={{ fontSize: '12px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
+                                                <span style={{ fontSize: '10px', color: '#444', flexShrink: 0, width: '34px', textAlign: 'right' }}>{present}/{total}</span>
+                                              </div>
+                                            )
+                                          })}
                                         </div>
                                       </div>
-                                    ))}
-                                  </div>
-                                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '8px' }}>⏱ {s.minutesJouees} min</span>
-                                    {s.jaunes > 0 && <span style={{ fontSize: '11px', color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', padding: '2px 8px', borderRadius: '8px' }}>🟨 {s.jaunes}</span>}
-                                    {s.rouges > 0 && <span style={{ fontSize: '11px', color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '2px 8px', borderRadius: '8px' }}>🟥 {s.rouges}</span>}
-                                  </div>
-                                </div>
+                                    )}
 
-                                {/* Présence + Points séance */}
-                                <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
-                                    {/* Taux de présence */}
-                                    <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <AnneauTaux taux={s.tauxPresence ?? 0} size={44} strokeWidth={5} fontSize={10} />
-                                      <div>
-                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
-                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
-                                      </div>
-                                    </div>
-                                    {/* Points séance */}
-                                    <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
-                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_points_seance', lang)}</p>
-                                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>{s.points}</span>
-                                        <RankBadge rank={s.rankPoints?.rank} total={s.rankPoints?.total} />
-                                      </div>
-                                      {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Présence par mois */}
-                                {s.presenceMensuelle?.length > 0 && (
-                                  <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>📅 Présence par mois</p>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                      {s.presenceMensuelle.map(({ month, taux, present, total }) => {
-                                        const [y, m] = month.split('-')
-                                        const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                                        const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
-                                        return (
-                                          <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '10px', color: '#555', width: '40px', flexShrink: 0 }}>{label}</span>
-                                            <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
-                                              <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.5s' }} />
-                                            </div>
-                                            <span style={{ fontSize: '10px', fontWeight: 700, color, width: '32px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
-                                            <span style={{ fontSize: '9px', color: '#333', flexShrink: 0 }}>{present}/{total}</span>
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Avis éducateur */}
-                                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '12px 16px' }}>
-                                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 Avis de l'éducateur</p>
-                                  {s.noteEdu ? (
-                                    <>
-                                      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                                        {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
-                                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
-                                            <span style={{ color: '#f59e0b', fontSize: 12 }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
-                                          </div>
-                                        ) : null)}
-                                      </div>
-                                      {s.noteEdu.commentaire && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#555', fontStyle: 'italic' }}>"{s.noteEdu.commentaire}"</p>}
-                                    </>
-                                  ) : (
-                                    <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
-                                  )}
-                                </div>
-
-                                {/* Calendrier prochains matchs */}
-                                <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 Prochains matchs</p>
-                                  {s.prochainMatchs?.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                      {s.prochainMatchs.map((m, i) => {
-                                        const d = new Date(m.date)
-                                        const jour = d.toLocaleDateString(localeOf(lang), { weekday: 'short' })
-                                        const mois = d.toLocaleDateString(localeOf(lang), { month: 'short' })
-                                        return (
-                                          <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ flexShrink: 0, width: '42px', textAlign: 'center', background: '#34d39915', border: '1px solid #34d39930', borderRadius: '8px', padding: '4px 0', textTransform: 'uppercase' }}>
-                                              <div style={{ fontSize: '8px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{jour}</div>
-                                              <div style={{ fontSize: '16px', color: 'white', fontWeight: 800, lineHeight: 1.3 }}>{d.getDate()}</div>
-                                              <div style={{ fontSize: '8px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{mois}</div>
-                                            </div>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                                                <span style={{ fontSize: '10px', color: '#555' }}>{m.heure || ''}</span>
-                                                {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                    {/* Avis éducateur */}
+                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
+                                      <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: '13px' }}>📝 Avis de l'éducateur</p>
+                                      {s.noteEdu ? (
+                                        <>
+                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                                            {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
+                                              <div key={label}>
+                                                <p style={{ margin: '0 0 3px', fontSize: '11px', color: '#666' }}>{label}</p>
+                                                <span style={{ color: '#f59e0b', fontSize: '15px' }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
                                               </div>
-                                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
-                                              {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
-                                            </div>
+                                            ) : null)}
+                                          </div>
+                                          {s.noteEdu.commentaire && <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.noteEdu.commentaire}"</p>}
+                                        </>
+                                      ) : (
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#444', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Prochains matchs */}
+                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
+                                      <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#34d399' }}>📅 Prochains matchs</p>
+                                      {s.prochainMatchs?.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          {s.prochainMatchs.map((m, i) => {
+                                            const d = new Date(m.date)
+                                            const jour = d.toLocaleDateString(localeOf(lang), { weekday: 'short' })
+                                            const mois = d.toLocaleDateString(localeOf(lang), { month: 'short' })
+                                            return (
+                                              <div key={i} style={{ background: '#111', borderRadius: '10px', padding: '10px 14px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ flexShrink: 0, width: '46px', textAlign: 'center', background: '#34d39915', border: '1px solid #34d39930', borderRadius: '9px', padding: '5px 0', textTransform: 'uppercase' }}>
+                                                  <div style={{ fontSize: '9px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{jour}</div>
+                                                  <div style={{ fontSize: '18px', color: 'white', fontWeight: 800, lineHeight: 1.3 }}>{d.getDate()}</div>
+                                                  <div style={{ fontSize: '9px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{mois}</div>
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                                                    <span style={{ fontSize: '11px', color: '#666' }}>{m.heure || ''}</span>
+                                                    {m.competition && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>{m.competition}</span>}
+                                                  </div>
+                                                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#444' }}>vs</span> {m.equipe_exterieur}</p>
+                                                  {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>📍 {m.lieu}</p>}
+                                                </div>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#444', fontStyle: 'italic' }}>Aucun match programmé.</p>
+                                      )}
+                                    </div>
+
+                                    {/* Classements internes */}
+                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
+                                      <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#f97316' }}>🏅 Classements équipe</p>
+                                      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                                        {[
+                                          { key: 'buteurs', label: '⚽ Buteurs', data: s.leaderButs },
+                                          { key: 'passeurs', label: '🎯 Passeurs', data: s.leaderPasses },
+                                          { key: 'victoires', label: '🏆 Victoires', data: s.leaderVictoires },
+                                          { key: 'points', label: '⭐ Points', data: s.leaderPoints },
+                                        ].map(c => (
+                                          <button key={c.key} onClick={() => setClassementActif(c.key)}
+                                            style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#111', color: classementActif === c.key ? '#000' : '#666' }}>
+                                            {c.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      {(() => {
+                                        const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
+                                        return (
+                                          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+                                            {actif.length > 0 ? actif.map((row, i) => (
+                                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 800, color: i === 0 ? '#fbbf24' : i < 3 ? '#4ade80' : '#555', minWidth: '20px' }}>{i + 1}</span>
+                                                <span style={{ flex: 1, fontSize: '13px', fontWeight: row.isMe ? 800 : 500, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#999' }}>{row.val}</span>
+                                              </div>
+                                            )) : <p style={{ margin: 0, padding: '14px', fontSize: '12px', color: '#444' }}>—</p>}
                                           </div>
                                         )
-                                      })}
+                                      })()}
                                     </div>
-                                  ) : (
-                                    <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>Aucun match programmé.</p>
-                                  )}
-                                </div>
 
-                                {/* Classements internes */}
-                                <div>
-                                  <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 Classements équipe</p>
-                                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                                    {[
-                                      { key: 'buteurs', label: '⚽ Top buteurs', data: s.leaderButs },
-                                      { key: 'passeurs', label: '🎯 Top passeurs', data: s.leaderPasses },
-                                      { key: 'victoires', label: '🏆 Top victoires', data: s.leaderVictoires },
-                                      { key: 'points', label: '⭐ Points séance', data: s.leaderPoints },
-                                    ].map(c => (
-                                      <button key={c.key} onClick={() => setClassementActif(c.key)}
-                                        style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#0a0a0a', color: classementActif === c.key ? '#000' : '#555' }}>
-                                        {c.label}
-                                      </button>
-                                    ))}
+                                    {/* Lien classement ligue */}
+                                    {s.ligueUrl && (
+                                      <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '12px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                                        🏆 {t('aff_classement_championnat', lang)}
+                                      </a>
+                                    )}
                                   </div>
-                                  {(() => {
-                                    const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
-                                    return (
-                                      <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
-                                        {actif.length > 0 ? actif.map((row, i) => (
-                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
-                                            <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? '#4ade80' : '#555', minWidth: '18px' }}>{i + 1}</span>
-                                            <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
-                                            <span style={{ fontSize: '12px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#888' }}>{row.val}</span>
-                                          </div>
-                                        )) : <p style={{ margin: 0, padding: '12px', fontSize: '11px', color: '#333' }}>—</p>}
-                                      </div>
-                                    )
-                                  })()}
                                 </div>
-
-                                {/* Lien classement ligue */}
-                                {s.ligueUrl && (
-                                  <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
-                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                                    🏆 {t('aff_classement_championnat', lang)}
-                                  </a>
-                                )}
 
                               </div>
                             )
