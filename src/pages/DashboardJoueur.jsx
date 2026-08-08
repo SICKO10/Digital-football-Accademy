@@ -233,6 +233,30 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
   )
 }
 
+// Cercle de taux de présence — utilisé sur l'Accueil, à côté du widget
+// "Prochaines échéances". `taux`/`present`/`total` viennent de
+// presences_entrainement (saisie de l'éducateur), pas de disponibilites (le
+// sondage n'exprime qu'une intention, pas une présence constatée).
+function CerclePresence({ taux, present, total }) {
+  const r = 36
+  const circ = 2 * Math.PI * r
+  const offset = circ - (taux / 100) * circ
+  const couleur = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
+  return (
+    <div style={{ background: '#111827', borderRadius: '16px', padding: '20px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '140px' }}>
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r={r} fill="none" stroke="#1f2937" strokeWidth="8" />
+        <circle cx="45" cy="45" r={r} fill="none" stroke={couleur} strokeWidth="8"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          transform="rotate(-90 45 45)" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+        <text x="45" y="45" textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="800" fill={couleur}>{taux}%</text>
+      </svg>
+      <div style={{ fontSize: '12px', fontWeight: '700', color: 'white', marginTop: '8px' }}>Présence</div>
+      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{present}/{total} séances</div>
+    </div>
+  )
+}
+
 function DashboardJoueur() {
   const navigate = useNavigate()
   const [profil, setProfil] = useState(null)
@@ -311,6 +335,11 @@ function DashboardJoueur() {
   const [widgetDispoEnt, setWidgetDispoEnt] = useState(null)
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
+  const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total } | null
+  // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
+  const [resultatsCompetition, setResultatsCompetition] = useState([])
+  const [calendrierCompetition, setCalendrierCompetition] = useState([])
+  const [lienClassementCompetition, setLienClassementCompetition] = useState(null)
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
   const [pendingDispo, setPendingDispo] = useState({}) // { [eventId]: statut } — choix pas encore validé (avant clic sur "Valider")
@@ -350,6 +379,23 @@ function DashboardJoueur() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
+  // Taux de présence (widget Accueil, à côté de "Prochaines échéances") — basé
+  // sur presences_entrainement (constat de l'éducateur après la séance), donc
+  // equipeJoueurId (equipe_joueurs.id), PAS userId : contrairement à
+  // disponibilites (le sondage, où joueur_id = le compte du joueur), les
+  // présences sont rattachées à la fiche joueur du roster de l'éducateur. Ne
+  // compte que present/convoque comme "présent" (même convention que
+  // tauxPresence côté DashboardEducateur.jsx — un joueur convoqué en équipe
+  // sup n'est pas un absent).
+  const chargerTauxPresence = async (equipeJoueurId) => {
+    if (!equipeJoueurId) { setTauxPresenceAccueil(null); return }
+    const { data } = await supabase.from('presences_entrainement').select('statut').eq('joueur_id', equipeJoueurId)
+    if (!data || data.length === 0) { setTauxPresenceAccueil(null); return }
+    const total = data.length
+    const present = data.filter(p => p.statut === 'present' || p.statut === 'convoque').length
+    setTauxPresenceAccueil({ taux: Math.round((present / total) * 100), present, total })
+  }
+
   useEffect(() => {
     if (onglet === 'coach' && userId) {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
@@ -377,6 +423,10 @@ function DashboardJoueur() {
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id) }
+    }
+    if (onglet === 'competition') {
+      const a = mesAffiliations.find(af => af.statut === 'accepte')
+      if (a) chargerCompetition(a.educateur_id)
     }
   }, [onglet, userId, mesAffiliations])
 
@@ -479,6 +529,11 @@ function DashboardJoueur() {
     const aujourdHui = new Date().toISOString().split('T')[0]
     const dans30jours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
+    // Widget "taux de présence" affiché juste à côté — même déclencheur que le
+    // reste de ce chargement (onglet accueil + affiliation acceptée connue ici).
+    const equipeJoueurId = mesAffiliations.find(af => af.statut === 'accepte' && af.educateur_id === educateurId)?.equipe_joueur_id
+    chargerTauxPresence(equipeJoueurId)
+
     const [{ data: entrainements }, { data: matchs }] = await Promise.all([
       supabase.from('entrainements').select('id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
       supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4),
@@ -508,6 +563,25 @@ function DashboardJoueur() {
     setDispoMap(map)
     setWidgetDispoEnt(prochainEnt ? map[prochainEnt.id] || null : null)
     setWidgetDispoMatch(prochainM ? map[prochainM.id] || null : null)
+  }
+
+  // Onglet Compétition — lecture seule, mêmes données que Compétition côté éducateur
+  // (matchs_equipe : domicile est un booléen, le score joué se lit sur score_nous,
+  // pas de table calendrier_matchs séparée pour les matchs à venir — cf. la logique
+  // équivalente dans DashboardEducateur.jsx, grouperMatchsParMois/matchJoue).
+  const chargerCompetition = async (eduId) => {
+    if (!eduId) return
+    const [{ data: matchs }, { data: pe }] = await Promise.all([
+      supabase.from('matchs_equipe').select('*').eq('educateur_id', eduId).order('date', { ascending: false }),
+      supabase.from('profil_educateur').select('ligue_url').eq('user_id', eduId).maybeSingle(),
+    ])
+    const joues = (matchs || []).filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
+    const aVenir = (matchs || [])
+      .filter(m => m.score_nous === '' || m.score_nous === null || m.score_nous === undefined)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+    setResultatsCompetition(joues.slice(0, 5))
+    setCalendrierCompetition(aVenir.slice(0, 5))
+    setLienClassementCompetition(pe?.ligue_url || null)
   }
 
   const repondreDisponibilite = async (eventId, eventType, statut) => {
@@ -1079,6 +1153,83 @@ function DashboardJoueur() {
     )
   }
 
+  // Onglet Compétition — lecture seule (résultats/calendrier/classement de l'équipe
+  // de l'éducateur affilié), partagé entre les deux mises en page du dashboard
+  // (plan fan affilié vs dashboard principal) pour ne pas dupliquer le rendu.
+  const renduCompetition = () => {
+    const hasAffiliation = mesAffiliations.some(a => a.statut === 'accepte')
+    if (!hasAffiliation) {
+      return (
+        <div style={{ padding: '24px 20px' }}>
+          <h2 style={{ color: 'white', fontWeight: 800, marginBottom: '12px' }}>🏆 {t('jnav_competition', lang)}</h2>
+          <p style={{ color: '#6b7280', fontSize: '13px' }}>Rejoins une équipe (onglet "{t('jnav_equipe', lang)}") pour voir ses résultats, son calendrier et son classement.</p>
+        </div>
+      )
+    }
+    return (
+      <div style={{ padding: '24px 20px' }}>
+        <h2 style={{ color: 'white', fontWeight: 800, marginBottom: '24px' }}>🏆 {t('jnav_competition', lang)}</h2>
+
+        {lienClassementCompetition && (
+          <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid #1f2937' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🔗 Classement officiel</div>
+            <a href={lienClassementCompetition} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade80', color: '#0a0a0a', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+              🏆 Voir le classement ↗
+            </a>
+          </div>
+        )}
+
+        <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid #1f2937' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '12px' }}>📅 Prochains matchs</div>
+          {calendrierCompetition.length === 0 ? (
+            <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun match à venir</p>
+          ) : calendrierCompetition.map(m => (
+            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
+              <div>
+                <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
+                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                  {new Date(m.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  {m.heure ? ` · ${m.heure}` : ''}
+                  {m.competition ? ` · ${m.competition}` : ''}
+                </div>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? '#4ade80' : '#60a5fa' }}>
+                {m.domicile ? 'Domicile' : 'Extérieur'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '12px' }}>⚽ Derniers résultats</div>
+          {resultatsCompetition.length === 0 ? (
+            <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun résultat enregistré</p>
+          ) : resultatsCompetition.map(r => {
+            const scoreNous = Number(r.score_nous)
+            const scoreEux = Number(r.score_eux)
+            const victoire = scoreNous > scoreEux
+            const nul = scoreNous === scoreEux
+            return (
+              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
+                <div>
+                  <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>{r.score_nous} - {r.score_eux}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? '#4ade80' : nul ? '#facc15' : '#ef4444' }}>
+                    {victoire ? 'V' : nul ? 'N' : 'D'}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   // ── JOUEUR AFFILIÉ (plan fan + éducateur lié) ──
   // Note : basé sur "a une affiliation" (active OU archivée), pas seulement active.
   // Un joueur dont la saison vient d'être clôturée (toutes ses affiliations archivées)
@@ -1098,6 +1249,7 @@ function DashboardJoueur() {
       { id: 'accueil',       label: t('jnav_accueil', lang),        icon: <IconHome /> },
 
       { id: 'equipe',        label: t('jnav_equipe', lang),         icon: <IconUsers />, section: labelSection },
+      { id: 'competition',   label: t('jnav_competition', lang),    icon: <span style={{ fontSize: '18px' }}>🏆</span> },
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
 
@@ -1301,6 +1453,7 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />}
+          {onglet === 'competition' && renduCompetition()}
           {onglet === 'stats' && (
             <div style={{ maxWidth: '640px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>{t('aff_mes_stats', lang)}</h2>
@@ -1938,6 +2091,7 @@ function DashboardJoueur() {
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
+    { id: 'competition', label: t('jnav_competition', lang), icon: <span style={{ fontSize: '18px' }}>🏆</span> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
@@ -2205,7 +2359,8 @@ function DashboardJoueur() {
                 { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa' },
               ]
               return (
-                <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '20px', display: 'grid', gridTemplateColumns: isMobile || !tauxPresenceAccueil ? '1fr' : '1fr auto', gap: '16px', alignItems: 'start' }}>
+                <div>
                   <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
                     {t('jd_prochaines_echeances', lang)}
                   </p>
@@ -2285,6 +2440,8 @@ function DashboardJoueur() {
                       )
                     })}
                   </div>
+                </div>
+                {tauxPresenceAccueil && <CerclePresence {...tauxPresenceAccueil} />}
                 </div>
               )
             })()}
@@ -3292,6 +3449,9 @@ function DashboardJoueur() {
             </div>
           </div>
         )}
+
+        {/* ── COMPÉTITION (lecture seule) ── */}
+        {onglet === 'competition' && renduCompetition()}
 
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (

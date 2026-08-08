@@ -480,6 +480,7 @@ export const T = {
   jnav_accueil:             { fr: 'Accueil',                  en: 'Home',                  pt: 'Início',                es: 'Inicio',                it: 'Home',                  de: 'Startseite'            },
   jnav_equipe:              { fr: 'Mon Équipe',               en: 'My Team',               pt: 'A minha Equipa',        es: 'Mi Equipo',             it: 'La mia Squadra',        de: 'Mein Team'             },
   jnav_prep_physique:       { fr: 'Préparation physique',     en: 'Physical prep',         pt: 'Preparação física',     es: 'Preparación física',    it: 'Prep. fisica',          de: 'Phys. Training'        },
+  jnav_competition:         { fr: 'Compétition',              en: 'Competition',           pt: 'Competição',            es: 'Competición',           it: 'Competizione',          de: 'Wettbewerb'            },
   jnav_analyses:            { fr: 'Analyses',                 en: 'Analyses',              pt: 'Análises',              es: 'Análisis',              it: 'Analisi',               de: 'Analysen'              },
   jnav_coach:               { fr: 'Coach Analyseur',          en: 'Analysis Coach',        pt: 'Coach Analisador',      es: 'Coach Analista',        it: 'Coach Analista',        de: 'Analyse-Coach'         },
   jnav_profil:              { fr: 'Mon Profil',               en: 'My Profile',            pt: 'O meu Perfil',          es: 'Mi Perfil',             it: 'Il mio Profilo',        de: 'Mein Profil'           },

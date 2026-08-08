@@ -337,6 +337,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
   const [mousePos, setMousePos] = useState(null)
 
+  // ── Ajout d'un joueur individuel (par opposition au dispositif complet de
+  // 11 posé par ajouterEquipe/appliquerDispositif) ─────────────────────────
+  const [joueursEquipe, setJoueursEquipe] = useState([])
+  const [showPickerJoueur, setShowPickerJoueur] = useState(false)
+  const [pickerScreenPos, setPickerScreenPos] = useState({ x: 0, y: 0 }) // position écran (fixed) du popup
+  const [pickerStagePos, setPickerStagePos] = useState({ x: 0, y: 0 })   // position sur le terrain (coords Konva) du joueur à créer
+  const [pickerNumero, setPickerNumero] = useState('')
+  const [pickerNom, setPickerNom] = useState('')
+
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
 
@@ -371,6 +380,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   useEffect(() => {
     if (!isMobile && !isModal) chargerSchemas()
   }, [])
+
+  // Effectif réel de l'éducateur, pour proposer ses vrais joueurs dans le
+  // picker d'ajout individuel (userId = educateur_id ici, cf. les deux points
+  // d'usage de <Tactipad> dans DashboardEducateur.jsx).
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('equipe_joueurs').select('id, prenom, nom, poste, numero_maillot').eq('educateur_id', userId).order('nom')
+      .then(({ data }) => setJoueursEquipe(data || []))
+  }, [userId])
 
   const selectedElement = selectedId ? elements.find(e => e.id === selectedId) || null : null
   const TRANSFORMABLE_TYPES = ['fleche', 'zone-rect', 'zone-cercle']
@@ -527,6 +545,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     updateElement({ ...el, numero: numero.trim(), nom: (nom || '').trim() })
   }
 
+  // Pose un seul joueur (par opposition à ajouterEquipe/appliquerDispositif qui
+  // posent les 11) — depuis le picker ouvert par l'outil 👤. joueurRef pointe
+  // vers un joueur réel de l'effectif (id/prenom/nom/numero_maillot) si choisi
+  // depuis la liste, sinon numero/nom viennent des champs libres du picker.
+  const ajouterJoueurIndividuel = (joueurRef = null) => {
+    const numero = (joueurRef?.numero_maillot ?? pickerNumero ?? '').toString().trim()
+    const nom = joueurRef ? `${joueurRef.prenom || ''} ${joueurRef.nom || ''}`.trim() : pickerNom.trim()
+    applyElements([...elements, {
+      id: uid(), type: 'joueur', equipe: equipeActive, gardien: false,
+      numero, nom, x: pickerStagePos.x, y: pickerStagePos.y,
+    }])
+    setShowPickerJoueur(false)
+    setTool('select')
+  }
+
   // Renommage rapide via le panneau latéral — pas de push dans l'historique undo à
   // chaque frappe (contrairement à editerJoueur), sinon chaque lettre tapée créerait
   // une étape d'annulation séparée.
@@ -542,6 +575,16 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (!clickedOnEmpty) return
 
     if (tool === 'select') { setSelectedId(null); return }
+
+    if (tool === 'joueur') {
+      const dejaPlaces = elements.filter(el => el.type === 'joueur' && el.equipe === equipeActive).length
+      setPickerStagePos(pos)
+      setPickerScreenPos({ x: e.evt.clientX, y: e.evt.clientY })
+      setPickerNumero(String(dejaPlaces + 1))
+      setPickerNom('')
+      setShowPickerJoueur(true)
+      return
+    }
 
     if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h'].includes(tool)) {
       applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y, rotation: 0 }])
@@ -967,6 +1010,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           {outilsObjets.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
+          <button onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${equipeActive === 'A' ? t('tac_equipe_a', lang) : t('tac_equipe_b', lang)})`}>👤</button>
           <div style={{ height: '1px', background: '#222' }} />
           <div style={{ position: 'relative' }}>
             <button
@@ -1340,6 +1384,61 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Picker "Ajouter un joueur" — ouvert par l'outil 👤, positionné au clic ── */}
+      {showPickerJoueur && (
+        <>
+          <div onClick={() => setShowPickerJoueur(false)} style={{ position: 'fixed', inset: 0, zIndex: 499 }} />
+          <div style={{
+            position: 'fixed', top: pickerScreenPos.y, left: pickerScreenPos.x,
+            background: '#111', border: '1px solid #222',
+            borderRadius: '10px', padding: '12px', zIndex: 500,
+            minWidth: '220px', maxHeight: '320px', overflowY: 'auto',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '8px', fontWeight: '700' }}>
+              AJOUTER UN JOUEUR — {equipeActive === 'A' ? `🟢 ${t('tac_equipe_a', lang)}` : `🟠 ${t('tac_equipe_b', lang)}`}
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+              <input
+                value={pickerNumero} onChange={e => setPickerNumero(e.target.value)}
+                placeholder="N°" style={{ width: '44px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px', fontSize: '12px', textAlign: 'center' }}
+              />
+              <input
+                value={pickerNom} onChange={e => setPickerNom(e.target.value)}
+                placeholder="Nom (optionnel)" style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px 8px', fontSize: '12px' }}
+                onKeyDown={e => e.key === 'Enter' && ajouterJoueurIndividuel()}
+              />
+            </div>
+            <button onClick={() => ajouterJoueurIndividuel()}
+              style={{ display: 'block', width: '100%', padding: '6px', marginBottom: '8px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+              + Ajouter ce joueur
+            </button>
+
+            {joueursEquipe.length > 0 && (
+              <>
+                <div style={{ borderTop: '1px solid #222', margin: '4px 0 8px' }} />
+                <div style={{ fontSize: '10px', color: '#555', marginBottom: '4px' }}>OU DEPUIS L'EFFECTIF</div>
+                {joueursEquipe.map(j => (
+                  <button key={j.id} onClick={() => ajouterJoueurIndividuel(j)}
+                    style={{ display: 'block', width: '100%', padding: '6px 8px', background: 'transparent', border: 'none', color: '#d1d5db', textAlign: 'left', cursor: 'pointer', borderRadius: '6px', fontSize: '13px' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#1a1a1a' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                    {j.numero_maillot ? `#${j.numero_maillot} ` : ''}{j.prenom} {j.nom}
+                    {j.poste && <span style={{ color: '#6b7280', fontSize: '11px' }}> ({j.poste})</span>}
+                  </button>
+                ))}
+              </>
+            )}
+
+            <button onClick={() => setShowPickerJoueur(false)}
+              style={{ marginTop: '8px', width: '100%', padding: '6px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#9ca3af', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+              Annuler
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
