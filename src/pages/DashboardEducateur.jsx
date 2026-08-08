@@ -18,7 +18,7 @@ import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
-import { sondageEstClos } from '../lib/sondage'
+import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
@@ -990,6 +990,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerError, setScannerError] = useState(null)
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
+  const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
+  const [modalSondageMatch, setModalSondageMatch] = useState(null) // match affiché dans la modale résultats
+  const [convocationsCoches, setConvocationsCoches] = useState({}) // { [joueur_id]: bool }, pré-coché ✅/🏆 à l'ouverture de la modale
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
   const [modalMatchForm, setModalMatchForm] = useState(null)
   const [savingMatchForm, setSavingMatchForm] = useState(false)
@@ -1015,6 +1018,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [rapportsRecents, setRapportsRecents] = useState([]) // derniers rapports d'analyse, pour le fil d'activité de l'accueil
   const [sousOngletEnt, setSousOngletEnt] = useState('liste') // 'liste' | 'prochaine'
   const [savingCloture, setSavingCloture] = useState(false)
+  const [savingHeureSeance, setSavingHeureSeance] = useState(false)
   const [showPlanificateur, setShowPlanificateur] = useState(false)
   const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
@@ -1065,6 +1069,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const onResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // sondageEstClos() est calculée en direct depuis l'heure courante (cf. lib/sondage.js),
+  // donc aucune écriture en base n'est nécessaire à l'échéance — mais sans ce tick, rien
+  // ne force React à recalculer entre deux interactions : le badge 🟢 Sondage ouvert et
+  // les boutons de clôture auto restaient figés jusqu'au prochain rechargement de page,
+  // donnant l'impression que "1h avant / 5h avant / 24h avant" ne faisait rien.
+  const [, forcerReevaluationCloture] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => forcerReevaluationCloture(t => t + 1), 60 * 1000)
+    return () => clearInterval(id)
   }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
 
@@ -1149,6 +1164,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerMatchs = async (uid) => {
     const { data } = await supabase.from('matchs_equipe').select('*, stats_match(*)').eq('educateur_id', uid).order('date', { ascending: false })
     setMatchs(data || [])
+
+    // Dispos auto-déclarées par les joueurs pour ces matchs (mêmes disponibilites
+    // que pour les entraînements, via match_id — déjà écrites par les joueurs
+    // depuis leur dashboard, juste jamais affichées côté éducateur)
+    const matchIds = (data || []).map(m => m.id)
+    if (matchIds.length > 0) {
+      const { data: dispos } = await supabase.from('disponibilites').select('id, joueur_id, match_id, statut, created_at').in('match_id', matchIds)
+      const map = {}
+      dispos?.forEach(d => { if (!map[d.match_id]) map[d.match_id] = {}; map[d.match_id][d.joueur_id] = d.statut })
+      setDispoJoueursMatch(map)
+    } else {
+      setDispoJoueursMatch({})
+    }
   }
 
   const chargerEntrainements = async (uid) => {
@@ -2822,6 +2850,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: '#60a5fa15', border: '#60a5fa40', color: '#60a5fa' },
   }
 
+  // Réponses des joueurs à la dispo d'un match (disponibilites.match_id), triées
+  // ✅ → 🏆 → ❌ → 🤕 → 🤒 → ⏳ pour la modale résultats du sondage.
+  const reponsesDispoMatch = (matchId) => {
+    const ordre = { present: 0, convoque: 1, absent: 2, blesse: 3, malade: 4 }
+    return joueurs
+      .map(j => ({ ...j, statut: j.joueur_id ? dispoJoueursMatch[matchId]?.[j.joueur_id] || null : null }))
+      .sort((a, b) => (ordre[a.statut] ?? 5) - (ordre[b.statut] ?? 5))
+  }
+  const statsDispoMatch = (matchId) => {
+    const stats = { present: 0, absent: 0, blesse: 0, malade: 0, convoque: 0, sans_reponse: 0 }
+    reponsesDispoMatch(matchId).forEach(j => { if (j.statut) stats[j.statut]++; else stats.sans_reponse++ })
+    return stats
+  }
+
   // sondageEstClos importée de ../lib/sondage — partagée avec DashboardJoueur.jsx
   // (avant ce partage, seul ce fichier calculait la clôture en direct ; le
   // dashboard joueur se fiait au champ sondage_clos brut, jamais mis à jour
@@ -4467,25 +4509,42 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div key={moisKey}>
                         <p style={{ fontSize: '11px', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {items.map(m => (
-                            <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
-                                  {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
-                                  {m.heure ? ` · ${m.heure}` : ''}
-                                  {m.competition ? ` · ${m.competition}` : ''}
-                                  {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
-                                </p>
+                          {items.map(m => {
+                            const dispoStats = statsDispoMatch(m.id)
+                            const aDesReponses = dispoStats.present + dispoStats.absent + dispoStats.blesse + dispoStats.malade + dispoStats.convoque > 0
+                            return (
+                            <div key={m.id} style={{ ...st.card, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                                    {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    {m.heure ? ` · ${m.heure}` : ''}
+                                    {m.competition ? ` · ${m.competition}` : ''}
+                                    {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
+                                  </p>
+                                </div>
+                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m) }} style={st.btn('#a855f7')}>📋 Sondage dispo</button>
+                                {canEdit('competition') && (
+                                  <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
+                                )}
+                                {canEdit('stats') && (
+                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
+                                )}
                               </div>
-                              {canEdit('competition') && (
-                                <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
-                              )}
-                              {canEdit('stats') && (
-                                <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
+                              {aDesReponses && (
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px' }}>
+                                  <span style={{ color: '#4ade80' }}>✅ {dispoStats.present}</span>
+                                  <span style={{ color: '#ef4444' }}>❌ {dispoStats.absent}</span>
+                                  <span style={{ color: '#f97316' }}>🤕 {dispoStats.blesse}</span>
+                                  {dispoStats.malade > 0 && <span style={{ color: '#a855f7' }}>🤒 {dispoStats.malade}</span>}
+                                  {dispoStats.convoque > 0 && <span style={{ color: '#60a5fa' }}>🏆 {dispoStats.convoque}</span>}
+                                  <span style={{ color: '#6b7280' }}>⏳ {dispoStats.sans_reponse} en attente</span>
+                                </div>
                               )}
                             </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     ))}
@@ -4528,6 +4587,73 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
               </div>
             )}
+
+            {/* ── Modale résultats "Sondage dispo" match ── */}
+            {modalSondageMatch && (() => {
+              const m = modalSondageMatch
+              const reponses = reponsesDispoMatch(m.id)
+              const nomsCoches = reponses.filter(j => convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')).map(j => `${j.prenom} ${j.nom}`)
+              const copierConvocations = async () => {
+                try {
+                  await navigator.clipboard.writeText(nomsCoches.join(', '))
+                  afficherToast(`${nomsCoches.length} joueur${nomsCoches.length > 1 ? 's' : ''} copié${nomsCoches.length > 1 ? 's' : ''}`)
+                } catch { /* clipboard indisponible (contexte non sécurisé, permission refusée...) */ }
+              }
+              return (
+                <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+                  <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#555', margin: '0 0 16px' }}>
+                      {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                      {m.heure ? ` · ${m.heure}` : ''}
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
+                      {reponses.map(j => {
+                        const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
+                        return (
+                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#141414', borderRadius: '10px' }}>
+                            <Avatar person={j} size={32} />
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
+                              {j.poste && <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{j.poste}</p>}
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || '#333', background: cfg?.bg || '#1a1a1a', border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                              {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
+                            </span>
+                          </div>
+                        )
+                      })}
+                      {reponses.length === 0 && (
+                        <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
+                      )}
+                    </div>
+
+                    <div style={{ ...st.card, background: '#0d0d0d' }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>🎽 Générer les convocations</p>
+                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ✅ ou déjà convoqués 🏆. Décoche/coche pour ajuster, puis copie la liste.</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px', maxHeight: '200px', overflowY: 'auto' }}>
+                        {reponses.map(j => {
+                          const coche = convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')
+                          return (
+                            <label key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', padding: '4px 0' }}>
+                              <input type="checkbox" checked={coche} onChange={() => setConvocationsCoches(prev => ({ ...prev, [j.id]: !coche }))} />
+                              {j.prenom} {j.nom}
+                            </label>
+                          )
+                        })}
+                      </div>
+                      <button onClick={copierConvocations} style={st.btnSolid} disabled={nomsCoches.length === 0}>
+                        📋 Copier la liste ({nomsCoches.length})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Modale "Marquer comme joué" ── */}
             {modalMatchJoue && (
@@ -4741,6 +4867,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 await supabase.from('entrainements').update({ cloture_sondage_avant: heures }).eq('id', prochaineSeance.id)
                 setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, cloture_sondage_avant: heures } : e))
               }
+              // La clôture auto se calcule par rapport à l'heure de la séance (cf.
+              // sondageHeureCloture) — sans heure renseignée, "1h/5h/24h avant" est
+              // enregistré mais n'a aucun effet, ce qui donnait l'impression que ces
+              // boutons ne faisaient rien.
+              const heureCloture = sondageHeureCloture(prochaineSeance)
+              const sauvegarderHeureSeance = async (heure) => {
+                setSavingHeureSeance(true)
+                await supabase.from('entrainements').update({ heure }).eq('id', prochaineSeance.id)
+                setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, heure } : e))
+                setSavingHeureSeance(false)
+              }
 
               return (
                 <div>
@@ -4843,7 +4980,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                       <p style={{ fontSize: '11px', color: '#444', marginBottom: '14px' }}>
                         {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
+                        {delaiCloture && heureCloture && (
+                          <> — clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
+                        )}
                       </p>
+                      {delaiCloture && !prochaineSeance.heure && (
+                        <div style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '11px', color: '#f97316', margin: 0, flex: 1, minWidth: '200px' }}>
+                            ⚠️ Cette séance n'a pas d'heure renseignée : la clôture auto ne peut pas se déclencher tant qu'elle est absente.
+                          </p>
+                          <input type="time" style={{ ...st.input, width: 'auto' }} disabled={savingHeureSeance}
+                            onChange={e => e.target.value && sauvegarderHeureSeance(e.target.value)} />
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: '10px' }}>
                         {!clos ? (
                           <button onClick={cloturerSondage} disabled={savingCloture}

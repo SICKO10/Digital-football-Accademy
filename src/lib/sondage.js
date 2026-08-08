@@ -13,13 +13,20 @@
 // direct ; le côté joueur ne lisait que le champ sondage_clos brut, qui n'est
 // mis à jour qu'en cliquant "Clôturer maintenant", donc les joueurs
 // pouvaient continuer à répondre après le délai configuré.
-export function sondageEstClos(seance) {
-  if (!seance) return false
-  if (seance.sondage_clos) return true
-  if (!seance.cloture_sondage_avant || !seance.heure) return false
+// Date/heure exacte de clôture auto, ou null si la clôture auto n'est pas
+// configurée ou pas calculable (heure de séance manquante — cf. sondageEstClos).
+export function sondageHeureCloture(seance) {
+  if (!seance || !seance.cloture_sondage_avant || !seance.heure) return null
   const [h, m] = seance.heure.split(':').map(Number)
   const dateSeance = new Date(seance.date + 'T12:00:00')
   dateSeance.setHours(h, m, 0, 0)
-  const clotureTime = new Date(dateSeance.getTime() - seance.cloture_sondage_avant * 60 * 60 * 1000)
+  return new Date(dateSeance.getTime() - seance.cloture_sondage_avant * 60 * 60 * 1000)
+}
+
+export function sondageEstClos(seance) {
+  if (!seance) return false
+  if (seance.sondage_clos) return true
+  const clotureTime = sondageHeureCloture(seance)
+  if (!clotureTime) return false
   return new Date() >= clotureTime
 }
