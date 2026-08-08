@@ -269,9 +269,9 @@ function AnneauTaux({ taux, size = 90, strokeWidth = 8, fontSize = 16 }) {
   )
 }
 
-function CerclePresence({ taux, present, total }) {
+function CerclePresence({ taux, present, total, style }) {
   return (
-    <div style={{ background: '#111827', borderRadius: '16px', padding: '20px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '140px' }}>
+    <div style={{ background: '#111827', borderRadius: '16px', padding: '20px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '140px', boxSizing: 'border-box', ...style }}>
       <AnneauTaux taux={taux} />
       <div style={{ fontSize: '12px', fontWeight: '700', color: 'white', marginTop: '8px' }}>Présence</div>
       <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{present}/{total} séances</div>
@@ -2400,12 +2400,12 @@ function DashboardJoueur() {
                 { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa' },
               ]
               return (
-                <div style={{ marginBottom: '20px', display: 'grid', gridTemplateColumns: isMobile || !tauxPresenceAccueil ? '1fr' : '1fr auto', gap: '16px', alignItems: 'start' }}>
-                <div>
+                <div style={{ marginBottom: '20px' }}>
                   <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
                     {t('jd_prochaines_echeances', lang)}
                   </p>
-                  <div style={{ display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'stretch', gap: '16px' }}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '6px' }}>
                     {widgetCalendrier.map(ev => {
                       const date = new Date(ev.date + 'T12:00:00')
                       const isToday = date.toDateString() === new Date().toDateString()
@@ -2481,8 +2481,8 @@ function DashboardJoueur() {
                       )
                     })}
                   </div>
-                </div>
-                {tauxPresenceAccueil && <CerclePresence {...tauxPresenceAccueil} />}
+                  {tauxPresenceAccueil && <CerclePresence {...tauxPresenceAccueil} style={{ flexShrink: 0, alignSelf: 'stretch', height: 'auto' }} />}
+                  </div>
                 </div>
               )
             })()}
