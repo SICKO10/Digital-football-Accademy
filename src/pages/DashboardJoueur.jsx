@@ -242,24 +242,37 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
   )
 }
 
+// Un joueur "convoqué" (équipe supérieure, etc.) compte comme présent — même
+// convention que tauxPresence côté DashboardEducateur.jsx. Valeurs canoniques
+// uniquement (present/convoque) : présences_entrainement n'a jamais eu de
+// variantes accentuées/anglaises/booléennes, cf. sessions précédentes.
+const estPresent = (statut) => statut === 'present' || statut === 'convoque'
+
 // Cercle de taux de présence — utilisé sur l'Accueil, à côté du widget
 // "Prochaines échéances". `taux`/`present`/`total` viennent de
 // presences_entrainement (saisie de l'éducateur), pas de disponibilites (le
 // sondage n'exprime qu'une intention, pas une présence constatée).
-function CerclePresence({ taux, present, total }) {
-  const r = 36
+function AnneauTaux({ taux, size = 90, strokeWidth = 8, fontSize = 16 }) {
+  const r = (size - strokeWidth) / 2
+  const c = size / 2
   const circ = 2 * Math.PI * r
   const offset = circ - (taux / 100) * circ
   const couleur = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
   return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={c} cy={c} r={r} fill="none" stroke="#1f2937" strokeWidth={strokeWidth} />
+      <circle cx={c} cy={c} r={r} fill="none" stroke={couleur} strokeWidth={strokeWidth}
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        transform={`rotate(-90 ${c} ${c})`} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+      <text x={c} y={c} textAnchor="middle" dominantBaseline="central" fontSize={fontSize} fontWeight="800" fill={couleur}>{taux}%</text>
+    </svg>
+  )
+}
+
+function CerclePresence({ taux, present, total }) {
+  return (
     <div style={{ background: '#111827', borderRadius: '16px', padding: '20px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '140px' }}>
-      <svg width="90" height="90" viewBox="0 0 90 90">
-        <circle cx="45" cy="45" r={r} fill="none" stroke="#1f2937" strokeWidth="8" />
-        <circle cx="45" cy="45" r={r} fill="none" stroke={couleur} strokeWidth="8"
-          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-          transform="rotate(-90 45 45)" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
-        <text x="45" y="45" textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="800" fill={couleur}>{taux}%</text>
-      </svg>
+      <AnneauTaux taux={taux} />
       <div style={{ fontSize: '12px', fontWeight: '700', color: 'white', marginTop: '8px' }}>Présence</div>
       <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{present}/{total} séances</div>
     </div>
@@ -405,7 +418,7 @@ function DashboardJoueur() {
     const { data } = await supabase.from('presences_entrainement').select('statut').eq('joueur_id', equipeJoueurId)
     if (!data || data.length === 0) { setTauxPresenceAccueil(null); return }
     const total = data.length
-    const present = data.filter(p => p.statut === 'present' || p.statut === 'convoque').length
+    const present = data.filter(p => estPresent(p.statut)).length
     setTauxPresenceAccueil({ taux: Math.round((present / total) * 100), present, total })
   }
 
@@ -660,7 +673,7 @@ function DashboardJoueur() {
 
     // --- Stats personnelles ---
     const total = presencesMoi?.length || 0
-    const present = presencesMoi?.filter(p => p.statut === 'present').length || 0
+    const present = presencesMoi?.filter(p => estPresent(p.statut)).length || 0
     const points = presencesMoi?.filter(p => p.point_seance).length || 0
     const buts = matchsMoi?.reduce((s, m) => s + (m.buts || 0), 0) || 0
     const passes = matchsMoi?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
@@ -678,7 +691,7 @@ function DashboardJoueur() {
       const month = date.slice(0, 7)
       if (!byMonth[month]) byMonth[month] = { present: 0, total: 0 }
       byMonth[month].total++
-      if (p.statut === 'present') byMonth[month].present++
+      if (estPresent(p.statut)) byMonth[month].present++
     })
     const presenceMensuelle = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, v]) => ({
       month, taux: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total
@@ -1524,7 +1537,7 @@ function DashboardJoueur() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {[
                           { label: t('stats_tab_presences', lang), val: `${s.present ?? 0}/${s.total ?? 0}` },
-                          { label: t('aff_taux_presence', lang), val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' },
+                          { label: t('aff_taux_presence', lang), val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 75 ? '#4ade80' : s.tauxPresence >= 50 ? '#facc15' : '#ef4444' },
                           { label: t('aff_points_seance', lang), val: s.points ?? 0, color: '#fbbf24' },
                         ].map(({ label, val, color }) => (
                           <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
@@ -1554,7 +1567,7 @@ function DashboardJoueur() {
                           {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                             const [y, m] = month.split('-')
                             const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
-                            const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                            const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
                             return (
                               <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
@@ -1798,14 +1811,12 @@ function DashboardJoueur() {
                                     <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                       {/* Taux de présence */}
-                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                          <span style={{ fontSize: '20px', fontWeight: 800, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' }}>
-                                            {s.tauxPresence ?? '—'}%
-                                          </span>
+                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AnneauTaux taux={s.tauxPresence ?? 0} size={44} strokeWidth={5} fontSize={10} />
+                                        <div>
+                                          <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
+                                          <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                         </div>
-                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                       </div>
                                       {/* Points séance */}
                                       <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
@@ -1827,7 +1838,7 @@ function DashboardJoueur() {
                                         {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                           const [y, m] = month.split('-')
                                           const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                                          const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                          const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
                                           return (
                                             <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                               <span style={{ fontSize: '10px', color: '#555', width: '40px', flexShrink: 0 }}>{label}</span>
@@ -3614,14 +3625,12 @@ function DashboardJoueur() {
                                   <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                                     {/* Taux de présence */}
-                                    <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                      <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span style={{ fontSize: '20px', fontWeight: 800, color: s.tauxPresence >= 80 ? '#4ade80' : s.tauxPresence >= 60 ? '#f59e0b' : '#ef4444' }}>
-                                          {s.tauxPresence ?? '—'}%
-                                        </span>
+                                    <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <AnneauTaux taux={s.tauxPresence ?? 0} size={44} strokeWidth={5} fontSize={10} />
+                                      <div>
+                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
+                                        <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                       </div>
-                                      <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
                                     </div>
                                     {/* Points séance */}
                                     <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
@@ -3643,7 +3652,7 @@ function DashboardJoueur() {
                                       {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                         const [y, m] = month.split('-')
                                         const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                                        const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                        const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
                                         return (
                                           <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{ fontSize: '10px', color: '#555', width: '40px', flexShrink: 0 }}>{label}</span>
