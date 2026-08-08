@@ -400,6 +400,32 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
   )
 }
 
+// Donut victoires/nuls/défaites — même technique que DonutMulti (conic-gradient)
+// mais 3 segments fixes, pour le widget Effectif de l'Accueil.
+function DonutVND({ v, n, d, size = 72 }) {
+  const total = (v || 0) + (n || 0) + (d || 0)
+  if (!total) return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ color: '#333', fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
+    </div>
+  )
+  const pV = (v || 0) / total * 100
+  const pN = (n || 0) / total * 100
+  const vEnd = pV
+  const nEnd = vEnd + pN
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: `conic-gradient(#4ade80 0% ${vEnd}%, #facc15 ${vEnd}% ${nEnd}%, #ef4444 ${nEnd}% 100%)`
+      }} />
+      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.16, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{total}</span>
+      </div>
+    </div>
+  )
+}
+
 const TerrainFoot = () => (
   <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
@@ -708,11 +734,41 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
-        </div>
+        {(() => {
+          const matchsJoues = matchs.filter(m => matchJoue(m))
+          const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
+          const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
+          const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+          const totalM = matchsJoues.length
+          const pct = (n) => totalM ? Math.round(n / totalM * 100) : 0
+          return (
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, gridColumn: 'span 2', display: 'flex', alignItems: 'stretch', gap: '1.25rem' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
+                <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
+                <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
+              </div>
+
+              <div style={{ width: '1px', background: '#ffffff20', flexShrink: 0 }} />
+
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {[
+                    { label: 'V', val: victoires, color: '#4ade80' },
+                    { label: 'N', val: nuls, color: '#facc15' },
+                    { label: 'D', val: defaites, color: '#ef4444' },
+                  ].map(s => (
+                    <div key={s.label} style={{ textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: s.color }}>{s.label}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 700 }}>{pct(s.val)}%</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
