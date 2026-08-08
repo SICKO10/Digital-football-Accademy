@@ -5,6 +5,7 @@ import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
 import { sondageEstClos } from '../lib/sondage'
+import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
@@ -431,6 +432,9 @@ function DashboardJoueur() {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
       setCoachUnread(0)
     }
+    if (onglet === 'analyses' && userId) {
+      marquerAnalysesLues(userId)
+    }
     if (onglet === 'clubs' && clubsListe.length === 0 && recruteursList.length === 0) {
       setClubsLoading(true)
       Promise.all([
@@ -476,7 +480,11 @@ function DashboardJoueur() {
     await chargerNotifPrefs(user.id)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
-    const { data: coachData } = await supabase.from('profiles').select('*').eq('plan', 'coach')
+    // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
+    // interdit cette valeur (cf. lib/coachAdmin.js) — les comptes coach analyseur
+    // sont identifiés par email. Avec le filtre par plan, cette liste était donc
+    // toujours vide et le joueur ne pouvait jamais démarrer de conversation.
+    const { data: coachData } = await supabase.from('profiles').select('*').in('email', COACH_ADMIN_EMAILS)
     setProfil(data)
     setStats({
       club: data?.club || '', niveau_equipe: data?.niveau_equipe || '', categorie: data?.categorie || '',
@@ -522,6 +530,18 @@ function DashboardJoueur() {
   const marquerToutLu = async (uid) => {
     await supabase.from('notifications').update({ lu: true }).eq('user_id', uid).eq('lu', false)
     setNotifications(prev => prev.map(n => ({ ...n, lu: true })))
+  }
+
+  // Notifications de la clochette de type 'analyse' (cf. notifierJoueur dans
+  // DashboardCoach.jsx, envoyerAnalyse) — jusqu'ici seul le clic sur la notif
+  // elle-même dans la clochette la marquait lue ; ouvrir l'onglet Analyses
+  // directement depuis la sidebar ne le faisait pas, donc le badge restait affiché.
+  const marquerAnalysesLues = async (uid) => {
+    // Pas de garde sur l'état local `notifications` avant d'écrire : si l'onglet
+    // Analyses est ouvert directement (ex. lien profond) avant la fin du chargement
+    // initial des notifications, une garde ici raterait la mise à jour en base.
+    await supabase.from('notifications').update({ lu: true }).eq('user_id', uid).eq('type', 'analyse').eq('lu', false)
+    setNotifications(prev => prev.map(n => n.type === 'analyse' ? { ...n, lu: true } : n))
   }
 
   const sauvegarderNotifPrefs = async (newPrefs) => {
@@ -813,7 +833,7 @@ function DashboardJoueur() {
   const chargerConversations = async (uid) => {
     const { data } = await supabase
       .from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, plan), receiver:profiles!messages_receiver_id_fkey(prenom, nom, plan)')
+      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, plan, email), receiver:profiles!messages_receiver_id_fkey(prenom, nom, plan, email)')
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .order('created_at', { ascending: false })
     if (!data) return
@@ -826,13 +846,18 @@ function DashboardJoueur() {
       map[otherId].msgs.push(msg)
     })
     const allConvs = Object.values(map)
-    const isCoachAnalyseur = (plan) => plan === 'coach' || plan === 'coach_analyseur'
-    setConversations(allConvs.filter(c => !isCoachAnalyseur(c.other?.plan)))
-    setConvCoach(allConvs.filter(c => isCoachAnalyseur(c.other?.plan)))
+    // Les comptes coach analyseur ne sont PAS identifiables via profiles.plan : la
+    // contrainte CHECK en base interdit la valeur 'coach' (cf. lib/coachAdmin.js),
+    // donc other?.plan === 'coach' n'est jamais vrai et leurs messages tombaient
+    // par défaut dans "Recruteurs". Seul l'email (liste blanche) les identifie de
+    // façon fiable — même source que App.jsx pour le routing post-connexion.
+    const isCoachAnalyseur = (email) => COACH_ADMIN_EMAILS.includes(email)
+    setConversations(allConvs.filter(c => !isCoachAnalyseur(c.other?.email)))
+    setConvCoach(allConvs.filter(c => isCoachAnalyseur(c.other?.email)))
     // Compter messages coach non lus (reçus après la dernière visite de l'onglet)
     const lastRead = localStorage.getItem(`coach_read_${uid}`) || '1970-01-01'
     const nonLus = data.filter(msg =>
-      isCoachAnalyseur(msg.sender?.plan) &&
+      isCoachAnalyseur(msg.sender?.email) &&
       msg.receiver_id === uid &&
       new Date(msg.created_at) > new Date(lastRead)
     )
