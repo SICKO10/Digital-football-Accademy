@@ -349,6 +349,10 @@ function DashboardJoueur() {
   const [resultatsCompetition, setResultatsCompetition] = useState([])
   const [calendrierCompetition, setCalendrierCompetition] = useState([])
   const [lienClassementCompetition, setLienClassementCompetition] = useState(null)
+  // Mois affiché dans "Prochains matchs" (1er du mois, pour comparer par mois/année) — navigable via les flèches ‹ ›
+  const [moisCalendrierCompetition, setMoisCalendrierCompetition] = useState(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d
+  })
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
   const [pendingDispo, setPendingDispo] = useState({}) // { [eventId]: statut } — choix pas encore validé (avant clic sur "Valider")
@@ -584,7 +588,7 @@ function DashboardJoueur() {
       .filter(m => m.score_nous === '' || m.score_nous === null || m.score_nous === undefined)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
     setResultatsCompetition(joues.slice(0, 5))
-    setCalendrierCompetition(aVenir.slice(0, 5))
+    setCalendrierCompetition(aVenir) // pas de slice ici — navigation mois par mois dans renduCompetition
     setLienClassementCompetition(pe?.ligue_url || null)
   }
 
@@ -1184,26 +1188,48 @@ function DashboardJoueur() {
           </div>
         )}
 
-        <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid #1f2937' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '12px' }}>📅 Prochains matchs</div>
-          {calendrierCompetition.length === 0 ? (
-            <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun match à venir</p>
-          ) : calendrierCompetition.map(m => (
-            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
-              <div>
-                <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                  {new Date(m.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                  {m.heure ? ` · ${m.heure}` : ''}
-                  {m.competition ? ` · ${m.competition}` : ''}
+        {(() => {
+          const moisMatchs = calendrierCompetition.filter(m => {
+            const d = new Date(m.date + 'T12:00:00')
+            return d.getFullYear() === moisCalendrierCompetition.getFullYear() && d.getMonth() === moisCalendrierCompetition.getMonth()
+          })
+          const changerMois = (delta) => setMoisCalendrierCompetition(prev => {
+            const d = new Date(prev); d.setMonth(d.getMonth() + delta); return d
+          })
+          return (
+            <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid #1f2937' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>📅 Prochains matchs</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
+                    style={{ background: 'transparent', border: '1px solid #1f2937', color: '#9ca3af', width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#d1d5db', minWidth: '90px', textAlign: 'center', textTransform: 'capitalize' }}>
+                    {moisCalendrierCompetition.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button onClick={() => changerMois(1)} aria-label="Mois suivant"
+                    style={{ background: 'transparent', border: '1px solid #1f2937', color: '#9ca3af', width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>›</button>
                 </div>
               </div>
-              <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? '#4ade80' : '#60a5fa' }}>
-                {m.domicile ? 'Domicile' : 'Extérieur'}
-              </span>
+              {moisMatchs.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun match ce mois-ci</p>
+              ) : moisMatchs.map(m => (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                      {new Date(m.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {m.heure ? ` · ${m.heure}` : ''}
+                      {m.competition ? ` · ${m.competition}` : ''}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? '#4ade80' : '#60a5fa' }}>
+                    {m.domicile ? 'Domicile' : 'Extérieur'}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
+        })()}
 
         <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '12px' }}>⚽ Derniers résultats</div>
