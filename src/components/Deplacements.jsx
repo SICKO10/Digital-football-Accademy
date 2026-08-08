@@ -296,10 +296,11 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           // importé automatiquement sans heure) ressemble à tort à un vrai
           // besoin de location.
           const label = `${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')})`
-          alertes.push({
-            dep: r,
-            msg: r.heure_depart ? `${label} — bus insuffisant, prévoir une location` : `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement`,
-          })
+          alertes.push(
+            r.heure_depart
+              ? { dep: r, type: 'bus', msg: `${label} — bus insuffisant, prévoir une location` }
+              : { dep: r, type: 'heure', msg: `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement` }
+          )
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
         }
@@ -391,7 +392,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     await charger()
   }
 
-  const ouvrirEditionDeplacement = (dep) => {
+  const ouvrirEditionDeplacement = (dep, { focusHeureDepart = false } = {}) => {
     setForm({
       equipe: dep.equipe || '', educateur_responsable: dep.educateur_responsable || '', date_depart: dep.date_depart || '',
       heure_depart: dep.heure_depart || '', heure_retour_estimee: dep.heure_retour_estimee || '', nb_personnes: dep.nb_personnes ?? '',
@@ -401,6 +402,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     })
     setDeplacementEnEdition(dep.id)
     setShowForm(true)
+    // Le formulaire vient de se monter : laisse React peindre avant de focus.
+    if (focusHeureDepart) setTimeout(() => document.getElementById('input-heure-depart')?.focus(), 100)
   }
 
   const supprimerDeplacement = async (dep) => {
@@ -492,24 +495,32 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         </button>
       </div>
 
-      {alertesLocation.length > 0 && (
-        <div style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
-          <div style={{ fontWeight: 700, color: '#fb923c', marginBottom: '8px', fontSize: '13px' }}>
-            ⚠️ {alertesLocation.length} déplacement{alertesLocation.length > 1 ? 's' : ''} nécessite{alertesLocation.length > 1 ? 'nt' : ''} un bus de location
+      {(() => {
+        const sansHeure = alertesLocation.filter(a => a.type === 'heure')
+        const busInsuffisant = alertesLocation.filter(a => a.type === 'bus')
+        const bandeau = (liste, { bg, border, color, titre }) => liste.length > 0 && (
+          <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+            <div style={{ fontWeight: 700, color, marginBottom: '8px', fontSize: '13px' }}>{titre(liste.length)}</div>
+            {liste.map((alerte, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color, marginTop: '4px' }}>
+                <span>• {alerte.msg}</span>
+                {!readOnly && (
+                  <button onClick={() => ouvrirEditionDeplacement(alerte.dep, { focusHeureDepart: true })}
+                    style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${border}`, color, padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    ✏️ Compléter
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-          {alertesLocation.map((alerte, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color: '#fbbf24', marginTop: '4px' }}>
-              <span>• {alerte.msg}</span>
-              {!readOnly && (
-                <button onClick={() => ouvrirEditionDeplacement(alerte.dep)}
-                  style={{ flexShrink: 0, background: 'transparent', border: '1px solid #fb923c60', color: '#fb923c', padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ✏️ Compléter
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+        )
+        return (
+          <>
+            {bandeau(sansHeure, { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.3)', color: '#fb923c', titre: n => `⏰ ${n} déplacement${n > 1 ? 's' : ''} sans heure de départ — complète-${n > 1 ? 'les' : 'le'} pour permettre la répartition auto` })}
+            {bandeau(busInsuffisant, { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', color: '#ef4444', titre: n => `🚐 ${n} déplacement${n > 1 ? 's' : ''} nécessite${n > 1 ? 'nt' : ''} un bus de location` })}
+          </>
+        )
+      })()}
 
       {showForm && !readOnly && (
         <div style={{ ...st.card, marginBottom: '1.5rem' }}>
@@ -535,7 +546,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             </div>
             <div>
               <label style={st.label}>Heure de départ</label>
-              <input style={st.input} type="time" value={form.heure_depart} onChange={e => setForm(f => ({ ...f, heure_depart: e.target.value }))} />
+              <input id="input-heure-depart" style={st.input} type="time" value={form.heure_depart} onChange={e => setForm(f => ({ ...f, heure_depart: e.target.value }))} />
             </div>
             <div>
               <label style={st.label}>Heure de retour estimée</label>
