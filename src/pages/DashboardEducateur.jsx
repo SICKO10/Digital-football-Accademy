@@ -962,7 +962,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
   const [ligueUrl, setLigueUrl] = useState('')
-  const [ligueUrlSaved, setLigueUrlSaved] = useState(localStorage.getItem('ligueUrl') || '')
+  const [savingLigueUrl, setSavingLigueUrl] = useState(false)
   // Calendrier scanner
   const [calendarImages, setCalendarImages] = useState([])
   const [calendarLoading, setCalendarLoading] = useState(false)
@@ -4587,7 +4587,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {competitionSubTab === 'classement' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px' }}>
 
-                {/* Lien vers le classement officiel */}
+                {/* Lien vers le classement officiel — persisté sur profil_educateur.ligue_url
+                    (même champ que "Profil" et que ce que voient les joueurs sur leur
+                    dashboard ; avant ce fix, stocké seulement en localStorage donc perdu
+                    d'un navigateur/appareil à l'autre, et jamais visible des joueurs). */}
                 <div style={st.card}>
                   <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔗 {t('comp_classement_officiel', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>{t('comp_colle_lien_classement', lang)}</p>
@@ -4595,17 +4598,25 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     <input
                       style={{ ...st.input, flex: 1 }}
                       placeholder="https://fff.fr/... ou https://footeo.com/..."
-                      value={ligueUrl || ligueUrlSaved}
+                      value={ligueUrl || profilEdu?.ligue_url || ''}
                       onChange={e => setLigueUrl(e.target.value)}
                     />
                     <button
-                      onClick={() => { const url = ligueUrl || ligueUrlSaved; localStorage.setItem('ligueUrl', url); setLigueUrlSaved(url); setLigueUrl('') }}
-                      style={st.btnSolid}>
-                      💾 {t('btn_sauvegarder', lang)}
+                      disabled={savingLigueUrl}
+                      onClick={async () => {
+                        const url = (ligueUrl || profilEdu?.ligue_url || '').trim()
+                        setSavingLigueUrl(true)
+                        await supabase.from('profil_educateur').upsert({ user_id: userId, ligue_url: url }, { onConflict: 'user_id' })
+                        await chargerProfilEdu(userId)
+                        setSavingLigueUrl(false)
+                        setLigueUrl('')
+                      }}
+                      style={{ ...st.btnSolid, opacity: savingLigueUrl ? 0.6 : 1 }}>
+                      💾 {savingLigueUrl ? '...' : t('btn_sauvegarder', lang)}
                     </button>
                   </div>
-                  {ligueUrlSaved && (
-                    <a href={ligueUrlSaved} target="_blank" rel="noopener noreferrer"
+                  {profilEdu?.ligue_url && (
+                    <a href={profilEdu.ligue_url} target="_blank" rel="noopener noreferrer"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
                       🏆 {t('comp_voir_classement', lang)} ↗
                     </a>
