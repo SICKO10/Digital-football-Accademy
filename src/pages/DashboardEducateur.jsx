@@ -601,8 +601,14 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, lang, isMobile, mesSeancesOuvertes }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
+
+  // AccueilEducateur est un composant à part (pas une simple section du composant
+  // principal) — il ne peut utiliser que ses props ou des helpers locaux, pas les
+  // const définies plus bas dans DashboardEducateur (ex: le matchJoue partagé par
+  // les autres sections, cf. bug "Can't find variable: matchJoue" en prod).
+  const matchJoue = (m) => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined
 
   const totalJoueurs = joueurs.length
 
@@ -3384,6 +3390,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
             setSousOngletEnt={setSousOngletEnt}
+            setStatsSubTab={setStatsSubTab}
             lang={lang}
             isMobile={isMobile}
             mesSeancesOuvertes={mesSeancesOuvertes}
