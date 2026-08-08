@@ -1754,7 +1754,7 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'equipe' && (
-            <div style={{ maxWidth: '960px' }}>
+            <div style={{ padding: isMobile ? '16px' : '24px 32px' }}>
               <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2rem' }}>{t('jeq_titre', lang)}</h1>
 
               {/* Mes affiliations actives / en attente / refusées (l'historique archivé est plus bas) */}
@@ -1767,7 +1767,7 @@ function DashboardJoueur() {
                     return (
                       <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
                         {isAccepted ? (
-                          <div style={{ background: 'linear-gradient(135deg, #14532d, #166534)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                             <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
                               {pe?.prenom?.[0]}{pe?.nom?.[0]}
                             </div>
@@ -1827,174 +1827,182 @@ function DashboardJoueur() {
                             {/* Stats chargées */}
                             {statsJoueur[a.id] && (() => {
                               const s = statsJoueur[a.id]
-                              const RankBadge = ({ rank, total }) => rank && total > 1 ? (
-                                <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', background: rank === 1 ? '#fbbf2420' : '#ffffff10', color: rank === 1 ? '#fbbf24' : '#555', marginLeft: '4px' }}>
-                                  #{rank}/{total}
-                                </span>
-                              ) : null
+                              const pct = s.tauxPresence ?? 0
+                              const r = 44
+                              const circ = 2 * Math.PI * r
+                              const dash = (pct / 100) * circ
+                              const presColor = pct >= 80 ? '#4ade80' : pct >= 60 ? '#f59e0b' : '#ef4444'
                               return (
-                                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                                  {/* Stats match */}
-                                  <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#60a5fa' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                                  {/* Présence + Stats match côte à côte */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: '16px', alignItems: 'stretch' }}>
+                                    <div style={{ background: '#111', borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                                      <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
+                                      <svg width="110" height="110" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r={r} fill="none" stroke="#1e1e1e" strokeWidth="9" />
+                                        <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
+                                          strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
+                                          style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
+                                        <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
+                                        <text x="50" y="62" textAnchor="middle" fill="#444" fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                      </svg>
+                                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
+                                        {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                                       {[
                                         { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
                                         { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
                                         { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
                                         { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
                                       ].map(stat => (
-                                        <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                          <div>
-                                            <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                              <span style={{ fontSize: '20px', fontWeight: 800, color: stat.color }}>{stat.value}</span>
-                                            </div>
+                                        <div key={stat.label} style={{ background: '#111', borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
+                                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${stat.color}, transparent)` }} />
+                                          <p style={{ margin: '0 0 10px', fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '40px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
+                                            {stat.rank?.rank && stat.rank?.total > 1 && (
+                                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? '#fbbf2420' : '#ffffff08', color: stat.rank.rank === 1 ? '#fbbf24' : '#555', border: `1px solid ${stat.rank.rank === 1 ? '#fbbf2440' : '#1e1e1e'}` }}>
+                                                #{stat.rank.rank}/{stat.rank.total}
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       ))}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                                      <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '8px' }}>⏱ {s.minutesJouees} min</span>
-                                      {s.jaunes > 0 && <span style={{ fontSize: '11px', color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', padding: '2px 8px', borderRadius: '8px' }}>🟨 {s.jaunes}</span>}
-                                      {s.rouges > 0 && <span style={{ fontSize: '11px', color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '2px 8px', borderRadius: '8px' }}>🟥 {s.rouges}</span>}
-                                    </div>
                                   </div>
 
-                                  {/* Présence + Points séance */}
-                                  <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#fbbf24' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
-                                      {/* Taux de présence */}
-                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <AnneauTaux taux={s.tauxPresence ?? 0} size={44} strokeWidth={5} fontSize={10} />
-                                        <div>
-                                          <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_taux_presence', lang)}</p>
-                                          <span style={{ fontSize: '9px', color: '#333' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</span>
-                                        </div>
-                                      </div>
-                                      {/* Points séance */}
-                                      <div style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fbbf2420' }}>
-                                        <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('aff_points_seance', lang)}</p>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                          <span style={{ fontSize: '20px', fontWeight: 800, color: '#fbbf24' }}>{s.points}</span>
-                                          <RankBadge rank={s.rankPoints?.rank} total={s.rankPoints?.total} />
-                                        </div>
-                                        {s.rankPoints?.rank === 1 && <span style={{ fontSize: '9px', color: '#fbbf24' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
-                                      </div>
-                                    </div>
+                                  {/* Pills minutes/cartons */}
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
+                                    {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b12', border: '1px solid #f59e0b25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟨 {s.jaunes}</span>}
+                                    {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
                                   </div>
 
-                                  {/* Présence par mois */}
-                                  {s.presenceMensuelle?.length > 0 && (
-                                    <div>
-                                      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>📅 {t('club_presence_par_mois', lang)}</p>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                        {s.presenceMensuelle.map(({ month, taux, present, total }) => {
-                                          const [y, m] = month.split('-')
-                                          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                                          const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
-                                          return (
-                                            <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                              <span style={{ fontSize: '10px', color: '#555', width: '40px', flexShrink: 0 }}>{label}</span>
-                                              <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
-                                                <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.5s' }} />
+                                  {/* Présence mensuelle + Avis éducateur côte à côte */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                                    {s.presenceMensuelle?.length > 0 && (
+                                      <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                        <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                          {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                            const [y, m] = month.split('-')
+                                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
+                                            const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                            return (
+                                              <div key={month}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                  <span style={{ fontSize: '11px', color: '#666', textTransform: 'capitalize' }}>{label}</span>
+                                                  <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: '#333', fontWeight: 400 }}>({present}/{total})</span></span>
+                                                </div>
+                                                <div style={{ height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                  <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
+                                                </div>
                                               </div>
-                                              <span style={{ fontSize: '10px', fontWeight: 700, color, width: '32px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
-                                              <span style={{ fontSize: '9px', color: '#333', flexShrink: 0 }}>{present}/{total}</span>
-                                            </div>
-                                          )
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Avis éducateur */}
-                                  <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '12px 16px' }}>
-                                    <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13 }}>📝 {t('aff_avis_educateur_court', lang)}</p>
-                                    {s.noteEdu ? (
-                                      <>
-                                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                                          {[[t('aff_technique', lang), s.noteEdu.technique], [t('aff_physique', lang), s.noteEdu.physique], [t('aff_mental', lang), s.noteEdu.mental], [t('aff_tactique', lang), s.noteEdu.tactique]].map(([label, note]) => note ? (
-                                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                              <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
-                                              <span style={{ color: '#f59e0b', fontSize: 12 }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
-                                            </div>
-                                          ) : null)}
+                                            )
+                                          })}
                                         </div>
-                                        {s.noteEdu.commentaire && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#555', fontStyle: 'italic' }}>"{s.noteEdu.commentaire}"</p>}
-                                      </>
-                                    ) : (
-                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>
+                                      </div>
                                     )}
+                                    <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
+                                      {s.noteEdu ? (
+                                        <>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
+                                            {[
+                                              { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
+                                              { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
+                                              { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                              { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
+                                            ].map(n => (
+                                              <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0 }}>{n.label}</span>
+                                                <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                  <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
+                                                </div>
+                                                <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          {s.noteEdu.commentaire && (
+                                            <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
+                                          )}
+                                        </>
+                                      ) : <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
+                                    </div>
                                   </div>
 
-                                  {/* Calendrier prochains matchs */}
-                                  <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#34d399' }}>📅 {t('aff_prochains_matchs', lang)}</p>
-                                    {s.prochainMatchs?.length > 0 ? (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  {/* Prochains matchs */}
+                                  {s.prochainMatchs?.length > 0 && (
+                                    <div>
+                                      <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
+                                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '10px' }}>
                                         {s.prochainMatchs.map((m, i) => {
                                           const d = new Date(m.date)
-                                          const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                                           return (
-                                            <div key={i} style={{ background: '#0a0a0a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1a1a1a' }}>
-                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
-                                                {m.competition && <span style={{ fontSize: '9px', color: '#444', background: '#1a1a1a', padding: '1px 6px', borderRadius: '6px' }}>{m.competition}</span>}
+                                            <div key={i} style={{ background: '#111', borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                              <div style={{ background: 'linear-gradient(135deg, #4ade8020, #4ade8008)', border: '1px solid #4ade8030', borderRadius: '12px', padding: '8px 12px', textAlign: 'center', flexShrink: 0, minWidth: '50px' }}>
+                                                <p style={{ margin: 0, fontSize: '9px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
+                                                <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: '#4ade80', lineHeight: 1 }}>{d.getDate()}</p>
+                                                <p style={{ margin: 0, fontSize: '9px', color: '#4ade8070', textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { month: 'short' })}</p>
                                               </div>
-                                              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#333' }}>vs</span> {m.equipe_exterieur}</p>
-                                              {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                              <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                  {m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
+                                                </p>
+                                                <p style={{ margin: 0, fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                  {[m.heure, m.competition, m.lieu ? `📍 ${m.lieu}` : ''].filter(Boolean).join(' · ')}
+                                                </p>
+                                              </div>
                                             </div>
                                           )
                                         })}
                                       </div>
-                                    ) : (
-                                      <p style={{ margin: 0, fontSize: '11px', color: '#333', fontStyle: 'italic' }}>{t('aff_aucun_match_programme', lang)}</p>
-                                    )}
-                                  </div>
-
-                                  {/* Classements internes */}
-                                  <div>
-                                    <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: '#f97316' }}>🏅 {t('aff_classements_equipe', lang)}</p>
-                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                                      {[
-                                        { key: 'buteurs', label: `⚽ ${t('aff_top_buteurs', lang)}`, data: s.leaderButs },
-                                        { key: 'passeurs', label: `🎯 ${t('aff_top_passeurs', lang)}`, data: s.leaderPasses },
-                                        { key: 'victoires', label: `🏆 ${t('aff_top_victoires', lang)}`, data: s.leaderVictoires },
-                                        { key: 'points', label: `⭐ ${t('aff_points_seance', lang)}`, data: s.leaderPoints },
-                                      ].map(c => (
-                                        <button key={c.key} onClick={() => setClassementActif(c.key)}
-                                          style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#0a0a0a', color: classementActif === c.key ? '#000' : '#555' }}>
-                                          {c.label}
-                                        </button>
-                                      ))}
                                     </div>
-                                    {(() => {
-                                      const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
-                                      return (
-                                        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
-                                          {actif.length > 0 ? actif.map((row, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
-                                              <span style={{ fontSize: '12px', fontWeight: 800, color: i < 3 ? '#4ade80' : '#555', minWidth: '18px' }}>{i + 1}</span>
-                                              <span style={{ flex: 1, fontSize: '12px', fontWeight: row.isMe ? 800 : 400, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? t('jcoach_toi', lang) : row.nom}</span>
-                                              <span style={{ fontSize: '12px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#888' }}>{row.val}</span>
-                                            </div>
-                                          )) : <p style={{ margin: 0, padding: '12px', fontSize: '11px', color: '#333' }}>—</p>}
-                                        </div>
-                                      )
-                                    })()}
-                                  </div>
-
-                                  {/* Lien classement ligue */}
-                                  {s.ligueUrl && (
-                                    <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
-                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                                      🏆 {t('aff_classement_championnat', lang)}
-                                    </a>
                                   )}
 
+                                  {/* Classements — pleine largeur */}
+                                  <div>
+                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+                                      {[
+                                        { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: '#4ade80' },
+                                        { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: '#60a5fa' },
+                                        { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: '#fbbf24' },
+                                        { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: '#a78bfa' },
+                                      ].map(({ title, icon, data, color }) => (
+                                        <div key={title} style={{ background: '#111', borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                                            <span>{icon}</span>
+                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                                          </div>
+                                          {data?.length > 0 ? data.slice(0, 5).map((row, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', background: row.isMe ? `${color}10` : 'transparent', borderRadius: '8px', padding: '5px 6px', border: row.isMe ? `1px solid ${color}25` : '1px solid transparent' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? '#fbbf24' : '#2a2a2a', width: '14px', flexShrink: 0 }}>{i + 1}</span>
+                                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : '#1a1a1a', border: `1px solid ${row.isMe ? color + '40' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>
+                                                {row.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                              </div>
+                                              <span style={{ fontSize: '11px', color: row.isMe ? color : '#666', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                                {row.isMe ? t('jcoach_toi', lang) : row.nom.split(' ')[0]}
+                                              </span>
+                                              <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>{row.val}</span>
+                                            </div>
+                                          )) : <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {s.ligueUrl && (
+                                    <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
+                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                                      🏆 {t('aff_classement_championnat', lang)} →
+                                    </a>
+                                  )}
                                 </div>
                               )
                             })()}
@@ -3585,7 +3593,7 @@ function DashboardJoueur() {
 
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (
-          <div style={{ maxWidth: '1120px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ padding: isMobile ? '16px' : '24px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>{t('jeq_titre', lang)}</h1>
             <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
 
@@ -3620,7 +3628,7 @@ function DashboardJoueur() {
                   return (
                     <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
                       {isAccepted ? (
-                        <div style={{ background: 'linear-gradient(135deg, #14532d, #166534)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
                             {pe?.prenom?.[0]}{pe?.nom?.[0]}
                           </div>
@@ -3674,178 +3682,182 @@ function DashboardJoueur() {
                           {/* Stats chargées */}
                           {statsJoueur[a.id] && (() => {
                             const s = statsJoueur[a.id]
-                            const RankBadge = ({ rank, total }) => rank && total > 1 ? (
-                              <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '8px', background: rank === 1 ? '#fbbf2420' : '#ffffff10', color: rank === 1 ? '#fbbf24' : '#666', marginLeft: '6px' }}>
-                                #{rank}/{total}
-                              </span>
-                            ) : null
-
-                            const statCards = [
-                              { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                              { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
-                              { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
-                              { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
-                              { label: t('aff_points_seance', lang), value: s.points, color: '#fbbf24', rank: s.rankPoints, badge: s.rankPoints?.rank === 1 },
-                            ]
-
+                            const pct = s.tauxPresence ?? 0
+                            const r = 44
+                            const circ = 2 * Math.PI * r
+                            const dash = (pct / 100) * circ
+                            const presColor = pct >= 80 ? '#4ade80' : pct >= 60 ? '#f59e0b' : '#ef4444'
                             return (
-                              <div style={{ borderTop: '1px solid #1a1a1a', marginTop: '18px', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '18px', paddingTop: '24px', borderTop: '1px solid #1a1a1a' }}>
 
-                                {/* Vue d'ensemble */}
-                                <div>
-                                  <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 800, color: '#e5e7eb', letterSpacing: '0.3px' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
-                                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
-                                    <div style={{ flexShrink: 0, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: '16px', minWidth: '220px' }}>
-                                      <AnneauTaux taux={s.tauxPresence ?? 0} size={72} strokeWidth={7} fontSize={15} />
-                                      <div>
-                                        <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 700 }}>{t('aff_taux_presence', lang)}</p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#aaa' }}>{s.present}/{s.total} {t('stats_seances_plural', lang)}</p>
-                                      </div>
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: '260px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
-                                      {statCards.map(stat => (
-                                        <div key={stat.label} style={{ background: '#0a0a0a', borderRadius: '12px', padding: '14px 16px', border: '1px solid #1a1a1a' }}>
-                                          <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{stat.label}</p>
-                                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '26px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
-                                            <RankBadge rank={stat.rank?.rank} total={stat.rank?.total} />
-                                          </div>
-                                          {stat.badge && <span style={{ fontSize: '10px', color: '#fbbf24', marginTop: '4px', display: 'block' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
-                                        </div>
-                                      ))}
+                                {/* Présence + Stats match côte à côte */}
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: '16px', alignItems: 'stretch' }}>
+                                  <div style={{ background: '#111', borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
+                                    <svg width="110" height="110" viewBox="0 0 100 100">
+                                      <circle cx="50" cy="50" r={r} fill="none" stroke="#1e1e1e" strokeWidth="9" />
+                                      <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
+                                        strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
+                                        style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
+                                      <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
+                                      <text x="50" y="62" textAnchor="middle" fill="#444" fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                    </svg>
+                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                      <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
+                                      {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
                                     </div>
                                   </div>
-                                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '4px 12px', borderRadius: '10px' }}>⏱ {s.minutesJouees} min</span>
-                                    {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', padding: '4px 12px', borderRadius: '10px' }}>🟨 {s.jaunes}</span>}
-                                    {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444415', border: '1px solid #ef444430', padding: '4px 12px', borderRadius: '10px' }}>🟥 {s.rouges}</span>}
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                                    {[
+                                      { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
+                                      { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
+                                      { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                      { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
+                                    ].map(stat => (
+                                      <div key={stat.label} style={{ background: '#111', borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${stat.color}, transparent)` }} />
+                                        <p style={{ margin: '0 0 10px', fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                                          <span style={{ fontSize: '40px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
+                                          {stat.rank?.rank && stat.rank?.total > 1 && (
+                                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? '#fbbf2420' : '#ffffff08', color: stat.rank.rank === 1 ? '#fbbf24' : '#555', border: `1px solid ${stat.rank.rank === 1 ? '#fbbf2440' : '#1e1e1e'}` }}>
+                                              #{stat.rank.rank}/{stat.rank.total}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
 
-                                {/* Deux colonnes sur desktop pour occuper la largeur */}
-                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', alignItems: 'start' }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    {/* Présence par mois */}
-                                    {s.presenceMensuelle?.length > 0 && (
-                                      <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
-                                        <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#a78bfa' }}>📅 Présence par mois</p>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                                          {s.presenceMensuelle.map(({ month, taux, present, total }) => {
-                                            const [y, m] = month.split('-')
-                                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                                            const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
-                                            return (
-                                              <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ fontSize: '11px', color: '#666', width: '48px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
-                                                <div style={{ flex: 1, height: '8px', background: '#1a1a1a', borderRadius: '4px' }}>
-                                                  <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.5s' }} />
-                                                </div>
-                                                <span style={{ fontSize: '12px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
-                                                <span style={{ fontSize: '10px', color: '#444', flexShrink: 0, width: '34px', textAlign: 'right' }}>{present}/{total}</span>
-                                              </div>
-                                            )
-                                          })}
-                                        </div>
-                                      </div>
-                                    )}
+                                {/* Pills minutes/cartons */}
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
+                                  {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b12', border: '1px solid #f59e0b25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟨 {s.jaunes}</span>}
+                                  {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
+                                </div>
 
-                                    {/* Avis éducateur */}
-                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
-                                      <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: '13px' }}>📝 Avis de l'éducateur</p>
-                                      {s.noteEdu ? (
-                                        <>
-                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                                            {[['Technique', s.noteEdu.technique], ['Physique', s.noteEdu.physique], ['Mental', s.noteEdu.mental], ['Tactique', s.noteEdu.tactique]].map(([label, note]) => note ? (
-                                              <div key={label}>
-                                                <p style={{ margin: '0 0 3px', fontSize: '11px', color: '#666' }}>{label}</p>
-                                                <span style={{ color: '#f59e0b', fontSize: '15px' }}>{'★'.repeat(note)}{'☆'.repeat(5 - note)}</span>
+                                {/* Présence mensuelle + Avis éducateur côte à côte */}
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                                  {s.presenceMensuelle?.length > 0 && (
+                                    <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                          const [y, m] = month.split('-')
+                                          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
+                                          const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                          return (
+                                            <div key={month}>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '11px', color: '#666', textTransform: 'capitalize' }}>{label}</span>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: '#333', fontWeight: 400 }}>({present}/{total})</span></span>
                                               </div>
-                                            ) : null)}
-                                          </div>
-                                          {s.noteEdu.commentaire && <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.noteEdu.commentaire}"</p>}
-                                        </>
-                                      ) : (
-                                        <p style={{ margin: 0, fontSize: '12px', color: '#444', fontStyle: 'italic' }}>Pas encore de note partagée par ton éducateur.</p>
-                                      )}
+                                              <div style={{ height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
+                                              </div>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
                                     </div>
+                                  )}
+                                  <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                    <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
+                                    {s.noteEdu ? (
+                                      <>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
+                                          {[
+                                            { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
+                                            { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
+                                            { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                            { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
+                                          ].map(n => (
+                                            <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                              <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0 }}>{n.label}</span>
+                                              <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
+                                              </div>
+                                              <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        {s.noteEdu.commentaire && (
+                                          <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
+                                        )}
+                                      </>
+                                    ) : <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
                                   </div>
+                                </div>
 
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    {/* Prochains matchs */}
-                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
-                                      <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#34d399' }}>📅 Prochains matchs</p>
-                                      {s.prochainMatchs?.length > 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                          {s.prochainMatchs.map((m, i) => {
-                                            const d = new Date(m.date)
-                                            const jour = d.toLocaleDateString(localeOf(lang), { weekday: 'short' })
-                                            const mois = d.toLocaleDateString(localeOf(lang), { month: 'short' })
-                                            return (
-                                              <div key={i} style={{ background: '#111', borderRadius: '10px', padding: '10px 14px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ flexShrink: 0, width: '46px', textAlign: 'center', background: '#34d39915', border: '1px solid #34d39930', borderRadius: '9px', padding: '5px 0', textTransform: 'uppercase' }}>
-                                                  <div style={{ fontSize: '9px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{jour}</div>
-                                                  <div style={{ fontSize: '18px', color: 'white', fontWeight: 800, lineHeight: 1.3 }}>{d.getDate()}</div>
-                                                  <div style={{ fontSize: '9px', color: '#34d399', fontWeight: 700, lineHeight: 1.3 }}>{mois}</div>
-                                                </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                                                    <span style={{ fontSize: '11px', color: '#666' }}>{m.heure || ''}</span>
-                                                    {m.competition && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>{m.competition}</span>}
-                                                  </div>
-                                                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'white' }}>{m.equipe_domicile} <span style={{ color: '#444' }}>vs</span> {m.equipe_exterieur}</p>
-                                                  {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>📍 {m.lieu}</p>}
-                                                </div>
-                                              </div>
-                                            )
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <p style={{ margin: 0, fontSize: '12px', color: '#444', fontStyle: 'italic' }}>Aucun match programmé.</p>
-                                      )}
-                                    </div>
-
-                                    {/* Classements internes */}
-                                    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 20px' }}>
-                                      <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 800, color: '#f97316' }}>🏅 Classements équipe</p>
-                                      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                                        {[
-                                          { key: 'buteurs', label: '⚽ Buteurs', data: s.leaderButs },
-                                          { key: 'passeurs', label: '🎯 Passeurs', data: s.leaderPasses },
-                                          { key: 'victoires', label: '🏆 Victoires', data: s.leaderVictoires },
-                                          { key: 'points', label: '⭐ Points', data: s.leaderPoints },
-                                        ].map(c => (
-                                          <button key={c.key} onClick={() => setClassementActif(c.key)}
-                                            style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: classementActif === c.key ? '#4ade80' : '#111', color: classementActif === c.key ? '#000' : '#666' }}>
-                                            {c.label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                      {(() => {
-                                        const actif = { buteurs: s.leaderButs, passeurs: s.leaderPasses, victoires: s.leaderVictoires, points: s.leaderPoints }[classementActif] || []
+                                {/* Prochains matchs */}
+                                {s.prochainMatchs?.length > 0 && (
+                                  <div>
+                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '10px' }}>
+                                      {s.prochainMatchs.map((m, i) => {
+                                        const d = new Date(m.date)
                                         return (
-                                          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
-                                            {actif.length > 0 ? actif.map((row, i) => (
-                                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderBottom: i < actif.length - 1 ? '1px solid #1a1a1a' : 'none', background: row.isMe ? '#4ade8010' : 'transparent' }}>
-                                                <span style={{ fontSize: '13px', fontWeight: 800, color: i === 0 ? '#fbbf24' : i < 3 ? '#4ade80' : '#555', minWidth: '20px' }}>{i + 1}</span>
-                                                <span style={{ flex: 1, fontSize: '13px', fontWeight: row.isMe ? 800 : 500, color: row.isMe ? '#4ade80' : '#ccc', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.isMe ? 'Toi' : row.nom}</span>
-                                                <span style={{ fontSize: '13px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#999' }}>{row.val}</span>
-                                              </div>
-                                            )) : <p style={{ margin: 0, padding: '14px', fontSize: '12px', color: '#444' }}>—</p>}
+                                          <div key={i} style={{ background: '#111', borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                            <div style={{ background: 'linear-gradient(135deg, #4ade8020, #4ade8008)', border: '1px solid #4ade8030', borderRadius: '12px', padding: '8px 12px', textAlign: 'center', flexShrink: 0, minWidth: '50px' }}>
+                                              <p style={{ margin: 0, fontSize: '9px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
+                                              <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: '#4ade80', lineHeight: 1 }}>{d.getDate()}</p>
+                                              <p style={{ margin: 0, fontSize: '9px', color: '#4ade8070', textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { month: 'short' })}</p>
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
+                                              </p>
+                                              <p style={{ margin: 0, fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {[m.heure, m.competition, m.lieu ? `📍 ${m.lieu}` : ''].filter(Boolean).join(' · ')}
+                                              </p>
+                                            </div>
                                           </div>
                                         )
-                                      })()}
+                                      })}
                                     </div>
+                                  </div>
+                                )}
 
-                                    {/* Lien classement ligue */}
-                                    {s.ligueUrl && (
-                                      <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '12px', border: '1px solid #fbbf2430', background: '#fbbf2410', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                                        🏆 {t('aff_classement_championnat', lang)}
-                                      </a>
-                                    )}
+                                {/* Classements — pleine largeur */}
+                                <div>
+                                  <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
+                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+                                    {[
+                                      { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: '#4ade80' },
+                                      { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: '#60a5fa' },
+                                      { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: '#fbbf24' },
+                                      { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: '#a78bfa' },
+                                    ].map(({ title, icon, data, color }) => (
+                                      <div key={title} style={{ background: '#111', borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                                          <span>{icon}</span>
+                                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                                        </div>
+                                        {data?.length > 0 ? data.slice(0, 5).map((row, i) => (
+                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', background: row.isMe ? `${color}10` : 'transparent', borderRadius: '8px', padding: '5px 6px', border: row.isMe ? `1px solid ${color}25` : '1px solid transparent' }}>
+                                            <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? '#fbbf24' : '#2a2a2a', width: '14px', flexShrink: 0 }}>{i + 1}</span>
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : '#1a1a1a', border: `1px solid ${row.isMe ? color + '40' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>
+                                              {row.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                            </div>
+                                            <span style={{ fontSize: '11px', color: row.isMe ? color : '#666', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                              {row.isMe ? t('jcoach_toi', lang) : row.nom.split(' ')[0]}
+                                            </span>
+                                            <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>{row.val}</span>
+                                          </div>
+                                        )) : <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>}
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
 
+                                {s.ligueUrl && (
+                                  <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                                    🏆 {t('aff_classement_championnat', lang)} →
+                                  </a>
+                                )}
                               </div>
                             )
                           })()}
