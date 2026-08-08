@@ -575,7 +575,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, lang, isMobile, mesSeancesOuvertes }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, lang, isMobile, mesSeancesOuvertes }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalJoueurs = joueurs.length
@@ -857,7 +857,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           const enAttente = Math.max(0, totalJoueurs - dispoProchainEnt.length)
           const clos = sondageEstClos(prochainEnt)
           return (
-            <button onClick={() => setActiveSection('entrainements')}
+            <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
               style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : '#4ade80'}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
               <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
               <div style={{ fontSize: '13px', color: 'white', fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -3327,6 +3327,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             disposRecentes={disposRecentes}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
+            setSousOngletEnt={setSousOngletEnt}
             lang={lang}
             isMobile={isMobile}
             mesSeancesOuvertes={mesSeancesOuvertes}
