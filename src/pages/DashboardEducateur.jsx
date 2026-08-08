@@ -757,9 +757,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
               <div style={{ height: '1px', background: '#ffffff20', flexShrink: 0 }} />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                 <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '14px' }}>
                   {[
                     { label: 'V', val: victoires, color: '#4ade80' },
                     { label: 'N', val: nuls, color: '#facc15' },
