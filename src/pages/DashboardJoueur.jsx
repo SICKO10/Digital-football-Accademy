@@ -1253,7 +1253,7 @@ function DashboardJoueur() {
       { id: 'accueil',       label: t('jnav_accueil', lang),        icon: <IconHome /> },
 
       { id: 'equipe',        label: t('jnav_equipe', lang),         icon: <IconUsers />, section: labelSection },
-      { id: 'competition',   label: t('jnav_competition', lang),    icon: <span style={{ fontSize: '18px' }}>🏆</span> },
+      { id: 'competition',   label: t('jnav_competition', lang),    icon: <IconTrophy /> },
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
 
@@ -2095,7 +2095,7 @@ function DashboardJoueur() {
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
-    { id: 'competition', label: t('jnav_competition', lang), icon: <span style={{ fontSize: '18px' }}>🏆</span> },
+    { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
