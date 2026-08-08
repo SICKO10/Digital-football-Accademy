@@ -534,7 +534,7 @@ export default function DashboardClub() {
   const [codeClub, setCodeClub] = useState('')
 
   // Profil club
-  const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', description: '' })
+  const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '' })
   const [savingProfilClub, setSavingProfilClub] = useState(false)
   const [avatarClubUploading, setAvatarClubUploading] = useState(false)
   const [avisRecus, setAvisRecus] = useState([])
@@ -706,7 +706,7 @@ export default function DashboardClub() {
     setClub(clubProfile)
     setMonRole(role)
     setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
-    setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', description: clubProfile.description || '' })
+    setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '' })
 
     // Génère un code club s'il n'existe pas encore (seulement le club lui-même, pas le staff)
     if (profile.plan === 'club') {
@@ -1324,6 +1324,7 @@ export default function DashboardClub() {
     await supabase.from('profiles').update({
       club: profilClubEdit.club,
       region: profilClubEdit.region,
+      ville: profilClubEdit.ville,
       description: profilClubEdit.description,
     }).eq('id', clubId)
     setClub(prev => ({ ...prev, ...profilClubEdit }))
@@ -2129,6 +2130,11 @@ export default function DashboardClub() {
                   <div>
                     <label style={st.label}>{t('profil_region', lang)}</label>
                     <input style={st.input} value={profilClubEdit.region} onChange={e => setProfilClubEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex: Provence-Alpes-Côte d'Azur" disabled={!canEditSection('profil')} />
+                  </div>
+                  <div>
+                    <label style={st.label}>Ville (siège du club)</label>
+                    <input style={st.input} value={profilClubEdit.ville} onChange={e => setProfilClubEdit(p => ({ ...p, ville: e.target.value }))} placeholder="Ex: Cannes" disabled={!canEditSection('profil')} />
+                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>Utilisée pour calculer automatiquement les horaires de départ/retour des déplacements en Extérieur.</p>
                   </div>
                   <div>
                     <label style={st.label}>{t('seance_description', lang)}</label>

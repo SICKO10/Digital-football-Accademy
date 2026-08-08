@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { repartirBus } from '../lib/repartitionBus'
+import { estimerDeplacement, calculerTrajet } from '../lib/mapbox'
 
 const NATURES = [
   { val: 'match', label: '⚽ Match', emoji: '⚽' },
@@ -14,6 +15,7 @@ const formVide = () => ({
   heure_retour_estimee: '', nb_personnes: '',
   lieu_destination: '', nature: 'match', vehicule: '', conducteur: '',
   km_avant: '', gasoil_avant: '',
+  distance_km: null, duree_trajet_min: null,
 })
 
 const st = {
@@ -68,6 +70,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [alertesLocation, setAlertesLocation] = useState([])
   const [repartitionAutoEnCours, setRepartitionAutoEnCours] = useState(false)
   const [recuperationMatchsEnCours, setRecuperationMatchsEnCours] = useState(false)
+  const [clubVille, setClubVille] = useState(null)
+  const [estimationEnCours, setEstimationEnCours] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -97,7 +101,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setVehicules(data || [])
   }
 
-  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules() } }, [clubId])
+  // Ville du club (siège), pour estimer la distance/durée du trajet vers la
+  // destination saisie dans le formulaire manuel — cf. estimerDistanceDestination.
+  const chargerClubVille = async () => {
+    const { data } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
+    setClubVille(data?.ville || null)
+  }
+
+  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules(); chargerClubVille() } }, [clubId])
 
   // Récupère les matchs Extérieur (matchs_equipe.domicile = false) des éducateurs
   // du club qui n'ont pas encore de déplacement correspondant. Un déplacement
@@ -116,19 +127,29 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const aCreer = (matchsExt || []).filter(m => m.date && !datesDejaCouvertes.has(m.date))
     if (aCreer.length === 0) { setRecuperationMatchsEnCours(false); alert('Aucun match Extérieur manquant à récupérer.'); return }
     const { data: { user } } = await supabase.auth.getUser()
-    const payload = aCreer.map(m => {
+    // Ville du club (siège), pour estimer automatiquement les horaires de départ/retour
+    // via Mapbox si la ville du match a été renseignée (cf. lib/mapbox.js) — sinon
+    // heure_depart reste null, comme avant.
+    const { data: clubProfile } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
+    const payload = await Promise.all(aCreer.map(async m => {
       const cat = equipesOptions.find(c => c.educateur_id === m.educateur_id)
+      const horaires = (clubProfile?.ville && m.ville && m.heure)
+        ? await estimerDeplacement(clubProfile.ville, m.ville, m.heure)
+        : null
       return {
         club_id: clubId,
         equipe: cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : null,
         educateur_id: m.educateur_id,
         date_depart: m.date,
-        heure_depart: m.heure || null,
+        heure_depart: horaires?.heure_depart || m.heure || null,
+        heure_retour_estimee: horaires?.heure_retour_estimee || null,
+        distance_km: horaires?.distance_km ?? null,
+        duree_trajet_min: horaires?.duree_trajet_min ?? null,
         lieu_destination: m.lieu || m.adversaire || 'Extérieur',
         nature: 'match',
         created_by: user?.id || null,
       }
-    })
+    }))
     const { error } = await supabase.from('deplacements').insert(payload)
     setRecuperationMatchsEnCours(false)
     if (error) { alert('Erreur : ' + error.message); return }
@@ -305,6 +326,23 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     (d.vehicule || '').split('+').map(p => p.trim()).includes(plaque)
   )
 
+  // Estime la distance/durée du trajet vers la destination saisie, déclenché
+  // à la sortie du champ (onBlur) plutôt qu'à chaque frappe : "lieu_destination"
+  // est un texte libre (nom de stade, adresse...), pas une ville seule, donc
+  // interroger Mapbox sur une saisie partielle serait à la fois inutile (peu
+  // de chances de géocoder correctement un texte en cours de frappe) et
+  // gourmand en appels. Purement informatif ici — n'écrase pas heure_depart,
+  // qui n'a pas d'heure de coup d'envoi de référence dans ce formulaire
+  // générique (utilisé aussi pour tournois/stages, cf. estimerEtAppliquerHoraires
+  // dans DashboardEducateur.jsx pour l'estimation automatique liée à un match).
+  const estimerDistanceDestination = async () => {
+    if (!clubVille || !form.lieu_destination.trim() || estimationEnCours) return
+    setEstimationEnCours(true)
+    const trajet = await calculerTrajet(clubVille, form.lieu_destination.trim())
+    setEstimationEnCours(false)
+    if (trajet) setForm(f => ({ ...f, distance_km: trajet.distance_km, duree_trajet_min: trajet.duree_trajet_min }))
+  }
+
   // Crée un nouveau déplacement, ou met à jour deplacementEnEdition si défini
   // (formulaire partagé entre création et édition — mêmes champs des deux côtés).
   const sauvegarderDeplacement = async () => {
@@ -334,6 +372,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       conducteur: form.conducteur.trim() || null,
       km_avant: form.km_avant !== '' ? parseFloat(form.km_avant) : null,
       gasoil_avant: form.gasoil_avant.trim() || null,
+      distance_km: form.distance_km ?? null,
+      duree_trajet_min: form.duree_trajet_min ?? null,
     }
     let error
     if (deplacementEnEdition) {
@@ -356,6 +396,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       heure_depart: dep.heure_depart || '', heure_retour_estimee: dep.heure_retour_estimee || '', nb_personnes: dep.nb_personnes ?? '',
       lieu_destination: dep.lieu_destination || '', nature: dep.nature || 'match', vehicule: dep.vehicule || '', conducteur: dep.conducteur || '',
       km_avant: dep.km_avant ?? '', gasoil_avant: dep.gasoil_avant || '',
+      distance_km: dep.distance_km ?? null, duree_trajet_min: dep.duree_trajet_min ?? null,
     })
     setDeplacementEnEdition(dep.id)
     setShowForm(true)
@@ -505,7 +546,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={st.label}>Lieu / destination</label>
-              <input style={st.input} value={form.lieu_destination} onChange={e => setForm(f => ({ ...f, lieu_destination: e.target.value }))} placeholder="Ex: Stade municipal, Lyon" />
+              <input style={st.input} value={form.lieu_destination}
+                onChange={e => setForm(f => ({ ...f, lieu_destination: e.target.value, distance_km: null, duree_trajet_min: null }))}
+                onBlur={estimerDistanceDestination}
+                placeholder="Ex: Stade municipal, Lyon" />
+              {estimationEnCours && <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>🗺️ Estimation du trajet...</p>}
+              {!estimationEnCours && form.distance_km != null && (
+                <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: '#9ca3af' }}>
+                  🗺️ <strong style={{ color: 'white' }}>{form.distance_km} km</strong>
+                  {form.duree_trajet_min != null && <> · {Math.floor(form.duree_trajet_min / 60)}h{String(form.duree_trajet_min % 60).padStart(2, '0')} de trajet (aller simple, depuis {clubVille})</>}
+                </p>
+              )}
             </div>
             <div>
               <label style={st.label}>Nature</label>
@@ -606,6 +657,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                             {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                             {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
                             {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
+                            {d.distance_km != null ? ` · 🗺️ ${d.distance_km} km` : ''}
+                            {d.duree_trajet_min != null ? ` (${Math.floor(d.duree_trajet_min / 60)}h${String(d.duree_trajet_min % 60).padStart(2, '0')})` : ''}
                           </p>
                         </div>
                         <span style={{

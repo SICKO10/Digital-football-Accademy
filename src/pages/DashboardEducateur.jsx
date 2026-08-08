@@ -13,6 +13,7 @@ import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
+import { estimerDeplacement } from '../lib/mapbox'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
@@ -976,7 +977,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Matchs
   const [matchs, setMatchs] = useState([])
   const [showAddMatch, setShowAddMatch] = useState(false)
-  const [newMatch, setNewMatch] = useState({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+  const [newMatch, setNewMatch] = useState({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
   const [savingMatch, setSavingMatch] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [scannerImageBase64, setScannerImageBase64] = useState(null)
@@ -1111,7 +1112,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data } = await supabase
       .from('club_educateurs')
-      .select('*, club:club_id(club, prenom, nom, avatar_url)')
+      .select('*, club:club_id(club, prenom, nom, avatar_url, ville)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -2370,13 +2371,31 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!error) afficherToast('Déplacement créé automatiquement')
   }
 
+  // Calcule automatiquement les horaires de départ/retour du déplacement lié à un
+  // match Extérieur (ville du club + ville du match connues, token Mapbox configuré
+  // — cf. lib/mapbox.js) et les applique : cache distance_km/duree_trajet_min sur le
+  // match, et heure_depart/heure_retour_estimee sur le déplacement correspondant.
+  // N'écrase jamais une heure de départ déjà saisie à la main (.is('heure_depart', null)).
+  const estimerEtAppliquerHoraires = async (m) => {
+    if (m.domicile || !m.date || !m.ville || !m.heure) return
+    const clubVille = clubAffiliation?.club?.ville
+    if (!clubVille || !clubAffiliation?.club_id) return
+    const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
+    if (!resultat) return
+    await supabase.from('matchs_equipe').update({ distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min }).eq('id', m.id)
+    await supabase.from('deplacements')
+      .update({ heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee })
+      .eq('club_id', clubAffiliation.club_id).eq('date_depart', m.date).is('heure_depart', null)
+  }
+
   const ajouterMatch = async () => {
     if (!newMatch.adversaire || !newMatch.date) return
     setSavingMatch(true)
-    await supabase.from('matchs_equipe').insert({ ...newMatch, educateur_id: userId, domicile: newMatch.domicile })
+    const { data } = await supabase.from('matchs_equipe').insert({ ...newMatch, educateur_id: userId, domicile: newMatch.domicile }).select().single()
     await creerDeplacementAutoMatch(newMatch)
+    if (data) await estimerEtAppliquerHoraires(data)
     await chargerMatchs(userId)
-    setNewMatch({ date: '', heure: '', lieu: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+    setNewMatch({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
     setSavingMatch(false)
   }
@@ -2427,7 +2446,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setSavingMatchJoue(false)
   }
 
-  const matchFormVide = () => ({ id: null, adversaire: '', date: '', heure: '', competition: '', domicile: true, lieu: '' })
+  const matchFormVide = () => ({ id: null, adversaire: '', date: '', heure: '', competition: '', domicile: true, lieu: '', ville: '' })
 
   const ouvrirModalCreerMatch = () => setModalMatchForm(matchFormVide())
 
@@ -2439,6 +2458,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     competition: m.competition || '',
     domicile: m.domicile !== false,
     lieu: m.lieu || '',
+    ville: m.ville || '',
   })
 
   const sauvegarderMatchForm = async () => {
@@ -2449,6 +2469,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       const { error } = await supabase.from('matchs_equipe').update(champs).eq('id', id)
       if (error) { afficherToast(`Erreur lors de la modification du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
       setMatchs(prev => prev.map(m => m.id === id ? { ...m, ...champs } : m))
+      await estimerEtAppliquerHoraires({ ...champs, id })
     } else {
       const { data, error } = await supabase.from('matchs_equipe').insert({
         ...champs, educateur_id: userId, score_nous: '', score_eux: '',
@@ -2457,6 +2478,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       if (data) {
         setMatchs(prev => [data, ...prev])
         await creerDeplacementAutoMatch(data)
+        await estimerEtAppliquerHoraires(data)
       }
     }
     setSavingMatchForm(false)
@@ -4276,6 +4298,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
                       <div><label style={st.label}>{t('comp_competition', lang)}</label><input style={st.input} placeholder="Championnat, Coupe..." value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })} /></div>
                       <div><label style={st.label}>{t('comp_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newMatch.lieu} onChange={e => setNewMatch({ ...newMatch, lieu: e.target.value })} /></div>
+                      {!newMatch.domicile && (
+                        <div><label style={st.label}>Ville (pour calculer le trajet)</label><input style={st.input} placeholder="Ex: Lyon" value={newMatch.ville} onChange={e => setNewMatch({ ...newMatch, ville: e.target.value })} /></div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
                         <span style={{ color: '#555', paddingBottom: '10px', fontWeight: 700 }}>-</span>
@@ -4762,6 +4787,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <label style={st.label}>{t('comp_lieu', lang)}</label>
                       <input style={st.input} placeholder="Ex: Stade municipal" value={modalMatchForm.lieu} onChange={e => setModalMatchForm(f => ({ ...f, lieu: e.target.value }))} />
                     </div>
+                    {!modalMatchForm.domicile && (
+                      <div>
+                        <label style={st.label}>Ville (pour calculer le trajet)</label>
+                        <input style={st.input} placeholder="Ex: Lyon" value={modalMatchForm.ville} onChange={e => setModalMatchForm(f => ({ ...f, ville: e.target.value }))} />
+                      </div>
+                    )}
                     <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
                         <input type="checkbox" checked={modalMatchForm.domicile} onChange={e => setModalMatchForm(f => ({ ...f, domicile: e.target.checked }))} />
