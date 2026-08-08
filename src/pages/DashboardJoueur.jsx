@@ -366,6 +366,10 @@ function DashboardJoueur() {
   const [moisCalendrierCompetition, setMoisCalendrierCompetition] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d
   })
+  // Idem pour "Derniers résultats" — null tant que l'utilisateur n'a pas navigué,
+  // pour partir du mois du dernier match joué plutôt que du mois en cours (souvent
+  // vide côté résultats passés) une fois resultatsCompetition chargé.
+  const [moisResultatsCompetition, setMoisResultatsCompetition] = useState(null)
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
   const [pendingDispo, setPendingDispo] = useState({}) // { [eventId]: statut } — choix pas encore validé (avant clic sur "Valider")
@@ -600,8 +604,8 @@ function DashboardJoueur() {
     const aVenir = (matchs || [])
       .filter(m => m.score_nous === '' || m.score_nous === null || m.score_nous === undefined)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
-    setResultatsCompetition(joues.slice(0, 5))
-    setCalendrierCompetition(aVenir) // pas de slice ici — navigation mois par mois dans renduCompetition
+    setResultatsCompetition(joues) // pas de slice ici — navigation mois par mois dans renduCompetition
+    setCalendrierCompetition(aVenir) // idem
     setLienClassementCompetition(pe?.ligue_url || null)
   }
 
@@ -1244,31 +1248,58 @@ function DashboardJoueur() {
           )
         })()}
 
-        <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '12px' }}>⚽ Derniers résultats</div>
-          {resultatsCompetition.length === 0 ? (
-            <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun résultat enregistré</p>
-          ) : resultatsCompetition.map(r => {
-            const scoreNous = Number(r.score_nous)
-            const scoreEux = Number(r.score_eux)
-            const victoire = scoreNous > scoreEux
-            const nul = scoreNous === scoreEux
-            return (
-              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
-                <div>
-                  <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</div>
-                </div>
+        {(() => {
+          const moisEffectif = moisResultatsCompetition || (() => {
+            const base = resultatsCompetition[0] ? new Date(resultatsCompetition[0].date + 'T12:00:00') : new Date()
+            base.setDate(1); base.setHours(0, 0, 0, 0)
+            return base
+          })()
+          const moisResultats = resultatsCompetition.filter(r => {
+            const d = new Date(r.date + 'T12:00:00')
+            return d.getFullYear() === moisEffectif.getFullYear() && d.getMonth() === moisEffectif.getMonth()
+          })
+          const changerMois = (delta) => setMoisResultatsCompetition(() => {
+            const d = new Date(moisEffectif); d.setMonth(d.getMonth() + delta); return d
+          })
+          return (
+            <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>⚽ Derniers résultats</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>{r.score_nous} - {r.score_eux}</span>
-                  <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? '#4ade80' : nul ? '#facc15' : '#ef4444' }}>
-                    {victoire ? 'V' : nul ? 'N' : 'D'}
+                  <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
+                    style={{ background: 'transparent', border: '1px solid #1f2937', color: '#9ca3af', width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#d1d5db', minWidth: '90px', textAlign: 'center', textTransform: 'capitalize' }}>
+                    {moisEffectif.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
                   </span>
+                  <button onClick={() => changerMois(1)} aria-label="Mois suivant"
+                    style={{ background: 'transparent', border: '1px solid #1f2937', color: '#9ca3af', width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>›</button>
                 </div>
               </div>
-            )
-          })}
-        </div>
+              {moisResultats.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun résultat ce mois-ci</p>
+              ) : moisResultats.map(r => {
+                const scoreNous = Number(r.score_nous)
+                const scoreEux = Number(r.score_eux)
+                const victoire = scoreNous > scoreEux
+                const nul = scoreNous === scoreEux
+                return (
+                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>{r.score_nous} - {r.score_eux}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? '#4ade80' : nul ? '#facc15' : '#ef4444' }}>
+                        {victoire ? 'V' : nul ? 'N' : 'D'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
       </div>
     )
   }
