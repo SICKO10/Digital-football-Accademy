@@ -748,16 +748,16 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           const totalM = matchsJoues.length
           const pct = (n) => totalM ? Math.round(n / totalM * 100) : 0
           return (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, gridColumn: 'span 2', display: 'flex', alignItems: 'stretch', gap: '1.25rem' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
                 <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
                 <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
                 <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
               </div>
 
-              <div style={{ width: '1px', background: '#ffffff20', flexShrink: 0 }} />
+              <div style={{ height: '1px', background: '#ffffff20', flexShrink: 0 }} />
 
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
                 <div style={{ display: 'flex', gap: '10px' }}>
                   {[
