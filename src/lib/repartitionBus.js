@@ -12,6 +12,12 @@
 //    disponibles dont la capacité cumulée couvre le groupe.
 // 4. Si rien ne convient (timing ou capacité), le déplacement est marqué
 //    "insuffisant" pour alerte et affectation manuelle.
+//
+// Exception : pour un tournoi ou un stage, le bus reste sur place toute la
+// journée avec le groupe (pas d'aller-retour comme pour un match) — même si
+// heure_retour_estimee est renseignée, elle ne reflète pas un vrai moment de
+// disponibilité. Le bus est donc bloqué pour le reste de la journée dès qu'il
+// est assigné à ce type de déplacement, plutôt que réputé libre à retour.
 
 export const MARGE_MIN_DEFAUT = 30
 
@@ -29,7 +35,8 @@ export function repartirBus(deplacements, vehicules, margeMin = MARGE_MIN_DEFAUT
   return sorted.map(dep => {
     const depart = toMinutes(dep.heure_depart)
     const nbPersonnes = Number(dep.nb_personnes) || 0
-    const retour = toMinutes(dep.heure_retour_estimee) ?? depart
+    const journeeComplete = dep.nature === 'tournoi' || dep.nature === 'stage'
+    const retour = journeeComplete ? Infinity : (toMinutes(dep.heure_retour_estimee) ?? depart)
 
     if (depart == null) {
       return { ...dep, vehicule: '', vehicules: [], conducteur: '', statut: 'insuffisant' }
