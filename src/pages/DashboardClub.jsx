@@ -1484,24 +1484,30 @@ export default function DashboardClub() {
 
   const soumettreGrilleEvaluation = async (payload) => {
     if (!seanceEvalModal) return
-    await supabase.from('evaluations_seance').upsert({
-      seance_id: seanceEvalModal.id,
-      evaluateur_id: clubId,
-      evaluateur_type: payload.evaluateurType || 'club',
-      criteres: payload.criteres,
-      note_preparation: payload.note_preparation,
-      note_animation: payload.note_animation,
-      note_pedagogie: payload.note_pedagogie,
-      note_management: payload.note_management,
-      note_football: payload.note_football,
-      note_totale: payload.note_totale,
-      points_forts: payload.points_forts,
-      axes_amelioration: payload.axes_amelioration,
-      actions: payload.actions,
-    }, { onConflict: 'seance_id' })
-    await supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceEvalModal.id)
-    await chargerSeancesRecues(clubId)
+    // Optimistic : la modale se ferme tout de suite. Les deux écritures
+    // (évaluation + statut de la séance) ne dépendent pas l'une de l'autre —
+    // seulement de l'id de la séance, déjà connu — donc en parallèle.
+    const seanceId = seanceEvalModal.id
     setSeanceEvalModal(null)
+    await Promise.all([
+      supabase.from('evaluations_seance').upsert({
+        seance_id: seanceId,
+        evaluateur_id: clubId,
+        evaluateur_type: payload.evaluateurType || 'club',
+        criteres: payload.criteres,
+        note_preparation: payload.note_preparation,
+        note_animation: payload.note_animation,
+        note_pedagogie: payload.note_pedagogie,
+        note_management: payload.note_management,
+        note_football: payload.note_football,
+        note_totale: payload.note_totale,
+        points_forts: payload.points_forts,
+        axes_amelioration: payload.axes_amelioration,
+        actions: payload.actions,
+      }, { onConflict: 'seance_id' }),
+      supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceId),
+    ])
+    await chargerSeancesRecues(clubId)
   }
 
   const handleLogout = async () => { await signOutSafe(); navigate('/') }

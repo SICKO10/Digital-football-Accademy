@@ -77,10 +77,17 @@ function DashboardCoach() {
   }
 
   const marquerDemandeTraitee = async (id) => {
+    // Optimistic : la demande sort de la liste tout de suite, sans attendre
+    // la réponse Supabase ni un rechargement complet.
+    const avant = demandesClub.find(d => d.id === id)
+    setDemandesClub(prev => prev.filter(d => d.id !== id))
     setTraitantDemande(id)
-    await supabase.from('demandes_club').update({ statut: 'traite' }).eq('id', id)
-    await getDemandesClub()
+    const { error } = await supabase.from('demandes_club').update({ statut: 'traite' }).eq('id', id)
     setTraitantDemande(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      if (avant) setDemandesClub(prev => [avant, ...prev])
+    }
   }
 
   const getClubsEnAttente = async () => {
@@ -94,10 +101,17 @@ function DashboardCoach() {
   }
 
   const activerClub = async (clubId) => {
+    // Optimistic : le club sort de la liste "en attente" tout de suite, sans
+    // attendre la réponse Supabase ni un rechargement complet.
+    const avant = clubsEnAttente.find(c => c.id === clubId)
+    setClubsEnAttente(prev => prev.filter(c => c.id !== clubId))
     setActivatingClub(clubId)
-    await supabase.from('profiles').update({ abonnement_actif: true }).eq('id', clubId)
-    await getClubsEnAttente()
+    const { error } = await supabase.from('profiles').update({ abonnement_actif: true }).eq('id', clubId)
     setActivatingClub(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      if (avant) setClubsEnAttente(prev => [avant, ...prev])
+    }
   }
 
   const copierLienClub = (clubId, palier, cycle) => {
@@ -145,42 +159,49 @@ function DashboardCoach() {
   }
 
   const soumettreGrilleCoach = async (payload) => {
-    await supabase.from('evaluations_seance').upsert({
-      seance_id: seanceEvalModal.id,
-      evaluateur_id: coachId,
-      evaluateur_type: 'coach',
-      criteres: payload.criteres,
-      note_preparation: payload.note_preparation,
-      note_animation: payload.note_animation,
-      note_pedagogie: payload.note_pedagogie,
-      note_management: payload.note_management,
-      note_football: payload.note_football,
-      note_totale: payload.note_totale,
-      points_forts: payload.points_forts,
-      axes_amelioration: payload.axes_amelioration,
-      actions: payload.actions,
-    }, { onConflict: 'seance_id' })
-    await supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceEvalModal.id)
-
-    // Un seul destinataire : l'éducateur pour une séance "ouverte" (sans club), le club sinon.
-    // educateur_id/club_id sont tous deux des profiles.id — notifierJoueur fonctionne pour n'importe quel profil.
-    try {
-      const destinataireId = seanceEvalModal.origine === 'ouvert' ? seanceEvalModal.educateur_id : seanceEvalModal.club_id
-      if (destinataireId) {
-        await notifierJoueur({
-          type: 'analyse_seance',
-          userId: destinataireId,
-          titre: 'Analyse de séance disponible',
-          contenu: { texte: `La séance "${seanceEvalModal.theme || 'sans thème'}" a été analysée par un coach.` },
-          lien: seanceEvalModal.origine === 'ouvert' ? '/educateur' : '/club',
-        })
-      }
-    } catch (e) {
-      console.error('Erreur notification analyse séance:', e)
-    }
-
-    await chargerSeancesTransferees()
+    const seance = seanceEvalModal
+    if (!seance) return
+    // Optimistic : la modale se ferme tout de suite. Les 3 opérations
+    // (évaluation, statut de la séance, notification) sont indépendantes —
+    // aucune ne dépend du résultat d'une autre — donc en parallèle.
     setSeanceEvalModal(null)
+    await Promise.all([
+      supabase.from('evaluations_seance').upsert({
+        seance_id: seance.id,
+        evaluateur_id: coachId,
+        evaluateur_type: 'coach',
+        criteres: payload.criteres,
+        note_preparation: payload.note_preparation,
+        note_animation: payload.note_animation,
+        note_pedagogie: payload.note_pedagogie,
+        note_management: payload.note_management,
+        note_football: payload.note_football,
+        note_totale: payload.note_totale,
+        points_forts: payload.points_forts,
+        axes_amelioration: payload.axes_amelioration,
+        actions: payload.actions,
+      }, { onConflict: 'seance_id' }),
+      supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seance.id),
+      // Un seul destinataire : l'éducateur pour une séance "ouverte" (sans club), le club sinon.
+      // educateur_id/club_id sont tous deux des profiles.id — notifierJoueur fonctionne pour n'importe quel profil.
+      (async () => {
+        try {
+          const destinataireId = seance.origine === 'ouvert' ? seance.educateur_id : seance.club_id
+          if (destinataireId) {
+            await notifierJoueur({
+              type: 'analyse_seance',
+              userId: destinataireId,
+              titre: 'Analyse de séance disponible',
+              contenu: { texte: `La séance "${seance.theme || 'sans thème'}" a été analysée par un coach.` },
+              lien: seance.origine === 'ouvert' ? '/educateur' : '/club',
+            })
+          }
+        } catch (e) {
+          console.error('Erreur notification analyse séance:', e)
+        }
+      })(),
+    ])
+    await chargerSeancesTransferees()
   }
 
   const getCertifications = async () => {
@@ -193,44 +214,58 @@ function DashboardCoach() {
   }
 
   const validerCertification = async (certif) => {
+    // Optimistic : la certification passe "validé" tout de suite dans la
+    // liste locale. La mise à jour de la certification et le message de
+    // notification sont indépendants (le message ne dépend pas du résultat
+    // de l'update) — en parallèle.
+    const avant = certif.statut
+    setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'validé' } : c))
     setValidating(prev => ({ ...prev, [certif.id]: 'validating' }))
-    const { error } = await supabase.from('certifications')
-      .update({ statut: 'validé', validated_at: new Date().toISOString(), commentaire_admin: commentaires[certif.id] || null })
-      .eq('id', certif.id)
-    if (!error) {
-      // Notifier le joueur
-      if (coachId && certif.profiles?.id) {
-        await supabase.from('messages').insert({
-          sender_id: coachId,
-          receiver_id: certif.profiles.id,
-          content: `⭐ Félicitations ! Ta certification "${certif.niveau}" pour la saison ${certif.saison} a été validée. Le badge apparaît maintenant sur ton profil.`,
-          created_at: new Date().toISOString()
-        })
-      }
-      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'validé' } : c))
-    }
+    const [{ error }] = await Promise.all([
+      supabase.from('certifications')
+        .update({ statut: 'validé', validated_at: new Date().toISOString(), commentaire_admin: commentaires[certif.id] || null })
+        .eq('id', certif.id),
+      coachId && certif.profiles?.id
+        ? supabase.from('messages').insert({
+            sender_id: coachId,
+            receiver_id: certif.profiles.id,
+            content: `⭐ Félicitations ! Ta certification "${certif.niveau}" pour la saison ${certif.saison} a été validée. Le badge apparaît maintenant sur ton profil.`,
+            created_at: new Date().toISOString()
+          })
+        : Promise.resolve({ error: null }),
+    ])
     setValidating(prev => ({ ...prev, [certif.id]: null }))
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: avant } : c))
+    }
   }
 
   const rejeterCertification = async (certif) => {
     const motif = commentaires[certif.id]?.trim()
     if (!motif) { alert('Indique un motif de rejet avant de rejeter.'); return }
+    // Optimistic : idem validerCertification.
+    const avant = certif.statut
+    setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'rejeté', commentaire_admin: motif } : c))
     setValidating(prev => ({ ...prev, [certif.id]: 'rejecting' }))
-    const { error } = await supabase.from('certifications')
-      .update({ statut: 'rejeté', commentaire_admin: motif })
-      .eq('id', certif.id)
-    if (!error) {
-      if (coachId && certif.profiles?.id) {
-        await supabase.from('messages').insert({
-          sender_id: coachId,
-          receiver_id: certif.profiles.id,
-          content: `❌ Ta demande de certification "${certif.niveau}" (${certif.saison}) a été rejetée. Motif : ${motif}`,
-          created_at: new Date().toISOString()
-        })
-      }
-      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'rejeté', commentaire_admin: motif } : c))
-    }
+    const [{ error }] = await Promise.all([
+      supabase.from('certifications')
+        .update({ statut: 'rejeté', commentaire_admin: motif })
+        .eq('id', certif.id),
+      coachId && certif.profiles?.id
+        ? supabase.from('messages').insert({
+            sender_id: coachId,
+            receiver_id: certif.profiles.id,
+            content: `❌ Ta demande de certification "${certif.niveau}" (${certif.saison}) a été rejetée. Motif : ${motif}`,
+            created_at: new Date().toISOString()
+          })
+        : Promise.resolve({ error: null }),
+    ])
     setValidating(prev => ({ ...prev, [certif.id]: null }))
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: avant } : c))
+    }
   }
 
   const envoyerAnalyse = async (demandeId, joueurId) => {
@@ -253,41 +288,50 @@ function DashboardCoach() {
       }
     }
 
-    await supabase.from('demandes')
+    const { error } = await supabase.from('demandes')
       .update({ statut: 'analyse', loom_url: loomUrl, ...(rapportPdfUrl ? { rapport_pdf_url: rapportPdfUrl } : {}) })
       .eq('id', demandeId)
+    if (error) {
+      setSending(prev => ({ ...prev, [demandeId]: false }))
+      alert('Erreur : ' + error.message)
+      return
+    }
 
     const demande = demandes.find(d => d.id === demandeId)
     const titreDemande = demande?.titre || 'ta vidéo'
     const joueurPrenom = demande?.profiles?.prenom || 'le joueur'
 
-    if (coachId && joueurId) {
-      await supabase.from('messages').insert({
-        sender_id: coachId,
-        receiver_id: joueurId,
-        content: `🎬 Ton analyse vidéo est prête ! J'ai analysé "${titreDemande}". Regarde ici : ${loomUrl}`,
-        created_at: new Date().toISOString()
-      })
-    }
-
-    if (joueurId) {
-      await notifierJoueur({
-        type: 'analyse',
-        userId: joueurId,
-        titre: `Analyse de "${titreDemande}" prête`,
-        contenu: { texte: `Regarde ici : ${loomUrl}` },
-        lien: '/dashboard',
-      })
-    }
-
+    // Optimistic à partir d'ici : l'écriture principale (demandes) est
+    // confirmée, donc on déclare terminé côté UI tout de suite. Le message et
+    // la notification au joueur sont indépendants l'un de l'autre — en
+    // parallèle, en arrière-plan.
     setDemandes(prev => prev.map(d =>
       d.id === demandeId ? { ...d, statut: 'analyse', loom_url: loomUrl, ...(rapportPdfUrl ? { rapport_pdf_url: rapportPdfUrl } : {}) } : d
     ))
-
     setSending(prev => ({ ...prev, [demandeId]: false }))
     setLoomUrls(prev => ({ ...prev, [demandeId]: '' }))
     setRapportPdfFiles(prev => ({ ...prev, [demandeId]: null }))
     alert(`✅ Analyse envoyée à ${joueurPrenom} !`)
+
+    await Promise.all([
+      coachId && joueurId
+        ? supabase.from('messages').insert({
+            sender_id: coachId,
+            receiver_id: joueurId,
+            content: `🎬 Ton analyse vidéo est prête ! J'ai analysé "${titreDemande}". Regarde ici : ${loomUrl}`,
+            created_at: new Date().toISOString()
+          })
+        : Promise.resolve(),
+      joueurId
+        ? notifierJoueur({
+            type: 'analyse',
+            userId: joueurId,
+            titre: `Analyse de "${titreDemande}" prête`,
+            contenu: { texte: `Regarde ici : ${loomUrl}` },
+            lien: '/dashboard',
+          })
+        : Promise.resolve(),
+    ])
   }
 
   const getVideoUrl = (demande) => demande.video_url || demande.lien_video || demande.clip_url || null
