@@ -673,16 +673,22 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   }
 
   const sauvegarderFiche = async () => {
+    // Optimistic : la modale se ferme tout de suite sans attendre la réponse
+    // Supabase. Erreur → réouverte avec la saisie intacte.
+    const depSnapshot = deplacementFicheOuverte
     setSavingFiche(true)
+    setDeplacementFicheOuverte(null)
     const { error } = await supabase.from('deplacements').update({
       fiches_bus: fichesBus,
       remarques: remarquesGenerales.trim() || null,
       fiche_completee: true,
       fiche_completee_le: new Date().toISOString(),
-    }).eq('id', deplacementFicheOuverte.id)
+    }).eq('id', depSnapshot.id)
     setSavingFiche(false)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setDeplacementFicheOuverte(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setDeplacementFicheOuverte(depSnapshot)
+    }
   }
 
   // Fenêtre lundi → dimanche de la semaine en cours
@@ -1697,18 +1703,31 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const sauvegarderProcede = async () => {
     if (!procedeForm.nom.trim()) return
-    setSavingProcede(true)
     const payload = { ...procedeForm, educateur_id: userId, duree: procedeForm.duree ? parseInt(procedeForm.duree) : null }
-    if (procedeEnEdition) {
-      await supabase.from('bibliotheque_exercices').update(payload).eq('id', procedeEnEdition.id)
-    } else {
-      await supabase.from('bibliotheque_exercices').insert(payload)
-    }
-    await chargerBiblio()
+    // Optimistic : la modale se ferme tout de suite sans attendre la réponse
+    // Supabase. Erreur → réouverte avec la saisie intacte (aucune
+    // vérification d'erreur n'existait avant, on en ajoute a minima).
+    const idEnEdition = procedeEnEdition
+    const formSnapshot = { ...procedeForm }
+    setSavingProcede(true)
     setModalProcede(false)
     setProcedeEnEdition(null)
     setProcedeForm(PROCEDE_VIDE)
+    let error
+    if (idEnEdition) {
+      ;({ error } = await supabase.from('bibliotheque_exercices').update(payload).eq('id', idEnEdition.id))
+    } else {
+      ;({ error } = await supabase.from('bibliotheque_exercices').insert(payload))
+    }
     setSavingProcede(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setProcedeForm(formSnapshot)
+      setProcedeEnEdition(idEnEdition)
+      setModalProcede(true)
+      return
+    }
+    await chargerBiblio(userId)
   }
 
   const supprimerProcede = async (id) => {
@@ -1822,27 +1841,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       return
     }
 
-    await lierFicheAEntrainementCorrespondant(inserted.id, fiche.date)
-
-    try {
-      const pdfBlob = await genererPdfFiche()
-      if (pdfBlob) {
-        const path = `fiches/${userId}/${Date.now()}.pdf`
-        const { error: uploadError } = await supabase.storage.from('documents').upload(path, pdfBlob, { contentType: 'application/pdf', upsert: true })
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-          await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', inserted.id)
-        } else {
-          console.error('Erreur upload PDF fiche:', uploadError)
-        }
-      }
-    } catch (e) {
-      console.error('Erreur génération PDF fiche:', e)
-    }
-
+    // Optimistic : l'insert principal ci-dessus est confirmé, donc on referme
+    // côté UI tout de suite. La liaison à l'entraînement et la génération du
+    // PDF ne dépendent pas l'une de l'autre (juste de l'id fraîchement créé)
+    // — elles tournent en parallèle plutôt qu'en séquence, en arrière-plan.
     setSavingFiche(false)
     setFicheFichierUrl(null)
     setFicheExtraite(false)
+
+    const [, pdfBlob] = await Promise.all([
+      lierFicheAEntrainementCorrespondant(inserted.id, fiche.date),
+      genererPdfFiche().catch(e => { console.error('Erreur génération PDF fiche:', e); return null }),
+    ])
+    if (pdfBlob) {
+      const path = `fiches/${userId}/${Date.now()}.pdf`
+      const { error: uploadError } = await supabase.storage.from('documents').upload(path, pdfBlob, { contentType: 'application/pdf', upsert: true })
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+        await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', inserted.id)
+      } else {
+        console.error('Erreur upload PDF fiche:', uploadError)
+      }
+    }
     await chargerMesSeancesOuvertes(userId)
   }
 
@@ -2300,11 +2320,21 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const sauvegarderProfilEdu = async () => {
     if (!profilEduEdit) return
-    setSavingProfil(true)
+    // Optimistic : profil local mis à jour tout de suite, sans attendre la
+    // réponse Supabase. Erreur → on revient à l'ancien profil (aucune
+    // vérification d'erreur n'existait avant, on en ajoute a minima).
+    const avant = profilEdu
     const payload = { ...profilEduEdit, user_id: userId, updated_at: new Date().toISOString() }
-    const { data } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
-    if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
+    setProfilEdu(payload)
+    setSavingProfil(true)
+    const { data, error } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
     setSavingProfil(false)
+    if (error) {
+      setProfilEdu(avant)
+      alert('Erreur lors de la sauvegarde : ' + error.message)
+      return
+    }
+    if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
   }
 
   const uploadDiplome = async (file) => {
@@ -2340,12 +2370,22 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const ajouterJoueur = async () => {
     if (!newJoueur.prenom || !newJoueur.nom) return
+    // Optimistic : le formulaire se ferme tout de suite sans attendre la
+    // réponse Supabase. Erreur → réouvert avec la saisie intacte (aucune
+    // vérification d'erreur n'existait avant, on en ajoute a minima).
+    const snapshot = { ...newJoueur }
     setSavingJoueur(true)
-    await supabase.from('equipe_joueurs').insert({ ...newJoueur, educateur_id: userId })
-    await chargerJoueurs(userId)
     setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
     setShowAddJoueur(false)
+    const { error } = await supabase.from('equipe_joueurs').insert({ ...snapshot, educateur_id: userId })
     setSavingJoueur(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewJoueur(snapshot)
+      setShowAddJoueur(true)
+      return
+    }
+    await chargerJoueurs(userId)
   }
 
   const supprimerJoueur = async (id) => {
@@ -2480,12 +2520,22 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const sauvegarderJoueur = async () => {
     if (!joueurEnEdition) return
-    setSavingEdit(true)
     const { id, ...fields } = joueurEnEdition
-    await supabase.from('equipe_joueurs').update(fields).eq('id', id)
-    await chargerJoueurs(userId)
+    // Optimistic : on connaît déjà exactement les nouvelles valeurs, donc la
+    // liste locale se met à jour et la modale se ferme tout de suite, sans
+    // attendre la réponse Supabase (aucune vérification d'erreur n'existait
+    // avant, on en ajoute a minima).
+    const avant = joueurs.find(j => j.id === id)
+    setJoueurs(prev => prev.map(j => (j.id === id ? { ...j, ...fields } : j)))
+    setSavingEdit(true)
     setJoueurEnEdition(null)
+    const { error } = await supabase.from('equipe_joueurs').update(fields).eq('id', id)
     setSavingEdit(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      if (avant) setJoueurs(prev => prev.map(j => (j.id === id ? avant : j)))
+      setJoueurEnEdition({ id, ...fields })
+    }
   }
 
   const assignerCategorieClub = async (joueurId, categorieId) => {
@@ -2579,14 +2629,29 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const ajouterMatch = async () => {
     if (!newMatch.adversaire || !newMatch.date) return
+    // Optimistic : le formulaire se ferme tout de suite. L'insert du match et
+    // la création du déplacement associé ne dépendent pas l'un de l'autre
+    // (creerDeplacementAutoMatch utilise les champs saisis localement, pas
+    // l'id généré par l'insert) donc ils partent en parallèle ; l'estimation
+    // auto des horaires, elle, a besoin du vrai id retourné par l'insert et
+    // reste donc après.
+    const snapshot = { ...newMatch }
     setSavingMatch(true)
-    const { data } = await supabase.from('matchs_equipe').insert({ ...newMatch, educateur_id: userId, domicile: newMatch.domicile }).select().single()
-    await creerDeplacementAutoMatch(newMatch)
-    if (data) await estimerEtAppliquerHoraires(data)
-    await chargerMatchs(userId)
     setNewMatch({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
+    const [{ data, error }] = await Promise.all([
+      supabase.from('matchs_equipe').insert({ ...snapshot, educateur_id: userId, domicile: snapshot.domicile }).select().single(),
+      creerDeplacementAutoMatch(snapshot),
+    ])
     setSavingMatch(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewMatch(snapshot)
+      setShowAddMatch(true)
+      return
+    }
+    if (data) await estimerEtAppliquerHoraires(data)
+    await chargerMatchs(userId)
   }
 
   // Un match est "joué" dès qu'un score (même 0-0) a été saisi — matchs_equipe.score_nous
@@ -2624,14 +2689,21 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const marquerMatchJoue = async () => {
     if (!modalMatchJoue) return
+    // Optimistic : la modale se ferme tout de suite. Le score du match et les
+    // stats par joueur sont deux écritures indépendantes (tables différentes,
+    // aucune ne dépend du résultat de l'autre) — elles partent en parallèle.
+    const matchId = modalMatchJoue.id
     setSavingMatchJoue(true)
-    await supabase.from('matchs_equipe').update({
-      score_nous: scoreJoueForm.score_nous,
-      score_eux: scoreJoueForm.score_eux,
-    }).eq('id', modalMatchJoue.id)
-    await sauvegarderStatsMatch(modalMatchJoue.id) // upsert stats_match + recharge matchs
     setModalMatchJoue(null)
+    const score = scoreJoueForm
     setScoreJoueForm({ score_nous: '', score_eux: '' })
+    await Promise.all([
+      supabase.from('matchs_equipe').update({
+        score_nous: score.score_nous,
+        score_eux: score.score_eux,
+      }).eq('id', matchId),
+      sauvegarderStatsMatch(matchId), // upsert stats_match + recharge matchs
+    ])
     setSavingMatchJoue(false)
   }
 
@@ -2658,17 +2730,29 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       const { error } = await supabase.from('matchs_equipe').update(champs).eq('id', id)
       if (error) { afficherToast(`Erreur lors de la modification du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
       setMatchs(prev => prev.map(m => m.id === id ? { ...m, ...champs } : m))
+      // Optimistic à partir d'ici : la modale se ferme tout de suite,
+      // l'estimation des horaires continue en arrière-plan.
+      setSavingMatchForm(false)
+      setModalMatchForm(null)
       await estimerEtAppliquerHoraires({ ...champs, id })
-    } else {
-      const { data, error } = await supabase.from('matchs_equipe').insert({
-        ...champs, educateur_id: userId, score_nous: '', score_eux: '',
-      }).select().single()
-      if (error) { afficherToast(`Erreur lors de la création du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
-      if (data) {
-        setMatchs(prev => [data, ...prev])
-        await creerDeplacementAutoMatch(data)
-        await estimerEtAppliquerHoraires(data)
-      }
+      return
+    }
+    const { data, error } = await supabase.from('matchs_equipe').insert({
+      ...champs, educateur_id: userId, score_nous: '', score_eux: '',
+    }).select().single()
+    if (error) { afficherToast(`Erreur lors de la création du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
+    if (data) {
+      setMatchs(prev => [data, ...prev])
+      // Optimistic à partir d'ici : la modale se ferme tout de suite. L'ordre
+      // création du déplacement puis estimation des horaires reste séquentiel
+      // — la 2e requête cherche en base le déplacement que la 1re vient de
+      // créer ; les paralléliser créerait une course où elle ne le trouverait
+      // pas encore.
+      setSavingMatchForm(false)
+      setModalMatchForm(null)
+      await creerDeplacementAutoMatch(data)
+      await estimerEtAppliquerHoraires(data)
+      return
     }
     setSavingMatchForm(false)
     setModalMatchForm(null)
@@ -2676,13 +2760,16 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const sauvegarderStatsMatch = async (matchId) => {
     const entries = Object.entries(statsMatch[matchId] || {})
-    for (const [joueurId, s] of entries) {
-      await supabase.from('stats_match').upsert({
+    // Un upsert par joueur, chacun indépendant des autres (clé match_id+
+    // joueur_id différente à chaque fois) — en parallèle plutôt qu'en
+    // séquence.
+    await Promise.all(entries.map(([joueurId, s]) =>
+      supabase.from('stats_match').upsert({
         match_id: matchId, joueur_id: joueurId, educateur_id: userId,
         minutes: s.minutes || 0, buts: s.buts || 0, passes_dec: s.passes_dec || 0,
         clean_sheet: s.clean_sheet || false, carton_jaune: s.carton_jaune || false, carton_rouge: s.carton_rouge || false
       }, { onConflict: 'match_id,joueur_id' })
-    }
+    ))
     await chargerMatchs(userId)
     setMatchActif(null)
     setStatsMatch({})
@@ -2969,12 +3056,22 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
   const sauvegarderEntrainementEdite = async () => {
     if (!entrainementEnEdition?.date) return
-    setSavingEntrainementEdit(true)
     const { id, date, heure, description, lieu } = entrainementEnEdition
-    const { error } = await supabase.from('entrainements').update({ date, heure, description, lieu }).eq('id', id)
-    if (!error) setEntrainements(prev => prev.map(e => e.id === id ? { ...e, date, heure, description, lieu } : e))
-    setSavingEntrainementEdit(false)
+    // Optimistic : la liste locale se met à jour et la modale se ferme tout
+    // de suite, sans attendre la réponse Supabase. Erreur → réouverte
+    // (l'erreur était auparavant ignorée silencieusement).
+    const avant = entrainements.find(e => e.id === id)
+    const snapshot = entrainementEnEdition
+    setEntrainements(prev => prev.map(e => e.id === id ? { ...e, date, heure, description, lieu } : e))
+    setSavingEntrainementEdit(true)
     setEntrainementEnEdition(null)
+    const { error } = await supabase.from('entrainements').update({ date, heure, description, lieu }).eq('id', id)
+    setSavingEntrainementEdit(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      if (avant) setEntrainements(prev => prev.map(e => e.id === id ? avant : e))
+      setEntrainementEnEdition(snapshot)
+    }
   }
 
   const importerFicheDansEntrainement = (seance) => {
@@ -3133,13 +3230,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   }
 
   const sauvegarderNote = async (joueurId, noteData) => {
+    // Optimistic : la note locale se met à jour tout de suite, sans attendre
+    // la réponse Supabase ni un rechargement complet de toutes les notes.
+    const avantNotes = notes[joueurId]
+    const avantLocal = localNotes[joueurId]
+    setNotes(prev => ({ ...prev, [joueurId]: { ...prev[joueurId], joueur_id: joueurId, educateur_id: userId, ...noteData } }))
+    setLocalNotes(prev => ({ ...prev, [joueurId]: { technique: noteData.technique || 0, physique: noteData.physique || 0, mental: noteData.mental || 0, tactique: noteData.tactique || 0, commentaire: noteData.commentaire || '', visible_joueur: noteData.visible_joueur || false } }))
     setSavingNote(true)
-    await supabase.from('notes_joueurs').upsert(
+    const { error } = await supabase.from('notes_joueurs').upsert(
       { joueur_id: joueurId, educateur_id: userId, ...noteData },
       { onConflict: 'joueur_id,educateur_id' }
     )
-    await chargerNotes(userId)
     setSavingNote(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNotes(prev => ({ ...prev, [joueurId]: avantNotes }))
+      setLocalNotes(prev => ({ ...prev, [joueurId]: avantLocal }))
+    }
   }
 
   // Classement calculé
@@ -4794,11 +4901,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       disabled={savingLigueUrl}
                       onClick={async () => {
                         const url = (ligueUrl || profilEdu?.ligue_url || '').trim()
+                        // Optimistic : le lien local se met à jour tout de
+                        // suite, sans attendre la réponse Supabase ni un
+                        // rechargement complet. Erreur → on revient en arrière.
+                        const avant = profilEdu
+                        setProfilEdu(prev => ({ ...prev, ligue_url: url }))
                         setSavingLigueUrl(true)
-                        await supabase.from('profil_educateur').upsert({ user_id: userId, ligue_url: url }, { onConflict: 'user_id' })
-                        await chargerProfilEdu(userId)
-                        setSavingLigueUrl(false)
                         setLigueUrl('')
+                        const { error } = await supabase.from('profil_educateur').upsert({ user_id: userId, ligue_url: url }, { onConflict: 'user_id' })
+                        setSavingLigueUrl(false)
+                        if (error) {
+                          setProfilEdu(avant)
+                          alert('Erreur : ' + error.message)
+                        }
                       }}
                       style={{ ...st.btnSolid, opacity: savingLigueUrl ? 0.6 : 1 }}>
                       💾 {savingLigueUrl ? '...' : t('btn_sauvegarder', lang)}
@@ -5094,19 +5209,36 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               const clos = sondageEstClos(prochaineSeance)
               const delaiCloture = prochaineSeance.cloture_sondage_avant ?? null
 
+              // Les 4 actions ci-dessous suivent le même schéma optimistic :
+              // l'état local (entrainements) se met à jour tout de suite, sans
+              // attendre la réponse Supabase ; en cas d'erreur on revient en
+              // arrière (aucune n'avait de gestion d'erreur avant).
               const cloturerSondage = async () => {
-                setSavingCloture(true)
-                await supabase.from('entrainements').update({ sondage_clos: true }).eq('id', prochaineSeance.id)
                 setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: true } : e))
+                setSavingCloture(true)
+                const { error } = await supabase.from('entrainements').update({ sondage_clos: true }).eq('id', prochaineSeance.id)
                 setSavingCloture(false)
+                if (error) {
+                  setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: false } : e))
+                  alert('Erreur : ' + error.message)
+                }
               }
               const rouvrirSondage = async () => {
-                await supabase.from('entrainements').update({ sondage_clos: false }).eq('id', prochaineSeance.id)
                 setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: false } : e))
+                const { error } = await supabase.from('entrainements').update({ sondage_clos: false }).eq('id', prochaineSeance.id)
+                if (error) {
+                  setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, sondage_clos: true } : e))
+                  alert('Erreur : ' + error.message)
+                }
               }
               const sauvegarderDelaiCloture = async (heures) => {
-                await supabase.from('entrainements').update({ cloture_sondage_avant: heures }).eq('id', prochaineSeance.id)
+                const avant = prochaineSeance.cloture_sondage_avant
                 setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, cloture_sondage_avant: heures } : e))
+                const { error } = await supabase.from('entrainements').update({ cloture_sondage_avant: heures }).eq('id', prochaineSeance.id)
+                if (error) {
+                  setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, cloture_sondage_avant: avant } : e))
+                  alert('Erreur : ' + error.message)
+                }
               }
               // La clôture auto se calcule par rapport à l'heure de la séance (cf.
               // sondageHeureCloture) — sans heure renseignée, "1h/5h/24h avant" est
@@ -5114,10 +5246,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               // boutons ne faisaient rien.
               const heureCloture = sondageHeureCloture(prochaineSeance)
               const sauvegarderHeureSeance = async (heure) => {
-                setSavingHeureSeance(true)
-                await supabase.from('entrainements').update({ heure }).eq('id', prochaineSeance.id)
+                const avant = prochaineSeance.heure
                 setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, heure } : e))
+                setSavingHeureSeance(true)
+                const { error } = await supabase.from('entrainements').update({ heure }).eq('id', prochaineSeance.id)
                 setSavingHeureSeance(false)
+                if (error) {
+                  setEntrainements(prev => prev.map(e => e.id === prochaineSeance.id ? { ...e, heure: avant } : e))
+                  alert('Erreur : ' + error.message)
+                }
               }
 
               return (
