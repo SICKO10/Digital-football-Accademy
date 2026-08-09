@@ -553,7 +553,7 @@ function FicheContenu({ fiche, categorieLabel }) {
         </div>
       </div>
       <div className="procedes-grid">
-        {fiche.procedes.map((p, i) => {
+        {(fiche.procedes || []).map((p, i) => {
           const consignesLignes = (p.consignes || '').split('\n')
           return (
           <div className="procede-block" key={i}>
