@@ -287,7 +287,6 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
 
   const enregistrerTest = async () => {
     if (!testForm.joueur_id || !testForm.date_test) return
-    setSavingTest(true)
     const payload = {
       joueur_id: testForm.joueur_id,
       educateur_id: educateurId,
@@ -299,10 +298,15 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
       test_30_15_kmh: testForm.test_30_15_kmh !== '' ? parseFloat(testForm.test_30_15_kmh) : null,
       notes: testForm.notes.trim() || null,
     }
+    // Optimistic : le formulaire se réinitialise tout de suite (l'éducateur
+    // peut enchaîner la saisie du joueur suivant) sans attendre la réponse
+    // Supabase, qui continue en arrière-plan. Erreur → saisie restaurée.
+    const snapshot = { ...testForm }
+    setSavingTest(true)
+    setTestForm({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', test_30_15_kmh: '', notes: '' })
     const { error } = await supabase.from('tests_physiques').insert(payload)
     setSavingTest(false)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setTestForm({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', test_30_15_kmh: '', notes: '' })
+    if (error) { alert('Erreur : ' + error.message); setTestForm(snapshot); return }
     await loadTests()
   }
 

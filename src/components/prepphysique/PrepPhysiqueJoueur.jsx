@@ -106,11 +106,16 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
       // joueur est directement comptabilisée (classement, progression).
       proof_url, statut: 'valide',
     }
+    // Optimistic à partir d'ici seulement : l'upload de la photo (ci-dessus)
+    // doit rester séquentiel puisque proof_url en dépend, mais une fois le
+    // payload prêt on ferme/valide côté UI tout de suite sans attendre la
+    // confirmation d'écriture de la soumission, qui continue en arrière-plan.
+    onSaved()
     const { error } = soumissionExistante?.id
       ? await supabase.from('soumissions_prep').update(payload).eq('id', soumissionExistante.id)
       : await supabase.from('soumissions_prep').insert(payload)
     setLoading(false)
-    if (!error) onSaved()
+    if (error) alert("Erreur lors de l'enregistrement : " + error.message)
   }
 
   const typeInfo = TYPES_SEANCE.find(t => t.value === seance.type_seance)
