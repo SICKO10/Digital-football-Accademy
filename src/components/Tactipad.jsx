@@ -689,6 +689,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         applyElements([...elements, { id: uid(), type: 'fleche', style, points, color: arrowColor }])
         setPendingStart(null)
         setMousePos(null)
+        setTool('select') // revient en mode sélection après avoir posé la flèche, au lieu de rester en mode "prochain clic = nouvelle flèche"
       }
     }
   }
