@@ -89,3 +89,36 @@ export async function estimerDeplacement(villeClub, villeMatch, heureCoupEnvoi) 
   const horaires = calculerHoraires(heureCoupEnvoi, trajet.duree_trajet_min)
   return { ...trajet, ...(horaires || {}) }
 }
+
+// Diagnostic (lecture seule, ne modifie jamais le cache) : à appeler quand
+// calculerTrajet/estimerDeplacement a renvoyé null, pour savoir PRÉCISÉMENT
+// où ça a échoué — token absent/invalide, ville du club introuvable, ville
+// du match introuvable, ou erreur du service d'itinéraire — plutôt que de
+// deviner. Refait les mêmes appels étape par étape en inspectant chaque
+// réponse HTTP.
+export async function diagnostiquerEchecTrajet(villeDepart, villeArrivee) {
+  if (!TOKEN) return "Token Mapbox non configuré (VITE_MAPBOX_TOKEN absent de cet environnement) — vérifie la configuration de déploiement."
+  if (!villeDepart?.trim()) return "Ville du club non renseignée."
+  if (!villeArrivee?.trim()) return "Ville de destination non renseignée."
+  try {
+    const geocode = async (ville) => {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(ville.trim())}.json?access_token=${TOKEN}&country=fr&types=place&limit=1`
+      const res = await fetch(url)
+      return { res, data: res.ok ? await res.json() : null }
+    }
+    const { res: resDepart, data: dataDepart } = await geocode(villeDepart)
+    if (!resDepart.ok) return `Le service de géolocalisation a renvoyé une erreur (HTTP ${resDepart.status}) — token Mapbox probablement invalide ou expiré.`
+    if (!dataDepart.features?.[0]) return `Ville du club "${villeDepart.trim()}" non reconnue par le service de géolocalisation.`
+    const { res: resArrivee, data: dataArrivee } = await geocode(villeArrivee)
+    if (!resArrivee.ok) return `Le service de géolocalisation a renvoyé une erreur (HTTP ${resArrivee.status}) — token Mapbox probablement invalide ou expiré.`
+    if (!dataArrivee.features?.[0]) return `Ville "${villeArrivee.trim()}" non reconnue par le service de géolocalisation.`
+    const [depart, arrivee] = [dataDepart.features[0].center, dataArrivee.features[0].center]
+    const resDirections = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${depart[0]},${depart[1]};${arrivee[0]},${arrivee[1]}?access_token=${TOKEN}&overview=false`)
+    if (!resDirections.ok) return `Le service de calcul d'itinéraire a renvoyé une erreur (HTTP ${resDirections.status}).`
+    const routeData = await resDirections.json()
+    if (!routeData.routes?.[0]) return "Aucun itinéraire routier trouvé entre ces deux villes."
+    return "Échec inattendu (les deux villes sont pourtant reconnues et un itinéraire existe) — réessaie."
+  } catch (e) {
+    return `Erreur réseau lors de l'appel au service Mapbox : ${e.message}`
+  }
+}

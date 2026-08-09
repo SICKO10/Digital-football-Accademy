@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { repartirBus } from '../lib/repartitionBus'
-import { estimerDeplacement, calculerTrajet } from '../lib/mapbox'
+import { estimerDeplacement, calculerTrajet, diagnostiquerEchecTrajet } from '../lib/mapbox'
 
 const NATURES = [
   { val: 'match', label: '⚽ Match', emoji: '⚽' },
@@ -321,7 +321,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       if (!m.ville) { diagnostics.set(d.id, "Le match correspondant n'a pas de ville renseignée dans le calendrier."); continue }
       if (!m.heure) { diagnostics.set(d.id, "Le match correspondant n'a pas d'heure de coup d'envoi renseignée dans le calendrier."); continue }
       const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
-      if (!resultat) { diagnostics.set(d.id, `Calcul d'itinéraire impossible (ville "${m.ville}" non reconnue, ou service indisponible).`); continue }
+      if (!resultat) { diagnostics.set(d.id, await diagnostiquerEchecTrajet(clubVille, m.ville)); continue }
       updates.push({ id: d.id, educateur_id: d.educateur_id || m.educateur_id || null, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
     }
     if (updates.length === 0) return { liste, diagnostics }
