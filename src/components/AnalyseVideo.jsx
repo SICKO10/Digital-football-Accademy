@@ -273,7 +273,11 @@ Instructions:
   }
 
   const sauvegarderRapport = async () => {
+    // Optimistic : confirmation affichée tout de suite, l'écriture continue
+    // en arrière-plan. Rien à restaurer en cas d'échec (aucun champ n'est
+    // réinitialisé ici) — juste une alerte d'erreur distincte si besoin.
     setSavingRapport(true)
+    alert('Rapport sauvegardé !')
     const { error } = await supabase.from('rapports_analyse').insert({
       educateur_id: userId,
       prenom_joueur: `${playerInfo.prenom} ${playerInfo.nom}`.trim(),
@@ -289,7 +293,6 @@ Instructions:
       alert('Erreur lors de la sauvegarde : ' + error.message)
       return
     }
-    alert('Rapport sauvegardé !')
     await chargerRapports()
   }
 

@@ -330,6 +330,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
   const handleSaveProfil = async () => {
     if (!userId) return;
+    // Optimistic : profil local + toast mis à jour tout de suite, sans
+    // attendre la réponse Supabase. Erreur → on revient à l'ancien profil.
+    const avant = profilLocal;
+    setProfilLocal(prev => ({ ...prev, ...profilEdit }));
+    setToast('Profil mis à jour !');
     setSavingProfil(true);
     const { error } = await supabase.from('profiles').update({
       prenom: profilEdit.prenom,
@@ -340,11 +345,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
       description: profilEdit.description,
       recherche_profil: profilEdit.recherche_profil,
     }).eq('id', userId);
-    if (!error) {
-      setProfilLocal(prev => ({ ...prev, ...profilEdit }));
-      setToast('Profil mis à jour !');
-    }
     setSavingProfil(false);
+    if (error) {
+      setProfilLocal(avant);
+      setToast('Erreur lors de la mise à jour du profil');
+    }
   };
 
   const handleAvatarUpload = async (e) => {

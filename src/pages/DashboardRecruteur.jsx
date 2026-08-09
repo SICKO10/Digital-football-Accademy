@@ -354,6 +354,11 @@ export default function DashboardRecruteur() {
 
   const handleSaveProfil = async () => {
     if (!recruteurId) return;
+    // Optimistic : profil local + toast mis à jour tout de suite, sans
+    // attendre la réponse Supabase. Erreur → on revient à l'ancien profil.
+    const avant = recruteur;
+    setRecruteur(prev => ({ ...prev, ...profilEdit }));
+    setToast('Profil mis à jour !');
     setSavingProfil(true);
     const { error } = await supabase.from('profiles').update({
       prenom: profilEdit.prenom,
@@ -364,11 +369,11 @@ export default function DashboardRecruteur() {
       description: profilEdit.description,
       recherche_profil: profilEdit.recherche_profil,
     }).eq('id', recruteurId);
-    if (!error) {
-      setRecruteur(prev => ({ ...prev, ...profilEdit }));
-      setToast('Profil mis à jour !');
-    }
     setSavingProfil(false);
+    if (error) {
+      setRecruteur(avant);
+      setToast('Erreur lors de la mise à jour du profil');
+    }
   };
 
   const handleAvatarUpload = async (e) => {
