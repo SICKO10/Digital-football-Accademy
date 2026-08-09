@@ -509,13 +509,23 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
       contreparties_livrees: form.contreparties_livrees,
       notes: form.notes || null,
     }
-    const { error } = estEdition
-      ? await supabase.from('sponsors').update(payload).eq('id', modalSponsor.id)
-      : await supabase.from('sponsors').insert({ ...payload, paiements: [] })
+    // ModalSponsor garde son propre état de formulaire local (initialisé depuis
+    // le sponsor passé en prop) — fermer la modale avant confirmation de
+    // l'écriture perdrait la saisie en cas d'erreur, donc pas de fermeture
+    // optimiste ici. En revanche .select().single() sur l'écriture elle-même
+    // évite le rechargement complet (loadData) qui suivait : la ligne locale
+    // se met à jour directement avec la vraie donnée renvoyée par Supabase.
+    const { data, error } = estEdition
+      ? await supabase.from('sponsors').update(payload).eq('id', modalSponsor.id).select('*, niveaux_partenariat(nom, couleur, contreparties)').single()
+      : await supabase.from('sponsors').insert({ ...payload, paiements: [] }).select('*, niveaux_partenariat(nom, couleur, contreparties)').single()
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     setModalSponsor(null)
-    await loadData()
+    if (data) {
+      setSponsors(prev => estEdition ? prev.map(s => (s.id === data.id ? data : s)) : [...prev, data])
+    } else {
+      await loadData()
+    }
   }
 
   const supprimerSponsor = async (sponsor) => {
@@ -533,7 +543,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     setModalPaiement(null)
-    await loadData()
+    setSponsors(prev => prev.map(s => (s.id === modalPaiement.id ? { ...s, paiements: nouveauxPaiements } : s)))
   }
 
   const toggleContrepartie = async (sponsor, contrepartie) => {
@@ -553,13 +563,17 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
   const sauvegarderNiveau = async (form) => {
     setSaving(true)
     const estEdition = modalNiveau && modalNiveau !== 'new'
-    const { error } = estEdition
-      ? await supabase.from('niveaux_partenariat').update(form).eq('id', modalNiveau.id)
-      : await supabase.from('niveaux_partenariat').insert({ club_id: clubId, ordre: niveaux.length, ...form })
+    const { data, error } = estEdition
+      ? await supabase.from('niveaux_partenariat').update(form).eq('id', modalNiveau.id).select().single()
+      : await supabase.from('niveaux_partenariat').insert({ club_id: clubId, ordre: niveaux.length, ...form }).select().single()
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
     setModalNiveau(null)
-    await loadData()
+    if (data) {
+      setNiveaux(prev => estEdition ? prev.map(n => (n.id === data.id ? data : n)) : [...prev, data])
+    } else {
+      await loadData()
+    }
   }
 
   const supprimerNiveau = async (niveau) => {

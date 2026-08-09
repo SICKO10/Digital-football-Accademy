@@ -106,12 +106,21 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   // ── Configuration terrains (dirigeant) ──────────────────────────────────────
   const ajouterTerrain = async () => {
     if (!newTerrain.nom.trim()) return
+    // Optimistic : le formulaire se referme tout de suite sans attendre la
+    // réponse Supabase, qui continue en arrière-plan. Erreur → réouvert
+    // avec la saisie intacte.
+    const snapshot = { ...newTerrain }
     setSavingTerrain(true)
-    const { error } = await supabase.from('terrains').insert({ club_id: clubId, nom: newTerrain.nom.trim(), type: newTerrain.type })
-    setSavingTerrain(false)
-    if (error) { alert('Erreur : ' + error.message); return }
     setNewTerrain({ nom: '', type: 'foot_11' })
     setShowAddTerrain(false)
+    const { error } = await supabase.from('terrains').insert({ club_id: clubId, nom: snapshot.nom.trim(), type: snapshot.type })
+    setSavingTerrain(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewTerrain(snapshot)
+      setShowAddTerrain(true)
+      return
+    }
     await chargerTerrains()
   }
 
@@ -122,14 +131,29 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const sauvegarderTerrain = async (id) => {
     const edit = terrainEdits[id]
     if (!edit) return
-    await supabase.from('terrains').update({ nom: edit.nom.trim(), type: edit.type }).eq('id', id)
+    // Optimistic : sort du mode édition tout de suite sans attendre la
+    // réponse Supabase. Erreur → l'édition se rouvre (aucune vérification
+    // d'erreur n'existait avant, on en ajoute a minima pour ne pas échouer
+    // silencieusement maintenant que l'UI ne réagit plus au retour serveur).
     setTerrainEdits(prev => { const next = { ...prev }; delete next[id]; return next })
+    const { error } = await supabase.from('terrains').update({ nom: edit.nom.trim(), type: edit.type }).eq('id', id)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setTerrainEdits(prev => ({ ...prev, [id]: edit }))
+      return
+    }
     await chargerTerrains()
   }
 
   const toggleActifTerrain = async (t) => {
-    await supabase.from('terrains').update({ actif: !t.actif }).eq('id', t.id)
-    await chargerTerrains()
+    // Optimistic : la ligne bascule tout de suite dans la liste locale
+    // plutôt que d'attendre la réponse Supabase puis un rechargement complet.
+    setTerrains(prev => prev.map(x => x.id === t.id ? { ...x, actif: !t.actif } : x))
+    const { error } = await supabase.from('terrains').update({ actif: !t.actif }).eq('id', t.id)
+    if (error) {
+      setTerrains(prev => prev.map(x => x.id === t.id ? { ...x, actif: t.actif } : x))
+      alert('Erreur : ' + error.message)
+    }
   }
 
   const supprimerTerrain = async (id) => {
@@ -143,7 +167,6 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   // ── Créneaux (dirigeant) ─────────────────────────────────────────────────────
   const sauvegarderCreneau = async () => {
     if (!formCreneau.terrain_id || !formCreneau.heure_debut || !formCreneau.heure_fin) return
-    setSavingCreneau(true)
     const payload = {
       club_id: clubId,
       terrain_id: formCreneau.terrain_id,
@@ -153,12 +176,21 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       heure_debut: formCreneau.heure_debut,
       heure_fin: formCreneau.heure_fin,
     }
-    const { error } = formCreneau.id
-      ? await supabase.from('planning_terrains').update(payload).eq('id', formCreneau.id)
+    // Optimistic : le formulaire se ferme tout de suite sans attendre la
+    // réponse Supabase, qui continue en arrière-plan. Erreur → réouvert
+    // avec la saisie intacte.
+    const snapshot = { ...formCreneau }
+    setSavingCreneau(true)
+    setFormCreneau(null)
+    const { error } = snapshot.id
+      ? await supabase.from('planning_terrains').update(payload).eq('id', snapshot.id)
       : await supabase.from('planning_terrains').insert(payload)
     setSavingCreneau(false)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setFormCreneau(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setFormCreneau(snapshot)
+      return
+    }
     await chargerPlanning()
   }
 

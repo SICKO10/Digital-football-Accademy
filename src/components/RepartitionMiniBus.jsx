@@ -142,12 +142,21 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
 
   const ajouterVehicule = async () => {
     if (!newVehicule.plaque.trim() || !newVehicule.capacite) return
+    // Optimistic : le formulaire se referme tout de suite sans attendre la
+    // réponse Supabase, qui continue en arrière-plan. Erreur → réouvert
+    // avec la saisie intacte.
+    const snapshot = { ...newVehicule }
     setSavingVehicule(true)
-    const { error } = await supabase.from('vehicules').insert({ club_id: clubId, plaque: newVehicule.plaque.trim().toUpperCase(), capacite: parseInt(newVehicule.capacite) })
-    setSavingVehicule(false)
-    if (error) { alert('Erreur : ' + error.message); return }
     setNewVehicule({ plaque: '', capacite: '' })
     setShowAddVehicule(false)
+    const { error } = await supabase.from('vehicules').insert({ club_id: clubId, plaque: snapshot.plaque.trim().toUpperCase(), capacite: parseInt(snapshot.capacite) })
+    setSavingVehicule(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewVehicule(snapshot)
+      setShowAddVehicule(true)
+      return
+    }
     await chargerVehicules()
   }
 
