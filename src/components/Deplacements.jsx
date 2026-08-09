@@ -282,29 +282,45 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   // pas de ville ou d'heure renseignée (ou si aucun match ne correspond) :
   // ceux-là restent dans la bannière "sans heure de départ", à traiter via
   // "✏️ Compléter".
+  // diagnostics : Map(deplacement.id -> raison précise de l'échec), affichée
+  // ensuite dans la bannière à la place du message générique — pour que
+  // l'utilisateur sache exactement quoi corriger (et où) sans avoir à
+  // deviner : ville du club manquante, match introuvable, match incomplet,
+  // ou échec du calcul d'itinéraire (Mapbox).
   const completerHorairesDepuisMatchs = async (liste) => {
     const incomplets = liste.filter(d => !d.heure_depart && d.nature === 'match')
-    if (incomplets.length === 0 || !clubVille) return liste
+    const diagnostics = new Map()
+    if (incomplets.length === 0) return { liste, diagnostics }
+    if (!clubVille) {
+      incomplets.forEach(d => diagnostics.set(d.id, "Ville du club non renseignée — complète-la dans Profil du club pour permettre le calcul auto."))
+      return { liste, diagnostics }
+    }
     const educateurIds = [...new Set(incomplets.map(d => d.educateur_id).filter(Boolean))]
-    if (educateurIds.length === 0) return liste
+    if (educateurIds.length === 0) {
+      incomplets.forEach(d => diagnostics.set(d.id, "Ce déplacement n'est lié à aucun éducateur, impossible de retrouver le match d'origine."))
+      return { liste, diagnostics }
+    }
     const { data: matchsExt } = await supabase.from('matchs_equipe').select('*')
       .in('educateur_id', educateurIds).eq('domicile', false)
     const updates = []
     for (const d of incomplets) {
+      if (!d.educateur_id) { diagnostics.set(d.id, "Ce déplacement n'est lié à aucun éducateur, impossible de retrouver le match d'origine."); continue }
       const m = (matchsExt || []).find(x => x.date === d.date_depart && x.educateur_id === d.educateur_id)
-      if (!m || !m.ville || !m.heure) continue
+      if (!m) { diagnostics.set(d.id, "Aucun match Extérieur correspondant trouvé à cette date dans le calendrier."); continue }
+      if (!m.ville) { diagnostics.set(d.id, "Le match correspondant n'a pas de ville renseignée dans le calendrier."); continue }
+      if (!m.heure) { diagnostics.set(d.id, "Le match correspondant n'a pas d'heure de coup d'envoi renseignée dans le calendrier."); continue }
       const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
-      if (!resultat) continue
+      if (!resultat) { diagnostics.set(d.id, `Calcul d'itinéraire impossible (ville "${m.ville}" non reconnue, ou service indisponible).`); continue }
       updates.push({ id: d.id, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
     }
-    if (updates.length === 0) return liste
+    if (updates.length === 0) return { liste, diagnostics }
     await Promise.all(updates.map(({ id, ...champs }) => supabase.from('deplacements').update(champs).eq('id', id)))
     const misAJour = liste.map(d => {
       const maj = updates.find(u => u.id === d.id)
       return maj ? { ...d, ...maj } : d
     })
     setDeplacements(misAJour)
-    return misAJour
+    return { liste: misAJour, diagnostics }
   }
 
   // Assigne automatiquement les véhicules du parc aux déplacements qui n'en
@@ -316,7 +332,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   // garantir qu'aucun bus n'est doublement réservé le même jour.
   const repartirAutomatiquement = async () => {
     setRepartitionAutoEnCours(true)
-    const deplacementsActuels = await completerHorairesDepuisMatchs(deplacements)
+    const { liste: deplacementsActuels, diagnostics } = await completerHorairesDepuisMatchs(deplacements)
     const aTraiter = deplacementsActuels.filter(d => !d.vehicule)
     const parDate = {}
     aTraiter.forEach(d => { if (!parDate[d.date_depart]) parDate[d.date_depart] = []; parDate[d.date_depart].push(d) })
@@ -342,7 +358,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           alertes.push(
             r.heure_depart
               ? { dep: r, type: 'bus', msg: `${label} — bus insuffisant, prévoir une location` }
-              : { dep: r, type: 'heure', msg: `${label} — heure de départ manquante (ville ou heure du match introuvable), impossible d'assigner un bus automatiquement` }
+              : { dep: r, type: 'heure', msg: `${label} — ${diagnostics.get(r.id) || 'heure de départ manquante, impossible d\'assigner un bus automatiquement'}` }
           )
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
