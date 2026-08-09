@@ -864,21 +864,28 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   }
 
   const sauvegarderSchema = async () => {
-    setSavingSchema(true)
     const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
     const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences }
     const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema }
-    const { error } = currentSchemaId
-      ? await supabase.from('tactipads').update(payload).eq('id', currentSchemaId)
+    const idEnEdition = currentSchemaId
+    const nomSnapshot = nomSchema
+    // Optimistic : le champ nom se réinitialise tout de suite (schéma
+    // "sauvegardé") sans attendre la réponse Supabase, qui continue en
+    // arrière-plan. Erreur → on restaure nom/id pour ne rien perdre.
+    setSavingSchema(true)
+    setNomSchema('')
+    setCurrentSchemaId(null)
+    const { error } = idEnEdition
+      ? await supabase.from('tactipads').update(payload).eq('id', idEnEdition)
       : await supabase.from('tactipads').insert(payload)
     setSavingSchema(false)
     if (error) {
       if (error.code === '42P01') { setTableMissing(true); return }
       alert('Erreur lors de la sauvegarde : ' + error.message)
+      setNomSchema(nomSnapshot)
+      setCurrentSchemaId(idEnEdition)
       return
     }
-    setNomSchema('')
-    setCurrentSchemaId(null)
     await chargerSchemas()
   }
 
