@@ -176,11 +176,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const actuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
     const nouvelles = actuelles.includes(plaque) ? actuelles.filter(p => p !== plaque) : [...actuelles, plaque]
     const vehiculeStr = nouvelles.join(' + ') || null
+    // Optimistic : la case se coche/décoche à l'instant, sans attendre la
+    // réponse Supabase — sinon chaque clic de cette liste (souvent plusieurs
+    // à la suite) sentait le décalage réseau. Erreur → on annule ce toggle précis.
+    setDeplacements(prev => prev.map(x => (x.id === d.id ? { ...x, vehicule: vehiculeStr } : x)))
     setSavingAssignation(d.id)
     const { error } = await supabase.from('deplacements').update({ vehicule: vehiculeStr }).eq('id', d.id)
     setSavingAssignation(null)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setDeplacements(prev => prev.map(x => (x.id === d.id ? { ...x, vehicule: vehiculeStr } : x)))
+    if (error) {
+      setDeplacements(prev => prev.map(x => (x.id === d.id ? { ...x, vehicule: d.vehicule } : x)))
+      alert('Erreur : ' + error.message)
+    }
   }
 
   // Exporte tous les déplacements de la saison en PDF, groupés mois puis
@@ -377,18 +383,39 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       distance_km: form.distance_km ?? null,
       duree_trajet_min: form.duree_trajet_min ?? null,
     }
+    const idEnEdition = deplacementEnEdition
+    const formSnapshot = { ...form }
+    const avant = idEnEdition ? deplacements.find(d => d.id === idEnEdition) : null
+
+    // Optimistic : ferme le formulaire et met à jour la liste tout de suite
+    // (pour une édition, on connaît déjà la nouvelle valeur) au lieu d'attendre
+    // la réponse Supabase — l'écriture réelle continue en arrière-plan. Pour
+    // une création, l'id réel n'existe pas encore : on laisse charger() s'en
+    // charger juste après. En cas d'erreur, tout revient en arrière et le
+    // formulaire se rouvre avec la saisie intacte plutôt que de la perdre.
+    setForm(formVide())
+    setDeplacementEnEdition(null)
+    setShowForm(false)
+    if (idEnEdition) {
+      setDeplacements(prev => prev.map(d => d.id === idEnEdition ? { ...d, ...champs } : d))
+    }
+
     let error
-    if (deplacementEnEdition) {
-      ;({ error } = await supabase.from('deplacements').update(champs).eq('id', deplacementEnEdition))
+    if (idEnEdition) {
+      ;({ error } = await supabase.from('deplacements').update(champs).eq('id', idEnEdition))
     } else {
       const { data: { user } } = await supabase.auth.getUser()
       ;({ error } = await supabase.from('deplacements').insert({ ...champs, club_id: clubId, created_by: user?.id || null }))
     }
     setSaving(false)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setForm(formVide())
-    setDeplacementEnEdition(null)
-    setShowForm(false)
+    if (error) {
+      if (idEnEdition && avant) setDeplacements(prev => prev.map(d => d.id === idEnEdition ? avant : d))
+      alert('Erreur : ' + error.message)
+      setForm(formSnapshot)
+      setDeplacementEnEdition(idEnEdition)
+      setShowForm(true)
+      return
+    }
     await charger()
   }
 
@@ -437,14 +464,23 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const enregistrerRetour = async (id) => {
     const edit = retourEdits[id]
     if (!edit) return
-    setSavingRetour(prev => ({ ...prev, [id]: true }))
-    const { error } = await supabase.from('deplacements').update({
+    const champs = {
       km_apres: edit.km_apres !== '' ? parseFloat(edit.km_apres) : null,
       gasoil_apres: edit.gasoil_apres?.trim() || null,
-    }).eq('id', id)
+    }
+    // Optimistic : on connaît déjà exactement ce qui change, donc la ligne se
+    // met à jour dans la liste tout de suite plutôt que d'attendre la
+    // réponse Supabase puis un rechargement complet. Erreur → on annule ce
+    // changement local précis (pas besoin de tout recharger pour ça).
+    const avant = deplacements.find(d => d.id === id)
+    setDeplacements(prev => prev.map(d => d.id === id ? { ...d, ...champs } : d))
+    setSavingRetour(prev => ({ ...prev, [id]: true }))
+    const { error } = await supabase.from('deplacements').update(champs).eq('id', id)
     setSavingRetour(prev => ({ ...prev, [id]: false }))
-    if (error) { alert('Erreur : ' + error.message); return }
-    await charger()
+    if (error) {
+      if (avant) setDeplacements(prev => prev.map(d => d.id === id ? avant : d))
+      alert('Erreur : ' + error.message)
+    }
   }
 
   if (tableMissing) {
