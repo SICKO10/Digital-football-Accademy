@@ -138,7 +138,41 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
     setCategories(data || [])
   }
 
+  const [loadingDeplacements, setLoadingDeplacements] = useState(false)
+
   useEffect(() => { if (clubId) { chargerVehicules(); chargerCategories() } }, [clubId])
+
+  // Récupère les déplacements déjà créés (et déjà calculés automatiquement —
+  // ville détectée, heure_depart/heure_retour_estimee = 1h30/2h30 + temps de
+  // trajet, cf. estimerEtAppliquerHoraires dans DashboardEducateur.jsx) qui
+  // n'ont pas encore de véhicule assigné, pour éviter d'avoir à ressaisir ces
+  // horaires à la main ici. _dbId marque une ligne comme déjà existante en
+  // base : publierPlanning s'en sert pour mettre à jour la ligne au lieu
+  // d'en recréer une (voir plus bas).
+  const chargerDeplacementsAVenir = async () => {
+    setLoadingDeplacements(true)
+    const aujourdHui = new Date().toISOString().split('T')[0]
+    const { data, error } = await supabase.from('deplacements').select('*')
+      .eq('club_id', clubId).is('vehicule', null).gte('date_depart', aujourdHui).order('date_depart')
+    setLoadingDeplacements(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    const dejaCharges = new Set(lignes.map(l => l._dbId).filter(Boolean))
+    const nouvelles = (data || []).filter(d => !dejaCharges.has(d.id)).map(d => ({
+      _id: crypto.randomUUID(),
+      _dbId: d.id,
+      equipe: d.equipe || '',
+      educateur_responsable: d.educateur_responsable || '',
+      date_depart: d.date_depart || '',
+      heure_depart: d.heure_depart || '',
+      heure_retour_estimee: d.heure_retour_estimee || '',
+      lieu_destination: d.lieu_destination || '',
+      nature: d.nature || 'match',
+      nb_personnes: d.nb_personnes != null ? String(d.nb_personnes) : '',
+    }))
+    if (nouvelles.length === 0) { alert('Aucun déplacement à venir sans véhicule assigné à charger.'); return }
+    setLignes(prev => [...prev, ...nouvelles])
+    setValide(false)
+  }
 
   const ajouterVehicule = async () => {
     if (!newVehicule.plaque.trim() || !newVehicule.capacite) return
@@ -234,6 +268,10 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
   const nbCombines = (suggestions || []).filter(s => s.statut === 'combine').length
 
   // ── Étape 3 : publication ───────────────────────────────────────────────────
+  // Les lignes chargées depuis des déplacements déjà existants (_dbId, cf.
+  // chargerDeplacementsAVenir) sont mises à jour (véhicule/conducteur/effectif
+  // uniquement) au lieu d'être réinsérées, pour ne pas dupliquer la ligne en
+  // base ni ses horaires déjà calculés automatiquement.
   const publierPlanning = async () => {
     if (!suggestions || suggestions.length === 0) return
     setPublishing(true)
@@ -242,11 +280,8 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
     // catégories du club — nécessaire pour le widget "Mes déplacements" de
     // l'éducateur sur son Accueil, qui filtre par educateur_id.
     const educateurIdDeEquipe = (equipeTexte) => categories.find(c => `${c.nom} ${c.equipe || ''}`.trim() === (equipeTexte || '').trim())?.educateur_id || null
-    const payload = suggestions.map(s => ({
-      club_id: clubId,
+    const champsCommuns = (s) => ({
       equipe: s.equipe || null,
-      educateur_id: educateurIdDeEquipe(s.equipe),
-      educateur_responsable: s.educateur_responsable || null,
       date_depart: s.date_depart || null,
       heure_depart: s.heure_depart || null,
       heure_retour_estimee: s.heure_retour_estimee || null,
@@ -255,11 +290,24 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
       vehicule: s.statut === 'combine' ? (libelleCombine(s.vehicule1, s.vehicule2) || null) : (s.vehicule || null),
       conducteur: s.statut === 'combine' ? (libelleCombine(s.conducteur1, s.conducteur2) || null) : (s.conducteur || null),
       nb_personnes: s.nb_personnes !== '' ? parseInt(s.nb_personnes) : null,
-      created_by: user?.id || null,
-    }))
-    const { error } = await supabase.from('deplacements').insert(payload)
+    })
+    const aInserer = suggestions.filter(s => !s._dbId)
+    const aMettreAJour = suggestions.filter(s => s._dbId)
+    const [resInsert, ...resUpdates] = await Promise.all([
+      aInserer.length > 0
+        ? supabase.from('deplacements').insert(aInserer.map(s => ({
+            club_id: clubId,
+            educateur_id: educateurIdDeEquipe(s.equipe),
+            educateur_responsable: s.educateur_responsable || null,
+            created_by: user?.id || null,
+            ...champsCommuns(s),
+          })))
+        : Promise.resolve({ error: null }),
+      ...aMettreAJour.map(s => supabase.from('deplacements').update(champsCommuns(s)).eq('id', s._dbId)),
+    ])
     setPublishing(false)
-    if (error) { alert('Erreur lors de la publication : ' + error.message); return }
+    const erreur = resInsert.error || resUpdates.find(r => r.error)?.error
+    if (erreur) { alert('Erreur lors de la publication : ' + erreur.message); return }
     setPublishSuccess(true)
     setLignes([])
     setValide(false)
@@ -339,12 +387,18 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
       {/* ── Étape 1 — Upload ── */}
       <div style={{ ...st.card, marginBottom: '1.5rem' }}>
         <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>Étape 1 — Planning de déplacements</p>
-        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 14px' }}>Fichier Excel/CSV, ou photo d'un tableau.</p>
+        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 14px' }}>
+          Charge les déplacements déjà calculés automatiquement (ville, horaires), ou importe un fichier Excel/CSV.
+        </p>
 
         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-excel" />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={chargerDeplacementsAVenir} disabled={loadingDeplacements}
+            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loadingDeplacements ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: loadingDeplacements ? 0.6 : 1 }}>
+            {loadingDeplacements ? '⏳ Chargement...' : '🔄 Charger les déplacements à venir'}
+          </button>
           <label htmlFor="input-scan-excel"
-            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
+            style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
             {scanning ? '⏳ Import en cours...' : '📊 Importer un fichier Excel / CSV'}
           </label>
           {lignes.length > 0 && (
