@@ -22,6 +22,13 @@ export const EQUIPES_CONFIG = {
   D: { label: 'tac_equipe_d', color: '#f43f5e', emoji: '🔴' },
 }
 
+// Palette proposée dans le picker de couleur d'équipe (clic droit sur un bouton équipe).
+const PALETTE_COULEURS_EQUIPE = [
+  '#4ade80', '#22c55e', '#f97316', '#ef4444', '#60a5fa', '#3b82f6',
+  '#f43f5e', '#a78bfa', '#fbbf24', '#f59e0b', '#34d399', '#ffffff',
+  '#e879f9', '#06b6d4', '#84cc16', '#fb923c',
+]
+
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
 const lerp = (a, b, t) => a + (b - a) * t
@@ -200,9 +207,13 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
   return [x1, y1, x2, y2]
 }
 
-export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true }) {
+// couleurs : surcharge optionnelle { A, B, C, D } — permet à l'éditeur de
+// personnaliser les couleurs d'équipe (cf. equipesCouleurs) sans toucher aux
+// couleurs par défaut d'EQUIPES_CONFIG, réutilisées telles quelles par
+// TactipadPublic.jsx quand un schéma n'a pas de couleurs personnalisées.
+export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true, couleurs = null }) {
   const isJoker = el.type === 'joker'
-  const color = isJoker ? '#ffffff' : (EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color)
+  const color = isJoker ? '#ffffff' : (couleurs?.[el.equipe] ?? EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color)
   return (
     <Group
       x={el.x} y={el.y} draggable={draggable}
@@ -342,7 +353,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   const [elements, setElements] = useState([])
   const [selectedId, setSelectedId] = useState(null)
+  // Sélection multiple — glisser sur le fond du terrain (outil "select") pose
+  // un rectangle, puis Suppr ou le bouton dédié efface tout ce qu'il contient.
+  // Restreinte aux éléments ponctuels (joueur/joker/objet/texte) dont x/y est
+  // un centre — les zones (coin) et flèches (liste de points) n'ont pas une
+  // géométrie compatible avec ce test "centre dans le rectangle".
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectionBox, setSelectionBox] = useState(null) // { x, y, w, h } en coordonnées Stage
+  const [isSelecting, setIsSelecting] = useState(false)
+  const selectionStart = useRef(null)
   const [equipeActive, setEquipeActive] = useState('A')
+  // Couleurs d'équipe personnalisables (clic droit sur le bouton équipe) —
+  // initialisées depuis EQUIPES_CONFIG, sauvegardées/rechargées avec le
+  // schéma (cf. sauvegarderSchema/chargerSchema) pour survivre à la fermeture.
+  const [equipesCouleurs, setEquipesCouleurs] = useState(() => {
+    const init = {}
+    Object.keys(EQUIPES_CONFIG).forEach(eq => { init[eq] = EQUIPES_CONFIG[eq].color })
+    return init
+  })
+  const [colorPickerOpen, setColorPickerOpen] = useState(null) // 'A' | 'B' | 'C' | 'D' | null
   const [tool, setTool] = useState('select')
   const [showMaterielPanel, setShowMaterielPanel] = useState(false)
   const [arrowColor, setArrowColor] = useState('#ffffff')
@@ -421,6 +450,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       const tag = e.target.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+        e.preventDefault()
+        setElements(prev => prev.filter(el => !selectedIds.has(el.id)))
+        setSelectedIds(new Set())
+        return
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault()
         setElements(prev => prev.filter(el => el.id !== selectedId))
@@ -429,6 +464,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       }
       if (e.key === 'Escape') {
         setSelectedId(null)
+        setSelectedIds(new Set())
         setPendingStart(null)
         setMousePos(null)
         setTool('select')
@@ -470,7 +506,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [selectedId, elements])
+  }, [selectedId, selectedIds, elements])
 
   const pushHistory = () => {
     setHistory(h => [...h, elements])
@@ -668,12 +704,50 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }
   }
 
-  // ── NOUVEAU : mise à jour de la position souris pour la preview flèche ────
+  // ── Sélection multiple : glisser sur le fond avec l'outil "select" ────────
+  // Le rectangle et les positions comparées sont en coordonnées Stage (comme
+  // pos.x/pos.y posé sur les éléments), pas en pixels écran — contrairement à
+  // un div positionné en position:fixed, ça reste juste si le canvas est
+  // redimensionné/scrollé.
+  const handleStageMouseDown = (e) => {
+    const stage = e.target.getStage()
+    const clickedOnEmpty = e.target === stage || e.target.getClassName() === 'Image'
+    if (tool !== 'select' || !clickedOnEmpty) return
+    const pos = stage.getPointerPosition()
+    if (!pos) return
+    selectionStart.current = pos
+    setIsSelecting(true)
+    setSelectedIds(new Set())
+  }
+
+  const ELEMENTS_SELECTIONNABLES = ['joueur', 'joker', 'objet', 'texte']
+
+  const handleStageMouseUp = () => {
+    if (isSelecting && selectionBox && (selectionBox.w > 3 || selectionBox.h > 3)) {
+      const dansLaBoite = elements.filter(el =>
+        ELEMENTS_SELECTIONNABLES.includes(el.type) &&
+        el.x >= selectionBox.x && el.x <= selectionBox.x + selectionBox.w &&
+        el.y >= selectionBox.y && el.y <= selectionBox.y + selectionBox.h
+      )
+      setSelectedIds(new Set(dansLaBoite.map(el => el.id)))
+    }
+    setIsSelecting(false)
+    setSelectionBox(null)
+    selectionStart.current = null
+  }
+
+  // ── Mise à jour de la position souris pour la preview flèche + le rectangle
+  // de sélection en cours ────────────────────────────────────────────────────
   const handleMouseMove = (e) => {
-    if (!pendingStart) return
     const stage = e.target.getStage()
     const pos = stage.getPointerPosition()
-    if (pos) setMousePos(pos)
+    if (!pos) return
+    if (pendingStart) setMousePos(pos)
+    if (isSelecting && selectionStart.current) {
+      const sx = Math.min(pos.x, selectionStart.current.x)
+      const sy = Math.min(pos.y, selectionStart.current.y)
+      setSelectionBox({ x: sx, y: sy, w: Math.abs(pos.x - selectionStart.current.x), h: Math.abs(pos.y - selectionStart.current.y) })
+    }
   }
 
   const exportPNG = () => {
@@ -865,7 +939,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   const sauvegarderSchema = async () => {
     const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
-    const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences }
+    const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences, equipesCouleurs }
     const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema }
     const idEnEdition = currentSchemaId
     const nomSnapshot = nomSchema
@@ -901,6 +975,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setEtapeActive(0)
     setElements(seqs[0] || schema.elements || [])
     setHistory([]); setFuture([]); setSelectedId(null)
+    if (schema.equipesCouleurs) setEquipesCouleurs(schema.equipesCouleurs)
     setNomSchema(s.nom || '')
     setCurrentSchemaId(s.id)
   }
@@ -995,7 +1070,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const arrowPreviewStyle = tool.replace('fleche-', '')
 
   return (
-    <div>
+    <div onClick={() => colorPickerOpen && setColorPickerOpen(null)}>
       {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
@@ -1038,12 +1113,39 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             <option value="5-4-1">5-4-1</option>
           </optgroup>
         </select>
-        <button onClick={() => { setEquipeActive('A'); ajouterEquipe('A') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'A' ? '1px solid #4ade80' : '1px solid #4ade8040', background: equipeActive === 'A' ? '#4ade8030' : '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 {t('tac_equipe_a', lang)}</button>
-        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟠 {t('tac_equipe_b', lang)}</button>
         {/* C/D : juste une sélection d'équipe active, pas de remplissage auto à 11 —
-            pensées pour des petits groupes (ateliers, rondos), pas une opposition complète. */}
-        <button onClick={() => setEquipeActive('C')} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'C' ? '1px solid #60a5fa' : '1px solid #60a5fa40', background: equipeActive === 'C' ? '#60a5fa30' : '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔵 {t('tac_equipe_c', lang)}</button>
-        <button onClick={() => setEquipeActive('D')} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'D' ? '1px solid #f43f5e' : '1px solid #f43f5e40', background: equipeActive === 'D' ? '#f43f5e30' : '#f43f5e15', color: '#f43f5e', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 {t('tac_equipe_d', lang)}</button>
+            pensées pour des petits groupes (ateliers, rondos), pas une opposition complète.
+            Clic droit : ouvre la palette de couleur de l'équipe (clic gauche = sélection). */}
+        {Object.keys(EQUIPES_CONFIG).map(eq => {
+          const couleur = equipesCouleurs[eq]
+          const actif = equipeActive === eq
+          return (
+            <div key={eq} style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setEquipeActive(eq); if (eq === 'A' || eq === 'B') ajouterEquipe(eq) }}
+                onContextMenu={e => { e.preventDefault(); setColorPickerOpen(colorPickerOpen === eq ? null : eq) }}
+                style={{
+                  padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
+                  border: actif ? `1px solid ${couleur}` : `1px solid ${couleur}40`,
+                  background: actif ? `${couleur}30` : `${couleur}15`,
+                  color: couleur, fontSize: '12px', fontWeight: 700,
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleur, display: 'inline-block' }} />
+                {t(EQUIPES_CONFIG[eq].label, lang)}
+                <span style={{ fontSize: '10px', opacity: 0.5 }}>▾</span>
+              </button>
+              {colorPickerOpen === eq && (
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
+                  {PALETTE_COULEURS_EQUIPE.map(c => (
+                    <button key={c} onClick={() => { setEquipesCouleurs(prev => ({ ...prev, [eq]: c })); setColorPickerOpen(null) }}
+                      style={{ width: '28px', height: '28px', borderRadius: '6px', background: c, border: couleur === c ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {tableMissing && !isModal && (
@@ -1127,7 +1229,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             height={height}
             onClick={handleStageClick}
             onTap={handleStageClick}
+            onMouseDown={handleStageMouseDown}
             onMouseMove={handleMouseMove}
+            onMouseUp={handleStageMouseUp}
             style={{ borderRadius: '12px', overflow: 'hidden', cursor: pendingStart ? 'crosshair' : 'default' }}
           >
             <Layer>
@@ -1185,14 +1289,22 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
-                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement}
+                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement}
                   onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
                   onRotate={() => updateElement({ ...e, rotation: (e.rotation || 0) === 0 ? 90 : 0 })}
                 />
               ))}
               {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} />
+                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} />
               ))}
+
+              {/* ── Rectangle de sélection multiple en cours de glisser ────────── */}
+              {selectionBox && (
+                <Rect
+                  x={selectionBox.x} y={selectionBox.y} width={selectionBox.w} height={selectionBox.h}
+                  fill="#60a5fa15" stroke="#60a5fa" strokeWidth={1.5} dash={[6, 4]} listening={false}
+                />
+              )}
 
               {/* ── NOUVEAU : preview flèche en temps réel ──────────────────── */}
               {pendingStart && mousePos && ['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble'].includes(tool) && (
@@ -1241,7 +1353,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   const dx = target.x - el.x
                   const dy = target.y - el.y
                   if (Math.sqrt(dx * dx + dy * dy) < 10) return null
-                  const color = EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color
+                  const color = equipesCouleurs[el.equipe] ?? EQUIPES_CONFIG.A.color
                   return (
                     <Arrow key={`mv-${el.id}`}
                       points={[el.x, el.y, target.x, target.y]}
@@ -1261,6 +1373,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
             <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ {t('tac_redo', lang)}</button>
             <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 {t('btn_supprimer', lang)}</button>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => { applyElements(elements.filter(el => !selectedIds.has(el.id))); setSelectedIds(new Set()) }}
+                title="Suppr"
+                style={{ background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '0 14px', height: '38px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                🗑 Supprimer {selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''}
+              </button>
+            )}
             <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 {t('tac_tout_effacer', lang)}</button>
             <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ {t('tac_export_png', lang)}</button>
           </div>
@@ -1367,17 +1487,17 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           <div style={{ width: 170, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {joueursParEquipe.map(({ eq, joueurs }) => (
               <div key={eq}>
-                <div style={{ color: EQUIPES_CONFIG[eq].color, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>{EQUIPES_CONFIG[eq].emoji} {t(EQUIPES_CONFIG[eq].label, lang)}</div>
+                <div style={{ color: equipesCouleurs[eq], fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>{EQUIPES_CONFIG[eq].emoji} {t(EQUIPES_CONFIG[eq].label, lang)}</div>
                 {joueurs.map(j => (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: EQUIPES_CONFIG[eq].color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: equipesCouleurs[eq], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
                       {j.numero}
                     </div>
                     <input
                       value={j.nom || ''}
                       onChange={e => renommerJoueur(j.id, e.target.value)}
                       placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
-                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? EQUIPES_CONFIG[eq].color : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? equipesCouleurs[eq] : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
                       onFocus={() => setSelectedId(j.id)}
                     />
                   </div>

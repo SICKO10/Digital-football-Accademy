@@ -89,7 +89,7 @@ export default function TactipadPublic() {
             <ObjetNode key={e.id} el={e} isSelected={false} draggable={false} />
           ))}
           {elements.filter(e => e.type === 'joueur').map(e => (
-            <JoueurNode key={e.id} el={e} isSelected={false} draggable={false} />
+            <JoueurNode key={e.id} el={e} isSelected={false} draggable={false} couleurs={schema.equipesCouleurs} />
           ))}
         </Layer>
       </Stage>
