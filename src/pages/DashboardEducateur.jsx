@@ -1850,7 +1850,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setFicheExtraite(false)
 
     const [, pdfBlob] = await Promise.all([
-      lierFicheAEntrainementCorrespondant(inserted.id, fiche.date),
+      lierFicheAEntrainementCorrespondant(inserted.id, fiche.date).catch(e => console.error('Erreur liaison fiche/entraînement:', e)),
       genererPdfFiche().catch(e => { console.error('Erreur génération PDF fiche:', e); return null }),
     ])
     if (pdfBlob) {
@@ -2641,7 +2641,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setShowAddMatch(false)
     const [{ data, error }] = await Promise.all([
       supabase.from('matchs_equipe').insert({ ...snapshot, educateur_id: userId, domicile: snapshot.domicile }).select().single(),
-      creerDeplacementAutoMatch(snapshot),
+      creerDeplacementAutoMatch(snapshot).catch(e => console.error('Erreur création déplacement auto:', e)),
     ])
     setSavingMatch(false)
     if (error) {
@@ -2703,7 +2703,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
         score_nous: scoreSnapshot.score_nous,
         score_eux: scoreSnapshot.score_eux,
       }).eq('id', matchId),
-      sauvegarderStatsMatch(matchId), // upsert stats_match + recharge matchs
+      sauvegarderStatsMatch(matchId).catch(e => console.error('Erreur sauvegarde stats match:', e)), // upsert stats_match + recharge matchs
     ])
     setSavingMatchJoue(false)
     if (error) {
