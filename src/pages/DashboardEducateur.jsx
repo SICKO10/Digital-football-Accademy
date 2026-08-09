@@ -1455,6 +1455,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [ficheFichierUrl, setFicheFichierUrl] = useState(null) // image du scan d'origine, portée jusqu'à la sauvegarde de la fiche
   const [ficheExtraite, setFicheExtraite] = useState(false) // bandeau "fiche extraite" affiché après un scan IA
   const [ficheApercu, setFicheApercu] = useState(null) // fiche archivée (seances_uploadees row) affichée dans le modal aperçu
+  const [modeEditionApercu, setModeEditionApercu] = useState(false)
+  const [ficheApercuEdit, setFicheApercuEdit] = useState(null) // copie éditable de ficheApercu.fiche_seance + categorie_tactique, tant que modeEditionApercu est actif
+  const [savingFicheApercu, setSavingFicheApercu] = useState(false)
   const [scanImageFile, setScanImageFile] = useState(null)
   const [scanImagePreview, setScanImagePreview] = useState(null)
   const [scanImageBase64, setScanImageBase64] = useState(null)
@@ -1691,6 +1694,68 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       if (f.procedes.length <= 1) return f
       return { ...f, procedes: f.procedes.filter((_, i) => i !== index).map((p, i) => ({ ...p, numero: i + 1 })) }
     })
+  }
+
+  // ── Édition d'une fiche archivée (modal "aperçu", seances_uploadees) ───────────
+  // Copie éditable séparée de `fiche`/`setFiche` (celle-ci sert à la RÉDACTION
+  // d'une nouvelle fiche dans l'onglet dédié, avec sa propre sauvegarde en INSERT
+  // — mélanger les deux casserait cet écran). Ici sauvegarderFicheApercuEdit fait
+  // un UPDATE sur la ligne déjà archivée.
+  const ouvrirEditionApercu = () => {
+    const fs = ficheApercu?.fiche_seance || {}
+    setFicheApercuEdit({
+      theme: fs.theme || '', date: fs.date || '', categorie_tactique: ficheApercu?.categorie_tactique || '',
+      nb_joueurs: fs.nb_joueurs || '', duree_totale: fs.duree_totale || '', objectif_general: fs.objectif_general || '',
+      sport: fs.sport || 'football',
+      procedes: (fs.procedes && fs.procedes.length ? fs.procedes : [{ numero: 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }])
+        .map(p => ({ ...p })),
+    })
+    setModeEditionApercu(true)
+  }
+
+  const updateProcedeApercu = (index, field, value) => {
+    setFicheApercuEdit(f => {
+      const procedes = [...f.procedes]
+      procedes[index] = { ...procedes[index], [field]: value }
+      return { ...f, procedes }
+    })
+  }
+
+  const ajouterProcedeApercu = () => {
+    setFicheApercuEdit(f => ({
+      ...f,
+      procedes: [...f.procedes, { numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }],
+    }))
+  }
+
+  const retirerProcedeApercu = (index) => {
+    setFicheApercuEdit(f => {
+      if (f.procedes.length <= 1) return f
+      return { ...f, procedes: f.procedes.filter((_, i) => i !== index).map((p, i) => ({ ...p, numero: i + 1 })) }
+    })
+  }
+
+  const annulerEditionApercu = () => {
+    setModeEditionApercu(false)
+    setFicheApercuEdit(null)
+  }
+
+  const sauvegarderFicheApercuEdit = async () => {
+    setSavingFicheApercu(true)
+    const payload = {
+      theme: ficheApercuEdit.theme || null,
+      date_seance: ficheApercuEdit.date || null,
+      categorie_tactique: ficheApercuEdit.categorie_tactique || null,
+      fiche_seance: ficheApercuEdit,
+    }
+    const { error } = await supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id)
+    setSavingFicheApercu(false)
+    if (error) { alert('Erreur lors de la sauvegarde : ' + error.message); return }
+    const updated = { ...ficheApercu, ...payload }
+    setFicheApercu(updated)
+    setMesSeancesOuvertes(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+    setModeEditionApercu(false)
+    setFicheApercuEdit(null)
   }
 
   // ── Bibliothèque de procédés ──────────────────────────────────────────────────
@@ -7597,30 +7662,140 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
     <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
 
-    {ficheApercu && (
+    {ficheApercu && (() => {
+      // Le modal .fiche-render est une feuille blanche (texte noir, cf. index.css)
+      // même en mode édition, pour rester visuellement cohérent avec l'aperçu en
+      // lecture — juste un soulignement vert pour distinguer les champs éditables.
+      const champEditStyle = { border: 'none', borderBottom: '1px solid #4ade80', background: 'transparent', color: '#000', fontSize: '13px', width: '100%', outline: 'none', padding: '2px 0', fontFamily: 'inherit' }
+      const champEditTextareaStyle = { ...champEditStyle, resize: 'vertical', display: 'block' }
+      return (
       <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
-        onClick={() => setFicheApercu(null)}>
+        onClick={() => { if (!modeEditionApercu) setFicheApercu(null) }}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
-            {ficheApercu.fichier_url && (
+            {ficheApercu.fichier_url && !modeEditionApercu && (
               <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
                 style={{ background: '#60a5fa', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 ⬇️ {t('seance_fichier', lang)}
               </a>
             )}
-            <button onClick={() => setFicheApercu(null)} style={{ background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              ✕ {t('btn_fermer', lang)}
-            </button>
+            {modeEditionApercu ? (
+              <>
+                <button onClick={sauvegarderFicheApercuEdit} disabled={savingFicheApercu}
+                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: savingFicheApercu ? 0.6 : 1 }}>
+                  {savingFicheApercu ? 'Enregistrement...' : `✓ ${t('btn_sauvegarder', lang)}`}
+                </button>
+                <button onClick={annulerEditionApercu}
+                  style={{ background: '#1a1a1a', border: '1px solid #444', color: '#aaa', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {t('btn_annuler', lang)}
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={ouvrirEditionApercu}
+                  style={{ background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ✏️ {t('btn_modifier', lang)}
+                </button>
+                <button onClick={() => setFicheApercu(null)} style={{ background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ✕ {t('btn_fermer', lang)}
+                </button>
+              </>
+            )}
           </div>
           <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
-            <FicheContenu
-              fiche={ficheApercu.fiche_seance || {}}
-              categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
-            />
+            {modeEditionApercu && ficheApercuEdit ? (
+              <>
+                <div className="fiche-header">
+                  <div className="fiche-row fiche-row-1">
+                    <div className="fiche-champ large">
+                      <label>Thème</label>
+                      <input value={ficheApercuEdit.theme} onChange={e => setFicheApercuEdit(f => ({ ...f, theme: e.target.value }))} style={champEditStyle} />
+                    </div>
+                    <div className="fiche-champ">
+                      <label>Date</label>
+                      <input type="date" value={ficheApercuEdit.date} onChange={e => setFicheApercuEdit(f => ({ ...f, date: e.target.value }))} style={champEditStyle} />
+                    </div>
+                    <div className="fiche-champ">
+                      <label>Catégorie</label>
+                      <select value={ficheApercuEdit.categorie_tactique} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_tactique: e.target.value }))} style={champEditStyle}>
+                        <option value="">—</option>
+                        {CATEGORIES_TACTIQUES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="fiche-champ">
+                      <label>Nb joueurs</label>
+                      <input value={ficheApercuEdit.nb_joueurs} onChange={e => setFicheApercuEdit(f => ({ ...f, nb_joueurs: e.target.value }))} style={champEditStyle} />
+                    </div>
+                  </div>
+                  <div className="fiche-row fiche-row-2">
+                    <div className="fiche-champ">
+                      <label>Durée totale</label>
+                      <input value={ficheApercuEdit.duree_totale} onChange={e => setFicheApercuEdit(f => ({ ...f, duree_totale: e.target.value }))} style={champEditStyle} />
+                    </div>
+                    <div className="fiche-champ large">
+                      <label>Objectif général</label>
+                      <input value={ficheApercuEdit.objectif_general} onChange={e => setFicheApercuEdit(f => ({ ...f, objectif_general: e.target.value }))} style={champEditStyle} />
+                    </div>
+                  </div>
+                </div>
+                <div className="procedes-grid">
+                  {ficheApercuEdit.procedes.map((p, i) => (
+                    <div className="procede-block" key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <h3 style={{ margin: 0 }}>Procédé {p.numero}</h3>
+                        {ficheApercuEdit.procedes.length > 1 && (
+                          <button type="button" onClick={() => retirerProcedeApercu(i)} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                        )}
+                      </div>
+                      <div className="procede-grid">
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Titre</label>
+                          <input value={p.titre} onChange={e => updateProcedeApercu(i, 'titre', e.target.value)} style={champEditStyle} />
+                        </div>
+                        <div className="procede-field">
+                          <label>Durée</label>
+                          <input value={p.duree} onChange={e => updateProcedeApercu(i, 'duree', e.target.value)} style={champEditStyle} />
+                        </div>
+                        <div className="procede-field">
+                          <label>Nombre de joueurs</label>
+                          <input value={p.nb_joueurs} onChange={e => updateProcedeApercu(i, 'nb_joueurs', e.target.value)} style={champEditStyle} />
+                        </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>But</label>
+                          <textarea value={p.but} onChange={e => updateProcedeApercu(i, 'but', e.target.value)} rows={2} style={champEditTextareaStyle} />
+                        </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Organisation</label>
+                          <textarea value={p.organisation} onChange={e => updateProcedeApercu(i, 'organisation', e.target.value)} rows={2} style={champEditTextareaStyle} />
+                        </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Consignes</label>
+                          <textarea value={p.consignes} onChange={e => updateProcedeApercu(i, 'consignes', e.target.value)} rows={3} style={champEditTextareaStyle} />
+                        </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Variables / progressions</label>
+                          <textarea value={p.variables} onChange={e => updateProcedeApercu(i, 'variables', e.target.value)} rows={2} style={champEditTextareaStyle} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={ajouterProcedeApercu}
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '2px dashed #4ade8080', background: 'transparent', color: '#16a34a', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginTop: '4px' }}>
+                  + {t('seance_ajouter_procede', lang)}
+                </button>
+              </>
+            ) : (
+              <FicheContenu
+                fiche={ficheApercu.fiche_seance || {}}
+                categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
+              />
+            )}
           </div>
         </div>
       </div>
-    )}
+      )
+    })()}
 
     {tactipadModal !== null && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
