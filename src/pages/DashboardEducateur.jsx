@@ -5632,10 +5632,29 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
                           {e.lieu && <span style={{ fontSize: '12px', color: '#555' }}>📍 {e.lieu}</span>}
                           {e.fiche_id && (
-                            <span
-                              onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}
-                              style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px', cursor: 'pointer' }}>
-                              📄 {t('ent_voir_fiche', lang)}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
+                              <span
+                                onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}
+                                style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px 0 0 10px', cursor: 'pointer' }}>
+                                📄 {t('ent_voir_fiche', lang)}
+                              </span>
+                              <span
+                                onClick={async ev => {
+                                  ev.stopPropagation()
+                                  if (!confirm('Détacher cette fiche de la séance ?')) return
+                                  // Optimiste : la fiche reste dans "Mes séances sauvegardées",
+                                  // seul le lien avec cet entraînement est retiré.
+                                  setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: null } : x)))
+                                  const { error } = await supabase.from('entrainements').update({ fiche_id: null }).eq('id', e.id)
+                                  if (error) {
+                                    setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: e.fiche_id } : x)))
+                                    alert('Erreur : ' + error.message)
+                                  }
+                                }}
+                                title="Détacher cette fiche"
+                                style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '1px 6px', borderRadius: '0 10px 10px 0', cursor: 'pointer', lineHeight: 1.5 }}>
+                                ×
+                              </span>
                             </span>
                           )}
                           {!estFuture && total > 0 && (
