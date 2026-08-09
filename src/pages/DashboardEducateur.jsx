@@ -552,6 +552,29 @@ function FicheContenu({ fiche, categorieLabel }) {
           <div className="fiche-champ large"><label>Objectif général</label>{fiche.objectif_general || '—'}</div>
         </div>
       </div>
+
+      {fiche.mode_diplome && (
+        <div style={{ border: '1px solid #000', borderRadius: '4px', padding: '10px 12px', marginBottom: '14px' }}>
+          <p style={{ fontWeight: 'bold', fontSize: '13px', margin: '0 0 8px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
+          <div className="fiche-row" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '8px' }}>
+            <div className="fiche-champ"><label>Phase de jeu</label>{fiche.phase_jeu || '—'}</div>
+            <div className="fiche-champ"><label>Principe de jeu</label>{fiche.principe_jeu || '—'}</div>
+          </div>
+          {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
+            <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {fiche.constats && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Constats</label>{fiche.constats}</div>}
+              {fiche.justification_pedagogique && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Justification pédagogique</label>{fiche.justification_pedagogique}</div>}
+              {fiche.auto_evaluation && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Auto-évaluation</label>{fiche.auto_evaluation}</div>}
+            </div>
+          )}
+          {fiche.mode_diplome === 'DEF' && (
+            <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+              {fiche.analyse_equipe && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Analyse équipe</label>{fiche.analyse_equipe}</div>}
+              {fiche.bilan_projection && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Bilan et projection</label>{fiche.bilan_projection}</div>}
+            </div>
+          )}
+        </div>
+      )}
       <div className="procedes-grid">
         {(fiche.procedes || []).map((p, i) => {
           const consignesLignes = (p.consignes || '').split('\n')
@@ -1443,6 +1466,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   })
   const ficheVide = {
     theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
+    // Mode diplôme (BMF/BEF/DEF) — optionnel, null = fiche libre. Fait partie de
+    // `fiche` (et donc de fiche_seance à la sauvegarde) plutôt que des states
+    // séparés : ce composant centralise déjà toute la fiche dans un seul objet.
+    mode_diplome: null, phase_jeu: '', principe_jeu: '',
+    constats: '', justification_pedagogique: '', auto_evaluation: '',
+    analyse_equipe: '', bilan_projection: '',
     procedes: Array(4).fill(null).map((_, i) => ({
       numero: i + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: ''
     }))
@@ -1707,6 +1736,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       theme: fs.theme || '', date: fs.date || '', categorie_tactique: ficheApercu?.categorie_tactique || '',
       nb_joueurs: fs.nb_joueurs || '', duree_totale: fs.duree_totale || '', objectif_general: fs.objectif_general || '',
       sport: fs.sport || 'football',
+      mode_diplome: fs.mode_diplome || null, phase_jeu: fs.phase_jeu || '', principe_jeu: fs.principe_jeu || '',
+      constats: fs.constats || '', justification_pedagogique: fs.justification_pedagogique || '', auto_evaluation: fs.auto_evaluation || '',
+      analyse_equipe: fs.analyse_equipe || '', bilan_projection: fs.bilan_projection || '',
       procedes: (fs.procedes && fs.procedes.length ? fs.procedes : [{ numero: 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }])
         .map(p => ({ ...p })),
     })
@@ -6446,13 +6478,93 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
                   style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
-                <textarea
-                  placeholder={t('seance_objectif_general', lang)}
-                  value={fiche.objectif_general}
-                  onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
-                  rows={2}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                />
+
+                {/* ── Mode diplôme (BMF/BEF/DEF) — objectif_general existe déjà comme champ
+                    de base de la fiche ; en mode diplôme il est déplacé/relabellisé dans
+                    l'encart officiel ci-dessous plutôt que dupliqué, pour ne pas avoir deux
+                    champs "objectif" à la fois. */}
+                <div>
+                  <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>🎓 Mode diplôme (optionnel)</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[null, 'BMF', 'BEF', 'DEF'].map(m => (
+                      <button
+                        key={m ?? 'libre'}
+                        type="button"
+                        onClick={() => setFiche(f => ({ ...f, mode_diplome: f.mode_diplome === m ? null : m }))}
+                        style={{
+                          padding: '7px 16px', borderRadius: '8px', border: '1px solid',
+                          borderColor: fiche.mode_diplome === m ? '#4ade80' : '#2a2a2a',
+                          background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.12)' : '#0a0a0a',
+                          color: fiche.mode_diplome === m ? '#4ade80' : '#9ca3af',
+                          fontSize: '13px', fontWeight: fiche.mode_diplome === m ? 700 : 400, cursor: 'pointer',
+                        }}>
+                        {m === null ? 'Libre' : m}
+                        {m === 'BMF' && ' — Moniteur'}
+                        {m === 'BEF' && ' — Éducateur'}
+                        {m === 'DEF' && ' — Diplôme Éducateur'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {fiche.mode_diplome ? (() => {
+                  const inputStyle = { background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
+                  const labelStyle = { color: '#9ca3af', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', marginTop: '10px' }
+                  return (
+                    <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
+                      <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
+
+                      <label style={labelStyle}>Phase de jeu *</label>
+                      <select value={fiche.phase_jeu || ''} onChange={e => setFiche(f => ({ ...f, phase_jeu: e.target.value }))} style={inputStyle}>
+                        <option value="">— Choisir —</option>
+                        {['Attaque', 'Défense', 'Transition offensive', 'Transition défensive', 'Animation collective'].map(o => <option key={o}>{o}</option>)}
+                      </select>
+
+                      <label style={labelStyle}>Principe de jeu *</label>
+                      <input type="text" placeholder="Ex: Conservation du ballon, Pressing haut…" value={fiche.principe_jeu || ''} onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))} style={inputStyle} />
+
+                      <label style={labelStyle}>Objectif de séance *</label>
+                      <textarea placeholder={t('seance_objectif_general', lang)} value={fiche.objectif_general} onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))} rows={2} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+
+                      {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
+                        <>
+                          <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
+                          <p style={{ color: '#60a5fa', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs complémentaires {fiche.mode_diplome}</p>
+
+                          <label style={labelStyle}>Constats réalisés (observation des joueurs)</label>
+                          <textarea placeholder="Décris ce que tu as observé lors des matchs ou séances précédentes…" value={fiche.constats || ''} onChange={e => setFiche(f => ({ ...f, constats: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+
+                          <label style={labelStyle}>Justification des choix pédagogiques</label>
+                          <textarea placeholder="Pourquoi ces exercices ? Quel lien avec les constats ?" value={fiche.justification_pedagogique || ''} onChange={e => setFiche(f => ({ ...f, justification_pedagogique: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+
+                          <label style={labelStyle}>Auto-évaluation de la séance</label>
+                          <textarea placeholder="Bilan post-séance : ce qui a fonctionné, ce qui n'a pas fonctionné…" value={fiche.auto_evaluation || ''} onChange={e => setFiche(f => ({ ...f, auto_evaluation: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                        </>
+                      )}
+
+                      {fiche.mode_diplome === 'DEF' && (
+                        <>
+                          <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
+                          <p style={{ color: '#f97316', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs DEF — Analyse avancée</p>
+
+                          <label style={labelStyle}>Analyse de l'équipe / Contexte (lien match → entraînement)</label>
+                          <textarea placeholder="Situation de l'équipe, problèmes collectifs observés en match…" value={fiche.analyse_equipe || ''} onChange={e => setFiche(f => ({ ...f, analyse_equipe: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+
+                          <label style={labelStyle}>Bilan et projection (prochaine séance)</label>
+                          <textarea placeholder="Analyse post-séance approfondie et ce qui sera travaillé ensuite…" value={fiche.bilan_projection || ''} onChange={e => setFiche(f => ({ ...f, bilan_projection: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                        </>
+                      )}
+                    </div>
+                  )
+                })() : (
+                  <textarea
+                    placeholder={t('seance_objectif_general', lang)}
+                    value={fiche.objectif_general}
+                    onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
+                    rows={2}
+                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                  />
+                )}
               </div>
 
               {fiche.procedes.map((p, i) => (
@@ -6639,7 +6751,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             return (
                               <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                                 <div>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{s.theme || t('seance_sans_theme', lang)}</p>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
+                                    {s.theme || t('seance_sans_theme', lang)}
+                                    {s.fiche_seance?.mode_diplome && (
+                                      <span style={{
+                                        fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
+                                        background: s.fiche_seance.mode_diplome === 'BMF' ? 'rgba(74,222,128,0.15)' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
+                                        color: s.fiche_seance.mode_diplome === 'BMF' ? '#4ade80' : s.fiche_seance.mode_diplome === 'BEF' ? '#60a5fa' : '#f97316',
+                                        border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? '#4ade80' : s.fiche_seance.mode_diplome === 'BEF' ? '#60a5fa' : '#f97316'}`,
+                                      }}>
+                                        {s.fiche_seance.mode_diplome}
+                                      </span>
+                                    )}
+                                  </p>
                                   {s.date_seance && (
                                     <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
                                       {new Date(s.date_seance).toLocaleDateString('fr-FR')}
