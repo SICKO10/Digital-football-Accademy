@@ -21,6 +21,17 @@
 
 export const MARGE_MIN_DEFAUT = 30
 
+// Effectif par défaut d'un déplacement match (joueurs convoqués + staff),
+// basé sur le type de compétition — pas l'effectif total de l'équipe (un
+// match n'embarque qu'une partie du groupe) : 14 joueurs habituellement, 16
+// en coupe, + 2 dirigeants dans tous les cas. Sert de valeur de départ tant
+// que l'éducateur n'a pas ajusté nb_personnes à la main pour ce match précis
+// (nombre réel de convoqués, qui varie d'un match à l'autre).
+export const effectifParDefautMatch = (competition) => {
+  const estCoupe = /coupe/i.test(competition || '')
+  return (estCoupe ? 16 : 14) + 2
+}
+
 export const toMinutes = (hhmm) => {
   if (!hhmm) return null
   const [h, m] = String(hhmm).split(':').map(Number)

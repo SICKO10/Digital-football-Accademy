@@ -14,6 +14,7 @@ import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import { estimerDeplacement } from '../lib/mapbox'
+import { effectifParDefautMatch } from '../lib/repartitionBus'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import { t, LANGS, localeOf } from '../lib/translations'
@@ -2688,13 +2689,14 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   // Crée automatiquement une ligne Déplacements pour un match Extérieur nouvellement
   // ajouté au calendrier (véhicule, conducteur, km — restent vides, à compléter
-  // manuellement dans l'onglet Déplacements). nb_personnes est pré-rempli avec
-  // l'effectif réel de l'équipe (joueurs, chargé pour cet éducateur) + 2 pour le
-  // staff (éducateur + au moins un dirigeant) — sinon la répartition auto des
-  // mini-bus considère 0 personne et propose systématiquement le plus petit bus.
-  // Reste modifiable ensuite au cas par cas (tous les joueurs ne se déplacent pas
-  // forcément à chaque match) via le formulaire de l'onglet Déplacements.
-  // Nécessite un club affilié : deplacements.club_id est NOT NULL en base.
+  // manuellement dans l'onglet Déplacements). nb_personnes est pré-rempli avec un
+  // effectif par défaut (14 joueurs, 16 en coupe, + 2 dirigeants — cf.
+  // effectifParDefautMatch) — pas l'effectif total de l'équipe, un match n'en
+  // convoque qu'une partie — sinon la répartition auto des mini-bus considère 0
+  // personne et propose systématiquement le plus petit bus. Reste modifiable au
+  // cas par cas (nombre réel de convoqués) via le formulaire de l'onglet
+  // Déplacements. Nécessite un club affilié : deplacements.club_id est NOT NULL
+  // en base.
   const creerDeplacementAutoMatch = async (m) => {
     if (m.domicile || !m.date) return
     if (!clubAffiliation?.club_id) return
@@ -2708,7 +2710,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       lieu_destination: m.lieu || m.adversaire || null,
       ville_destination: m.ville || null,
       nature: 'match',
-      nb_personnes: joueurs.length > 0 ? joueurs.length + 2 : null,
+      nb_personnes: effectifParDefautMatch(m.competition),
       created_by: user?.id || null,
     })
     if (!error) afficherToast('Déplacement créé automatiquement')
