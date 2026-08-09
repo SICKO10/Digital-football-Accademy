@@ -255,6 +255,7 @@ export const T = {
   seance_duree_totale:      { fr: 'Durée totale (ex: 90 min)', en: 'Total duration (e.g. 90 min)', pt: 'Duração total (ex: 90 min)', es: 'Duración total (ej. 90 min)', it: 'Durata totale (es. 90 min)', de: 'Gesamtdauer (z. B. 90 Min.)' },
   seance_objectif_general:  { fr: 'Objectif général de la séance', en: 'General session objective', pt: 'Objetivo geral da sessão', es: 'Objetivo general de la sesión', it: 'Obiettivo generale della seduta', de: 'Allgemeines Ziel der Einheit' },
   seance_procede:           { fr: 'Procédé',                  en: 'Drill',                 pt: 'Exercício',             es: 'Ejercicio',             it: 'Esercizio',             de: 'Übung'                 },
+  seance_ajouter_procede:   { fr: 'Ajouter un procédé',       en: 'Add a drill',           pt: 'Adicionar um exercício', es: 'Añadir un ejercicio',   it: 'Aggiungi un esercizio', de: 'Übung hinzufügen'      },
   seance_titre_procede:     { fr: 'Titre du procédé',         en: 'Drill title',           pt: 'Título do exercício',   es: 'Título del ejercicio',  it: 'Titolo dell\'esercizio', de: 'Übungstitel'          },
   seance_duree_min:         { fr: 'Durée (min)',              en: 'Duration (min)',        pt: 'Duração (min)',         es: 'Duración (min)',        it: 'Durata (min)',          de: 'Dauer (Min.)'          },
   seance_but:               { fr: 'But',                      en: 'Goal',                  pt: 'Objetivo',              es: 'Objetivo',              it: 'Obiettivo',             de: 'Ziel'                  },

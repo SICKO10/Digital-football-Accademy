@@ -1668,6 +1668,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setFiche({ ...fiche, procedes: newProcedes })
   }
 
+  // fiche.procedes était initialisé à un nombre fixe (4, cf. ficheVide) sans
+  // moyen d'en ajouter ou retirer — ajouterProcedeFiche/retirerProcedeFiche
+  // comblent ça. Nom différent de supprimerProcede (bibliotheque_exercices,
+  // plus haut) qui gère un tout autre concept (la bibliothèque d'exercices
+  // réutilisables, pas les procédés de la fiche en cours de rédaction).
+  const ajouterProcedeFiche = () => {
+    setFiche(f => ({
+      ...f,
+      procedes: [...f.procedes, { numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }],
+    }))
+  }
+
+  const retirerProcedeFiche = (index) => {
+    setFiche(f => {
+      if (f.procedes.length <= 1) return f
+      return { ...f, procedes: f.procedes.filter((_, i) => i !== index).map((p, i) => ({ ...p, numero: i + 1 })) }
+    })
+  }
+
   // ── Bibliothèque de procédés ──────────────────────────────────────────────────
   const chargerBiblio = async (uid) => {
     setBiblioLoading(true)
@@ -6205,7 +6224,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
               {fiche.procedes.map((p, i) => (
                 <div key={i} style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', color: '#4ade80' }}>{t('seance_procede', lang)} {p.numero}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: '#4ade80' }}>{t('seance_procede', lang)} {p.numero}</p>
+                    {fiche.procedes.length > 1 && (
+                      <button type="button" onClick={() => retirerProcedeFiche(i)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                        title={t('btn_supprimer', lang)}>
+                        ✕
+                      </button>
+                    )}
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <input
                       placeholder={t('seance_titre_procede', lang)}
@@ -6285,6 +6313,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                 </div>
               ))}
+
+              <button
+                type="button"
+                onClick={ajouterProcedeFiche}
+                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px dashed #4ade8040', background: 'transparent', color: '#4ade80', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '8px' }}
+              >
+                + {t('seance_ajouter_procede', lang)}
+              </button>
 
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
                 <button
