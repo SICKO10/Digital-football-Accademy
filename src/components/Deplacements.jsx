@@ -272,6 +272,41 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     }
   }
 
+  // Avant de répartir : tente de compléter automatiquement les déplacements
+  // "match" sans heure_depart en retrouvant leur match Extérieur d'origine
+  // (même date + même éducateur — cf. creerDeplacementAutoMatch dans
+  // DashboardEducateur.jsx, qui pose ce lien à la création) pour en déduire
+  // ville + heure de coup d'envoi, puis heure_depart/heure_retour_estimee
+  // (1h30/2h30 + trajet, cf. lib/mapbox.js) — sans aucune ressaisie manuelle.
+  // Un déplacement reste incomplet seulement si le match source lui-même n'a
+  // pas de ville ou d'heure renseignée (ou si aucun match ne correspond) :
+  // ceux-là restent dans la bannière "sans heure de départ", à traiter via
+  // "✏️ Compléter".
+  const completerHorairesDepuisMatchs = async (liste) => {
+    const incomplets = liste.filter(d => !d.heure_depart && d.nature === 'match')
+    if (incomplets.length === 0 || !clubVille) return liste
+    const educateurIds = [...new Set(incomplets.map(d => d.educateur_id).filter(Boolean))]
+    if (educateurIds.length === 0) return liste
+    const { data: matchsExt } = await supabase.from('matchs_equipe').select('*')
+      .in('educateur_id', educateurIds).eq('domicile', false)
+    const updates = []
+    for (const d of incomplets) {
+      const m = (matchsExt || []).find(x => x.date === d.date_depart && x.educateur_id === d.educateur_id)
+      if (!m || !m.ville || !m.heure) continue
+      const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
+      if (!resultat) continue
+      updates.push({ id: d.id, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
+    }
+    if (updates.length === 0) return liste
+    await Promise.all(updates.map(({ id, ...champs }) => supabase.from('deplacements').update(champs).eq('id', id)))
+    const misAJour = liste.map(d => {
+      const maj = updates.find(u => u.id === d.id)
+      return maj ? { ...d, ...maj } : d
+    })
+    setDeplacements(misAJour)
+    return misAJour
+  }
+
   // Assigne automatiquement les véhicules du parc aux déplacements qui n'en
   // ont pas encore (ne touche jamais une assignation déjà faite manuellement).
   // Traite chaque date séparément avec repartirBus (le même algorithme que
@@ -281,7 +316,8 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   // garantir qu'aucun bus n'est doublement réservé le même jour.
   const repartirAutomatiquement = async () => {
     setRepartitionAutoEnCours(true)
-    const aTraiter = deplacements.filter(d => !d.vehicule)
+    const deplacementsActuels = await completerHorairesDepuisMatchs(deplacements)
+    const aTraiter = deplacementsActuels.filter(d => !d.vehicule)
     const parDate = {}
     aTraiter.forEach(d => { if (!parDate[d.date_depart]) parDate[d.date_depart] = []; parDate[d.date_depart].push(d) })
 
@@ -289,7 +325,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const updates = []
     Object.entries(parDate).forEach(([date, deps]) => {
       const plaquesDejaPrises = new Set(
-        deplacements.filter(d => d.date_depart === date && d.vehicule)
+        deplacementsActuels.filter(d => d.date_depart === date && d.vehicule)
           .flatMap(d => d.vehicule.split('+').map(p => p.trim()))
       )
       const vehiculesDispos = vehicules.filter(v => !plaquesDejaPrises.has(v.plaque))
@@ -306,7 +342,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           alertes.push(
             r.heure_depart
               ? { dep: r, type: 'bus', msg: `${label} — bus insuffisant, prévoir une location` }
-              : { dep: r, type: 'heure', msg: `${label} — heure de départ manquante, impossible d'assigner un bus automatiquement` }
+              : { dep: r, type: 'heure', msg: `${label} — heure de départ manquante (ville ou heure du match introuvable), impossible d'assigner un bus automatiquement` }
           )
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
