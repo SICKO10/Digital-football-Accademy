@@ -2666,6 +2666,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const { error } = await supabase.from('deplacements').insert({
       club_id: clubAffiliation.club_id,
       equipe: equipe || null,
+      educateur_id: user?.id || null,
       date_depart: m.date,
       lieu_destination: m.lieu || m.adversaire || null,
       ville_destination: m.ville || null,

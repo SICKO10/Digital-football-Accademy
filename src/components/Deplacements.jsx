@@ -287,6 +287,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   // l'utilisateur sache exactement quoi corriger (et où) sans avoir à
   // deviner : ville du club manquante, match introuvable, match incomplet,
   // ou échec du calcul d'itinéraire (Mapbox).
+  // educateur_id résolu depuis d.educateur_id si présent, sinon retrouvé via le
+  // texte d.equipe matché contre les catégories du club — rattrape les
+  // déplacements créés par un bug de creerDeplacementAutoMatch (Dashboard-
+  // Educateur.jsx) qui n'enregistrait pas educateur_id à la création.
+  const educateurIdDeDeplacement = (d) => d.educateur_id
+    || equipesOptions.find(c => `${c.nom} ${c.equipe || ''}`.trim() === (d.equipe || '').trim())?.educateur_id
+    || null
+
   const completerHorairesDepuisMatchs = async (liste) => {
     const incomplets = liste.filter(d => !d.heure_depart && d.nature === 'match')
     const diagnostics = new Map()
@@ -295,23 +303,24 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       incomplets.forEach(d => diagnostics.set(d.id, "Ville du club non renseignée — complète-la dans Profil du club pour permettre le calcul auto."))
       return { liste, diagnostics }
     }
-    const educateurIds = [...new Set(incomplets.map(d => d.educateur_id).filter(Boolean))]
+    const educateurIds = [...new Set(incomplets.map(educateurIdDeDeplacement).filter(Boolean))]
     if (educateurIds.length === 0) {
-      incomplets.forEach(d => diagnostics.set(d.id, "Ce déplacement n'est lié à aucun éducateur, impossible de retrouver le match d'origine."))
+      incomplets.forEach(d => diagnostics.set(d.id, "Impossible de déterminer l'éducateur de ce déplacement (ni éducateur associé, ni équipe reconnue) — vérifie le champ Équipe."))
       return { liste, diagnostics }
     }
     const { data: matchsExt } = await supabase.from('matchs_equipe').select('*')
       .in('educateur_id', educateurIds).eq('domicile', false)
     const updates = []
     for (const d of incomplets) {
-      if (!d.educateur_id) { diagnostics.set(d.id, "Ce déplacement n'est lié à aucun éducateur, impossible de retrouver le match d'origine."); continue }
-      const m = (matchsExt || []).find(x => x.date === d.date_depart && x.educateur_id === d.educateur_id)
+      const eduId = educateurIdDeDeplacement(d)
+      if (!eduId) { diagnostics.set(d.id, "Impossible de déterminer l'éducateur de ce déplacement (ni éducateur associé, ni équipe reconnue) — vérifie le champ Équipe."); continue }
+      const m = (matchsExt || []).find(x => x.date === d.date_depart && x.educateur_id === eduId)
       if (!m) { diagnostics.set(d.id, "Aucun match Extérieur correspondant trouvé à cette date dans le calendrier."); continue }
       if (!m.ville) { diagnostics.set(d.id, "Le match correspondant n'a pas de ville renseignée dans le calendrier."); continue }
       if (!m.heure) { diagnostics.set(d.id, "Le match correspondant n'a pas d'heure de coup d'envoi renseignée dans le calendrier."); continue }
       const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
       if (!resultat) { diagnostics.set(d.id, `Calcul d'itinéraire impossible (ville "${m.ville}" non reconnue, ou service indisponible).`); continue }
-      updates.push({ id: d.id, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
+      updates.push({ id: d.id, educateur_id: d.educateur_id || eduId, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
     }
     if (updates.length === 0) return { liste, diagnostics }
     await Promise.all(updates.map(({ id, ...champs }) => supabase.from('deplacements').update(champs).eq('id', id)))
