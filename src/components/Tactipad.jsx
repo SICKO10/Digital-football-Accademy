@@ -12,6 +12,16 @@ const COULEURS = [
   { val: '#111111', label: 'Noir' },
 ]
 
+// Jusqu'à 4 équipes sur le plateau (utile pour les exercices à plusieurs
+// groupes, pas seulement une opposition A vs B) — couleur/label lookupés
+// partout au lieu d'un ternaire binaire A/B codé en dur.
+export const EQUIPES_CONFIG = {
+  A: { label: 'tac_equipe_a', color: '#4ade80', emoji: '🟢' },
+  B: { label: 'tac_equipe_b', color: '#f97316', emoji: '🟠' },
+  C: { label: 'tac_equipe_c', color: '#60a5fa', emoji: '🔵' },
+  D: { label: 'tac_equipe_d', color: '#f43f5e', emoji: '🔴' },
+}
+
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
 const lerp = (a, b, t) => a + (b - a) * t
@@ -191,7 +201,8 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
 }
 
 export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true }) {
-  const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
+  const isJoker = el.type === 'joker'
+  const color = isJoker ? '#ffffff' : (EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color)
   return (
     <Group
       x={el.x} y={el.y} draggable={draggable}
@@ -201,12 +212,14 @@ export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () 
       onDblTap={() => onEdit(el.id)}
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
-      {el.gardien ? (
+      {isJoker ? (
+        <Circle radius={14} fill="rgba(255,255,255,0.55)" stroke={isSelected ? '#4ade80' : '#000000'} strokeWidth={isSelected ? 3 : 1.5} dash={[4, 3]} />
+      ) : el.gardien ? (
         <Rect x={-14} y={-14} width={28} height={28} cornerRadius={8} fill={color} stroke={isSelected ? '#fff' : '#00000060'} strokeWidth={isSelected ? 3 : 1.5} />
       ) : (
         <Circle radius={14} fill={color} stroke={isSelected ? '#fff' : '#00000060'} strokeWidth={isSelected ? 3 : 1.5} />
       )}
-      <Text text={String(el.numero ?? '')} fontSize={12} fontStyle="bold" fill="#000" width={28} height={28} x={-14} y={-14} align="center" verticalAlign="middle" listening={false} />
+      <Text text={isJoker ? '★' : String(el.numero ?? '')} fontSize={isJoker ? 14 : 12} fontStyle="bold" fill="#000" width={28} height={28} x={-14} y={-14} align="center" verticalAlign="middle" listening={false} />
       {el.nom && (
         <Text text={el.nom} fontSize={10} fill="#fff" x={-30} y={16} width={60} align="center" listening={false} />
       )}
@@ -345,6 +358,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [pickerStagePos, setPickerStagePos] = useState({ x: 0, y: 0 })   // position sur le terrain (coords Konva) du joueur à créer
   const [pickerNumero, setPickerNumero] = useState('')
   const [pickerNom, setPickerNom] = useState('')
+  const [pickerNbJoueurs, setPickerNbJoueurs] = useState('1')
 
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
@@ -539,6 +553,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const editerJoueur = (id) => {
     const el = elements.find(e => e.id === id)
     if (!el) return
+    if (el.type === 'joker') {
+      const nom = prompt('Nom du joker (optionnel) :', el.nom ?? '')
+      if (nom === null) return
+      updateElement({ ...el, nom: nom.trim() })
+      return
+    }
     const numero = prompt('Numéro du joueur :', el.numero ?? '')
     if (numero === null) return
     const nom = prompt('Nom du joueur (optionnel) :', el.nom ?? '')
@@ -556,6 +576,31 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       id: uid(), type: 'joueur', equipe: equipeActive, gardien: false,
       numero, nom, x: pickerStagePos.x, y: pickerStagePos.y,
     }])
+    setShowPickerJoueur(false)
+    setTool('select')
+  }
+
+  // Pose n joueurs d'un coup (ex: "8" → 8 joueurs), numérotés à la suite en
+  // partant du numéro saisi dans le picker (ou du prochain numéro dispo pour
+  // cette équipe si le champ N° est vide), en colonne verticale centrée sur
+  // le point cliqué.
+  const ajouterJoueursMultiples = () => {
+    const n = Math.max(1, parseInt(pickerNbJoueurs, 10) || 1)
+    const depart = parseInt(pickerNumero, 10) || (elements.filter(e => e.type === 'joueur' && e.equipe === equipeActive).length + 1)
+    const nouveaux = Array.from({ length: n }, (_, i) => ({
+      id: uid(), type: 'joueur', equipe: equipeActive, gardien: false,
+      numero: String(depart + i), nom: '',
+      x: pickerStagePos.x, y: pickerStagePos.y + (i - (n - 1) / 2) * 36,
+    }))
+    applyElements([...elements, ...nouveaux])
+    setShowPickerJoueur(false)
+    setTool('select')
+  }
+
+  // Joueur "joker" — pas rattaché à une équipe (utile pour un exercice, un
+  // remplaçant polyvalent...), rendu en pointillés blancs dans JoueurNode.
+  const ajouterJoker = () => {
+    applyElements([...elements, { id: uid(), type: 'joker', nom: '', x: pickerStagePos.x, y: pickerStagePos.y }])
     setShowPickerJoueur(false)
     setTool('select')
   }
@@ -741,8 +786,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         const t = easeInOut(raw)
 
         const interpolated = fromElems.map(el => {
-          // Joueurs et objets → interpolation de position
-          if (el.type === 'joueur' || el.type === 'objet') {
+          // Joueurs, jokers et objets → interpolation de position
+          if (el.type === 'joueur' || el.type === 'joker' || el.type === 'objet') {
             const target = toElems.find(e => e.id === el.id)
             if (!target) return el
             return { ...el, x: lerp(el.x, target.x, t), y: lerp(el.y, target.y, t) }
@@ -933,9 +978,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   })
 
   // ── Panneau joueurs droit ─────────────────────────────────────────────────
-  const joueursA = elements.filter(e => e.type === 'joueur' && e.equipe === 'A').sort((a, b) => Number(a.numero) - Number(b.numero))
-  const joueursB = elements.filter(e => e.type === 'joueur' && e.equipe === 'B').sort((a, b) => Number(a.numero) - Number(b.numero))
-  const hasJoueurs = joueursA.length > 0 || joueursB.length > 0
+  const joueursParEquipe = Object.keys(EQUIPES_CONFIG)
+    .map(eq => ({ eq, joueurs: elements.filter(e => e.type === 'joueur' && e.equipe === eq).sort((a, b) => Number(a.numero) - Number(b.numero)) }))
+    .filter(g => g.joueurs.length > 0)
+  const jokers = elements.filter(e => e.type === 'joker')
+  const hasJoueurs = joueursParEquipe.length > 0 || jokers.length > 0
 
   // Style du tool actif pour preview flèche
   const arrowPreviewStyle = tool.replace('fleche-', '')
@@ -964,7 +1011,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           defaultValue=""
           style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
         >
-          <option value="">📋 {t('tac_dispositif', lang)} ({equipeActive === 'A' ? t('tac_equipe_a', lang) : t('tac_equipe_b', lang)})...</option>
+          <option value="">📋 {t('tac_dispositif', lang)} ({t(EQUIPES_CONFIG[equipeActive].label, lang)})...</option>
           <optgroup label="4 défenseurs">
             <option value="4-3-3">4-3-3</option>
             <option value="4-4-2">4-4-2</option>
@@ -985,7 +1032,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           </optgroup>
         </select>
         <button onClick={() => { setEquipeActive('A'); ajouterEquipe('A') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'A' ? '1px solid #4ade80' : '1px solid #4ade8040', background: equipeActive === 'A' ? '#4ade8030' : '#4ade8015', color: '#4ade80', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟢 {t('tac_equipe_a', lang)}</button>
-        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 {t('tac_equipe_b', lang)}</button>
+        <button onClick={() => { setEquipeActive('B'); ajouterEquipe('B') }} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'B' ? '1px solid #f97316' : '1px solid #f9731640', background: equipeActive === 'B' ? '#f9731630' : '#f9731615', color: '#f97316', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🟠 {t('tac_equipe_b', lang)}</button>
+        {/* C/D : juste une sélection d'équipe active, pas de remplissage auto à 11 —
+            pensées pour des petits groupes (ateliers, rondos), pas une opposition complète. */}
+        <button onClick={() => setEquipeActive('C')} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'C' ? '1px solid #60a5fa' : '1px solid #60a5fa40', background: equipeActive === 'C' ? '#60a5fa30' : '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔵 {t('tac_equipe_c', lang)}</button>
+        <button onClick={() => setEquipeActive('D')} style={{ padding: '7px 14px', borderRadius: '8px', border: equipeActive === 'D' ? '1px solid #f43f5e' : '1px solid #f43f5e40', background: equipeActive === 'D' ? '#f43f5e30' : '#f43f5e15', color: '#f43f5e', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🔴 {t('tac_equipe_d', lang)}</button>
       </div>
 
       {tableMissing && !isModal && (
@@ -1010,7 +1061,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           {outilsObjets.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
-          <button onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${equipeActive === 'A' ? t('tac_equipe_a', lang) : t('tac_equipe_b', lang)})`}>👤</button>
+          <button onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
           <div style={{ height: '1px', background: '#222' }} />
           <div style={{ position: 'relative' }}>
             <button
@@ -1132,7 +1183,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   onRotate={() => updateElement({ ...e, rotation: (e.rotation || 0) === 0 ? 90 : 0 })}
                 />
               ))}
-              {elements.filter(e => e.type === 'joueur').map(e => (
+              {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
                 <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} />
               ))}
 
@@ -1183,7 +1234,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   const dx = target.x - el.x
                   const dy = target.y - el.y
                   if (Math.sqrt(dx * dx + dy * dy) < 10) return null
-                  const color = el.equipe === 'A' ? '#4ade80' : '#f97316'
+                  const color = EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color
                   return (
                     <Arrow key={`mv-${el.id}`}
                       points={[el.x, el.y, target.x, target.y]}
@@ -1307,38 +1358,38 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         {/* ── NOUVEAU : panneau joueurs à droite ──────────────────────────── */}
         {hasJoueurs && (
           <div style={{ width: 170, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {joueursA.length > 0 && (
-              <div>
-                <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>ÉQUIPE A</div>
-                {joueursA.map(j => (
+            {joueursParEquipe.map(({ eq, joueurs }) => (
+              <div key={eq}>
+                <div style={{ color: EQUIPES_CONFIG[eq].color, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>{EQUIPES_CONFIG[eq].emoji} {t(EQUIPES_CONFIG[eq].label, lang)}</div>
+                {joueurs.map(j => (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: EQUIPES_CONFIG[eq].color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
                       {j.numero}
                     </div>
                     <input
                       value={j.nom || ''}
                       onChange={e => renommerJoueur(j.id, e.target.value)}
                       placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
-                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#4ade80' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? EQUIPES_CONFIG[eq].color : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
                       onFocus={() => setSelectedId(j.id)}
                     />
                   </div>
                 ))}
               </div>
-            )}
-            {joueursB.length > 0 && (
+            ))}
+            {jokers.length > 0 && (
               <div>
-                <div style={{ color: '#f97316', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>ÉQUIPE B</div>
-                {joueursB.map(j => (
+                <div style={{ color: '#e5e7eb', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>⭐ JOKERS</div>
+                {jokers.map(j => (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: j.gardien ? 4 : '50%', background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
-                      {j.numero}
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.55)', border: '1px dashed #000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                      ★
                     </div>
                     <input
                       value={j.nom || ''}
                       onChange={e => renommerJoueur(j.id, e.target.value)}
-                      placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
-                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#f97316' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      placeholder="Joker"
+                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#e5e7eb' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
                       onFocus={() => setSelectedId(j.id)}
                     />
                   </div>
@@ -1398,10 +1449,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           }}>
             <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '8px', fontWeight: '700' }}>
-              AJOUTER UN JOUEUR — {equipeActive === 'A' ? `🟢 ${t('tac_equipe_a', lang)}` : `🟠 ${t('tac_equipe_b', lang)}`}
+              AJOUTER UN JOUEUR — {EQUIPES_CONFIG[equipeActive].emoji} {t(EQUIPES_CONFIG[equipeActive].label, lang)}
             </div>
 
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
               <input
                 value={pickerNumero} onChange={e => setPickerNumero(e.target.value)}
                 placeholder="N°" style={{ width: '44px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px', fontSize: '12px', textAlign: 'center' }}
@@ -1413,8 +1464,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               />
             </div>
             <button onClick={() => ajouterJoueurIndividuel()}
-              style={{ display: 'block', width: '100%', padding: '6px', marginBottom: '8px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+              style={{ display: 'block', width: '100%', padding: '6px', marginBottom: '10px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
               + Ajouter ce joueur
+            </button>
+
+            {/* Ajout rapide par nombre — pose n joueurs numérotés à la suite en une fois */}
+            <div style={{ borderTop: '1px solid #222', margin: '4px 0 8px' }} />
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' }}>
+              <input
+                type="number" min="1" value={pickerNbJoueurs} onChange={e => setPickerNbJoueurs(e.target.value)}
+                style={{ width: '44px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px', fontSize: '12px', textAlign: 'center' }}
+              />
+              <button onClick={ajouterJoueursMultiples}
+                style={{ flex: 1, padding: '6px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+                + Ajouter en série
+              </button>
+            </div>
+            <button onClick={ajouterJoker}
+              style={{ display: 'block', width: '100%', padding: '6px', marginBottom: '8px', background: '#ffffff12', border: '1px dashed #ffffff50', color: '#e5e7eb', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+              ★ + Joker
             </button>
 
             {joueursEquipe.length > 0 && (

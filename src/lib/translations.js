@@ -704,6 +704,8 @@ export const T = {
   tac_dispositif:           { fr: 'Dispositif',      en: 'Formation',        pt: 'Dispositivo',     es: 'Dispositivo',     it: 'Disposizione',    de: 'Formation'        },
   tac_equipe_a:             { fr: 'Équipe A',        en: 'Team A',           pt: 'Equipa A',        es: 'Equipo A',        it: 'Squadra A',       de: 'Team A'           },
   tac_equipe_b:             { fr: 'Équipe B',        en: 'Team B',           pt: 'Equipa B',        es: 'Equipo B',        it: 'Squadra B',       de: 'Team B'           },
+  tac_equipe_c:             { fr: 'Équipe C',        en: 'Team C',           pt: 'Equipa C',        es: 'Equipo C',        it: 'Squadra C',       de: 'Team C'           },
+  tac_equipe_d:             { fr: 'Équipe D',        en: 'Team D',           pt: 'Equipa D',        es: 'Equipo D',        it: 'Squadra D',       de: 'Team D'           },
   tac_tout_effacer:         { fr: 'Tout effacer',    en: 'Clear all',        pt: 'Limpar tudo',     es: 'Borrar todo',     it: 'Cancella tutto',  de: 'Alles löschen'    },
   tac_export_png:           { fr: 'Export PNG',      en: 'Export PNG',       pt: 'Exportar PNG',    es: 'Exportar PNG',    it: 'Esporta PNG',     de: 'PNG exportieren'  },
   tac_etape:                { fr: 'Étape',           en: 'Step',             pt: 'Etapa',           es: 'Etapa',           it: 'Fase',            de: 'Schritt'          },
