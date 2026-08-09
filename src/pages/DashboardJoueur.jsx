@@ -2402,20 +2402,21 @@ function DashboardJoueur() {
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+          <div style={{ padding: isMobile ? '16px' : '24px 40px' }}>
 
-            {/* HERO CARD */}
-            <div style={{ background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+            {/* HERO CARD — pleine largeur */}
+            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar person={profil} size={80} border="2.5px solid #4ade80" />
+                <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
                 <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
               </div>
-              <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
+                  <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
                   <span style={{ background: isPro ? '#4ade80' : '#3b82f6', color: '#000', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
                     {profil?.plan}
                   </span>
@@ -2428,56 +2429,23 @@ function DashboardJoueur() {
                 <p style={{ color: '#555', fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
                 </p>
-                <div style={{ display: 'flex', gap: isMobile ? '16px' : '28px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
                   {[
                     { val: profil?.analyses_restantes ?? '—', label: t('jd_analyses_stat', lang) },
                     { val: demandes.length, label: t('jd_demandes_stat', lang) },
                     { val: profil?.categorie || '—', label: t('equipe_categorie', lang) },
                   ].map((s, i, arr) => (
-                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '28px' }}>
+                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '32px' }}>
                       <div>
-                        <p style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
-                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '3px' }}>{s.label}</p>
+                        <p style={{ fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
+                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '4px' }}>{s.label}</p>
                       </div>
-                      {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', background: '#1f1f1f' }} />}
+                      {i < arr.length - 1 && <div style={{ width: '1px', height: '36px', background: '#1f1f1f' }} />}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
-            {/* TEASER MON ÉQUIPE */}
-            {(() => {
-              const aff = mesAffiliations.find(a => a.statut === 'accepte')
-              const pending = !aff && mesAffiliations.find(a => a.statut === 'en_attente')
-              if (aff) {
-                const pe = aff.profil_educateur
-                return (
-                  <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: '#fff' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
-                      {pe?.prenom?.[0]}{pe?.nom?.[0]}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#86efac' }}>{t('jeq_titre', lang)}</p>
-                    </div>
-                    <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
-                  </button>
-                )
-              }
-              if (pending) {
-                return (
-                  <div style={{ background: '#1f150a', border: '1px solid #f9731630', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#f97316', fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
-                  </div>
-                )
-              }
-              return (
-                <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
-                  🔑 Rejoins ton équipe avec le code fourni par ton éducateur
-                </button>
-              )
-            })()}
 
             {/* PLANNING DE LA SEMAINE (si affilié à un éducateur) */}
             {mesAffiliations.some(a => a.statut === 'accepte') && (
@@ -2584,186 +2552,231 @@ function DashboardJoueur() {
               )
             })()}
 
-            {/* QUOTA ANALYSES */}
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                <div>
-                  <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>{t('jd_quota_titre', lang)}</p>
-                  <p style={{ fontSize: '11px', color: '#444' }}>{t('jd_quota_reset', lang)}</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
-                    {profil?.analyses_restantes ?? 0}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {(profil?.analyses_restantes || 0) > 0 ? (
-                  <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
-                    {t('jd_envoyer_video', lang)}
+            {/* Grille 2 colonnes desktop (1fr / 340px) — 1 colonne pleine largeur sur mobile */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '20px', alignItems: 'start' }}>
+
+              {/* ── Colonne gauche ── */}
+              <div style={{ minWidth: 0 }}>
+
+                {/* ACTION CARDS */}
+                <div style={{ display: 'grid', gridTemplateColumns: isPro ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+                  <button className="dj-action-card" onClick={() => navigate('/jogabonito')}
+                    style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#f97316' }}>
+                      <IconPlay />
+                    </div>
+                    <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Jogabonito</p>
+                    <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Feed vertical · Reels des talents</p>
                   </button>
-                ) : (
-                  <p style={{ fontSize: '12px', color: '#444', margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
+
+                  {isPro && (
+                    <button className="dj-action-card" onClick={() => navigate('/feed')}
+                      style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#4ade80' }}>
+                        <IconGlobe />
+                      </div>
+                      <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Feed</p>
+                      <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Talents · Visible recruteurs</p>
+                    </button>
+                  )}
+
+                  <button id="upload-section" className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
+                    style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#60a5fa' }}>
+                      <IconUpload />
+                    </div>
+                    <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Publier</p>
+                    <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{isPro ? 'Clip Feed · Visible agents & clubs' : 'Reel Jogabonito · MP4 · TikTok'}</p>
+                  </button>
+                </div>
+
+                {/* TEASER MON ÉQUIPE */}
+                {(() => {
+                  const aff = mesAffiliations.find(a => a.statut === 'accepte')
+                  const pending = !aff && mesAffiliations.find(a => a.statut === 'en_attente')
+                  if (aff) {
+                    const pe = aff.profil_educateur
+                    return (
+                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: '#fff' }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
+                          {pe?.prenom?.[0]}{pe?.nom?.[0]}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#86efac' }}>{t('jeq_titre', lang)}</p>
+                        </div>
+                        <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
+                      </button>
+                    )
+                  }
+                  if (pending) {
+                    return (
+                      <div style={{ background: '#1f150a', border: '1px solid #f9731630', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#f97316', fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
+                      </div>
+                    )
+                  }
+                  return (
+                    <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                      🔑 Rejoins ton équipe avec le code fourni par ton éducateur
+                    </button>
+                  )
+                })()}
+
+                {/* MESSAGES PREVIEW */}
+                {conversations.length > 0 && (
+                  <div style={{ background: '#111', border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{t('jd_messages_rec', lang)}</p>
+                      <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
+                    </div>
+                    {conversations.slice(0, 2).map(conv => (
+                      <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
+                        <Avatar person={conv.other} size={32} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                          <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {t('aff_acheter_analyse_cta', lang)}
-                </button>
-              </div>
-            </div>
 
-            {/* ACTION CARDS */}
-            <div style={{ display: 'grid', gridTemplateColumns: isPro ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
-              <button className="dj-action-card" onClick={() => navigate('/jogabonito')}
-                style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#f97316' }}>
-                  <IconPlay />
-                </div>
-                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Jogabonito</p>
-                <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Feed vertical · Reels des talents</p>
-              </button>
-
-              {isPro && (
-                <button className="dj-action-card" onClick={() => navigate('/feed')}
-                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#4ade80' }}>
-                    <IconGlobe />
-                  </div>
-                  <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Feed</p>
-                  <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Talents · Visible recruteurs</p>
-                </button>
-              )}
-
-              <button id="upload-section" className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
-                style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#60a5fa' }}>
-                  <IconUpload />
-                </div>
-                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Publier</p>
-                <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{isPro ? 'Clip Feed · Visible agents & clubs' : 'Reel Jogabonito · MP4 · TikTok'}</p>
-              </button>
-            </div>
-
-            {/* VIDÉO */}
-            {profil?.clip_url ? (
-              <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_partagee', lang)}</p>
-                    <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? t('jvid_feed_visible', lang) : 'Jogabonito uniquement'}</p>
-                  </div>
-                  <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade80', color: '#000', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
-                    {t('jvid_voir', lang)}
-                  </a>
-                  <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                  <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
-                  </button>
-                </div>
-              </div>
-            ) : reelJogabonito ? (
-              <div style={{ background: '#111', border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_jogabonito', lang)}</p>
-                    <p style={{ fontSize: '11px', color: '#444' }}>{t('jvid_visible_joga', lang)}</p>
-                  </div>
-                  <span style={{ background: '#f9731615', color: '#f97316', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f97316', color: '#fff', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
-                    {t('jvid_voir', lang)}
-                  </a>
-                  <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                  <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
-                <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
-                <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
-                <p style={{ fontSize: '12px', color: '#333', marginBottom: '20px', lineHeight: 1.6 }}>
-                  {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
-                </p>
-                <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
-                </button>
-              </div>
-            )}
-
-            {/* MESSAGES PREVIEW */}
-            {conversations.length > 0 && (
-              <div style={{ background: '#111', border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{t('jd_messages_rec', lang)}</p>
-                  <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
-                </div>
-                {conversations.slice(0, 2).map(conv => (
-                  <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
-                    <Avatar person={conv.other} size={32} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
+                {convCoach.length > 0 && (
+                  <div style={{ background: '#111', border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>{t('jd_reponses_coach', lang)}</p>
+                      <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                    {convCoach.slice(0, 1).map(conv => (
+                      <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
+                        <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
+                          <p style={{ fontSize: '11px', color: '#f97316' }}>{t('jnav_coach', lang)}</p>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
 
-            {convCoach.length > 0 && (
-              <div style={{ background: '#111', border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>{t('jd_reponses_coach', lang)}</p>
-                  <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
-                </div>
-                {convCoach.slice(0, 1).map(conv => (
-                  <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
-                    <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#f97316' }}>{t('jnav_coach', lang)}</p>
+              {/* ── Colonne droite ── */}
+              <div style={{ minWidth: 0 }}>
+
+                {/* QUOTA ANALYSES */}
+                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                    <div>
+                      <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>{t('jd_quota_titre', lang)}</p>
+                      <p style={{ fontSize: '11px', color: '#444' }}>{t('jd_quota_reset', lang)}</p>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
+                        {profil?.analyses_restantes ?? 0}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {(profil?.analyses_restantes || 0) > 0 ? (
+                      <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
+                        {t('jd_envoyer_video', lang)} →
+                      </button>
+                    ) : (
+                      <p style={{ fontSize: '12px', color: '#444', margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
+                    )}
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {t('aff_acheter_analyse_cta', lang)}
+                    </button>
+                  </div>
+                </div>
 
-            {/* UPSELL PRO */}
-            {!isPro && (
-              <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
-                  <p style={{ fontSize: '12px', color: '#555' }}>{t('jd_upsell_desc', lang)}</p>
-                </div>
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                  {t('jd_plan_pro_cta', lang)}
-                </button>
-              </div>
-            )}
+                {/* VIDÉO */}
+                {profil?.clip_url ? (
+                  <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_partagee', lang)}</p>
+                        <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? t('jvid_feed_visible', lang) : 'Jogabonito uniquement'}</p>
+                      </div>
+                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade80', color: '#000', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                        {t('jvid_voir', lang)}
+                      </a>
+                      <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
+                      </button>
+                    </div>
+                  </div>
+                ) : reelJogabonito ? (
+                  <div style={{ background: '#111', border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_jogabonito', lang)}</p>
+                        <p style={{ fontSize: '11px', color: '#444' }}>{t('jvid_visible_joga', lang)}</p>
+                      </div>
+                      <span style={{ background: '#f9731615', color: '#f97316', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f97316', color: '#fff', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                        {t('jvid_voir', lang)}
+                      </a>
+                      <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
+                    <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
+                    <p style={{ fontSize: '12px', color: '#333', marginBottom: '20px', lineHeight: 1.6 }}>
+                      {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
+                    </p>
+                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
+                    </button>
+                  </div>
+                )}
 
-            {/* ABONNEMENT */}
-            <div style={{ background: '#111', border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
-              {cancelDone ? (
-                <div>
-                  <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>{t('jd_resiliation_prog', lang)}</p>
-                  <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_resiliation_desc', lang)}</p>
+                {/* UPSELL PRO */}
+                {!isPro && (
+                  <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div>
+                      <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
+                      <p style={{ fontSize: '12px', color: '#555' }}>{t('jd_upsell_desc', lang)}</p>
+                    </div>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                      {t('jd_plan_pro_cta', lang)}
+                    </button>
+                  </div>
+                )}
+
+                {/* ABONNEMENT */}
+                <div style={{ background: '#111', border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
+                  {cancelDone ? (
+                    <div>
+                      <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>{t('jd_resiliation_prog', lang)}</p>
+                      <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_resiliation_desc', lang)}</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+                      <p style={{ fontSize: '12px', color: '#444' }}>
+                        {t('jd_plan_actif', lang)} <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
+                      </p>
+                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? '#444' : '#ef4444', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                        {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                  <p style={{ fontSize: '12px', color: '#444' }}>
-                    {t('jd_plan_actif', lang)} <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
-                  </p>
-                  <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? '#444' : '#ef4444', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
-                    {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
