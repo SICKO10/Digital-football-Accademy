@@ -132,6 +132,13 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     // via Mapbox si la ville du match a été renseignée (cf. lib/mapbox.js) — sinon
     // heure_depart reste null, comme avant.
     const { data: clubProfile } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
+    // Effectif réel par éducateur (roster equipe_joueurs) + 2 pour le staff
+    // (éducateur + au moins un dirigeant) — sinon la répartition auto des
+    // mini-bus considère 0 personne et propose systématiquement le plus petit
+    // bus. Reste modifiable au cas par cas dans le formulaire.
+    const { data: rosterRows } = await supabase.from('equipe_joueurs').select('educateur_id').in('educateur_id', educateurIds)
+    const effectifParEducateur = {}
+    ;(rosterRows || []).forEach(r => { effectifParEducateur[r.educateur_id] = (effectifParEducateur[r.educateur_id] || 0) + 1 })
     const payload = await Promise.all(aCreer.map(async m => {
       const cat = equipesOptions.find(c => c.educateur_id === m.educateur_id)
       const horaires = (clubProfile?.ville && m.ville && m.heure)
@@ -149,6 +156,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         lieu_destination: m.lieu || m.adversaire || 'Extérieur',
         ville_destination: m.ville || null,
         nature: 'match',
+        nb_personnes: effectifParEducateur[m.educateur_id] ? effectifParEducateur[m.educateur_id] + 2 : null,
         created_by: user?.id || null,
       }
     }))
@@ -308,6 +316,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     }
     const { data: matchsExt } = await supabase.from('matchs_equipe').select('*')
       .in('educateur_id', educateurIdsClub).eq('domicile', false)
+    // Effectif réel par éducateur (roster equipe_joueurs) + 2 pour le staff
+    // (éducateur + au moins un dirigeant) — pour ne pas laisser nb_personnes
+    // vide sur ces déplacements historiques, ce qui ferait proposer
+    // systématiquement le plus petit bus lors de la répartition. Ne touche
+    // jamais un nb_personnes déjà saisi à la main.
+    const { data: rosterRows } = await supabase.from('equipe_joueurs').select('educateur_id').in('educateur_id', educateurIdsClub)
+    const effectifParEducateur = {}
+    ;(rosterRows || []).forEach(r => { effectifParEducateur[r.educateur_id] = (effectifParEducateur[r.educateur_id] || 0) + 1 })
     const normalise = (s) => (s || '').trim().toLowerCase()
     const trouverMatch = (d) => {
       const memeJour = (matchsExt || []).filter(x => x.date === d.date_depart)
@@ -322,7 +338,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       if (!m.heure) { diagnostics.set(d.id, "Le match correspondant n'a pas d'heure de coup d'envoi renseignée dans le calendrier."); continue }
       const resultat = await estimerDeplacement(clubVille, m.ville, m.heure)
       if (!resultat) { diagnostics.set(d.id, await diagnostiquerEchecTrajet(clubVille, m.ville)); continue }
-      updates.push({ id: d.id, educateur_id: d.educateur_id || m.educateur_id || null, ville_destination: m.ville, heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee, distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min })
+      const eduId = d.educateur_id || m.educateur_id || null
+      const effectif = eduId && effectifParEducateur[eduId] ? effectifParEducateur[eduId] + 2 : null
+      updates.push({
+        id: d.id, educateur_id: eduId, ville_destination: m.ville,
+        heure_depart: resultat.heure_depart, heure_retour_estimee: resultat.heure_retour_estimee,
+        distance_km: resultat.distance_km, duree_trajet_min: resultat.duree_trajet_min,
+        ...(d.nb_personnes == null && effectif != null ? { nb_personnes: effectif } : {}),
+      })
     }
     if (updates.length === 0) return { liste, diagnostics }
     await Promise.all(updates.map(({ id, ...champs }) => supabase.from('deplacements').update(champs).eq('id', id)))
