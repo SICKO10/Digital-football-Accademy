@@ -145,13 +145,19 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
     setProfil(prev => ({ ...prev, ...profilForm }))
     setSaving(true)
     setSaved(true)
-    setTimeout(() => { setSaved(false); setEditProfil(false) }, 1500)
     const { error } = await supabase.from('profiles').update(profilForm).eq('id', userId)
     setSaving(false)
     if (error) {
+      // Le timer de fermeture ne démarre qu'une fois l'écriture confirmée
+      // (ci-dessous) — sur erreur on annule le check "sauvegardé" tout de
+      // suite au lieu de laisser le formulaire se refermer 1,5s plus tard
+      // sur une sauvegarde qui a en fait échoué.
+      setSaved(false)
       setProfil(avant)
       alert('Erreur lors de la sauvegarde : ' + error.message)
+      return
     }
+    setTimeout(() => { setSaved(false); setEditProfil(false) }, 1500)
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']

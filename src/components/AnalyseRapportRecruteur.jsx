@@ -284,11 +284,10 @@ Instructions:
   }
 
   const sauvegarderRapport = async () => {
-    // Optimistic : confirmation affichée tout de suite, l'écriture continue
-    // en arrière-plan. Rien à restaurer en cas d'échec (aucun champ n'est
-    // réinitialisé ici) — juste une alerte d'erreur distincte si besoin.
+    // Pas d'alerte de succès avant confirmation : un "Rapport sauvegardé !"
+    // suivi juste après d'une alerte d'erreur contradictoire serait plus
+    // trompeur qu'utile pour une action ponctuelle comme celle-ci.
     setSavingRapport(true)
-    alert('Rapport sauvegardé !')
     const { error } = await supabase.from('rapports_scouting').insert({
       recruteur_id: userId,
       prenom_joueur: `${playerInfo.prenom} ${playerInfo.nom}`.trim(),
@@ -305,6 +304,7 @@ Instructions:
       alert('Erreur lors de la sauvegarde : ' + error.message)
       return
     }
+    alert('Rapport sauvegardé !')
     await chargerRapports()
   }
 

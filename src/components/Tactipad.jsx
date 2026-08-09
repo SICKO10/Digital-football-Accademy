@@ -943,10 +943,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       : await supabase.from('tactipads').insert(payload)
     setSavingSchema(false)
     if (error) {
-      if (error.code === '42P01') { setTableMissing(true); return }
-      alert('Erreur lors de la sauvegarde : ' + error.message)
       setNomSchema(nomSnapshot)
       setCurrentSchemaId(idEnEdition)
+      if (error.code === '42P01') { setTableMissing(true); return }
+      alert('Erreur lors de la sauvegarde : ' + error.message)
       return
     }
     await chargerSchemas()
