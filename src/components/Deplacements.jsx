@@ -16,6 +16,7 @@ const formVide = () => ({
   lieu_destination: '', ville_destination: '', nature: 'match', vehicule: '', conducteur: '',
   km_avant: '', gasoil_avant: '',
   distance_km: null, duree_trajet_min: null,
+  heure_coup_envoi: '', // transitoire, sert uniquement au calcul auto ci-dessous — jamais persisté
 })
 
 const st = {
@@ -335,19 +336,31 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   )
 
   // Estime la distance/durée du trajet vers la ville saisie, déclenché à la
-  // sortie du champ (onBlur) plutôt qu'à chaque frappe. Un champ "Ville de
+  // sortie des champs (onBlur) plutôt qu'à chaque frappe. Un champ "Ville de
   // destination" dédié — distinct de "lieu_destination" qui contient souvent
   // le nom de l'adversaire/du stade (ex: "USCA FOOTBALL 2"), pas une ville
-  // géocodable. Purement informatif ici — n'écrase pas heure_depart, qui n'a
-  // pas d'heure de coup d'envoi de référence dans ce formulaire générique
-  // (utilisé aussi pour tournois/stages, cf. estimerEtAppliquerHoraires dans
-  // DashboardEducateur.jsx pour l'estimation automatique liée à un match).
-  const estimerDistanceDestination = async () => {
+  // géocodable. Pour un match, si l'heure de coup d'envoi est aussi connue
+  // (form.heure_coup_envoi, champ transitoire non persisté), calcule aussi
+  // heure_depart/heure_retour_estimee (1h30/2h30 + trajet, cf. lib/mapbox.js)
+  // — même règle que estimerEtAppliquerHoraires dans DashboardEducateur.jsx,
+  // ici pour compléter à la main un déplacement qui ne l'a pas eu automatique-
+  // ment (ex: ville non renseignée au moment de l'ajout du match). Les champs
+  // restent ensuite modifiables à la main si besoin.
+  const estimerTrajetEtHoraires = async () => {
     if (!clubVille || !form.ville_destination.trim() || estimationEnCours) return
     setEstimationEnCours(true)
-    const trajet = await calculerTrajet(clubVille, form.ville_destination.trim())
+    const resultat = (form.nature === 'match' && form.heure_coup_envoi)
+      ? await estimerDeplacement(clubVille, form.ville_destination.trim(), form.heure_coup_envoi)
+      : await calculerTrajet(clubVille, form.ville_destination.trim())
     setEstimationEnCours(false)
-    if (trajet) setForm(f => ({ ...f, distance_km: trajet.distance_km, duree_trajet_min: trajet.duree_trajet_min }))
+    if (!resultat) return
+    setForm(f => ({
+      ...f,
+      distance_km: resultat.distance_km,
+      duree_trajet_min: resultat.duree_trajet_min,
+      heure_depart: resultat.heure_depart || f.heure_depart,
+      heure_retour_estimee: resultat.heure_retour_estimee || f.heure_retour_estimee,
+    }))
   }
 
   // Crée un nouveau déplacement, ou met à jour deplacementEnEdition si défini
@@ -419,18 +432,20 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     await charger()
   }
 
-  const ouvrirEditionDeplacement = (dep, { focusHeureDepart = false } = {}) => {
+  const ouvrirEditionDeplacement = (dep, { focusHeureDepart = false, focusHeureCoupEnvoi = false } = {}) => {
     setForm({
       equipe: dep.equipe || '', educateur_responsable: dep.educateur_responsable || '', date_depart: dep.date_depart || '',
       heure_depart: dep.heure_depart || '', heure_retour_estimee: dep.heure_retour_estimee || '', nb_personnes: dep.nb_personnes ?? '',
       lieu_destination: dep.lieu_destination || '', ville_destination: dep.ville_destination || '', nature: dep.nature || 'match', vehicule: dep.vehicule || '', conducteur: dep.conducteur || '',
       km_avant: dep.km_avant ?? '', gasoil_avant: dep.gasoil_avant || '',
       distance_km: dep.distance_km ?? null, duree_trajet_min: dep.duree_trajet_min ?? null,
+      heure_coup_envoi: '',
     })
     setDeplacementEnEdition(dep.id)
     setShowForm(true)
     // Le formulaire vient de se monter : laisse React peindre avant de focus.
-    if (focusHeureDepart) setTimeout(() => document.getElementById('input-heure-depart')?.focus(), 100)
+    if (focusHeureCoupEnvoi) setTimeout(() => document.getElementById('input-heure-coup-envoi')?.focus(), 100)
+    else if (focusHeureDepart) setTimeout(() => document.getElementById('input-heure-depart')?.focus(), 100)
   }
 
   const supprimerDeplacement = async (dep) => {
@@ -541,7 +556,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color, marginTop: '4px' }}>
                 <span>• {alerte.msg}</span>
                 {!readOnly && (
-                  <button onClick={() => ouvrirEditionDeplacement(alerte.dep, { focusHeureDepart: true })}
+                  <button onClick={() => ouvrirEditionDeplacement(alerte.dep, alerte.dep.nature === 'match' ? { focusHeureCoupEnvoi: true } : { focusHeureDepart: true })}
                     style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${border}`, color, padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     ✏️ Compléter
                   </button>
@@ -602,7 +617,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               <label style={st.label}>Ville de destination (pour calcul trajet)</label>
               <input style={st.input} value={form.ville_destination}
                 onChange={e => setForm(f => ({ ...f, ville_destination: e.target.value, distance_km: null, duree_trajet_min: null }))}
-                onBlur={estimerDistanceDestination}
+                onBlur={estimerTrajetEtHoraires}
                 placeholder="Ex: Nice, Marseille, Lyon..." />
               {estimationEnCours && <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>🗺️ Estimation du trajet...</p>}
               {!estimationEnCours && form.distance_km != null && (
@@ -612,6 +627,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                 </p>
               )}
             </div>
+            {form.nature === 'match' && (
+              <div>
+                <label style={st.label}>Heure de coup d'envoi (pour calcul auto départ/retour)</label>
+                <input id="input-heure-coup-envoi" style={st.input} type="time" value={form.heure_coup_envoi}
+                  onChange={e => setForm(f => ({ ...f, heure_coup_envoi: e.target.value }))}
+                  onBlur={estimerTrajetEtHoraires} />
+                <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>
+                  Avec la ville de destination ci-dessus, calcule automatiquement l'heure de départ (1h30 + trajet avant) et de retour estimée (2h30 + trajet après).
+                </p>
+              </div>
+            )}
             <div>
               <label style={st.label}>Nature</label>
               <select style={st.input} value={form.nature} onChange={e => setForm(f => ({ ...f, nature: e.target.value }))}>
