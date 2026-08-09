@@ -138,11 +138,20 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
   const [saved, setSaved] = useState(false)
 
   const sauvegarder = async () => {
-    setSaving(true)
-    await supabase.from('profiles').update(profilForm).eq('id', userId)
+    // Optimistic : profil local mis à jour et confirmation affichée tout de
+    // suite, sans attendre la réponse Supabase. Erreur → on revient à
+    // l'ancien profil (aucune vérification d'erreur n'existait avant).
+    const avant = profil
     setProfil(prev => ({ ...prev, ...profilForm }))
-    setSaving(false); setSaved(true)
+    setSaving(true)
+    setSaved(true)
     setTimeout(() => { setSaved(false); setEditProfil(false) }, 1500)
+    const { error } = await supabase.from('profiles').update(profilForm).eq('id', userId)
+    setSaving(false)
+    if (error) {
+      setProfil(avant)
+      alert('Erreur lors de la sauvegarde : ' + error.message)
+    }
   }
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
@@ -545,10 +554,18 @@ function DashboardJoueur() {
   }
 
   const sauvegarderNotifPrefs = async (newPrefs) => {
-    setSavingPrefs(true)
-    await supabase.from('notification_preferences').upsert({ user_id: userId, ...newPrefs }, { onConflict: 'user_id' })
+    // Optimistic : préférences locales mises à jour tout de suite, sans
+    // attendre la réponse Supabase. Erreur → on revient aux anciennes
+    // préférences (aucune vérification d'erreur n'existait avant).
+    const avant = notifPrefs
     setNotifPrefs(newPrefs)
+    setSavingPrefs(true)
+    const { error } = await supabase.from('notification_preferences').upsert({ user_id: userId, ...newPrefs }, { onConflict: 'user_id' })
     setSavingPrefs(false)
+    if (error) {
+      setNotifPrefs(avant)
+      alert('Erreur lors de la sauvegarde : ' + error.message)
+    }
   }
 
   const chargerAffiliations = async (uid) => {
@@ -631,6 +648,12 @@ function DashboardJoueur() {
 
   const repondreDisponibilite = async (eventId, eventType, statut) => {
     if (!eventId || !userId) return
+    // Déjà optimiste (dispoMap/widgets mis à jour avant l'écriture) — il
+    // manquait juste la gestion d'erreur pour revenir en arrière si l'upsert
+    // échoue, maintenant que l'UI ne dépend plus du retour serveur.
+    const avantDispo = dispoMap[eventId]
+    const avantEnt = widgetDispoEnt
+    const avantMatch = widgetDispoMatch
     setSavingDispo(true)
     setDispoMap(prev => ({ ...prev, [eventId]: statut }))
     if (eventType === 'entrainement' && widgetProchainEnt?.id === eventId) setWidgetDispoEnt(statut)
@@ -640,8 +663,14 @@ function DashboardJoueur() {
       statut,
       ...(eventType === 'entrainement' ? { seance_id: eventId } : { match_id: eventId }),
     }
-    await supabase.from('disponibilites').upsert(payload, { onConflict: eventType === 'entrainement' ? 'joueur_id,seance_id' : 'joueur_id,match_id' })
+    const { error } = await supabase.from('disponibilites').upsert(payload, { onConflict: eventType === 'entrainement' ? 'joueur_id,seance_id' : 'joueur_id,match_id' })
     setSavingDispo(false)
+    if (error) {
+      setDispoMap(prev => ({ ...prev, [eventId]: avantDispo }))
+      if (eventType === 'entrainement' && widgetProchainEnt?.id === eventId) setWidgetDispoEnt(avantEnt)
+      if (eventType === 'match' && widgetProchainMatch?.id === eventId) setWidgetDispoMatch(avantMatch)
+      alert('Erreur lors de l\'envoi de ta disponibilité : ' + error.message)
+    }
   }
 
   const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
@@ -809,13 +838,19 @@ function DashboardJoueur() {
 
   const soumettreNoteEdu = async () => {
     if (!eduNote) return
-    setSavingNoteEdu(true)
     const allKeys = CRITERES_EDU_KEYS.flatMap(c => c.criteres.map(cr => cr.key))
     const allFilled = allKeys.every(k => noteCriteres[k])
-    if (!allFilled) { setSavingNoteEdu(false); return }
+    if (!allFilled) return
     const moyGlobale = allKeys.reduce((s, k) => s + (noteCriteres[k] || 0), 0) / allKeys.length
-    await supabase.from('notes_educateur').upsert({
-      educateur_id: eduNote.educateur_id,
+    // Optimistic : la modale se ferme et la confirmation s'affiche tout de
+    // suite, sans attendre la réponse Supabase. Erreur → réouverte.
+    const eduNoteSnapshot = eduNote
+    setSavingNoteEdu(true)
+    setNoteSaved(true)
+    setEduNote(null)
+    setTimeout(() => setNoteSaved(false), 3000)
+    const { error } = await supabase.from('notes_educateur').upsert({
+      educateur_id: eduNoteSnapshot.educateur_id,
       auteur_id: userId,
       auteur_type: 'joueur',
       saison: noteSaison,
@@ -824,10 +859,12 @@ function DashboardJoueur() {
       commentaire: noteCommentaire,
       visible_public: notePublic,
     }, { onConflict: 'educateur_id,auteur_id,saison' })
-    setNoteSaved(true)
-    setEduNote(null)
-    setTimeout(() => setNoteSaved(false), 3000)
     setSavingNoteEdu(false)
+    if (error) {
+      setNoteSaved(false)
+      setEduNote(eduNoteSnapshot)
+      alert('Erreur lors de l\'envoi de la note : ' + error.message)
+    }
   }
 
   const chargerConversations = async (uid) => {
@@ -997,12 +1034,18 @@ function DashboardJoueur() {
   }
 
   const handleSaveStats = async () => {
-    setSavingStats(true)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('profiles').update({ ...stats, points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', '), style_de_jeu: styleDeJeu }).eq('id', user.id)
-    setSavingStats(false)
+    // Optimistic : confirmation affichée tout de suite (une fois l'utilisateur
+    // résolu, nécessaire pour l'écriture) sans attendre la réponse Supabase.
+    setSavingStats(true)
     setStatsSaved(true)
     setTimeout(() => setStatsSaved(false), 3000)
+    const { error } = await supabase.from('profiles').update({ ...stats, points_forts: pointsForts.join(', '), a_ameliorer: aAmeliorer.join(', '), style_de_jeu: styleDeJeu }).eq('id', user.id)
+    setSavingStats(false)
+    if (error) {
+      setStatsSaved(false)
+      alert('Erreur lors de la sauvegarde : ' + error.message)
+    }
   }
 
   const caracteristiquesParPoste = {
@@ -1072,13 +1115,16 @@ function DashboardJoueur() {
       const { error: insertError } = await supabase.from('parcours').insert({ ...nouveauClub, joueur_id: userId })
       if (insertError) { alert('Erreur ajout parcours : ' + insertError.message); setSavingParcours(false); return }
     }
-    const { data, error: fetchError } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
-    if (fetchError) console.error('Erreur chargement parcours :', fetchError.message)
-    setParcours(data || [])
+    // Optimistic à partir d'ici : l'écriture elle-même est déjà confirmée
+    // (erreur gérée ci-dessus), donc le formulaire se réinitialise tout de
+    // suite sans attendre le rechargement complet de la liste qui suit.
     setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
     setClubSuggestions([])
     setShowSuggestions(false)
     setSavingParcours(false)
+    const { data, error: fetchError } = await supabase.from('parcours').select('*').eq('joueur_id', userId).order('saison', { ascending: false })
+    if (fetchError) console.error('Erreur chargement parcours :', fetchError.message)
+    setParcours(data || [])
   }
 
   const modifierClub = (p) => {
