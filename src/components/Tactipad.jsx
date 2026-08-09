@@ -380,7 +380,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [mousePos, setMousePos] = useState(null)
 
   // ── Ajout d'un joueur individuel (par opposition au dispositif complet de
-  // 11 posé par ajouterEquipe/appliquerDispositif) ─────────────────────────
+  // 11 posé par appliquerDispositif) ────────────────────────────────────────
   const [joueursEquipe, setJoueursEquipe] = useState([])
   const [showPickerJoueur, setShowPickerJoueur] = useState(false)
   const [pickerScreenPos, setPickerScreenPos] = useState({ x: 0, y: 0 }) // position écran (fixed) du popup
@@ -548,17 +548,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSelectedId(null)
   }
 
-  const ajouterEquipe = (equipe) => {
-    if (elements.some(e => e.type === 'joueur' && e.equipe === equipe)) return
-    const baseX = equipe === 'A' ? width * 0.28 : width * 0.72
-    const joueurs = []
-    for (let i = 1; i <= 10; i++) {
-      joueurs.push({ id: uid(), type: 'joueur', equipe, gardien: false, numero: i + 1, nom: '', x: baseX + (equipe === 'A' ? -1 : 1) * (i % 2) * 40, y: (height / 11) * i })
-    }
-    joueurs.push({ id: uid(), type: 'joueur', equipe, gardien: true, numero: 1, nom: '', x: equipe === 'A' ? width * 0.05 : width * 0.95, y: height / 2 })
-    applyElements([...elements, ...joueurs])
-  }
-
   const appliquerDispositif = (cle) => {
     if (!cle || !DISPOSITIFS[cle]) return
     const nouveauxJoueurs = DISPOSITIFS[cle].map(p => {
@@ -601,8 +590,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     updateElement({ ...el, numero: numero.trim(), nom: (nom || '').trim() })
   }
 
-  // Pose un seul joueur (par opposition à ajouterEquipe/appliquerDispositif qui
-  // posent les 11) — depuis le picker ouvert par l'outil 👤. joueurRef pointe
+  // Pose un seul joueur (par opposition à appliquerDispositif qui pose les 11
+  // d'un coup) — depuis le picker ouvert par l'outil 👤. joueurRef pointe
   // vers un joueur réel de l'effectif (id/prenom/nom/numero_maillot) si choisi
   // depuis la liste, sinon numero/nom viennent des champs libres du picker.
   const ajouterJoueurIndividuel = (joueurRef = null) => {
@@ -1113,8 +1102,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             <option value="5-4-1">5-4-1</option>
           </optgroup>
         </select>
-        {/* C/D : juste une sélection d'équipe active, pas de remplissage auto à 11 —
-            pensées pour des petits groupes (ateliers, rondos), pas une opposition complète.
+        {/* Les 4 équipes se comportent pareil : le clic ne fait que sélectionner
+            l'équipe active, aucun joueur n'apparaît tout seul — il faut soit les
+            poser un par un/en série (outil 👤), soit choisir un dispositif dans
+            le menu ci-dessus pour poser les 11 d'un coup.
             Clic droit : ouvre la palette de couleur de l'équipe (clic gauche = sélection). */}
         {Object.keys(EQUIPES_CONFIG).map(eq => {
           const couleur = equipesCouleurs[eq]
@@ -1122,7 +1113,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           return (
             <div key={eq} style={{ position: 'relative' }}>
               <button
-                onClick={() => { setEquipeActive(eq); if (eq === 'A' || eq === 'B') ajouterEquipe(eq) }}
+                onClick={() => setEquipeActive(eq)}
                 onContextMenu={e => { e.preventDefault(); setColorPickerOpen(colorPickerOpen === eq ? null : eq) }}
                 style={{
                   padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
