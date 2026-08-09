@@ -832,7 +832,6 @@ export default function DashboardClub() {
 
   const sauvegarderEvenement = async () => {
     if (!evenementForm.titre.trim() || !evenementForm.date) return
-    setSavingEvenement(true)
     const payload = {
       club_id: clubId,
       titre: evenementForm.titre.trim(),
@@ -843,13 +842,24 @@ export default function DashboardClub() {
       description: evenementForm.description.trim() || null,
       participants: evenementForm.participants,
     }
-    const { error } = editingEvenementId
-      ? await supabase.from('evenements_club').update(payload).eq('id', editingEvenementId)
-      : await supabase.from('evenements_club').insert(payload)
-    setSavingEvenement(false)
-    if (error) { alert('Erreur : ' + error.message); return }
+    // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
+    // intacte en cas d'erreur.
+    const idEnEdition = editingEvenementId
+    const snapshot = { ...evenementForm }
+    setSavingEvenement(true)
     setShowEvenementForm(false)
     setEditingEvenementId(null)
+    const { error } = idEnEdition
+      ? await supabase.from('evenements_club').update(payload).eq('id', idEnEdition)
+      : await supabase.from('evenements_club').insert(payload)
+    setSavingEvenement(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setEvenementForm(snapshot)
+      setEditingEvenementId(idEnEdition)
+      setShowEvenementForm(true)
+      return
+    }
     await chargerEvenements(clubId)
   }
 
@@ -879,7 +889,6 @@ export default function DashboardClub() {
 
   const sauvegarderProjet = async () => {
     if (!projetForm.nom.trim()) return
-    setSavingProjet(true)
     const payload = {
       club_id: clubId,
       nom: projetForm.nom.trim(),
@@ -890,19 +899,36 @@ export default function DashboardClub() {
       responsable_nom: projetForm.responsable_nom || null,
       statut: projetForm.statut,
     }
-    const { error } = editingProjetId
-      ? await supabase.from('projets_club').update(payload).eq('id', editingProjetId)
-      : await supabase.from('projets_club').insert(payload)
-    setSavingProjet(false)
-    if (error) { alert('Erreur : ' + error.message); return }
+    // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
+    // intacte en cas d'erreur.
+    const idEnEdition = editingProjetId
+    const snapshot = { ...projetForm }
+    setSavingProjet(true)
     setShowProjetForm(false)
     setEditingProjetId(null)
+    const { error } = idEnEdition
+      ? await supabase.from('projets_club').update(payload).eq('id', idEnEdition)
+      : await supabase.from('projets_club').insert(payload)
+    setSavingProjet(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setProjetForm(snapshot)
+      setEditingProjetId(idEnEdition)
+      setShowProjetForm(true)
+      return
+    }
     await chargerProjets(clubId)
   }
 
   const changerStatutProjet = async (id, statut) => {
-    await supabase.from('projets_club').update({ statut }).eq('id', id)
-    await chargerProjets(clubId)
+    // Optimistic : le statut change dans la liste locale tout de suite.
+    const avant = projetsClub.find(p => p.id === id)?.statut
+    setProjetsClub(prev => prev.map(p => (p.id === id ? { ...p, statut } : p)))
+    const { error } = await supabase.from('projets_club').update({ statut }).eq('id', id)
+    if (error) {
+      setProjetsClub(prev => prev.map(p => (p.id === id ? { ...p, statut: avant } : p)))
+      alert('Erreur : ' + error.message)
+    }
   }
 
   const supprimerProjet = async (id) => {
@@ -960,7 +986,6 @@ export default function DashboardClub() {
   // Le président n'a jamais de ligne : il garde tout, en dur, quoi qu'il arrive (cf. canViewSection).
   const sauvegarderPermissions = async (matrice) => {
     if (!clubId) return
-    setSavingPermissions(true)
     const rows = []
     for (const role of Object.keys(matrice)) {
       if (role === 'president') continue
@@ -968,10 +993,20 @@ export default function DashboardClub() {
         rows.push({ club_id: clubId, role, section, can_view: matrice[role][section].can_view, can_edit: matrice[role][section].can_edit })
       }
     }
+    // Optimistic : on connaît déjà exactement ce que sera la matrice, donc la
+    // modale se ferme et l'état local se met à jour tout de suite, sans
+    // attendre la réponse Supabase.
+    const avant = rolePermissions
+    setRolePermissions(rows)
+    setShowPermissionsModal(false)
+    setSavingPermissions(true)
     const { error } = await supabase.from('role_permissions').upsert(rows, { onConflict: 'club_id,role,section' })
-    if (!error) await chargerRolePermissions(clubId)
     setSavingPermissions(false)
-    if (!error) setShowPermissionsModal(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setRolePermissions(avant)
+      setShowPermissionsModal(true)
+    }
   }
 
   const rechercherUtilisateurs = async (query) => {
@@ -1051,15 +1086,28 @@ export default function DashboardClub() {
   const sauvegarderMembreOrganigramme = async () => {
     const role = formOrganigramme.role === 'Autre' ? (roleOrganigrammeLibre.trim() || 'Autre') : formOrganigramme.role
     if (!role || !formOrganigramme.prenom.trim()) return
-    setSavingOrganigramme(true)
     const payload = { ...formOrganigramme, role, club_id: clubId, ordre: Number(formOrganigramme.ordre) || 0 }
-    if (membreOrganigrammeEdite) {
-      await supabase.from('organigramme_club').update(payload).eq('id', membreOrganigrammeEdite.id)
+    // Optimistic : la modale se ferme tout de suite sans attendre la réponse
+    // Supabase. Erreur → réouverte avec la saisie intacte (aucune vérification
+    // d'erreur n'existait avant, on en ajoute a minima).
+    const membreSnapshot = membreOrganigrammeEdite
+    const formSnapshot = { ...formOrganigramme }
+    setSavingOrganigramme(true)
+    setModalOrganigramme(false)
+    let error
+    if (membreSnapshot) {
+      ;({ error } = await supabase.from('organigramme_club').update(payload).eq('id', membreSnapshot.id))
     } else {
-      await supabase.from('organigramme_club').insert(payload)
+      ;({ error } = await supabase.from('organigramme_club').insert(payload))
     }
     setSavingOrganigramme(false)
-    setModalOrganigramme(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setFormOrganigramme(formSnapshot)
+      setMembreOrganigrammeEdite(membreSnapshot)
+      setModalOrganigramme(true)
+      return
+    }
     await chargerOrganigramme(clubId)
   }
 
@@ -1212,17 +1260,27 @@ export default function DashboardClub() {
   // ── Gestion catégories ──
   const ajouterCategorie = async () => {
     if (!newCategorie.nom) return
+    // Optimistic : le formulaire se ferme tout de suite sans attendre la
+    // réponse Supabase. Erreur → réouvert avec la saisie intacte (aucune
+    // vérification d'erreur n'existait avant, on en ajoute a minima).
+    const snapshot = { ...newCategorie }
     setSavingCategorie(true)
-    await supabase.from('club_categories').insert({
-      club_id: clubId,
-      nom: newCategorie.nom,
-      equipe: newCategorie.equipe,
-      educateur_id: newCategorie.educateur_id || null,
-    })
-    await chargerCategories(clubId)
     setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' })
     setShowAddCategorie(false)
+    const { error } = await supabase.from('club_categories').insert({
+      club_id: clubId,
+      nom: snapshot.nom,
+      equipe: snapshot.equipe,
+      educateur_id: snapshot.educateur_id || null,
+    })
     setSavingCategorie(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewCategorie(snapshot)
+      setShowAddCategorie(true)
+      return
+    }
+    await chargerCategories(clubId)
   }
 
   const supprimerCategorie = async (id) => {
@@ -1320,15 +1378,23 @@ export default function DashboardClub() {
   }
 
   const sauvegarderProfilClub = async () => {
+    // Optimistic : le profil local se met à jour tout de suite, sans attendre
+    // la réponse Supabase. Erreur → on revient à l'ancien profil (aucune
+    // vérification d'erreur n'existait avant, on en ajoute a minima).
+    const avant = club
+    setClub(prev => ({ ...prev, ...profilClubEdit }))
     setSavingProfilClub(true)
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       club: profilClubEdit.club,
       region: profilClubEdit.region,
       ville: profilClubEdit.ville,
       description: profilClubEdit.description,
     }).eq('id', clubId)
-    setClub(prev => ({ ...prev, ...profilClubEdit }))
     setSavingProfilClub(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setClub(avant)
+    }
   }
 
   const handleAvatarClubUpload = async (e) => {
@@ -1364,10 +1430,15 @@ export default function DashboardClub() {
     const allKeys = CRITERES_EDU.flatMap(c => c.criteres.map(cr => cr.key))
     const allFilled = allKeys.every(k => eduNoteCriteres[k])
     if (!allFilled) return
-    setSavingEduNote(true)
     const moyGlobale = allKeys.reduce((s, k) => s + (eduNoteCriteres[k] || 0), 0) / allKeys.length
-    await supabase.from('notes_educateur').upsert({
-      educateur_id: eduNoteModal.educateur_id,
+    // Optimistic : la modale se ferme tout de suite sans attendre la réponse
+    // Supabase. Erreur → réouverte (aucune vérification d'erreur n'existait
+    // avant, on en ajoute a minima).
+    const modalSnapshot = eduNoteModal
+    setSavingEduNote(true)
+    setEduNoteModal(null)
+    const { error } = await supabase.from('notes_educateur').upsert({
+      educateur_id: modalSnapshot.educateur_id,
       auteur_id: clubId,
       auteur_type: 'club',
       saison: eduNoteSaison,
@@ -1377,7 +1448,10 @@ export default function DashboardClub() {
       visible_public: true,
     }, { onConflict: 'educateur_id,auteur_id,saison' })
     setSavingEduNote(false)
-    setEduNoteModal(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setEduNoteModal(modalSnapshot)
+    }
   }
 
   const notifierCoachs = async (payload) => {
