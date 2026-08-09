@@ -215,6 +215,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
   const [joueurOuvert, setJoueurOuvert] = useState(null) // id du joueur déplié dans l'onglet Stats
   const [testForm, setTestForm] = useState({ joueur_id: '', date_test: new Date().toISOString().split('T')[0], cmj_cm: '', sprint_10m_s: '', sprint_30m_s: '', test_30_15_kmh: '', notes: '' })
   const [savingTest, setSavingTest] = useState(false)
+  const [testEnEdition, setTestEnEdition] = useState(null) // ligne tests_physiques en cours d'édition, ou null
+  const [formEditTest, setFormEditTest] = useState({})
+  const [savingEditTest, setSavingEditTest] = useState(false)
 
   const loadProgrammes = async () => {
     setLoading(true)
@@ -308,6 +311,41 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
     setSavingTest(false)
     if (error) { alert('Erreur : ' + error.message); setTestForm(snapshot); return }
     await loadTests()
+  }
+
+  const ouvrirEditionTest = (test) => {
+    setTestEnEdition(test)
+    setFormEditTest({
+      cmj_cm: test.cmj_cm ?? '', sprint_10m_s: test.sprint_10m_s ?? '',
+      sprint_30m_s: test.sprint_30m_s ?? '', test_30_15_kmh: test.test_30_15_kmh ?? '',
+      notes: test.notes || '',
+    })
+  }
+
+  const sauvegarderTestEdit = async () => {
+    const payload = {
+      cmj_cm: formEditTest.cmj_cm !== '' ? parseFloat(formEditTest.cmj_cm) : null,
+      sprint_10m_s: formEditTest.sprint_10m_s !== '' ? parseFloat(formEditTest.sprint_10m_s) : null,
+      sprint_30m_s: formEditTest.sprint_30m_s !== '' ? parseFloat(formEditTest.sprint_30m_s) : null,
+      test_30_15_kmh: formEditTest.test_30_15_kmh !== '' ? parseFloat(formEditTest.test_30_15_kmh) : null,
+      notes: formEditTest.notes.trim() || null,
+    }
+    const id = testEnEdition.id
+    // Optimiste : la ligne du tableau se met à jour et la modale se ferme tout
+    // de suite, la requête continue en arrière-plan (même schéma qu'enregistrerTest).
+    setTests(prev => prev.map(t => (t.id === id ? { ...t, ...payload } : t)))
+    setTestEnEdition(null)
+    setSavingEditTest(true)
+    const { error } = await supabase.from('tests_physiques').update(payload).eq('id', id)
+    setSavingEditTest(false)
+    if (error) { alert('Erreur : ' + error.message); await loadTests() }
+  }
+
+  const supprimerTest = async (test) => {
+    if (!confirm('Supprimer ce test ?')) return
+    setTests(prev => prev.filter(t => t.id !== test.id))
+    const { error } = await supabase.from('tests_physiques').delete().eq('id', test.id)
+    if (error) { alert('Erreur : ' + error.message); await loadTests() }
   }
 
   const ouvrirSuivi = async () => {
@@ -645,6 +683,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 {['Date', 'Joueur', 'CMJ', 'Sprint 10m', 'Sprint 30m', '30-15 IFT', 'Notes'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '8px 10px', color: st.muted, fontSize: 11, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
+                {!readOnly && <th style={{ padding: '8px 10px' }} />}
               </tr>
             </thead>
             <tbody>
@@ -666,10 +705,63 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                     )
                   })}
                   <td style={{ padding: '8px 10px', color: st.muted, fontStyle: 'italic', maxWidth: 200 }}>{test.notes || ''}</td>
+                  {!readOnly && (
+                    <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => ouvrirEditionTest(test)}
+                        style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.muted, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', marginRight: 6 }}>
+                        ✏️
+                      </button>
+                      <button onClick={() => supprimerTest(test)}
+                        style={{ background: 'transparent', border: '1px solid #ef444430', color: st.red, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                        🗑
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {testEnEdition && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setTestEnEdition(null)}>
+          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 16, padding: 24, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
+            onClick={e => e.stopPropagation()}>
+            <p style={{ fontWeight: 700, fontSize: 15, margin: 0, color: st.text }}>
+              Modifier le test — {testEnEdition.joueur ? `${testEnEdition.joueur.prenom} ${testEnEdition.joueur.nom}` : ''}
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: st.muted }}>{new Date(testEnEdition.date_test).toLocaleDateString('fr-FR')}</p>
+
+            {Object.entries(objectifsTests).map(([cle, o]) => {
+              const atteint = objectifAtteint(cle, formEditTest[cle])
+              return (
+                <div key={cle}>
+                  <label style={{ fontSize: 12, color: st.muted, display: 'block', marginBottom: 6 }}>{o.label} ({o.unit.trim()})</label>
+                  <input type="number" step="0.01" value={formEditTest[cle]} onChange={e => setFormEditTest(p => ({ ...p, [cle]: e.target.value }))}
+                    style={{ width: '100%', background: st.bg, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 8, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              )
+            })}
+
+            <div>
+              <label style={{ fontSize: 12, color: st.muted, display: 'block', marginBottom: 6 }}>Notes</label>
+              <textarea value={formEditTest.notes} onChange={e => setFormEditTest(p => ({ ...p, notes: e.target.value }))}
+                style={{ width: '100%', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', minHeight: 60, resize: 'vertical', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+              <button onClick={() => setTestEnEdition(null)}
+                style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.muted, borderRadius: 8, padding: '9px 18px', fontSize: 13, cursor: 'pointer' }}>
+                Annuler
+              </button>
+              <button onClick={sauvegarderTestEdit} disabled={savingEditTest}
+                style={{ background: st.green, color: '#000', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingEditTest ? 0.6 : 1 }}>
+                ✓ Sauvegarder
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
