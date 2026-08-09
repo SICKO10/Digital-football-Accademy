@@ -2692,19 +2692,25 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     // Optimistic : la modale se ferme tout de suite. Le score du match et les
     // stats par joueur sont deux écritures indépendantes (tables différentes,
     // aucune ne dépend du résultat de l'autre) — elles partent en parallèle.
-    const matchId = modalMatchJoue.id
+    const matchSnapshot = modalMatchJoue
+    const matchId = matchSnapshot.id
+    const scoreSnapshot = scoreJoueForm
     setSavingMatchJoue(true)
     setModalMatchJoue(null)
-    const score = scoreJoueForm
     setScoreJoueForm({ score_nous: '', score_eux: '' })
-    await Promise.all([
+    const [{ error }] = await Promise.all([
       supabase.from('matchs_equipe').update({
-        score_nous: score.score_nous,
-        score_eux: score.score_eux,
+        score_nous: scoreSnapshot.score_nous,
+        score_eux: scoreSnapshot.score_eux,
       }).eq('id', matchId),
       sauvegarderStatsMatch(matchId), // upsert stats_match + recharge matchs
     ])
     setSavingMatchJoue(false)
+    if (error) {
+      alert("Erreur lors de l'enregistrement du score : " + error.message)
+      setModalMatchJoue(matchSnapshot)
+      setScoreJoueForm(scoreSnapshot)
+    }
   }
 
   const matchFormVide = () => ({ id: null, adversaire: '', date: '', heure: '', competition: '', domicile: true, lieu: '', ville: '' })
@@ -2763,13 +2769,18 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     // Un upsert par joueur, chacun indépendant des autres (clé match_id+
     // joueur_id différente à chaque fois) — en parallèle plutôt qu'en
     // séquence.
-    await Promise.all(entries.map(([joueurId, s]) =>
+    const resultats = await Promise.all(entries.map(([joueurId, s]) =>
       supabase.from('stats_match').upsert({
         match_id: matchId, joueur_id: joueurId, educateur_id: userId,
         minutes: s.minutes || 0, buts: s.buts || 0, passes_dec: s.passes_dec || 0,
         clean_sheet: s.clean_sheet || false, carton_jaune: s.carton_jaune || false, carton_rouge: s.carton_rouge || false
       }, { onConflict: 'match_id,joueur_id' })
     ))
+    const erreurs = resultats.filter(r => r.error)
+    if (erreurs.length > 0) {
+      console.error('Erreur sauvegarde stats match:', erreurs.map(e => e.error.message))
+      alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''}.`)
+    }
     await chargerMatchs(userId)
     setMatchActif(null)
     setStatsMatch({})

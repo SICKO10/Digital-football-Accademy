@@ -1489,7 +1489,11 @@ export default function DashboardClub() {
     // seulement de l'id de la séance, déjà connu — donc en parallèle.
     const seanceId = seanceEvalModal.id
     setSeanceEvalModal(null)
-    await Promise.all([
+    // ModalGrilleSeance garde son propre état interne (notes, commentaires) —
+    // le rouvrir en cas d'erreur ne restaurerait pas la saisie (remount avec
+    // un état vide), donc on ne tente pas ça : juste une alerte claire pour
+    // que l'utilisateur sache qu'il doit recommencer l'évaluation.
+    const [{ error }] = await Promise.all([
       supabase.from('evaluations_seance').upsert({
         seance_id: seanceId,
         evaluateur_id: clubId,
@@ -1507,6 +1511,9 @@ export default function DashboardClub() {
       }, { onConflict: 'seance_id' }),
       supabase.from('seances_uploadees').update({ statut: 'analyse' }).eq('id', seanceId),
     ])
+    if (error) {
+      alert("Erreur lors de l'enregistrement de l'évaluation : " + error.message + '\n\nMerci de recommencer l\'évaluation.')
+    }
     await chargerSeancesRecues(clubId)
   }
 

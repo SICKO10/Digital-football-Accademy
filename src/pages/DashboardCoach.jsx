@@ -165,7 +165,11 @@ function DashboardCoach() {
     // (évaluation, statut de la séance, notification) sont indépendantes —
     // aucune ne dépend du résultat d'une autre — donc en parallèle.
     setSeanceEvalModal(null)
-    await Promise.all([
+    // ModalGrilleSeance garde son propre état interne (notes, commentaires) —
+    // le rouvrir en cas d'erreur ne restaurerait pas la saisie (remount avec
+    // un état vide), donc on ne tente pas ça : juste une alerte claire pour
+    // que l'utilisateur sache qu'il doit recommencer l'évaluation.
+    const [{ error }] = await Promise.all([
       supabase.from('evaluations_seance').upsert({
         seance_id: seance.id,
         evaluateur_id: coachId,
@@ -201,6 +205,9 @@ function DashboardCoach() {
         }
       })(),
     ])
+    if (error) {
+      alert("Erreur lors de l'enregistrement de l'évaluation : " + error.message + '\n\nMerci de recommencer l\'évaluation.')
+    }
     await chargerSeancesTransferees()
   }
 
