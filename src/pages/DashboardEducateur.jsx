@@ -4979,6 +4979,22 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 {canEdit('competition') && (
                                   <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
                                 )}
+                                {canEdit('competition') && (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
+                                      const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                      if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
+                                      const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                      if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
+                                      setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                    }}
+                                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                                    title="Supprimer ce match"
+                                  >
+                                    🗑️
+                                  </button>
+                                )}
                                 {canEdit('stats') && (
                                   <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
                                 )}
