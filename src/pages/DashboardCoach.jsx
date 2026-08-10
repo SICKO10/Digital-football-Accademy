@@ -47,6 +47,11 @@ function DashboardCoach() {
   const [seancesTransferees, setSeancesTransferees] = useState([])
   const [seanceEvalModal, setSeanceEvalModal] = useState(null)
 
+  // Support (tickets envoyés depuis le widget "💬 Support" — cf. FloatingHelper.jsx)
+  const [tickets, setTickets] = useState([])
+  const [reponseDrafts, setReponseDrafts] = useState({})
+  const [savingTicket, setSavingTicket] = useState(null)
+
   useEffect(() => {
     init()
   }, [])
@@ -63,9 +68,43 @@ function DashboardCoach() {
       setCoachId(user.id)
       setCoachEmail(user.email)
     }
-    const taches = [getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees()]
+    const taches = [getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees(), getTickets()]
     if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getClubsEnAttente(), getDemandesClub())
     await Promise.all(taches)
+  }
+
+  const getTickets = async () => {
+    const { data } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false })
+    const userIds = [...new Set((data || []).map(t => t.user_id).filter(Boolean))]
+    let profilsParId = {}
+    if (userIds.length > 0) {
+      const { data: profils } = await supabase.from('profiles').select('id, prenom, nom, email').in('id', userIds)
+      profilsParId = Object.fromEntries((profils || []).map(p => [p.id, p]))
+    }
+    setTickets((data || []).map(t => ({ ...t, expediteur: profilsParId[t.user_id] })))
+  }
+
+  const marquerTicketResolu = async (id) => {
+    const avant = tickets.find(t => t.id === id)
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, statut: 'resolu' } : t))
+    setSavingTicket(id)
+    const { error } = await supabase.from('support_tickets').update({ statut: 'resolu' }).eq('id', id)
+    setSavingTicket(null)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      if (avant) setTickets(prev => prev.map(t => t.id === id ? avant : t))
+    }
+  }
+
+  const envoyerReponseTicket = async (id) => {
+    const reponse = (reponseDrafts[id] || '').trim()
+    if (!reponse) return
+    setSavingTicket(id)
+    const { error } = await supabase.from('support_tickets').update({ reponse, coach_id: coachId, statut: 'resolu' }).eq('id', id)
+    setSavingTicket(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, reponse, coach_id: coachId, statut: 'resolu' } : t))
+    setReponseDrafts(prev => ({ ...prev, [id]: '' }))
   }
 
   const getDemandesClub = async () => {
@@ -396,6 +435,7 @@ function DashboardCoach() {
     { id: 'recruteurs', label: 'Clubs / Agents', icon: '🏢', badge: 0 },
     { id: 'seances_club', label: 'Séances club', icon: '🎥', badge: seancesTransferees.length },
     { id: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️', badge: 0 },
+    { id: 'support', label: 'Support', icon: '💬', badge: tickets.filter(t => t.statut === 'ouvert').length },
     ...(isAdminClubs ? [
       { id: 'clubs_admin', label: 'Clubs en attente', icon: '🏟️', badge: clubsEnAttente.length },
       { id: 'demandes_club', label: 'Demandes Club', icon: '📨', badge: demandesClub.filter(d => d.statut === 'nouveau').length },
@@ -408,6 +448,7 @@ function DashboardCoach() {
     recruteurs: '🏢 Clubs / Agents',
     seances_club: '🎥 Séances club',
     analyseur_ia: '🎙️ Analyseur IA',
+    support: '💬 Support',
     clubs_admin: '🏟️ Clubs en attente d\'activation',
     demandes_club: '📨 Demandes Club',
   }
@@ -958,6 +999,73 @@ function DashboardCoach() {
           )}
 
           {activeSection === 'analyseur_ia' && <AnalyseurIA />}
+
+          {/* ===== SECTION SUPPORT ===== */}
+          {activeSection === 'support' && (
+            <>
+              {tickets.length === 0 ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '48px', marginBottom: '1rem' }}>💬</p>
+                  <p style={{ color: '#666' }}>Aucun ticket pour le moment</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {tickets.map(t => (
+                    <div key={t.id} style={{ background: '#111', border: `1px solid ${t.statut === 'ouvert' ? '#f9731640' : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{t.sujet}</p>
+                            {t.statut === 'ouvert' ? (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: '#f9731615', border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>OUVERT</span>
+                            ) : (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#4ade80', background: '#4ade8015', border: '1px solid #4ade8040', padding: '2px 8px', borderRadius: '20px' }}>✓ RÉSOLU</span>
+                            )}
+                          </div>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
+                            {t.expediteur ? `${t.expediteur.prenom || ''} ${t.expediteur.nom || ''}`.trim() || t.expediteur.email : 'Utilisateur inconnu'}
+                            {t.expediteur?.email ? ` · ${t.expediteur.email}` : ''}
+                          </p>
+                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>{new Date(t.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        {t.statut === 'ouvert' && (
+                          <button onClick={() => marquerTicketResolu(t.id)} disabled={savingTicket === t.id}
+                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            {savingTicket === t.id ? 'Mise à jour...' : '✓ Marquer comme résolu'}
+                          </button>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa', lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{t.message}</p>
+
+                      {t.reponse && (
+                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1f1f1f' }}>
+                          <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ta réponse</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: '#ddd', lineHeight: 1.6 }}>{t.reponse}</p>
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1f1f1f', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <textarea
+                          value={reponseDrafts[t.id] ?? ''}
+                          onChange={e => setReponseDrafts(prev => ({ ...prev, [t.id]: e.target.value }))}
+                          placeholder={t.reponse ? 'Modifier la réponse...' : 'Écrire une réponse...'}
+                          rows={2}
+                          style={{ flex: '1 1 200px', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 10px', color: '#e4e4e7', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical' }}
+                        />
+                        <button
+                          onClick={() => envoyerReponseTicket(t.id)}
+                          disabled={savingTicket === t.id || !(reponseDrafts[t.id] ?? '').trim()}
+                          style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: !(reponseDrafts[t.id] ?? '').trim() ? 0.5 : 1, alignSelf: 'flex-start' }}
+                        >
+                          ✉️ Envoyer la réponse
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
           {/* ===== SECTION CLUBS EN ATTENTE (accès restreint) ===== */}
           {activeSection === 'clubs_admin' && isAdminClubs && (
