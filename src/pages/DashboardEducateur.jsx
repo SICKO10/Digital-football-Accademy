@@ -2716,6 +2716,24 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!error) afficherToast('Déplacement créé automatiquement')
   }
 
+  // Supprime le(s) déplacement(s) lié(s) à un match Extérieur qu'on vient de
+  // supprimer. deplacements n'a pas de colonne match_id (pas de vraie clé
+  // étrangère à faire suivre en cascade) : le lien se fait par date +
+  // adversaire/lieu, la même heuristique que completerHorairesDepuisMatchs
+  // dans Deplacements.jsx. Ne fait rien pour un match Domicile (jamais de
+  // déplacement associé). Best-effort : une erreur ici n'annule pas la
+  // suppression du match déjà effectuée, juste loggée.
+  const supprimerDeplacementLieAuMatch = async (m) => {
+    if (m.domicile || !clubAffiliation?.club_id) return
+    const normalise = (s) => (s || '').trim().toLowerCase()
+    const { data: candidats, error } = await supabase.from('deplacements').select('id, lieu_destination')
+      .eq('club_id', clubAffiliation.club_id).eq('date_depart', m.date).eq('nature', 'match')
+    if (error) { console.error('Erreur recherche déplacement lié au match supprimé:', error); return }
+    const cible = (candidats || []).find(d => normalise(d.lieu_destination) === normalise(m.adversaire) || normalise(d.lieu_destination) === normalise(m.lieu))
+      || (candidats?.length === 1 ? candidats[0] : null)
+    if (cible) await supabase.from('deplacements').delete().eq('id', cible.id)
+  }
+
   // Calcule automatiquement les horaires de départ/retour du déplacement lié à un
   // match Extérieur (ville du club + ville du match connues, token Mapbox configuré
   // — cf. lib/mapbox.js) et les applique : cache distance_km/duree_trajet_min sur le
@@ -4785,6 +4803,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 if (error) { alert('Erreur : ' + error.message); return }
                                 setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
                                 if (matchActif?.id === m.id) setMatchActif(null)
+                                supprimerDeplacementLieAuMatch(m)
                               }}
                               style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
                               title="Supprimer ce résultat"
@@ -4988,6 +5007,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                       const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
                                       if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
                                       setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                      supprimerDeplacementLieAuMatch(m)
                                     }}
                                     style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
                                     title="Supprimer ce match"
