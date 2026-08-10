@@ -2746,7 +2746,14 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setNewMatch({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
     setShowAddMatch(false)
     const [{ data, error }] = await Promise.all([
-      supabase.from('matchs_equipe').insert({ ...snapshot, educateur_id: userId, domicile: snapshot.domicile }).select().single(),
+      supabase.from('matchs_equipe').insert({
+        ...snapshot, educateur_id: userId, domicile: snapshot.domicile,
+        // score_nous/score_eux sont des colonnes integer — une chaîne vide (score pas
+        // encore saisi, le cas normal à la création) fait échouer l'insert avec
+        // "invalid input syntax for type integer" si on l'envoie telle quelle.
+        score_nous: snapshot.score_nous === '' ? null : parseInt(snapshot.score_nous),
+        score_eux: snapshot.score_eux === '' ? null : parseInt(snapshot.score_eux),
+      }).select().single(),
       creerDeplacementAutoMatch(snapshot).catch(e => console.error('Erreur création déplacement auto:', e)),
     ])
     setSavingMatch(false)
@@ -2760,8 +2767,12 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     await chargerMatchs(userId)
   }
 
-  // Un match est "joué" dès qu'un score (même 0-0) a été saisi — matchs_equipe.score_nous
-  // est une colonne texte, jamais SQL NULL en pratique (toujours '' par défaut à la création).
+  // Un match est "joué" dès qu'un score (même 0-0) a été saisi. score_nous/score_eux
+  // sont des colonnes integer (pas texte, malgré un commentaire précédent qui disait
+  // le contraire — cf. le bug "invalid input syntax for type integer" que ça a causé
+  // tant que les inserts envoyaient '' au lieu de null) : NULL = pas encore joué.
+  // Le check triple reste utile côté lecture pour les lignes chargées avant ce fix
+  // (potentiellement encore '' en base) et par robustesse générale.
   const matchJoue = (m) => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined
 
   const grouperMatchsParMois = (liste, moisDesc = true) => {
@@ -2806,8 +2817,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setScoreJoueForm({ score_nous: '', score_eux: '' })
     const [{ error }] = await Promise.all([
       supabase.from('matchs_equipe').update({
-        score_nous: scoreSnapshot.score_nous,
-        score_eux: scoreSnapshot.score_eux,
+        score_nous: scoreSnapshot.score_nous === '' ? null : parseInt(scoreSnapshot.score_nous),
+        score_eux: scoreSnapshot.score_eux === '' ? null : parseInt(scoreSnapshot.score_eux),
       }).eq('id', matchId),
       sauvegarderStatsMatch(matchId).catch(e => console.error('Erreur sauvegarde stats match:', e)), // upsert stats_match + recharge matchs
     ])
@@ -2850,7 +2861,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       return
     }
     const { data, error } = await supabase.from('matchs_equipe').insert({
-      ...champs, educateur_id: userId, score_nous: '', score_eux: '',
+      ...champs, educateur_id: userId, score_nous: null, score_eux: null,
     }).select().single()
     if (error) { afficherToast(`Erreur lors de la création du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
     if (data) {
