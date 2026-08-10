@@ -15,6 +15,7 @@ import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
+import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -70,10 +71,34 @@ const ROLES_ORGANIGRAMME = [
   'Responsable Marketing', 'Responsable Réseaux Sociaux',
   'Responsable Recrutement', 'Délégué', 'Autre',
 ]
-const CATEGORIES_ORGANIGRAMME = {
-  'Direction': ['Président', 'Vice-Président', 'Secrétaire', 'Trésorier'],
-  'Staff Sportif': ['Directeur Sportif', 'Éducateur', 'Éducateur Gardiens', 'Kinésithérapeute', 'Médecin', 'Préparateur Physique'],
-  'Organisation': ['Responsable Mini-Bus', 'Responsable Buvette', 'Responsable Marketing', 'Responsable Réseaux Sociaux', 'Responsable Recrutement', 'Délégué', 'Autre'],
+// Organigramme V2 : département (regroupement visuel, indépendant des catégories
+// ci-dessus qui servaient à l'ancien affichage en grille) et couleur associée pour
+// l'arbre hiérarchique.
+const DEPT_COLORS = {
+  'Direction':      { bg: '#1a1a2e', border: '#818cf8', text: '#818cf8', dot: '#818cf8' },
+  'Sportif':        { bg: '#0f1f0f', border: '#4ade80', text: '#4ade80', dot: '#4ade80' },
+  'Administration': { bg: '#1a1200', border: '#fbbf24', text: '#fbbf24', dot: '#fbbf24' },
+  'Communication':  { bg: '#1a0f1f', border: '#c084fc', text: '#c084fc', dot: '#c084fc' },
+  'Finance':        { bg: '#0f1a1a', border: '#22d3ee', text: '#22d3ee', dot: '#22d3ee' },
+  'Médical':        { bg: '#1f0f0f', border: '#f87171', text: '#f87171', dot: '#f87171' },
+  'Autre':          { bg: '#1a1a1a', border: '#6b7280', text: '#9ca3af', dot: '#6b7280' },
+}
+const getDeptColor = (dept) => DEPT_COLORS[dept] || DEPT_COLORS['Autre']
+
+// Construit l'arbre hiérarchique à partir de la liste plate organigramme_club, en
+// reliant chaque membre à son "superieur" via la clé "Nom Prénom" (même convention
+// que la colonne du template Excel et que le prompt de scan IA).
+const construireArbreOrganigramme = (membres) => {
+  const map = {}
+  const roots = []
+  membres.forEach(m => { map[`${m.nom} ${m.prenom}`.trim()] = { ...m, children: [] } })
+  membres.forEach(m => {
+    const node = map[`${m.nom} ${m.prenom}`.trim()]
+    const sup = m.superieur?.trim()
+    if (sup && map[sup] && map[sup] !== node) map[sup].children.push(node)
+    else roots.push(node)
+  })
+  return roots
 }
 
 // Sections pilotables par la matrice de permissions (role_permissions). 'terrains'
@@ -473,6 +498,90 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose }) {
   )
 }
 
+// Carte d'un membre de l'organigramme + ses subordonnés, en arbre récursif. Composant
+// à part (comme StatCard/DonutChart/AccueilClub/PermissionsModal ci-dessus) plutôt que
+// défini à l'intérieur de DashboardClub : une fonction composant redéfinie à chaque
+// rendu du parent changerait d'identité et forcerait React à démonter/remonter tout
+// le sous-arbre à chaque frappe dans la barre de recherche.
+function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdit, onEdit, onDelete }) {
+  const hasChildren = node.children && node.children.length > 0
+  const nodeKey = `${node.nom} ${node.prenom}`.trim()
+  const isExpanded = expandedNodes.has(nodeKey)
+  const colors = getDeptColor(node.departement)
+
+  const matchSearch = !searchQuery ||
+    `${node.nom} ${node.prenom} ${node.role} ${node.departement}`.toLowerCase().includes(searchQuery.toLowerCase())
+
+  if (!matchSearch && !hasChildren) return null
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: hasChildren && isExpanded ? '0' : '8px' }}>
+        {depth > 0 && (
+          <div style={{ width: '28px', minWidth: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginRight: '8px', paddingTop: '16px' }}>
+            <div style={{ width: '1px', flex: 1, background: '#2a2a2a', minHeight: '16px' }} />
+            <div style={{ width: '20px', height: '1px', background: '#2a2a2a' }} />
+          </div>
+        )}
+
+        <div style={{
+          background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: '10px',
+          padding: '10px 14px', minWidth: '200px', maxWidth: '260px', position: 'relative',
+          opacity: matchSearch ? 1 : 0.3, transition: 'opacity 0.2s',
+        }}>
+          <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', background: colors.dot }} />
+
+          <p style={{ margin: '0 0 2px', color: '#fff', fontWeight: 700, fontSize: '14px', paddingRight: '16px' }}>{node.prenom} {node.nom}</p>
+          <p style={{ margin: '0 0 4px', color: colors.text, fontSize: '12px', fontWeight: 500 }}>{node.role}</p>
+          <p style={{ margin: 0, color: '#4b5563', fontSize: '11px' }}>{node.departement}</p>
+
+          {(node.email || node.telephone) && (
+            <div style={{ marginTop: '6px', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
+              {node.email && <p style={{ margin: 0, color: '#6b7280', fontSize: '10px' }}>✉ {node.email}</p>}
+              {node.telephone && <p style={{ margin: 0, color: '#6b7280', fontSize: '10px' }}>📞 {node.telephone}</p>}
+            </div>
+          )}
+
+          {canEdit && (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
+              <button onClick={() => onEdit(node)} style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>✏️ Modifier</button>
+              <button onClick={() => onDelete(node.id)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>🗑️</button>
+            </div>
+          )}
+
+          {hasChildren && (
+            <div
+              onClick={() => onToggle(nodeKey)}
+              style={{
+                position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
+                background: colors.border, borderRadius: '50%', width: '20px', height: '20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '11px', color: '#000', fontWeight: 700, zIndex: 1,
+                boxShadow: '0 0 0 3px #0a0a0a', cursor: 'pointer',
+              }}
+            >
+              {isExpanded ? '−' : `+${node.children.length}`}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {hasChildren && isExpanded && (
+        <div style={{ marginLeft: depth === 0 ? '0' : '36px', paddingLeft: '20px', borderLeft: '1px solid #1a1a1a', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {node.children.map((child, i) => (
+            <OrgNode
+              key={child.id || `${child.nom}-${child.prenom}-${i}`}
+              node={child} depth={depth + 1}
+              expandedNodes={expandedNodes} onToggle={onToggle} searchQuery={searchQuery}
+              canEdit={canEdit} onEdit={onEdit} onDelete={onDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DashboardClub() {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
@@ -507,9 +616,18 @@ export default function DashboardClub() {
   const [organigramme, setOrganigramme] = useState([])
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
-  const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0 })
+  const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
   const [roleOrganigrammeLibre, setRoleOrganigrammeLibre] = useState('')
   const [savingOrganigramme, setSavingOrganigramme] = useState(false)
+
+  // Organigramme V2 : import Excel + scan IA + arbre hiérarchique
+  const [orgImportMode, setOrgImportMode] = useState(null) // null | 'excel' | 'scan'
+  const [orgSearchQuery, setOrgSearchQuery] = useState('')
+  const [orgExpandedNodes, setOrgExpandedNodes] = useState(new Set())
+  const [orgScanFile, setOrgScanFile] = useState(null)
+  const [orgScanLoading, setOrgScanLoading] = useState(false)
+  const [orgScanStatus, setOrgScanStatus] = useState(null)
+  const [orgImportLoading, setOrgImportLoading] = useState(false)
 
   // Permissions par rôle (section Staff → "Gérer les permissions")
   const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
@@ -1070,10 +1188,10 @@ export default function DashboardClub() {
     setMembreOrganigrammeEdite(membre)
     if (membre) {
       const roleConnu = ROLES_ORGANIGRAMME.includes(membre.role)
-      setFormOrganigramme({ prenom: membre.prenom || '', nom: membre.nom || '', role: roleConnu ? membre.role : 'Autre', telephone: membre.telephone || '', email: membre.email || '', ordre: membre.ordre || 0 })
+      setFormOrganigramme({ prenom: membre.prenom || '', nom: membre.nom || '', role: roleConnu ? membre.role : 'Autre', telephone: membre.telephone || '', email: membre.email || '', ordre: membre.ordre || 0, departement: membre.departement || 'Autre', superieur: membre.superieur || '' })
       setRoleOrganigrammeLibre(roleConnu ? '' : (membre.role || ''))
     } else {
-      setFormOrganigramme({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0 })
+      setFormOrganigramme({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
       setRoleOrganigrammeLibre('')
     }
     setModalOrganigramme(true)
@@ -1111,6 +1229,150 @@ export default function DashboardClub() {
     if (!confirm('Supprimer ce membre de l\'organigramme ?')) return
     await supabase.from('organigramme_club').delete().eq('id', id)
     setOrganigramme(prev => prev.filter(m => m.id !== id))
+  }
+
+  const toggleOrgNode = (key) => {
+    setOrgExpandedNodes(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const telechargerTemplateOrganigramme = async () => {
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Nom', 'Prénom', 'Rôle', 'Département', 'Supérieur (Nom Prénom)', 'Email', 'Téléphone'],
+      ['Dupont', 'Jean', 'Président', 'Direction', '', 'president@club.fr', '06 00 00 00 00'],
+      ['Martin', 'Pierre', 'Directeur Sportif', 'Sportif', 'Dupont Jean', 'sport@club.fr', ''],
+      ['Bernard', 'Sophie', 'Secrétaire', 'Administration', 'Dupont Jean', '', ''],
+      ['Leclerc', 'Marc', 'Éducateur U17', 'Sportif', 'Martin Pierre', '', ''],
+    ])
+    ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 22 }, { wch: 18 }, { wch: 22 }, { wch: 24 }, { wch: 14 }]
+    XLSX.utils.book_append_sheet(wb, ws, 'Organigramme')
+    XLSX.writeFile(wb, 'template_organigramme.xlsx')
+  }
+
+  // Remplace tout l'organigramme du club par le contenu du fichier — cohérent avec
+  // l'usage attendu (réimporter après mise à jour du fichier source), signalé à
+  // l'utilisateur dans le panneau d'import.
+  const importerOrganigrammeExcel = async (e) => {
+    const file = e.target.files[0]
+    if (!file || !clubId) return
+    setOrgImportLoading(true)
+    try {
+      const XLSX = await import('xlsx')
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer)
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      const membres = rows.map((row, i) => ({
+        club_id: clubId,
+        nom: String(row['Nom'] || '').trim(),
+        prenom: String(row['Prénom'] || '').trim(),
+        role: String(row['Rôle'] || '').trim() || 'Autre',
+        departement: String(row['Département'] || 'Autre').trim() || 'Autre',
+        superieur: String(row['Supérieur (Nom Prénom)'] || '').trim(),
+        email: String(row['Email'] || '').trim(),
+        telephone: String(row['Téléphone'] || '').trim(),
+        ordre: i,
+      })).filter(m => m.nom && m.role)
+      if (membres.length === 0) throw new Error('Aucune ligne valide trouvée (Nom et Rôle sont obligatoires).')
+
+      await supabase.from('organigramme_club').delete().eq('club_id', clubId)
+      const { data, error } = await supabase.from('organigramme_club').insert(membres).select()
+      if (error) throw error
+      setOrganigramme(data || [])
+      setOrgImportMode(null)
+      alert(`✅ ${membres.length} membre${membres.length > 1 ? 's' : ''} importé${membres.length > 1 ? 's' : ''} avec succès !`)
+    } catch (err) {
+      alert('Erreur import : ' + err.message)
+    } finally {
+      setOrgImportLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  // Scan d'un organigramme papier via Groq Vision — même modèle et même file
+  // d'attente séquentielle (enqueueGroqRequest) que les autres scans IA de l'app
+  // (feuille de match, séances...), pour respecter le rate limit global du compte.
+  const scannerOrganigramme = async () => {
+    if (!orgScanFile || !clubId) return
+    setOrgScanLoading(true)
+    setOrgScanStatus(null)
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(orgScanFile)
+      })
+      const prompt = `Analyse cet organigramme de club de football (photo ou document) et extrait tous les membres visibles.
+Réponds UNIQUEMENT avec un tableau JSON valide, aucun texte avant ou après, aucune balise markdown.
+
+Format exact attendu :
+[
+  { "nom": "Dupont", "prenom": "Jean", "role": "Président", "departement": "Direction", "superieur": "" },
+  { "nom": "Martin", "prenom": "Pierre", "role": "Directeur Sportif", "departement": "Sportif", "superieur": "Dupont Jean" }
+]
+
+Règles :
+- "superieur" = "Nom Prénom" du supérieur hiérarchique direct visible sur le document (chaîne vide si c'est le sommet de la hiérarchie)
+- "departement" = l'un des : Direction, Sportif, Administration, Communication, Finance, Médical, Autre
+- Inclure tous les membres visibles sur le document
+- Si le prénom n'est pas visible, mets une chaîne vide`
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'qwen/qwen3.6-27b',
+          messages: [
+            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'user', content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: `data:${orgScanFile.type || 'image/jpeg'};base64,${base64}` } }
+            ] }
+          ],
+          temperature: 0.3,
+          max_completion_tokens: 4000
+        })
+      }, setOrgScanStatus)
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      const jsonMatch = text.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
+      const extraits = JSON.parse(jsonMatch[0])
+      const membres = extraits.map((m, i) => ({
+        club_id: clubId,
+        nom: (m.nom || '').trim(),
+        prenom: (m.prenom || '').trim(),
+        role: (m.role || 'Autre').trim() || 'Autre',
+        departement: (m.departement || 'Autre').trim() || 'Autre',
+        superieur: (m.superieur || '').trim(),
+        email: '',
+        telephone: '',
+        ordre: i,
+      })).filter(m => m.nom)
+      if (membres.length === 0) throw new Error('Aucun membre détecté sur ce document.')
+
+      await supabase.from('organigramme_club').delete().eq('club_id', clubId)
+      const { data: inserted, error } = await supabase.from('organigramme_club').insert(membres).select()
+      if (error) throw error
+      setOrganigramme(inserted || [])
+      setOrgImportMode(null)
+      setOrgScanFile(null)
+      alert(`✅ ${membres.length} membre${membres.length > 1 ? 's' : ''} extrait${membres.length > 1 ? 's' : ''} depuis le document !`)
+    } catch (err) {
+      alert('Erreur scan : ' + err.message)
+    } finally {
+      setOrgScanLoading(false)
+      setOrgScanStatus(null)
+    }
   }
 
   const chargerClassements = async () => {
@@ -2795,70 +3057,129 @@ export default function DashboardClub() {
           )
         })()}
 
-        {/* ── ORGANIGRAMME ── */}
+        {/* ── ORGANIGRAMME V2 : arbre hiérarchique + import Excel/scan IA ── */}
         {activeTab === 'organigramme' && canViewSection('organigramme') && (
           <div>
-            {canEditSection('organigramme') && (
-              <button onClick={() => ouvrirModalOrganigramme(null)} style={{ ...st.btnSolid, marginBottom: '24px' }}>+ Ajouter un membre</button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ margin: 0, color: '#fff', fontSize: '18px', fontWeight: 700 }}>🏛️ Organigramme</h2>
+                <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''}</p>
+              </div>
+              {canEditSection('organigramme') && (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
+                  <button
+                    onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
+                    style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: '#fbbf24', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    📊 Importer Excel
+                  </button>
+                  <button
+                    onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
+                    style={{ background: '#0f1f0f', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    📷 Scanner un document
+                  </button>
+                  {organigramme.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
+                        setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
+                      }}
+                      style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
+                    >
+                      {orgExpandedNodes.size > 0 ? '↑ Tout réduire' : '↓ Tout développer'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {orgImportMode === 'excel' && (
+              <div style={{ background: '#111', border: '1px solid #fbbf24', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#fbbf24', fontSize: '15px' }}>📊 Import depuis Excel / CSV</h3>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
+                  Utilise le template avec les colonnes : <strong style={{ color: '#fff' }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button onClick={telechargerTemplateOrganigramme} style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: '#fbbf24', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    ⬇️ Télécharger le template
+                  </button>
+                  <label style={{ background: '#fbbf24', borderRadius: '8px', color: '#000', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                    📂 Choisir un fichier
+                    <input type="file" accept=".xlsx,.xls,.csv" onChange={importerOrganigrammeExcel} style={{ display: 'none' }} />
+                  </label>
+                  {orgImportLoading && <span style={{ color: '#9ca3af', fontSize: '13px' }}>⏳ Import en cours…</span>}
+                </div>
+                <p style={{ color: '#4b5563', fontSize: '12px', margin: '10px 0 0' }}>⚠️ L'import remplacera l'organigramme actuel.</p>
+              </div>
             )}
 
-            {Object.entries(CATEGORIES_ORGANIGRAMME).map(([categorie, roles]) => {
-              const membres = organigramme.filter(m => roles.includes(m.role) || (categorie === 'Organisation' && !ROLES_ORGANIGRAMME.includes(m.role)))
-              if (!membres.length) return null
-              return (
-                <div key={categorie} style={{ marginBottom: '32px' }}>
-                  <h3 style={{ color: '#4ade80', fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
-                    {categorie}
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '12px' }}>
-                    {membres.map(membre => (
-                      <div key={membre.id} style={{ background: '#111827', borderRadius: '12px', padding: '16px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', flexShrink: 0, overflow: 'hidden' }}>
-                            {membre.photo_url
-                              ? <img src={membre.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              : (membre.prenom?.[0] || '') + (membre.nom?.[0] || '')}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '700', color: 'white', fontSize: '14px' }}>{membre.prenom} {membre.nom}</div>
-                            <div style={{ fontSize: '11px', color: '#4ade80', fontWeight: '600' }}>{membre.role}</div>
-                          </div>
-                        </div>
-
-                        {(membre.telephone || membre.email) && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                            {membre.telephone && (
-                              <a href={`tel:${membre.telephone}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af', textDecoration: 'none' }}>
-                                📞 {membre.telephone}
-                              </a>
-                            )}
-                            {membre.email && (
-                              <a href={`mailto:${membre.email}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af', textDecoration: 'none', wordBreak: 'break-all' }}>
-                                ✉️ {membre.email}
-                              </a>
-                            )}
-                          </div>
-                        )}
-
-                        {canEditSection('organigramme') && (
-                          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                            <button onClick={() => ouvrirModalOrganigramme(membre)} style={{ flex: 1, padding: '6px', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
-                              ✏️ Modifier
-                            </button>
-                            <button onClick={() => supprimerMembreOrganigramme(membre.id)} style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
-                              🗑️
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+            {orgImportMode === 'scan' && (
+              <div style={{ background: '#111', border: '1px solid #4ade80', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#4ade80', fontSize: '15px' }}>📷 Scanner un organigramme</h3>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
+                  Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label style={{ background: '#0f1f0f', border: '1px solid #4ade80', borderRadius: '8px', color: '#4ade80', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    🖼️ {orgScanFile ? orgScanFile.name : 'Choisir une image'}
+                    <input type="file" accept="image/*" onChange={e => setOrgScanFile(e.target.files[0])} style={{ display: 'none' }} />
+                  </label>
+                  {orgScanFile && (
+                    <button
+                      onClick={scannerOrganigramme}
+                      disabled={orgScanLoading}
+                      style={{ background: '#4ade80', border: 'none', borderRadius: '8px', color: '#000', padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
+                    >
+                      {orgScanLoading ? libelleStatutGroq(orgScanStatus) : '🔍 Analyser'}
+                    </button>
+                  )}
                 </div>
-              )
-            })}
+              </div>
+            )}
 
-            {organigramme.length === 0 && (
-              <p style={{ color: '#666', fontSize: '13px' }}>Aucun membre dans l'organigramme pour l'instant.</p>
+            {organigramme.length > 0 && (
+              <input
+                type="text"
+                placeholder="🔍 Rechercher un membre, un rôle, un département…"
+                value={orgSearchQuery}
+                onChange={e => setOrgSearchQuery(e.target.value)}
+                style={{ width: '100%', background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '8px', color: '#fff', padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
+              />
+            )}
+
+            {organigramme.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                {[...new Set(organigramme.map(m => m.departement || 'Autre'))].map(dept => {
+                  const c = getDeptColor(dept)
+                  return (
+                    <span key={dept} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: `1px solid ${c.border}`, color: c.text, background: c.bg }}>
+                      ● {dept}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+
+            {organigramme.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#4b5563' }}>
+                <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🏛️</p>
+                <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: '#6b7280' }}>Aucun membre dans l'organigramme</p>
+                <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
+                  {construireArbreOrganigramme(organigramme).map((root, i) => (
+                    <OrgNode
+                      key={root.id || i} node={root} depth={0}
+                      expandedNodes={orgExpandedNodes} onToggle={toggleOrgNode} searchQuery={orgSearchQuery}
+                      canEdit={canEditSection('organigramme')} onEdit={ouvrirModalOrganigramme} onDelete={supprimerMembreOrganigramme}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -2892,6 +3213,24 @@ export default function DashboardClub() {
                 {formOrganigramme.role === 'Autre' && (
                   <input style={{ ...st.input, marginTop: '8px' }} placeholder="Préciser le rôle" value={roleOrganigrammeLibre} onChange={e => setRoleOrganigrammeLibre(e.target.value)} />
                 )}
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={st.label}>Département</label>
+                <select style={st.input} value={formOrganigramme.departement} onChange={e => setFormOrganigramme(f => ({ ...f, departement: e.target.value }))}>
+                  {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={st.label}>Supérieur hiérarchique</label>
+                <select style={st.input} value={formOrganigramme.superieur} onChange={e => setFormOrganigramme(f => ({ ...f, superieur: e.target.value }))}>
+                  <option value="">— Aucun (sommet) —</option>
+                  {organigramme.filter(m => m.id !== membreOrganigrammeEdite?.id).map(m => {
+                    const key = `${m.nom} ${m.prenom}`.trim()
+                    return <option key={m.id} value={key}>{m.prenom} {m.nom}</option>
+                  })}
+                </select>
               </div>
 
               <div style={{ marginBottom: '12px' }}>
