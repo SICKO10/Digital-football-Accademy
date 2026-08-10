@@ -40,7 +40,7 @@ const CONTACT_ROLE_LABEL = (role) => CONTACT_ROLES.find(r => r.val === role)?.la
 const st = {
   card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  tab: (active) => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
+  tab: (active, color = '#4ade80') => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? color : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
   btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
   btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
   btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }),
@@ -96,7 +96,7 @@ function StatutBadge({ statut }) {
   )
 }
 
-function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false }) {
+function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false, accentColor = '#4ade80' }) {
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
   const total = Number(sponsor.montant_contrat) || 0
@@ -143,7 +143,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
         </div>
         <div>
           <p style={st.label}>Reçu</p>
-          <p style={{ margin: 0, fontWeight: 700, color: '#4ade80' }}>{recu.toLocaleString('fr-FR')} €</p>
+          <p style={{ margin: 0, fontWeight: 700, color: accentColor }}>{recu.toLocaleString('fr-FR')} €</p>
         </div>
         <div>
           <p style={st.label}>Reste</p>
@@ -167,7 +167,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
               const livree = contrepartiesLivrees.includes(c)
               return (
                 <button key={i} onClick={() => !readOnly && onToggleContrepartie(sponsor, c)} disabled={readOnly}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#4ade80' : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? accentColor : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
                   <span>{livree ? '✓' : '○'}</span> {c}
                 </button>
               )
@@ -205,7 +205,7 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
 }
 
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
-function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
+function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor = '#4ade80' }) {
   const [form, setForm] = useState(() => ({
     entreprise: sponsor?.entreprise || '',
     contact_nom: sponsor?.contact_nom || '',
@@ -326,7 +326,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving }) {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => onSave(form)} disabled={!valide || saving} style={{ ...st.btnSolid('#4ade80'), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
+          <button onClick={() => onSave(form)} disabled={!valide || saving} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
             {saving ? 'Enregistrement...' : sponsor ? 'Enregistrer' : 'Créer le sponsor'}
           </button>
           <button onClick={onClose} style={st.btnSecondary}>Annuler</button>
@@ -384,7 +384,7 @@ function ModalPaiement({ sponsor, onClose, onSave, saving }) {
   )
 }
 
-function ModalNiveau({ niveau, onClose, onSave, saving }) {
+function ModalNiveau({ niveau, onClose, onSave, saving, accentColor = '#4ade80' }) {
   const [nom, setNom] = useState(niveau?.nom || '')
   const [montantAnnuel, setMontantAnnuel] = useState(niveau?.montant_annuel != null ? String(niveau.montant_annuel) : '')
   const [couleur, setCouleur] = useState(niveau?.couleur || COULEURS_NIVEAU[0].val)
@@ -447,7 +447,7 @@ function ModalNiveau({ niveau, onClose, onSave, saving }) {
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
           <button
             onClick={() => onSave({ nom: nom.trim(), montant_annuel: Number(montantAnnuel) || 0, couleur, contreparties })}
-            disabled={!valide || saving} style={{ ...st.btnSolid('#4ade80'), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
+            disabled={!valide || saving} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
             {saving ? 'Enregistrement...' : niveau ? 'Enregistrer' : 'Créer le niveau'}
           </button>
           <button onClick={onClose} style={st.btnSecondary}>Annuler</button>
@@ -458,7 +458,7 @@ function ModalNiveau({ niveau, onClose, onSave, saving }) {
 }
 
 // ── Composant principal ──────────────────────────────────────────────────────
-export default function GestionSponsors({ clubId, saison, readOnly = false }) {
+export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
   const [vue, setVue] = useState('dashboard')
   const [saisonActive, setSaisonActive] = useState(saison)
   const [niveaux, setNiveaux] = useState([])
@@ -606,7 +606,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
             { id: 'sponsors', label: '🤝 Sponsors' },
             { id: 'niveaux', label: '⭐ Niveaux' },
           ].map(t => (
-            <button key={t.id} style={st.tab(vue === t.id)} onClick={() => setVue(t.id)}>{t.label}</button>
+            <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
           ))}
         </div>
         <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
@@ -617,9 +617,9 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
       {vue === 'dashboard' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
-            <KpiCard label="Sponsors actifs" valeur={sponsors.length} />
+            <KpiCard label="Sponsors actifs" valeur={sponsors.length} couleur={accentColor} />
             <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur="#60a5fa" />
-            <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur="#4ade80" />
+            <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur={accentColor} />
             <KpiCard label="Restant à recevoir" valeur={`${Math.max(0, budgetTotal - encaisse).toLocaleString('fr-FR')} €`} couleur="#f59e0b" />
           </div>
 
@@ -677,7 +677,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
       {vue === 'sponsors' && (
         <div>
           {!readOnly && (
-            <button onClick={() => setModalSponsor('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Nouveau sponsor</button>
+            <button onClick={() => setModalSponsor('new')} style={{ ...st.btnSolid(accentColor), marginBottom: '1.25rem' }}>+ Nouveau sponsor</button>
           )}
           {sponsors.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
@@ -692,6 +692,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
                   onAjouterPaiement={setModalPaiement}
                   onToggleContrepartie={toggleContrepartie}
                   readOnly={readOnly}
+                  accentColor={accentColor}
                 />
               ))}
             </div>
@@ -702,7 +703,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
       {vue === 'niveaux' && (
         <div>
           {!readOnly && (
-            <button onClick={() => setModalNiveau('new')} style={{ ...st.btnSolid('#4ade80'), marginBottom: '1.25rem' }}>+ Ajouter un niveau</button>
+            <button onClick={() => setModalNiveau('new')} style={{ ...st.btnSolid(accentColor), marginBottom: '1.25rem' }}>+ Ajouter un niveau</button>
           )}
           {niveaux.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
@@ -730,6 +731,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
           onClose={() => setModalSponsor(null)}
           onSave={sauvegarderSponsor}
           saving={saving}
+          accentColor={accentColor}
         />
       )}
       {modalNiveau && !readOnly && (
@@ -738,6 +740,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false }) {
           onClose={() => setModalNiveau(null)}
           onSave={sauvegarderNiveau}
           saving={saving}
+          accentColor={accentColor}
         />
       )}
       {modalPaiement && (
