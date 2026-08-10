@@ -3468,7 +3468,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
+      <p style={{ color: '#60a5fa', fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
     </div>
   )
 
@@ -6098,7 +6098,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <p style={{ margin: '0 0 1rem', fontSize: '12px', color: '#555' }}>{filtered.length} {t('recrut_joueurs_trouves', lang)}</p>
               {/* Grid joueurs */}
               {!recrutLoaded ? (
-                <p style={{ color: '#4ade80', textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
+                <p style={{ color: '#60a5fa', textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
               ) : filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#444' }}>
                   <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
