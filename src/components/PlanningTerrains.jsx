@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import { normaliserHeure, normaliserCle, trouverValeur, lignesVersObjets, trouverFeuilleAvecDonnees } from '../lib/excelImport'
+import { normaliserHeure, normaliserCle, trouverFeuilleAvecDonnees } from '../lib/excelImport'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 
 const JOURS = [
@@ -24,15 +24,6 @@ const creneauVide = (terrainId) => ({
   id: null, terrain_id: terrainId || '', equipe: '', educateur_id: '',
   jour: 'lundi', heure_debut: '', heure_fin: '',
 })
-
-const ALIAS_IMPORT = {
-  terrain: ['terrain'],
-  equipe: ['equipe', 'team'],
-  educateur: ['educateur', 'coach', 'entraineur'],
-  jour: ['jour', 'day'],
-  heure_debut: ['heuredebut', 'debut', 'start'],
-  heure_fin: ['heurefin', 'fin', 'end'],
-}
 
 const normaliserJour = (val) => JOURS.find(j => normaliserCle(val).includes(j.val))?.val || ''
 
@@ -66,7 +57,6 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [importLignes, setImportLignes] = useState([])
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState(null)
-  const [fichierEnErreur, setFichierEnErreur] = useState(null) // File dont l'import par en-têtes a échoué — proposé pour l'analyse IA
   const [iaStatus, setIaStatus] = useState(null)
 
   const chargerTerrains = async () => {
@@ -216,72 +206,25 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
 
   const nomEducateurDeLigne = (e) => `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim()
 
+  // Import Excel/CSV du planning : lit le fichier et envoie directement son
+  // contenu brut à l'IA (même modèle/file d'attente que les autres scans IA
+  // de l'app, cf. enqueueGroqRequest), sans tenter de détecter/valider des
+  // en-têtes ou colonnes nous-mêmes au préalable — les fichiers réels
+  // (grilles par semaine, tableaux croisés, en-têtes sur plusieurs lignes...)
+  // ne rentrent pas de façon fiable dans un mapping de colonnes fixe, et
+  // l'IA s'en sort largement mieux. Alimente le tableau d'aperçu éditable
+  // (importLignes) — aucun insert direct : le dirigeant garde la main pour
+  // corriger/valider avant "Valider l'import".
   const handleFichierImport = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setImportError(null)
-    setFichierEnErreur(null)
     const ext = file.name.split('.').pop().toLowerCase()
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
       setImportError('Format non supporté. Utilise un fichier .xlsx ou .csv (depuis Numbers : exporte en .xlsx ou .csv au préalable).')
       e.target.value = ''
       return
     }
-    setImporting(true)
-    try {
-      const XLSX = await import('xlsx')
-      const buf = await file.arrayBuffer()
-      const wb = XLSX.read(buf, { type: 'array' })
-      const { sheet: feuille, sheetName } = trouverFeuilleAvecDonnees(wb, s => XLSX.utils.sheet_to_json(s, { header: 1, defval: '' }))
-      if (!feuille) throw new Error('Aucun onglet avec des données trouvé dans le fichier.')
-      console.log('Onglet utilisé :', sheetName)
-      const rowsBrutes = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
-      const { lignes: rows, headerRow } = lignesVersObjets(rowsBrutes)
-      console.log('Import planning terrains — headers détectés :', headerRow)
-      if (headerRow.length === 0) {
-        throw new Error("En-têtes non trouvées dans les 20 premières lignes du fichier. Vérifie qu'il contient bien des colonnes comme Terrain, Équipe, Jour, Heure début, Heure fin.")
-      }
-
-      const mapped = rows.map(row => {
-        const terrainNom = trouverValeur(row, ALIAS_IMPORT.terrain)
-        const equipe = trouverValeur(row, ALIAS_IMPORT.equipe)
-        const educateurNom = trouverValeur(row, ALIAS_IMPORT.educateur)
-        const jourBrut = trouverValeur(row, ALIAS_IMPORT.jour)
-        const terrain = terrains.find(t => normaliserCle(t.nom) === normaliserCle(terrainNom))
-        const educateur = educateurs.find(e => normaliserCle(nomEducateurDeLigne(e)) === normaliserCle(educateurNom))
-        return {
-          _id: crypto.randomUUID(),
-          terrain_id: terrain?.id || '',
-          equipe,
-          educateur_id: educateur?.educateur_id || '',
-          jour: normaliserJour(jourBrut) || 'lundi',
-          heure_debut: normaliserHeure(trouverValeur(row, ALIAS_IMPORT.heure_debut)),
-          heure_fin: normaliserHeure(trouverValeur(row, ALIAS_IMPORT.heure_fin)),
-        }
-      }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
-
-      if (mapped.length === 0) {
-        throw new Error(`Aucune ligne exploitable trouvée. Colonnes détectées : ${headerRow.join(', ')}. Vérifie qu'elles correspondent au modèle (Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin) et que les lignes de données sous les en-têtes sont bien remplies.`)
-      }
-      setImportLignes(mapped)
-    } catch (err) {
-      setImportError(err.message)
-      setFichierEnErreur(file)
-    }
-    setImporting(false)
-    e.target.value = ''
-  }
-
-  // Filet de secours quand handleFichierImport n'a pas trouvé d'en-têtes
-  // exploitables (grille complexe, tableau croisé...) : envoie le contenu
-  // brut du fichier à l'IA (même modèle/file d'attente que les autres scans
-  // IA de l'app, cf. enqueueGroqRequest) pour qu'elle extraie les créneaux
-  // elle-même. Alimente ensuite le même tableau d'aperçu éditable que
-  // l'import par en-têtes (importLignes) — aucun insert direct : le
-  // dirigeant garde la main pour corriger/valider avant "Valider l'import".
-  const analyserPlanningIA = async (file) => {
-    if (!file) return
-    setImportError(null)
     setImporting(true)
     setIaStatus(null)
     try {
@@ -351,12 +294,12 @@ Règles :
 
       if (mapped.length === 0) throw new Error("L'IA n'a trouvé aucun créneau exploitable dans ce fichier.")
       setImportLignes(mapped)
-      setFichierEnErreur(null)
     } catch (err) {
       setImportError(err.message)
     }
     setImporting(false)
     setIaStatus(null)
+    e.target.value = ''
   }
 
   const modifierLigneImport = (id, champ, valeur) => {
@@ -554,26 +497,15 @@ Règles :
                 <div style={{ ...st.card, marginBottom: '1.5rem' }}>
                   <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Import Excel / CSV</p>
                   <p style={{ fontSize: '12px', color: '#555', margin: '0 0 12px' }}>
-                    Colonnes attendues : Terrain, Équipe, Éducateur, Jour, Heure début, Heure fin — utilise le template pour être sûr du format. Depuis Numbers : exporte d'abord en .xlsx ou .csv.
+                    L'IA analyse directement le fichier, quel que soit son format (grille par semaine, tableau croisé, liste avec en-têtes...) — utilise le template si tu pars de zéro. Depuis Numbers : exporte d'abord en .xlsx ou .csv.
                   </p>
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFichierImport} style={{ display: 'none' }} id="input-import-terrains" />
                   <label htmlFor="input-import-terrains"
                     style={{ background: accentColor, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: importing ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: importing ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
-                    {importing ? 'Lecture en cours...' : 'Choisir un fichier'}
+                    {importing ? libelleStatutGroq(iaStatus) : 'Choisir un fichier'}
                   </label>
 
                   {importError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {importError}</p>}
-                  {fichierEnErreur && (
-                    <div style={{ marginTop: '10px' }}>
-                      <button onClick={() => analyserPlanningIA(fichierEnErreur)} disabled={importing}
-                        style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: importing ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: importing ? 0.6 : 1 }}>
-                        {importing ? libelleStatutGroq(iaStatus) : '🤖 Réessayer avec l\'IA'}
-                      </button>
-                      <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>
-                        Pour les fichiers sans en-têtes claires (grille complexe, tableau croisé...) — l'IA lit le fichier et propose des créneaux à valider ci-dessous.
-                      </p>
-                    </div>
-                  )}
 
                   {importLignes.length > 0 && (
                     <div style={{ marginTop: '16px' }}>
