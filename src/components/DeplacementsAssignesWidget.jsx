@@ -13,7 +13,7 @@ export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a
       .eq('educateur_id', userId)
       .gte('date_depart', aujourdHui)
       .order('date_depart')
-      .limit(5)
+      .limit(2)
     setDeplacements(data || [])
     setLoading(false)
   }
@@ -38,7 +38,7 @@ export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a
     <div style={{ marginBottom: '1.5rem' }}>
       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>🚌 Prochains déplacements</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {deplacements.map(d => {
+        {deplacements.slice(0, 2).map(d => {
           const date = new Date(d.date_depart + 'T12:00:00')
           const joursRestants = Math.ceil((date - new Date()) / (1000 * 60 * 60 * 24))
           const urgent = joursRestants <= 3
