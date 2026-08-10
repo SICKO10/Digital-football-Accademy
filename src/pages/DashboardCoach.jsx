@@ -51,6 +51,7 @@ function DashboardCoach() {
   const [tickets, setTickets] = useState([])
   const [reponseDrafts, setReponseDrafts] = useState({})
   const [savingTicket, setSavingTicket] = useState(null)
+  const [ticketsError, setTicketsError] = useState(null)
 
   useEffect(() => {
     init()
@@ -74,7 +75,17 @@ function DashboardCoach() {
   }
 
   const getTickets = async () => {
-    const { data } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false })
+    if (error) {
+      // 42P01 = la table n'existe pas encore (supabase_support_tickets.sql pas exécuté) —
+      // dans les deux cas on préfère un message clair à une liste vide silencieuse.
+      console.error('❌ Chargement des tickets support échoué :', error.code, error.message)
+      setTicketsError(error.code === '42P01'
+        ? "La table support_tickets n'existe pas encore en base — exécute supabase_support_tickets.sql dans l'éditeur SQL Supabase."
+        : `Erreur de chargement : ${error.message}`)
+      return
+    }
+    setTicketsError(null)
     const userIds = [...new Set((data || []).map(t => t.user_id).filter(Boolean))]
     let profilsParId = {}
     if (userIds.length > 0) {
@@ -1003,6 +1014,11 @@ function DashboardCoach() {
           {/* ===== SECTION SUPPORT ===== */}
           {activeSection === 'support' && (
             <>
+              {ticketsError && (
+                <div style={{ background: '#f9731610', border: '1px solid #f9731640', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem', color: '#f97316', fontSize: '13px' }}>
+                  ⚠️ {ticketsError}
+                </div>
+              )}
               {tickets.length === 0 ? (
                 <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>💬</p>
