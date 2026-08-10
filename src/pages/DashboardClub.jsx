@@ -7,7 +7,6 @@ import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
-import RepartitionMiniBus from '../components/RepartitionMiniBus'
 import PlanningTerrains from '../components/PlanningTerrains'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -43,7 +42,6 @@ const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoTerrain   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><circle cx="12" cy="12" r="3"/></svg>
 const IcoLink      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-const IcoCalculator = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
 const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
 
@@ -88,7 +86,6 @@ const PERMISSION_SECTIONS = [
   { id: 'deplacements', label: 'Déplacements' },
   { id: 'budget', label: 'Budget' },
   { id: 'sponsors', label: 'Sponsors' },
-  { id: 'repartition_bus', label: 'Mini-bus' },
   { id: 'profil', label: 'Profil club' },
   { id: 'evenements', label: 'Événements & Projets' },
   { id: 'organigramme', label: 'Organigramme' },
@@ -105,7 +102,6 @@ const PERMISSION_DEFAULTS = {
   deplacements: ['president', 'marketing', 'secretaire'],
   budget: ['president', 'secretaire'],
   sponsors: ['president', 'marketing', 'secretaire'],
-  repartition_bus: ['president', 'marketing', 'secretaire'],
   profil: ['president', 'marketing', 'secretaire'],
   evenements: [],
   organigramme: [],
@@ -648,7 +644,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements', 'organigramme']
+    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme']
     const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection)
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
@@ -1537,7 +1533,7 @@ export default function DashboardClub() {
   })()
 
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'repartition_bus', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection)
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection)
 
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
@@ -1562,7 +1558,6 @@ export default function DashboardClub() {
   ] : activeCategorie === 'administratif' ? [
     ...(canViewSection('sponsors') ? [{ id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) }] : []),
     ...(canViewSection('deplacements') ? [{ id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) }] : []),
-    ...(canViewSection('repartition_bus') ? [{ id: 'repartition_bus', label: iconLabel(IcoCalculator, 'Répartition mini-bus') }] : []),
     ...(canViewSection('profil') ? [{ id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) }] : []),
     ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
     ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
@@ -2168,9 +2163,6 @@ export default function DashboardClub() {
         )}
         {activeTab === 'deplacements' && canViewSection('deplacements') && (
           <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} />
-        )}
-        {activeTab === 'repartition_bus' && canViewSection('repartition_bus') && (
-          <RepartitionMiniBus clubId={clubId} readOnly={!canEditSection('repartition_bus')} />
         )}
         {activeTab === 'recrutement' && canViewSection('sportif') && (
           <ScoutCenter userId={clubId} profil={club} embedded={true} />

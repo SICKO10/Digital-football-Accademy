@@ -73,6 +73,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [recuperationMatchsEnCours, setRecuperationMatchsEnCours] = useState(false)
   const [clubVille, setClubVille] = useState(null)
   const [estimationEnCours, setEstimationEnCours] = useState(false)
+  const [showAddVehicule, setShowAddVehicule] = useState(false)
+  const [newVehicule, setNewVehicule] = useState({ plaque: '', capacite: '' })
+  const [savingVehicule, setSavingVehicule] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -98,8 +101,37 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   }
 
   const chargerVehicules = async () => {
-    const { data } = await supabase.from('vehicules').select('*').eq('club_id', clubId)
+    const { data } = await supabase.from('vehicules').select('*').eq('club_id', clubId).order('plaque')
     setVehicules(data || [])
+  }
+
+  // Gestion du parc de véhicules — fusionnée depuis l'ancien onglet "Répartition
+  // mini-bus" (RepartitionMiniBus.jsx), devenu redondant : Déplacements a déjà
+  // sa propre répartition automatique + ses propres horaires calculés, plus
+  // besoin d'un aller-retour import/publication séparé pour juste gérer le parc.
+  const ajouterVehicule = async () => {
+    if (!newVehicule.plaque.trim() || !newVehicule.capacite) return
+    // Optimistic : le formulaire se referme tout de suite sans attendre la
+    // réponse Supabase. Erreur → réouvert avec la saisie intacte.
+    const snapshot = { ...newVehicule }
+    setSavingVehicule(true)
+    setNewVehicule({ plaque: '', capacite: '' })
+    setShowAddVehicule(false)
+    const { error } = await supabase.from('vehicules').insert({ club_id: clubId, plaque: snapshot.plaque.trim().toUpperCase(), capacite: parseInt(snapshot.capacite) })
+    setSavingVehicule(false)
+    if (error) {
+      alert('Erreur : ' + error.message)
+      setNewVehicule(snapshot)
+      setShowAddVehicule(true)
+      return
+    }
+    await chargerVehicules()
+  }
+
+  const supprimerVehicule = async (id) => {
+    if (!confirm('Retirer ce véhicule du parc ?')) return
+    await supabase.from('vehicules').delete().eq('id', id)
+    await chargerVehicules()
   }
 
   // Ville du club (siège), pour estimer la distance/durée du trajet vers la
@@ -616,6 +648,41 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
             {showForm ? '✕ Fermer' : '+ Nouveau déplacement'}
           </button>
         )}
+      </div>
+
+      {/* ── Parc de véhicules — fusionné depuis l'ancien onglet "Répartition mini-bus" ── */}
+      <div style={{ ...st.card, marginBottom: '1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <span style={{ color: '#9ca3af', fontSize: '13px', fontWeight: 700, marginRight: '4px', flexShrink: 0 }}>🚌 Parc :</span>
+        {vehicules.length === 0 ? (
+          <span style={{ color: '#4b5563', fontSize: '13px' }}>Aucun véhicule enregistré</span>
+        ) : (
+          vehicules.map(v => (
+            <span key={v.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px' }}>
+              🚐 {v.plaque} · {v.capacite} places
+              {!readOnly && (
+                <button onClick={() => supprimerVehicule(v.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
+              )}
+            </span>
+          ))
+        )}
+        {!readOnly && (showAddVehicule ? (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input style={{ ...st.input, maxWidth: '160px' }} placeholder="Plaque (ex: AB-123-CD)" value={newVehicule.plaque} onChange={e => setNewVehicule(v => ({ ...v, plaque: e.target.value }))} />
+            <input style={{ ...st.input, maxWidth: '110px' }} type="number" min="1" placeholder="Capacité" value={newVehicule.capacite} onChange={e => setNewVehicule(v => ({ ...v, capacite: e.target.value }))} />
+            <button onClick={ajouterVehicule} disabled={savingVehicule || !newVehicule.plaque.trim() || !newVehicule.capacite}
+              style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              {savingVehicule ? 'Ajout...' : '✓ Ajouter'}
+            </button>
+            <button onClick={() => setShowAddVehicule(false)} style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Annuler
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddVehicule(true)}
+            style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            + Ajouter un véhicule
+          </button>
+        ))}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
