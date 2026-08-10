@@ -239,7 +239,11 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       // Colonnes jointes par " | " (pas des tabulations) : les tabulations brutes dans
       // une chaîne envoyée à un LLM peuvent se retrouver telles quelles dans sa réponse
       // JSON et casser le parsing (JSON.parse n'accepte pas un \t littéral non échappé).
-      const sample = grille.slice(0, 60).map(row => row.slice(0, 40).map(c => String(c ?? '')).join(' | ')).join('\n').trim()
+      const sample = grille
+        .filter(row => row.some(c => String(c ?? '').trim() !== ''))
+        .slice(0, 40)
+        .map(row => row.slice(0, 30).map(c => String(c ?? '')).join(' | '))
+        .join('\n').trim()
       if (!sample) throw new Error('Fichier vide ou illisible.')
 
       const prompt = `Voici le contenu brut (colonnes séparées par " | ") d'un planning d'occupation de terrains de football club, sous une forme quelconque (grille par semaine, tableau croisé, liste...) :
@@ -264,7 +268,7 @@ Règles :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
+          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
             { role: 'user', content: prompt },
