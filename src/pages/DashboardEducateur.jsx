@@ -3687,10 +3687,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     </button>
                   ))}
                 </div>
-                <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title={t('equipe_telecharger_modele', lang)}>📥 {t('equipe_template', lang)}</button>
+                <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title={t('equipe_telecharger_modele', lang)}>{t('equipe_template', lang)}</button>
                 {canEdit('effectif') && (
                   <>
-                    <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>📂 {t('equipe_importer_excel_csv', lang)}</button>
+                    <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>{t('equipe_importer_excel_csv', lang)}</button>
                     <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
                     <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ {t('equipe_ajouter', lang)}</button>
                   </>
@@ -4050,7 +4050,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={confirmerImport} style={st.btnSolid}>✅ Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
+                    <button onClick={confirmerImport} style={st.btnSolid}>Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
                     <button onClick={() => setImportPreview(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
                   </div>
                 )}
