@@ -531,12 +531,24 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
 
   const supprimerDeplacement = async (dep) => {
     if (!confirm(`Supprimer le déplacement vers ${dep.lieu_destination} ?`)) return
+    // Try/catch en plus du check `error` : un échec réseau (perte de connexion,
+    // requête coupée) fait rejeter la promesse fetch elle-même — pas de {error}
+    // renvoyé par Supabase dans ce cas, juste un throw ("TypeError: Load failed"
+    // sur Safari/iOS, "Failed to fetch" ailleurs) qui remontait auparavant tel
+    // quel jusqu'à l'utilisateur sans message compréhensible.
+    let data, error
+    try {
+      ;({ data, error } = await supabase.from('deplacements').delete().eq('id', dep.id).select())
+    } catch (e) {
+      console.error('❌ Suppression déplacement — échec réseau :', e)
+      alert("La suppression a échoué : connexion au serveur interrompue. Vérifie ta connexion internet et réessaie.")
+      return
+    }
     // .select() pour détecter un DELETE silencieusement bloqué par une policy RLS —
     // Postgres/Supabase renvoie alors error: null avec 0 ligne supprimée, pas une
     // erreur, donc juste vérifier `error` ne suffit pas (même piège déjà rencontré
     // sur la suppression de joueur : la carte disparaît de l'UI en optimiste, mais
     // réapparaît au rechargement car rien n'a vraiment été supprimé en base).
-    const { data, error } = await supabase.from('deplacements').delete().eq('id', dep.id).select()
     if (error) {
       console.error('❌ Suppression déplacement échouée :', error.code, error.message, error.details)
       alert('Erreur : ' + error.message)
