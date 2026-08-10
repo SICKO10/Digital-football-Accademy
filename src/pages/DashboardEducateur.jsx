@@ -3727,7 +3727,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         <div key={i}
                           style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? '#4ade8008' : '#141414', border: `1px solid ${isToday ? '#4ade8025' : '#1f1f1f'}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default' }}
                           onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: ev.type === 'match' ? '#60a5fa15' : '#4ade8015', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : '#4ade8030'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: ev.type === 'match' ? '#60a5fa15' : 'rgba(96,165,250,0.06)', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : 'rgba(96,165,250,0.15)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                             {ev.type === 'match' ? '⚽' : '🏃'}
                           </div>
                           <div style={{ flex: 1 }}>
@@ -3749,7 +3749,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
-              <div style={{ background: '#0f1a2e', border: '1px solid #1e3a5f', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
                 <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#60a5fa', fontWeight: 700, fontSize: 13 }}>

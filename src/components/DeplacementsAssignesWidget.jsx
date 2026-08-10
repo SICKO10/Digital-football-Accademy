@@ -35,23 +35,62 @@ export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a
   if (loading || deplacements.length === 0) return null
 
   return (
-    <div style={{ background: accentColor + '10', border: `1px solid ${accentColor}40`, borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>🚌 Déplacements qui te concernent</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {deplacements.map(d => (
-          <div key={d.id} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-              <span>{d.equipe || 'Équipe'} · {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{d.heure_depart ? ` · ${d.heure_depart.slice(0, 5)}` : ''}</span>
-              <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>{d.vehicule || 'Bus à confirmer'}</span>
+    <div style={{ marginBottom: '1.5rem' }}>
+      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>🚌 Prochains déplacements</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {deplacements.map(d => {
+          const date = new Date(d.date_depart + 'T12:00:00')
+          const joursRestants = Math.ceil((date - new Date()) / (1000 * 60 * 60 * 24))
+          const urgent = joursRestants <= 3
+          const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+          const badge = joursRestants <= 0 ? "Aujourd'hui" : joursRestants === 1 ? 'Demain' : `J-${joursRestants}`
+
+          return (
+            <div key={d.id} style={{
+              background: urgent ? 'rgba(249,115,22,0.06)' : 'rgba(96,165,250,0.05)',
+              border: `1px solid ${urgent ? 'rgba(249,115,22,0.2)' : 'rgba(96,165,250,0.15)'}`,
+              borderRadius: '10px', padding: '12px 16px',
+              display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
+            }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
+                background: urgent ? 'rgba(249,115,22,0.12)' : 'rgba(96,165,250,0.10)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px',
+              }}>
+                🚌
+              </div>
+
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {d.lieu_destination || d.equipe || 'Déplacement'}
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                  {dateStr}
+                  {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
+                  {d.ville_destination ? ` · ${d.ville_destination}` : ''}
+                  {' · '}{d.vehicule || 'Bus à confirmer'}
+                </p>
+              </div>
+
+              <div style={{
+                flexShrink: 0,
+                background: urgent ? 'rgba(249,115,22,0.15)' : 'rgba(96,165,250,0.10)',
+                border: `1px solid ${urgent ? '#f97316' : '#3b82f6'}`,
+                borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 700,
+                color: urgent ? '#f97316' : '#60a5fa',
+              }}>
+                {badge}
+              </div>
+
+              {onOuvrirFiche && (
+                <button onClick={() => onOuvrirFiche(d)}
+                  style={{ flexShrink: 0, background: 'transparent', border: '1px solid #2a2a2a', color: d.fiche_completee ? accentColor : '#888', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {d.fiche_completee ? '✅ Fiche remplie' : '✏️ Remplir la fiche'}
+                </button>
+              )}
             </div>
-            {onOuvrirFiche && (
-              <button onClick={() => onOuvrirFiche(d)}
-                style={{ alignSelf: 'flex-start', background: 'transparent', border: '1px solid #2a2a2a', color: d.fiche_completee ? accentColor : '#888', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                {d.fiche_completee ? '✅ Fiche remplie — modifier' : '✏️ Remplir la fiche'}
-              </button>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
