@@ -3749,10 +3749,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ background: '#0f1a2e', border: '1px solid #1e3a5f', borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
                 <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#25D36615', border: '1px solid #25D36640', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#25D366', fontWeight: 700, fontSize: 13 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#60a5fa', fontWeight: 700, fontSize: 13 }}>
                   💬 {t('equipe_ouvrir_groupe', lang)}
                 </a>
                 <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
