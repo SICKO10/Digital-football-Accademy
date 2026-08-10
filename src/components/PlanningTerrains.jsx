@@ -236,14 +236,17 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       const { sheet: feuilleTrouvee } = trouverFeuilleAvecDonnees(wb, s => XLSX.utils.sheet_to_json(s, { header: 1, defval: '' })) || {}
       const feuille = feuilleTrouvee || wb.Sheets[wb.SheetNames[0]]
       const grille = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
-      const sample = grille.slice(0, 60).map(row => row.slice(0, 40).join('\t')).join('\n').trim()
+      // Colonnes jointes par " | " (pas des tabulations) : les tabulations brutes dans
+      // une chaîne envoyée à un LLM peuvent se retrouver telles quelles dans sa réponse
+      // JSON et casser le parsing (JSON.parse n'accepte pas un \t littéral non échappé).
+      const sample = grille.slice(0, 60).map(row => row.slice(0, 40).map(c => String(c ?? '')).join(' | ')).join('\n').trim()
       if (!sample) throw new Error('Fichier vide ou illisible.')
 
-      const prompt = `Voici le contenu brut (colonnes séparées par des tabulations) d'un planning d'occupation de terrains de football club, sous une forme quelconque (grille par semaine, tableau croisé, liste...) :
+      const prompt = `Voici le contenu brut (colonnes séparées par " | ") d'un planning d'occupation de terrains de football club, sous une forme quelconque (grille par semaine, tableau croisé, liste...) :
 
-\`\`\`
+---DEBUT FICHIER---
 ${sample}
-\`\`\`
+---FIN FICHIER---
 
 Terrains existants dans ce club (réutilise ces noms exacts si tu les reconnais dans le fichier) : ${terrains.map(t => t.nom).join(', ') || 'aucun terrain enregistré'}
 
