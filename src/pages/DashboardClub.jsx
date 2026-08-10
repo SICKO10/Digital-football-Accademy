@@ -239,7 +239,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = '#4ade80' }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -276,39 +276,39 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> {t('club_accueil', lang)}</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
 
-      <TerrainsLiberesWidget clubId={clubId} accentColor="#4ade80" titre="Terrains disponibles ce jour" />
+      <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles ce jour" />
 
       {/* Planning club : matchs de toutes les équipes affiliées + événements club
           (tournois, soirées, réunions...) — volontairement pas les séances
           d'entraînement, qui restent une vue éducateur. */}
-      <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
+      <div style={{ background: '#111', border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} accentColor="#4ade80" onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '2rem' }}>
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalLicencies}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{totalLicencies}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBallon /> {t('club_equipes_actives', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{nbEquipes}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEquipes}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> {t('club_tab_educateurs', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{nbEducateurs}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEducateurs}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoHorloge /> {t('club_demandes_affiliation', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? '#4ade80' : '#fff' }}>{nbEnAttente}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? couleurPrincipale : '#fff' }}>{nbEnAttente}</p>
           <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
         </div>
       </div>
@@ -397,6 +397,126 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
               ))}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Personnalisation visuelle du club (couleurs, photo de fond, logo hero, slogan) ──
+// Edite une copie locale des couleurs/slogan (themeEdit), appliquée immédiatement
+// sur le hero banner et la nav via sauvegarderTheme (optimistic sur `club`, parent).
+// Les uploads (fond/hero) se sauvegardent directement au choix du fichier — pas de
+// bouton "Appliquer" séparé pour ceux-là.
+const PRESETS_PRINCIPALE = ['#4ade80', '#f97316', '#60a5fa', '#f43f5e', '#fbbf24', '#a78bfa', '#22d3ee', '#ffffff']
+const PRESETS_SECONDAIRE = ['#22d3ee', '#4ade80', '#818cf8', '#f97316', '#ec4899', '#34d399', '#fbbf24', '#94a3b8']
+
+function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
+  const label = { color: '#9ca3af', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
+  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+
+  return (
+    <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+        <h3 style={{ margin: 0, color: '#fff', fontSize: '15px', fontWeight: 700 }}>🎨 Personnalisation du dashboard</h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
+        {/* Couleur principale */}
+        <div>
+          <label style={label}>Couleur principale</label>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input type="color" value={themeEdit.couleur_principale}
+              onChange={e => setThemeEdit(p => ({ ...p, couleur_principale: e.target.value }))}
+              style={{ width: '44px', height: '44px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {PRESETS_PRINCIPALE.map(c => (
+                <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_principale: c })); sauvegarderTheme({ couleur_principale: c }) }}
+                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_principale || '#4ade80') === c ? '2px solid white' : '2px solid transparent' }} />
+              ))}
+            </div>
+          </div>
+          <button onClick={() => sauvegarderTheme({ couleur_principale: themeEdit.couleur_principale })} disabled={savingTheme}
+            style={{ marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            Appliquer
+          </button>
+        </div>
+
+        {/* Couleur secondaire */}
+        <div>
+          <label style={label}>Couleur secondaire</label>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input type="color" value={themeEdit.couleur_secondaire}
+              onChange={e => setThemeEdit(p => ({ ...p, couleur_secondaire: e.target.value }))}
+              style={{ width: '44px', height: '44px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {PRESETS_SECONDAIRE.map(c => (
+                <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_secondaire: c })); sauvegarderTheme({ couleur_secondaire: c }) }}
+                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_secondaire || '#22d3ee') === c ? '2px solid white' : '2px solid transparent' }} />
+              ))}
+            </div>
+          </div>
+          <button onClick={() => sauvegarderTheme({ couleur_secondaire: themeEdit.couleur_secondaire })} disabled={savingTheme}
+            style={{ marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            Appliquer
+          </button>
+        </div>
+
+        {/* Photo de fond */}
+        <div>
+          <label style={label}>Photo de fond (stade, terrain, vestiaire…)</label>
+          {club?.image_fond_url && (
+            <img src={club.image_fond_url} alt="Fond" style={{ width: '100%', maxWidth: '280px', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px', display: 'block' }} />
+          )}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={btnFichier}>
+              {themeUploading === 'image_fond_url' ? '⏳ Upload...' : '📷 Choisir une photo'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!themeUploading}
+                onChange={e => e.target.files[0] && uploaderImageTheme(e.target.files[0], 'image_fond_url')} />
+            </label>
+            {club?.image_fond_url && (
+              <button onClick={() => sauvegarderTheme({ image_fond_url: null })}
+                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: '#ef4444', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Supprimer
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Photo hero / logo grand format */}
+        <div>
+          <label style={label}>Photo / logo du club (grand format, remplace l'avatar dans l'en-tête)</label>
+          {club?.image_hero_url && (
+            <img src={club.image_hero_url} alt="Hero" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '8px', display: 'block' }} />
+          )}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={btnFichier}>
+              {themeUploading === 'image_hero_url' ? '⏳ Upload...' : '🖼️ Choisir logo / photo'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!themeUploading}
+                onChange={e => e.target.files[0] && uploaderImageTheme(e.target.files[0], 'image_hero_url')} />
+            </label>
+            {club?.image_hero_url && (
+              <button onClick={() => sauvegarderTheme({ image_hero_url: null })}
+                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: '#ef4444', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Supprimer
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Slogan */}
+        <div style={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
+          <label style={label}>Slogan du club</label>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <input type="text" placeholder="Ex: Ensemble, on va plus loin" value={themeEdit.slogan}
+              onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
+              style={{ flex: 1, minWidth: '200px', background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+            <button onClick={() => sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })} disabled={savingTheme}
+              style={{ background: club?.couleur_principale || '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Sauvegarder
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -653,6 +773,14 @@ export default function DashboardClub() {
   const [avatarClubUploading, setAvatarClubUploading] = useState(false)
   const [avisRecus, setAvisRecus] = useState([])
 
+  // Thème visuel du club (couleurs, photo de fond, logo/photo hero, slogan)
+  // — persisté sur profiles (pas de table clubs dans ce projet), affiché sur
+  // le hero banner et repris sur la nav + les stats de l'Accueil.
+  const [showThemeEditor, setShowThemeEditor] = useState(false)
+  const [themeEdit, setThemeEdit] = useState({ couleur_principale: '#4ade80', couleur_secondaire: '#22d3ee', slogan: '' })
+  const [savingTheme, setSavingTheme] = useState(false)
+  const [themeUploading, setThemeUploading] = useState(null) // 'image_fond_url' | 'image_hero_url' | null
+
   // Notation générale éducateur
   const [eduNoteModal, setEduNoteModal] = useState(null) // affiliation en cours de notation
   const [eduNoteCriteres, setEduNoteCriteres] = useState({})
@@ -734,13 +862,16 @@ export default function DashboardClub() {
     return (PERMISSION_DEFAULTS[section] || []).includes(monRole)
   }
 
+  const couleurPrincipale = club?.couleur_principale || '#4ade80'
+  const couleurSecondaire = club?.couleur_secondaire || '#22d3ee'
+
   const st = {
     page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
     navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
     logo: { color: '#4ade80', fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
-    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
+    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? couleurPrincipale : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
     card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: '#4ade80', color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
     btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
@@ -821,6 +952,11 @@ export default function DashboardClub() {
     setMonRole(role)
     setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '' })
+    setThemeEdit({
+      couleur_principale: clubProfile.couleur_principale || '#4ade80',
+      couleur_secondaire: clubProfile.couleur_secondaire || '#22d3ee',
+      slogan: clubProfile.slogan || '',
+    })
 
     // Génère un code club s'il n'existe pas encore (seulement le club lui-même, pas le staff)
     if (profile.plan === 'club') {
@@ -1677,6 +1813,47 @@ Règles :
     setAvatarClubUploading(false)
   }
 
+  // Sauvegarde un ou plusieurs champs de thème (couleurs, slogan, images) —
+  // optimistic sur `club` (source de vérité pour la couleur affichée partout),
+  // sans attendre la réponse Supabase.
+  const sauvegarderTheme = async (champs) => {
+    const avant = club
+    setClub(prev => ({ ...prev, ...champs }))
+    setSavingTheme(true)
+    const { error } = await supabase.from('profiles').update(champs).eq('id', clubId)
+    setSavingTheme(false)
+    if (error) {
+      setClub(avant)
+      alert('Erreur : ' + error.message)
+    }
+  }
+
+  // Upload photo de fond / photo hero — même flux signé Cloudinary que
+  // l'avatar club (handleAvatarClubUpload), dossier dédié ('theme') pour ne
+  // pas mélanger avec les certifications/avatars.
+  const uploaderImageTheme = async (file, champ) => {
+    if (!file || !clubId) return
+    setThemeUploading(champ)
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'theme' }) })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
+      await sauvegarderTheme({ [champ]: uploadData.secure_url })
+    } catch (err) {
+      alert('Erreur upload : ' + err.message)
+    }
+    setThemeUploading(null)
+  }
+
   const ouvrirNotationEducateur = (affiliation) => {
     setEduNoteModal(affiliation)
     setEduNoteCriteres({})
@@ -1872,24 +2049,58 @@ Règles :
       </nav>
 
       <div style={st.content}>
-        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            {club?.avatar_url
-              ? <img src={club.avatar_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
-              : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: '#4ade80' }}>
-                  {clubInitiales}
-                </div>
-            }
-            <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '13px' }}>
-              {avatarClubUploading ? '…' : '✎'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
-            </label>
-          </div>
-          <div>
-            <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 800 }}>{club?.club || t('club_mon_club', lang)}</h1>
-            <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+        {/* ── Hero banner — couleurs/photo de fond/slogan personnalisables (Personnaliser) ── */}
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px', marginBottom: '1.5rem' }}>
+          {club?.image_fond_url && (
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${club.image_fond_url})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.35)' }} />
+          )}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: club?.image_fond_url
+              ? `linear-gradient(135deg, ${couleurPrincipale}33 0%, ${couleurSecondaire}22 100%)`
+              : `linear-gradient(135deg, ${couleurPrincipale}22 0%, #111 70%)`,
+          }} />
+          <div style={{ position: 'relative', padding: isMobile ? '16px' : '20px 24px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {club?.image_hero_url
+                ? <img src={club.image_hero_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '18px', objectFit: 'cover', border: `2px solid ${couleurPrincipale}66`, boxShadow: `0 0 20px ${couleurPrincipale}33` }} />
+                : club?.avatar_url
+                  ? <img src={club.avatar_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
+                  : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: couleurPrincipale }}>
+                      {clubInitiales}
+                    </div>
+              }
+              {!club?.image_hero_url && (
+                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '13px' }}>
+                  {avatarClubUploading ? '…' : '✎'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
+                </label>
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>{club?.club || t('club_mon_club', lang)}</h1>
+                {monRole === 'president' && (
+                  <button onClick={() => setShowThemeEditor(v => !v)}
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: '#ccc', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    🎨 {showThemeEditor ? 'Fermer' : 'Personnaliser'}
+                  </button>
+                )}
+              </div>
+              {club?.slogan && <p style={{ margin: '4px 0 0', color: couleurPrincipale, fontSize: '13px', fontStyle: 'italic', fontWeight: 500 }}>« {club.slogan} »</p>}
+              <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+            </div>
           </div>
         </div>
+
+        {showThemeEditor && monRole === 'president' && (
+          <ThemeEditor
+            club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
+            sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
+            savingTheme={savingTheme} themeUploading={themeUploading}
+            isMobile={isMobile} onClose={() => setShowThemeEditor(false)}
+          />
+        )}
 
         {!isMobile ? (
           <>
@@ -1902,7 +2113,7 @@ Règles :
                   onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
                   style={{
                     padding: '12px 28px', borderRadius: '10px', border: 'none',
-                    background: activeCategorie === cat.id ? '#4ade80' : '#1a1a1a',
+                    background: activeCategorie === cat.id ? couleurPrincipale : '#1a1a1a',
                     color: activeCategorie === cat.id ? '#000' : '#666',
                     fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
                     whiteSpace: 'nowrap', flexShrink: 0,
@@ -1963,8 +2174,8 @@ Règles :
                     }}
                     style={{
                       display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                      background: activeCategorie === cat.id ? '#4ade8015' : 'transparent',
-                      color: activeCategorie === cat.id ? '#4ade80' : '#aaa',
+                      background: activeCategorie === cat.id ? couleurPrincipale + '15' : 'transparent',
+                      color: activeCategorie === cat.id ? couleurPrincipale : '#aaa',
                       fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
                     }}>
                     {cat.label}
@@ -2006,6 +2217,7 @@ Règles :
             setActiveTab={setActiveTab}
             lang={lang}
             isMobile={isMobile}
+            couleurPrincipale={couleurPrincipale}
           />
         )}
 
