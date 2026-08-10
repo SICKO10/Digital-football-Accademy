@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { normaliserHeure, normaliserCle, trouverValeur, lignesVersObjets, trouverFeuilleAvecDonnees } from '../lib/excelImport'
+import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -65,6 +66,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [importLignes, setImportLignes] = useState([])
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState(null)
+  const [fichierEnErreur, setFichierEnErreur] = useState(null) // File dont l'import par en-têtes a échoué — proposé pour l'analyse IA
+  const [iaStatus, setIaStatus] = useState(null)
 
   const chargerTerrains = async () => {
     setLoadingTerrains(true)
@@ -217,10 +220,15 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     const file = e.target.files[0]
     if (!file) return
     setImportError(null)
+    setFichierEnErreur(null)
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      setImportError('Format non supporté. Utilise un fichier .xlsx ou .csv (depuis Numbers : exporte en .xlsx ou .csv au préalable).')
+      e.target.value = ''
+      return
+    }
     setImporting(true)
     try {
-      const ext = file.name.split('.').pop().toLowerCase()
-      if (!['xlsx', 'xls', 'csv'].includes(ext)) throw new Error('Format non supporté. Utilise un fichier .xlsx ou .csv (depuis Numbers : exporte en .xlsx ou .csv au préalable).')
       const XLSX = await import('xlsx')
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
@@ -258,9 +266,97 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       setImportLignes(mapped)
     } catch (err) {
       setImportError(err.message)
+      setFichierEnErreur(file)
     }
     setImporting(false)
     e.target.value = ''
+  }
+
+  // Filet de secours quand handleFichierImport n'a pas trouvé d'en-têtes
+  // exploitables (grille complexe, tableau croisé...) : envoie le contenu
+  // brut du fichier à l'IA (même modèle/file d'attente que les autres scans
+  // IA de l'app, cf. enqueueGroqRequest) pour qu'elle extraie les créneaux
+  // elle-même. Alimente ensuite le même tableau d'aperçu éditable que
+  // l'import par en-têtes (importLignes) — aucun insert direct : le
+  // dirigeant garde la main pour corriger/valider avant "Valider l'import".
+  const analyserPlanningIA = async (file) => {
+    if (!file) return
+    setImportError(null)
+    setImporting(true)
+    setIaStatus(null)
+    try {
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY
+      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
+      const XLSX = await import('xlsx')
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array' })
+      const { sheet: feuilleTrouvee } = trouverFeuilleAvecDonnees(wb, s => XLSX.utils.sheet_to_json(s, { header: 1, defval: '' })) || {}
+      const feuille = feuilleTrouvee || wb.Sheets[wb.SheetNames[0]]
+      const grille = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
+      const sample = grille.slice(0, 60).map(row => row.slice(0, 40).join('\t')).join('\n').trim()
+      if (!sample) throw new Error('Fichier vide ou illisible.')
+
+      const prompt = `Voici le contenu brut (colonnes séparées par des tabulations) d'un planning d'occupation de terrains de football club, sous une forme quelconque (grille par semaine, tableau croisé, liste...) :
+
+\`\`\`
+${sample}
+\`\`\`
+
+Terrains existants dans ce club (réutilise ces noms exacts si tu les reconnais dans le fichier) : ${terrains.map(t => t.nom).join(', ') || 'aucun terrain enregistré'}
+
+Extrait tous les créneaux d'occupation. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant/après, sans balise markdown, format exact :
+[{ "terrain": "...", "equipe": "...", "educateur": "...", "jour": "lundi", "heure_debut": "HH:MM", "heure_fin": "HH:MM" }]
+
+Règles :
+- "jour" en minuscules parmi lundi/mardi/mercredi/jeudi/vendredi/samedi/dimanche
+- "heure_debut"/"heure_fin" au format HH:MM, chaîne vide si absent du fichier
+- "educateur" = nom de l'éducateur/coach si visible, sinon chaîne vide
+- Ignore les lignes/colonnes vides ou de mise en forme (titres, totaux...)
+- Ne retourne que des créneaux réels trouvés dans le fichier, jamais d'exemple`
+
+      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'qwen/qwen3.6-27b',
+          messages: [
+            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.1,
+          max_completion_tokens: 4000,
+        }),
+      }, setIaStatus)
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
+      const raw = data.choices?.[0]?.message?.content || ''
+      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      const jsonMatch = text.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) throw new Error("L'IA n'a pas pu analyser ce fichier.")
+      const extraits = JSON.parse(jsonMatch[0])
+      if (!Array.isArray(extraits) || extraits.length === 0) throw new Error('Aucun créneau détecté dans ce fichier.')
+
+      const mapped = extraits.map(c => {
+        const terrain = terrains.find(t => normaliserCle(t.nom) === normaliserCle(c.terrain))
+        const educateur = educateurs.find(e => normaliserCle(nomEducateurDeLigne(e)) === normaliserCle(c.educateur))
+        return {
+          _id: crypto.randomUUID(),
+          terrain_id: terrain?.id || '',
+          equipe: (c.equipe || '').trim(),
+          educateur_id: educateur?.educateur_id || '',
+          jour: normaliserJour(c.jour) || 'lundi',
+          heure_debut: normaliserHeure(c.heure_debut) || '',
+          heure_fin: normaliserHeure(c.heure_fin) || '',
+        }
+      }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
+
+      if (mapped.length === 0) throw new Error("L'IA n'a trouvé aucun créneau exploitable dans ce fichier.")
+      setImportLignes(mapped)
+      setFichierEnErreur(null)
+    } catch (err) {
+      setImportError(err.message)
+    }
+    setImporting(false)
+    setIaStatus(null)
   }
 
   const modifierLigneImport = (id, champ, valeur) => {
@@ -467,6 +563,17 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
                   </label>
 
                   {importError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {importError}</p>}
+                  {fichierEnErreur && (
+                    <div style={{ marginTop: '10px' }}>
+                      <button onClick={() => analyserPlanningIA(fichierEnErreur)} disabled={importing}
+                        style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: importing ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: importing ? 0.6 : 1 }}>
+                        {importing ? libelleStatutGroq(iaStatus) : '🤖 Réessayer avec l\'IA'}
+                      </button>
+                      <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>
+                        Pour les fichiers sans en-têtes claires (grille complexe, tableau croisé...) — l'IA lit le fichier et propose des créneaux à valider ci-dessous.
+                      </p>
+                    </div>
+                  )}
 
                   {importLignes.length > 0 && (
                     <div style={{ marginTop: '16px' }}>
