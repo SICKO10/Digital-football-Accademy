@@ -343,16 +343,26 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   }
 
   // Assigne automatiquement les véhicules du parc aux déplacements qui n'en
-  // ont pas encore (ne touche jamais une assignation déjà faite manuellement).
-  // Traite chaque date séparément avec repartirBus (le même algorithme que
-  // Planning week-end / Répartition mini-bus — horaires-aware, réutilise un
-  // bus qui revient à temps), et exclut du parc dispo, pour cette date, les
-  // plaques déjà prises par un déplacement existant (manuel ou auto) pour
-  // garantir qu'aucun bus n'est doublement réservé le même jour.
+  // ont pas encore, ET reprend ceux dont le véhicule déjà assigné est
+  // insuffisant pour nb_personnes (ex: assigné avant que nb_personnes soit
+  // connu/corrigé) — pour que ces cas-là se fassent proposer une combinaison
+  // de plusieurs bus au lieu de rester bloqués sur un seul trop petit. Ne
+  // touche jamais une assignation déjà suffisante, manuelle ou non. Traite
+  // chaque date séparément avec repartirBus (le même algorithme que Planning
+  // week-end / Répartition mini-bus — horaires-aware, réutilise un bus qui
+  // revient à temps), et exclut du parc dispo, pour cette date, les plaques
+  // prises par un déplacement qui n'est PAS repris ici (donc déjà correct)
+  // pour garantir qu'aucun bus n'est doublement réservé le même jour — les
+  // plaques d'un déplacement repris (insuffisant) redeviennent, elles,
+  // disponibles pour une nouvelle combinaison.
   const repartirAutomatiquement = async () => {
     setRepartitionAutoEnCours(true)
     const { liste: deplacementsActuels, diagnostics } = await completerHorairesDepuisMatchs(deplacements)
-    const aTraiter = deplacementsActuels.filter(d => !d.vehicule)
+    const aTraiter = deplacementsActuels.filter(d => {
+      const cap = capaciteVehicule(d)
+      return !d.vehicule || (d.nb_personnes != null && (cap == null || cap < d.nb_personnes))
+    })
+    const aTraiterIds = new Set(aTraiter.map(d => d.id))
     const parDate = {}
     aTraiter.forEach(d => { if (!parDate[d.date_depart]) parDate[d.date_depart] = []; parDate[d.date_depart].push(d) })
 
@@ -360,7 +370,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const updates = []
     Object.entries(parDate).forEach(([date, deps]) => {
       const plaquesDejaPrises = new Set(
-        deplacementsActuels.filter(d => d.date_depart === date && d.vehicule)
+        deplacementsActuels.filter(d => d.date_depart === date && d.vehicule && !aTraiterIds.has(d.id))
           .flatMap(d => d.vehicule.split('+').map(p => p.trim()))
       )
       const vehiculesDispos = vehicules.filter(v => !plaquesDejaPrises.has(v.plaque))
