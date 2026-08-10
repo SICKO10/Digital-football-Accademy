@@ -418,7 +418,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
   return (
     <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-        <h3 style={{ margin: 0, color: '#fff', fontSize: '15px', fontWeight: 700 }}>🎨 Personnalisation du dashboard</h3>
+        <h3 style={{ margin: 0, color: '#fff', fontSize: '15px', fontWeight: 700 }}>Personnalisation du dashboard</h3>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
       </div>
 
@@ -2083,7 +2083,7 @@ Règles :
                 {monRole === 'president' && (
                   <button onClick={() => setShowThemeEditor(v => !v)}
                     style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: '#ccc', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    🎨 {showThemeEditor ? 'Fermer' : 'Personnaliser'}
+                    {showThemeEditor ? 'Fermer' : 'Personnaliser'}
                   </button>
                 )}
               </div>
