@@ -10,6 +10,7 @@ import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
+import CauserieAvantMatch from '../components/CauserieAvantMatch'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -154,6 +155,7 @@ const IcoExternal  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill=
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
+const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -3485,6 +3487,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       { key: 'equipe', label: t('nav_equipe', lang), icon: <IcoUsers /> },
       { key: 'stats', label: t('nav_stats', lang), icon: <IcoChart /> },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
+      { key: 'causerie', label: t('nav_causerie', lang), icon: <IcoMic /> },
       { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
       { key: 'terrains', label: t('nav_terrains', lang), icon: <IcoCalendar /> },
     ] },
@@ -7161,6 +7164,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <Tactipad userId={userId} lang={lang} />
             )}
           </div>
+        )}
+
+        {activeSection === 'causerie' && (
+          <CauserieAvantMatch userId={userId} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} />
         )}
 
         {activeSection === 'dirigeants' && (

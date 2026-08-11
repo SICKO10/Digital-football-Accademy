@@ -20,6 +20,7 @@ export const T = {
   nav_seances:          { fr: 'Séances',              en: 'Sessions',          pt: 'Sessões',           es: 'Sesiones',          it: 'Sedute',            de: 'Einheiten'         },
   nav_prep_physique:    { fr: 'Préparation physique', en: 'Physical prep',     pt: 'Preparação física', es: 'Preparación física',it: 'Prep. fisica',      de: 'Phys. Vorbereitung'},
   nav_tacticboard:      { fr: 'Tacticboard',          en: 'Tacticboard',       pt: 'Táctico',           es: 'Pizarra táctica',   it: 'Lavagna tattica',   de: 'Taktikboard'       },
+  nav_causerie:         { fr: 'Causerie',             en: 'Team talk',         pt: 'Discurso',          es: 'Charla técnica',    it: 'Discorso',          de: 'Teamansprache'     },
   nav_analyse:          { fr: 'Analyse rapport',      en: 'Report analysis',   pt: 'Análise relatório', es: 'Análisis informe',  it: 'Analisi report',    de: 'Berichtsanalyse'   },
   nav_evaluations:      { fr: 'Évaluations',          en: 'Evaluations',       pt: 'Avaliações',        es: 'Evaluaciones',      it: 'Valutazioni',       de: 'Bewertungen'       },
   nav_clotures:         { fr: 'Clôtures de saison',   en: 'Season closing',    pt: 'Fecho de época',    es: 'Cierre de temporada',it:'Chiusura stagione', de: 'Saisonabschluss'   },
