@@ -5,7 +5,11 @@ import { STRIPE_LINKS_CLUB } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 
 const st = {
-  section: { padding: '4rem 1.5rem', maxWidth: '960px', margin: '0 auto' },
+  // Fond pleine largeur (alterné par section) + wrapper interne limité en largeur —
+  // avant, les deux étaient fusionnés dans un seul style avec maxWidth, ce qui
+  // empêchait un fond de section de s'étendre sur toute la largeur de l'écran.
+  sectionOuter: (bg) => ({ background: bg, padding: '4rem 1.5rem' }),
+  sectionInner: { maxWidth: '960px', margin: '0 auto' },
   eyebrow: { display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 },
   titre: { fontSize: 'clamp(22px, 4vw, 30px)', fontWeight: 800, marginBottom: '0.5rem' },
   sousTitre: { color: colors.text.dim, fontSize: '14px', marginBottom: '2.5rem', maxWidth: '560px' },
@@ -17,46 +21,82 @@ const st = {
   cta: (color, dark) => ({ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: color ? 'none' : '1px solid #333', background: color || 'transparent', color: dark ? colors.background.base : colors.text.primary, fontSize: '14px', fontWeight: 700, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: 'auto' }),
 }
 
+// Halo + badge "Recommandé" appliqués à la card annuelle mise en avant — la
+// couleur suit celle de la section (vert joueur, bleu éducateur, orange
+// recruteur) plutôt que d'être toujours verte.
+const recommandeStyle = (color) => ({ position: 'relative', boxShadow: `0 0 40px ${color}${alpha.soft}`, transform: 'translateY(-4px)' })
+
+function BadgeRecommande({ color }) {
+  return (
+    <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: color, color: colors.black, fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+      ⭐ Recommandé
+    </div>
+  )
+}
+
 function Feature({ children }) {
   return <div style={st.feature}><span style={{ color: colors.accent.green, flexShrink: 0 }}>✓</span> {children}</div>
 }
 
-// Cartes Mensuel + Annuel côte à côte, même liste de fonctionnalités pour les
-// deux (éducateur, recruteur) — même layout 2 colonnes que la section Joueur.
-function OffrePro({ emoji, titre, color, features, profilId }) {
+// Une seule card à la fois (mensuelle ou annuelle selon `cycle`, piloté par le
+// toggle global de la page) — avant, les deux étaient affichées côte à côte
+// en permanence.
+function OffrePro({ emoji, titre, color, features, profilId, cycle }) {
   const navigate = useNavigate()
+  const isAnnuel = cycle === 'annuel'
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
-      {/* Mensuel */}
-      <div style={st.card(color, false)}>
+    <div style={{ maxWidth: '340px', margin: '0 auto' }}>
+      <div style={{ ...st.card(color, true), ...(isAnnuel ? recommandeStyle(color) : {}) }}>
+        {isAnnuel && <BadgeRecommande color={color} />}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <span style={{ fontSize: '24px' }}>{emoji}</span>
           <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
         </div>
-        <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 10px' }}>MENSUEL</p>
-        <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
+        {isAnnuel ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px' }}>
+              <p style={{ fontSize: '11px', color, fontWeight: 700, margin: 0 }}>ANNUEL</p>
+              <span style={{ background: `${color}20`, color, fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>2 mois offerts</span>
+            </div>
+            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>100€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/an</span></p>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 10px' }}>MENSUEL</p>
+            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
+          </>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
           {features.map(f => <Feature key={f}>{f}</Feature>)}
         </div>
-        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=mensuel`)} style={st.cta(null, false)}>Commencer — 10€/mois</button>
+        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=${cycle}`)} style={st.cta(isAnnuel ? color : null, isAnnuel)}>
+          {isAnnuel ? 'Commencer — 100€/an' : 'Commencer — 10€/mois'}
+        </button>
       </div>
+    </div>
+  )
+}
 
-      {/* Annuel */}
-      <div style={st.card(color, true)}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <span style={{ fontSize: '24px' }}>{emoji}</span>
-          <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px' }}>
-          <p style={{ fontSize: '11px', color, fontWeight: 700, margin: 0 }}>ANNUEL</p>
-          <span style={{ background: `${color}20`, color, fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>2 mois offerts</span>
-        </div>
-        <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>100€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/an</span></p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-          {features.map(f => <Feature key={f}>{f}</Feature>)}
-        </div>
-        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=annuel`)} style={st.cta(color, true)}>Commencer — 100€/an</button>
-      </div>
+// Toggle global Mensuel/Annuel — pilote l'affichage de toutes les sections Pro
+// (Joueur/Éducateur/Recruteur) en même temps.
+function CycleToggle({ cycle, setCycle }) {
+  const btnStyle = (actif) => ({
+    background: actif ? colors.accent.green : 'transparent',
+    color: actif ? colors.black : colors.text.dim,
+    border: 'none', borderRadius: '26px', padding: '9px 20px', fontSize: '13px', fontWeight: 700,
+    cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px',
+  })
+  return (
+    <div style={{ display: 'inline-flex', background: '#111', borderRadius: '30px', padding: '4px', marginBottom: '2.5rem' }}>
+      <button onClick={() => setCycle('mensuel')} style={btnStyle(cycle === 'mensuel')}>Mensuel</button>
+      <button onClick={() => setCycle('annuel')} style={btnStyle(cycle === 'annuel')}>
+        Annuel
+        {cycle !== 'annuel' && (
+          <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>
+            2 mois offerts
+          </span>
+        )}
+      </button>
     </div>
   )
 }
@@ -133,6 +173,8 @@ function FormulaireClub() {
 
 export default function Offres() {
   const navigate = useNavigate()
+  const [cycle, setCycle] = useState('annuel')
+  const isAnnuel = cycle === 'annuel'
 
   return (
     <div style={{ background: colors.background.base, minHeight: '100vh', color: 'white', fontFamily: 'Inter, sans-serif' }}>
@@ -146,78 +188,84 @@ export default function Offres() {
       <div style={{ textAlign: 'center', padding: '3rem 1.5rem 1rem' }}>
         <div style={st.eyebrow}>TARIFS</div>
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>Une offre pour chaque profil</h1>
-        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto' }}>Joueur, éducateur, recruteur ou club — choisis la formule qui te correspond.</p>
+        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur, recruteur ou club — choisis la formule qui te correspond.</p>
+        <CycleToggle cycle={cycle} setCycle={setCycle} />
       </div>
 
       {/* ── JOUEURS ── */}
-      <section style={st.section}>
-        <div style={st.eyebrow}>JOUEURS</div>
-        <h2 style={st.titre}>Progresse et fais-toi remarquer</h2>
-        <p style={st.sousTitre}>Du compte gratuit à l'accompagnement complet avec analyses vidéo d'experts.</p>
+      <section style={st.sectionOuter(colors.background.base)}>
+        <div style={st.sectionInner}>
+          <div style={st.eyebrow}>JOUEURS</div>
+          <h2 style={st.titre}>Progresse et fais-toi remarquer</h2>
+          <p style={st.sousTitre}>Du compte gratuit à l'accompagnement complet avec analyses vidéo d'experts.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
-          {/* Starter */}
-          <div style={st.card(colors.text.muted, false)}>
-            <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>Starter</h3>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>Gratuit</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-              <Feature>Réseau social Jogabonito (interactions, feed)</Feature>
-              <Feature>Affilié à un club → stats automatisées</Feature>
-              <Feature>Profil joueur de base</Feature>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', maxWidth: '700px', margin: '0 auto' }}>
+            {/* Starter — toujours visible, hors du toggle mensuel/annuel */}
+            <div style={st.card(colors.text.muted, false)}>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>Starter</h3>
+              <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>Gratuit</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+                <Feature>Réseau social Jogabonito (interactions, feed)</Feature>
+                <Feature>Affilié à un club → stats automatisées</Feature>
+                <Feature>Profil joueur de base</Feature>
+              </div>
+              <button onClick={() => navigate('/register?profil=joueur_starter')} style={st.cta(null, false)}>Commencer gratuitement</button>
             </div>
-            <button onClick={() => navigate('/register?profil=joueur_starter')} style={st.cta(null, false)}>Commencer gratuitement</button>
-          </div>
 
-          {/* Mensuel */}
-          <div style={st.card(colors.accent.green, false)}>
-            <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>Mensuel</h3>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-              <Feature>1 analyse vidéo / an</Feature>
-              <Feature>Analyse supplémentaire : 60€ à l'unité</Feature>
-              <Feature>Retour vocal expert</Feature>
-              <Feature>Affilié à un club → stats automatisées</Feature>
-              <Feature>Réseau social Jogabonito</Feature>
-              <Feature>Profil visible recruteurs</Feature>
-              <Feature>Réseau clubs et agents</Feature>
-              <Feature>Feed & visibilité</Feature>
+            {/* Pro — mensuel ou annuel selon le toggle global */}
+            <div style={{ ...st.card(colors.accent.green, true), ...(isAnnuel ? recommandeStyle(colors.accent.green) : {}) }}>
+              {isAnnuel && <BadgeRecommande color={colors.accent.green} />}
+              {isAnnuel ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>Annuel</h3>
+                    <span style={{ background: colors.accent.red + alpha.soft, color: colors.accent.red, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>-17%</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>100€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/an</span></p>
+                    <span style={{ fontSize: '13px', color: colors.text.faint, textDecoration: 'line-through' }}>120€</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+                    <Feature><strong>2 analyses vidéo / an</strong> (au lieu de 1)</Feature>
+                    <Feature>Analyse supplémentaire : 60€ à l'unité</Feature>
+                    <Feature>Retour vocal expert</Feature>
+                    <Feature>Affilié à un club → stats automatisées</Feature>
+                    <Feature>Réseau social Jogabonito</Feature>
+                    <Feature>Profil visible recruteurs</Feature>
+                    <Feature>Réseau clubs et agents</Feature>
+                    <Feature>Feed & visibilité</Feature>
+                  </div>
+                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={st.cta(colors.accent.green, true)}>Commencer — 100€/an</button>
+                </>
+              ) : (
+                <>
+                  <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>Mensuel</h3>
+                  <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+                    <Feature>1 analyse vidéo / an</Feature>
+                    <Feature>Analyse supplémentaire : 60€ à l'unité</Feature>
+                    <Feature>Retour vocal expert</Feature>
+                    <Feature>Affilié à un club → stats automatisées</Feature>
+                    <Feature>Réseau social Jogabonito</Feature>
+                    <Feature>Profil visible recruteurs</Feature>
+                    <Feature>Réseau clubs et agents</Feature>
+                    <Feature>Feed & visibilité</Feature>
+                  </div>
+                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>Commencer — 10€/mois</button>
+                </>
+              )}
             </div>
-            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>Commencer — 10€/mois</button>
-          </div>
-
-          {/* Annuel */}
-          <div style={st.card(colors.accent.green, true)}>
-            <div style={{ position: 'absolute', marginTop: '-2.75rem', marginLeft: '0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>Annuel</h3>
-              <span style={{ background: colors.accent.red + alpha.soft, color: colors.accent.red, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>-17%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
-              <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>100€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/an</span></p>
-              <span style={{ fontSize: '13px', color: colors.text.faint, textDecoration: 'line-through' }}>120€</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-              <Feature><strong>2 analyses vidéo / an</strong> (au lieu de 1)</Feature>
-              <Feature>Analyse supplémentaire : 60€ à l'unité</Feature>
-              <Feature>Retour vocal expert</Feature>
-              <Feature>Affilié à un club → stats automatisées</Feature>
-              <Feature>Réseau social Jogabonito</Feature>
-              <Feature>Profil visible recruteurs</Feature>
-              <Feature>Réseau clubs et agents</Feature>
-              <Feature>Feed & visibilité</Feature>
-            </div>
-            <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={st.cta(colors.accent.green, true)}>Commencer — 100€/an</button>
           </div>
         </div>
       </section>
 
       {/* ── ÉDUCATEURS ── */}
-      <section style={st.section}>
-        <div style={st.eyebrow}>ÉDUCATEURS</div>
-        <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
-        <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques — tout au même endroit.</p>
-        <div style={{ maxWidth: '680px' }}>
-          <OffrePro emoji="🎓" titre="Éducateur" color={colors.accent.blue} profilId="educateur" features={[
+      <section style={st.sectionOuter('#0d0d0d')}>
+        <div style={st.sectionInner}>
+          <div style={st.eyebrow}>ÉDUCATEURS</div>
+          <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
+          <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques — tout au même endroit.</p>
+          <OffrePro emoji="🎓" titre="Éducateur" color={colors.accent.blue} profilId="educateur" cycle={cycle} features={[
             'Gestion de l\'effectif',
             'Suivi des présences',
             'Analyse joueurs',
@@ -232,12 +280,12 @@ export default function Offres() {
       </section>
 
       {/* ── RECRUTEURS ── */}
-      <section style={st.section}>
-        <div style={st.eyebrow}>SCOUTS / RECRUTEURS</div>
-        <h2 style={st.titre}>Trouve tes prochains talents</h2>
-        <p style={st.sousTitre}>Recherche par profil, messagerie directe avec les joueurs et statistiques automatisées.</p>
-        <div style={{ maxWidth: '680px' }}>
-          <OffrePro emoji="🔍" titre="Scout / Recruteur" color={colors.accent.orange} profilId="scout" features={[
+      <section style={st.sectionOuter(colors.background.base)}>
+        <div style={st.sectionInner}>
+          <div style={st.eyebrow}>SCOUTS / RECRUTEURS</div>
+          <h2 style={st.titre}>Trouve tes prochains talents</h2>
+          <p style={st.sousTitre}>Recherche par profil, messagerie directe avec les joueurs et statistiques automatisées.</p>
+          <OffrePro emoji="🔍" titre="Scout / Recruteur" color={colors.accent.orange} profilId="scout" cycle={cycle} features={[
             'Accès à la base de joueurs',
             'Trouver des joueurs par profil (poste, niveau, région…)',
             'Messagerie directe avec les joueurs',
@@ -248,50 +296,52 @@ export default function Offres() {
       </section>
 
       {/* ── CLUBS ── */}
-      <section style={st.section}>
-        <div style={st.eyebrow}>CLUBS</div>
-        <h2 style={st.titre}>Un tarif adapté à la taille de ton club</h2>
-        <p style={st.sousTitre}>Le palier dépend du nombre de joueurs inscrits. Notre équipe vérifie ton effectif avant d'activer l'accès.</p>
+      <section style={st.sectionOuter('#0d0d0d')}>
+        <div style={st.sectionInner}>
+          <div style={st.eyebrow}>CLUBS</div>
+          <h2 style={st.titre}>Un tarif adapté à la taille de ton club</h2>
+          <p style={st.sousTitre}>Le palier dépend du nombre de joueurs inscrits. Notre équipe vérifie ton effectif avant d'activer l'accès.</p>
 
-        <div style={{ overflowX: 'auto', marginBottom: '2rem', border: '1px solid #1f1f1f', borderRadius: '14px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ background: colors.background.surface }}>
-                <th style={{ textAlign: 'left', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Palier</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Mensuel</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Annuel</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.values(STRIPE_LINKS_CLUB).map((p, i) => (
-                <tr key={p.label} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{p.label}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.mensuelPrix}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.annuelPrix}</td>
+          <div style={{ overflowX: 'auto', marginBottom: '2rem', border: '1px solid #1f1f1f', borderRadius: '14px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: colors.background.surface }}>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Palier</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Mensuel</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Annuel</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div style={st.card(colors.accent.purpleLight, true)}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Fonctionnalités incluses — tous paliers</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '9px', marginBottom: '1.75rem' }}>
-            <Feature>Gestion multi-équipes</Feature>
-            <Feature>Tous les outils éducateur</Feature>
-            <Feature>Scout Center recruteurs</Feature>
-            <Feature>Stats équipe automatisées</Feature>
-            <Feature>Analyses joueurs</Feature>
-            <Feature>Gestion budgétaire du club</Feature>
-            <Feature>Gestion des sponsors</Feature>
-            <Feature>Création de rôles (Dirigeant, Directeur sportif, Secrétaire…)</Feature>
-            <Feature>Espace dirigeant dédié</Feature>
-            <Feature>Réseau social Jogabonito</Feature>
+              </thead>
+              <tbody>
+                {Object.values(STRIPE_LINKS_CLUB).map((p, i) => (
+                  <tr key={p.label} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{p.label}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.mensuelPrix}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.annuelPrix}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <blockquote style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: '10px', fontSize: '13px', color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
-            « Invitez vos dirigeants, directeurs sportifs et secrétaires — chacun accède à son espace dédié. »
-          </blockquote>
-          <FormulaireClub />
+
+          <div style={st.card(colors.accent.purpleLight, true)}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Fonctionnalités incluses — tous paliers</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '9px', marginBottom: '1.75rem' }}>
+              <Feature>Gestion multi-équipes</Feature>
+              <Feature>Tous les outils éducateur</Feature>
+              <Feature>Scout Center recruteurs</Feature>
+              <Feature>Stats équipe automatisées</Feature>
+              <Feature>Analyses joueurs</Feature>
+              <Feature>Gestion budgétaire du club</Feature>
+              <Feature>Gestion des sponsors</Feature>
+              <Feature>Création de rôles (Dirigeant, Directeur sportif, Secrétaire…)</Feature>
+              <Feature>Espace dirigeant dédié</Feature>
+              <Feature>Réseau social Jogabonito</Feature>
+            </div>
+            <blockquote style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: '10px', fontSize: '13px', color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
+              « Invitez vos dirigeants, directeurs sportifs et secrétaires — chacun accède à son espace dédié. »
+            </blockquote>
+            <FormulaireClub />
+          </div>
         </div>
       </section>
 
