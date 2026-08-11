@@ -5729,10 +5729,6 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 return (
                   <div key={e.id} style={{ ...st.card, borderLeft: `3px solid ${estFuture ? '#60a5fa40' : '#4ade8030'}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {/* Indicateur passé/futur */}
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: estFuture ? '#60a5fa15' : '#4ade8015', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                        {estFuture ? '📅' : '✅'}
-                      </div>
                       <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
