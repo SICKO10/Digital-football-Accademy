@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
@@ -24,7 +25,7 @@ const etapesClub = [
   { num: 'ÉTAPE 4', titre: 'Tu te développes', desc: 'Connecte tes éducateurs et scouts aux joueurs pour trouver le bon profil' },
 ]
 
-function EtapesSection({ badge, titre, etapes, color }) {
+function EtapesSection({ badge, titre, etapes, color, ctaLabel, onCta }) {
   return (
     <section style={{ padding: '5rem 2rem', textAlign: 'center' }}>
       <div style={{ display: 'inline-block', background: `${color}15`, border: `1px solid ${color}40`, color, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{badge}</div>
@@ -39,13 +40,46 @@ function EtapesSection({ badge, titre, etapes, color }) {
           </div>
         ))}
       </div>
+      {ctaLabel && (
+        <button onClick={onCta} style={{ background: 'transparent', color, border: `1px solid ${color}40`, padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '3rem', fontFamily: 'Inter, sans-serif' }}>
+          {ctaLabel}
+        </button>
+      )}
     </section>
   )
 }
 
+const TABS = [
+  { id: 'joueur', label: 'Joueur', color: colors.accent.green },
+  { id: 'educateur', label: 'Éducateur', color: colors.accent.blue },
+  { id: 'recruteur', label: 'Recruteur', color: colors.accent.orange },
+  { id: 'club', label: 'Club', color: colors.accent.purple },
+]
+
 function Home() {
   const navigate = useNavigate()
   const { lang, setLang } = useLang()
+  const [heroCta1Hover, setHeroCta1Hover] = useState(false)
+  const [heroCta2Hover, setHeroCta2Hover] = useState(false)
+  const [tabActif, setTabActif] = useState('joueur')
+
+  // Données du tab "joueur" : dépend de t()/lang, donc construit ici plutôt
+  // qu'en constante de module comme etapesEducateur/etapesRecruteur/etapesClub
+  // (qui, eux, sont en français en dur — incohérence déjà présente avant ce
+  // changement, pas introduite ici).
+  const etapesJoueur = [
+    { num: 'ÉTAPE 1', titre: t('home_etape1_titre', lang), desc: t('home_etape1_desc', lang) },
+    { num: 'ÉTAPE 2', titre: t('home_etape2_titre', lang), desc: t('home_etape2_desc', lang) },
+    { num: 'ÉTAPE 3', titre: t('home_etape3_titre', lang), desc: t('home_etape3_desc', lang) },
+    { num: 'ÉTAPE 4', titre: t('home_etape4_titre', lang), desc: t('home_etape4_desc', lang) },
+  ]
+  const TAB_CONFIG = {
+    joueur: { badge: t('home_processus', lang), titre: t('home_comment_marche', lang), etapes: etapesJoueur, color: colors.accent.green, ctaLabel: 'Voir les tarifs joueur' },
+    educateur: { badge: 'TARIFS ÉDUCATEURS', titre: 'Développe tes joueurs', etapes: etapesEducateur, color: colors.accent.blue, ctaLabel: 'Voir les tarifs éducateur' },
+    recruteur: { badge: 'SCOUTS / RECRUTEURS', titre: 'Trouve tes prochains talents', etapes: etapesRecruteur, color: colors.accent.orange, ctaLabel: 'Voir les tarifs recruteur' },
+    club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub, color: colors.accent.purple, ctaLabel: 'Voir les tarifs club' },
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }} className="navbar-home">
@@ -77,14 +111,42 @@ function Home() {
         }
       `}</style>
 
-      <section style={{ padding: '5rem 2rem 3rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+      <section style={{ position: 'relative', padding: '5rem 2rem 3rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '480px', background: 'radial-gradient(ellipse 60% 40% at 50% 50%, #4ade8018 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>{t('home_badge_plateforme', lang)}</div>
         <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>{t('home_hero_titre_1', lang)}<br /><span style={{ color: colors.accent.green }}>{t('home_hero_titre_2', lang)}</span><br />{t('home_hero_titre_3', lang)}</h1>
         <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>{t('home_hero_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>{t('home_envoyer_video', lang)}</button>
-          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>{t('home_voir_jogabonito', lang)}</button>
+          <button
+            onClick={() => navigate('/register')}
+            onMouseEnter={() => setHeroCta1Hover(true)}
+            onMouseLeave={() => setHeroCta1Hover(false)}
+            style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none' }}>
+            {t('home_envoyer_video', lang)}
+          </button>
+          <button
+            onClick={() => navigate('/jogabonito')}
+            onMouseEnter={() => setHeroCta2Hover(true)}
+            onMouseLeave={() => setHeroCta2Hover(false)}
+            style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none' }}>
+            {t('home_voir_jogabonito', lang)}
+          </button>
         </div>
+
+        {/* Mockup flottant — preview stylisée du dashboard joueur */}
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', maxWidth: '600px', margin: '3rem auto 0', padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+            <span style={{ marginLeft: '8px', fontSize: '12px', color: colors.text.faint }}>Dashboard Joueur</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ height: '8px', width: '70%', borderRadius: '4px', background: `linear-gradient(90deg, ${colors.accent.green}30, transparent)` }} />
+            <div style={{ height: '8px', width: '45%', borderRadius: '4px', background: `linear-gradient(90deg, ${colors.accent.green}30, transparent)` }} />
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginTop: '4rem', paddingTop: '3rem', borderTop: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
           {[{ num: '500+', label: t('home_stat_joueurs_analyses', lang) }, { num: '98%', label: t('home_stat_satisfaction', lang) }, { num: '50+', label: t('home_stat_clubs_partenaires', lang) }].map(s => (
             <div key={s.label} style={{ textAlign: 'center' }}>
@@ -111,39 +173,27 @@ function Home() {
         <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>{t('home_voir_jogabonito', lang)}</button>
       </section>
 
-      <section id="comment" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_processus', lang)}</div>
-        <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '3rem' }}>{t('home_comment_marche', lang)}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-          {[{ num: '1', emoji: '📝', titre: t('home_etape1_titre', lang), desc: t('home_etape1_desc', lang) }, { num: '2', emoji: '🎬', titre: t('home_etape2_titre', lang), desc: t('home_etape2_desc', lang) }, { num: '3', emoji: '🔍', titre: t('home_etape3_titre', lang), desc: t('home_etape3_desc', lang) }, { num: '4', emoji: '🚀', titre: t('home_etape4_titre', lang), desc: t('home_etape4_desc', lang) }].map(step => (
-            <div key={step.num} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '1.5rem', textAlign: 'left' }}>
-              <div style={{ width: '44px', height: '44px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', marginBottom: '1rem' }}>{step.emoji}</div>
-              <div style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, marginBottom: '6px' }}>{t('home_etape', lang)} {step.num}</div>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{step.titre}</h3>
-              <p style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
-            </div>
-          ))}
+      <section id="comment" style={{ padding: '5rem 2rem 0', textAlign: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {TABS.map(tabItem => {
+            const actif = tabActif === tabItem.id
+            return (
+              <button key={tabItem.id} onClick={() => setTabActif(tabItem.id)}
+                style={{
+                  background: actif ? tabItem.color + alpha.subtle : 'transparent',
+                  border: `1px solid ${actif ? tabItem.color : '#222'}`,
+                  color: actif ? tabItem.color : colors.text.faint,
+                  borderRadius: '20px', padding: '8px 20px', fontSize: '13px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>
+                {tabItem.label}
+              </button>
+            )
+          })}
         </div>
       </section>
 
-      <div style={{ textAlign: 'center', paddingBottom: '3rem', background: '#0f0f0f', paddingTop: '3rem' }}>
-        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs joueur</button>
-      </div>
-
-      <EtapesSection badge="TARIFS ÉDUCATEURS" titre="Développe tes joueurs" etapes={etapesEducateur} color={colors.accent.blue} />
-      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
-        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: colors.accent.blue, border: '1px solid #60a5fa40', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs éducateur</button>
-      </div>
-
-      <EtapesSection badge="SCOUTS / RECRUTEURS" titre="Trouve tes prochains talents" etapes={etapesRecruteur} color={colors.accent.orange} />
-      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
-        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: colors.accent.orange, border: '1px solid #f9731640', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs recruteur</button>
-      </div>
-
-      <EtapesSection badge="CLUBS" titre="Gérez votre club de A à Z" etapes={etapesClub} color={colors.accent.green} />
-      <div style={{ textAlign: 'center', paddingBottom: '3rem' }}>
-        <button onClick={() => navigate('/offres')} style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir les tarifs club</button>
-      </div>
+      <EtapesSection {...TAB_CONFIG[tabActif]} onCta={() => navigate('/offres')} />
 
       <section style={{ background: '#0f0f0f', padding: '5rem 2rem', textAlign: 'center' }}>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>{t('home_pret_niveau_sup', lang)}</h2>
