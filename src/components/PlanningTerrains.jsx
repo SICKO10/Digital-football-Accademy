@@ -67,6 +67,28 @@ const creneauVide = (terrainId) => ({
 const normaliserJour = (val) => JOURS.find(j => normaliserCle(val).includes(j.val))?.val || ''
 const normaliserZone = (val) => ZONES.find(z => z.val === String(val || '').trim().toLowerCase())?.val || 'plein'
 
+// Les 7 dates (lundi→dimanche) de la semaine affichée, décalée de
+// `offsetSemaines` par rapport à la semaine courante (0 = cette semaine,
+// -1 = précédente, +1 = suivante). JOURS est déjà ordonné lundi→dimanche,
+// donc son index correspond directement au décalage depuis le lundi.
+const getDatesSemaine = (offsetSemaines = 0) => {
+  const aujourdHui = new Date()
+  const jourISO = aujourdHui.getDay() || 7 // Date.getDay() : 0=dimanche → 7 pour rester en semaine ISO (1=lundi)
+  const lundi = new Date(aujourdHui)
+  lundi.setDate(aujourdHui.getDate() - jourISO + 1 + offsetSemaines * 7)
+
+  return JOURS.map((j, i) => {
+    const date = new Date(lundi)
+    date.setDate(lundi.getDate() + i)
+    return {
+      val: j.val,
+      label: j.label,
+      dateStr: date.toISOString().split('T')[0],
+      labelCourt: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+    }
+  })
+}
+
 // Deux créneaux se chevauchent si leurs horaires se recoupent (bornes
 // incluses côté début, exclues côté fin — un créneau qui finit à 18:00 ne
 // chevauche pas celui qui commence à 18:00).
@@ -96,6 +118,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [categories, setCategories] = useState([]) // club_categories — équipes du club, pour le sélecteur + la couleur par équipe
   const [heuresClub, setHeuresClub] = useState({ ouverture: '08:00', fermeture: '22:00' })
   const [reclamingId, setReclamingId] = useState(null)
+  const [semaineOffset, setSemaineOffset] = useState(0) // 0 = semaine courante, -1 = précédente, +1 = suivante
+  const [exceptions, setExceptions] = useState([]) // planning_terrains_exceptions de la semaine affichée
 
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
@@ -137,6 +161,17 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     if (data) setHeuresClub({ ouverture: (data.planning_heure_ouverture || '08:00').slice(0, 5), fermeture: (data.planning_heure_fermeture || '22:00').slice(0, 5) })
   }
 
+  // Exceptions ponctuelles (libération/remplacement pour une date précise,
+  // cf. planning_terrains_exceptions) de la semaine affichée uniquement —
+  // une exception dont la date est passée n'est jamais chargée ici, donc le
+  // créneau de base reprend automatiquement sans purge à faire.
+  const chargerExceptions = async (offset) => {
+    const dates = getDatesSemaine(offset)
+    const { data } = await supabase.from('planning_terrains_exceptions').select('*')
+      .eq('club_id', clubId).gte('date_exception', dates[0].dateStr).lte('date_exception', dates[6].dateStr)
+    setExceptions(data || [])
+  }
+
   useEffect(() => {
     if (!clubId) return
     chargerTerrains()
@@ -155,6 +190,12 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clubId])
+
+  useEffect(() => {
+    if (!clubId) return
+    chargerExceptions(semaineOffset)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, semaineOffset])
 
   // ── Configuration terrains (dirigeant) ──────────────────────────────────────
   const ajouterTerrain = async () => {
@@ -418,25 +459,38 @@ Règles :
     await chargerPlanning()
   }
 
-  // ── Libération (éducateur) ──────────────────────────────────────────────────
-  const toggleLiberation = async (creneau) => {
-    setLiberating(prev => ({ ...prev, [creneau.id]: true }))
-    const { error } = await supabase.rpc('liberer_creneau', { p_creneau_id: creneau.id, p_libere: !creneau.libere })
-    setLiberating(prev => ({ ...prev, [creneau.id]: false }))
+  // ── Libération / remplacement ponctuel (éducateur) ──────────────────────────
+  // planning_terrains reste le gabarit récurrent (jamais modifié ici) ; toute
+  // libération ou remplacement passe par une exception datée
+  // (planning_terrains_exceptions), via les fonctions SECURITY DEFINER
+  // dédiées (aucune policy UPDATE/INSERT n'est ouverte aux éducateurs sur ces
+  // tables — RLS ne permet pas de restreindre une écriture à "seulement mes
+  // propres créneaux/exceptions").
+  const libererCreneauDate = async (creneau, dateStr, liberer) => {
+    const cle = `${creneau.id}_${dateStr}`
+    setLiberating(prev => ({ ...prev, [cle]: true }))
+    const { error } = await supabase.rpc('liberer_creneau_date', { p_creneau_id: creneau.id, p_date: dateStr, p_liberer: liberer })
+    setLiberating(prev => ({ ...prev, [cle]: false }))
     if (error) { alert('Erreur : ' + error.message); return }
-    await chargerPlanning()
+    await chargerExceptions(semaineOffset)
   }
 
-  // Réclamer un créneau libéré par un autre éducateur — pendant de
-  // toggleLiberation, même mécanisme (fonction SECURITY DEFINER dédiée, cf.
-  // reclamer_creneau dans supabase_planning_terrains_v1.sql) car aucune
-  // policy UPDATE n'est ouverte aux éducateurs sur planning_terrains.
-  const reclamerCreneau = async (creneau) => {
-    setReclamingId(creneau.id)
-    const { error } = await supabase.rpc('reclamer_creneau', { p_creneau_id: creneau.id })
+  const reclamerCreneauDate = async (creneau, dateStr) => {
+    const cle = `${creneau.id}_${dateStr}`
+    setReclamingId(cle)
+    const { error } = await supabase.rpc('reclamer_creneau_date', { p_creneau_id: creneau.id, p_date: dateStr })
     setReclamingId(null)
     if (error) { alert('Erreur : ' + error.message); return }
-    await chargerPlanning()
+    await chargerExceptions(semaineOffset)
+  }
+
+  // Dirigeant uniquement : annule une exception (le créneau de base reprend
+  // pour cette date) — accès direct autorisé par RLS (policy dirigeant), pas
+  // besoin d'une fonction dédiée comme pour les éducateurs.
+  const supprimerException = async (exceptionId) => {
+    if (!confirm('Supprimer cette exception ? Le créneau de base reprendra pour cette date.')) return
+    await supabase.from('planning_terrains_exceptions').delete().eq('id', exceptionId)
+    await chargerExceptions(semaineOffset)
   }
 
   const nomEducateur = (educateurId) => {
@@ -448,13 +502,33 @@ Règles :
     .filter(c => c.terrain_id === terrainActif && c.jour === jour)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
 
+  // Fusionne un créneau du gabarit avec son exception (s'il y en a une) pour
+  // UNE date précise — vue "effective" utilisée uniquement pour l'affichage
+  // et la détection de conflit, jamais persistée telle quelle.
+  const creneauPourDate = (c, dateStr) => {
+    const exception = exceptions.find(e => e.creneau_id === c.id && e.date_exception === dateStr)
+    if (!exception) return { ...c, exception: null, libere: false, estRemplacement: false }
+    if (exception.type === 'liberation') {
+      return { ...c, exception, libere: true, libere_par: exception.libere_par, estRemplacement: false }
+    }
+    // remplacement : une autre équipe occupe ce créneau, ce jour-là uniquement
+    return { ...c, exception, libere: false, estRemplacement: true, equipe: exception.equipe_remplacante || c.equipe, educateur_id: exception.educateur_id }
+  }
+
   // conflit = un autre créneau du même terrain/jour, sur la MÊME zone, à un
   // horaire qui se chevauche — deux zones différentes (ex: demi-A/demi-B)
-  // se partagent légitimement le terrain, ce n'est pas un conflit.
-  const renderCreneauCard = (c, liste = []) => {
-    const estMonCreneau = mode === 'educateur' && c.educateur_id === userId
+  // se partagent légitimement le terrain, ce n'est pas un conflit. Un
+  // créneau libéré pour cette date ne compte pas dans les conflits (le
+  // terrain est effectivement libre à cet horaire-là).
+  // cBase = ligne du gabarit récurrent (planning_terrains) ; dateStr = date
+  // précise affichée ; listeBase = tous les créneaux du gabarit de ce
+  // terrain/jour, pour la détection de conflit une fois fusionnés eux aussi.
+  const renderCreneauCard = (cBase, dateStr, listeBase = []) => {
+    const c = creneauPourDate(cBase, dateStr)
+    const liste = listeBase.map(x => creneauPourDate(x, dateStr))
+    const cle = `${cBase.id}_${dateStr}`
     const zone = c.zone || 'plein'
-    const enConflit = liste.some(autre => autre.id !== c.id && (autre.zone || 'plein') === zone && seChevauchent(c, autre))
+    const enConflit = !c.libere && liste.some(autre => autre.id !== c.id && !autre.libere && (autre.zone || 'plein') === zone && seChevauchent(c, autre))
     const couleurBord = zone !== 'plein' ? couleurZone(zone, accentColor) : (c.libere ? accentColor : '#1a1a1a')
     return (
       <div key={c.id} style={{
@@ -477,9 +551,14 @@ Règles :
           <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>⚠️ Même zone qu'un autre créneau à cet horaire</p>
         )}
         {c.libere ? (
-          <p style={{ margin: '4px 0 0', fontSize: '11px', color: accentColor }}>Disponible — libéré par {c.libere_par || 'un éducateur'}</p>
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: accentColor }}>Disponible ce jour — libéré par {c.libere_par || 'un éducateur'}</p>
         ) : (
           <>
+            {c.estRemplacement && (
+              <span style={{ display: 'inline-block', fontSize: '9px', fontWeight: 700, color: '#fbbf24', background: '#fbbf2418', border: '1px solid #fbbf2440', borderRadius: '10px', padding: '1px 7px', margin: '4px 0 0' }}>
+                Remplacement ce jour
+              </span>
+            )}
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ccc', display: 'flex', alignItems: 'center', gap: '6px' }}>
               {couleurEquipe(c.equipe, categories) && (
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleurEquipe(c.equipe, categories), flexShrink: 0 }} />
@@ -492,24 +571,30 @@ Règles :
 
         {estDirigeant && (
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-            <button onClick={() => setFormCreneau({ id: c.id, terrain_id: c.terrain_id, equipe: c.equipe || '', educateur_id: c.educateur_id || '', jour: c.jour, heure_debut: c.heure_debut?.slice(0, 5) || '', heure_fin: c.heure_fin?.slice(0, 5) || '', zone: c.zone || 'plein' })}
+            <button onClick={() => setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' })}
               style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}>✏️</button>
-            <button onClick={() => supprimerCreneau(c.id)}
+            <button onClick={() => supprimerCreneau(cBase.id)}
               style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+            {c.exception && (
+              <button onClick={() => supprimerException(c.exception.id)} title="Supprimer cette exception — le créneau de base reprend"
+                style={{ marginLeft: 'auto', background: 'none', border: '1px solid #2a2a2a', color: '#888', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
+                ↩ exception
+              </button>
+            )}
           </div>
         )}
 
-        {estMonCreneau && (
-          <button onClick={() => toggleLiberation(c)} disabled={liberating[c.id]}
+        {mode === 'educateur' && cBase.educateur_id === userId && !c.estRemplacement && (
+          <button onClick={() => libererCreneauDate(cBase, dateStr, !c.libere)} disabled={liberating[cle]}
             style={{ marginTop: '8px', width: '100%', background: c.libere ? '#1a1a1a' : accentColor, color: c.libere ? '#aaa' : '#000', border: c.libere ? '1px solid #2a2a2a' : 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {liberating[c.id] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce créneau'}
+            {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
         )}
 
-        {mode === 'educateur' && c.libere && c.educateur_id !== userId && (
-          <button onClick={() => reclamerCreneau(c)} disabled={reclamingId === c.id}
+        {mode === 'educateur' && c.libere && cBase.educateur_id !== userId && (
+          <button onClick={() => reclamerCreneauDate(cBase, dateStr)} disabled={reclamingId === cle}
             style={{ marginTop: '8px', width: '100%', background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {reclamingId === c.id ? '...' : 'Prendre ce créneau'}
+            {reclamingId === cle ? '...' : 'Prendre ce créneau'}
           </button>
         )}
       </div>
@@ -761,19 +846,46 @@ Règles :
                 </div>
               )}
 
+              {/* ── Navigation semaine — les libérations/remplacements affichés sont
+                  ceux de la semaine visible uniquement (exceptions datées). ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                <button onClick={() => setSemaineOffset(o => o - 1)}
+                  style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#fff', padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ‹
+                </button>
+                <span style={{ color: '#ccc', fontWeight: 600, fontSize: '13px' }}>
+                  {(() => {
+                    const dates = getDatesSemaine(semaineOffset)
+                    return `${dates[0].labelCourt} – ${dates[6].labelCourt}`
+                  })()}
+                  {semaineOffset === 0 && <span style={{ color: accentColor, marginLeft: '8px', fontSize: '11px', fontWeight: 700 }}>Cette semaine</span>}
+                </span>
+                <button onClick={() => setSemaineOffset(o => o + 1)}
+                  style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#fff', padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ›
+                </button>
+                {semaineOffset !== 0 && (
+                  <button onClick={() => setSemaineOffset(0)}
+                    style={{ background: 'none', border: 'none', color: '#555', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+                    revenir à cette semaine
+                  </button>
+                )}
+              </div>
+
               {loadingPlanning ? (
                 <p style={{ color: '#444', fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-                  {JOURS.map(j => {
+                  {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
                     return (
                       <div key={j.val}>
-                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', textAlign: 'center' }}>{j.label}</p>
+                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px', textAlign: 'center' }}>{j.label.slice(0, 3)}</p>
+                        <p style={{ fontSize: '11px', color: '#333', margin: '0 0 8px', textAlign: 'center' }}>{j.labelCourt}</p>
                         {liste.length === 0 ? (
                           <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
                         ) : (
-                          liste.map(c => renderCreneauCard(c, liste))
+                          liste.map(c => renderCreneauCard(c, j.dateStr, liste))
                         )}
                       </div>
                     )
