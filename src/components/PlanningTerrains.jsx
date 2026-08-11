@@ -40,6 +40,25 @@ const ZONES = [
 const ZONE_COLORS_FIXES = { 'demi-A': '#60a5fa', 'demi-B': '#818cf8', 'zone-1': '#fbbf24', 'zone-2': '#f97316', 'zone-3': '#f43f5e', 'zone-4': '#c084fc', 'zone-5': '#22d3ee' }
 const couleurZone = (zone, accentColor) => ZONE_COLORS_FIXES[zone] || accentColor
 
+// Zones disponibles selon le type réel du terrain (cf. règle club : foot à 11
+// = 1 demi-terrain par équipe, foot à 8/5 contre 5 = jusqu'à 5 groupes). Un
+// terrain "autre" (non classé) ne propose que "plein", faute de règle connue.
+const zonesDisponibles = (typeTerrain) => {
+  if (typeTerrain === 'foot_11') return ZONES.filter(z => ['plein', 'demi-A', 'demi-B'].includes(z.val))
+  if (typeTerrain === 'foot_8' || typeTerrain === '5c5') return ZONES.filter(z => z.val === 'plein' || z.val.startsWith('zone-'))
+  return [ZONES[0]]
+}
+
+// Couleur de secours pour une équipe sans couleur choisie (club_categories.couleur
+// nulle) — palette fixe, indexée sur l'ordre des catégories pour rester stable
+// d'un rendu à l'autre tant que la liste de catégories ne change pas.
+const PALETTE_EQUIPES = ['#4ade80', '#60a5fa', '#f97316', '#a78bfa', '#f43f5e', '#22d3ee', '#fbbf24', '#34d399', '#818cf8', '#f472b6']
+const couleurEquipe = (nomEquipe, categories) => {
+  const idx = categories.findIndex(c => `${c.nom} ${c.equipe || ''}`.trim() === (nomEquipe || '').trim())
+  if (idx === -1) return null
+  return categories[idx]?.couleur || PALETTE_EQUIPES[idx % PALETTE_EQUIPES.length]
+}
+
 const creneauVide = (terrainId) => ({
   id: null, terrain_id: terrainId || '', equipe: '', educateur_id: '',
   jour: 'lundi', heure_debut: '', heure_fin: '', zone: 'plein',
@@ -74,6 +93,9 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [planning, setPlanning] = useState([])
   const [loadingPlanning, setLoadingPlanning] = useState(true)
   const [educateurs, setEducateurs] = useState([])
+  const [categories, setCategories] = useState([]) // club_categories — équipes du club, pour le sélecteur + la couleur par équipe
+  const [heuresClub, setHeuresClub] = useState({ ouverture: '08:00', fermeture: '22:00' })
+  const [reclamingId, setReclamingId] = useState(null)
 
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
@@ -105,11 +127,23 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     setEducateurs(data || [])
   }
 
+  const chargerCategories = async () => {
+    const { data } = await supabase.from('club_categories').select('id, nom, equipe, educateur_id, couleur').eq('club_id', clubId).order('nom')
+    setCategories(data || [])
+  }
+
+  const chargerHeuresClub = async () => {
+    const { data } = await supabase.from('profiles').select('planning_heure_ouverture, planning_heure_fermeture').eq('id', clubId).maybeSingle()
+    if (data) setHeuresClub({ ouverture: (data.planning_heure_ouverture || '08:00').slice(0, 5), fermeture: (data.planning_heure_fermeture || '22:00').slice(0, 5) })
+  }
+
   useEffect(() => {
     if (!clubId) return
     chargerTerrains()
     chargerPlanning()
     chargerEducateurs()
+    chargerCategories()
+    chargerHeuresClub()
 
     const channel = supabase
       .channel(`planning_terrains_${clubId}`)
@@ -393,6 +427,18 @@ Règles :
     await chargerPlanning()
   }
 
+  // Réclamer un créneau libéré par un autre éducateur — pendant de
+  // toggleLiberation, même mécanisme (fonction SECURITY DEFINER dédiée, cf.
+  // reclamer_creneau dans supabase_planning_terrains_v1.sql) car aucune
+  // policy UPDATE n'est ouverte aux éducateurs sur planning_terrains.
+  const reclamerCreneau = async (creneau) => {
+    setReclamingId(creneau.id)
+    const { error } = await supabase.rpc('reclamer_creneau', { p_creneau_id: creneau.id })
+    setReclamingId(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    await chargerPlanning()
+  }
+
   const nomEducateur = (educateurId) => {
     const e = educateurs.find(x => x.educateur_id === educateurId)
     return e ? `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim() : ''
@@ -434,7 +480,12 @@ Règles :
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: accentColor }}>Disponible — libéré par {c.libere_par || 'un éducateur'}</p>
         ) : (
           <>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ccc' }}>{c.equipe || '—'}</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ccc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {couleurEquipe(c.equipe, categories) && (
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleurEquipe(c.equipe, categories), flexShrink: 0 }} />
+              )}
+              {c.equipe || '—'}
+            </p>
             <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{nomEducateur(c.educateur_id) || '—'}</p>
           </>
         )}
@@ -452,6 +503,13 @@ Règles :
           <button onClick={() => toggleLiberation(c)} disabled={liberating[c.id]}
             style={{ marginTop: '8px', width: '100%', background: c.libere ? '#1a1a1a' : accentColor, color: c.libere ? '#aaa' : '#000', border: c.libere ? '1px solid #2a2a2a' : 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {liberating[c.id] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce créneau'}
+          </button>
+        )}
+
+        {mode === 'educateur' && c.libere && c.educateur_id !== userId && (
+          <button onClick={() => reclamerCreneau(c)} disabled={reclamingId === c.id}
+            style={{ marginTop: '8px', width: '100%', background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {reclamingId === c.id ? '...' : 'Prendre ce créneau'}
           </button>
         )}
       </div>
@@ -656,15 +714,22 @@ Règles :
                     </div>
                     <div>
                       <label style={st.label}>Heure début</label>
-                      <input style={st.input} type="time" value={formCreneau.heure_debut} onChange={e => setFormCreneau(f => ({ ...f, heure_debut: e.target.value }))} />
+                      <input style={st.input} type="time" min={heuresClub.ouverture} max={heuresClub.fermeture} value={formCreneau.heure_debut} onChange={e => setFormCreneau(f => ({ ...f, heure_debut: e.target.value }))} />
                     </div>
                     <div>
                       <label style={st.label}>Heure fin</label>
-                      <input style={st.input} type="time" value={formCreneau.heure_fin} onChange={e => setFormCreneau(f => ({ ...f, heure_fin: e.target.value }))} />
+                      <input style={st.input} type="time" min={heuresClub.ouverture} max={heuresClub.fermeture} value={formCreneau.heure_fin} onChange={e => setFormCreneau(f => ({ ...f, heure_fin: e.target.value }))} />
                     </div>
                     <div>
                       <label style={st.label}>Équipe</label>
-                      <input style={st.input} value={formCreneau.equipe} onChange={e => setFormCreneau(f => ({ ...f, equipe: e.target.value }))} placeholder="Ex: U15 A" />
+                      {categories.length > 0 ? (
+                        <select style={st.input} value={formCreneau.equipe} onChange={e => setFormCreneau(f => ({ ...f, equipe: e.target.value }))}>
+                          <option value="">—</option>
+                          {categories.map(c => <option key={c.id} value={`${c.nom} ${c.equipe || ''}`.trim()}>{c.nom} {c.equipe}</option>)}
+                        </select>
+                      ) : (
+                        <input style={st.input} value={formCreneau.equipe} onChange={e => setFormCreneau(f => ({ ...f, equipe: e.target.value }))} placeholder="Ex: U15 A" />
+                      )}
                     </div>
                     <div>
                       <label style={st.label}>Éducateur</label>
@@ -676,12 +741,12 @@ Règles :
                     <div>
                       <label style={st.label}>Zone occupée</label>
                       <select style={st.input} value={formCreneau.zone || 'plein'} onChange={e => setFormCreneau(f => ({ ...f, zone: e.target.value }))}>
-                        {ZONES.map(z => <option key={z.val} value={z.val}>{z.label}</option>)}
+                        {zonesDisponibles(terrains.find(t => t.id === formCreneau.terrain_id)?.type).map(z => <option key={z.val} value={z.val}>{z.label}</option>)}
                       </select>
                     </div>
                   </div>
                   <p style={{ fontSize: '11px', color: '#555', margin: '-4px 0 12px' }}>
-                    Foot à 11 (U13+) : un demi-terrain par équipe (2 max sur un terrain plein). Foot à 5/futsal/U6-U11 : jusqu'à 5 zones sur un même terrain.
+                    Horaires du club : {heuresClub.ouverture}–{heuresClub.fermeture}. Foot à 11 (U13+) : un demi-terrain par équipe (2 max sur un terrain plein). Foot à 5/futsal/U6-U11 : jusqu'à 5 zones sur un même terrain.
                   </p>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={sauvegarderCreneau} disabled={savingCreneau}
