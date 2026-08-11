@@ -30,7 +30,9 @@ const formVide = () => ({
   cpa_offensifs: [''],
   cpa_defensifs: [''],
   tireurs: [''],
-  schema_tactique: [],
+  schema_tactique: { joueurs: [], ballon: null, fleches: [] },
+  schema_cpa_offensif: { joueurs: [], ballon: null, fleches: [] },
+  schema_cpa_defensif: { joueurs: [], ballon: null, fleches: [] },
 })
 
 // Liste de points éditable (animation avec/sans ballon, CPA, tireurs) — au
@@ -136,7 +138,9 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: form.cpa_offensifs.filter(Boolean),
       cpa_defensifs: form.cpa_defensifs.filter(Boolean),
       tireurs: form.tireurs.filter(Boolean),
-      schema_tactique: form.schema_tactique || [],
+      schema_tactique: form.schema_tactique || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_offensif: form.schema_cpa_offensif || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_defensif: form.schema_cpa_defensif || { joueurs: [], ballon: null, fleches: [] },
     }
     const res = ficheCourante?.id
       ? await supabase.from('causeries').update(payload).eq('id', ficheCourante.id).select().single()
@@ -178,7 +182,9 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: f.cpa_offensifs?.length ? f.cpa_offensifs : [''],
       cpa_defensifs: f.cpa_defensifs?.length ? f.cpa_defensifs : [''],
       tireurs: f.tireurs?.length ? f.tireurs : [''],
-      schema_tactique: f.schema_tactique || [],
+      schema_tactique: f.schema_tactique || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_offensif: f.schema_cpa_offensif || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_defensif: f.schema_cpa_defensif || { joueurs: [], ballon: null, fleches: [] },
     })
     setVue('form')
   }
@@ -372,28 +378,41 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
 
         <div style={card}>
           {sectionTitle('06', '#22d3ee', 'Coups de pied arrêtés')}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ ...label, color: '#4ade80' }}>Offensifs (corners, CFL, penalties)</label>
+
+          <div style={{ marginBottom: '24px' }}>
+            <p style={{ ...label, color: '#4ade80', marginBottom: '10px' }}>⚽ Offensifs — Corners, CFL, Penalties</p>
+            <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_offensifs} onChange={(i, v) => setLigne('cpa_offensifs', i, v)} onAjouter={() => ajouterLigne('cpa_offensifs')} onSupprimer={i => supprimerLigne('cpa_offensifs', i)} inputStyle={inp} placeholder="Ex: Corner entrant côté droit, n°9 au 1er poteau…" />
             </div>
-            <div>
-              <label style={{ ...label, color: '#f87171' }}>Défensifs</label>
+            <div style={{ background: '#050505', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px' }}>
+              <p style={{ margin: '0 0 10px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Offensif</p>
+              <TacticalBoard data={form.schema_cpa_offensif} onChange={val => set('schema_cpa_offensif', val)} />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <p style={{ ...label, color: '#f87171', marginBottom: '10px' }}>🛡️ Défensifs</p>
+            <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_defensifs} onChange={(i, v) => setLigne('cpa_defensifs', i, v)} onAjouter={() => ajouterLigne('cpa_defensifs')} onSupprimer={i => supprimerLigne('cpa_defensifs', i)} inputStyle={inp} placeholder="Ex: Zone sur corner, le n°5 sur le 2ème poteau…" />
             </div>
-            <div>
-              <label style={{ ...label, color: '#fbbf24' }}>Tireurs</label>
-              <ListeChamp valeurs={form.tireurs} onChange={(i, v) => setLigne('tireurs', i, v)} onAjouter={() => ajouterLigne('tireurs')} onSupprimer={i => supprimerLigne('tireurs', i)} inputStyle={inp} placeholder="Ex: Kevin (penaltys), Mehdi (CFL directs)…" />
+            <div style={{ background: '#050505', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px' }}>
+              <p style={{ margin: '0 0 10px', color: '#f87171', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Défensif</p>
+              <TacticalBoard data={form.schema_cpa_defensif} onChange={val => set('schema_cpa_defensif', val)} />
             </div>
+          </div>
+
+          <div>
+            <p style={{ ...label, color: '#fbbf24', marginBottom: '10px' }}>🎯 Tireurs</p>
+            <ListeChamp valeurs={form.tireurs} onChange={(i, v) => setLigne('tireurs', i, v)} onAjouter={() => ajouterLigne('tireurs')} onSupprimer={i => supprimerLigne('tireurs', i)} inputStyle={inp} placeholder="Ex: Kevin (penaltys), Mehdi (CFL directs)…" />
           </div>
         </div>
 
         <div style={card}>
           {sectionTitle('07', '#f59e0b', 'Schéma tactique (demi-terrain)')}
           <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>
-            Place les joueurs sur le demi-terrain. Utile pour les coups de pied arrêtés ou les positions de départ.
+            Place les joueurs, le ballon et des flèches sur le demi-terrain. Utile pour les positions de départ ou une animation.
           </p>
-          <TacticalBoard joueurs={form.schema_tactique} onChange={val => set('schema_tactique', val)} />
+          <TacticalBoard data={form.schema_tactique} onChange={val => set('schema_tactique', val)} />
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
@@ -496,6 +515,12 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
               ))}
             </div>
           )}
+          {(f.schema_cpa_offensif?.joueurs?.length > 0 || f.schema_cpa_offensif?.fleches?.length > 0 || f.schema_cpa_offensif?.ballon) && (
+            <div style={{ marginBottom: '14px' }}>
+              <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma offensif</p>
+              <TacticalBoard data={f.schema_cpa_offensif} onChange={() => {}} readOnly />
+            </div>
+          )}
           {(f.cpa_defensifs || []).filter(Boolean).length > 0 && (
             <div style={{ marginBottom: '14px' }}>
               <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Défensifs</p>
@@ -505,6 +530,12 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
                   <p style={{ margin: 0, color: '#d1d5db', fontSize: '13px', lineHeight: 1.5 }}>{pt}</p>
                 </div>
               ))}
+            </div>
+          )}
+          {(f.schema_cpa_defensif?.joueurs?.length > 0 || f.schema_cpa_defensif?.fleches?.length > 0 || f.schema_cpa_defensif?.ballon) && (
+            <div style={{ marginBottom: '14px' }}>
+              <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma défensif</p>
+              <TacticalBoard data={f.schema_cpa_defensif} onChange={() => {}} readOnly />
             </div>
           )}
           {(f.tireurs || []).filter(Boolean).length > 0 && (
@@ -521,10 +552,10 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
         </div>
       </div>
 
-      {(f.schema_tactique || []).length > 0 && (
+      {(f.schema_tactique?.joueurs?.length > 0 || f.schema_tactique?.fleches?.length > 0 || f.schema_tactique?.ballon) && (
         <div style={{ padding: '24px', borderTop: '1px solid #222' }}>
           <p style={{ margin: '0 0 14px', color: '#f59e0b', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>📐 Schéma tactique</p>
-          <TacticalBoard joueurs={f.schema_tactique} onChange={() => {}} readOnly />
+          <TacticalBoard data={f.schema_tactique} onChange={() => {}} readOnly />
         </div>
       )}
 
