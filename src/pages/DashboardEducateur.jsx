@@ -3634,7 +3634,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         </div>
       </aside>
 
-      <div style={{ flex: 1, minWidth: 0, maxWidth: activeSection === 'accueil' ? '1400px' : '1100px', margin: '0 auto', padding: isMobile ? '16px 14px' : '1.25rem 1.5rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '1.25rem' }}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: activeSection === 'accueil' ? '1600px' : '1400px', margin: '0 auto', padding: isMobile ? '16px 14px' : '1.25rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '1.25rem' }}>
 
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', marginLeft: '-12px' }}>
