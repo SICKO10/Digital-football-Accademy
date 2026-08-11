@@ -3443,21 +3443,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   }
 
   const tauxPresence = (joueurId) => {
-    // Seulement les séances où la présence a été effectivement saisie
-    // (row existe ET a un statut intentionnel, pas juste la valeur par défaut vide)
-    const saisies = entrainements.filter(e =>
-      (e.presences_entrainement || []).some(p => p.joueur_id === joueurId && (p.statut || p.present))
-    )
-    if (!saisies.length) return null
-    const getStatut = (e) => {
+    // On prend en compte à la fois les saisies manuelles (presences_entrainement)
+    // ET les réponses auto au sondage (dispoJoueurs) pour les joueurs non encore saisis.
+    const joueur = joueurs.find(j => j.id === joueurId)
+    const getStatutEffectif = (e) => {
       const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      return p?.statut || (p?.present ? 'present' : 'absent')
+      const nonSaisi = !p || (!p.statut && !p.present)
+      if (!nonSaisi) return p?.statut || (p?.present ? 'present' : 'absent')
+      // Pas de saisie manuelle → on utilise la réponse auto au sondage si elle existe
+      return joueur?.joueur_id ? (dispoJoueurs[e.id]?.[joueur.joueur_id] || null) : null
     }
-    const presents  = saisies.filter(e => getStatut(e) === 'present').length
-    const convoque  = saisies.filter(e => getStatut(e) === 'convoque').length
-    const absents   = saisies.filter(e => getStatut(e) === 'absent').length
-    const blesses   = saisies.filter(e => getStatut(e) === 'blesse').length
-    const malade    = saisies.filter(e => getStatut(e) === 'malade').length
+    const saisies = entrainements.filter(e => getStatutEffectif(e) !== null)
+    if (!saisies.length) return null
+    const presents  = saisies.filter(e => getStatutEffectif(e) === 'present').length
+    const convoque  = saisies.filter(e => getStatutEffectif(e) === 'convoque').length
+    const absents   = saisies.filter(e => getStatutEffectif(e) === 'absent').length
+    const blesses   = saisies.filter(e => getStatutEffectif(e) === 'blesse').length
+    const malade    = saisies.filter(e => getStatutEffectif(e) === 'malade').length
     const total     = saisies.length
     return { taux: Math.round(((presents + convoque) / total) * 100), presents, convoque, absents, blesses, malade, total }
   }
@@ -4426,15 +4428,21 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           const tauxPresenceGlobal = Math.round((totalPresents + totalConvoques) / tot * 100)
                           const tauxAbsentsGlobal = Math.round(totalAbsents / tot * 100)
                           return [
-                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: '#4ade80' },
-                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: '#ef4444', note: t('stats_pres_dont', lang) },
-                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: '#f97316' },
-                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: '#a855f7' },
-                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: '#60a5fa' },
+                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: '#4ade80', count: totalPresents + totalConvoques },
+                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: '#ef4444', note: t('stats_pres_dont', lang), count: totalAbsents },
+                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: '#f97316', count: totalBlesses },
+                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: '#a855f7', count: totalMalades },
+                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: '#60a5fa', count: totalConvoques },
                           ]
                         })().map(c => (
                           <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
-                            <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>{c.val}%</span>
+                            <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>
+                              {c.val}%
+                              {/* Compteur brut affiché même si l'arrondi tombe à 0% (ex: 1 ou 2
+                                  cas sur des centaines de séances × joueurs) — sinon un vrai
+                                  blessé/malade "Auto" devient invisible à tort. */}
+                              {c.count > 0 && <span style={{ fontSize: '12px', fontWeight: 600, color: '#555' }}> ({c.count})</span>}
+                            </span>
                             <span style={{ fontSize: '11px', color: '#555', marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
                             {c.note && (
                               <span style={{ fontSize: '9px', color: '#444', marginTop: '2px', textAlign: 'center' }}>{c.note}</span>
@@ -5705,10 +5713,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid #1a1a1a', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
                         {[...items].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
-                const nbPresents = (e.presences_entrainement || []).filter(p => p.statut === 'present' || p.statut === 'convoque' || (!p.statut && p.present)).length
-                const nbBlesses = (e.presences_entrainement || []).filter(p => p.statut === 'blesse').length
-                const nbMalades = (e.presences_entrainement || []).filter(p => p.statut === 'malade').length
-                const nbConvoques = (e.presences_entrainement || []).filter(p => p.statut === 'convoque').length
+                const getStatutJoueur = (j) => {
+                  const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id)
+                  const nonSaisi = !p || (!p.statut && !p.present)
+                  if (!nonSaisi) return p.statut || (p.present ? 'present' : 'absent')
+                  return j.joueur_id ? (dispoJoueurs[e.id]?.[j.joueur_id] || null) : null
+                }
+                const nbPresents  = joueurs.filter(j => { const s = getStatutJoueur(j); return s === 'present' || s === 'convoque' }).length
+                const nbBlesses   = joueurs.filter(j => getStatutJoueur(j) === 'blesse').length
+                const nbMalades   = joueurs.filter(j => getStatutJoueur(j) === 'malade').length
+                const nbConvoques = joueurs.filter(j => getStatutJoueur(j) === 'convoque').length
                 const total = joueurs.length
                 const dateObj = new Date(e.date + 'T12:00:00')
                 const estFuture = dateObj > new Date()
