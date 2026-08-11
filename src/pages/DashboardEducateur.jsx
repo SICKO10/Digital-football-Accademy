@@ -6904,7 +6904,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         )}
 
         {activeSection === 'bibliotheque' && (
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
