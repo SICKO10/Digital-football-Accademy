@@ -1577,7 +1577,7 @@ Règles :
         // Compteurs bruts (présent stricto sensu, sans convoqué) pour le taux de présence
         // effectif agrégé au niveau équipe, dans l'onglet Classements.
         presenceEffectifTotal: totalPresences,
-        presenceEffectifPresents: pr.filter(p => p.statut === 'present').length,
+        presenceEffectifPresents: pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length,
         pointsSeance: points,
         noteGlobale,
         presenceMensuelle,
