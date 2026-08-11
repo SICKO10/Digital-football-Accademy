@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
 import { colors, alpha } from '../tokens'
+import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
@@ -55,8 +56,8 @@ const IconMessage = () => (
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
 )
-const IconMic = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const IconMic = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
   </svg>
 )
@@ -73,8 +74,8 @@ const IconUpload = () => (
     <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
   </svg>
 )
-const IconVideoOff = () => (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+const IconVideoOff = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
   </svg>
 )
@@ -83,8 +84,8 @@ const IconLock = () => (
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 )
-const IconSearch = () => (
-  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+const IconSearch = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
   </svg>
 )
@@ -1317,7 +1318,7 @@ function DashboardJoueur() {
                 </div>
               </div>
               {moisMatchs.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun match ce mois-ci</p>
+                <EmptyState compact title="Aucun match ce mois-ci" />
               ) : moisMatchs.map(m => (
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1f2937' }}>
                   <div>
@@ -1365,7 +1366,7 @@ function DashboardJoueur() {
                 </div>
               </div>
               {moisResultats.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '13px' }}>Aucun résultat ce mois-ci</p>
+                <EmptyState compact title="Aucun résultat ce mois-ci" />
               ) : moisResultats.map(r => {
                 const scoreNous = Number(r.score_nous)
                 const scoreEux = Number(r.score_eux)
@@ -1635,9 +1636,7 @@ function DashboardJoueur() {
                 const hasDonnees = s.present || s.points || s.matchsJoues || s.noteEdu ||
                   s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
                 if (!hasDonnees) return (
-                  <p style={{ color: colors.border.strong, fontSize: '13px', fontStyle: 'italic' }}>
-                    {t('aff_aucune_seance_match', lang)}
-                  </p>
+                  <EmptyState compact title={t('aff_aucune_seance_match', lang)} />
                 )
 
                 // ── Badges / streaks ──────────────────────────────────────
@@ -2112,20 +2111,19 @@ function DashboardJoueur() {
 
               {/* Aucune affiliation active → inviter à rejoindre */}
               {mesAffiliations.filter(a => a.statut === 'accepte').length === 0 && (
-                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 24, textAlign: 'center', marginTop: 16 }}>
-                  <p style={{ fontSize: 32, marginBottom: 12 }}>🏟️</p>
-                  <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{t('aff_nouvelle_saison', lang)}</p>
-                  <p style={{ fontSize: 13, color: colors.text.faint, marginBottom: 16 }}>{t('aff_rejoins_equipe_code', lang)}</p>
-                  <input
-                    placeholder="CODE ÉQUIPE"
-                    value={codeEquipe}
-                    onChange={e => setCodeEquipe(e.target.value.toUpperCase())}
-                    style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: colors.text.primary, fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
-                  />
-                  <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
-                    style={{ ...st.btnSolid(), width: '100%' }}>
-                    {t('jeq_rejoindre_btn', lang)}
-                  </button>
+                <div style={{ marginTop: 16 }}>
+                  <EmptyState icon="🏟️" title={t('aff_nouvelle_saison', lang)} subtitle={t('aff_rejoins_equipe_code', lang)}>
+                    <input
+                      placeholder="CODE ÉQUIPE"
+                      value={codeEquipe}
+                      onChange={e => setCodeEquipe(e.target.value.toUpperCase())}
+                      style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: colors.text.primary, fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
+                      style={{ ...st.btnSolid(), width: '100%' }}>
+                      {t('jeq_rejoindre_btn', lang)}
+                    </button>
+                  </EmptyState>
                 </div>
               )}
             </div>
@@ -2197,13 +2195,12 @@ function DashboardJoueur() {
               {loadingFanFavoris ? (
                 <p style={{ color: colors.accent.green, textAlign: 'center', fontSize: '14px' }}>Chargement...</p>
               ) : fanFavoris.length === 0 ? (
-                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '3rem', textAlign: 'center' }}>
-                  <p style={{ color: colors.border.strong, margin: '0 0 12px', display: 'flex', justifyContent: 'center' }}>
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  </p>
-                  <p style={{ color: colors.text.faint, fontSize: '14px', lineHeight: 1.6 }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape Save pour les retrouver ici.</p>
-                  <button onClick={() => navigate('/jogabonito')} style={{ ...st.btnSolid(), marginTop: '1rem' }}>Aller sur Jogabonito</button>
-                </div>
+                <EmptyState
+                  icon={<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+                  title="Aucun reel sauvegardé"
+                  subtitle="Swipe sur Jogabonito et tape Save pour les retrouver ici."
+                  cta={{ label: 'Aller sur Jogabonito', onClick: () => navigate('/jogabonito') }}
+                />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {fanFavoris.map(reel => (
@@ -2375,7 +2372,7 @@ function DashboardJoueur() {
                 )}
               </div>
               {notifications.length === 0 ? (
-                <p style={{ padding: '24px', textAlign: 'center', color: colors.text.disabled, fontSize: '13px' }}>Aucune notification</p>
+                <EmptyState compact title="Aucune notification" />
               ) : (
                 notifications.map(n => (
                   <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
@@ -2439,7 +2436,7 @@ function DashboardJoueur() {
                 )}
               </div>
               {notifications.length === 0 ? (
-                <p style={{ padding: '24px', textAlign: 'center', color: colors.text.disabled, fontSize: '13px' }}>Aucune notification</p>
+                <EmptyState compact title="Aucune notification" />
               ) : (
                 notifications.map(n => (
                   <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
@@ -2797,15 +2794,14 @@ function DashboardJoueur() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
-                    <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', color: colors.text.disabled, marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
-                    <p style={{ fontSize: '12px', color: colors.border.strong, marginBottom: '20px', lineHeight: 1.6 }}>
-                      {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
-                    </p>
-                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={st.btnSolid()}>
-                      {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
-                    </button>
+                  <div style={{ marginBottom: '16px' }}>
+                    <EmptyState
+                      dashed
+                      icon={<IconVideoOff />}
+                      title={t('jvid_aucune', lang)}
+                      subtitle={isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
+                      cta={{ label: isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang), onClick: () => navigate(isPro ? '/upload-clip' : '/upload-reel') }}
+                    />
                   </div>
                 )}
 
@@ -3184,10 +3180,7 @@ function DashboardJoueur() {
               )}
             </div>
             {demandes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconSearch /></div>
-                <p style={{ color: colors.text.disabled, fontSize: '14px' }}>{t('ja_aucune', lang)}</p>
-              </div>
+              <EmptyState compact icon={<IconSearch />} title={t('ja_aucune', lang)} />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {demandes.map(demande => (
@@ -3380,11 +3373,7 @@ function DashboardJoueur() {
             </div>
 
             {(!profil?.plan || profil.plan === 'fan') ? (
-              <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎮</div>
-                <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>{t('jcarte_feature', lang)}</p>
-                <p style={{ fontSize: '13px', color: colors.text.faint }}>{t('jcarte_abo', lang)}</p>
-              </div>
+              <EmptyState dashed icon="🎮" title={t('jcarte_feature', lang)} subtitle={t('jcarte_abo', lang)} />
             ) : (
               <>
                 {profil?.carte_fifa_url && (
@@ -3528,10 +3517,7 @@ function DashboardJoueur() {
               </div>
             )}
             {coaches.length === 0 ? (
-              <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center', color: colors.icon.muted }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconMic /></div>
-                <p style={{ fontSize: '13px', color: colors.text.disabled }}>{t('jcoach_aucun', lang)}</p>
-              </div>
+              <EmptyState dashed icon={<IconMic size={40} />} title={t('jcoach_aucun', lang)} />
             ) : (
               <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                 {coaches.length > 1 && (
@@ -3656,10 +3642,7 @@ function DashboardJoueur() {
               ))}
 
               {!clubsLoading && (explorerFiltre === 'tous' ? clubsListe.length + recruteursList.length : explorerFiltre === 'clubs' ? clubsListe.length : recruteursList.length) === 0 && (
-                <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
-                  <p style={{ fontSize: '14px', color: colors.text.disabled }}>{t('jexp_aucun', lang)}</p>
-                </div>
+                <EmptyState dashed icon="🔍" title={t('jexp_aucun', lang)} />
               )}
             </div>
           </div>
@@ -3954,10 +3937,7 @@ function DashboardJoueur() {
             )}
 
             {mesAffiliations.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '3rem', color: colors.border.strong, fontSize: '13px' }}>
-                <p style={{ fontSize: '32px', marginBottom: '12px' }}>🏟️</p>
-                <p>Tu n'es encore affilié à aucune équipe.<br/>Entre un code d'équipe pour commencer.</p>
-              </div>
+              <EmptyState icon="🏟️" title="Tu n'es encore affilié à aucune équipe" subtitle="Entre un code d'équipe pour commencer." />
             )}
           </div>
         )}
@@ -4074,7 +4054,7 @@ function DashboardJoueur() {
             )}
 
             {!recruteurModal.description && !recruteurModal.recherche_profil && (
-              <p style={{ fontSize: '13px', color: colors.text.disabled, textAlign: 'center', padding: '1rem 0' }}>Ce recruteur n'a pas encore complété son profil.</p>
+              <EmptyState compact title="Ce recruteur n'a pas encore complété son profil." />
             )}
 
             <button
