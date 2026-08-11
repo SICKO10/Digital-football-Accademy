@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
+import TacticalBoard from './TacticalBoard'
 
 const METEO_OPTIONS = [
   { val: 'soleil', icon: '☀️', label: 'Soleil' },
@@ -29,6 +30,7 @@ const formVide = () => ({
   cpa_offensifs: [''],
   cpa_defensifs: [''],
   tireurs: [''],
+  schema_tactique: [],
 })
 
 // Liste de points éditable (animation avec/sans ballon, CPA, tireurs) — au
@@ -134,6 +136,7 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: form.cpa_offensifs.filter(Boolean),
       cpa_defensifs: form.cpa_defensifs.filter(Boolean),
       tireurs: form.tireurs.filter(Boolean),
+      schema_tactique: form.schema_tactique || [],
     }
     const res = ficheCourante?.id
       ? await supabase.from('causeries').update(payload).eq('id', ficheCourante.id).select().single()
@@ -175,6 +178,7 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: f.cpa_offensifs?.length ? f.cpa_offensifs : [''],
       cpa_defensifs: f.cpa_defensifs?.length ? f.cpa_defensifs : [''],
       tireurs: f.tireurs?.length ? f.tireurs : [''],
+      schema_tactique: f.schema_tactique || [],
     })
     setVue('form')
   }
@@ -384,6 +388,14 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
           </div>
         </div>
 
+        <div style={card}>
+          {sectionTitle('07', '#f59e0b', 'Schéma tactique (demi-terrain)')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>
+            Place les joueurs sur le demi-terrain. Utile pour les coups de pied arrêtés ou les positions de départ.
+          </p>
+          <TacticalBoard joueurs={form.schema_tactique} onChange={val => set('schema_tactique', val)} />
+        </div>
+
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
           <button onClick={() => setVue('liste')} style={btnO}>Annuler</button>
           <button onClick={sauvegarder} disabled={saving} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
@@ -508,6 +520,13 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
           )}
         </div>
       </div>
+
+      {(f.schema_tactique || []).length > 0 && (
+        <div style={{ padding: '24px', borderTop: '1px solid #222' }}>
+          <p style={{ margin: '0 0 14px', color: '#f59e0b', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>📐 Schéma tactique</p>
+          <TacticalBoard joueurs={f.schema_tactique} onChange={() => {}} readOnly />
+        </div>
+      )}
 
       <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>Digital Football — Fiche préparée par {equipeNom || "l'équipe"}</p>
