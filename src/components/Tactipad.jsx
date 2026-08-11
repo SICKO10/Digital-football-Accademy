@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Image as KonvaImage, Circle, Ellipse, Rect, Arrow, Line, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
@@ -414,8 +414,33 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const trRef = useRef(null)
   const nodeRefs = useRef({})
 
-  const width = Math.min(window.innerWidth - 32, 800)
+  // Largeur du canvas Konva — mesurée sur son propre conteneur (canvasRef) via
+  // ResizeObserver plutôt que dérivée de window.innerWidth : Tactipad est
+  // rendu dans des contextes très différents (onglet avec sidebar 220px
+  // persistante dès 768px de large, modale avec son propre padding...) que ce
+  // composant n'a aucun moyen de connaître à l'avance. Se fier à la largeur
+  // réellement disponible marche partout, y compris en cas de sidebar
+  // tablette qui rognait l'espace sans que le calcul précédent (window.
+  // innerWidth - 32) n'en tienne compte, faisant déborder le terrain sur la
+  // droite. Valeur de secours identique à l'ancien calcul tant que la
+  // première mesure n'est pas encore arrivée ; useLayoutEffect (avant peinture)
+  // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
+  const canvasRef = useRef(null)
+  const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 800))
   const height = Math.round(width * 10 / 16)
+
+  useLayoutEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+    const mettreAJourLargeur = () => {
+      const disponible = el.getBoundingClientRect().width
+      if (disponible > 0) setWidth(Math.max(280, Math.min(Math.round(disponible), 800)))
+    }
+    mettreAJourLargeur()
+    const observer = new ResizeObserver(mettreAJourLargeur)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const svgString = useMemo(() => terrainSvgString({ sport, vue, fond, w: width, h: height }), [sport, vue, fond, width, height])
   const terrainImg = useSvgImage(svgString)
@@ -1208,8 +1233,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           </div>
         </div>
 
-        {/* Canvas */}
-        <div style={{ position: 'relative' }}>
+        {/* Canvas — flex:1/minWidth:0 pour pouvoir rétrécir dans la ligne flex
+            (toolbar + canvas) au lieu de forcer sa largeur naturelle ; c'est
+            ce conteneur, une fois réellement rétréci par le layout (sidebar,
+            padding de la modale...), que canvasRef mesure pour dimensionner
+            le Stage Konva. overflow:hidden en filet de sécurité contre tout
+            débordement d'1-2px (arrondi sub-pixel). */}
+        <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '800px', overflow: 'hidden' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
               Clique le point d'arrivée de la flèche… <span style={{ color: '#666' }}>(Échap pour annuler)</span>
