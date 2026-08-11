@@ -20,12 +20,38 @@ const TYPES_TERRAIN = [
   { val: 'autre', label: 'Autre' },
 ]
 
+// Zone occupée sur le terrain pour ce créneau — permet à plusieurs équipes de
+// se partager un même terrain au même horaire : foot à 11 (U13+) sur un
+// demi-terrain chacune (2 zones max), foot à 5/futsal/U6-U11 jusqu'à 5 zones.
+// 'plein' (défaut) = le créneau occupe tout le terrain, comme avant.
+const ZONES = [
+  { val: 'plein', label: 'Terrain plein' },
+  { val: 'demi-A', label: 'Demi-terrain A' },
+  { val: 'demi-B', label: 'Demi-terrain B' },
+  { val: 'zone-1', label: 'Zone 1' },
+  { val: 'zone-2', label: 'Zone 2' },
+  { val: 'zone-3', label: 'Zone 3' },
+  { val: 'zone-4', label: 'Zone 4' },
+  { val: 'zone-5', label: 'Zone 5' },
+]
+// 'plein' reprend la couleur de marque du club (accentColor, déjà utilisée
+// partout ailleurs) ; les sous-zones ont chacune une couleur fixe distincte
+// pour rester lisibles quand plusieurs sont empilées sur la même case.
+const ZONE_COLORS_FIXES = { 'demi-A': '#60a5fa', 'demi-B': '#818cf8', 'zone-1': '#fbbf24', 'zone-2': '#f97316', 'zone-3': '#f43f5e', 'zone-4': '#c084fc', 'zone-5': '#22d3ee' }
+const couleurZone = (zone, accentColor) => ZONE_COLORS_FIXES[zone] || accentColor
+
 const creneauVide = (terrainId) => ({
   id: null, terrain_id: terrainId || '', equipe: '', educateur_id: '',
-  jour: 'lundi', heure_debut: '', heure_fin: '',
+  jour: 'lundi', heure_debut: '', heure_fin: '', zone: 'plein',
 })
 
 const normaliserJour = (val) => JOURS.find(j => normaliserCle(val).includes(j.val))?.val || ''
+const normaliserZone = (val) => ZONES.find(z => z.val === String(val || '').trim().toLowerCase())?.val || 'plein'
+
+// Deux créneaux se chevauchent si leurs horaires se recoupent (bornes
+// incluses côté début, exclues côté fin — un créneau qui finit à 18:00 ne
+// chevauche pas celui qui commence à 18:00).
+const seChevauchent = (a, b) => a.heure_debut < b.heure_fin && b.heure_debut < a.heure_fin
 
 const st = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
@@ -168,6 +194,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       jour: formCreneau.jour,
       heure_debut: formCreneau.heure_debut,
       heure_fin: formCreneau.heure_fin,
+      zone: formCreneau.zone || 'plein',
     }
     // Optimistic : le formulaire se ferme tout de suite sans attendre la
     // réponse Supabase, qui continue en arrière-plan. Erreur → réouvert
@@ -254,13 +281,19 @@ ${sample}
 
 Terrains existants dans ce club (réutilise ces noms exacts si tu les reconnais dans le fichier) : ${terrains.map(t => t.nom).join(', ') || 'aucun terrain enregistré'}
 
+RÈGLE IMPORTANTE — plusieurs équipes peuvent partager un même terrain au même horaire, sur des zones différentes :
+- Foot à 11 (catégories U13, U14, U15, U16, U17, U18, U19, U20, Seniors, R1, R2...) : chaque équipe occupe UN DEMI-TERRAIN, donc au plus 2 équipes simultanées sur un terrain plein (zones "demi-A" et "demi-B").
+- Foot à 5 / futsal / U6, U7, U8, U9, U10, U11, U12 : jusqu'à 5 groupes peuvent se partager un même terrain (zones "zone-1" à "zone-5").
+- Si une seule équipe/groupe occupe tout le terrain à cet horaire, ou si tu ne peux pas déterminer de partage, mets zone "plein".
+
 Extrait tous les créneaux d'occupation. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant/après, sans balise markdown, format exact :
-[{ "terrain": "...", "equipe": "...", "educateur": "...", "jour": "lundi", "heure_debut": "HH:MM", "heure_fin": "HH:MM" }]
+[{ "terrain": "...", "equipe": "...", "educateur": "...", "jour": "lundi", "heure_debut": "HH:MM", "heure_fin": "HH:MM", "zone": "plein" }]
 
 Règles :
 - "jour" en minuscules parmi lundi/mardi/mercredi/jeudi/vendredi/samedi/dimanche
 - "heure_debut"/"heure_fin" au format HH:MM, chaîne vide si absent du fichier
 - "educateur" = nom de l'éducateur/coach si visible, sinon chaîne vide
+- "zone" parmi plein/demi-A/demi-B/zone-1/zone-2/zone-3/zone-4/zone-5, selon la règle de partage ci-dessus déduite de la catégorie de l'équipe
 - Ignore les lignes/colonnes vides ou de mise en forme (titres, totaux...)
 - Ne retourne que des créneaux réels trouvés dans le fichier, jamais d'exemple`
 
@@ -296,6 +329,7 @@ Règles :
           jour: normaliserJour(c.jour) || 'lundi',
           heure_debut: normaliserHeure(c.heure_debut) || '',
           heure_fin: normaliserHeure(c.heure_fin) || '',
+          zone: normaliserZone(c.zone),
         }
       }).filter(l => l.equipe || l.heure_debut || l.heure_fin)
 
@@ -327,6 +361,7 @@ Règles :
       jour: l.jour,
       heure_debut: l.heure_debut,
       heure_fin: l.heure_fin,
+      zone: l.zone || 'plein',
     }))
     const { error } = await supabase.from('planning_terrains').insert(payload)
     setImporting(false)
@@ -354,17 +389,34 @@ Règles :
     .filter(c => c.terrain_id === terrainActif && c.jour === jour)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
 
-  const renderCreneauCard = (c) => {
+  // conflit = un autre créneau du même terrain/jour, sur la MÊME zone, à un
+  // horaire qui se chevauche — deux zones différentes (ex: demi-A/demi-B)
+  // se partagent légitimement le terrain, ce n'est pas un conflit.
+  const renderCreneauCard = (c, liste = []) => {
     const estMonCreneau = mode === 'educateur' && c.educateur_id === userId
+    const zone = c.zone || 'plein'
+    const enConflit = liste.some(autre => autre.id !== c.id && (autre.zone || 'plein') === zone && seChevauchent(c, autre))
+    const couleurBord = zone !== 'plein' ? couleurZone(zone, accentColor) : (c.libere ? accentColor : '#1a1a1a')
     return (
       <div key={c.id} style={{
         background: c.libere ? accentColor + '10' : '#0a0a0a',
-        border: `1px solid ${c.libere ? accentColor + '40' : '#1a1a1a'}`,
+        border: `1px solid ${enConflit ? '#ef4444' : (c.libere ? accentColor + '40' : '#1a1a1a')}`,
+        borderLeft: `3px solid ${enConflit ? '#ef4444' : couleurBord}`,
         borderRadius: '10px', padding: '10px 12px', marginBottom: '8px',
       }}>
-        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.libere ? accentColor : '#fff' }}>
-          {c.heure_debut?.slice(0, 5)} – {c.heure_fin?.slice(0, 5)}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.libere ? accentColor : '#fff' }}>
+            {c.heure_debut?.slice(0, 5)} – {c.heure_fin?.slice(0, 5)}
+          </p>
+          {zone !== 'plein' && (
+            <span style={{ fontSize: '9px', fontWeight: 700, color: couleurZone(zone, accentColor), background: couleurZone(zone, accentColor) + '18', border: `1px solid ${couleurZone(zone, accentColor)}40`, borderRadius: '10px', padding: '1px 7px', whiteSpace: 'nowrap' }}>
+              {ZONES.find(z => z.val === zone)?.label || zone}
+            </span>
+          )}
+        </div>
+        {enConflit && (
+          <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>⚠️ Même zone qu'un autre créneau à cet horaire</p>
+        )}
         {c.libere ? (
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: accentColor }}>Disponible — libéré par {c.libere_par || 'un éducateur'}</p>
         ) : (
@@ -376,7 +428,7 @@ Règles :
 
         {estDirigeant && (
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-            <button onClick={() => setFormCreneau({ id: c.id, terrain_id: c.terrain_id, equipe: c.equipe || '', educateur_id: c.educateur_id || '', jour: c.jour, heure_debut: c.heure_debut?.slice(0, 5) || '', heure_fin: c.heure_fin?.slice(0, 5) || '' })}
+            <button onClick={() => setFormCreneau({ id: c.id, terrain_id: c.terrain_id, equipe: c.equipe || '', educateur_id: c.educateur_id || '', jour: c.jour, heure_debut: c.heure_debut?.slice(0, 5) || '', heure_fin: c.heure_fin?.slice(0, 5) || '', zone: c.zone || 'plein' })}
               style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}>✏️</button>
             <button onClick={() => supprimerCreneau(c.id)}
               style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px' }}>✕</button>
@@ -526,6 +578,7 @@ Règles :
                               <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Jour</th>
                               <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Début</th>
                               <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Fin</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Zone</th>
                               <th></th>
                             </tr>
                           </thead>
@@ -552,6 +605,11 @@ Règles :
                                 </td>
                                 <td style={{ padding: '6px 10px' }}><input style={st.input} type="time" value={l.heure_debut} onChange={e => modifierLigneImport(l._id, 'heure_debut', e.target.value)} /></td>
                                 <td style={{ padding: '6px 10px' }}><input style={st.input} type="time" value={l.heure_fin} onChange={e => modifierLigneImport(l._id, 'heure_fin', e.target.value)} /></td>
+                                <td style={{ padding: '6px 10px' }}>
+                                  <select style={{ ...st.input, minWidth: '120px' }} value={l.zone || 'plein'} onChange={e => modifierLigneImport(l._id, 'zone', e.target.value)}>
+                                    {ZONES.map(z => <option key={z.val} value={z.val}>{z.label}</option>)}
+                                  </select>
+                                </td>
                                 <td style={{ padding: '6px 10px' }}><button onClick={() => supprimerLigneImport(l._id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '14px' }}>✕</button></td>
                               </tr>
                             ))}
@@ -602,7 +660,16 @@ Règles :
                         {educateurs.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
                       </select>
                     </div>
+                    <div>
+                      <label style={st.label}>Zone occupée</label>
+                      <select style={st.input} value={formCreneau.zone || 'plein'} onChange={e => setFormCreneau(f => ({ ...f, zone: e.target.value }))}>
+                        {ZONES.map(z => <option key={z.val} value={z.val}>{z.label}</option>)}
+                      </select>
+                    </div>
                   </div>
+                  <p style={{ fontSize: '11px', color: '#555', margin: '-4px 0 12px' }}>
+                    Foot à 11 (U13+) : un demi-terrain par équipe (2 max sur un terrain plein). Foot à 5/futsal/U6-U11 : jusqu'à 5 zones sur un même terrain.
+                  </p>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={sauvegarderCreneau} disabled={savingCreneau}
                       style={{ background: accentColor, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -620,16 +687,19 @@ Règles :
                 <p style={{ color: '#444', fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-                  {JOURS.map(j => (
-                    <div key={j.val}>
-                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', textAlign: 'center' }}>{j.label}</p>
-                      {creneauxDuJour(j.val).length === 0 ? (
-                        <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
-                      ) : (
-                        creneauxDuJour(j.val).map(renderCreneauCard)
-                      )}
-                    </div>
-                  ))}
+                  {JOURS.map(j => {
+                    const liste = creneauxDuJour(j.val)
+                    return (
+                      <div key={j.val}>
+                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', textAlign: 'center' }}>{j.label}</p>
+                        {liste.length === 0 ? (
+                          <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
+                        ) : (
+                          liste.map(c => renderCreneauCard(c, liste))
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </>
