@@ -26,19 +26,27 @@ const etapesClub = [
 ]
 
 function EtapesSection({ badge, titre, etapes, color, ctaLabel, onCta }) {
+  const [hoveredCard, setHoveredCard] = useState(null)
   return (
     <section style={{ padding: '5rem 2rem', textAlign: 'center' }}>
       <div style={{ display: 'inline-block', background: `${color}15`, border: `1px solid ${color}40`, color, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{badge}</div>
       <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '3rem' }}>{titre}</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-        {etapes.map(step => (
-          <div key={step.num} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '1.5rem', textAlign: 'left' }}>
-            <div style={{ width: '44px', height: '44px', background: `${color}15`, border: `1px solid ${color}40`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color, marginBottom: '1rem' }}>{step.num.match(/\d+/)?.[0]}</div>
-            <div style={{ fontSize: '11px', color, fontWeight: 700, marginBottom: '6px' }}>{step.num}</div>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{step.titre}</h3>
-            <p style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
-          </div>
-        ))}
+        {etapes.map(step => {
+          const id = `etape-${step.num}`
+          const hovered = hoveredCard === id
+          return (
+            <div key={step.num}
+              onMouseEnter={() => setHoveredCard(id)}
+              onMouseLeave={() => setHoveredCard(null)}
+              style={{ background: colors.background.surface, border: `1px solid ${hovered ? color : '#222'}`, borderRadius: '14px', padding: '1.5rem', textAlign: 'left', transform: hovered ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}>
+              <div style={{ width: '44px', height: '44px', background: `${color}15`, border: `1px solid ${color}40`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color, marginBottom: '1rem' }}>{step.num.match(/\d+/)?.[0]}</div>
+              <div style={{ fontSize: '11px', color, fontWeight: 700, marginBottom: '6px' }}>{step.num}</div>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{step.titre}</h3>
+              <p style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+            </div>
+          )
+        })}
       </div>
       {ctaLabel && (
         <button onClick={onCta} style={{ background: 'transparent', color, border: `1px solid ${color}40`, padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '3rem', fontFamily: 'Inter, sans-serif' }}>

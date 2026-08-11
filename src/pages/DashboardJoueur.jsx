@@ -310,6 +310,7 @@ function CerclePresence({ taux, present, total, style }) {
 
 function DashboardJoueur() {
   const navigate = useNavigate()
+  const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
   const [notifications, setNotifications] = useState([])
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
@@ -2692,7 +2693,11 @@ function DashboardJoueur() {
                       <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {conversations.slice(0, 2).map(conv => (
-                      <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
+                      <div key={conv.otherId}
+                        onClick={() => { setMessageActif(conv); setOnglet('messages') }}
+                        onMouseEnter={() => setHoveredCard(`msgprev-${conv.otherId}`)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', border: `1px solid ${hoveredCard === `msgprev-${conv.otherId}` ? colors.accent.green : 'transparent'}`, transform: hoveredCard === `msgprev-${conv.otherId}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}>
                         <Avatar person={conv.other} size={32} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
@@ -2711,7 +2716,11 @@ function DashboardJoueur() {
                       <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {convCoach.slice(0, 1).map(conv => (
-                      <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
+                      <div key={conv.otherId}
+                        onClick={() => setOnglet('coach')}
+                        onMouseEnter={() => setHoveredCard(`coachprev-${conv.otherId}`)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', border: `1px solid ${hoveredCard === `coachprev-${conv.otherId}` ? colors.accent.orange : 'transparent'}`, transform: hoveredCard === `coachprev-${conv.otherId}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}>
                         <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor={colors.accent.orange} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
@@ -3296,7 +3305,9 @@ function DashboardJoueur() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
                     {conversations.map(conv => (
                       <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', cursor: 'pointer' }}>
+                        onMouseEnter={() => setHoveredCard(`msg-${conv.otherId}`)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: colors.background.surface, border: `1px solid ${hoveredCard === `msg-${conv.otherId}` ? colors.accent.green : colors.background.raised}`, borderRadius: '14px', cursor: 'pointer', transform: hoveredCard === `msg-${conv.otherId}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}>
                         <Avatar person={conv.other} size={44} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
@@ -3589,10 +3600,10 @@ function DashboardJoueur() {
               {/* Clubs / Éducateurs */}
               {(explorerFiltre === 'tous' || explorerFiltre === 'clubs') && clubsListe.map(edu => (
                 <div key={`edu-${edu.id}`}
-                  style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+                  style={{ background: colors.background.surface, border: `1px solid ${hoveredCard === `club-${edu.id}` ? colors.accent.green : colors.background.raised}`, borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', transform: hoveredCard === `club-${edu.id}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}
                   onClick={() => navigate(`/clubs/${edu.id}`)}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
+                  onMouseEnter={() => setHoveredCard(`club-${edu.id}`)}
+                  onMouseLeave={() => setHoveredCard(null)}>
                   {edu.avatar_url
                     ? <img src={edu.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
                     : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>
@@ -3617,10 +3628,10 @@ function DashboardJoueur() {
               {/* Recruteurs */}
               {(explorerFiltre === 'tous' || explorerFiltre === 'recruteurs') && recruteursList.map(rec => (
                 <div key={`rec-${rec.id}`}
-                  style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+                  style={{ background: colors.background.surface, border: `1px solid ${hoveredCard === `rec-${rec.id}` ? colors.accent.blue : colors.background.raised}`, borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', transform: hoveredCard === `rec-${rec.id}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}
                   onClick={() => setRecruteurModal(rec)}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
+                  onMouseEnter={() => setHoveredCard(`rec-${rec.id}`)}
+                  onMouseLeave={() => setHoveredCard(null)}>
                   {rec.avatar_url
                     ? <img src={rec.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #60a5fa30', flexShrink: 0 }} />
                     : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d0d1a', border: '2px solid #60a5fa20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.blue, flexShrink: 0 }}>
