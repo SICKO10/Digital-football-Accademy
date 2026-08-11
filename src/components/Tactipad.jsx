@@ -1166,7 +1166,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       </div>
 
       {tableMissing && !isModal && (
-        <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
+        <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
           ⚠️ La table <code>tactipads</code> n'existe pas encore en base.
         </div>
       )}
@@ -1569,7 +1569,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {schemas.map(s => (
-                <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.nom || 'Sans titre'}</p>
                     <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{s.partage ? ' · 🔗 partagé' : ''}</p>
@@ -1593,7 +1593,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           <div style={{
             position: 'fixed', top: pickerScreenPos.y, left: pickerScreenPos.x,
             background: '#111', border: '1px solid #222',
-            borderRadius: '10px', padding: '12px', zIndex: 500,
+            borderRadius: '12px', padding: '12px', zIndex: 500,
             minWidth: '220px', maxHeight: '320px', overflowY: 'auto',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           }}>
