@@ -263,17 +263,30 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
       const { sheet: feuilleTrouvee } = trouverFeuilleAvecDonnees(wb, s => XLSX.utils.sheet_to_json(s, { header: 1, defval: '' })) || {}
       const feuille = feuilleTrouvee || wb.Sheets[wb.SheetNames[0]]
       const grille = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '' })
-      // Colonnes jointes par " | " (pas des tabulations) : les tabulations brutes dans
-      // une chaîne envoyée à un LLM peuvent se retrouver telles quelles dans sa réponse
-      // JSON et casser le parsing (JSON.parse n'accepte pas un \t littéral non échappé).
-      const sample = grille
-        .filter(row => row.some(c => String(c ?? '').trim() !== ''))
-        .slice(0, 40)
-        .map(row => row.slice(0, 30).map(c => String(c ?? '')).join(' | '))
-        .join('\n').trim()
-      if (!sample) throw new Error('Fichier vide ou illisible.')
+      // Liste "position: valeur" des cellules non vides plutôt qu'un dump ligne
+      // par ligne : une grille complexe (planning par semaine, tableau croisé)
+      // peut avoir bien plus de 30 colonnes utiles, et la plupart des cellules
+      // d'un planning sont vides — les lister toutes gaspillait des tokens sans
+      // rien apporter. Chaque cellule garde sa position (Lx = ligne, Cy =
+      // colonne) pour que l'IA puisse reconstituer quelles valeurs sont sur la
+      // même ligne/colonne. "0" exclu (souvent une cellule de mise en forme
+      // vide plutôt qu'une vraie donnée). Plafonné à 150 cellules : au-delà,
+      // le fichier est trop dense pour tenir dans le contexte du modèle —
+      // avertit plutôt que de tronquer silencieusement.
+      const cellsNonVides = []
+      grille.slice(0, 55).forEach((row, i) => {
+        row.forEach((cell, j) => {
+          const val = String(cell ?? '').trim()
+          if (val && val !== '0') cellsNonVides.push(`L${i + 1}C${j + 1}: "${val}"`)
+        })
+      })
+      if (cellsNonVides.length === 0) throw new Error('Fichier vide ou illisible.')
+      if (cellsNonVides.length > 150) {
+        console.warn(`Import planning terrains IA : ${cellsNonVides.length} cellules non vides détectées, seules les 150 premières sont envoyées à l'IA.`)
+      }
+      const sample = cellsNonVides.slice(0, 150).join('\n')
 
-      const prompt = `Voici le contenu brut (colonnes séparées par " | ") d'un planning d'occupation de terrains de football club, sous une forme quelconque (grille par semaine, tableau croisé, liste...) :
+      const prompt = `Voici la liste des cellules non vides d'un planning d'occupation de terrains de football club (format Excel), sous une forme quelconque (grille par semaine, tableau croisé, liste...). Chaque ligne indique la position de la cellule (Lx = ligne x, Cy = colonne y) et sa valeur — les cellules d'une même ligne Lx sont sur la même ligne du fichier, celles d'une même colonne Cy sont dans la même colonne :
 
 ---DEBUT FICHIER---
 ${sample}
