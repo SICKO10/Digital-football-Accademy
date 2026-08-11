@@ -56,6 +56,15 @@ export const colors = {
     cyan: '#22d3ee',    // couleur secondaire par défaut du thème club
   },
 
+  // Icônes désactivées/muettes (ex: état vide, verrou, placeholder) — même
+  // valeur que border.default (#2a2a2a) mais catégorie distincte : c'est une
+  // couleur de texte/icône dans ces usages-là, pas une bordure. Historique :
+  // le premier passage de substitution (DashboardJoueur.jsx) avait mappé ces
+  // cas sur colors.border.default faute de cette catégorie ; corrigé après revue.
+  icon: {
+    muted: '#2a2a2a',
+  },
+
   // Neutres additionnels
   black: '#000',
   white: '#fff',

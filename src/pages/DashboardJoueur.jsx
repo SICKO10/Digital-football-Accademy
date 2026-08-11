@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
+import { colors, alpha } from '../tokens'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
@@ -114,13 +115,13 @@ const IconTrophy = () => (
 
 function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
   return (
-    <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
-      <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
+    <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
+      <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
       <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
-      <p style={{ fontSize: '13px', color: '#555', maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
+      <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
-        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
   )
@@ -173,21 +174,21 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
           <p style={{ margin: 0, fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>
             {profil?.prenom || '—'} {profil?.nom || ''}
           </p>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4ade80' }}>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.accent.green }}>
             {profil?.poste || t('aff_poste_non_renseigne', lang)}
           </p>
           {profil?.categorie && (
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{profil.categorie}{profil?.club ? ` · ${profil.club}` : ''}</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{profil.categorie}{profil?.club ? ` · ${profil.club}` : ''}</p>
           )}
         </div>
         <button onClick={() => setEditProfil(!editProfil)}
-          style={{ background: editProfil ? '#4ade8020' : '#111', border: `1px solid ${editProfil ? '#4ade8060' : '#2a2a2a'}`, color: editProfil ? '#4ade80' : '#555', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+          style={{ background: editProfil ? colors.accent.green + alpha.soft : colors.background.surface, border: `1px solid ${editProfil ? '#4ade8060' : colors.border.default}`, color: editProfil ? colors.accent.green : colors.text.faint, borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
           {editProfil ? t('btn_annuler', lang) : `✏️ ${t('btn_modifier', lang)}`}
         </button>
       </div>
 
       {/* Infos / Formulaire */}
-      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {editProfil ? (
           <>
             {[
@@ -199,33 +200,33 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
               { label: t('aff_date_naissance', lang), key: 'date_naissance', type: 'date' },
             ].map(({ label, key, type }) => (
               <div key={key}>
-                <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
+                <label style={{ fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
                 <input type={type} value={profilForm[key]}
                   onChange={e => setProfilForm(prev => ({ ...prev, [key]: e.target.value }))}
-                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
               </div>
             ))}
             <div>
-              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_poste', lang)}</label>
+              <label style={{ fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_poste', lang)}</label>
               <select value={profilForm.poste} onChange={e => setProfilForm(prev => ({ ...prev, poste: e.target.value }))}
-                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }}>
                 <option value="">{t('aff_selectionner', lang)}</option>
                 {postes.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '11px', color: '#555', display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_pied', lang)}</label>
+              <label style={{ fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_pied', lang)}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[['droit', t('equipe_droit', lang)], ['gauche', t('equipe_gauche', lang)], ['les deux', t('equipe_les_deux', lang)]].map(([p, label]) => (
                   <button key={p} onClick={() => setProfilForm(prev => ({ ...prev, pied: p }))}
-                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? '#4ade8060' : '#2a2a2a'}`, background: profilForm.pied === p ? '#4ade8015' : '#0a0a0a', color: profilForm.pied === p ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize' }}>
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? '#4ade8060' : colors.border.default}`, background: profilForm.pied === p ? colors.accent.green + alpha.subtle : colors.background.base, color: profilForm.pied === p ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize' }}>
                     {label}
                   </button>
                 ))}
               </div>
             </div>
             <button onClick={sauvegarder} disabled={saving}
-              style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
               {saving ? t('jp_sauvegarde_cours', lang) : saved ? `✅ ${t('msg_sauvegarde_ok', lang)}` : t('btn_sauvegarder', lang)}
             </button>
           </>
@@ -242,13 +243,13 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
               { label: t('aff_date_naissance', lang), val: profil?.date_naissance ? new Date(profil.date_naissance).toLocaleDateString(localeOf(lang)) : null },
             ].filter(r => r.val).map(({ label, val }) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', padding: '4px 0', borderBottom: '1px solid #141414' }}>
-                <span style={{ color: '#555' }}>{label}</span>
+                <span style={{ color: colors.text.faint }}>{label}</span>
                 <span style={{ fontWeight: 600, color: '#ccc' }}>{val}</span>
               </div>
             ))}
             {[profil?.prenom, profil?.nom, profil?.poste].every(v => !v) && (
-              <p style={{ margin: 0, fontSize: '13px', color: '#333', textAlign: 'center', padding: '12px 0' }}>
-                {t('aff_clique_sur', lang)} <strong style={{ color: '#555' }}>{t('btn_modifier', lang)}</strong> {t('aff_clique_modifier_profil', lang)}
+              <p style={{ margin: 0, fontSize: '13px', color: colors.border.strong, textAlign: 'center', padding: '12px 0' }}>
+                {t('aff_clique_sur', lang)} <strong style={{ color: colors.text.faint }}>{t('btn_modifier', lang)}</strong> {t('aff_clique_modifier_profil', lang)}
               </p>
             )}
           </>
@@ -273,7 +274,7 @@ function AnneauTaux({ taux, size = 90, strokeWidth = 8, fontSize = 16 }) {
   const c = size / 2
   const circ = 2 * Math.PI * r
   const offset = circ - (taux / 100) * circ
-  const couleur = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
+  const couleur = taux >= 75 ? colors.accent.green : taux >= 50 ? '#facc15' : colors.accent.red
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={c} cy={c} r={r} fill="none" stroke="#1f2937" strokeWidth={strokeWidth} />
@@ -1076,7 +1077,7 @@ function DashboardJoueur() {
   }
 
   const getClubColor = (name) => {
-    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981', '#f97316', '#06b6d4', '#ec4899']
+    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', colors.accent.red, '#10b981', colors.accent.orange, '#06b6d4', '#ec4899']
     let hash = 0
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
     return colors[Math.abs(hash) % colors.length]
@@ -1209,18 +1210,18 @@ function DashboardJoueur() {
   }
 
   const inputStyle = {
-    width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px',
+    width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px',
     padding: '11px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box',
     fontFamily: 'Inter, sans-serif', outline: 'none',
   }
   const labelStyle = {
-    fontSize: '11px', color: '#555', display: 'block', marginBottom: '7px',
+    fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '7px',
     fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase',
   }
   const msgBubble = (mine) => ({
     maxWidth: '70%', padding: '10px 14px',
     borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-    background: mine ? '#4ade80' : '#1a1a1a', color: mine ? '#000' : '#fff',
+    background: mine ? colors.accent.green : colors.background.raised, color: mine ? colors.black : colors.text.primary,
     fontSize: '14px', alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: '8px',
   })
 
@@ -1229,27 +1230,27 @@ function DashboardJoueur() {
   // ── BANNI ──
   if (profil?.banni) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: '440px', width: '100%', background: '#111', border: '1px solid #ef444430', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-          <div style={{ color: '#ef4444', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: colors.background.surface, border: '1px solid #ef444430', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+          <div style={{ color: colors.accent.red, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
           </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#ef4444', marginBottom: '0.75rem' }}>Compte suspendu</h1>
-          <p style={{ fontSize: '14px', color: '#555', marginBottom: '1rem', lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: colors.accent.red, marginBottom: '0.75rem' }}>Compte suspendu</h1>
+          <p style={{ fontSize: '14px', color: colors.text.faint, marginBottom: '1rem', lineHeight: 1.6 }}>
             Ton compte a été suspendu pour violation des CGU et du règlement de la plateforme.
           </p>
           {profil?.banni_motif && (
-            <div style={{ background: '#1a1a1a', border: '1px solid #ef444420', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
-              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
-                <strong style={{ color: '#ef4444' }}>Motif :</strong> {profil.banni_motif}
+            <div style={{ background: colors.background.raised, border: '1px solid #ef444420', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '13px', color: colors.text.muted, margin: 0 }}>
+                <strong style={{ color: colors.accent.red }}>Motif :</strong> {profil.banni_motif}
               </p>
             </div>
           )}
-          <p style={{ fontSize: '12px', color: '#444', marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '12px', color: colors.text.disabled, marginBottom: '1.5rem' }}>
             Conformément aux CGU acceptées lors de ton inscription, aucun remboursement ne sera effectué.
           </p>
-          <span onClick={handleLogout} style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
+          <span onClick={handleLogout} style={{ color: colors.text.faint, fontSize: '13px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
       </div>
     )
@@ -1274,9 +1275,9 @@ function DashboardJoueur() {
 
         {lienClassementCompetition && (
           <div style={{ background: '#111827', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid #1f2937' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', marginBottom: '10px' }}>🔗 Classement officiel</div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.green, marginBottom: '10px' }}>🔗 Classement officiel</div>
             <a href={lienClassementCompetition} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade80', color: '#0a0a0a', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.green, color: colors.background.base, padding: '10px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
               🏆 Voir le classement ↗
             </a>
           </div>
@@ -1316,7 +1317,7 @@ function DashboardJoueur() {
                       {m.competition ? ` · ${m.competition}` : ''}
                     </div>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? '#4ade80' : '#60a5fa' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? colors.accent.green : colors.accent.blue }}>
                     {m.domicile ? 'Domicile' : 'Extérieur'}
                   </span>
                 </div>
@@ -1367,7 +1368,7 @@ function DashboardJoueur() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>{r.score_nous} - {r.score_eux}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? '#4ade80' : nul ? '#facc15' : '#ef4444' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? colors.accent.green : nul ? '#facc15' : colors.accent.red }}>
                         {victoire ? 'V' : nul ? 'N' : 'D'}
                       </span>
                     </div>
@@ -1412,7 +1413,7 @@ function DashboardJoueur() {
     ]
 
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; } .af-nav-btn:hover { background: #141414 !important; color: #ccc !important; }`}</style>
 
         {isMobile && sidebarOpen && (
@@ -1420,7 +1421,7 @@ function DashboardJoueur() {
         )}
 
         <aside style={{
-          width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
+          width: '220px', background: colors.background.sunken, borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
           ...(isMobile ? {
             position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
           } : {
@@ -1429,27 +1430,27 @@ function DashboardJoueur() {
         }}>
           <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-              <div style={{ marginTop: '4px', fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>{t('aff_joueur_affilie', lang)}</div>
+              <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+              <div style={{ marginTop: '4px', fontSize: '11px', color: colors.accent.green, fontWeight: 600 }}>{t('aff_joueur_affilie', lang)}</div>
             </div>
             {isMobile && (
-              <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: 20, cursor: 'pointer' }}>✕</button>
             )}
           </div>
           <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {secAffilie.map(item => (
               <div key={item.id}>
                 {item.section && (
-                  <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                  <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
                     {item.section}
                   </div>
                 )}
                 <button className="af-nav-btn" onClick={() => { if (item.id === 'jogabonito') navigate('/jogabonito'); else setOnglet(item.id); setSidebarOpen(false) }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
-                  {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />}
+                  {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />}
                 </button>
               </div>
             ))}
@@ -1458,102 +1459,102 @@ function DashboardJoueur() {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[['fr','🇫🇷'],['en','🇬🇧'],['pt','🇧🇷'],['es','🇪🇸'],['it','🇮🇹'],['de','🇩🇪']].map(([code, flag]) => (
                 <button key={code} onClick={() => setLang(code)}
-                  style={{ background: lang === code ? '#4ade8020' : 'transparent', border: `1px solid ${lang === code ? '#4ade80' : '#2a2a2a'}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? '#4ade80' : '#555' }}>
+                  style={{ background: lang === code ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${lang === code ? colors.accent.green : colors.border.default}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? colors.accent.green : colors.text.faint }}>
                   {flag}
                 </button>
               ))}
             </div>
           </div>
           <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
-            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#444', fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
+            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
           </div>
         </aside>
 
         <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto' }}>
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)}
-              style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
+              style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
               ☰
             </button>
           )}
           {onglet === 'accueil' && (
             <div style={{ maxWidth: '640px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>{t('aff_bonjour', lang)} {profil?.prenom} 👋</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '10px', color: '#4ade80', fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
+              <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{(edu?.prenom?.[0] || '?').toUpperCase()}</div>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{(edu?.prenom?.[0] || '?').toUpperCase()}</div>
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{edu?.prenom} {edu?.nom}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{edu?.club || ''}{edu?.categorie ? ` · ${edu.categorie}` : ''}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{edu?.club || ''}{edu?.categorie ? ` · ${edu.categorie}` : ''}</p>
                   </div>
                 </div>
               </div>
 
               {edu && (
-                <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '14px', boxShadow: '0 0 0 1px #4ade8010' }}>
-                  <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+                <div style={{ background: colors.background.surface, border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '14px', boxShadow: '0 0 0 1px #4ade8010' }}>
+                  <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: colors.accent.green, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
                   <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
                 </div>
               )}
 
               {(() => {
                 const STATUT_OPTIONS = [
-                  { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: '#4ade80', bg: '#4ade8015', border: '#4ade8040' },
-                  { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: '#ef4444', bg: '#ef444415', border: '#ef444440' },
-                  { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: '#f97316', bg: '#f9731615', border: '#f9731640' },
-                  { val: 'malade',   label: t('ent_malade', lang),   emoji: '🤒', color: '#a855f7', bg: '#a855f715', border: '#a855f740' },
-                  { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa', bg: '#60a5fa15', border: '#60a5fa40' },
+                  { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.medium },
+                  { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: colors.accent.red, bg: colors.accent.red + alpha.subtle, border: colors.accent.red + alpha.medium },
+                  { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.medium },
+                  { val: 'malade',   label: t('ent_malade', lang),   emoji: '🤒', color: colors.accent.purple, bg: colors.accent.purple + alpha.subtle, border: colors.accent.purple + alpha.medium },
+                  { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: colors.accent.blue, bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.medium },
                 ]
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '14px' }}>
                     {widgetProchainEnt && (
-                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                           <span style={{ fontSize: '20px' }}>📋</span>
                           <div>
                             <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px' }}>{t('aff_prochain_entrainement', lang)}</p>
-                            <p style={{ fontSize: '12px', color: '#555' }}>{new Date(widgetProchainEnt.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                            <p style={{ fontSize: '12px', color: colors.text.faint }}>{new Date(widgetProchainEnt.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                           </div>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_seras_tu_present', lang)}</p>
+                        <p style={{ fontSize: '12px', color: colors.text.muted, marginBottom: '12px' }}>{t('aff_seras_tu_present', lang)}</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
                             <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainEnt.id, 'entrainement', opt.val)} disabled={savingDispo}
-                              style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoEnt === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : colors.border.default}`, color: widgetDispoEnt === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                               {opt.emoji} {opt.label}
                             </button>
                           ))}
                         </div>
-                        {widgetDispoEnt && <p style={{ fontSize: '11px', color: '#444', marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                        {widgetDispoEnt && <p style={{ fontSize: '11px', color: colors.text.disabled, marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
                       </div>
                     )}
 
                     {widgetProchainMatch && (
-                      <div style={{ background: '#111', border: '1px solid #60a5fa20', borderRadius: '16px', padding: '20px' }}>
+                      <div style={{ background: colors.background.surface, border: '1px solid #60a5fa20', borderRadius: '16px', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                           <span style={{ fontSize: '20px' }}>⚽</span>
                           <div>
                             <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px' }}>{t('aff_prochain_match', lang)} — {widgetProchainMatch.adversaire || t('aff_match_titre', lang)}</p>
-                            <p style={{ fontSize: '12px', color: '#555' }}>{new Date(widgetProchainMatch.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                            <p style={{ fontSize: '12px', color: colors.text.faint }}>{new Date(widgetProchainMatch.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                           </div>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{t('aff_dispo_pour_match', lang)}</p>
+                        <p style={{ fontSize: '12px', color: colors.text.muted, marginBottom: '12px' }}>{t('aff_dispo_pour_match', lang)}</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
                             <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainMatch.id, 'match', opt.val)} disabled={savingDispo}
-                              style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : '#2a2a2a'}`, color: widgetDispoMatch === opt.val ? opt.color : '#555', padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : colors.border.default}`, color: widgetDispoMatch === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                               {opt.emoji} {opt.label}
                             </button>
                           ))}
                         </div>
-                        {widgetDispoMatch && <p style={{ fontSize: '11px', color: '#444', marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                        {widgetDispoMatch && <p style={{ fontSize: '11px', color: colors.text.disabled, marginTop: '10px' }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
                       </div>
                     )}
 
                     {widgetCalendrier.length > 0 && (
-                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
                         <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '16px' }}>📅 {t('aff_cette_semaine', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {widgetCalendrier.map((ev, i) => {
@@ -1566,13 +1567,13 @@ function DashboardJoueur() {
                               : null
                             const optStatut = STATUT_OPTIONS.find(o => o.val === statut)
                             return (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? '#4ade8008' : '#141414', border: `1px solid ${isToday ? '#4ade8025' : '#1f1f1f'}`, borderRadius: '10px' }}>
-                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ev.type === 'match' ? '#60a5fa15' : '#4ade8015', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : '#4ade8030'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? colors.accent.green + alpha.faint : colors.background.surfaceAlt, border: `1px solid ${isToday ? '#4ade8025' : colors.border.faint}`, borderRadius: '10px' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ev.type === 'match' ? colors.accent.blue + alpha.subtle : colors.accent.green + alpha.subtle, border: `1px solid ${ev.type === 'match' ? colors.accent.blue + alpha.light : colors.accent.green + alpha.light}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
                                   {ev.type === 'match' ? '⚽' : '🏃'}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{ev.titre}</p>
-                                  <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}</p>
+                                  <p style={{ fontSize: '11px', color: colors.text.faint }}>{labelJour}</p>
                                 </div>
                                 {optStatut && <span style={{ fontSize: '16px' }}>{optStatut.emoji}</span>}
                               </div>
@@ -1587,19 +1588,19 @@ function DashboardJoueur() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[{ id: 'prep_physique', label: t('aff_prepa_physique_court', lang), emoji: '🏋️', desc: t('aff_tes_seances_exercices', lang) }, { id: 'stats', label: t('aff_mes_stats', lang), emoji: '📊', desc: t('aff_presences_performance', lang) }].map(item => (
-                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>
+                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>
                     <div style={{ fontSize: '22px', marginBottom: '8px' }}>{item.emoji}</div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.label}</p>
-                    <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#555' }}>{item.desc}</p>
+                    <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.desc}</p>
                   </button>
                 ))}
               </div>
               <div style={{ background: 'linear-gradient(135deg, #4ade8010, #0a0a0a)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('aff_passe_niveau_sup', lang)}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
                 </div>
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
+                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
               </div>
             </div>
           )}
@@ -1610,11 +1611,11 @@ function DashboardJoueur() {
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>{t('aff_mes_stats', lang)}</h2>
 
               {!affiliation ? (
-                <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>{t('aff_rejoins_equipe_stats', lang)}</p>
+                <p style={{ color: colors.border.strong, fontSize: '13px', fontStyle: 'italic' }}>{t('aff_rejoins_equipe_stats', lang)}</p>
               ) : (
               <>
               {statsLoading[affiliation.id] && (
-                <p style={{ color: '#4ade80', fontSize: '13px' }}>{t('jexp_chargement', lang)}</p>
+                <p style={{ color: colors.accent.green, fontSize: '13px' }}>{t('jexp_chargement', lang)}</p>
               )}
 
               {statsJoueur[affiliation.id] && (() => {
@@ -1623,34 +1624,34 @@ function DashboardJoueur() {
                 const hasDonnees = s.present || s.points || s.matchsJoues || s.noteEdu ||
                   s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
                 if (!hasDonnees) return (
-                  <p style={{ color: '#333', fontSize: '13px', fontStyle: 'italic' }}>
+                  <p style={{ color: colors.border.strong, fontSize: '13px', fontStyle: 'italic' }}>
                     {t('aff_aucune_seance_match', lang)}
                   </p>
                 )
 
                 // ── Badges / streaks ──────────────────────────────────────
                 const badges = []
-                if (s.tauxPresence === 100) badges.push({ label: t('aff_badge_100pct', lang), color: '#4ade80' })
-                else if (s.tauxPresence >= 80) badges.push({ label: t('aff_badge_assidu', lang), color: '#4ade80' })
-                if (s.rankPoints?.rank === 1) badges.push({ label: t('aff_badge_top_points', lang), color: '#fbbf24' })
-                if (s.rankButs?.rank === 1) badges.push({ label: t('aff_badge_top_buteur', lang), color: '#f97316' })
-                if (s.buts >= 5) badges.push({ label: `${s.buts} ${t('comp_buts', lang)}`, color: '#f97316' })
+                if (s.tauxPresence === 100) badges.push({ label: t('aff_badge_100pct', lang), color: colors.accent.green })
+                else if (s.tauxPresence >= 80) badges.push({ label: t('aff_badge_assidu', lang), color: colors.accent.green })
+                if (s.rankPoints?.rank === 1) badges.push({ label: t('aff_badge_top_points', lang), color: colors.accent.amber })
+                if (s.rankButs?.rank === 1) badges.push({ label: t('aff_badge_top_buteur', lang), color: colors.accent.orange })
+                if (s.buts >= 5) badges.push({ label: `${s.buts} ${t('comp_buts', lang)}`, color: colors.accent.orange })
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
                     {/* Entraînement */}
                     <div>
-                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#fbbf24', letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
+                      <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.accent.amber, letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ {t('aff_entrainement_titre', lang)}</p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {[
                           { label: t('stats_tab_presences', lang), val: `${s.present ?? 0}/${s.total ?? 0}` },
-                          { label: t('aff_taux_presence', lang), val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 75 ? '#4ade80' : s.tauxPresence >= 50 ? '#facc15' : '#ef4444' },
-                          { label: t('aff_points_seance', lang), val: s.points ?? 0, color: '#fbbf24' },
+                          { label: t('aff_taux_presence', lang), val: `${s.tauxPresence ?? 0}%`, color: s.tauxPresence >= 75 ? colors.accent.green : s.tauxPresence >= 50 ? '#facc15' : colors.accent.red },
+                          { label: t('aff_points_seance', lang), val: s.points ?? 0, color: colors.accent.amber },
                         ].map(({ label, val, color }) => (
-                          <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                            <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: color || '#4ade80' }}>{val}</p>
-                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555' }}>{label}</p>
+                          <div key={label} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: color || colors.accent.green }}>{val}</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: colors.text.faint }}>{label}</p>
                           </div>
                         ))}
                       </div>
@@ -1669,21 +1670,21 @@ function DashboardJoueur() {
 
                     {/* Présence par mois */}
                     {s.presenceMensuelle?.length > 0 && (
-                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
-                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: '#a78bfa', letterSpacing: '1px', textTransform: 'uppercase' }}>📅 {t('aff_points_seance_par_mois', lang)}</p>
+                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: colors.accent.purpleLight, letterSpacing: '1px', textTransform: 'uppercase' }}>📅 {t('aff_points_seance_par_mois', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                             const [y, m] = month.split('-')
                             const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
-                            const color = taux >= 75 ? '#4ade80' : taux >= 50 ? '#facc15' : '#ef4444'
+                            const color = taux >= 75 ? colors.accent.green : taux >= 50 ? '#facc15' : colors.accent.red
                             return (
                               <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
-                                <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
+                                <span style={{ fontSize: '11px', color: colors.text.faint, width: '70px', flexShrink: 0, textTransform: 'capitalize' }}>{label}</span>
+                                <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px' }}>
                                   <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.5s' }} />
                                 </div>
                                 <span style={{ fontSize: '11px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
-                                <span style={{ fontSize: '10px', color: '#333', flexShrink: 0 }}>{present}/{total}</span>
+                                <span style={{ fontSize: '10px', color: colors.border.strong, flexShrink: 0 }}>{present}/{total}</span>
                               </div>
                             )
                           })}
@@ -1694,18 +1695,18 @@ function DashboardJoueur() {
                     {/* Stats de match */}
                     {(s.matchsJoues > 0 || s.buts > 0 || s.passes > 0) && (
                       <div>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#60a5fa', letterSpacing: '1px', textTransform: 'uppercase' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.accent.blue, letterSpacing: '1px', textTransform: 'uppercase' }}>⚽ {t('aff_stats_match_titre', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                           {[
-                            { label: t('jp_matchs_joues', lang), val: s.matchsJoues ?? 0, color: '#60a5fa' },
-                            { label: t('comp_buts', lang), val: s.buts ?? 0, color: '#4ade80' },
-                            { label: t('club_passes_dec_emoji', lang), val: s.passes ?? 0, color: '#a78bfa' },
+                            { label: t('jp_matchs_joues', lang), val: s.matchsJoues ?? 0, color: colors.accent.blue },
+                            { label: t('comp_buts', lang), val: s.buts ?? 0, color: colors.accent.green },
+                            { label: t('club_passes_dec_emoji', lang), val: s.passes ?? 0, color: colors.accent.purpleLight },
                             { label: t('jp_minutes', lang), val: s.minutesJouees ?? 0, color: '#34d399' },
                             { label: t('jp_clean_sheets', lang), val: s.cleanSheets ?? 0, color: '#34d399' },
                           ].map(({ label, val, color }) => (
-                            <div key={label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                            <div key={label} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                               <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color }}>{val}</p>
-                              <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#555' }}>{label}</p>
+                              <p style={{ margin: '4px 0 0', fontSize: '10px', color: colors.text.faint }}>{label}</p>
                             </div>
                           ))}
                         </div>
@@ -1715,18 +1716,18 @@ function DashboardJoueur() {
                     {/* Avis éducateur */}
                     <div>
                       <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_avis_ton_educateur', lang)}</p>
-                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '16px' }}>
                         {s.noteEdu ? (
                           <>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
                               {[
-                                { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
-                                { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
-                                { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
+                                { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
+                                { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
                                 { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
                               ].map(n => (
                                 <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontSize: '11px', color: '#555', flex: 1 }}>{n.label}</span>
+                                  <span style={{ fontSize: '11px', color: colors.text.faint, flex: 1 }}>{n.label}</span>
                                   <div style={{ display: 'flex', gap: '2px' }}>
                                     {[1, 2, 3, 4, 5].map(i => (
                                       <span key={i} style={{ fontSize: '12px', color: i <= (n.value || 0) ? n.color : '#222' }}>★</span>
@@ -1736,13 +1737,13 @@ function DashboardJoueur() {
                               ))}
                             </div>
                             {s.noteEdu.commentaire && (
-                              <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>
+                              <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>
                                 "{s.noteEdu.commentaire}"
                               </p>
                             )}
                           </>
                         ) : (
-                          <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>
+                          <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>
                             {t('aff_pas_note_partagee', lang)}
                           </p>
                         )}
@@ -1752,21 +1753,21 @@ function DashboardJoueur() {
                     {/* Classements équipe */}
                     {(s.leaderButs?.length > 0 || s.leaderPoints?.length > 0) && (
                       <div>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f97316', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.accent.orange, letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                           {[
                             { title: t('aff_top_buteurs', lang), data: s.leaderButs },
                             { title: t('aff_points_seance', lang), data: s.leaderPoints },
                           ].map(({ title, data }) => data?.length > 0 && (
-                            <div key={title} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
-                              <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                            <div key={title} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
+                              <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
                               {data.slice(0, 3).map((row, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px', background: row.isMe ? '#4ade8010' : 'transparent', borderRadius: '6px', padding: '2px 4px', border: row.isMe ? '1px solid #4ade8030' : '1px solid transparent' }}>
-                                  <span style={{ fontSize: '9px', color: i === 0 ? '#fbbf24' : '#333', fontWeight: 800, width: '12px' }}>{i + 1}</span>
-                                  <span style={{ fontSize: '11px', color: row.isMe ? '#4ade80' : '#888', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                  <span style={{ fontSize: '9px', color: i === 0 ? colors.accent.amber : colors.border.strong, fontWeight: 800, width: '12px' }}>{i + 1}</span>
+                                  <span style={{ fontSize: '11px', color: row.isMe ? colors.accent.green : colors.text.muted, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
                                     {row.isMe ? t('aff_fleche_toi', lang) : row.nom?.split(' ')[0] || '—'}
                                   </span>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, color: row.isMe ? '#4ade80' : '#555' }}>{row.val}</span>
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: row.isMe ? colors.accent.green : colors.text.faint }}>{row.val}</span>
                                 </div>
                               ))}
                             </div>
@@ -1784,13 +1785,13 @@ function DashboardJoueur() {
                             const d = new Date(m.date)
                             const label = d.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
                             return (
-                              <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
+                              <div key={i} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '12px 14px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                                   <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 700 }}>{label}{m.heure ? ` · ${m.heure}` : ''}</span>
-                                  {m.competition && <span style={{ fontSize: '10px', color: '#444', background: '#1a1a1a', padding: '1px 7px', borderRadius: '6px' }}>{m.competition}</span>}
+                                  {m.competition && <span style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.raised, padding: '1px 7px', borderRadius: '6px' }}>{m.competition}</span>}
                                 </div>
-                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400 }}>vs</span> {m.equipe_exterieur}</p>
-                                {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#444' }}>📍 {m.lieu}</p>}
+                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{m.equipe_domicile} <span style={{ color: colors.border.strong, fontWeight: 400 }}>vs</span> {m.equipe_exterieur}</p>
+                                {m.lieu && <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.disabled }}>📍 {m.lieu}</p>}
                               </div>
                             )
                           })}
@@ -1817,7 +1818,7 @@ function DashboardJoueur() {
                     const pe = a.profil_educateur
                     const isAccepted = a.statut === 'accepte'
                     return (
-                      <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
+                      <div key={a.id} style={{ background: colors.background.raised, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? colors.border.default : colors.border.default}` }}>
                         {isAccepted ? (
                           <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                             <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
@@ -1844,17 +1845,17 @@ function DashboardJoueur() {
                           </div>
                         ) : (
                           <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#555', flexShrink: 0 }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.background.raised, border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: colors.text.faint, flexShrink: 0 }}>
                               {pe?.prenom?.[0]}{pe?.nom?.[0]}
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
                             </div>
                             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                              background: a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
-                              color: a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
-                              border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
+                              background: a.statut === 'en_attente' ? '#f59e0b15' : colors.accent.red + alpha.subtle,
+                              color: a.statut === 'en_attente' ? '#f59e0b' : colors.accent.red,
+                              border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : colors.accent.red + alpha.light}` }}>
                               {a.statut === 'en_attente' ? `⏳ ${t('etat_en_attente', lang)}` : `✕ ${t('etat_refuse', lang)}`}
                             </span>
                           </div>
@@ -1883,41 +1884,41 @@ function DashboardJoueur() {
                               const r = 44
                               const circ = 2 * Math.PI * r
                               const dash = (pct / 100) * circ
-                              const presColor = pct >= 80 ? '#4ade80' : pct >= 60 ? '#f59e0b' : '#ef4444'
+                              const presColor = pct >= 80 ? colors.accent.green : pct >= 60 ? '#f59e0b' : colors.accent.red
                               return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
                                   {/* Présence + Stats match côte à côte */}
                                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: '16px', alignItems: 'stretch' }}>
-                                    <div style={{ background: '#111', borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                                      <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
+                                    <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                                      <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
                                       <svg width="110" height="110" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r={r} fill="none" stroke="#1e1e1e" strokeWidth="9" />
                                         <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
                                           strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
                                           style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
                                         <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
-                                        <text x="50" y="62" textAnchor="middle" fill="#444" fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                        <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
                                       </svg>
                                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
-                                        {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
+                                        <span style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
+                                        {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
                                       </div>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                                       {[
-                                        { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                                        { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
-                                        { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                        { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: colors.accent.blue, rank: s.rankMatchs },
+                                        { label: t('comp_buts', lang), value: s.buts, color: colors.accent.green, rank: s.rankButs },
+                                        { label: t('club_passes_dec_emoji', lang), value: s.passes, color: colors.accent.purpleLight, rank: s.rankPasses },
                                         { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
                                       ].map(stat => (
-                                        <div key={stat.label} style={{ background: '#111', borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
+                                        <div key={stat.label} style={{ background: colors.background.surface, borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
                                           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${stat.color}, transparent)` }} />
-                                          <p style={{ margin: '0 0 10px', fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
+                                          <p style={{ margin: '0 0 10px', fontSize: '10px', color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
                                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ fontSize: '40px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
                                             {stat.rank?.rank && stat.rank?.total > 1 && (
-                                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? '#fbbf2420' : '#ffffff08', color: stat.rank.rank === 1 ? '#fbbf24' : '#555', border: `1px solid ${stat.rank.rank === 1 ? '#fbbf2440' : '#1e1e1e'}` }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? colors.accent.amber + alpha.soft : '#ffffff08', color: stat.rank.rank === 1 ? colors.accent.amber : colors.text.faint, border: `1px solid ${stat.rank.rank === 1 ? colors.accent.amber + alpha.medium : '#1e1e1e'}` }}>
                                                 #{stat.rank.rank}/{stat.rank.total}
                                               </span>
                                             )}
@@ -1929,28 +1930,28 @@ function DashboardJoueur() {
 
                                   {/* Pills minutes/cartons */}
                                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
+                                    <span style={{ fontSize: '12px', color: colors.accent.blue, background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
                                     {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b12', border: '1px solid #f59e0b25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟨 {s.jaunes}</span>}
-                                    {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
+                                    {s.rouges > 0 && <span style={{ fontSize: '12px', color: colors.accent.red, background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
                                   </div>
 
                                   {/* Présence mensuelle + Avis éducateur côte à côte */}
                                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                                     {s.presenceMensuelle?.length > 0 && (
-                                      <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
-                                        <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
+                                      <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                        <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                           {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                             const [y, m] = month.split('-')
                                             const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
-                                            const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                            const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
                                             return (
                                               <div key={month}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                  <span style={{ fontSize: '11px', color: '#666', textTransform: 'capitalize' }}>{label}</span>
-                                                  <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: '#333', fontWeight: 400 }}>({present}/{total})</span></span>
+                                                  <span style={{ fontSize: '11px', color: colors.text.dim, textTransform: 'capitalize' }}>{label}</span>
+                                                  <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span></span>
                                                 </div>
-                                                <div style={{ height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                   <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
                                                 </div>
                                               </div>
@@ -1959,20 +1960,20 @@ function DashboardJoueur() {
                                         </div>
                                       </div>
                                     )}
-                                    <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
-                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
+                                    <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
                                       {s.noteEdu ? (
                                         <>
                                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
                                             {[
-                                              { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
-                                              { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
-                                              { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                              { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
+                                              { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
+                                              { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
                                               { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
                                             ].map(n => (
                                               <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0 }}>{n.label}</span>
-                                                <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <span style={{ fontSize: '11px', color: colors.text.faint, width: '70px', flexShrink: 0 }}>{n.label}</span>
+                                                <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                   <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
                                                 </div>
                                                 <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
@@ -1980,32 +1981,32 @@ function DashboardJoueur() {
                                             ))}
                                           </div>
                                           {s.noteEdu.commentaire && (
-                                            <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
+                                            <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
                                           )}
                                         </>
-                                      ) : <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
+                                      ) : <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
                                     </div>
                                   </div>
 
                                   {/* Prochains matchs */}
                                   {s.prochainMatchs?.length > 0 && (
                                     <div>
-                                      <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
+                                      <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
                                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '10px' }}>
                                         {s.prochainMatchs.map((m, i) => {
                                           const d = new Date(m.date)
                                           return (
-                                            <div key={i} style={{ background: '#111', borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                            <div key={i} style={{ background: colors.background.surface, borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
                                               <div style={{ background: 'linear-gradient(135deg, #4ade8020, #4ade8008)', border: '1px solid #4ade8030', borderRadius: '12px', padding: '8px 12px', textAlign: 'center', flexShrink: 0, minWidth: '50px' }}>
-                                                <p style={{ margin: 0, fontSize: '9px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
-                                                <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: '#4ade80', lineHeight: 1 }}>{d.getDate()}</p>
+                                                <p style={{ margin: 0, fontSize: '9px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
+                                                <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: colors.accent.green, lineHeight: 1 }}>{d.getDate()}</p>
                                                 <p style={{ margin: 0, fontSize: '9px', color: '#4ade8070', textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { month: 'short' })}</p>
                                               </div>
                                               <div style={{ flex: 1, minWidth: 0 }}>
-                                                <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                  {m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
+                                                <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                  {m.equipe_domicile} <span style={{ color: colors.border.strong, fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
                                                 </p>
-                                                <p style={{ margin: 0, fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                   {[m.heure, m.competition, m.lieu ? `📍 ${m.lieu}` : ''].filter(Boolean).join(' · ')}
                                                 </p>
                                               </div>
@@ -2018,32 +2019,32 @@ function DashboardJoueur() {
 
                                   {/* Classements — pleine largeur */}
                                   <div>
-                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
+                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
                                       {[
-                                        { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: '#4ade80' },
-                                        { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: '#60a5fa' },
-                                        { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: '#fbbf24' },
-                                        { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: '#a78bfa' },
+                                        { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: colors.accent.green },
+                                        { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: colors.accent.blue },
+                                        { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: colors.accent.amber },
+                                        { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: colors.accent.purpleLight },
                                       ].map(({ title, icon, data, color }) => (
-                                        <div key={title} style={{ background: '#111', borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                                        <div key={title} style={{ background: colors.background.surface, borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
                                           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                                             <span>{icon}</span>
-                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
                                           </div>
                                           {data?.length > 0 ? data.slice(0, 5).map((row, i) => (
                                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', background: row.isMe ? `${color}10` : 'transparent', borderRadius: '8px', padding: '5px 6px', border: row.isMe ? `1px solid ${color}25` : '1px solid transparent' }}>
-                                              <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? '#fbbf24' : '#2a2a2a', width: '14px', flexShrink: 0 }}>{i + 1}</span>
-                                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : '#1a1a1a', border: `1px solid ${row.isMe ? color + '40' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>
+                                              <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? colors.accent.amber : colors.icon.muted, width: '14px', flexShrink: 0 }}>{i + 1}</span>
+                                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : colors.background.raised, border: `1px solid ${row.isMe ? color + '40' : colors.border.default}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>
                                                 {row.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                               </div>
-                                              <span style={{ fontSize: '11px', color: row.isMe ? color : '#666', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                              <span style={{ fontSize: '11px', color: row.isMe ? color : colors.text.dim, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
                                                 {row.isMe ? t('jcoach_toi', lang) : row.nom.split(' ')[0]}
                                               </span>
-                                              <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>{row.val}</span>
+                                              <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>{row.val}</span>
                                             </div>
-                                          )) : <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>}
+                                          )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
                                         </div>
                                       ))}
                                     </div>
@@ -2051,7 +2052,7 @@ function DashboardJoueur() {
 
                                   {s.ligueUrl && (
                                     <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
-                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: colors.accent.amber, fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
                                       🏆 {t('aff_classement_championnat', lang)} →
                                     </a>
                                   )}
@@ -2061,7 +2062,7 @@ function DashboardJoueur() {
 
                             {/* Joueur lié mais pas encore dans l'effectif */}
                             {!a.equipe_joueur_id && (
-                              <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
+                              <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.disabled, fontStyle: 'italic' }}>
                                 ⏳ {t('aff_educateur_doit_lier', lang)}
                               </p>
                             )}
@@ -2076,19 +2077,19 @@ function DashboardJoueur() {
               {/* Historique */}
               {mesAffiliations.filter(a => a.statut === 'archive').length > 0 && (
                 <div style={{ marginTop: 24 }}>
-                  <p style={{ fontSize: 11, color: '#333', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 10 }}>
+                  <p style={{ fontSize: 11, color: colors.border.strong, fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 10 }}>
                     {t('jcoach_historique', lang).toUpperCase()}
                   </p>
                   {mesAffiliations.filter(a => a.statut === 'archive').map(af => {
                     const e = af.profil_educateur
                     return (
-                      <div key={af.id} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={af.id} style={{ background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: 12, padding: '14px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#666' }}>{e?.prenom} {e?.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: 11, color: '#333' }}>{e?.club}{e?.categorie ? ` · ${e.categorie}` : ''}</p>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: colors.text.dim }}>{e?.prenom} {e?.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: 11, color: colors.border.strong }}>{e?.club}{e?.categorie ? ` · ${e.categorie}` : ''}</p>
                         </div>
                         {af.saison && (
-                          <span style={{ fontSize: 11, color: '#333', background: '#1a1a1a', padding: '3px 10px', borderRadius: 20 }}>
+                          <span style={{ fontSize: 11, color: colors.border.strong, background: colors.background.raised, padding: '3px 10px', borderRadius: 20 }}>
                             {af.saison}
                           </span>
                         )}
@@ -2100,18 +2101,18 @@ function DashboardJoueur() {
 
               {/* Aucune affiliation active → inviter à rejoindre */}
               {mesAffiliations.filter(a => a.statut === 'accepte').length === 0 && (
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 24, textAlign: 'center', marginTop: 16 }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 24, textAlign: 'center', marginTop: 16 }}>
                   <p style={{ fontSize: 32, marginBottom: 12 }}>🏟️</p>
                   <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{t('aff_nouvelle_saison', lang)}</p>
-                  <p style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>{t('aff_rejoins_equipe_code', lang)}</p>
+                  <p style={{ fontSize: 13, color: colors.text.faint, marginBottom: 16 }}>{t('aff_rejoins_equipe_code', lang)}</p>
                   <input
                     placeholder="CODE ÉQUIPE"
                     value={codeEquipe}
                     onChange={e => setCodeEquipe(e.target.value.toUpperCase())}
-                    style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
+                    style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: colors.text.primary, fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
                   />
                   <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
-                    style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {t('jeq_rejoindre_btn', lang)}
                   </button>
                 </div>
@@ -2130,13 +2131,13 @@ function DashboardJoueur() {
   // ── FAN ──
   if (profil?.plan === 'fan') {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; }`}</style>
         <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #141414' }}>
-          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#555' }}>Bonjour {profil?.prenom}</span>
-            <button onClick={handleLogout} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
+            <span style={{ fontSize: '13px', color: colors.text.faint }}>Bonjour {profil?.prenom}</span>
+            <button onClick={handleLogout} style={{ background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
           </div>
         </nav>
 
@@ -2144,7 +2145,7 @@ function DashboardJoueur() {
           <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #141414', marginBottom: '2rem', paddingBottom: '0' }}>
             {[['accueil', 'Accueil'], ['favoris', 'Mes Favoris'], ['messages', 'Messages']].map(([id, label]) => (
               <button key={id} onClick={() => { setFanOnglet(id); if (id === 'favoris') chargerFanFavoris() }}
-                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? '#4ade80' : '#555', fontSize: '13px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', padding: '10px 16px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent', fontFamily: 'Inter, sans-serif', marginBottom: '-1px' }}>
+                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? colors.accent.green : colors.text.faint, fontSize: '13px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', padding: '10px 16px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent', fontFamily: 'Inter, sans-serif', marginBottom: '-1px' }}>
                 {label}
               </button>
             ))}
@@ -2152,29 +2153,29 @@ function DashboardJoueur() {
 
           {fanOnglet === 'accueil' && (
             <>
-              <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '20px', padding: '2.5rem', marginBottom: '16px', textAlign: 'center' }}>
-                <div style={{ width: '64px', height: '64px', background: '#4ade8010', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#4ade80' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #4ade8020', borderRadius: '20px', padding: '2.5rem', marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ width: '64px', height: '64px', background: '#4ade8010', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: colors.accent.green }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Compte Fan</h1>
-                <p style={{ color: '#555', fontSize: '14px', margin: '0 0 1.5rem', lineHeight: 1.6 }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
-                <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <p style={{ color: colors.text.faint, fontSize: '14px', margin: '0 0 1.5rem', lineHeight: 1.6 }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
+                <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   Voir Jogabonito
                 </button>
               </div>
-              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '20px', padding: '2rem' }}>
-                <div style={{ display: 'inline-block', background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '20px', marginBottom: '14px', letterSpacing: '1px' }}>PASSE JOUEUR</div>
+              <div style={{ background: colors.background.surface, border: '1px solid #4ade8030', borderRadius: '20px', padding: '2rem' }}>
+                <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 800, padding: '4px 12px', borderRadius: '20px', marginBottom: '14px', letterSpacing: '1px' }}>PASSE JOUEUR</div>
                 <h2 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Expose ton talent aux recruteurs</h2>
-                <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
+                <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem', lineHeight: 1.6 }}>Publie tes vidéos, reçois des analyses d'expert et sois visible des clubs et agents.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
                   {[{ plan: 'Mensuel', prix: '10€/mois', desc: '2 analyses / mois · Reels Jogabonito' }, { plan: 'Annuel', prix: '100€/an', desc: '3 analyses / mois · Feed · Visible recruteurs' }].map(p => (
-                    <div key={p.plan} style={{ background: '#141414', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div><p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '11px', color: '#444' }}>{p.desc}</p></div>
-                      <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
+                    <div key={p.plan} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div><p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{p.plan}</p><p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.disabled }}>{p.desc}</p></div>
+                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px' }}>{p.prix}</span>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => navigate('/register')} style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Devenir joueur</button>
+                <button onClick={() => navigate('/register')} style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', padding: '13px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Devenir joueur</button>
               </div>
             </>
           )}
@@ -2183,26 +2184,26 @@ function DashboardJoueur() {
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.3px' }}>Reels sauvegardés</h2>
               {loadingFanFavoris ? (
-                <p style={{ color: '#4ade80', textAlign: 'center', fontSize: '14px' }}>Chargement...</p>
+                <p style={{ color: colors.accent.green, textAlign: 'center', fontSize: '14px' }}>Chargement...</p>
               ) : fanFavoris.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '3rem', textAlign: 'center' }}>
-                  <p style={{ color: '#333', margin: '0 0 12px', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '3rem', textAlign: 'center' }}>
+                  <p style={{ color: colors.border.strong, margin: '0 0 12px', display: 'flex', justifyContent: 'center' }}>
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   </p>
-                  <p style={{ color: '#555', fontSize: '14px', lineHeight: 1.6 }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape Save pour les retrouver ici.</p>
-                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Aller sur Jogabonito</button>
+                  <p style={{ color: colors.text.faint, fontSize: '14px', lineHeight: 1.6 }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape Save pour les retrouver ici.</p>
+                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Aller sur Jogabonito</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {fanFavoris.map(reel => (
-                    <div key={reel.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div key={reel.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <Avatar person={reel.profiles} size={44} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{reel.profiles?.prenom} {reel.profiles?.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
-                        {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.accent.green }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
+                        {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
                       </div>
-                      <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade8010', border: '1px solid #4ade8030', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>Voir</button>
+                      <button onClick={() => navigate('/jogabonito')} style={{ background: '#4ade8010', border: '1px solid #4ade8030', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>Voir</button>
                     </div>
                   ))}
                 </div>
@@ -2211,11 +2212,11 @@ function DashboardJoueur() {
           )}
 
           {fanOnglet === 'messages' && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center' }}>
-              <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center' }}>
+              <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Plan Pro requis</h2>
-              <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
-              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+              <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
+              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
             </div>
           )}
         </div>
@@ -2226,17 +2227,17 @@ function DashboardJoueur() {
   // ── PAS ABONNÉ ──
   if (!profil?.abonnement_actif) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
-        <div style={{ maxWidth: '400px', width: '100%', background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+        <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
-          <p style={{ fontSize: '13px', color: '#555', marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
+          <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
             <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.background.base, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
           </div>
-          <span onClick={handleLogout} style={{ color: '#444', fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
+          <span onClick={handleLogout} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
       </div>
     )
@@ -2274,7 +2275,7 @@ function DashboardJoueur() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2289,8 +2290,8 @@ function DashboardJoueur() {
       `}</style>
 
       {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
-      <OnboardingGuide key={onboardingKey} userId={userId} accentColor="#4ade80" />
-      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor="#4ade80" />
+      <OnboardingGuide key={onboardingKey} userId={userId} accentColor={colors.accent.green} />
+      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} />
 
       {/* ── SIDEBAR ── */}
       {isMobile && sidebarOpen && (
@@ -2298,7 +2299,7 @@ function DashboardJoueur() {
       )}
 
       <aside style={{
-        width: '220px', background: '#0d0d0d', borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        width: '220px', background: colors.background.sunken, borderRight: '1px solid #141414', display: 'flex', flexDirection: 'column', flexShrink: 0,
         ...(isMobile ? {
           position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
@@ -2307,10 +2308,10 @@ function DashboardJoueur() {
       }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #141414', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-            Digital<span style={{ color: '#4ade80' }}>Football</span>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
           </div>
           {isMobile && (
-            <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer' }}>✕</button>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: 20, cursor: 'pointer' }}>✕</button>
           )}
         </div>
 
@@ -2318,24 +2319,24 @@ function DashboardJoueur() {
           {navItems.map((item, i) => (
             <div key={item.id}>
               {item.section && item.section !== navItems[i - 1]?.section && (
-                <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
                   {item.section}
                 </div>
               )}
               <button className="dj-nav-btn"
                 id={NAV_SECTION_IDS[item.id]}
                 onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? '#4ade80' : item.locked ? '#333' : '#555', fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                 {item.badge > 0 && (
-                  <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
+                  <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
                     {item.badge}
                   </span>
                 )}
                 {onglet === item.id && (
-                  <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#4ade80', borderRadius: '0 3px 3px 0' }} />
+                  <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />
                 )}
               </button>
             </div>
@@ -2344,36 +2345,36 @@ function DashboardJoueur() {
 
         {/* Clochette notifications */}
         <div style={{ padding: '0 10px 12px', position: 'relative' }}>
-          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'transparent', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
+          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'transparent', color: colors.text.faint, fontSize: '13px', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
             <span style={{ fontSize: '16px' }}>🔔</span>
             <span style={{ flex: 1, textAlign: 'left' }}>Notifications</span>
             {notifications.filter(n => !n.lu).length > 0 && (
-              <span style={{ background: '#4ade80', color: '#000', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px' }}>
+              <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px' }}>
                 {notifications.filter(n => !n.lu).length}
               </span>
             )}
           </button>
 
           {notifDropdownOpen && (
-            <div style={{ position: 'absolute', bottom: '100%', left: '10px', right: '10px', background: '#111', border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', marginBottom: '8px', zIndex: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ position: 'absolute', bottom: '100%', left: '10px', right: '10px', background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', marginBottom: '8px', zIndex: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Notifications</p>
                 {notifications.some(n => !n.lu) && (
-                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: '#4ade80', fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
+                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
                 )}
               </div>
               {notifications.length === 0 ? (
-                <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
+                <p style={{ padding: '24px', textAlign: 'center', color: colors.text.disabled, fontSize: '13px' }}>Aucune notification</p>
               ) : (
                 notifications.map(n => (
                   <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
-                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
+                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : colors.accent.green + alpha.faint }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      {!n.lu && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', marginTop: '5px', flexShrink: 0 }} />}
+                      {!n.lu && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colors.accent.green, marginTop: '5px', flexShrink: 0 }} />}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontSize: '12px', fontWeight: n.lu ? 400 : 700 }}>{n.titre}</p>
-                        {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.contenu}</p>}
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#333' }}>{new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.contenu}</p>}
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', color: colors.border.strong }}>{new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
                   </div>
@@ -2387,7 +2388,7 @@ function DashboardJoueur() {
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[['fr','🇫🇷'],['en','🇬🇧'],['pt','🇧🇷'],['es','🇪🇸'],['it','🇮🇹'],['de','🇩🇪']].map(([code, flag]) => (
               <button key={code} onClick={() => setLang(code)}
-                style={{ background: lang === code ? '#4ade8020' : 'transparent', border: `1px solid ${lang === code ? '#4ade80' : '#2a2a2a'}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? '#4ade80' : '#555' }}>
+                style={{ background: lang === code ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${lang === code ? colors.accent.green : colors.border.default}`, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '14px', color: lang === code ? colors.accent.green : colors.text.faint }}>
                 {flag}
               </button>
             ))}
@@ -2399,10 +2400,10 @@ function DashboardJoueur() {
             <Avatar person={profil} size={32} border="1.5px solid #4ade8040" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profil?.prenom} {profil?.nom}</p>
-              <p style={{ margin: '1px 0 0', fontSize: '10px', color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{profil?.plan}</p>
+              <p style={{ margin: '1px 0 0', fontSize: '10px', color: colors.accent.green, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{profil?.plan}</p>
             </div>
           </div>
-          <button onClick={handleLogout} style={{ width: '100%', background: 'transparent', border: '1px solid #1a1a1a', color: '#444', padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={handleLogout} style={{ width: '100%', background: 'transparent', border: '1px solid #1a1a1a', color: colors.text.disabled, padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Déconnexion
           </button>
         </div>
@@ -2410,30 +2411,30 @@ function DashboardJoueur() {
 
       {isMobile && (
         <div style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 150 }}>
-          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#111', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+          <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: colors.background.surface, border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <span style={{ fontSize: '18px' }}>🔔</span>
           {notifications.filter(n => !n.lu).length > 0 && (
-            <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#4ade80', color: '#000', fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: colors.accent.green, color: colors.black, fontSize: '9px', fontWeight: 800, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {notifications.filter(n => !n.lu).length}
             </span>
           )}
           </button>
           {notifDropdownOpen && (
-            <div style={{ position: 'absolute', top: '48px', right: 0, width: '300px', background: '#111', border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ position: 'absolute', top: '48px', right: 0, width: '300px', background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', maxHeight: '400px', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Notifications</p>
                 {notifications.some(n => !n.lu) && (
-                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: '#4ade80', fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
+                  <button onClick={() => marquerToutLu(userId)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '11px', cursor: 'pointer' }}>Tout marquer lu</button>
                 )}
               </div>
               {notifications.length === 0 ? (
-                <p style={{ padding: '24px', textAlign: 'center', color: '#444', fontSize: '13px' }}>Aucune notification</p>
+                <p style={{ padding: '24px', textAlign: 'center', color: colors.text.disabled, fontSize: '13px' }}>Aucune notification</p>
               ) : (
                 notifications.map(n => (
                   <div key={n.id} onClick={() => { marquerNotifLue(n.id); setNotifDropdownOpen(false); if (n.lien) navigate(n.lien) }}
-                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : '#4ade8008' }}>
+                    style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: n.lu ? 'transparent' : colors.accent.green + alpha.faint }}>
                     <p style={{ margin: 0, fontSize: '12px', fontWeight: n.lu ? 400 : 700 }}>{n.titre}</p>
-                    {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{n.contenu}</p>}
+                    {n.contenu && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{n.contenu}</p>}
                   </div>
                 ))
               )}
@@ -2447,7 +2448,7 @@ function DashboardJoueur() {
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 'calc(20px + env(safe-area-inset-top, 0px)) 16px 0', display: 'block' }}>
+            style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: 'calc(20px + env(safe-area-inset-top, 0px)) 16px 0', display: 'block' }}>
             ☰
           </button>
         )}
@@ -2461,24 +2462,24 @@ function DashboardJoueur() {
               <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: colors.accent.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
               </div>
               <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
-                  <span style={{ background: isPro ? '#4ade80' : '#3b82f6', color: '#000', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
+                  <span style={{ background: isPro ? colors.accent.green : '#3b82f6', color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
                     {profil?.plan}
                   </span>
                   {profil?.numero_licence && (
-                    <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px', flexShrink: 0 }}>
+                    <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px', flexShrink: 0 }}>
                       🪪 {t('jd_licencie', lang)}
                     </span>
                   )}
                 </div>
-                <p style={{ color: '#555', fontSize: '13px', marginBottom: '20px' }}>
+                <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
                 </p>
                 <div style={{ display: 'flex', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
@@ -2489,10 +2490,10 @@ function DashboardJoueur() {
                   ].map((s, i, arr) => (
                     <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '32px' }}>
                       <div>
-                        <p style={{ fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: '#fff' }}>{s.val}</p>
-                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '4px' }}>{s.label}</p>
+                        <p style={{ fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{s.val}</p>
+                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '4px' }}>{s.label}</p>
                       </div>
-                      {i < arr.length - 1 && <div style={{ width: '1px', height: '36px', background: '#1f1f1f' }} />}
+                      {i < arr.length - 1 && <div style={{ width: '1px', height: '36px', background: colors.border.faint }} />}
                     </div>
                   ))}
                 </div>
@@ -2501,8 +2502,8 @@ function DashboardJoueur() {
 
             {/* PLANNING DE LA SEMAINE (si affilié à un éducateur) */}
             {mesAffiliations.some(a => a.statut === 'accepte') && (
-              <div style={{ background: '#111', border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
-                <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+              <div style={{ background: colors.background.surface, border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
+                <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: colors.accent.green, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
                 <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
               </div>
             )}
@@ -2510,15 +2511,15 @@ function DashboardJoueur() {
             {/* PROCHAINES ÉCHÉANCES (si affilié à un éducateur) */}
             {widgetCalendrier.length > 0 && (() => {
               const OPTIONS_SONDAGE = [
-                { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: '#4ade80' },
-                { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: '#ef4444' },
-                { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: '#f97316' },
-                { val: 'malade',   label: t('ent_malade', lang),   emoji: '😷', color: '#a855f7' },
-                { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: '#60a5fa' },
+                { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: colors.accent.green },
+                { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: colors.accent.red },
+                { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: colors.accent.orange },
+                { val: 'malade',   label: t('ent_malade', lang),   emoji: '😷', color: colors.accent.purple },
+                { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: colors.accent.blue },
               ]
               return (
                 <div style={{ marginBottom: '20px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
                     {t('jd_prochaines_echeances', lang)}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'stretch', gap: '16px' }}>
@@ -2531,7 +2532,7 @@ function DashboardJoueur() {
                       const isMatch = ev.type === 'match'
                       const statut = dispoMap[ev.id] || null
                       const sondageClos = sondageEstClos(ev)
-                      const accentColor = isMatch ? '#60a5fa' : '#4ade80'
+                      const accentColor = isMatch ? colors.accent.blue : colors.accent.green
                       const optStatut = OPTIONS_SONDAGE.find(o => o.val === statut)
                       const pending = pendingDispo[ev.id]
                       const selected = pending !== undefined ? pending : statut
@@ -2553,8 +2554,8 @@ function DashboardJoueur() {
                             {sondageClos && <span style={{ fontSize: '10px' }} title={t('ent_sondage_clos', lang)}>🔒</span>}
                           </div>
                           <p style={{ fontWeight: 800, fontSize: '12px', margin: 0, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.titre}</p>
-                          <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
-                          {ev.lieu && <p style={{ fontSize: '10px', color: '#555', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {ev.lieu}</p>}
+                          <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
+                          {ev.lieu && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {ev.lieu}</p>}
 
                           {!sondageClos ? (
                             <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
@@ -2564,7 +2565,7 @@ function DashboardJoueur() {
                                   return (
                                     <button key={opt.val} title={opt.label}
                                       onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
-                                      style={{ flexShrink: 0, width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : '#2a2a2a'}`, color: isSelected ? opt.color : '#555', fontSize: '12px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      style={{ flexShrink: 0, width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : colors.border.default}`, color: isSelected ? opt.color : colors.text.faint, fontSize: '12px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                       {opt.emoji}
                                     </button>
                                   )
@@ -2573,7 +2574,7 @@ function DashboardJoueur() {
                               {/* Sur mobile, le title="" (infobulle) ne s'affiche jamais — pas de hover
                                   au tactile. On montre donc l'intitulé de l'option choisie dès le clic. */}
                               {selected && (
-                                <p style={{ fontSize: '9px', fontWeight: 700, color: OPTIONS_SONDAGE.find(o => o.val === selected)?.color || '#555', margin: '0 0 6px' }}>
+                                <p style={{ fontSize: '9px', fontWeight: 700, color: OPTIONS_SONDAGE.find(o => o.val === selected)?.color || colors.text.faint, margin: '0 0 6px' }}>
                                   {OPTIONS_SONDAGE.find(o => o.val === selected)?.label}
                                 </p>
                               )}
@@ -2583,11 +2584,11 @@ function DashboardJoueur() {
                                     await repondreDisponibilite(ev.id, ev.type, pending)
                                     setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
                                   }}
-                                  style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', padding: '5px 0', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                  style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', padding: '5px 0', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                                   {t('aff_valider', lang)}
                                 </button>
                               )}
-                              {statut && !hasUnsavedChoice && <p style={{ fontSize: '9px', color: '#4ade80', margin: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
+                              {statut && !hasUnsavedChoice && <p style={{ fontSize: '9px', color: colors.accent.green, margin: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
                             </div>
                           ) : statut && (
                             <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
@@ -2613,32 +2614,32 @@ function DashboardJoueur() {
                 {/* ACTION CARDS */}
                 <div style={{ display: 'grid', gridTemplateColumns: isPro ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
                   <button className="dj-action-card" onClick={() => navigate('/jogabonito')}
-                    style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#f97316' }}>
+                    style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.orange }}>
                       <IconPlay />
                     </div>
                     <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Jogabonito</p>
-                    <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Feed vertical · Reels des talents</p>
+                    <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>Feed vertical · Reels des talents</p>
                   </button>
 
                   {isPro && (
                     <button className="dj-action-card" onClick={() => navigate('/feed')}
-                      style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#4ade80' }}>
+                      style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.green }}>
                         <IconGlobe />
                       </div>
                       <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Feed</p>
-                      <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>Talents · Visible recruteurs</p>
+                      <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>Talents · Visible recruteurs</p>
                     </button>
                   )}
 
                   <button id="upload-section" className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
-                    style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#60a5fa' }}>
+                    style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.blue }}>
                       <IconUpload />
                     </div>
                     <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Publier</p>
-                    <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{isPro ? 'Clip Feed · Visible agents & clubs' : 'Reel Jogabonito · MP4 · TikTok'}</p>
+                    <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{isPro ? 'Clip Feed · Visible agents & clubs' : 'Reel Jogabonito · MP4 · TikTok'}</p>
                   </button>
                 </div>
 
@@ -2649,27 +2650,27 @@ function DashboardJoueur() {
                   if (aff) {
                     const pe = aff.profil_educateur
                     return (
-                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: '#fff' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
+                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
                           {pe?.prenom?.[0]}{pe?.nom?.[0]}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#86efac' }}>{t('jeq_titre', lang)}</p>
                         </div>
-                        <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
+                        <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
                       </button>
                     )
                   }
                   if (pending) {
                     return (
                       <div style={{ background: '#1f150a', border: '1px solid #f9731630', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#f97316', fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
+                        <p style={{ margin: 0, fontSize: '13px', color: colors.accent.orange, fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
                       </div>
                     )
                   }
                   return (
-                    <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: '#555', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
                       🔑 Rejoins ton équipe avec le code fourni par ton éducateur
                     </button>
                   )
@@ -2677,38 +2678,38 @@ function DashboardJoueur() {
 
                 {/* MESSAGES PREVIEW */}
                 {conversations.length > 0 && (
-                  <div style={{ background: '#111', border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{t('jd_messages_rec', lang)}</p>
-                      <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
+                      <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>{t('jd_messages_rec', lang)}</p>
+                      <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {conversations.slice(0, 2).map(conv => (
-                      <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
+                      <div key={conv.otherId} onClick={() => { setMessageActif(conv); setOnglet('messages') }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginBottom: '6px' }}>
                         <Avatar person={conv.other} size={32} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                          <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
+                          <p style={{ fontSize: '11px', color: colors.accent.green }}>{t('jd_recruteur_badge', lang)}</p>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                        <p style={{ fontSize: '12px', color: colors.border.strong, maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                       </div>
                     ))}
                   </div>
                 )}
 
                 {convCoach.length > 0 && (
-                  <div style={{ background: '#111', border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', color: '#f97316' }}>{t('jd_reponses_coach', lang)}</p>
-                      <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
+                      <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.orange }}>{t('jd_reponses_coach', lang)}</p>
+                      <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {convCoach.slice(0, 1).map(conv => (
-                      <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
-                        <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor="#f97316" />
+                      <div key={conv.otherId} onClick={() => setOnglet('coach')} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
+                        <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor={colors.accent.orange} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                          <p style={{ fontSize: '11px', color: '#f97316' }}>{t('jnav_coach', lang)}</p>
+                          <p style={{ fontSize: '11px', color: colors.accent.orange }}>{t('jnav_coach', lang)}</p>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#333', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                        <p style={{ fontSize: '12px', color: colors.border.strong, maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                       </div>
                     ))}
                   </div>
@@ -2719,27 +2720,27 @@ function DashboardJoueur() {
               <div style={{ minWidth: 0 }}>
 
                 {/* QUOTA ANALYSES */}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                     <div>
                       <p style={{ fontSize: '14px', fontWeight: 700, color: '#ccc', marginBottom: '3px' }}>{t('jd_quota_titre', lang)}</p>
-                      <p style={{ fontSize: '11px', color: '#444' }}>{t('jd_quota_reset', lang)}</p>
+                      <p style={{ fontSize: '11px', color: colors.text.disabled }}>{t('jd_quota_reset', lang)}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? '#4ade80' : '#ef4444', lineHeight: 1 }}>
+                      <span style={{ fontSize: '26px', fontWeight: 900, color: (profil?.analyses_restantes || 0) > 0 ? colors.accent.green : colors.accent.red, lineHeight: 1 }}>
                         {profil?.analyses_restantes ?? 0}
                       </span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {(profil?.analyses_restantes || 0) > 0 ? (
-                      <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
+                      <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
                         {t('jd_envoyer_video', lang)} →
                       </button>
                     ) : (
-                      <p style={{ fontSize: '12px', color: '#444', margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
+                      <p style={{ fontSize: '12px', color: colors.text.disabled, margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
                     )}
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: '#4ade80', border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {t('aff_acheter_analyse_cta', lang)}
                     </button>
                   </div>
@@ -2747,51 +2748,51 @@ function DashboardJoueur() {
 
                 {/* VIDÉO */}
                 {profil?.clip_url ? (
-                  <div style={{ background: '#111', border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_partagee', lang)}</p>
-                        <p style={{ fontSize: '11px', color: '#444' }}>{isPro ? t('jvid_feed_visible', lang) : 'Jogabonito uniquement'}</p>
+                        <p style={{ fontSize: '11px', color: colors.text.disabled }}>{isPro ? t('jvid_feed_visible', lang) : 'Jogabonito uniquement'}</p>
                       </div>
-                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                      <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#4ade80', color: '#000', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                      <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.green, color: colors.black, padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
                         {t('jvid_voir', lang)}
                       </a>
-                      <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? colors.text.disabled : colors.accent.red, border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
                   </div>
                 ) : reelJogabonito ? (
-                  <div style={{ background: '#111', border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_jogabonito', lang)}</p>
-                        <p style={{ fontSize: '11px', color: '#444' }}>{t('jvid_visible_joga', lang)}</p>
+                        <p style={{ fontSize: '11px', color: colors.text.disabled }}>{t('jvid_visible_joga', lang)}</p>
                       </div>
-                      <span style={{ background: '#f9731615', color: '#f97316', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
+                      <span style={{ background: colors.accent.orange + alpha.subtle, color: colors.accent.orange, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px' }}>LIVE</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f97316', color: '#fff', padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                      <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.orange, color: colors.text.primary, padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
                         {t('jvid_voir', lang)}
                       </a>
-                      <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: '#555', border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? '#444' : '#ef4444', border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? colors.text.disabled : colors.accent.red, border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
-                    <div style={{ color: '#2a2a2a', display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
-                    <p style={{ fontWeight: 700, fontSize: '14px', color: '#444', marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
-                    <p style={{ fontSize: '12px', color: '#333', marginBottom: '20px', lineHeight: 1.6 }}>
+                  <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '36px', marginBottom: '16px', textAlign: 'center' }}>
+                    <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconVideoOff /></div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', color: colors.text.disabled, marginBottom: '6px' }}>{t('jvid_aucune', lang)}</p>
+                    <p style={{ fontSize: '12px', color: colors.border.strong, marginBottom: '20px', lineHeight: 1.6 }}>
                       {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
                     </p>
-                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
                     </button>
                   </div>
@@ -2802,27 +2803,27 @@ function DashboardJoueur() {
                   <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div>
                       <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
-                      <p style={{ fontSize: '12px', color: '#555' }}>{t('jd_upsell_desc', lang)}</p>
+                      <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('jd_upsell_desc', lang)}</p>
                     </div>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                       {t('jd_plan_pro_cta', lang)}
                     </button>
                   </div>
                 )}
 
                 {/* ABONNEMENT */}
-                <div style={{ background: '#111', border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #141414', borderRadius: '14px', padding: '18px 20px' }}>
                   {cancelDone ? (
                     <div>
-                      <p style={{ fontSize: '13px', color: '#f97316', fontWeight: 700, marginBottom: '4px' }}>{t('jd_resiliation_prog', lang)}</p>
-                      <p style={{ fontSize: '12px', color: '#444' }}>{t('jd_resiliation_desc', lang)}</p>
+                      <p style={{ fontSize: '13px', color: colors.accent.orange, fontWeight: 700, marginBottom: '4px' }}>{t('jd_resiliation_prog', lang)}</p>
+                      <p style={{ fontSize: '12px', color: colors.text.disabled }}>{t('jd_resiliation_desc', lang)}</p>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
-                      <p style={{ fontSize: '12px', color: '#444' }}>
-                        {t('jd_plan_actif', lang)} <span style={{ color: '#4ade80', fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
+                      <p style={{ fontSize: '12px', color: colors.text.disabled }}>
+                        {t('jd_plan_actif', lang)} <span style={{ color: colors.accent.green, fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
                       </p>
-                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? '#444' : '#ef4444', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
                         {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
                       </button>
                     </div>
@@ -2838,21 +2839,21 @@ function DashboardJoueur() {
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jp_titre', lang)}</h1>
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
               <p style={labelStyle}>{t('jp_photo', lang)}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
                 <Avatar person={profil} size={80} border="2px solid #4ade8050" />
                 <div>
-                  <label style={{ display: 'inline-block', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? '#444' : '#aaa', fontFamily: 'Inter, sans-serif' }}>
+                  <label style={{ display: 'inline-block', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? colors.text.disabled : colors.text.secondary, fontFamily: 'Inter, sans-serif' }}>
                     {avatarUploading ? t('jp_upload_cours', lang) : t('jp_choisir_photo', lang)}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                   </label>
-                  <p style={{ fontSize: '11px', color: '#444', marginTop: '8px' }}>JPG, PNG, WEBP · Max 5 MB</p>
+                  <p style={{ fontSize: '11px', color: colors.text.disabled, marginTop: '8px' }}>JPG, PNG, WEBP · Max 5 MB</p>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
               <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_infos_club', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div><label style={labelStyle}>{t('jp_club_actuel', lang)}</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} /></div>
@@ -2886,7 +2887,7 @@ function DashboardJoueur() {
               </div>
             </div>
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
               <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_stats', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 {[['matchs_officiel', t('jp_matchs_off', lang)], ['matchs_amical', t('jp_matchs_amical', lang)], ['minutes_jouees', t('jp_minutes', lang)], ['buts_pied_droit', t('jp_buts_droit', lang)], ['buts_pied_gauche', t('jp_buts_gauche', lang)], ['buts_tete', t('jp_buts_tete', lang)], ['buts_total', t('jp_buts_total', lang)], ['passes_decisives', t('jp_passes_dec', lang)], ['cleansheets', t('jp_cleansheets', lang)]].map(([key, label]) => (
@@ -2896,7 +2897,7 @@ function DashboardJoueur() {
             </div>
 
             {caracteristiquesParPoste[profil?.poste] && (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
                 <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_style_jeu', lang)}</p>
 
                 <div style={{ marginBottom: '24px' }}>
@@ -2905,9 +2906,9 @@ function DashboardJoueur() {
                     {['Dos au jeu', 'Technique / Dribbleur', 'Physique / Aérien', 'Vitesse / Percussion', 'Créateur / Vision', 'Box-to-box', 'Renard des surfaces', 'Défensif / Récupérateur', 'Meneur / Leadership', 'Centreur', 'Buteur / Finisseur', 'Pressing intense', 'Ailier percutant', 'Polyvalent'].map(s => (
                       <div key={s} onClick={() => setStyleDeJeu(styleDeJeu === s ? '' : s)}
                         style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
-                          background: styleDeJeu === s ? '#60a5fa20' : '#1a1a1a',
+                          background: styleDeJeu === s ? colors.accent.blue + alpha.soft : colors.background.raised,
                           border: styleDeJeu === s ? '1px solid #60a5fa' : '1px solid #333',
-                          color: styleDeJeu === s ? '#60a5fa' : '#aaa',
+                          color: styleDeJeu === s ? colors.accent.blue : colors.text.secondary,
                           fontWeight: styleDeJeu === s ? 700 : 400,
                         }}>
                         {s}
@@ -2928,9 +2929,9 @@ function DashboardJoueur() {
                           onClick={() => !disabled && toggleCaracteristique(pointsForts, setPointsForts, c)}
                           style={{
                             padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
-                            background: selected ? '#4ade8020' : '#1a1a1a',
+                            background: selected ? colors.accent.green + alpha.soft : colors.background.raised,
                             border: selected ? '1px solid #4ade80' : '1px solid #333',
-                            color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : 'white',
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             opacity: disabled ? 0.5 : 1,
                           }}
@@ -2954,9 +2955,9 @@ function DashboardJoueur() {
                           onClick={() => !disabled && toggleCaracteristique(aAmeliorer, setAAmeliorer, c)}
                           style={{
                             padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
-                            background: selected ? '#4ade8020' : '#1a1a1a',
+                            background: selected ? colors.accent.green + alpha.soft : colors.background.raised,
                             border: selected ? '1px solid #4ade80' : '1px solid #333',
-                            color: selected ? '#4ade80' : disabled ? '#444' : 'white',
+                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : 'white',
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             opacity: disabled ? 0.5 : 1,
                           }}
@@ -2970,7 +2971,7 @@ function DashboardJoueur() {
               </div>
             )}
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
               <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_parcours', lang)}</p>
 
               {parcours.length > 0 && (
@@ -2978,26 +2979,26 @@ function DashboardJoueur() {
                   {parcours.map((p, i) => (
                     <div key={p.id} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#4ade80', marginTop: '4px', flexShrink: 0 }} />
-                        {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: '#1f1f1f', marginTop: '2px' }} />}
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.green, marginTop: '4px', flexShrink: 0 }} />
+                        {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: colors.border.faint, marginTop: '2px' }} />}
                       </div>
                       <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           {p.logo_url
                             ? <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
-                            : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getClubColor(p.club || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: '#fff', flexShrink: 0 }}>{getClubInitials(p.club || '?')}</div>
+                            : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getClubColor(p.club || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: colors.text.primary, flexShrink: 0 }}>{getClubInitials(p.club || '?')}</div>
                           }
                           <div>
                             <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
-                            <p style={{ fontSize: '11px', color: '#555', marginBottom: '4px' }}>
+                            <p style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '4px' }}>
                               {[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(' · ')}
                             </p>
                             {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
                               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: '#4ade80' }}>⚽ {p.matchs_joues} matchs</span>}
-                                {p.buts > 0 && <span style={{ fontSize: '11px', color: '#f97316' }}>⚽ {p.buts} buts</span>}
-                                {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: '#60a5fa' }}>🎯 {p.passes_decisives} passes</span>}
-                                {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: '#a855f7' }}>🧤 {p.cleansheets} CS</span>}
+                                {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: colors.accent.green }}>⚽ {p.matchs_joues} matchs</span>}
+                                {p.buts > 0 && <span style={{ fontSize: '11px', color: colors.accent.orange }}>⚽ {p.buts} buts</span>}
+                                {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: colors.accent.blue }}>🎯 {p.passes_decisives} passes</span>}
+                                {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: colors.accent.purple }}>🧤 {p.cleansheets} CS</span>}
                               </div>
                             )}
                           </div>
@@ -3023,7 +3024,7 @@ function DashboardJoueur() {
                     {nouveauClub.club.trim() && (
                       nouveauClub.logo_url
                         ? <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
-                        : <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: getClubColor(nouveauClub.club), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: '#fff', zIndex: 1 }}>{getClubInitials(nouveauClub.club)}</div>
+                        : <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: getClubColor(nouveauClub.club), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: colors.text.primary, zIndex: 1 }}>{getClubInitials(nouveauClub.club)}</div>
                     )}
                     <input
                       value={nouveauClub.club}
@@ -3038,11 +3039,11 @@ function DashboardJoueur() {
                       style={{ ...inputStyle, paddingLeft: nouveauClub.club.trim() ? '36px' : '14px' }}
                     />
                     {loadingSuggestions && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#555' }}>…</span>
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: colors.text.faint }}>…</span>
                     )}
                   </div>
                   {showSuggestions && clubSuggestions.length > 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, overflow: 'hidden', marginTop: '4px' }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, overflow: 'hidden', marginTop: '4px' }}>
                       {clubSuggestions.map(team => (
                         <div
                           key={team.idTeam}
@@ -3054,7 +3055,7 @@ function DashboardJoueur() {
                           {team.strTeamBadge && <img src={team.strTeamBadge} alt="" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}
                           <div>
                             <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>{team.strTeam}</p>
-                            {team.strCountry && <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{team.strCountry}</p>}
+                            {team.strCountry && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{team.strCountry}</p>}
                           </div>
                         </div>
                       ))}
@@ -3114,26 +3115,26 @@ function DashboardJoueur() {
 
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
+                  style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
                   {savingParcours ? (editingParcoursId ? t('jp_modif_cours', lang) : t('jp_ajout_cours', lang)) : (editingParcoursId ? t('jp_modifier_parcours', lang) : t('jp_ajouter_club', lang))}
                 </button>
                 {editingParcoursId && (
                   <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
-                    style={{ background: 'transparent', border: '1px solid #333', color: '#555', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'transparent', border: '1px solid #333', color: colors.text.faint, padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {t('btn_annuler', lang)}
                   </button>
                 )}
               </div>
             </div>
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
               <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_historique_saisons', lang)}</p>
               <HistoriqueSaisons joueurId={userId} />
             </div>
 
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
               <p style={{ ...labelStyle, marginBottom: '6px' }}>{t('jp_notif_prefs', lang)}</p>
-              <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>{t('jp_notif_desc', lang)}</p>
+              <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jp_notif_desc', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
                   { key: 'email_analyse', label: t('jp_notif_analyse', lang) },
@@ -3142,19 +3143,19 @@ function DashboardJoueur() {
                   { key: 'email_message', label: t('jp_notif_message', lang) },
                 ].map(pref => (
                   <div key={pref.key} onClick={() => sauvegarderNotifPrefs({ ...notifPrefs, [pref.key]: !notifPrefs[pref.key] })}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#141414', borderRadius: '10px', cursor: 'pointer' }}>
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
                     <span style={{ fontSize: '14px' }}>{pref.label}</span>
-                    <div style={{ width: '40px', height: '22px', background: notifPrefs[pref.key] ? '#4ade80' : '#333', borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                      <div style={{ position: 'absolute', top: '3px', left: notifPrefs[pref.key] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                    <div style={{ width: '40px', height: '22px', background: notifPrefs[pref.key] ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', top: '3px', left: notifPrefs[pref.key] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
                     </div>
                   </div>
                 ))}
               </div>
-              {savingPrefs && <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
+              {savingPrefs && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
             </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
-              style={{ width: '100%', background: statsSaved ? '#22c55e' : '#4ade80', color: '#000', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
+              style={{ width: '100%', background: statsSaved ? '#22c55e' : colors.accent.green, color: colors.black, border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
               {savingStats ? t('jp_sauvegarde_cours', lang) : statsSaved ? t('jp_profil_sauvegarde', lang) : t('profil_sauvegarder_profil', lang)}
             </button>
           </div>
@@ -3166,7 +3167,7 @@ function DashboardJoueur() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{t('ja_titre', lang)}</h1>
               {(profil?.analyses_restantes || 0) > 0 && (
-                <button onClick={() => navigate('/upload')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => navigate('/upload')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {t('ja_nouvelle', lang)}
                 </button>
               )}
@@ -3174,22 +3175,22 @@ function DashboardJoueur() {
             {demandes.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 0' }}>
                 <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconSearch /></div>
-                <p style={{ color: '#444', fontSize: '14px' }}>{t('ja_aucune', lang)}</p>
+                <p style={{ color: colors.text.disabled, fontSize: '14px' }}>{t('ja_aucune', lang)}</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {demandes.map(demande => (
-                  <div key={demande.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px' }}>
+                  <div key={demande.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <h3 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.2px' }}>{demande.titre}</h3>
-                      <span style={{ background: demande.statut === 'analyse' ? '#4ade8012' : '#f59e0b12', color: demande.statut === 'analyse' ? '#4ade80' : '#f59e0b', fontSize: '10px', padding: '3px 10px', borderRadius: '20px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
+                      <span style={{ background: demande.statut === 'analyse' ? '#4ade8012' : '#f59e0b12', color: demande.statut === 'analyse' ? colors.accent.green : '#f59e0b', fontSize: '10px', padding: '3px 10px', borderRadius: '20px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
                         {demande.statut === 'analyse' ? t('ja_recue', lang) : t('etat_en_attente', lang)}
                       </span>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#444', marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p style={{ fontSize: '12px', color: colors.text.disabled, marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                       {demande.loom_url && (
-                        <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: '#4ade80', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
+                        <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: colors.accent.green, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
                           {t('ja_voir', lang)}
                         </a>
                       )}
@@ -3197,8 +3198,8 @@ function DashboardJoueur() {
                         <a href={demande.rapport_pdf_url} target="_blank" rel="noopener noreferrer"
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6,
-                            background: '#4ade8015', border: '1px solid #4ade8030',
-                            color: '#4ade80', borderRadius: 8, padding: '7px 14px',
+                            background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030',
+                            color: colors.accent.green, borderRadius: 8, padding: '7px 14px',
                             fontSize: 12, fontWeight: 700, textDecoration: 'none',
                             fontFamily: 'Inter, sans-serif',
                           }}>
@@ -3216,13 +3217,13 @@ function DashboardJoueur() {
         {/* ── MESSAGES ── */}
         {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan' || profil?.plan === 'joueur_starter') && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
               <div style={{ color: '#222', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>{t('jm_plan_pro', lang)}</h2>
-              <p style={{ fontSize: '13px', color: '#555', maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
+              <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
                 {t('jm_plan_pro_desc', lang)}
               </p>
-              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {t('jd_plan_pro_cta', lang)}
               </button>
             </div>
@@ -3236,12 +3237,12 @@ function DashboardJoueur() {
                 <Avatar person={messageActif.other} size={36} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '1px' }}>{messageActif.other?.prenom} {messageActif.other?.nom}</p>
-                  <p style={{ fontSize: '11px', color: '#4ade80' }}>{t('jd_recruteur_badge', lang)}</p>
+                  <p style={{ fontSize: '11px', color: colors.accent.green }}>{t('jd_recruteur_badge', lang)}</p>
                 </div>
                 <button onClick={async () => {
                   const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).maybeSingle()
                   if (data) setRecruteurModal(data)
-                }} style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                }} style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   {t('jm_voir_profil', lang)}
                 </button>
               </div>
@@ -3254,14 +3255,14 @@ function DashboardJoueur() {
                 ))}
               </div>
               <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
-                <input style={{ flex: 1, background: '#141414', border: '1px solid #222', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
-                <button onClick={envoyerMessage} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>{t('btn_envoyer', lang)}</button>
+                <input style={{ flex: 1, background: colors.background.surfaceAlt, border: '1px solid #222', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
+                <button onClick={envoyerMessage} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>{t('btn_envoyer', lang)}</button>
               </div>
             </>
           ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: '#2a2a2a' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '10px', color: colors.icon.muted }}>
               <IconMessage />
-              <p style={{ fontSize: '13px', color: '#333' }}>{t('jm_select_conv', lang)}</p>
+              <p style={{ fontSize: '13px', color: colors.border.strong }}>{t('jm_select_conv', lang)}</p>
             </div>
           )
 
@@ -3270,10 +3271,10 @@ function DashboardJoueur() {
             if (messageActif) {
               return (
                 <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
-                  <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: '#4ade80', fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Inter, sans-serif' }}>
+                  <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.accent.green, fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Inter, sans-serif' }}>
                     {t('jm_retour', lang)}
                   </button>
-                  <div style={{ flex: 1, minHeight: 0, background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, minHeight: 0, background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {panelConversation}
                   </div>
                 </div>
@@ -3284,25 +3285,25 @@ function DashboardJoueur() {
                 <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>{t('jm_titre', lang)}</h1>
                 {conversations.length === 0 ? (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                    <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
-                    <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
+                    <p style={{ fontSize: '13px', color: colors.text.disabled, marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
+                    <p style={{ fontSize: '11px', color: colors.border.strong, lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
                     {conversations.map(conv => (
                       <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', cursor: 'pointer' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', cursor: 'pointer' }}>
                         <Avatar person={conv.other} size={44} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px' }}>
                             <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                             {conv.msgs[0]?.created_at && (
-                              <span style={{ fontSize: '10px', color: '#444', flexShrink: 0 }}>{new Date(conv.msgs[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                              <span style={{ fontSize: '10px', color: colors.text.disabled, flexShrink: 0 }}>{new Date(conv.msgs[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                             )}
                           </div>
-                          <p style={{ fontSize: '12px', color: '#555', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.msgs[0]?.content}</p>
+                          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.msgs[0]?.content}</p>
                         </div>
-                        <span style={{ color: '#333', fontSize: '18px', flexShrink: 0 }}>›</span>
+                        <span style={{ color: colors.border.strong, fontSize: '18px', flexShrink: 0 }}>›</span>
                       </div>
                     ))}
                   </div>
@@ -3316,30 +3317,30 @@ function DashboardJoueur() {
             <div style={{ padding: '24px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
               <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '16px', padding: '0 8px' }}>{t('jm_titre', lang)}</h1>
               <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 0 }}>
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ padding: '14px 16px', borderBottom: '1px solid #141414' }}>
-                    <p style={{ fontWeight: 700, color: '#4ade80', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jm_conversations', lang)}</p>
+                    <p style={{ fontWeight: 700, color: colors.accent.green, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jm_conversations', lang)}</p>
                   </div>
                   {conversations.length === 0 ? (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                      <p style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
-                      <p style={{ fontSize: '11px', color: '#333', lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
+                      <p style={{ fontSize: '13px', color: colors.text.disabled, marginBottom: '6px' }}>{t('jm_aucun', lang)}</p>
+                      <p style={{ fontSize: '11px', color: colors.border.strong, lineHeight: 1.5 }}>{t('jm_scout_contact', lang)}</p>
                     </div>
                   ) : conversations.map(conv => (
                     <div key={conv.otherId} onClick={() => setMessageActif(conv)}
-                      style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? '#4ade8008' : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
+                      style={{ padding: '12px 16px', borderBottom: '1px solid #141414', cursor: 'pointer', background: messageActif?.otherId === conv.otherId ? colors.accent.green + alpha.faint : 'transparent', borderLeft: messageActif?.otherId === conv.otherId ? '2px solid #4ade80' : '2px solid transparent' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                         <Avatar person={conv.other} size={30} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.other?.prenom} {conv.other?.nom}</p>
-                          <p style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>{t('jd_recruteur_badge', lang)}</p>
+                          <p style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 600 }}>{t('jd_recruteur_badge', lang)}</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '11px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
+                      <p style={{ fontSize: '11px', color: colors.border.strong, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conv.msgs[0]?.content}</p>
                     </div>
                   ))}
                 </div>
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   {panelConversation}
                 </div>
               </div>
@@ -3350,7 +3351,7 @@ function DashboardJoueur() {
         {/* ── COACH ── */}
         {onglet === 'carte' && (
           <div style={{ maxWidth: '520px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
                 {t('jcarte_titre', lang)}
                 <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
@@ -3362,29 +3363,29 @@ function DashboardJoueur() {
                   {isPro ? '⭐ PRO' : 'STARTER'}
                 </span>
               </h2>
-              <p style={{ fontSize: '13px', color: '#555' }}>
+              <p style={{ fontSize: '13px', color: colors.text.faint }}>
                 {t('jcarte_desc', lang)}
               </p>
             </div>
 
             {(!profil?.plan || profil.plan === 'fan') ? (
-              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
+              <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎮</div>
                 <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>{t('jcarte_feature', lang)}</p>
-                <p style={{ fontSize: '13px', color: '#555' }}>{t('jcarte_abo', lang)}</p>
+                <p style={{ fontSize: '13px', color: colors.text.faint }}>{t('jcarte_abo', lang)}</p>
               </div>
             ) : (
               <>
                 {profil?.carte_fifa_url && (
-                  <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <img src={profil.carte_fifa_url} alt="Ma carte FIFA" style={{ width: '72px', height: '100px', objectFit: 'contain', borderRadius: '6px' }} />
                     <div>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#4ade80', marginBottom: '4px' }}>✓ Carte sauvegardée</p>
-                      <p style={{ fontSize: '12px', color: '#555' }}>Visible dans ton profil recruteur.</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.green, marginBottom: '4px' }}>✓ Carte sauvegardée</p>
+                      <p style={{ fontSize: '12px', color: colors.text.faint }}>Visible dans ton profil recruteur.</p>
                     </div>
                   </div>
                 )}
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                   <FifaCardGenerator
                     plan={isPro ? 'pro' : 'starter'}
                     profil={profil}
@@ -3398,32 +3399,32 @@ function DashboardJoueur() {
 
         {onglet === 'certif' && (
           <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
                 {t('jcertif_titre', lang)}
                 <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#f0c03020', color: '#f0c030', border: '1px solid #f0c03040', verticalAlign: 'middle' }}>⭐ Officiel</span>
               </h2>
-              <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>
                 {t('jcertif_desc', lang)}
               </p>
             </div>
 
             {/* Certifications existantes */}
             {certifications.length > 0 && (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '14px' }}>{t('jcertif_mes_demandes', lang)}</p>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.muted, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '14px' }}>{t('jcertif_mes_demandes', lang)}</p>
                 {certifications.map(c => (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 2px' }}>{c.niveau} — {c.saison}</p>
-                      <p style={{ fontSize: '12px', color: '#555', margin: 0 }}>{c.documents?.length || 0} feuille{(c.documents?.length || 0) > 1 ? 's' : ''} envoyée{(c.documents?.length || 0) > 1 ? 's' : ''}</p>
-                      {c.commentaire_admin && <p style={{ fontSize: '12px', color: '#f97316', margin: '4px 0 0' }}>💬 {c.commentaire_admin}</p>}
+                      <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0 }}>{c.documents?.length || 0} feuille{(c.documents?.length || 0) > 1 ? 's' : ''} envoyée{(c.documents?.length || 0) > 1 ? 's' : ''}</p>
+                      {c.commentaire_admin && <p style={{ fontSize: '12px', color: colors.accent.orange, margin: '4px 0 0' }}>💬 {c.commentaire_admin}</p>}
                     </div>
                     <span style={{
                       fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px',
-                      background: c.statut === 'validé' ? '#4ade8020' : c.statut === 'rejeté' ? '#ef444420' : '#f0c03020',
-                      color: c.statut === 'validé' ? '#4ade80' : c.statut === 'rejeté' ? '#ef4444' : '#f0c030',
-                      border: `1px solid ${c.statut === 'validé' ? '#4ade8040' : c.statut === 'rejeté' ? '#ef444440' : '#f0c03040'}`,
+                      background: c.statut === 'validé' ? colors.accent.green + alpha.soft : c.statut === 'rejeté' ? colors.accent.red + alpha.soft : '#f0c03020',
+                      color: c.statut === 'validé' ? colors.accent.green : c.statut === 'rejeté' ? colors.accent.red : '#f0c030',
+                      border: `1px solid ${c.statut === 'validé' ? colors.accent.green + alpha.medium : c.statut === 'rejeté' ? colors.accent.red + alpha.medium : '#f0c03040'}`,
                     }}>
                       {c.statut === 'validé' ? t('jcertif_valide', lang) : c.statut === 'rejeté' ? t('jcertif_rejete', lang) : t('jcertif_attente', lang)}
                     </span>
@@ -3434,14 +3435,14 @@ function DashboardJoueur() {
 
             {/* Nouvelle demande */}
             {certifSent ? (
-              <div style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #4ade8030', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
                 <p style={{ fontSize: '32px', marginBottom: '12px' }}>✅</p>
-                <p style={{ fontWeight: 800, fontSize: '16px', color: '#4ade80', marginBottom: '6px' }}>{t('jcertif_envoyee', lang)}</p>
-                <p style={{ fontSize: '13px', color: '#555' }}>{t('jcertif_verif_48h', lang)}</p>
+                <p style={{ fontWeight: 800, fontSize: '16px', color: colors.accent.green, marginBottom: '6px' }}>{t('jcertif_envoyee', lang)}</p>
+                <p style={{ fontSize: '13px', color: colors.text.faint }}>{t('jcertif_verif_48h', lang)}</p>
               </div>
             ) : (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{t('jcertif_nouvelle', lang)}</p>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.muted, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{t('jcertif_nouvelle', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
                   <div>
                     <label style={labelStyle}>{t('jcertif_niveau', lang)}</label>
@@ -3461,8 +3462,8 @@ function DashboardJoueur() {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={labelStyle}>{t('jcertif_feuilles', lang)} ({certifDocs.length}/5 minimum)</label>
-                  <p style={{ fontSize: '12px', color: '#555', marginBottom: '10px' }}>{t('jcertif_min5', lang)}</p>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#141414', border: '1px dashed #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
+                  <p style={{ fontSize: '12px', color: colors.text.faint, marginBottom: '10px' }}>{t('jcertif_min5', lang)}</p>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: colors.background.surfaceAlt, border: '1px dashed #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                     {uploadingCertif ? t('jp_upload_cours', lang) : t('jcertif_selectionner', lang)}
                     <input type="file" accept="image/*,.pdf" multiple onChange={handleCertifDocUpload} style={{ display: 'none' }} disabled={uploadingCertif} />
@@ -3470,8 +3471,8 @@ function DashboardJoueur() {
                   {certifDocs.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                       {certifDocs.map((url, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#4ade8015', border: '1px solid #4ade8030', borderRadius: '8px', padding: '4px 10px' }}>
-                          <span style={{ fontSize: '11px', color: '#4ade80' }}>✓ Feuille {i + 1}</span>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', borderRadius: '8px', padding: '4px 10px' }}>
+                          <span style={{ fontSize: '11px', color: colors.accent.green }}>✓ Feuille {i + 1}</span>
                           <button onClick={() => setCertifDocs(prev => prev.filter((_, j) => j !== i))}
                             style={{ background: 'none', border: 'none', color: '#4ade8080', cursor: 'pointer', fontSize: '12px', padding: '0 2px' }}>✕</button>
                         </div>
@@ -3493,14 +3494,14 @@ function DashboardJoueur() {
 
         {onglet === 'coach' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>{t('jcoach_titre', lang)}</h2>
-              <p style={{ fontSize: '13px', color: '#555' }}>{t('jcoach_desc', lang)}</p>
+              <p style={{ fontSize: '13px', color: colors.text.faint }}>{t('jcoach_desc', lang)}</p>
             </div>
             {convCoach.length > 0 && (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #141414' }}>
-                  <p style={{ fontWeight: 700, color: '#f97316', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jcoach_historique', lang)}</p>
+                  <p style={{ fontWeight: 700, color: colors.accent.orange, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jcoach_historique', lang)}</p>
                 </div>
                 <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', maxHeight: '380px', overflowY: 'auto' }}>
                   {(() => {
@@ -3516,19 +3517,19 @@ function DashboardJoueur() {
               </div>
             )}
             {coaches.length === 0 ? (
-              <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center', color: '#2a2a2a' }}>
+              <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center', color: colors.icon.muted }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><IconMic /></div>
-                <p style={{ fontSize: '13px', color: '#444' }}>{t('jcoach_aucun', lang)}</p>
+                <p style={{ fontSize: '13px', color: colors.text.disabled }}>{t('jcoach_aucun', lang)}</p>
               </div>
             ) : (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                 {coaches.length > 1 && (
                   <div style={{ marginBottom: '16px' }}>
                     <label style={labelStyle}>{t('jcoach_coach', lang)}</label>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                       {coaches.map(c => (
                         <button key={c.id} onClick={() => setCoachSelectionne(c)}
-                          style={{ background: coachSelectionne?.id === c.id ? '#f97316' : 'transparent', color: coachSelectionne?.id === c.id ? '#000' : '#555', border: `1px solid ${coachSelectionne?.id === c.id ? '#f97316' : '#2a2a2a'}`, padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
+                          style={{ background: coachSelectionne?.id === c.id ? colors.accent.orange : 'transparent', color: coachSelectionne?.id === c.id ? colors.black : colors.text.faint, border: `1px solid ${coachSelectionne?.id === c.id ? colors.accent.orange : colors.border.default}`, padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
                           {c.prenom} {c.nom}
                         </button>
                       ))}
@@ -3539,7 +3540,7 @@ function DashboardJoueur() {
                   {convCoach.length > 0 ? t('jcoach_nouveau_msg', lang) : `Écrire à ${coachSelectionne?.prenom || 'votre coach analyseur'}`}
                 </label>
                 {coachSent ? (
-                  <div style={{ textAlign: 'center', padding: '36px 0', color: '#f97316' }}>
+                  <div style={{ textAlign: 'center', padding: '36px 0', color: colors.accent.orange }}>
                     <p style={{ fontSize: '28px', marginBottom: '8px' }}>✓</p>
                     <p style={{ fontWeight: 700, fontSize: '14px' }}>{t('jcoach_msg_envoye', lang)}</p>
                   </div>
@@ -3547,9 +3548,9 @@ function DashboardJoueur() {
                   <>
                     <textarea value={messageCoach} onChange={e => setMessageCoach(e.target.value)}
                       placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
-                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                      style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                     <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
-                      style={{ marginTop: '12px', width: '100%', background: '#f97316', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                      style={{ marginTop: '12px', width: '100%', background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
                       {sendingCoach ? t('etat_envoi_cours', lang) : t('jcoach_envoyer', lang)}
                     </button>
                   </>
@@ -3568,7 +3569,7 @@ function DashboardJoueur() {
         {onglet === 'clubs' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t('jexp_titre', lang)}</h1>
-            <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>{t('jexp_desc', lang)}</p>
+            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jexp_desc', lang)}</p>
 
             {/* Filtres */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -3578,75 +3579,75 @@ function DashboardJoueur() {
                 { id: 'recruteurs', label: `🔍 ${t('jexp_filtre_rec', lang)} (${recruteursList.length})` },
               ].map(f => (
                 <button key={f.id} onClick={() => setExplorerFiltre(f.id)}
-                  style={{ padding: '7px 16px', borderRadius: '20px', border: `1px solid ${explorerFiltre === f.id ? '#4ade80' : '#2a2a2a'}`, background: explorerFiltre === f.id ? '#4ade8015' : 'transparent', color: explorerFiltre === f.id ? '#4ade80' : '#555', fontSize: '12px', fontWeight: explorerFiltre === f.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ padding: '7px 16px', borderRadius: '20px', border: `1px solid ${explorerFiltre === f.id ? colors.accent.green : colors.border.default}`, background: explorerFiltre === f.id ? colors.accent.green + alpha.subtle : 'transparent', color: explorerFiltre === f.id ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: explorerFiltre === f.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {f.label}
                 </button>
               ))}
             </div>
 
-            {clubsLoading && <p style={{ color: '#444', textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
+            {clubsLoading && <p style={{ color: colors.text.disabled, textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
               {/* Clubs / Éducateurs */}
               {(explorerFiltre === 'tous' || explorerFiltre === 'clubs') && clubsListe.map(edu => (
                 <div key={`edu-${edu.id}`}
-                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+                  style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
                   onClick={() => navigate(`/clubs/${edu.id}`)}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#4ade8040'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+                  onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
                   {edu.avatar_url
                     ? <img src={edu.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
-                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
+                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>
                         {(edu.club || edu.prenom || '?')[0].toUpperCase()}
                       </div>
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
-                      <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>{t('jexp_club_badge', lang)}</span>
+                      <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>{t('jexp_club_badge', lang)}</span>
                       <BadgeNote cibleId={edu.id} />
                     </div>
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint }}>
                       {[edu.niveau_equipe, edu.region].filter(Boolean).join(' · ')}
                     </p>
-                    {edu.description && <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
+                    {edu.description && <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
                   </div>
-                  <span style={{ color: '#4ade80', fontSize: '16px', flexShrink: 0 }}>→</span>
+                  <span style={{ color: colors.accent.green, fontSize: '16px', flexShrink: 0 }}>→</span>
                 </div>
               ))}
 
               {/* Recruteurs */}
               {(explorerFiltre === 'tous' || explorerFiltre === 'recruteurs') && recruteursList.map(rec => (
                 <div key={`rec-${rec.id}`}
-                  style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+                  style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
                   onClick={() => setRecruteurModal(rec)}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+                  onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
                   {rec.avatar_url
                     ? <img src={rec.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #60a5fa30', flexShrink: 0 }} />
-                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d0d1a', border: '2px solid #60a5fa20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: '#60a5fa', flexShrink: 0 }}>
+                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d0d1a', border: '2px solid #60a5fa20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.blue, flexShrink: 0 }}>
                         {(rec.prenom || '?')[0]}{(rec.nom || '')[0]}
                       </div>
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{rec.prenom} {rec.nom}</p>
-                      <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>{t('jexp_rec_badge', lang)}</span>
+                      <span style={{ background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>{t('jexp_rec_badge', lang)}</span>
                       <BadgeNote cibleId={rec.id} />
                     </div>
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#555' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint }}>
                       {[rec.type_recruteur, rec.club, rec.region].filter(Boolean).join(' · ')}
                     </p>
                   </div>
-                  <span style={{ color: '#60a5fa', fontSize: '16px', flexShrink: 0 }}>⭐</span>
+                  <span style={{ color: colors.accent.blue, fontSize: '16px', flexShrink: 0 }}>⭐</span>
                 </div>
               ))}
 
               {!clubsLoading && (explorerFiltre === 'tous' ? clubsListe.length + recruteursList.length : explorerFiltre === 'clubs' ? clubsListe.length : recruteursList.length) === 0 && (
-                <div style={{ background: '#111', border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px dashed #222', borderRadius: '16px', padding: '56px', textAlign: 'center' }}>
                   <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
-                  <p style={{ fontSize: '14px', color: '#444' }}>{t('jexp_aucun', lang)}</p>
+                  <p style={{ fontSize: '14px', color: colors.text.disabled }}>{t('jexp_aucun', lang)}</p>
                 </div>
               )}
             </div>
@@ -3660,27 +3661,27 @@ function DashboardJoueur() {
         {onglet === 'equipe' && (
           <div style={{ padding: isMobile ? '16px' : '24px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>{t('jeq_titre', lang)}</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
 
             {/* Code d'entrée */}
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px', marginBottom: '1.5rem' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px', marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔑 {t('jeq_rejoindre', lang)}</p>
-              <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>{t('jeq_rejoindre_desc', lang)}</p>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('jeq_rejoindre_desc', lang)}</p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
-                  style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '15px', fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase' }}
+                  style={{ flex: 1, background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '15px', fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase' }}
                   placeholder="CODE ÉQUIPE"
                   value={codeEquipe}
                   onChange={e => { setCodeEquipe(e.target.value.toUpperCase()); setCodeError(null); setCodeSuccess(false) }}
                   onKeyDown={e => e.key === 'Enter' && rejoindreEquipe()}
                 />
                 <button onClick={rejoindreEquipe} disabled={sendingCode || !codeEquipe.trim()}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: codeEquipe.trim() ? 1 : 0.4 }}>
+                  style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: codeEquipe.trim() ? 1 : 0.4 }}>
                   {sendingCode ? '...' : t('jeq_rejoindre_btn', lang)}
                 </button>
               </div>
-              {codeError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>⚠️ {codeError}</p>}
-              {codeSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>✅ {t('jeq_demande_envoyee', lang)}</p>}
+              {codeError && <p style={{ color: colors.accent.red, fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>⚠️ {codeError}</p>}
+              {codeSuccess && <p style={{ color: colors.accent.green, fontSize: '12px', marginTop: '8px', margin: '8px 0 0' }}>✅ {t('jeq_demande_envoyee', lang)}</p>}
             </div>
 
             {/* Mes affiliations */}
@@ -3691,7 +3692,7 @@ function DashboardJoueur() {
                   const pe = a.profil_educateur
                   const isAccepted = a.statut === 'accepte'
                   return (
-                    <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? '#2a2a2a' : '#2a2a2a'}` }}>
+                    <div key={a.id} style={{ background: colors.background.raised, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? colors.border.default : colors.border.default}` }}>
                       {isAccepted ? (
                         <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
@@ -3712,17 +3713,17 @@ function DashboardJoueur() {
                         </div>
                       ) : (
                         <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#555', flexShrink: 0 }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.background.raised, border: '2px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: colors.text.faint, flexShrink: 0 }}>
                             {pe?.prenom?.[0]}{pe?.nom?.[0]}
                           </div>
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{pe?.prenom} {pe?.nom}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{pe?.club} · {pe?.categorie} · {pe?.niveau_championnat}</p>
                           </div>
                           <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                            background: a.statut === 'en_attente' ? '#f59e0b15' : '#ef444415',
-                            color: a.statut === 'en_attente' ? '#f59e0b' : '#ef4444',
-                            border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : '#ef444430'}` }}>
+                            background: a.statut === 'en_attente' ? '#f59e0b15' : colors.accent.red + alpha.subtle,
+                            color: a.statut === 'en_attente' ? '#f59e0b' : colors.accent.red,
+                            border: `1px solid ${a.statut === 'en_attente' ? '#f59e0b30' : colors.accent.red + alpha.light}` }}>
                             {a.statut === 'en_attente' ? '⏳ En attente' : '✕ Refusé'}
                           </span>
                         </div>
@@ -3751,41 +3752,41 @@ function DashboardJoueur() {
                             const r = 44
                             const circ = 2 * Math.PI * r
                             const dash = (pct / 100) * circ
-                            const presColor = pct >= 80 ? '#4ade80' : pct >= 60 ? '#f59e0b' : '#ef4444'
+                            const presColor = pct >= 80 ? colors.accent.green : pct >= 60 ? '#f59e0b' : colors.accent.red
                             return (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '18px', paddingTop: '24px', borderTop: '1px solid #1a1a1a' }}>
 
                                 {/* Présence + Stats match côte à côte */}
                                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: '16px', alignItems: 'stretch' }}>
-                                  <div style={{ background: '#111', borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
+                                  <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '24px 20px', border: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_taux_presence', lang)}</p>
                                     <svg width="110" height="110" viewBox="0 0 100 100">
                                       <circle cx="50" cy="50" r={r} fill="none" stroke="#1e1e1e" strokeWidth="9" />
                                       <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
                                         strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
                                         style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
                                       <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
-                                      <text x="50" y="62" textAnchor="middle" fill="#444" fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                      <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
                                     </svg>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                      <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
-                                      {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: '#fbbf24', fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
+                                      <span style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>⭐ {s.points} pts</span>
+                                      {s.rankPoints?.rank === 1 && <span style={{ background: '#fbbf2412', border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px' }}>🏆 {t('aff_meilleur_equipe', lang)}</span>}
                                     </div>
                                   </div>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                                     {[
-                                      { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: '#60a5fa', rank: s.rankMatchs },
-                                      { label: t('comp_buts', lang), value: s.buts, color: '#4ade80', rank: s.rankButs },
-                                      { label: t('club_passes_dec_emoji', lang), value: s.passes, color: '#a78bfa', rank: s.rankPasses },
+                                      { label: t('jp_matchs_joues', lang), value: s.matchsJoues, color: colors.accent.blue, rank: s.rankMatchs },
+                                      { label: t('comp_buts', lang), value: s.buts, color: colors.accent.green, rank: s.rankButs },
+                                      { label: t('club_passes_dec_emoji', lang), value: s.passes, color: colors.accent.purpleLight, rank: s.rankPasses },
                                       { label: t('jp_clean_sheets', lang), value: s.cleanSheets, color: '#34d399', rank: s.rankClean },
                                     ].map(stat => (
-                                      <div key={stat.label} style={{ background: '#111', borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
+                                      <div key={stat.label} style={{ background: colors.background.surface, borderRadius: '18px', padding: '18px 16px', border: `1px solid ${stat.color}18`, position: 'relative', overflow: 'hidden' }}>
                                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${stat.color}, transparent)` }} />
-                                        <p style={{ margin: '0 0 10px', fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
+                                        <p style={{ margin: '0 0 10px', fontSize: '10px', color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</p>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
                                           <span style={{ fontSize: '40px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</span>
                                           {stat.rank?.rank && stat.rank?.total > 1 && (
-                                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? '#fbbf2420' : '#ffffff08', color: stat.rank.rank === 1 ? '#fbbf24' : '#555', border: `1px solid ${stat.rank.rank === 1 ? '#fbbf2440' : '#1e1e1e'}` }}>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px', background: stat.rank.rank === 1 ? colors.accent.amber + alpha.soft : '#ffffff08', color: stat.rank.rank === 1 ? colors.accent.amber : colors.text.faint, border: `1px solid ${stat.rank.rank === 1 ? colors.accent.amber + alpha.medium : '#1e1e1e'}` }}>
                                               #{stat.rank.rank}/{stat.rank.total}
                                             </span>
                                           )}
@@ -3797,28 +3798,28 @@ function DashboardJoueur() {
 
                                 {/* Pills minutes/cartons */}
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: '12px', color: '#60a5fa', background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
+                                  <span style={{ fontSize: '12px', color: colors.accent.blue, background: '#60a5fa12', border: '1px solid #60a5fa25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>⏱ {s.minutesJouees} min</span>
                                   {s.jaunes > 0 && <span style={{ fontSize: '12px', color: '#f59e0b', background: '#f59e0b12', border: '1px solid #f59e0b25', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟨 {s.jaunes}</span>}
-                                  {s.rouges > 0 && <span style={{ fontSize: '12px', color: '#ef4444', background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
+                                  {s.rouges > 0 && <span style={{ fontSize: '12px', color: colors.accent.red, background: '#ef444412', border: '1px solid #ef444425', padding: '5px 14px', borderRadius: '20px', fontWeight: 600 }}>🟥 {s.rouges}</span>}
                                 </div>
 
                                 {/* Présence mensuelle + Avis éducateur côte à côte */}
                                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                                   {s.presenceMensuelle?.length > 0 && (
-                                    <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
-                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
+                                    <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                      <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                                           const [y, m] = month.split('-')
                                           const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
-                                          const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                                          const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
                                           return (
                                             <div key={month}>
                                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                <span style={{ fontSize: '11px', color: '#666', textTransform: 'capitalize' }}>{label}</span>
-                                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: '#333', fontWeight: 400 }}>({present}/{total})</span></span>
+                                                <span style={{ fontSize: '11px', color: colors.text.dim, textTransform: 'capitalize' }}>{label}</span>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span></span>
                                               </div>
-                                              <div style={{ height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                              <div style={{ height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
                                               </div>
                                             </div>
@@ -3827,20 +3828,20 @@ function DashboardJoueur() {
                                       </div>
                                     </div>
                                   )}
-                                  <div style={{ background: '#111', borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
-                                    <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
+                                  <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: '1px solid #1a1a1a' }}>
+                                    <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
                                     {s.noteEdu ? (
                                       <>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
                                           {[
-                                            { label: t('aff_technique', lang), value: s.noteEdu.technique, color: '#60a5fa' },
-                                            { label: t('aff_physique', lang), value: s.noteEdu.physique, color: '#4ade80' },
-                                            { label: t('aff_mental', lang), value: s.noteEdu.mental, color: '#a78bfa' },
+                                            { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
+                                            { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
+                                            { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
                                             { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
                                           ].map(n => (
                                             <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                              <span style={{ fontSize: '11px', color: '#555', width: '70px', flexShrink: 0 }}>{n.label}</span>
-                                              <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                              <span style={{ fontSize: '11px', color: colors.text.faint, width: '70px', flexShrink: 0 }}>{n.label}</span>
+                                              <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
                                               </div>
                                               <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
@@ -3848,32 +3849,32 @@ function DashboardJoueur() {
                                           ))}
                                         </div>
                                         {s.noteEdu.commentaire && (
-                                          <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
+                                          <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: '1px solid #1a1a1a', paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
                                         )}
                                       </>
-                                    ) : <p style={{ margin: 0, fontSize: '12px', color: '#333', fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
+                                    ) : <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
                                   </div>
                                 </div>
 
                                 {/* Prochains matchs */}
                                 {s.prochainMatchs?.length > 0 && (
                                   <div>
-                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
+                                    <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_prochains_matchs', lang)}</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '10px' }}>
                                       {s.prochainMatchs.map((m, i) => {
                                         const d = new Date(m.date)
                                         return (
-                                          <div key={i} style={{ background: '#111', borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                          <div key={i} style={{ background: colors.background.surface, borderRadius: '16px', padding: '14px 18px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <div style={{ background: 'linear-gradient(135deg, #4ade8020, #4ade8008)', border: '1px solid #4ade8030', borderRadius: '12px', padding: '8px 12px', textAlign: 'center', flexShrink: 0, minWidth: '50px' }}>
-                                              <p style={{ margin: 0, fontSize: '9px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
-                                              <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: '#4ade80', lineHeight: 1 }}>{d.getDate()}</p>
+                                              <p style={{ margin: 0, fontSize: '9px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' })}</p>
+                                              <p style={{ margin: '2px 0', fontSize: '22px', fontWeight: 800, color: colors.accent.green, lineHeight: 1 }}>{d.getDate()}</p>
                                               <p style={{ margin: 0, fontSize: '9px', color: '#4ade8070', textTransform: 'uppercase' }}>{d.toLocaleDateString(localeOf(lang), { month: 'short' })}</p>
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                              <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {m.equipe_domicile} <span style={{ color: '#333', fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
+                                              <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {m.equipe_domicile} <span style={{ color: colors.border.strong, fontWeight: 400, fontSize: '12px' }}>vs</span> {m.equipe_exterieur}
                                               </p>
-                                              <p style={{ margin: 0, fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                              <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {[m.heure, m.competition, m.lieu ? `📍 ${m.lieu}` : ''].filter(Boolean).join(' · ')}
                                               </p>
                                             </div>
@@ -3886,32 +3887,32 @@ function DashboardJoueur() {
 
                                 {/* Classements — pleine largeur */}
                                 <div>
-                                  <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#444', letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
+                                  <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
                                     {[
-                                      { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: '#4ade80' },
-                                      { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: '#60a5fa' },
-                                      { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: '#fbbf24' },
-                                      { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: '#a78bfa' },
+                                      { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: colors.accent.green },
+                                      { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: colors.accent.blue },
+                                      { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: colors.accent.amber },
+                                      { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: colors.accent.purpleLight },
                                     ].map(({ title, icon, data, color }) => (
-                                      <div key={title} style={{ background: '#111', borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                                      <div key={title} style={{ background: colors.background.surface, borderRadius: '18px', padding: '16px', border: '1px solid #1a1a1a', position: 'relative', overflow: 'hidden' }}>
                                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                                           <span>{icon}</span>
-                                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
                                         </div>
                                         {data?.length > 0 ? data.slice(0, 5).map((row, i) => (
                                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', background: row.isMe ? `${color}10` : 'transparent', borderRadius: '8px', padding: '5px 6px', border: row.isMe ? `1px solid ${color}25` : '1px solid transparent' }}>
-                                            <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? '#fbbf24' : '#2a2a2a', width: '14px', flexShrink: 0 }}>{i + 1}</span>
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : '#1a1a1a', border: `1px solid ${row.isMe ? color + '40' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>
+                                            <span style={{ fontSize: '10px', fontWeight: 800, color: i === 0 ? colors.accent.amber : colors.icon.muted, width: '14px', flexShrink: 0 }}>{i + 1}</span>
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: row.isMe ? `${color}20` : colors.background.raised, border: `1px solid ${row.isMe ? color + '40' : colors.border.default}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>
                                               {row.nom.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                             </div>
-                                            <span style={{ fontSize: '11px', color: row.isMe ? color : '#666', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
+                                            <span style={{ fontSize: '11px', color: row.isMe ? color : colors.text.dim, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.isMe ? 700 : 400 }}>
                                               {row.isMe ? t('jcoach_toi', lang) : row.nom.split(' ')[0]}
                                             </span>
-                                            <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : '#555', flexShrink: 0 }}>{row.val}</span>
+                                            <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>{row.val}</span>
                                           </div>
-                                        )) : <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>}
+                                        )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
                                       </div>
                                     ))}
                                   </div>
@@ -3919,7 +3920,7 @@ function DashboardJoueur() {
 
                                 {s.ligueUrl && (
                                   <a href={s.ligueUrl} target="_blank" rel="noopener noreferrer"
-                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: '#fbbf24', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', border: '1px solid #fbbf2430', background: 'linear-gradient(135deg, #fbbf2410, #f59e0b08)', color: colors.accent.amber, fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
                                     🏆 {t('aff_classement_championnat', lang)} →
                                   </a>
                                 )}
@@ -3929,7 +3930,7 @@ function DashboardJoueur() {
 
                           {/* Joueur lié mais pas encore dans l'effectif */}
                           {!a.equipe_joueur_id && (
-                            <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#444', fontStyle: 'italic' }}>
+                            <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.disabled, fontStyle: 'italic' }}>
                               ⏳ {t('aff_educateur_doit_lier', lang)}
                             </p>
                           )}
@@ -3942,7 +3943,7 @@ function DashboardJoueur() {
             )}
 
             {mesAffiliations.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '3rem', color: '#333', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '3rem', color: colors.border.strong, fontSize: '13px' }}>
                 <p style={{ fontSize: '32px', marginBottom: '12px' }}>🏟️</p>
                 <p>Tu n'es encore affilié à aucune équipe.<br/>Entre un code d'équipe pour commencer.</p>
               </div>
@@ -3955,20 +3956,20 @@ function DashboardJoueur() {
       {/* Modal notation éducateur */}
       {eduNote && (
         <div onClick={() => setEduNote(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ Évaluer {eduNote.profil_educateur?.prenom} {eduNote.profil_educateur?.nom}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Ton évaluation est anonyme et aide à améliorer la qualité de l'encadrement.</p>
+                <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>Ton évaluation est anonyme et aide à améliorer la qualité de l'encadrement.</p>
               </div>
-              <button onClick={() => setEduNote(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setEduNote(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             {/* Saison */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <label style={{ fontSize: '12px', color: '#555', flexShrink: 0 }}>Saison évaluée :</label>
+              <label style={{ fontSize: '12px', color: colors.text.faint, flexShrink: 0 }}>Saison évaluée :</label>
               <select value={noteSaison} onChange={e => setNoteSaison(e.target.value)}
-                style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
                 {['2024-2025','2023-2024','2022-2023'].map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -3976,16 +3977,16 @@ function DashboardJoueur() {
             {/* 6 catégories */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
               {CRITERES_EDU_KEYS.map(cat => (
-                <div key={cat.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
+                <div key={cat.key} style={{ background: colors.background.surface, borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
                   <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {cat.criteres.map(c => (
                       <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                        <span style={{ flex: 1, fontSize: '12px', color: colors.text.secondary }}>{c.label}</span>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           {[1,2,3,4,5].map(n => (
                             <button key={n} onClick={() => setNoteCriteres(prev => ({ ...prev, [c.key]: n }))}
-                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (noteCriteres[c.key] || 0) >= n ? cat.color : '#2a2a2a', padding: '2px', lineHeight: 1 }}>
+                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (noteCriteres[c.key] || 0) >= n ? cat.color : colors.icon.muted, padding: '2px', lineHeight: 1 }}>
                               ★
                             </button>
                           ))}
@@ -4002,17 +4003,17 @@ function DashboardJoueur() {
             <div style={{ marginBottom: '14px' }}>
               <textarea value={noteCommentaire} onChange={e => setNoteCommentaire(e.target.value)}
                 placeholder="Commentaire (optionnel)..."
-                style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', fontFamily: 'Inter, sans-serif', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
             </div>
 
             {/* Visibilité */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#aaa', marginBottom: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary, marginBottom: '16px' }}>
               <input type="checkbox" checked={notePublic} onChange={e => setNotePublic(e.target.checked)} />
               Rendre mon commentaire public (visible par les recruteurs)
             </label>
 
             <button onClick={soumettreNoteEdu} disabled={savingNote || CRITERES_EDU_KEYS.flatMap(c => c.criteres).some(c => !noteCriteres[c.key])}
-              style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU_KEYS.flatMap(c => c.criteres).every(c => noteCriteres[c.key]) ? 1 : 0.4 }}>
+              style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU_KEYS.flatMap(c => c.criteres).every(c => noteCriteres[c.key]) ? 1 : 0.4 }}>
               {savingNote ? '⏳ Envoi...' : '✅ Soumettre l\'évaluation'}
             </button>
           </div>
@@ -4022,52 +4023,52 @@ function DashboardJoueur() {
       {/* Modal profil recruteur */}
       {recruteurModal && (
         <div onClick={() => setRecruteurModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #222', borderRadius: '20px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '20px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                 {recruteurModal.avatar_url
                   ? <img src={recruteurModal.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
-                  : <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80' }}>
+                  : <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: colors.accent.green }}>
                       {(recruteurModal.prenom || '?')[0]}{(recruteurModal.nom || '?')[0]}
                     </div>
                 }
                 <div>
                   <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    {recruteurModal.type_recruteur && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{recruteurModal.type_recruteur}</span>}
+                    {recruteurModal.type_recruteur && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{recruteurModal.type_recruteur}</span>}
                     <BadgeNote cibleId={recruteurModal.id} />
                   </div>
                 </div>
               </div>
-              <button onClick={() => setRecruteurModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setRecruteurModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-              {recruteurModal.club && <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: '#555' }}>🏟️ Club / Agence</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.club}</p></div>}
-              {recruteurModal.region && <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: '#555' }}>📍 Région</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.region}</p></div>}
+              {recruteurModal.club && <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>🏟️ Club / Agence</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.club}</p></div>}
+              {recruteurModal.region && <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>📍 Région</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.region}</p></div>}
             </div>
 
             {recruteurModal.description && (
-              <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
-                <p style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>Présentation</p>
+              <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
+                <p style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>Présentation</p>
                 <p style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6, margin: 0 }}>{recruteurModal.description}</p>
               </div>
             )}
 
             {recruteurModal.recherche_profil && (
-              <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '14px' }}>
+              <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '14px' }}>
                 <p style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>🔍 Ce qu'il recherche</p>
                 <p style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6, margin: 0 }}>{recruteurModal.recherche_profil}</p>
               </div>
             )}
 
             {!recruteurModal.description && !recruteurModal.recherche_profil && (
-              <p style={{ fontSize: '13px', color: '#444', textAlign: 'center', padding: '1rem 0' }}>Ce recruteur n'a pas encore complété son profil.</p>
+              <p style={{ fontSize: '13px', color: colors.text.disabled, textAlign: 'center', padding: '1rem 0' }}>Ce recruteur n'a pas encore complété son profil.</p>
             )}
 
             <button
               onClick={() => { setNotationCible(recruteurModal); setRecruteurModal(null) }}
-              style={{ width: '100%', marginTop: '1rem', background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ width: '100%', marginTop: '1rem', background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               ⭐ {(() => {
                 const t = (recruteurModal?.type_recruteur || '').toLowerCase()
                 if (t.includes('club') || t.includes('directeur')) return 'Noter ce club'
