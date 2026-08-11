@@ -35,8 +35,8 @@ export const colors = {
     primary: '#fff',
     secondary: '#aaa',    // (131)
     muted: '#888',
-    dim: '#666',          // (169)
-    faint: '#555',        // légendes/labels (419 — la couleur de texte la plus utilisée après le vert)
+    dim: '#999',          // (169) — #666 à l'origine, remonté à #999 pour le contraste WCAG AA sur fond #111
+    faint: '#888',        // légendes/labels (419 — la couleur de texte la plus utilisée après le vert) — #555 à l'origine, remonté à #888 pour le contraste WCAG AA sur fond #111
     disabled: '#444',
     ghost: '#333',        // texte quasi invisible (placeholders désactivés)
   },
