@@ -30,9 +30,8 @@ const formVide = () => ({
   cpa_offensifs: [''],
   cpa_defensifs: [''],
   tireurs: [''],
-  schema_tactique: { joueurs: [], ballon: null, fleches: [] },
-  schema_cpa_offensif: { joueurs: [], ballon: null, fleches: [] },
-  schema_cpa_defensif: { joueurs: [], ballon: null, fleches: [] },
+  schema_cpa_offensif: { etapes: [{ joueurs: [], ballon: null }] },
+  schema_cpa_defensif: { etapes: [{ joueurs: [], ballon: null }] },
 })
 
 // Liste de points éditable (animation avec/sans ballon, CPA, tireurs) — au
@@ -57,6 +56,12 @@ function ListeChamp({ valeurs, onChange, onAjouter, onSupprimer, placeholder, in
       </button>
     </div>
   )
+}
+
+// Un board TacticalBoard (format multi-étapes) est "rempli" dès qu'une de
+// ses étapes contient au moins un joueur ou le ballon.
+function boardEstRempli(board) {
+  return (board?.etapes || []).some(e => (e.joueurs || []).length > 0 || e.ballon)
 }
 
 // Portail vers document.body (même mécanisme que FicheSeancePrint plus haut
@@ -138,9 +143,8 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: form.cpa_offensifs.filter(Boolean),
       cpa_defensifs: form.cpa_defensifs.filter(Boolean),
       tireurs: form.tireurs.filter(Boolean),
-      schema_tactique: form.schema_tactique || { joueurs: [], ballon: null, fleches: [] },
-      schema_cpa_offensif: form.schema_cpa_offensif || { joueurs: [], ballon: null, fleches: [] },
-      schema_cpa_defensif: form.schema_cpa_defensif || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_offensif: form.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
+      schema_cpa_defensif: form.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
     }
     const res = ficheCourante?.id
       ? await supabase.from('causeries').update(payload).eq('id', ficheCourante.id).select().single()
@@ -182,9 +186,8 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
       cpa_offensifs: f.cpa_offensifs?.length ? f.cpa_offensifs : [''],
       cpa_defensifs: f.cpa_defensifs?.length ? f.cpa_defensifs : [''],
       tireurs: f.tireurs?.length ? f.tireurs : [''],
-      schema_tactique: f.schema_tactique || { joueurs: [], ballon: null, fleches: [] },
-      schema_cpa_offensif: f.schema_cpa_offensif || { joueurs: [], ballon: null, fleches: [] },
-      schema_cpa_defensif: f.schema_cpa_defensif || { joueurs: [], ballon: null, fleches: [] },
+      schema_cpa_offensif: f.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
+      schema_cpa_defensif: f.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
     })
     setVue('form')
   }
@@ -407,14 +410,6 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
           </div>
         </div>
 
-        <div style={card}>
-          {sectionTitle('07', '#f59e0b', 'Schéma tactique (demi-terrain)')}
-          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>
-            Place les joueurs, le ballon et des flèches sur le demi-terrain. Utile pour les positions de départ ou une animation.
-          </p>
-          <TacticalBoard data={form.schema_tactique} onChange={val => set('schema_tactique', val)} />
-        </div>
-
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
           <button onClick={() => setVue('liste')} style={btnO}>Annuler</button>
           <button onClick={sauvegarder} disabled={saving} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
@@ -515,7 +510,7 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
               ))}
             </div>
           )}
-          {(f.schema_cpa_offensif?.joueurs?.length > 0 || f.schema_cpa_offensif?.fleches?.length > 0 || f.schema_cpa_offensif?.ballon) && (
+          {boardEstRempli(f.schema_cpa_offensif) && (
             <div style={{ marginBottom: '14px' }}>
               <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma offensif</p>
               <TacticalBoard data={f.schema_cpa_offensif} onChange={() => {}} readOnly />
@@ -532,7 +527,7 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
               ))}
             </div>
           )}
-          {(f.schema_cpa_defensif?.joueurs?.length > 0 || f.schema_cpa_defensif?.fleches?.length > 0 || f.schema_cpa_defensif?.ballon) && (
+          {boardEstRempli(f.schema_cpa_defensif) && (
             <div style={{ marginBottom: '14px' }}>
               <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma défensif</p>
               <TacticalBoard data={f.schema_cpa_defensif} onChange={() => {}} readOnly />
@@ -551,13 +546,6 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
           )}
         </div>
       </div>
-
-      {(f.schema_tactique?.joueurs?.length > 0 || f.schema_tactique?.fleches?.length > 0 || f.schema_tactique?.ballon) && (
-        <div style={{ padding: '24px', borderTop: '1px solid #222' }}>
-          <p style={{ margin: '0 0 14px', color: '#f59e0b', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>📐 Schéma tactique</p>
-          <TacticalBoard data={f.schema_tactique} onChange={() => {}} readOnly />
-        </div>
-      )}
 
       <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>Digital Football — Fiche préparée par {equipeNom || "l'équipe"}</p>

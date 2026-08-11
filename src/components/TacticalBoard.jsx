@@ -3,36 +3,66 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 const W = 520
 const H = 340
 
-const COLORS = ['#fbbf24', '#4ade80', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#fff']
-const ARROW_MARKERS = {
-  '#fbbf24': 'yw', '#4ade80': 'gn', '#60a5fa': 'bl',
-  '#f87171': 'rd', '#c084fc': 'pp', '#fb923c': 'og', '#fff': 'wh'
+const emptyEtape = () => ({ joueurs: [], ballon: null })
+const EMPTY_DATA = { etapes: [emptyEtape()] }
+
+const maxId = (etapes) => {
+  let m = 0
+  etapes.forEach(e => (e.joueurs || []).forEach(j => { if (j.id > m) m = j.id }))
+  return m
 }
 
-const EMPTY_DATA = { joueurs: [], ballon: null, fleches: [] }
-
+// Board tactique multi-étapes : chaque étape est un instantané (joueurs +
+// ballon). "+ Étape" clone l'étape courante (mêmes ids, donc même joueurs)
+// pour que l'utilisateur les fasse glisser vers leurs nouvelles positions —
+// "Animer" rejoue ensuite les étapes dans l'ordre en faisant réellement
+// bouger les jetons d'une position à l'autre (transition CSS sur leur
+// position), plutôt que de simples flèches statiques.
 export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const svgRef = useRef(null)
-  const d = data && typeof data === 'object' ? data : EMPTY_DATA
-  const joueurs = Array.isArray(d.joueurs) ? d.joueurs : []
-  const ballon = d.ballon || null
-  const fleches = Array.isArray(d.fleches) ? d.fleches : []
+  const d = data && Array.isArray(data.etapes) && data.etapes.length ? data : EMPTY_DATA
+  const etapes = d.etapes
+
+  const [etapeIdx, setEtapeIdx] = useState(0)
+  const idx = Math.min(etapeIdx, etapes.length - 1)
+  const etape = etapes[idx] || emptyEtape()
+  const joueurs = Array.isArray(etape.joueurs) ? etape.joueurs : []
+  const ballon = etape.ballon || null
 
   const [mode, setMode] = useState('select')
-  // modes: select | add_nous | add_adv | add_ball | arrow
   const [drag, setDrag] = useState(null) // { type:'joueur'|'ballon', id }
-  const [arrowFrom, setArrowFrom] = useState(null)
-  const [mouse, setMouse] = useState(null)
   const [editId, setEditId] = useState(null)
   const [editVal, setEditVal] = useState('')
-  const [selArrow, setSelArrow] = useState(null)
-  const [arrowColor, setArrowColor] = useState('#fbbf24')
-  const [animating, setAnimating] = useState(false)
-  const [animIdx, setAnimIdx] = useState(-1)
-  const animTimer = useRef(null)
-  const nextId = useRef(1)
+  const [serieN, setSerieN] = useState(5)
+  const [playIdx, setPlayIdx] = useState(null) // étape affichée pendant la lecture, null = édition
+  const playTimer = useRef(null)
+  const nextId = useRef(maxId(etapes) + 1)
 
-  const up = (patch) => onChange({ ...EMPTY_DATA, joueurs, ballon, fleches, ...patch })
+  const displayIdx = playIdx !== null ? playIdx : idx
+  const displayEtape = etapes[displayIdx] || emptyEtape()
+  const displayJoueurs = Array.isArray(displayEtape.joueurs) ? displayEtape.joueurs : []
+  const displayBallon = displayEtape.ballon || null
+
+  const majEtape = (patch) => {
+    const next = etapes.map((e, i) => i === idx ? { ...emptyEtape(), ...e, ...patch } : e)
+    onChange({ etapes: next })
+  }
+
+  const ajouterEtape = () => {
+    if (readOnly || playIdx !== null) return
+    const clone = { joueurs: joueurs.map(j => ({ ...j })), ballon: ballon ? { ...ballon } : null }
+    const next = [...etapes, clone]
+    onChange({ etapes: next })
+    setPlayIdx(null)
+    setEtapeIdx(next.length - 1)
+  }
+
+  const supprimerEtape = (i) => {
+    if (readOnly || playIdx !== null || etapes.length <= 1) return
+    const next = etapes.filter((_, ix) => ix !== i)
+    onChange({ etapes: next })
+    setEtapeIdx(p => Math.min(p, next.length - 1))
+  }
 
   const svgPos = (e) => {
     const r = svgRef.current?.getBoundingClientRect()
@@ -46,41 +76,52 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   }
 
   const clickSVG = (e) => {
-    if (readOnly || drag) return
+    if (readOnly || drag || playIdx !== null) return
     if (e.target.closest('.dot')) return
     const p = svgPos(e)
     if (mode === 'add_nous' || mode === 'add_adv') {
       const equipe = mode === 'add_nous' ? 'nous' : 'adverse'
       const num = joueurs.filter(j => j.equipe === equipe).length + 1
-      up({ joueurs: [...joueurs, { id: nextId.current++, x: p.x, y: p.y, equipe, nom: String(num) }] })
+      majEtape({ joueurs: [...joueurs, { id: nextId.current++, x: p.x, y: p.y, equipe, nom: String(num) }] })
     } else if (mode === 'add_ball') {
-      up({ ballon: { x: p.x, y: p.y } })
+      majEtape({ ballon: { x: p.x, y: p.y } })
       setMode('select')
-    } else if (mode === 'arrow') {
-      if (!arrowFrom) {
-        setArrowFrom(p)
-      } else {
-        const maxSeq = fleches.length ? Math.max(...fleches.map(f => f.seq || 0)) : 0
-        up({ fleches: [...fleches, { id: nextId.current++, x1: arrowFrom.x, y1: arrowFrom.y, x2: p.x, y2: p.y, c: arrowColor, seq: maxSeq + 1 }] })
-        setArrowFrom(null)
-      }
     }
   }
 
+  const ajouterSerie = (equipe) => {
+    if (readOnly || playIdx !== null) return
+    const n = Math.max(1, Math.min(15, parseInt(serieN, 10) || 1))
+    const deja = joueurs.filter(j => j.equipe === equipe).length
+    const baseY = equipe === 'nous' ? H - 55 : 55
+    const margin = 55
+    const usable = W - margin * 2
+    const nouveaux = Array.from({ length: n }, (_, k) => ({
+      id: nextId.current++,
+      x: n === 1 ? W / 2 : margin + (usable * k) / (n - 1),
+      y: baseY,
+      equipe,
+      nom: String(deja + k + 1),
+    }))
+    majEtape({ joueurs: [...joueurs, ...nouveaux] })
+  }
+
   const onMove = useCallback((e) => {
+    if (playIdx !== null || !drag) return
     const p = svgPos(e)
-    setMouse(p)
-    if (!drag) return
-    if (drag.type === 'joueur') {
-      up({ joueurs: joueurs.map(j => j.id === drag.id ? { ...j, x: p.x, y: p.y } : j) })
-    } else {
-      up({ ballon: { x: p.x, y: p.y } })
-    }
+    const next = etapes.map((et, i) => {
+      if (i !== idx) return et
+      if (drag.type === 'joueur') {
+        return { ...et, joueurs: (et.joueurs || []).map(j => j.id === drag.id ? { ...j, x: p.x, y: p.y } : j) }
+      }
+      return { ...et, ballon: { x: p.x, y: p.y } }
+    })
+    onChange({ etapes: next })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag, joueurs, ballon, fleches])
+  }, [drag, idx, etapes, playIdx])
 
   const startDrag = (e, type, id) => {
-    if (readOnly || mode !== 'select') return
+    if (readOnly || mode !== 'select' || playIdx !== null) return
     e.stopPropagation()
     setDrag({ type, id })
   }
@@ -88,42 +129,36 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const stopDrag = () => setDrag(null)
 
   const delJoueur = (e, id) => {
+    if (readOnly || playIdx !== null) return
     e.preventDefault(); e.stopPropagation()
-    up({ joueurs: joueurs.filter(j => j.id !== id) })
-  }
-
-  const delFleche = (id) => {
-    up({ fleches: fleches.filter(f => f.id !== id) })
-    setSelArrow(null)
+    majEtape({ joueurs: joueurs.filter(j => j.id !== id) })
   }
 
   const beginEdit = (e, j) => {
-    if (readOnly || mode !== 'select') return
+    if (readOnly || mode !== 'select' || playIdx !== null) return
     e.stopPropagation()
     setEditId(j.id); setEditVal(j.nom)
   }
 
   const saveEdit = () => {
-    up({ joueurs: joueurs.map(j => j.id === editId ? { ...j, nom: editVal || j.nom } : j) })
+    majEtape({ joueurs: joueurs.map(j => j.id === editId ? { ...j, nom: editVal || j.nom } : j) })
     setEditId(null)
   }
 
-  const sorted = [...fleches].sort((a, b) => (a.seq || 0) - (b.seq || 0))
-
   const playAnim = () => {
-    if (animating) { clearTimeout(animTimer.current); setAnimating(false); setAnimIdx(-1); return }
-    if (!sorted.length) return
-    setAnimating(true); setAnimIdx(0)
+    if (playIdx !== null) { clearTimeout(playTimer.current); setPlayIdx(null); return }
+    if (etapes.length < 2) return
     let i = 0
-    const next = () => {
+    setPlayIdx(0)
+    const step = () => {
       i++
-      if (i < sorted.length) { setAnimIdx(i); animTimer.current = setTimeout(next, 1100) }
-      else { animTimer.current = setTimeout(() => { setAnimating(false); setAnimIdx(-1) }, 900) }
+      if (i < etapes.length) { setPlayIdx(i); playTimer.current = setTimeout(step, 1400) }
+      else { playTimer.current = setTimeout(() => setPlayIdx(null), 1200) }
     }
-    animTimer.current = setTimeout(next, 1100)
+    playTimer.current = setTimeout(step, 1400)
   }
 
-  useEffect(() => () => clearTimeout(animTimer.current), [])
+  useEffect(() => () => clearTimeout(playTimer.current), [])
 
   const tb = (active, c = '#9ca3af') => ({
     background: active ? `${c}22` : '#0d0d0d',
@@ -132,50 +167,67 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
   })
 
-  const mid = (f) => ({ x: (f.x1 + f.x2) / 2, y: (f.y1 + f.y2) / 2 })
-  const flen = (f) => Math.hypot(f.x2 - f.x1, f.y2 - f.y1)
+  const showEtapesRow = !readOnly || etapes.length > 1
 
   return (
     <div>
+      {showEtapesRow && (
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px', alignItems: 'center' }}>
+          <span style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', marginRight: '2px' }}>Étapes</span>
+          {etapes.map((_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+              <button
+                onClick={() => { setPlayIdx(null); setEtapeIdx(i) }}
+                disabled={playIdx !== null}
+                style={{
+                  background: displayIdx === i ? 'rgba(167,139,250,0.18)' : '#0d0d0d',
+                  border: `1px solid ${displayIdx === i ? '#a78bfa' : '#1f2937'}`,
+                  borderRadius: !readOnly && etapes.length > 1 ? '6px 0 0 6px' : '6px',
+                  color: displayIdx === i ? '#a78bfa' : '#9ca3af',
+                  fontSize: '11px', fontWeight: 700, padding: '5px 9px',
+                  cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif',
+                }}
+              >{i + 1}</button>
+              {!readOnly && etapes.length > 1 && (
+                <button onClick={() => supprimerEtape(i)} disabled={playIdx !== null}
+                  style={{ background: '#0d0d0d', border: '1px solid #1f2937', borderLeft: 'none', borderRadius: '0 6px 6px 0', color: '#6b7280', fontSize: '10px', padding: '5px 6px', cursor: playIdx !== null ? 'default' : 'pointer' }}>×</button>
+              )}
+            </div>
+          ))}
+          {!readOnly && (
+            <button onClick={ajouterEtape} disabled={playIdx !== null}
+              style={{ background: 'none', border: '1px dashed #374151', borderRadius: '6px', color: '#a78bfa', fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>+ Étape</button>
+          )}
+          {etapes.length > 1 && (
+            <button onClick={playAnim} style={{ ...tb(playIdx !== null, '#a78bfa'), marginLeft: 'auto' }}>
+              {playIdx !== null ? '⏹ Stop' : '▶ Animer le jeu'}
+            </button>
+          )}
+        </div>
+      )}
+
       {!readOnly && (
         <>
           <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '6px', alignItems: 'center' }}>
-            <button style={tb(mode === 'select')} onClick={() => { setMode('select'); setArrowFrom(null) }}>↖ Sélect</button>
+            <button style={tb(mode === 'select')} onClick={() => setMode('select')}>↖ Sélect</button>
+            <button style={tb(mode === 'add_nous', '#4ade80')} onClick={() => setMode('add_nous')}>🟢 +Nous</button>
+            <button style={tb(mode === 'add_adv', '#f87171')} onClick={() => setMode('add_adv')}>🔴 +Adv</button>
+            <button style={tb(mode === 'add_ball', '#fde68a')} onClick={() => setMode('add_ball')}>⚽ Ballon</button>
             <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
-            <button style={tb(mode === 'add_nous', '#4ade80')} onClick={() => { setMode('add_nous'); setArrowFrom(null) }}>🟢 +Nous</button>
-            <button style={tb(mode === 'add_adv', '#f87171')} onClick={() => { setMode('add_adv'); setArrowFrom(null) }}>🔴 +Adv</button>
-            <button style={tb(mode === 'add_ball', '#fde68a')} onClick={() => { setMode('add_ball'); setArrowFrom(null) }}>⚽ Ballon</button>
-            <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
-            <button style={tb(mode === 'arrow', '#60a5fa')} onClick={() => { setMode('arrow'); setArrowFrom(null) }}>
-              {mode === 'arrow' && arrowFrom ? '▶ clic arrivée…' : '→ Flèche'}
-            </button>
-            {mode === 'arrow' && (
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                {COLORS.map(c => (
-                  <button key={c} onClick={() => setArrowColor(c)} style={{ width: 16, height: 16, background: c, border: arrowColor === c ? '2px solid #fff' : '1px solid #111', borderRadius: '50%', cursor: 'pointer', padding: 0 }} />
-                ))}
-              </div>
-            )}
-            <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
-            <button
-              onClick={playAnim}
-              disabled={!fleches.length}
-              style={{ ...tb(animating, '#a78bfa'), opacity: fleches.length ? 1 : 0.4 }}
-            >
-              {animating ? '⏹ Stop' : '▶ Animer'}
-            </button>
-            {(joueurs.length || ballon || fleches.length) ? (
-              <button onClick={() => { up({ joueurs: [], ballon: null, fleches: [] }); setArrowFrom(null) }}
-                style={{ ...tb(false), marginLeft: 'auto', color: '#6b7280' }}>↺ Reset</button>
+            <input type="number" min={1} max={15} value={serieN} onChange={e => setSerieN(e.target.value)}
+              style={{ width: '36px', background: '#0d0d0d', border: '1px solid #1f2937', borderRadius: '6px', color: '#fff', fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
+            <button style={tb(false, '#4ade80')} onClick={() => ajouterSerie('nous')}>+ Série 🟢</button>
+            <button style={tb(false, '#f87171')} onClick={() => ajouterSerie('adverse')}>+ Série 🔴</button>
+            {(joueurs.length || ballon) ? (
+              <button onClick={() => majEtape({ joueurs: [], ballon: null })}
+                style={{ ...tb(false), marginLeft: 'auto', color: '#6b7280' }}>↺ Vider l'étape</button>
             ) : null}
           </div>
           <p style={{ color: '#374151', fontSize: '10px', margin: '0 0 6px' }}>
-            {mode === 'select' && 'Glisse les éléments · Double-clic → renommer · Clic droit → supprimer'}
+            {mode === 'select' && 'Glisse les joueurs/ballon · Double-clic → renommer · Clic droit → supprimer'}
             {mode === 'add_nous' && 'Clique sur le terrain pour placer un joueur (notre équipe)'}
             {mode === 'add_adv' && 'Clique sur le terrain pour placer un joueur (adversaire)'}
             {mode === 'add_ball' && 'Clique sur le terrain pour placer le ballon'}
-            {mode === 'arrow' && !arrowFrom && 'Clique pour définir le départ de la flèche'}
-            {mode === 'arrow' && arrowFrom && "Clique pour définir l'arrivée · Échap pour annuler"}
           </p>
         </>
       )}
@@ -183,24 +235,14 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width: '100%', borderRadius: '10px', userSelect: 'none', touchAction: 'none', cursor: mode === 'select' ? 'default' : 'crosshair' }}
+        style={{ width: '100%', borderRadius: '10px', userSelect: 'none', touchAction: 'none', cursor: !readOnly && mode !== 'select' && playIdx === null ? 'crosshair' : 'default' }}
         onClick={clickSVG}
         onMouseMove={onMove}
         onMouseUp={stopDrag}
         onMouseLeave={stopDrag}
         onTouchMove={onMove}
         onTouchEnd={stopDrag}
-        onKeyDown={e => e.key === 'Escape' && setArrowFrom(null)}
-        tabIndex={0}
       >
-        <defs>
-          {COLORS.map(c => (
-            <marker key={c} id={`arr-${ARROW_MARKERS[c]}`} markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L0,6 L7,3 z" fill={c} />
-            </marker>
-          ))}
-        </defs>
-
         {/* Pelouse */}
         <rect width={W} height={H} fill="#1a3a1a" rx="8" />
         {[0, 1, 2, 3, 4, 5, 6].map(i => (
@@ -210,95 +252,47 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         {/* Lignes */}
         <rect x={10} y={10} width={W - 20} height={H - 20} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} rx={3} />
         <text x={W / 2} y={23} textAnchor="middle" fill="#ffffff1a" fontSize={9} fontFamily="sans-serif">— CÔTÉ ADVERSE —</text>
-        {/* Grande surface */}
         <rect x={135} y={H - 108} width={W - 270} height={108} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
-        {/* Petite surface */}
         <rect x={202} y={H - 48} width={W - 404} height={48} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1} strokeOpacity={0.3} />
-        {/* But */}
         <rect x={218} y={H - 10} width={W - 436} height={10} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
-        {/* Penalty */}
         <circle cx={W / 2} cy={H - 74} r={3} fill="#fff" fillOpacity={0.5} />
-        {/* Arc */}
         <path d={`M 158 ${H - 108} A 88 88 0 0 0 ${W - 158} ${H - 108}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
 
-        {/* Flèches */}
-        {sorted.map((f, idx) => {
-          const visible = !animating || idx <= animIdx
-          if (!visible) return null
-          const animatingCur = animating && idx === animIdx
-          const len = flen(f)
-          const mk = `url(#arr-${ARROW_MARKERS[f.c] || 'yw'})`
-          const m = mid(f)
-          return (
-            <g key={f.id}>
-              {/* Zone de clic */}
-              <line x1={f.x1} y1={f.y1} x2={f.x2} y2={f.y2} stroke="transparent" strokeWidth={14}
-                onClick={e => { e.stopPropagation(); setSelArrow(selArrow === f.id ? null : f.id) }}
-                style={{ cursor: 'pointer' }}
-              />
-              {/* Trait */}
-              <line
-                x1={f.x1} y1={f.y1} x2={f.x2} y2={f.y2}
-                stroke={f.c || '#fbbf24'} strokeWidth={selArrow === f.id ? 3 : 2}
-                strokeOpacity={animating && idx < animIdx ? 0.45 : 1}
-                markerEnd={mk}
-                strokeDasharray={animatingCur ? `${len} ${len}` : undefined}
-                strokeDashoffset={animatingCur ? len : undefined}
-                style={animatingCur ? { animation: 'drawArr 1s ease forwards' } : undefined}
-              />
-              {/* Badge séquence */}
-              {!animating && (
-                <>
-                  <circle cx={m.x} cy={m.y} r={9} fill={f.c || '#fbbf24'} fillOpacity={0.25} />
-                  <text x={m.x} y={m.y + 4} textAnchor="middle" fill={f.c || '#fbbf24'} fontSize={9} fontWeight="bold" fontFamily="sans-serif">{f.seq || idx + 1}</text>
-                </>
-              )}
-            </g>
-          )
-        })}
-
-        {/* Aperçu flèche */}
-        {arrowFrom && mouse && mode === 'arrow' && (
-          <line x1={arrowFrom.x} y1={arrowFrom.y} x2={mouse.x} y2={mouse.y}
-            stroke={arrowColor} strokeWidth={2} strokeOpacity={0.55} strokeDasharray="7 5"
-            markerEnd={`url(#arr-${ARROW_MARKERS[arrowColor] || 'yw'})`}
-          />
-        )}
-
         {/* Ballon */}
-        {ballon && (
-          <g className="dot" onMouseDown={e => startDrag(e, 'ballon', null)}
+        {displayBallon && (
+          <g className="dot"
+            style={{ transform: `translate(${displayBallon.x}px, ${displayBallon.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
+            onMouseDown={e => startDrag(e, 'ballon', null)}
             onTouchStart={e => startDrag(e, 'ballon', null)}
-            onContextMenu={e => { e.preventDefault(); e.stopPropagation(); up({ ballon: null }) }}
-            style={{ cursor: mode === 'select' ? 'grab' : 'default' }}
+            onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (!readOnly && playIdx === null) majEtape({ ballon: null }) }}
           >
-            <circle cx={ballon.x} cy={ballon.y} r={13} fill="#fff" fillOpacity={0.12} stroke="#fff" strokeWidth={1} />
-            <text x={ballon.x} y={ballon.y + 6} textAnchor="middle" fontSize={17}>⚽</text>
+            <circle r={13} fill="#fff" fillOpacity={0.12} stroke="#fff" strokeWidth={1} />
+            <text textAnchor="middle" y={6} fontSize={17}>⚽</text>
           </g>
         )}
 
         {/* Joueurs */}
-        {joueurs.map(j => {
+        {displayJoueurs.map(j => {
           const isN = j.equipe === 'nous'
           const c = isN ? '#4ade80' : '#f87171'
-          const short = (j.nom || '').slice(0, 5)
+          const initiales = (j.nom || '').slice(0, 3)
           return (
             <g key={j.id} className="dot"
+              style={{ transform: `translate(${j.x}px, ${j.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
               onMouseDown={e => startDrag(e, 'joueur', j.id)}
               onTouchStart={e => startDrag(e, 'joueur', j.id)}
               onDoubleClick={e => beginEdit(e, j)}
               onContextMenu={e => delJoueur(e, j.id)}
-              style={{ cursor: mode === 'select' ? 'grab' : 'default' }}
             >
-              <circle cx={j.x + 1} cy={j.y + 1} r={16} fill="rgba(0,0,0,0.45)" />
-              <circle cx={j.x} cy={j.y} r={16} fill={isN ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'} stroke={c} strokeWidth={2} />
-              <text x={j.x} y={j.y + 5} textAnchor="middle" fill={c}
-                fontSize={short.length > 3 ? 9 : 12} fontWeight="bold" fontFamily="sans-serif">{short}</text>
+              <circle cx={1} cy={1} r={15} fill="rgba(0,0,0,0.45)" />
+              <circle r={15} fill={isN ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'} stroke={c} strokeWidth={2} />
+              <text textAnchor="middle" y={4} fill={c} fontSize={initiales.length > 2 ? 9 : 12} fontWeight="bold" fontFamily="sans-serif">{initiales}</text>
+              {j.nom && (
+                <text textAnchor="middle" y={28} fill={c} fontSize={9} fontWeight="700" fontFamily="sans-serif" style={{ paintOrder: 'stroke' }} stroke="#080808" strokeWidth={3}>{j.nom}</text>
+              )}
             </g>
           )
         })}
-
-        <style>{'@keyframes drawArr{to{stroke-dashoffset:0}}'}</style>
       </svg>
 
       {/* Édition nom */}
@@ -311,21 +305,6 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
           />
           <button onClick={saveEdit} style={{ background: '#4ade80', border: 'none', borderRadius: '6px', color: '#000', fontWeight: 700, fontSize: '12px', padding: '4px 10px', cursor: 'pointer' }}>OK</button>
           <button onClick={() => setEditId(null)} style={{ background: 'none', border: '1px solid #1f2937', borderRadius: '6px', color: '#6b7280', fontSize: '12px', padding: '4px 10px', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-
-      {/* Contrôle flèche sélectionnée */}
-      {selArrow && !readOnly && (
-        <div style={{ marginTop: '8px', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ color: '#9ca3af', fontSize: '11px' }}>Couleur :</span>
-          {COLORS.map(c => (
-            <button key={c} onClick={() => up({ fleches: fleches.map(f => f.id === selArrow ? { ...f, c } : f) })}
-              style={{ width: 18, height: 18, background: c, border: '1px solid #111', borderRadius: '50%', cursor: 'pointer', padding: 0 }} />
-          ))}
-          <button onClick={() => delFleche(selArrow)}
-            style={{ marginLeft: '6px', background: 'rgba(248,113,113,0.1)', border: '1px solid #f87171', borderRadius: '6px', color: '#f87171', fontSize: '11px', padding: '3px 8px', cursor: 'pointer' }}>
-            ✕ Supprimer
-          </button>
         </div>
       )}
     </div>
