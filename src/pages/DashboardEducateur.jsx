@@ -2499,7 +2499,13 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (joueurActif?.id === id) setJoueurActif(null)
   }
 
-  const reinitialiserAccesJoueur = async (email) => {
+  const reinitialiserAccesJoueur = async (j) => {
+    let email = j.email || ''
+    // Si le joueur a un compte lié, on récupère son vrai email depuis profiles
+    if (j.joueur_id) {
+      const { data: profil } = await supabase.from('profiles').select('email').eq('id', j.joueur_id).maybeSingle()
+      if (profil?.email) email = profil.email
+    }
     if (!email) { alert('Email inconnu pour ce joueur.'); return }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://digital-football-accademy.vercel.app/reset-password',
@@ -2549,7 +2555,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             ✅ Compte lié
           </span>
           {canEdit('effectif') && (
-            <button onClick={() => reinitialiserAccesJoueur(j.email)}
+            <button onClick={() => reinitialiserAccesJoueur(j)}
               style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
               title="Envoyer un email de réinitialisation de mot de passe">
               🔑
