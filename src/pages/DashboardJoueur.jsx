@@ -20,6 +20,17 @@ import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 
+// Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
+// dans DashboardEducateur.jsx/DashboardCoach.jsx/GestionSponsors.jsx. Défini au
+// niveau module (pas dans un composant) car ce fichier a plusieurs composants
+// frères (UpgradeCard, ProfilAffilieOnglet...) qui utilisent tous des boutons —
+// colors/alpha sont des imports statiques, pas de state, donc pas besoin de
+// redéfinir st par composant.
+const st = {
+  btn: (color = colors.accent.green) => ({ background: color + alpha.subtle, border: `1px solid ${color}${alpha.medium}`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  btnSolid: (color = colors.accent.green) => ({ background: color, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+}
+
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
 const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
 const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors']
@@ -121,7 +132,7 @@ function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
       <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
-        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={st.btnSolid()}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
   )
@@ -226,7 +237,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
               </div>
             </div>
             <button onClick={sauvegarder} disabled={saving}
-              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
+              style={{ ...st.btnSolid(), marginTop: '4px' }}>
               {saving ? t('jp_sauvegarde_cours', lang) : saved ? `✅ ${t('msg_sauvegarde_ok', lang)}` : t('btn_sauvegarder', lang)}
             </button>
           </>
@@ -1600,7 +1611,7 @@ function DashboardJoueur() {
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('aff_passe_niveau_sup', lang)}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
                 </div>
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
+                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ ...st.btnSolid(), whiteSpace: 'nowrap', flexShrink: 0 }}>{t('aff_voir_packs', lang)}</button>
               </div>
             </div>
           )}
@@ -2112,7 +2123,7 @@ function DashboardJoueur() {
                     style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 10, padding: '10px 14px', color: colors.text.primary, fontSize: 15, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: '100%', marginBottom: 10, outline: 'none', boxSizing: 'border-box' }}
                   />
                   <button onClick={rejoindreEquipe} disabled={!codeEquipe.trim()}
-                    style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ ...st.btnSolid(), width: '100%' }}>
                     {t('jeq_rejoindre_btn', lang)}
                   </button>
                 </div>
@@ -2159,7 +2170,7 @@ function DashboardJoueur() {
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Compte Fan</h1>
                 <p style={{ color: colors.text.faint, fontSize: '14px', margin: '0 0 1.5rem', lineHeight: 1.6 }}>Like, commente et sauvegarde les meilleurs reels Jogabonito.</p>
-                <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => navigate('/jogabonito')} style={st.btnSolid()}>
                   Voir Jogabonito
                 </button>
               </div>
@@ -2175,7 +2186,7 @@ function DashboardJoueur() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => navigate('/register')} style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', padding: '13px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Devenir joueur</button>
+                <button onClick={() => navigate('/register')} style={{ ...st.btnSolid(), width: '100%' }}>Devenir joueur</button>
               </div>
             </>
           )}
@@ -2191,7 +2202,7 @@ function DashboardJoueur() {
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   </p>
                   <p style={{ color: colors.text.faint, fontSize: '14px', lineHeight: 1.6 }}>Aucun reel sauvegardé.<br />Swipe sur Jogabonito et tape Save pour les retrouver ici.</p>
-                  <button onClick={() => navigate('/jogabonito')} style={{ marginTop: '1rem', background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Aller sur Jogabonito</button>
+                  <button onClick={() => navigate('/jogabonito')} style={{ ...st.btnSolid(), marginTop: '1rem' }}>Aller sur Jogabonito</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -2216,7 +2227,7 @@ function DashboardJoueur() {
               <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>Plan Pro requis</h2>
               <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '340px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>Passe au Plan Pro pour recevoir des messages de recruteurs et clubs.</p>
-              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_pro_prix', lang)}</button>
+              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={st.btnSolid()}>{t('aff_pro_prix', lang)}</button>
             </div>
           )}
         </div>
@@ -2734,7 +2745,7 @@ function DashboardJoueur() {
                   </div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {(profil?.analyses_restantes || 0) > 0 ? (
-                      <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s' }}>
+                      <button className="dj-btn-green" onClick={() => navigate('/upload')} style={{ ...st.btnSolid(), transition: 'background 0.15s' }}>
                         {t('jd_envoyer_video', lang)} →
                       </button>
                     ) : (
@@ -2792,7 +2803,7 @@ function DashboardJoueur() {
                     <p style={{ fontSize: '12px', color: colors.border.strong, marginBottom: '20px', lineHeight: 1.6 }}>
                       {isPro ? 'Publie un clip pour apparaître dans le Feed et Jogabonito' : 'Publie un reel pour apparaître dans Jogabonito'}
                     </p>
-                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')} style={st.btnSolid()}>
                       {isPro ? t('jvid_publier_clip', lang) : t('jvid_publier_reel', lang)}
                     </button>
                   </div>
@@ -2805,7 +2816,7 @@ function DashboardJoueur() {
                       <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
                       <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('jd_upsell_desc', lang)}</p>
                     </div>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ ...st.btnSolid(), whiteSpace: 'nowrap' }}>
                       {t('jd_plan_pro_cta', lang)}
                     </button>
                   </div>
@@ -3115,7 +3126,7 @@ function DashboardJoueur() {
 
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
-                  style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
+                  style={{ ...st.btnSolid(), transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
                   {savingParcours ? (editingParcoursId ? t('jp_modif_cours', lang) : t('jp_ajout_cours', lang)) : (editingParcoursId ? t('jp_modifier_parcours', lang) : t('jp_ajouter_club', lang))}
                 </button>
                 {editingParcoursId && (
@@ -3155,7 +3166,7 @@ function DashboardJoueur() {
             </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
-              style={{ width: '100%', background: statsSaved ? '#22c55e' : colors.accent.green, color: colors.black, border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
+              style={{ ...st.btnSolid(statsSaved ? '#22c55e' : colors.accent.green), width: '100%', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
               {savingStats ? t('jp_sauvegarde_cours', lang) : statsSaved ? t('jp_profil_sauvegarde', lang) : t('profil_sauvegarder_profil', lang)}
             </button>
           </div>
@@ -3167,7 +3178,7 @@ function DashboardJoueur() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{t('ja_titre', lang)}</h1>
               {(profil?.analyses_restantes || 0) > 0 && (
-                <button onClick={() => navigate('/upload')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => navigate('/upload')} style={st.btnSolid()}>
                   {t('ja_nouvelle', lang)}
                 </button>
               )}
@@ -3223,7 +3234,7 @@ function DashboardJoueur() {
               <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
                 {t('jm_plan_pro_desc', lang)}
               </p>
-              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={st.btnSolid()}>
                 {t('jd_plan_pro_cta', lang)}
               </button>
             </div>
@@ -3242,7 +3253,7 @@ function DashboardJoueur() {
                 <button onClick={async () => {
                   const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).maybeSingle()
                   if (data) setRecruteurModal(data)
-                }} style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                }} style={{ ...st.btn(colors.accent.green), padding: '6px 14px', fontSize: '12px' }}>
                   {t('jm_voir_profil', lang)}
                 </button>
               </div>
@@ -3256,7 +3267,7 @@ function DashboardJoueur() {
               </div>
               <div style={{ padding: '14px 16px', borderTop: '1px solid #141414', display: 'flex', gap: '10px' }}>
                 <input style={{ flex: 1, background: colors.background.surfaceAlt, border: '1px solid #222', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
-                <button onClick={envoyerMessage} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>{t('btn_envoyer', lang)}</button>
+                <button onClick={envoyerMessage} style={st.btnSolid()}>{t('btn_envoyer', lang)}</button>
               </div>
             </>
           ) : (
@@ -3550,7 +3561,7 @@ function DashboardJoueur() {
                       placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
                       style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                     <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
-                      style={{ marginTop: '12px', width: '100%', background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                      style={{ ...st.btnSolid(colors.accent.orange), marginTop: '12px', width: '100%', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
                       {sendingCoach ? t('etat_envoi_cours', lang) : t('jcoach_envoyer', lang)}
                     </button>
                   </>
@@ -3676,7 +3687,7 @@ function DashboardJoueur() {
                   onKeyDown={e => e.key === 'Enter' && rejoindreEquipe()}
                 />
                 <button onClick={rejoindreEquipe} disabled={sendingCode || !codeEquipe.trim()}
-                  style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: codeEquipe.trim() ? 1 : 0.4 }}>
+                  style={{ ...st.btnSolid(), opacity: codeEquipe.trim() ? 1 : 0.4 }}>
                   {sendingCode ? '...' : t('jeq_rejoindre_btn', lang)}
                 </button>
               </div>
@@ -4013,7 +4024,7 @@ function DashboardJoueur() {
             </label>
 
             <button onClick={soumettreNoteEdu} disabled={savingNote || CRITERES_EDU_KEYS.flatMap(c => c.criteres).some(c => !noteCriteres[c.key])}
-              style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU_KEYS.flatMap(c => c.criteres).every(c => noteCriteres[c.key]) ? 1 : 0.4 }}>
+              style={{ ...st.btnSolid(), width: '100%', opacity: CRITERES_EDU_KEYS.flatMap(c => c.criteres).every(c => noteCriteres[c.key]) ? 1 : 0.4 }}>
               {savingNote ? '⏳ Envoi...' : '✅ Soumettre l\'évaluation'}
             </button>
           </div>
@@ -4068,7 +4079,7 @@ function DashboardJoueur() {
 
             <button
               onClick={() => { setNotationCible(recruteurModal); setRecruteurModal(null) }}
-              style={{ width: '100%', marginTop: '1rem', background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ ...st.btn(colors.accent.amber), width: '100%', marginTop: '1rem', padding: '10px', borderRadius: '10px', fontWeight: 700 }}>
               ⭐ {(() => {
                 const t = (recruteurModal?.type_recruteur || '').toLowerCase()
                 if (t.includes('club') || t.includes('directeur')) return 'Noter ce club'
