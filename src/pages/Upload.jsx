@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { colors, alpha } from '../tokens'
 
 const notifierCoachs = async (payload) => {
   const { data: coachs } = await supabase.from('profiles').select('email').eq('plan', 'coach')
@@ -195,17 +196,17 @@ export default function Upload() {
   }
 
   const s = {
-    page: { minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif' },
-    nav: { background: '#111', borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
-    logo: { color: '#4ade80', fontWeight: 700, fontSize: '1.2rem', cursor: 'pointer' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    nav: { background: colors.background.surface, borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
+    logo: { color: colors.accent.green, fontWeight: 700, fontSize: '1.2rem', cursor: 'pointer' },
     container: { maxWidth: '700px', margin: '0 auto', padding: '3rem 2rem' },
-    box: { background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem' },
-    label: { fontSize: '13px', color: '#aaa', marginBottom: '6px', display: 'block' },
-    input: { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
+    box: { background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem' },
+    label: { fontSize: '13px', color: colors.text.secondary, marginBottom: '6px', display: 'block' },
+    input: { width: '100%', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
     btn: (disabled) => ({
       width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-      background: disabled ? '#333' : '#4ade80',
-      color: disabled ? '#666' : '#000',
+      background: disabled ? colors.border.strong : colors.accent.green,
+      color: disabled ? colors.text.dim : colors.black,
       fontSize: '15px', fontWeight: 700,
       cursor: disabled ? 'not-allowed' : 'pointer',
     }),
@@ -213,14 +214,14 @@ export default function Upload() {
       flex: 1, padding: '12px', borderRadius: '8px',
       border: active ? '2px solid #4ade80' : '1px solid #333',
       background: active ? '#4ade8010' : 'transparent',
-      color: active ? '#4ade80' : '#666',
+      color: active ? colors.accent.green : colors.text.dim,
       fontWeight: 600, cursor: 'pointer', fontSize: '14px',
     }),
     quotaBadge: (restantes) => ({
       display: 'inline-flex', alignItems: 'center', gap: '6px',
       background: restantes > 0 ? '#001a0a' : '#1a0a00',
-      border: `1px solid ${restantes > 0 ? '#4ade8040' : '#f9731640'}`,
-      color: restantes > 0 ? '#4ade80' : '#f97316',
+      border: `1px solid ${restantes > 0 ? colors.accent.green + alpha.medium : colors.accent.orange + alpha.medium}`,
+      color: restantes > 0 ? colors.accent.green : colors.accent.orange,
       padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
       marginBottom: '1.5rem',
     }),
@@ -228,7 +229,7 @@ export default function Upload() {
 
   if (!profil) return (
     <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80' }}>{t('jexp_chargement', lang)}</p>
+      <p style={{ color: colors.accent.green }}>{t('jexp_chargement', lang)}</p>
     </div>
   )
 
@@ -241,11 +242,11 @@ export default function Upload() {
         <span style={s.logo} onClick={() => navigate('/')}>⚽ Digital Football</span>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button onClick={() => navigate('/dashboard')}
-            style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
+            style={{ background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
             {t('upload_dashboard_retour', lang)}
           </button>
           <button onClick={async () => { await signOutSafe(); navigate('/') }}
-            style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', fontSize: '13px' }}>
+            style={{ background: 'transparent', border: 'none', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }}>
             {t('btn_deconnexion', lang)}
           </button>
         </div>
@@ -253,9 +254,9 @@ export default function Upload() {
 
       <div style={s.container}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-          {t('upload_partage_ta_video', lang)} <span style={{ color: '#4ade80' }}>🎬</span>
+          {t('upload_partage_ta_video', lang)} <span style={{ color: colors.accent.green }}>🎬</span>
         </h1>
-        <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '14px' }}>
+        <p style={{ color: colors.text.dim, marginBottom: '1.5rem', fontSize: '14px' }}>
           {t('upload_clip_desc', lang)}
         </p>
 
@@ -268,10 +269,10 @@ export default function Upload() {
           <div style={{ ...s.box, border: '2px solid #4ade80', textAlign: 'center', padding: '3rem' }}>
             <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</p>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_video_envoyee', lang)}</h2>
-            <p style={{ color: '#666', marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_clip_visible_recruteurs', lang)}</p>
-            <p style={{ color: '#4ade80', marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_demande_creee_coach', lang)}</p>
-            <p style={{ color: '#666', marginBottom: '2rem', fontSize: '13px' }}>
-              {t('upload_il_te_reste', lang)} <strong style={{ color: '#fff' }}>{analysesRestantes}</strong> {t('upload_analyses_ce_mois_suffix', lang)}
+            <p style={{ color: colors.text.dim, marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_clip_visible_recruteurs', lang)}</p>
+            <p style={{ color: colors.accent.green, marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_demande_creee_coach', lang)}</p>
+            <p style={{ color: colors.text.dim, marginBottom: '2rem', fontSize: '13px' }}>
+              {t('upload_il_te_reste', lang)} <strong style={{ color: colors.text.primary }}>{analysesRestantes}</strong> {t('upload_analyses_ce_mois_suffix', lang)}
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => navigate('/dashboard')}
@@ -280,7 +281,7 @@ export default function Upload() {
               </button>
               {analysesRestantes > 0 && (
                 <button onClick={() => { setSuccess(false); setFile(null); setLien(''); setProgress(0) }}
-                  style={{ background: '#1a1a1a', border: '1px solid #333', color: '#aaa', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  style={{ background: colors.background.raised, border: '1px solid #333', color: colors.text.secondary, padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
                   {t('upload_envoyer_autre', lang)}
                 </button>
               )}
@@ -290,7 +291,7 @@ export default function Upload() {
           <div style={{ ...s.box, border: '1px solid #f9731640', textAlign: 'center', padding: '3rem' }}>
             <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</p>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_quota_epuise', lang)}</h2>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem' }}>
+            <p style={{ color: colors.text.dim, fontSize: '14px', marginBottom: '1.5rem' }}>
               {t('upload_quota_epuise_desc', lang)}<br />{t('upload_reviens_ou_upgrade', lang)}
             </p>
             <button onClick={() => navigate('/dashboard')}
@@ -311,7 +312,7 @@ export default function Upload() {
 
             {mode === 'lien' && (
               <div style={s.box}>
-                <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
+                <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '1rem' }}>
                   {t('upload_colle_ton_lien', lang)}
                 </label>
                 <input
@@ -321,12 +322,12 @@ export default function Upload() {
                   onChange={e => setLien(e.target.value)}
                 />
                 <div style={{ background: '#0f2a1a', border: '1px solid #4ade8030', borderRadius: '10px', padding: '1rem', marginTop: '1rem' }}>
-                  <p style={{ color: '#4ade80', fontWeight: 600, fontSize: '13px', margin: '0 0 8px' }}>
+                  <p style={{ color: colors.accent.green, fontWeight: 600, fontSize: '13px', margin: '0 0 8px' }}>
                     {t('upload_plateformes_acceptees_title', lang)}
                   </p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {['Veo ✓', 'YouTube ✓', 'Google Drive ✓', 'Hudl ✓'].map(p => (
-                      <span key={p} style={{ background: '#1a1a1a', border: '1px solid #333', color: '#666', padding: '4px 10px', borderRadius: '20px', fontSize: '12px' }}>
+                      <span key={p} style={{ background: colors.background.raised, border: '1px solid #333', color: colors.text.dim, padding: '4px 10px', borderRadius: '20px', fontSize: '12px' }}>
                         {p}
                       </span>
                     ))}
@@ -337,21 +338,21 @@ export default function Upload() {
 
             {mode === 'fichier' && (
               <div style={s.box}>
-                <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: '#fff', marginBottom: '1rem' }}>
+                <label style={{ ...s.label, fontSize: '15px', fontWeight: 600, color: colors.text.primary, marginBottom: '1rem' }}>
                   {t('upload_selectionne_ta_video', lang)}
                 </label>
                 <div
                   onClick={() => document.getElementById('video-input').click()}
                   style={{
-                    border: '2px dashed ' + (file ? '#4ade80' : '#333'),
+                    border: '2px dashed ' + (file ? colors.accent.green : colors.border.strong),
                     borderRadius: '12px', padding: '3rem', textAlign: 'center',
-                    cursor: 'pointer', background: file ? '#4ade8008' : 'transparent',
+                    cursor: 'pointer', background: file ? colors.accent.green + alpha.faint : 'transparent',
                   }}>
                   <p style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{file ? '🎬' : '📁'}</p>
                   <p style={{ fontWeight: 600, marginBottom: '4px' }}>
                     {file ? file.name : t('upload_clique_selectionner', lang)}
                   </p>
-                  <p style={{ fontSize: '13px', color: '#555' }}>
+                  <p style={{ fontSize: '13px', color: colors.text.faint }}>
                     {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : t('upload_max_500mb', lang)}
                   </p>
                 </div>
@@ -362,11 +363,11 @@ export default function Upload() {
                 {uploading && (
                   <div style={{ marginTop: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                      <span style={{ color: '#4ade80' }}>{t('upload_upload_en_cours', lang)}</span>
+                      <span style={{ color: colors.accent.green }}>{t('upload_upload_en_cours', lang)}</span>
                       <span style={{ fontWeight: 700 }}>{progress}%</span>
                     </div>
-                    <div style={{ background: '#1a1a1a', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', background: '#4ade80', width: `${progress}%`, transition: 'width 0.3s', borderRadius: '8px' }} />
+                    <div style={{ background: colors.background.raised, borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: colors.accent.green, width: `${progress}%`, transition: 'width 0.3s', borderRadius: '8px' }} />
                     </div>
                   </div>
                 )}
@@ -374,7 +375,7 @@ export default function Upload() {
             )}
 
             <div style={s.box}>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#4ade80', margin: '0 0 14px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.green, margin: '0 0 14px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                 {t('upload_aide_coach', lang)}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -429,7 +430,7 @@ export default function Upload() {
             </div>
 
             {erreur && (
-              <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '1rem', textAlign: 'center' }}>
+              <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '1rem', textAlign: 'center' }}>
                 ❌ {erreur}
               </p>
             )}
@@ -444,7 +445,7 @@ export default function Upload() {
                 : mode === 'lien' ? t('upload_envoyer_analyse', lang) : t('upload_envoyer_ma_video', lang)}
             </button>
 
-            <p style={{ textAlign: 'center', fontSize: '12px', color: '#555', marginTop: '1rem' }}>
+            <p style={{ textAlign: 'center', fontSize: '12px', color: colors.text.faint, marginTop: '1rem' }}>
               {t('upload_visible_recruteurs_analyse', lang)}
             </p>
           </>

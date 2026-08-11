@@ -25,6 +25,7 @@ import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
+import { colors, alpha } from '../tokens'
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
@@ -171,7 +172,7 @@ const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fil
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
-const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
+const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -180,7 +181,7 @@ const IcoBiblioTitre = ({ size = 22, color = '#4ade80' }) => (
     <line x1="12" y1="14" x2="14" y2="14"/>
   </svg>
 )
-const IcoDossier = ({ size = 32, color = '#60a5fa' }) => (
+const IcoDossier = ({ size = 32, color = colors.accent.blue }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
   </svg>
@@ -220,7 +221,7 @@ const IcoTypeSituation = ({ size = 16, color = 'currentColor' }) => (
     <polygon points="3 11 22 2 13 21 11 13 3 11"/>
   </svg>
 )
-const IcoBiblioVide = ({ size = 56, color = '#333' }) => (
+const IcoBiblioVide = ({ size = 56, color = colors.border.strong }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -239,13 +240,13 @@ export const CRITERES_EDU = [
     { key: 'cohesion', label: 'Création de cohésion' },
     { key: 'gestion_conflits', label: 'Gestion des conflits' },
   ]},
-  { key: 'pedagogie', label: '🎓 Pédagogie', color: '#a78bfa', criteres: [
+  { key: 'pedagogie', label: '🎓 Pédagogie', color: colors.accent.purpleLight, criteres: [
     { key: 'qualite_explications', label: 'Qualité des explications' },
     { key: 'capacite_corriger', label: 'Capacité à corriger' },
     { key: 'individualisation', label: 'Individualisation' },
     { key: 'adaptation_age', label: 'Adaptation à l\'âge' },
   ]},
-  { key: 'football', label: '⚽ Compétences football', color: '#4ade80', criteres: [
+  { key: 'football', label: '⚽ Compétences football', color: colors.accent.green, criteres: [
     { key: 'animation_seances', label: 'Animation des séances' },
     { key: 'competence_tactique', label: 'Compétence tactique' },
     { key: 'coaching_match', label: 'Coaching en match' },
@@ -257,7 +258,7 @@ export const CRITERES_EDU = [
     { key: 'progression_physique', label: 'Progression physique' },
     { key: 'progression_mentale', label: 'Progression mentale' },
   ]},
-  { key: 'professionnalisme', label: '🤝 Professionnalisme', color: '#60a5fa', criteres: [
+  { key: 'professionnalisme', label: '🤝 Professionnalisme', color: colors.accent.blue, criteres: [
     { key: 'ponctualite', label: 'Ponctualité' },
     { key: 'organisation', label: 'Organisation' },
     { key: 'communication_club', label: 'Communication avec le club' },
@@ -316,15 +317,15 @@ function parseRows(raw) {
 }
 
 // ── Bar chart horizontal SVG ──────────────────────────────────────────────────
-function BarChart({ data, color = '#4ade80', unit = '', max: forceMax }) {
+function BarChart({ data, color = colors.accent.green, unit = '', max: forceMax }) {
   if (!data.length) return null
   const max = forceMax ?? Math.max(...data.map(d => d.value), 1)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
       {data.map((d, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '110px', fontSize: '12px', color: '#aaa', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
-          <div style={{ flex: 1, background: '#1a1a1a', borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ width: '110px', fontSize: '12px', color: colors.text.secondary, textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
+          <div style={{ flex: 1, background: colors.background.raised, borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${max > 0 ? (d.value / max) * 100 : 0}%`, background: color + '99', borderRadius: '4px', transition: 'width 0.4s ease', minWidth: d.value > 0 ? '4px' : '0' }} />
           </div>
           <div style={{ width: '40px', fontSize: '12px', fontWeight: 700, color, textAlign: 'right', flexShrink: 0 }}>{d.value}{unit}</div>
@@ -342,16 +343,16 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth={size * 0.09} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={colors.background.raised} strokeWidth={size * 0.09} />
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={size * 0.09}
           strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
           transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
-          fontSize={size * 0.22} fontWeight="800" fill="#fff" fontFamily="Inter,sans-serif">{value || 0}</text>
+          fontSize={size * 0.22} fontWeight="800" fill={colors.text.primary} fontFamily="Inter,sans-serif">{value || 0}</text>
         <text x={cx} y={cy + size * 0.2} textAnchor="middle"
-          fontSize={size * 0.11} fill="#555" fontFamily="Inter,sans-serif">/{max}</text>
+          fontSize={size * 0.11} fill={colors.text.faint} fontFamily="Inter,sans-serif">/{max}</text>
       </svg>
-      <span style={{ fontSize: '11px', color: '#555', fontFamily: 'Inter,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: '11px', color: colors.text.faint, fontFamily: 'Inter,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
     </div>
   )
 }
@@ -360,10 +361,10 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
 function DonutPresence({ taux }) {
   const r = 16, circ = 2 * Math.PI * r
   const dash = (taux / 100) * circ
-  const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
+  const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
   return (
     <svg width="42" height="42" viewBox="0 0 42 42">
-      <circle cx="21" cy="21" r={r} fill="none" stroke="#1a1a1a" strokeWidth="5" />
+      <circle cx="21" cy="21" r={r} fill="none" stroke={colors.background.raised} strokeWidth="5" />
       <circle cx="21" cy="21" r={r} fill="none" stroke={color} strokeWidth="5"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         transform="rotate(-90 21 21)" />
@@ -376,10 +377,10 @@ function DonutPresence({ taux }) {
 function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
   const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
   const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
-  const color = taux >= 80 ? '#4ade80' : taux >= 50 ? '#f59e0b' : '#f87171'
+  const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
   if (!total) return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: '#333', fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
     </div>
   )
   const p = (presents || 0) / total * 100
@@ -396,7 +397,7 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
         width: size, height: size, borderRadius: '50%',
         background: `conic-gradient(#4ade80 0% ${p}%, #60a5fa ${p}% ${pEnd}%, #ef4444 ${pEnd}% ${aEnd}%, #f97316 ${aEnd}% ${bEnd}%, #a855f7 ${bEnd}% 100%)`
       }} />
-      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
         <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
       </div>
     </div>
@@ -408,8 +409,8 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
 function DonutVND({ v, n, d, size = 72 }) {
   const total = (v || 0) + (n || 0) + (d || 0)
   if (!total) return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <span style={{ color: '#333', fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
     </div>
   )
   const pV = (v || 0) / total * 100
@@ -422,8 +423,8 @@ function DonutVND({ v, n, d, size = 72 }) {
         width: size, height: size, borderRadius: '50%',
         background: `conic-gradient(#4ade80 0% ${vEnd}%, #facc15 ${vEnd}% ${nEnd}%, #ef4444 ${nEnd}% 100%)`
       }} />
-      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: size * 0.16, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{total}</span>
+      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.16, fontWeight: 800, color: colors.text.primary, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{total}</span>
       </div>
     </div>
   )
@@ -432,105 +433,105 @@ function DonutVND({ v, n, d, size = 72 }) {
 const TerrainFoot = () => (
   <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
-    <rect width="300" height="200" fill="white" stroke="#333" strokeWidth="2"/>
+    <rect width="300" height="200" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
-    <line x1="150" y1="0" x2="150" y2="200" stroke="#333" strokeWidth="1.5"/>
+    <line x1="150" y1="0" x2="150" y2="200" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Cercle central */}
-    <circle cx="150" cy="100" r="30" fill="none" stroke="#333" strokeWidth="1.5"/>
-    <circle cx="150" cy="100" r="2" fill="#333"/>
+    <circle cx="150" cy="100" r="30" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
+    <circle cx="150" cy="100" r="2" fill={colors.border.strong}/>
     {/* Surface de réparation gauche */}
-    <rect x="0" y="55" width="55" height="90" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="55" width="55" height="90" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface de but gauche */}
-    <rect x="0" y="75" width="18" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="75" width="18" height="50" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Point de penalty gauche */}
-    <circle cx="40" cy="100" r="2" fill="#333"/>
+    <circle cx="40" cy="100" r="2" fill={colors.border.strong}/>
     {/* Arc de cercle gauche */}
-    <path d="M 55 75 A 30 30 0 0 1 55 125" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 55 75 A 30 30 0 0 1 55 125" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface de réparation droite */}
-    <rect x="245" y="55" width="55" height="90" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="245" y="55" width="55" height="90" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface de but droite */}
-    <rect x="282" y="75" width="18" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="282" y="75" width="18" height="50" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Point de penalty droit */}
-    <circle cx="260" cy="100" r="2" fill="#333"/>
+    <circle cx="260" cy="100" r="2" fill={colors.border.strong}/>
     {/* Arc de cercle droit */}
-    <path d="M 245 75 A 30 30 0 0 0 245 125" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 245 75 A 30 30 0 0 0 245 125" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Coins arrondis (arcs de corner) */}
-    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 290 0 A 10 10 0 0 1 300 10" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 0 190 A 10 10 0 0 0 10 200" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 300 190 A 10 10 0 0 1 290 200" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 290 0 A 10 10 0 0 1 300 10" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 0 190 A 10 10 0 0 0 10 200" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 300 190 A 10 10 0 0 1 290 200" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
   </svg>
 )
 
 const DemiTerrain = () => (
   <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
-    <rect width="299" height="199" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    <rect width="299" height="199" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale (bord droit, pointillé) */}
-    <line x1="299" y1="0" x2="299" y2="200" stroke="#333" strokeWidth="1.5" strokeDasharray="6,3"/>
+    <line x1="299" y1="0" x2="299" y2="200" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
     {/* Surface de réparation */}
-    <rect x="0" y="50" width="90" height="100" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="50" width="90" height="100" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface de but */}
-    <rect x="0" y="70" width="28" height="60" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="70" width="28" height="60" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Point de penalty */}
-    <circle cx="62" cy="100" r="2.5" fill="#333"/>
+    <circle cx="62" cy="100" r="2.5" fill={colors.border.strong}/>
     {/* Arc de penalty */}
-    <path d="M 90 70 A 38 38 0 0 1 90 130" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 90 70 A 38 38 0 0 1 90 130" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Demi-cercle central (bord droit) */}
-    <path d="M 299 65 A 40 40 0 0 0 299 135" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 299 65 A 40 40 0 0 0 299 135" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Arcs de corner */}
-    <path d="M 0 15 A 15 15 0 0 1 15 0" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 0 185 A 15 15 0 0 0 15 200" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 15 A 15 15 0 0 1 15 0" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 0 185 A 15 15 0 0 0 15 200" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
   </svg>
 )
 
 const DemiTerrainFutsal = () => (
   <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
-    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale pointillée */}
-    <line x1="299" y1="0" x2="299" y2="180" stroke="#333" strokeWidth="1.5" strokeDasharray="6,3"/>
+    <line x1="299" y1="0" x2="299" y2="180" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
     {/* Zone de but (rectangle) */}
-    <rect x="0" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="65" width="25" height="50" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface de réparation arrondie (demi-cercle r=65) */}
-    <path d="M 0 25 A 80 80 0 0 1 0 155" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 0 25 A 80 80 0 0 1 0 155" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Point de penalty 6m */}
-    <circle cx="48" cy="90" r="2.5" fill="#333"/>
+    <circle cx="48" cy="90" r="2.5" fill={colors.border.strong}/>
     {/* Point de penalty 10m */}
-    <circle cx="80" cy="90" r="2.5" fill="#333"/>
+    <circle cx="80" cy="90" r="2.5" fill={colors.border.strong}/>
     {/* Demi-cercle central bord droit */}
-    <path d="M 299 60 A 40 40 0 0 0 299 120" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 299 60 A 40 40 0 0 0 299 120" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Arcs de corner (petits) */}
-    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
   </svg>
 )
 
 const TerrainFutsal = () => (
   <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
-    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke="#333" strokeWidth="2"/>
+    <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
-    <line x1="150" y1="0" x2="150" y2="180" stroke="#333" strokeWidth="1.5"/>
+    <line x1="150" y1="0" x2="150" y2="180" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Cercle central */}
-    <circle cx="150" cy="90" r="30" fill="none" stroke="#333" strokeWidth="1.5"/>
-    <circle cx="150" cy="90" r="2.5" fill="#333"/>
+    <circle cx="150" cy="90" r="30" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
+    <circle cx="150" cy="90" r="2.5" fill={colors.border.strong}/>
     {/* Zone de but gauche */}
-    <rect x="0" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="0" y="65" width="25" height="50" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface arrondie gauche */}
-    <path d="M 0 20 A 80 80 0 0 1 0 160" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 0 20 A 80 80 0 0 1 0 160" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Points penalty gauche */}
-    <circle cx="48" cy="90" r="2.5" fill="#333"/>
-    <circle cx="80" cy="90" r="2.5" fill="#333"/>
+    <circle cx="48" cy="90" r="2.5" fill={colors.border.strong}/>
+    <circle cx="80" cy="90" r="2.5" fill={colors.border.strong}/>
     {/* Zone de but droite */}
-    <rect x="274" y="65" width="25" height="50" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <rect x="274" y="65" width="25" height="50" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Surface arrondie droite */}
-    <path d="M 299 20 A 80 80 0 0 0 299 160" fill="none" stroke="#333" strokeWidth="1.5"/>
+    <path d="M 299 20 A 80 80 0 0 0 299 160" fill="none" stroke={colors.border.strong} strokeWidth="1.5"/>
     {/* Points penalty droite */}
-    <circle cx="251" cy="90" r="2.5" fill="#333"/>
-    <circle cx="219" cy="90" r="2.5" fill="#333"/>
+    <circle cx="251" cy="90" r="2.5" fill={colors.border.strong}/>
+    <circle cx="219" cy="90" r="2.5" fill={colors.border.strong}/>
     {/* Arcs de corner */}
-    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 290 0 A 10 10 0 0 1 299 10" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke="#333" strokeWidth="1"/>
-    <path d="M 299 170 A 10 10 0 0 1 290 180" fill="none" stroke="#333" strokeWidth="1"/>
+    <path d="M 0 10 A 10 10 0 0 1 10 0" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 290 0 A 10 10 0 0 1 299 10" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 0 170 A 10 10 0 0 0 10 180" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
+    <path d="M 299 170 A 10 10 0 0 1 290 180" fill="none" stroke={colors.border.strong} strokeWidth="1"/>
   </svg>
 )
 
@@ -645,11 +646,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   const prochainEnt = prochainesEntrainements[0] || null
 
   const STATUTS_PRESENCE = [
-    { val: 'present', label: 'Présent', color: '#4ade80' },
-    { val: 'absent', label: 'Absent', color: '#ef4444' },
-    { val: 'malade', label: 'Malade', color: '#60a5fa' },
-    { val: 'blesse', label: 'Blessé', color: '#60a5fa' },
-    { val: 'convoque', label: 'Convoqué', color: '#60a5fa' },
+    { val: 'present', label: 'Présent', color: colors.accent.green },
+    { val: 'absent', label: 'Absent', color: colors.accent.red },
+    { val: 'malade', label: 'Malade', color: colors.accent.blue },
+    { val: 'blesse', label: 'Blessé', color: colors.accent.blue },
+    { val: 'convoque', label: 'Convoqué', color: colors.accent.blue },
   ]
 
   // Les réponses des joueurs au sondage "seras-tu présent ?" du prochain entraînement
@@ -754,11 +755,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   return (
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
+      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
 
       {/* ── Planning de la semaine — dynamique, généré depuis entrainements + matchs ── */}
-      <div style={{ background: '#111', border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
-        <p style={{ fontWeight: 800, fontSize: '14px', margin: '0 0 12px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
+      <div style={{ background: colors.background.surface, border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
+        <p style={{ fontWeight: 800, fontSize: '14px', margin: '0 0 12px', color: colors.accent.blue, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
         <PlanningSemaineWidget
           entrainements={entrainements}
           matchs={matchs}
@@ -767,8 +768,8 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         />
       </div>
 
-      {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor="#60a5fa" titre="Créneau libéré disponible" />}
-      <DeplacementsAssignesWidget userId={userId} accentColor="#60a5fa" onOuvrirFiche={ouvrirFicheDeplacement} />
+      {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor={colors.accent.blue} titre="Créneau libéré disponible" />}
+      <DeplacementsAssignesWidget userId={userId} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
@@ -780,11 +781,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           const totalM = matchsJoues.length
           const pct = (n) => totalM ? Math.round(n / totalM * 100) : 0
           return (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
+                <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
                 <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
-                <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
+                <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
               </div>
 
               <div style={{ height: '1px', background: '#ffffff20', flexShrink: 0 }} />
@@ -793,9 +794,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                 <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
                 <div style={{ display: 'flex', gap: '14px' }}>
                   {[
-                    { label: 'V', val: victoires, color: '#4ade80' },
+                    { label: 'V', val: victoires, color: colors.accent.green },
                     { label: 'N', val: nuls, color: '#facc15' },
-                    { label: 'D', val: defaites, color: '#ef4444' },
+                    { label: 'D', val: defaites, color: colors.accent.red },
                   ].map(s => (
                     <div key={s.label} style={{ textAlign: 'center' }}>
                       <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: s.color }}>{s.label}</p>
@@ -808,10 +809,10 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )
         })()}
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
           {prochainesEntrainements.length === 0 ? (
-            <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>Aucune séance planifiée</p>
+            <p style={{ fontSize: '14px', color: colors.text.disabled, margin: 0 }}>Aucune séance planifiée</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {prochainesEntrainements.map((entr, idx) => {
@@ -821,20 +822,20 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                 const estDemain = entr.date === demain.toISOString().split('T')[0]
                 const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
                 return (
-                  <div key={entr.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: idx === 0 ? '#60a5fa0f' : '#0a0a0a', borderRadius: '10px', border: `1px solid ${idx === 0 ? '#60a5fa30' : '#1a1a1a'}` }}>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: idx === 0 ? '#60a5fa' : '#2a2a2a', color: idx === 0 ? '#0a0a0a' : '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
+                  <div key={entr.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: idx === 0 ? '#60a5fa0f' : colors.background.base, borderRadius: '10px', border: `1px solid ${idx === 0 ? colors.accent.blue + alpha.light : colors.background.raised}` }}>
+                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: idx === 0 ? colors.accent.blue : colors.border.default, color: idx === 0 ? colors.background.base : colors.text.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
                       {idx + 1}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || mesSeancesOuvertes.find(s => s.id === entr.fiche_id)?.theme || 'Séance'}</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
                     </div>
                     {isMobile ? (
                       <span title={sondageEstClos(entr) ? 'Sondage clôturé' : 'Sondage ouvert'}
-                        style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? '#ef4444' : '#4ade80', flexShrink: 0 }} />
+                        style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? colors.accent.red : colors.accent.green, flexShrink: 0 }} />
                     ) : (
                       !sondageEstClos(entr) && (
-                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: '#4ade8015', color: '#4ade80', flexShrink: 0 }}>Sondage ouvert</span>
+                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: colors.accent.green + alpha.subtle, color: colors.accent.green, flexShrink: 0 }}>Sondage ouvert</span>
                       )
                     )}
                   </div>
@@ -844,24 +845,24 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoChart /> Présence cette semaine</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#60a5fa' }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoChart /> Présence cette semaine</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: colors.accent.blue }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> Prochain match</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> Prochain match</p>
           {prochainMatch ? (
             <>
               <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
-              <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? '#4ade8020' : '#f9731620', color: prochainMatch.domicile ? '#4ade80' : '#f97316', border: `1px solid ${prochainMatch.domicile ? '#4ade8040' : '#f9731640'}` }}>
+              <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? colors.accent.green + alpha.soft : colors.accent.orange + alpha.soft, color: prochainMatch.domicile ? colors.accent.green : colors.accent.orange, border: `1px solid ${prochainMatch.domicile ? colors.accent.green + alpha.medium : colors.accent.orange + alpha.medium}` }}>
                 {prochainMatch.domicile ? <IcoHome /> : <IcoBus />} {prochainMatch.domicile ? 'Domicile' : 'Déplacement'}
               </span>
             </>
           ) : (
-            <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>Aucun match planifié</p>
+            <p style={{ fontSize: '14px', color: colors.text.disabled, margin: 0 }}>Aucun match planifié</p>
           )}
         </div>
       </div>
@@ -898,29 +899,29 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
         const podiumPrecedent = podiumDuMois(moisPrecedentKey)
 
         return (
-          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
+          <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>🏅 Classement séances</p>
               <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
-                style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Voir tout →
               </button>
             </div>
 
-            <p style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
+            <p style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
               {now.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })}
             </p>
             {podiumActuel.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {podiumActuel.slice(0, 3).map((item, idx) => (
-                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: '#0a0a0a', borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
-                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? '#fbbf24' : idx === 1 ? '#9ca3af' : '#cd7f32', color: '#0a0a0a', fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.base, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? colors.accent.amber : idx === 1 ? '#9ca3af' : '#cd7f32', color: colors.background.base, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {idx + 1}
                     </span>
                     <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{item.joueur.prenom} {item.joueur.nom}</span>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#fbbf24' }}>{item.count} ⭐</span>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
                   </div>
                 ))}
               </div>
@@ -928,13 +929,13 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
             {podiumPrecedent.length > 0 && (
               <>
-                <p style={{ fontSize: '10px', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
+                <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
                   {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.75 }}>
                   <span style={{ fontSize: '14px' }}>🥇</span>
                   <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#fbbf24' }}>{podiumPrecedent[0].count} ⭐</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.amber }}>{podiumPrecedent[0].count} ⭐</span>
                 </div>
               </>
             )}
@@ -952,16 +953,16 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           const clos = sondageEstClos(prochainEnt)
           return (
             <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
-              style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : '#4ade80'}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : colors.accent.green}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
               <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
               <div style={{ fontSize: '13px', color: 'white', fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 📋 {prochainEnt.description || 'Entraînement'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-                <span style={{ color: '#4ade80' }}>✅ {presents}</span>
-                <span style={{ color: '#ef4444' }}>❌ {absents}</span>
+                <span style={{ color: colors.accent.green }}>✅ {presents}</span>
+                <span style={{ color: colors.accent.red }}>❌ {absents}</span>
                 <span style={{ color: '#6b7280' }}>⏳ {enAttente}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? '#374151' : 'rgba(74,222,128,0.15)', color: clos ? '#6b7280' : '#4ade80' }}>
+                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? '#374151' : 'rgba(74,222,128,0.15)', color: clos ? '#6b7280' : colors.accent.green }}>
                   {clos ? '🔒 Fermé' : '🟢 Ouvert'}
                 </span>
               </div>
@@ -969,9 +970,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )
         })() : (
           <button onClick={() => setActiveSection('equipe')}
-            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
+            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><IcoPlus /></span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>Ajouter un joueur</span>
           </button>
@@ -982,9 +983,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           { Icon: IcoLayout, label: 'Tacticboard', section: 'tactipad' },
         ].map(a => (
           <button key={a.section} onClick={() => setActiveSection(a.section)}
-            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#60a5fa40'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
+            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><a.Icon /></span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
           </button>
@@ -994,10 +995,10 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       {/* Fil d'activité récente */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoActivity /> Activité récente</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoPoll /> Dernières réponses aux sondages</p>
           {dernieresReponses.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune réponse pour l'instant.</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune réponse pour l'instant.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {dernieresReponses.map(d => {
@@ -1006,9 +1007,9 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                   <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.joueurNom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{d.seanceLabel}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{d.seanceLabel}</p>
                     </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: '#60a5fa', whiteSpace: 'nowrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: colors.accent.blue, whiteSpace: 'nowrap' }}>
                       {cfg ? <><cfg.Icon /> {cfg.label}</> : d.statut}
                     </span>
                   </div>
@@ -1018,15 +1019,15 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
           {!prochainEnt ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {STATUTS_PRESENCE.map(s => (
                 <div key={s.val} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{s.label}</span>
+                  <span style={{ fontSize: '11px', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{s.label}</span>
                   <span style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{compterStatutPresence(s.val)}</span>
                 </div>
               ))}
@@ -1034,16 +1035,16 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoFileText /> Derniers rapports générés</p>
           {rapportsRecents.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {rapportsRecents.map(r => (
                 <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{r.prenom_joueur || 'Sans nom'}{r.poste ? ` — ${r.poste}` : ''}</p>
-                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap' }}>{r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''}</span>
+                  <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>{r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''}</span>
                 </div>
               ))}
             </div>
@@ -1053,14 +1054,14 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
 
       {deplacementFicheOuverte && (() => {
         const dep = deplacementFicheOuverte
-        const inputSt = { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
+        const inputSt = { width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
         return (
           <div onClick={() => setDeplacementFicheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
               <p style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '16px' }}>📋 Fiche déplacement — {dep.lieu_destination}</p>
 
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
-                <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 700 }}>Données automatiques</p>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
+                <p style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 700 }}>Données automatiques</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '12px', color: '#ccc' }}>
                   <div>📍 <strong>{dep.lieu_destination || '—'}</strong></div>
                   <div>👥 <strong>{dep.equipe || '—'}</strong></div>
@@ -1072,46 +1073,46 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
               </div>
 
               {fichesBus.length === 0 ? (
-                <p style={{ color: '#555', fontSize: '12px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
+                <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
               ) : (
                 fichesBus.map((f, idx) => (
-                  <div key={f.immat} style={{ background: '#111', borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid #1a1a1a' }}>
-                    <div style={{ fontWeight: 700, color: '#4ade80', marginBottom: '10px', fontSize: '13px' }}>🚌 {f.immat}</div>
+                  <div key={f.immat} style={{ background: colors.background.surface, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid #1a1a1a' }}>
+                    <div style={{ fontWeight: 700, color: colors.accent.green, marginBottom: '10px', fontSize: '13px' }}>🚌 {f.immat}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <label style={{ fontSize: '11px', color: '#888' }}>Km avant
+                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Km avant
                         <input type="number" placeholder="ex: 45230" value={f.km_avant} onChange={e => modifierFicheBus(idx, 'km_avant', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: '#888' }}>Km après
+                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Km après
                         <input type="number" placeholder="ex: 45380" value={f.km_apres} onChange={e => modifierFicheBus(idx, 'km_apres', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: '#888' }}>Gasoil avant
+                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Gasoil avant
                         <input type="text" placeholder="ex: 4/4" value={f.gasoil_avant} onChange={e => modifierFicheBus(idx, 'gasoil_avant', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: '#888' }}>Gasoil après
+                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Gasoil après
                         <input type="text" placeholder="ex: 2/4" value={f.gasoil_apres} onChange={e => modifierFicheBus(idx, 'gasoil_apres', e.target.value)} style={inputSt} />
                       </label>
                     </div>
-                    <label style={{ fontSize: '11px', color: '#888', display: 'block', marginTop: '10px' }}>Nom du conducteur
+                    <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block', marginTop: '10px' }}>Nom du conducteur
                       <input type="text" placeholder="Prénom Nom" value={f.conducteur} onChange={e => modifierFicheBus(idx, 'conducteur', e.target.value)} style={inputSt} />
                     </label>
-                    <label style={{ fontSize: '11px', color: '#888', display: 'block', marginTop: '10px' }}>Remarques sur le véhicule
+                    <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block', marginTop: '10px' }}>Remarques sur le véhicule
                       <textarea placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={f.remarques_vehicule} onChange={e => modifierFicheBus(idx, 'remarques_vehicule', e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
                     </label>
                   </div>
                 ))
               )}
 
-              <label style={{ fontSize: '11px', color: '#888', display: 'block' }}>Remarques générales
+              <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block' }}>Remarques générales
                 <textarea placeholder="Observations sur le déplacement..." value={remarquesGenerales} onChange={e => setRemarquesGenerales(e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
               </label>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
                 <button onClick={sauvegarderFiche} disabled={savingFiche}
-                  style={{ flex: 1, background: '#4ade80', color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, cursor: savingFiche ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingFiche ? 0.6 : 1 }}>
+                  style={{ flex: 1, background: colors.accent.green, color: colors.background.base, border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, cursor: savingFiche ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingFiche ? 0.6 : 1 }}>
                   {savingFiche ? 'Enregistrement...' : '💾 Enregistrer la fiche'}
                 </button>
                 <button onClick={() => setDeplacementFicheOuverte(null)}
-                  style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.muted, borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   Annuler
                 </button>
               </div>
@@ -2552,13 +2553,13 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
          onClick={e => e.stopPropagation()}>
       {j.joueur_id ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, color: '#4ade80', background: '#4ade8015',
+          <span style={{ fontSize: 10, color: colors.accent.green, background: colors.accent.green + alpha.subtle,
                          padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
             ✅ Compte lié
           </span>
           {canEdit('effectif') && (
             <button onClick={() => reinitialiserAccesJoueur(j)}
-              style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
               title="Envoyer un email de réinitialisation de mot de passe">
               🔑
             </button>
@@ -2583,7 +2584,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
                   setInviteStatus(prev => { const next = { ...prev }; delete next[j.id]; return next })
                   await chargerJoueurs(userId)
                 }}
-                style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
                 ✕ Corriger
               </button>
             </div>
@@ -2598,8 +2599,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             placeholder="Email du joueur..."
             type="email"
             style={{
-              flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a',
-              borderRadius: 6, color: '#fff', padding: '5px 9px', fontSize: 11,
+              flex: 1, background: colors.background.base, border: '1px solid #2a2a2a',
+              borderRadius: 6, color: colors.text.primary, padding: '5px 9px', fontSize: 11,
               outline: 'none'
             }}
           />
@@ -2607,9 +2608,9 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             disabled={invitingId === j.id || !(inviteEmails[j.id] || '').trim()}
             onClick={() => inviterJoueur(j)}
             style={{
-              background: (inviteEmails[j.id] || '').trim() ? '#60a5fa20' : '#111',
-              border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#60a5fa60' : '#2a2a2a'),
-              color: (inviteEmails[j.id] || '').trim() ? '#60a5fa' : '#555',
+              background: (inviteEmails[j.id] || '').trim() ? colors.accent.blue + alpha.soft : colors.background.surface,
+              border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#60a5fa60' : colors.border.default),
+              color: (inviteEmails[j.id] || '').trim() ? colors.accent.blue : colors.text.faint,
               borderRadius: 6, padding: '5px 10px', fontSize: 11,
               fontWeight: 700, cursor: (inviteEmails[j.id] || '').trim() ? 'pointer' : 'default',
               whiteSpace: 'nowrap', transition: 'all 0.2s'
@@ -2619,7 +2620,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
           </button>
         </div>
       ) : (
-        <span style={{ fontSize: 11, color: '#333', fontStyle: 'italic' }}>Aucune invitation envoyée</span>
+        <span style={{ fontSize: 11, color: colors.border.strong, fontStyle: 'italic' }}>Aucune invitation envoyée</span>
       )}
     </div>
   )
@@ -3305,11 +3306,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   // Statuts disponibles (cycle au clic)
   const STATUTS = ['absent', 'present', 'blesse', 'malade', 'convoque']
   const STATUT_CONFIG = {
-    present:  { label: t('ent_present', lang),   emoji: '✅', bg: '#4ade8015', border: '#4ade8040', color: '#4ade80' },
-    absent:   { label: t('ent_absent', lang),    emoji: '❌', bg: '#ef444415', border: '#ef444440', color: '#ef4444' },
-    blesse:   { label: t('ent_blesse', lang),    emoji: '🤕', bg: '#f9731615', border: '#f9731640', color: '#f97316' },
-    malade:   { label: t('ent_malade', lang),    emoji: '🤒', bg: '#a855f715', border: '#a855f740', color: '#a855f7' },
-    convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: '#60a5fa15', border: '#60a5fa40', color: '#60a5fa' },
+    present:  { label: t('ent_present', lang),   emoji: '✅', bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.medium, color: colors.accent.green },
+    absent:   { label: t('ent_absent', lang),    emoji: '❌', bg: colors.accent.red + alpha.subtle, border: colors.accent.red + alpha.medium, color: colors.accent.red },
+    blesse:   { label: t('ent_blesse', lang),    emoji: '🤕', bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.medium, color: colors.accent.orange },
+    malade:   { label: t('ent_malade', lang),    emoji: '🤒', bg: colors.accent.purple + alpha.subtle, border: colors.accent.purple + alpha.medium, color: colors.accent.purple },
+    convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.medium, color: colors.accent.blue },
   }
 
   // Réponses des joueurs à la dispo d'un match (disponibilites.match_id), triées
@@ -3469,16 +3470,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
 
   const st = {
-    input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
-    label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
-    card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
-    btn: (color = '#60a5fa') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
-    btnSolid: { background: '#60a5fa', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
+    input: { width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+    label: { fontSize: '11px', color: colors.text.faint, marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
+    card: { background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
+    btn: (color = colors.accent.blue) => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+    btnSolid: { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#60a5fa', fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
+    <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: colors.accent.blue, fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
     </div>
   )
 
@@ -3539,13 +3540,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   return (
     <>
     {toastMsg && (
-      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toastMsg.type === 'erreur' ? '#ef4444' : '#4ade80', color: toastMsg.type === 'erreur' ? '#fff' : '#000', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '360px' }}>
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toastMsg.type === 'erreur' ? colors.accent.red : colors.accent.green, color: toastMsg.type === 'erreur' ? colors.text.primary : colors.black, padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '360px' }}>
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
-    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor="#60a5fa" />
-    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor="#60a5fa" />
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor={colors.accent.blue} />
+    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} />
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
 
       {/* Overlay mobile */}
       {isMobile && sidebarOpen && (
@@ -3557,7 +3558,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
       {/* SIDEBAR */}
       <aside style={{
-        width: '220px', background: '#0d0d0d', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        width: '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
         ...(isMobile ? {
           position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
@@ -3566,15 +3567,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       }}>
         <div style={{ padding: '24px 20px 16px' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-            Digital<span style={{ color: '#4ade80' }}>Football</span>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
           </div>
-          <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
-          {profil?.club && <p style={{ fontSize: '12px', color: '#555', margin: '8px 0 0' }}>{profil.club}</p>}
+          <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
+          {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
         </div>
 
         <div style={{ padding: '0 10px' }}>
           <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span style={{ flexShrink: 0 }}><IcoHome /></span><span style={{ flex: 1 }}>Accueil</span>
           </button>
         </div>
@@ -3582,17 +3583,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
           {sidebarSectionsVisibles.map(section => (
             <div key={section.titre}>
-              <div style={{ color: '#333', fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+              <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
                 {section.titre}
               </div>
               {section.items.map(item => (
                 <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? '#60a5fa' : item.locked ? '#333' : '#888', fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                   {activeSection === item.key && (
-                    <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: '#60a5fa', borderRadius: '0 3px 3px 0' }} />
+                    <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.blue, borderRadius: '0 3px 3px 0' }} />
                   )}
                 </button>
               ))}
@@ -3602,12 +3603,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
         <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
           <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? '#60a5fa' : '#888', fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span style={{ flexShrink: 0 }}><IcoUser /></span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
           </button>
           {staffClub && (
             <button onClick={() => navigate('/club')}
-              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: '#1a1a1a', border: '1px solid #60a5fa', borderRadius: '8px', color: '#60a5fa', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: '1px solid #60a5fa', borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
               🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
             </button>
           )}
@@ -3620,7 +3621,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   title={l.label}
                   style={{
                     padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                    background: lang === l.code ? '#60a5fa20' : 'transparent',
+                    background: lang === l.code ? colors.accent.blue + alpha.soft : 'transparent',
                     outline: lang === l.code ? '1px solid #60a5fa40' : 'none',
                     fontSize: '14px', lineHeight: 1,
                   }}>
@@ -3631,7 +3632,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
           </div>
 
           <button onClick={() => { signOutSafe(); navigate('/') }}
-            style={{ width: '100%', marginTop: '4px', background: 'transparent', color: '#555', border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
+            style={{ width: '100%', marginTop: '4px', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
             {t('btn_deconnexion', lang)}
           </button>
         </div>
@@ -3653,9 +3654,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               </svg>
             </button>
             <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>
-              Digital<span style={{ color: '#4ade80' }}>Football</span>
+              Digital<span style={{ color: colors.accent.green }}>Football</span>
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#60a5fa', color: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, marginRight: '2px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: colors.accent.blue, color: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, marginRight: '2px' }}>
               {profil?.prenom?.[0] || profil?.nom?.[0] || 'E'}
             </div>
           </div>
@@ -3686,22 +3687,22 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('equipe_titre', lang)}</h1>
-                <p style={{ color: '#555', fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} {t('equipe_joueurs', lang)} {t('equipe_dans_effectif', lang)}</p>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} {t('equipe_joueurs', lang)} {t('equipe_dans_effectif', lang)}</p>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {/* Toggle vue */}
-                <div style={{ display: 'flex', background: '#1a1a1a', borderRadius: '8px', padding: '3px', gap: '2px' }}>
+                <div style={{ display: 'flex', background: colors.background.raised, borderRadius: '8px', padding: '3px', gap: '2px' }}>
                   {[['poste',`⊞ ${t('equipe_vue_postes', lang)}`],['liste',`☰ ${t('equipe_vue_liste', lang)}`]].map(([v, label]) => (
                     <button key={v} onClick={() => setVueEquipe(v)}
-                      style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: vueEquipe === v ? '#60a5fa' : 'transparent', color: vueEquipe === v ? '#000' : '#555', transition: 'all 0.15s' }}>
+                      style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: vueEquipe === v ? colors.accent.blue : 'transparent', color: vueEquipe === v ? colors.black : colors.text.faint, transition: 'all 0.15s' }}>
                       {label}
                     </button>
                   ))}
                 </div>
-                <button onClick={telechargerTemplate} style={st.btn('#60a5fa')} title={t('equipe_telecharger_modele', lang)}>{t('equipe_template', lang)}</button>
+                <button onClick={telechargerTemplate} style={st.btn(colors.accent.blue)} title={t('equipe_telecharger_modele', lang)}>{t('equipe_template', lang)}</button>
                 {canEdit('effectif') && (
                   <>
-                    <button onClick={() => importRef.current?.click()} style={st.btn('#a78bfa')}>{t('equipe_importer_excel_csv', lang)}</button>
+                    <button onClick={() => importRef.current?.click()} style={st.btn(colors.accent.purpleLight)}>{t('equipe_importer_excel_csv', lang)}</button>
                     <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
                     <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ {t('equipe_ajouter', lang)}</button>
                   </>
@@ -3710,7 +3711,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             </div>
 
             {permissions?.effectif === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -3736,17 +3737,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'short' })
                       return (
                         <div key={i}
-                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? '#4ade8008' : '#141414', border: `1px solid ${isToday ? '#4ade8025' : '#1f1f1f'}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: isToday ? colors.accent.green + alpha.faint : colors.background.surfaceAlt, border: `1px solid ${isToday ? '#4ade8025' : colors.border.faint}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default' }}
                           onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: ev.type === 'match' ? '#60a5fa15' : 'rgba(96,165,250,0.06)', border: `1px solid ${ev.type === 'match' ? '#60a5fa30' : 'rgba(96,165,250,0.15)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: ev.type === 'match' ? colors.accent.blue + alpha.subtle : 'rgba(96,165,250,0.06)', border: `1px solid ${ev.type === 'match' ? colors.accent.blue + alpha.light : 'rgba(96,165,250,0.15)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                             {ev.type === 'match' ? '⚽' : '🏃'}
                           </div>
                           <div style={{ flex: 1 }}>
                             <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{ev.titre}</p>
-                            <p style={{ fontSize: '11px', color: '#555' }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
+                            <p style={{ fontSize: '11px', color: colors.text.faint }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
                           </div>
                           {ev.type === 'entrainement' && (
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: ev.sondage_clos ? '#ef4444' : '#4ade80', background: ev.sondage_clos ? '#ef444415' : '#4ade8015', border: `1px solid ${ev.sondage_clos ? '#ef444430' : '#4ade8030'}`, borderRadius: '20px', padding: '2px 8px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: ev.sondage_clos ? colors.accent.red : colors.accent.green, background: ev.sondage_clos ? colors.accent.red + alpha.subtle : colors.accent.green + alpha.subtle, border: `1px solid ${ev.sondage_clos ? colors.accent.red + alpha.light : colors.accent.green + alpha.light}`, borderRadius: '20px', padding: '2px 8px' }}>
                               {ev.sondage_clos ? t('ent_sondage_clos', lang) : t('ent_sondage_ouvert', lang)}
                             </span>
                           )}
@@ -3760,32 +3761,32 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
-              <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
-                <p style={{ margin: '0 0 8px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
+              <div style={{ background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+                <p style={{ margin: '0 0 8px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
                 <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: '#60a5fa', fontWeight: 700, fontSize: 13 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: colors.accent.blue, fontWeight: 700, fontSize: 13 }}>
                   💬 {t('equipe_ouvrir_groupe', lang)}
                 </a>
                 <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
-                  style={{ marginTop: 8, fontSize: 11, color: '#555', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  style={{ marginTop: 8, fontSize: 11, color: colors.text.faint, background: 'none', border: 'none', cursor: 'pointer' }}>
                   {t('equipe_modifier_lien', lang)}
                 </button>
               </div>
             ) : (
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700 }}>💬 {t('equipe_groupe', lang)}</p>
-                <p style={{ margin: '0 0 12px', fontSize: 12, color: '#555' }}>{t('equipe_colle_lien_groupe', lang)}</p>
+                <p style={{ margin: '0 0 12px', fontSize: 12, color: colors.text.faint }}>{t('equipe_colle_lien_groupe', lang)}</p>
                 <input
                   placeholder="https://chat.whatsapp.com/..."
                   value={lienGroupe}
                   onChange={e => setLienGroupe(e.target.value)}
-                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
                 />
                 <button onClick={async () => {
                   await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
                   await chargerProfilEdu(userId)
                 }}
-                  style={{ background: '#60a5fa', color: '#000', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {t('btn_sauvegarder', lang)}
                 </button>
               </div>
@@ -3800,7 +3801,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
               const noteGlobale = (ln.technique || ln.physique || ln.mental || ln.tactique)
                 ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1) : null
-              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? '#60a5fa' : j.poste?.toLowerCase().includes('milieu') ? '#a78bfa' : '#4ade80'
+              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
               return (
                 <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
                   <div style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
@@ -3813,10 +3814,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ flex: 1 }}>
                         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                         <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${j.categorie}` : ''}</p>
-                        {j.numero_licence && <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa15', padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
+                        {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
                       </div>
-                      {noteGlobale && <div style={{ textAlign: 'center' }}><p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#fbbf24' }}>{noteGlobale}</p><p style={{ margin: 0, fontSize: '10px', color: '#555' }}>NOTE ÉDU.</p></div>}
-                      <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
+                      {noteGlobale && <div style={{ textAlign: 'center' }}><p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: colors.accent.amber }}>{noteGlobale}</p><p style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>NOTE ÉDU.</p></div>}
+                      <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
                     </div>
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -3824,41 +3825,41 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {blocInvitationJoueur(j)}
 
                       {/* Présence - Donut multi + stats */}
-                      <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
                         <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏃 {t('equipe_presence_entrainements', lang)}</p>
                         {tx ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                             <DonutMulti presents={tx.presents} absents={tx.absents} blesses={tx.blesses} malade={tx.malade} convoque={tx.convoque} size={110} />
                             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                               {[
-                                { emoji: '✅', label: t('ent_present', lang), val: tx.presents, color: '#4ade80' },
-                                { emoji: '🏆', label: t('ent_convoque', lang), val: tx.convoque, color: '#60a5fa' },
-                                { emoji: '❌', label: t('ent_absent', lang), val: tx.absents, color: '#ef4444' },
-                                { emoji: '🤕', label: t('ent_blesse', lang), val: tx.blesses, color: '#f97316' },
-                                { emoji: '🤒', label: t('ent_malade', lang), val: tx.malade, color: '#a855f7' },
-                                { emoji: '📅', label: t('nav_seances', lang), val: tx.total, color: '#fff' },
+                                { emoji: '✅', label: t('ent_present', lang), val: tx.presents, color: colors.accent.green },
+                                { emoji: '🏆', label: t('ent_convoque', lang), val: tx.convoque, color: colors.accent.blue },
+                                { emoji: '❌', label: t('ent_absent', lang), val: tx.absents, color: colors.accent.red },
+                                { emoji: '🤕', label: t('ent_blesse', lang), val: tx.blesses, color: colors.accent.orange },
+                                { emoji: '🤒', label: t('ent_malade', lang), val: tx.malade, color: colors.accent.purple },
+                                { emoji: '📅', label: t('nav_seances', lang), val: tx.total, color: colors.text.primary },
                               ].map(s => (
-                                <div key={s.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '12px', color: '#555' }}>{s.emoji} {s.label}</span>
+                                <div key={s.label} style={{ background: colors.background.base, borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '12px', color: colors.text.faint }}>{s.emoji} {s.label}</span>
                                   <span style={{ fontWeight: 700, color: s.color, fontSize: '14px' }}>{s.val}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        ) : <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>{t('equipe_aucune_presence', lang)}</p>}
+                        ) : <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('equipe_aucune_presence', lang)}</p>}
                       </div>
 
                       {/* Évaluations - Radial skills */}
                       {(ln.technique || ln.physique || ln.mental || ln.tactique) ? (
-                        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
                           <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('equipe_evaluation_educateur', lang)}</p>
                           <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '12px' }}>
-                            <RadialSkill value={ln.technique} color="#4ade80" label={t('eval_technique', lang)} size={90} />
-                            <RadialSkill value={ln.physique} color="#60a5fa" label={t('eval_physique', lang)} size={90} />
-                            <RadialSkill value={ln.mental} color="#a78bfa" label={t('eval_mental', lang)} size={90} />
-                            <RadialSkill value={ln.tactique} color="#fbbf24" label={t('eval_tactique', lang)} size={90} />
+                            <RadialSkill value={ln.technique} color={colors.accent.green} label={t('eval_technique', lang)} size={90} />
+                            <RadialSkill value={ln.physique} color={colors.accent.blue} label={t('eval_physique', lang)} size={90} />
+                            <RadialSkill value={ln.mental} color={colors.accent.purpleLight} label={t('eval_mental', lang)} size={90} />
+                            <RadialSkill value={ln.tactique} color={colors.accent.amber} label={t('eval_tactique', lang)} size={90} />
                           </div>
-                          {ln.commentaire && <p style={{ margin: '14px 0 0', fontSize: '13px', color: '#aaa', background: '#0a0a0a', borderRadius: '8px', padding: '10px 14px', fontStyle: 'italic' }}>"{ln.commentaire}"</p>}
+                          {ln.commentaire && <p style={{ margin: '14px 0 0', fontSize: '13px', color: colors.text.secondary, background: colors.background.base, borderRadius: '8px', padding: '10px 14px', fontStyle: 'italic' }}>"{ln.commentaire}"</p>}
                         </div>
                       ) : null}
 
@@ -3875,42 +3876,42 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           return `${label}${isTie ? ' ex æquo' : ''}`
                         }
                         const rangStats = [
-                          { emoji: '🏆', label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: '#fbbf24' },
-                          { emoji: '⚽', label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: '#4ade80' },
-                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: '#60a5fa' },
-                          { emoji: '🧤', label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: '#a78bfa' },
+                          { emoji: '🏆', label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: colors.accent.amber },
+                          { emoji: '⚽', label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: colors.accent.green },
+                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: colors.accent.blue },
+                          { emoji: '🧤', label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: colors.accent.purpleLight },
                           { emoji: '⏱️', label: 'Temps de jeu', val: `${s.minutes}'`, rang: rang(id => statsGlobalesJoueur(id).minutes), color: '#f59e0b' },
-                          { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: '#4ade80' },
+                          { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: colors.accent.green },
                         ]
                         return (
-                          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                          <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
                             <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ {t('equipe_stats_matchs', lang)}</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                               {[
-                                { label: 'Matchs', val: s.matchs, color: '#fff' },
-                                { label: 'Victoires', val: s.victoires, color: '#fbbf24' },
-                                { label: 'Minutes', val: `${s.minutes}'`, color: '#fff' },
-                                { label: 'Buts', val: s.buts, color: '#4ade80' },
-                                { label: 'Passes D.', val: s.passes_dec, color: '#60a5fa' },
-                                { label: 'Clean S.', val: s.clean_sheets, color: '#a78bfa' },
+                                { label: 'Matchs', val: s.matchs, color: colors.text.primary },
+                                { label: 'Victoires', val: s.victoires, color: colors.accent.amber },
+                                { label: 'Minutes', val: `${s.minutes}'`, color: colors.text.primary },
+                                { label: 'Buts', val: s.buts, color: colors.accent.green },
+                                { label: 'Passes D.', val: s.passes_dec, color: colors.accent.blue },
+                                { label: 'Clean S.', val: s.clean_sheets, color: colors.accent.purpleLight },
                                 { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
-                                { label: '🟥', val: s.cartons_r, color: '#ef4444' },
+                                { label: '🟥', val: s.cartons_r, color: colors.accent.red },
                               ].map(c => (
-                                <div key={c.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
+                                <div key={c.label} style={{ background: colors.background.base, borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
                                   <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
-                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>{c.label}</p>
+                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase' }}>{c.label}</p>
                                 </div>
                               ))}
                             </div>
                             {/* Classements dans l'équipe */}
-                            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏅 {t('equipe_classements_equipe', lang)}</p>
+                            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '12px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏅 {t('equipe_classements_equipe', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {rangStats.filter(r => r.rang).map(r => (
-                                <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: '#0a0a0a', borderRadius: '8px' }}>
+                                <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: colors.background.base, borderRadius: '8px' }}>
                                   <span style={{ fontSize: '14px', width: '22px' }}>{r.emoji}</span>
                                   <span style={{ fontSize: '12px', color: '#777', flex: 1 }}>{r.label}</span>
-                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#aaa' }}>{r.val}</span>
-                                  <span style={{ fontSize: '12px', fontWeight: 800, color: r.rang.startsWith('1er') ? '#fbbf24' : r.rang.startsWith('2') ? '#9ca3af' : r.rang.startsWith('3') ? '#d97706' : '#555', background: '#111', padding: '2px 8px', borderRadius: '10px' }}>{r.rang}</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>{r.val}</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 800, color: r.rang.startsWith('1er') ? colors.accent.amber : r.rang.startsWith('2') ? '#9ca3af' : r.rang.startsWith('3') ? '#d97706' : colors.text.faint, background: colors.background.surface, padding: '2px 8px', borderRadius: '10px' }}>{r.rang}</span>
                                 </div>
                               ))}
                             </div>
@@ -3941,10 +3942,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               if (!palmares.length) return null
                               return (
                                 <div style={{ marginTop: '12px' }}>
-                                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🌟 {t('equipe_joueur_du_mois', lang)}</p>
+                                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '12px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>🌟 {t('equipe_joueur_du_mois', lang)}</p>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                     {palmares.map((p, i) => (
-                                      <span key={i} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                                      <span key={i} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
                                         🥇 {p.label}{p.tie ? ' (ex æquo)' : ''} · {p.pts}⭐
                                       </span>
                                     ))}
@@ -3958,7 +3959,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
                         </div>
                       )}
                     </div>
@@ -3970,10 +3971,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modal édition joueur ── */}
             {joueurEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
-                    <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     <div><label style={st.label}>{t('equipe_prenom', lang)}</label><input style={st.input} value={joueurEnEdition.prenom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, prenom: e.target.value }))} /></div>
@@ -4001,7 +4002,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -4018,11 +4019,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <div style={{ ...st.card, border: '1px solid #a78bfa40', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, color: '#a78bfa', fontSize: '15px' }}>📂 {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''} détecté{importPreview.rows.length > 1 ? 's' : ''}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{t('equipe_verifie_donnees', lang)}</p>
+                    <p style={{ margin: 0, fontWeight: 700, color: colors.accent.purpleLight, fontSize: '15px' }}>📂 {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''} détecté{importPreview.rows.length > 1 ? 's' : ''}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('equipe_verifie_donnees', lang)}</p>
                   </div>
                   {!importPreview.importing && (
-                    <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '18px' }}>✕</button>
+                    <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '18px' }}>✕</button>
                   )}
                 </div>
 
@@ -4032,20 +4033,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     <thead>
                       <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
                         {[t('equipe_prenom', lang), t('equipe_nom', lang), t('equipe_poste', lang), t('equipe_categorie', lang), t('equipe_col_maillot', lang), t('equipe_col_naissance', lang), t('equipe_col_licence', lang)].map(h => (
-                          <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                          <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {importPreview.rows.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #1a1a1a', background: i < importPreview.done ? '#4ade8008' : 'transparent' }}>
-                          <td style={{ padding: '7px 10px', fontWeight: 600, color: i < importPreview.done ? '#4ade80' : '#fff' }}>{r.prenom}</td>
-                          <td style={{ padding: '7px 10px', color: i < importPreview.done ? '#4ade80' : '#fff' }}>{r.nom}</td>
-                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.poste || '—'}</td>
-                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.categorie || '—'}</td>
-                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.numero_maillot || '—'}</td>
-                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.date_naissance || '—'}</td>
-                          <td style={{ padding: '7px 10px', color: '#aaa' }}>{r.numero_licence || '—'}</td>
+                        <tr key={i} style={{ borderBottom: '1px solid #1a1a1a', background: i < importPreview.done ? colors.accent.green + alpha.faint : 'transparent' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 600, color: i < importPreview.done ? colors.accent.green : colors.text.primary }}>{r.prenom}</td>
+                          <td style={{ padding: '7px 10px', color: i < importPreview.done ? colors.accent.green : colors.text.primary }}>{r.nom}</td>
+                          <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.poste || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.categorie || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.numero_maillot || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.date_naissance || '—'}</td>
+                          <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.numero_licence || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -4054,15 +4055,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 {importPreview.importing ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ flex: 1, background: '#1a1a1a', borderRadius: '6px', height: '8px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', background: '#4ade80', width: `${(importPreview.done / importPreview.rows.length) * 100}%`, transition: 'width 0.3s', borderRadius: '6px' }} />
+                    <div style={{ flex: 1, background: colors.background.raised, borderRadius: '6px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: colors.accent.green, width: `${(importPreview.done / importPreview.rows.length) * 100}%`, transition: 'width 0.3s', borderRadius: '6px' }} />
                     </div>
-                    <span style={{ fontSize: '13px', color: '#4ade80', fontWeight: 700, flexShrink: 0 }}>{importPreview.done}/{importPreview.rows.length}</span>
+                    <span style={{ fontSize: '13px', color: colors.accent.green, fontWeight: 700, flexShrink: 0 }}>{importPreview.done}/{importPreview.rows.length}</span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={confirmerImport} style={st.btnSolid}>Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
-                    <button onClick={() => setImportPreview(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={() => setImportPreview(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 )}
               </div>
@@ -4070,7 +4071,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
             {showAddJoueur && (
               <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
-                <p style={{ fontWeight: 700, marginBottom: '1rem', color: '#4ade80' }}>{t('equipe_nouveau_joueur', lang)}</p>
+                <p style={{ fontWeight: 700, marginBottom: '1rem', color: colors.accent.green }}>{t('equipe_nouveau_joueur', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
                   <div><label style={st.label}>{t('equipe_prenom', lang)} *</label><input style={st.input} value={newJoueur.prenom} onChange={e => setNewJoueur({ ...newJoueur, prenom: e.target.value })} /></div>
                   <div><label style={st.label}>{t('equipe_nom', lang)} *</label><input style={st.input} value={newJoueur.nom} onChange={e => setNewJoueur({ ...newJoueur, nom: e.target.value })} /></div>
@@ -4087,7 +4088,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
-                  <button onClick={() => setShowAddJoueur(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  <button onClick={() => setShowAddJoueur(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -4095,7 +4096,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '4rem' }}>
                 <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</p>
-                <p style={{ color: '#555' }}>{t('equipe_aucun_joueur_effectif', lang)}</p>
+                <p style={{ color: colors.text.faint }}>{t('equipe_aucun_joueur_effectif', lang)}</p>
               </div>
             ) : vueEquipe === 'liste' ? (
               <div style={{ ...st.card, overflow: 'auto' }}>
@@ -4103,7 +4104,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                       {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('equipe_col_age', lang), t('equipe_col_licence', lang), ''].map(h => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -4116,18 +4117,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       .map((j, i) => {
                         const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
                         const tx = tauxPresence(j.id)
-                        const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? '#60a5fa' : j.poste?.toLowerCase().includes('milieu') ? '#a78bfa' : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? '#4ade80' : '#555'
+                        const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
                         return (
                           <tr key={j.id} style={{ borderBottom: '1px solid #0f0f0f' }}>
-                            <td style={{ padding: '10px 12px', color: '#555', fontWeight: 700, width: '36px' }}>{j.numero_maillot || '—'}</td>
+                            <td style={{ padding: '10px 12px', color: colors.text.faint, fontWeight: 700, width: '36px' }}>{j.numero_maillot || '—'}</td>
                             <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                             <td style={{ padding: '10px 12px' }}><span style={{ color: posColor, fontSize: '12px' }}>{j.poste || '—'}</span></td>
-                            <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
-                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700 }}>🪪</span> : <span style={{ color: '#333', fontSize: '11px' }}>—</span>}</td>
+                            <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
+                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: colors.accent.blue, fontSize: '11px', fontWeight: 700 }}>🪪</span> : <span style={{ color: colors.border.strong, fontSize: '11px' }}>—</span>}</td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 {j.joueur_id ? (
-                                  <span title="Compte lié" style={{ color: '#4ade80', fontSize: 12 }}>✅</span>
+                                  <span title="Compte lié" style={{ color: colors.accent.green, fontSize: 12 }}>✅</span>
                                 ) : j.email ? (
                                   <span title={`Invitation envoyée · ${j.email}`} style={{ color: '#facc15', fontSize: 12 }}>✉️</span>
                                 ) : (
@@ -4135,16 +4136,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                     onClick={e => { e.stopPropagation(); setJoueurProfil(j) }}
                                     title="Inviter ce joueur"
                                     style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: 4,
-                                             color: '#888', fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
+                                             color: colors.text.muted, fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
                                   >
                                     +
                                   </button>
                                 )}
-                                <button onClick={() => setJoueurProfil(j)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 {t('equipe_profil', lang)}</button>
+                                <button onClick={() => setJoueurProfil(j)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 {t('equipe_profil', lang)}</button>
                                 {canEdit('effectif') && (
                                   <>
-                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
-                                    <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: colors.text.secondary, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                                    <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px' }}>✕</button>
                                   </>
                                 )}
                               </div>
@@ -4159,10 +4160,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {[
                   { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                  { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                  { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-                  { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
-                  { label: '❓ Sans poste', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                  { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+                  { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: '❓ Sans poste', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                 ].map(groupe => {
                   const groupJoueurs = joueurs.filter(j => groupe.match(j.poste))
                   if (!groupJoueurs.length) return null
@@ -4170,7 +4171,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     <div key={groupe.label}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                         <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: groupe.color }}>{groupe.label}</h2>
-                        <span style={{ fontSize: '12px', color: '#444', background: '#1a1a1a', padding: '2px 8px', borderRadius: '20px' }}>{groupJoueurs.length} joueur{groupJoueurs.length > 1 ? 's' : ''}</span>
+                        <span style={{ fontSize: '12px', color: colors.text.disabled, background: colors.background.raised, padding: '2px 8px', borderRadius: '20px' }}>{groupJoueurs.length} joueur{groupJoueurs.length > 1 ? 's' : ''}</span>
                         <div style={{ flex: 1, height: '1px', background: groupe.color + '20' }} />
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
@@ -4185,20 +4186,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 </div>
                                 <div style={{ flex: 1 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
                                 </div>
                                 {canEdit('effectif') && (
                                   <div style={{ display: 'flex', gap: '4px' }}>
-                                    <button onClick={e => { e.stopPropagation(); setJoueurEnEdition({ ...j }) }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', borderRadius: '6px', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
-                                    <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
+                                    <button onClick={e => { e.stopPropagation(); setJoueurEnEdition({ ...j }) }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, borderRadius: '6px', padding: '3px 7px', cursor: 'pointer', fontSize: '11px' }}>✏️</button>
+                                    <button onClick={e => { e.stopPropagation(); supprimerJoueur(j.id) }} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px', padding: '4px' }}>✕</button>
                                   </div>
                                 )}
                               </div>
                               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪</span>}
+                                {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f630', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>🪪</span>}
                                 {j.club_categorie_id && (() => {
                                   const cat = clubCategories.find(c => c.id === j.club_categorie_id)
-                                  return cat ? <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{cat.nom}-{cat.equipe}</span> : null
+                                  return cat ? <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{cat.nom}-{cat.equipe}</span> : null
                                 })()}
                                 <button onClick={e => { e.stopPropagation(); setJoueurProfil(j) }} style={{ background: groupe.color + '15', border: `1px solid ${groupe.color}30`, color: groupe.color, borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 {t('equipe_profil', lang)}</button>
                               </div>
@@ -4226,13 +4227,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`🌟 ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
-                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? '#60a5fa' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
+                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
 
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                <p style={{ color: '#555' }}>Ajoute d'abord des joueurs dans "Mon équipe"</p>
+                <p style={{ color: colors.text.faint }}>Ajoute d'abord des joueurs dans "Mon équipe"</p>
               </div>
             ) : (
               <>
@@ -4243,7 +4244,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                           {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang)].map(h => (
-                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -4254,18 +4255,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           return (
                             <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                              <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{j.poste || '—'}</td>
-                              <td style={{ padding: '10px 12px', color: s.matchs > 0 ? '#fff' : '#333' }}>{s.matchs}</td>
-                              <td style={{ padding: '10px 12px', color: s.minutes > 0 ? '#fff' : '#333' }}>{s.minutes}'</td>
-                              <td style={{ padding: '10px 12px', color: s.buts > 0 ? '#4ade80' : '#333', fontWeight: s.buts > 0 ? 700 : 400 }}>{s.buts}</td>
-                              <td style={{ padding: '10px 12px', color: s.passes_dec > 0 ? '#60a5fa' : '#333', fontWeight: s.passes_dec > 0 ? 700 : 400 }}>{s.passes_dec}</td>
-                              <td style={{ padding: '10px 12px', color: s.clean_sheets > 0 ? '#4ade80' : '#333' }}>{s.clean_sheets}</td>
-                              <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : '#333' }}>{s.cartons_j}</td>
-                              <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : '#333' }}>{s.cartons_r}</td>
+                              <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
+                              <td style={{ padding: '10px 12px', color: s.matchs > 0 ? colors.text.primary : colors.border.strong }}>{s.matchs}</td>
+                              <td style={{ padding: '10px 12px', color: s.minutes > 0 ? colors.text.primary : colors.border.strong }}>{s.minutes}'</td>
+                              <td style={{ padding: '10px 12px', color: s.buts > 0 ? colors.accent.green : colors.border.strong, fontWeight: s.buts > 0 ? 700 : 400 }}>{s.buts}</td>
+                              <td style={{ padding: '10px 12px', color: s.passes_dec > 0 ? colors.accent.blue : colors.border.strong, fontWeight: s.passes_dec > 0 ? 700 : 400 }}>{s.passes_dec}</td>
+                              <td style={{ padding: '10px 12px', color: s.clean_sheets > 0 ? colors.accent.green : colors.border.strong }}>{s.clean_sheets}</td>
+                              <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : colors.border.strong }}>{s.cartons_j}</td>
+                              <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : colors.border.strong }}>{s.cartons_r}</td>
                               <td style={{ padding: '10px 12px' }}>
                                 {tx !== null
-                                  ? <span style={{ color: tx.taux >= 80 ? '#4ade80' : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
-                                  : <span style={{ color: '#333' }}>—</span>}
+                                  ? <span style={{ color: tx.taux >= 80 ? colors.accent.green : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
+                                  : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                             </tr>
                           )
@@ -4279,12 +4280,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {statsSubTab === 'classement' && (() => {
                   const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: notes[j.id] }))
                   const TRIS = [
-                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: '#4ade80', unit: 'but' },
-                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: '#60a5fa', unit: 'passe' },
-                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: '#fbbf24', unit: 'V' },
-                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: '#a78bfa', unit: "'" },
+                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unit: 'but' },
+                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unit: 'passe' },
+                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unit: 'V' },
+                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unit: "'" },
                     { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
-                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: '#fbbf24', unit: '/5' },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: colors.accent.amber, unit: '/5' },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
@@ -4293,7 +4294,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {/* Sélecteur de critère */}
                       <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', marginBottom: '1.5rem' }}>
                         {TRIS.map(t => (
-                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : '#111', border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
+                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
                         ))}
                       </div>
                       {/* Podium top 3 */}
@@ -4310,7 +4311,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 <div style={{ fontSize: '22px', marginBottom: '6px' }}>{medals[rank]}</div>
                                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: triActif.color + '20', border: `2px solid ${triActif.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: triActif.color, fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>{j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}</div>
                                 <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700 }}>{j.prenom}</p>
-                                <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>{j.nom}</p>
+                                <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint }}>{j.nom}</p>
                                 <div style={{ background: triActif.color + '20', border: `1px solid ${triActif.color}40`, borderRadius: '8px', width: '70px', height: `${heights[rank]}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
                                   <span style={{ color: triActif.color, fontWeight: 800, fontSize: '18px' }}>{typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}</span>
                                   <span style={{ color: triActif.color + 'aa', fontSize: '9px' }}>{triActif.unit}</span>
@@ -4331,9 +4332,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           </colgroup>
                           <thead>
                             <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
-                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_col_joueur', lang)}</th>
-                              <th style={{ padding: '8px 12px', color: '#444', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_poste', lang)}</th>
+                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
+                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_col_joueur', lang)}</th>
+                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_poste', lang)}</th>
                               <th style={{ padding: '8px 12px', color: triActif.color, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{triActif.label}</th>
                             </tr>
                           </thead>
@@ -4342,9 +4343,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               const val = triActif.get(j)
                               return (
                                 <tr key={j.id} style={{ borderBottom: '1px solid #141414', background: i === 0 ? triActif.color + '08' : 'transparent' }}>
-                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : '#444', fontSize: i === 0 ? '15px' : '13px' }}>{i + 1}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled, fontSize: i === 0 ? '15px' : '13px' }}>{i + 1}</td>
                                   <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                                  <td style={{ padding: '10px 12px', color: '#555', fontSize: '12px' }}>{j.poste || '—'}</td>
+                                  <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
                                   <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color, fontSize: '15px' }}>
                                     {typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}{triActif.unit === '%' ? '%' : ''}
                                   </td>
@@ -4364,11 +4365,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '20px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box' }}>
                       {[
-                        { title: t('stats_graph_buteurs', lang), key: 'buts', color: '#4ade80' },
-                        { title: t('stats_graph_passes', lang), key: 'passes_dec', color: '#60a5fa' },
-                        { title: t('stats_graph_minutes', lang), key: 'minutes', color: '#a78bfa', unit: "'" },
+                        { title: t('stats_graph_buteurs', lang), key: 'buts', color: colors.accent.green },
+                        { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.blue },
+                        { title: t('stats_graph_minutes', lang), key: 'minutes', color: colors.accent.purpleLight, unit: "'" },
                         { title: t('stats_graph_matchs', lang), key: 'matchs', color: '#f59e0b' },
-                        { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: '#fbbf24' },
+                        { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: colors.accent.amber },
                         { title: t('stats_graph_cartons_r', lang), key: 'cartons_r', color: '#f87171' },
                       ].map(({ title, key, color, unit = '' }) => {
                         const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
@@ -4376,7 +4377,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           <div key={key} style={st.card}>
                             <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>{title}</p>
                             {data.length === 0
-                              ? <p style={{ color: '#333', fontSize: '13px' }}>{t('msg_aucune_donnee', lang)}</p>
+                              ? <p style={{ color: colors.border.strong, fontSize: '13px' }}>{t('msg_aucune_donnee', lang)}</p>
                               : <BarChart data={data.map(d => ({ label: d.label, value: d[key] }))} color={color} unit={unit} />
                             }
                           </div>
@@ -4431,24 +4432,24 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           const tauxPresenceGlobal = Math.round((totalPresents + totalConvoques) / tot * 100)
                           const tauxAbsentsGlobal = Math.round(totalAbsents / tot * 100)
                           return [
-                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: '#4ade80', count: totalPresents + totalConvoques },
-                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: '#ef4444', note: t('stats_pres_dont', lang), count: totalAbsents },
-                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: '#f97316', count: totalBlesses },
-                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: '#a855f7', count: totalMalades },
-                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: '#60a5fa', count: totalConvoques },
+                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: colors.accent.green, count: totalPresents + totalConvoques },
+                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: colors.accent.red, note: t('stats_pres_dont', lang), count: totalAbsents },
+                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: colors.accent.orange, count: totalBlesses },
+                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: colors.accent.purple, count: totalMalades },
+                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: colors.accent.blue, count: totalConvoques },
                           ]
                         })().map(c => (
-                          <div key={c.label} style={{ background: '#111', border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
+                          <div key={c.label} style={{ background: colors.background.surface, border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
                             <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>
                               {c.val}%
                               {/* Compteur brut affiché même si l'arrondi tombe à 0% (ex: 1 ou 2
                                   cas sur des centaines de séances × joueurs) — sinon un vrai
                                   blessé/malade "Auto" devient invisible à tort. */}
-                              {c.count > 0 && <span style={{ fontSize: '12px', fontWeight: 600, color: '#555' }}> ({c.count})</span>}
+                              {c.count > 0 && <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}> ({c.count})</span>}
                             </span>
-                            <span style={{ fontSize: '11px', color: '#555', marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
+                            <span style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
                             {c.note && (
-                              <span style={{ fontSize: '9px', color: '#444', marginTop: '2px', textAlign: 'center' }}>{c.note}</span>
+                              <span style={{ fontSize: '9px', color: colors.text.disabled, marginTop: '2px', textAlign: 'center' }}>{c.note}</span>
                             )}
                           </div>
                         ))}
@@ -4458,10 +4459,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
                         {[
                           { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                          { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                          { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-                          { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
-                          { label: '❓ Autres', color: '#555', match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                          { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                          { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+                          { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                          { label: '❓ Autres', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                         ].map(groupe => {
                           const gJoueurs = joueurs.filter(j => groupe.match(j.poste))
                           if (!gJoueurs.length) return null
@@ -4484,15 +4485,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                         />
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: '#555' }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
+                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
                                           {tx ? (
                                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '3px' }}>
                                               {[
-                                                { emoji: '✅', label: t('stats_statut_present', lang), val: tx.presents, color: '#4ade80' },
-                                                { emoji: '🏆', label: t('stats_statut_convoqu', lang), val: tx.convoque, color: '#60a5fa' },
-                                                { emoji: '❌', label: t('stats_statut_absent', lang), val: tx.absents, color: '#ef4444' },
-                                                { emoji: '🤕', label: t('stats_statut_blesse', lang), val: tx.blesses, color: '#f97316' },
-                                                { emoji: '🤒', label: t('stats_statut_malade', lang), val: tx.malade, color: '#a855f7' },
+                                                { emoji: '✅', label: t('stats_statut_present', lang), val: tx.presents, color: colors.accent.green },
+                                                { emoji: '🏆', label: t('stats_statut_convoqu', lang), val: tx.convoque, color: colors.accent.blue },
+                                                { emoji: '❌', label: t('stats_statut_absent', lang), val: tx.absents, color: colors.accent.red },
+                                                { emoji: '🤕', label: t('stats_statut_blesse', lang), val: tx.blesses, color: colors.accent.orange },
+                                                { emoji: '🤒', label: t('stats_statut_malade', lang), val: tx.malade, color: colors.accent.purple },
                                               ].filter(s => s.val > 0).map(s => (
                                                 <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
                                                   {s.emoji} {s.val} {s.label}
@@ -4500,13 +4501,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                               ))}
                                             </div>
                                           ) : (
-                                            <span style={{ fontSize: '11px', color: '#333' }}>Aucune présence saisie</span>
+                                            <span style={{ fontSize: '11px', color: colors.border.strong }}>Aucune présence saisie</span>
                                           )}
                                         </div>
                                         {tx && (
                                           <button
                                             onClick={() => setJoueurMoisDetail(joueurMoisDetail === j.id ? null : j.id)}
-                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#aaa', fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.secondary, fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                                           >
                                             📅 {joueurMoisDetail === j.id ? '▲' : '▼'}
                                           </button>
@@ -4518,17 +4519,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                         if (!moisData.length) return null
                                         return (
                                           <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Présence par mois</p>
+                                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Présence par mois</p>
                                             {moisData.map(m => {
-                                              const color = m.taux >= 80 ? '#4ade80' : m.taux >= 50 ? '#f59e0b' : '#ef4444'
+                                              const color = m.taux >= 80 ? colors.accent.green : m.taux >= 50 ? '#f59e0b' : colors.accent.red
                                               return (
                                                 <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                   <span style={{ fontSize: '11px', color: '#777', minWidth: '110px', textTransform: 'capitalize' }}>{m.label}</span>
-                                                  <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                                                  <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                     <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.4s' }} />
                                                   </div>
                                                   <span style={{ fontSize: '12px', fontWeight: 700, color, minWidth: '36px', textAlign: 'right' }}>{m.taux}%</span>
-                                                  <span style={{ fontSize: '10px', color: '#444' }}>{m.presents+m.convoque}/{m.total}</span>
+                                                  <span style={{ fontSize: '10px', color: colors.text.disabled }}>{m.presents+m.convoque}/{m.total}</span>
                                                 </div>
                                               )
                                             })}
@@ -4552,12 +4553,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             .map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
                             .filter(d => d.value > 0)
                             .sort((a, b) => b.value - a.value)}
-                          color="#4ade80"
+                          color={colors.accent.green}
                           unit="%"
                           max={100}
                         />
                         {joueurs.every(j => !tauxPresence(j.id)) && (
-                          <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
+                          <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
                         )}
                       </div>
                     </div>
@@ -4623,7 +4624,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={st.card}>
                     <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisCourant)}</p>
                     {podiumActuel.length === 0 ? (
-                      <p style={{ color: '#333', fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
+                      <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
                     ) : (
                       <>
                         {/* Podium top 3 */}
@@ -4632,7 +4633,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             {[0, 1, 2].filter(i => podiumActuel[i]).map((i) => {
                               const item = podiumActuel[i]
                               const heights = [130, 100, 80]
-                              const colors = ['#fbbf24', '#9ca3af', '#cd7f32']
+                              const colors = [colors.accent.amber, '#9ca3af', '#cd7f32']
                               return (
                                 <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontSize: '20px' }}>{medals[i]}</span>
@@ -4641,7 +4642,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                   </div>
                                   <div style={{ textAlign: 'center' }}>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom}</p>
-                                    <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{item.joueur.nom}</p>
+                                    <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.nom}</p>
                                     <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: colors[i] }}>{item.count}⭐</p>
                                   </div>
                                   <div style={{ width: '80px', height: `${heights[i]}px`, background: `${colors[i]}30`, border: `1px solid ${colors[i]}50`, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
@@ -4655,13 +4656,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         {/* Liste complète */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {podiumActuel.map((item, idx) => (
-                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#111', borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
                               <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
                               <div style={{ flex: 1 }}>
                                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{item.joueur.poste || 'Joueur'}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.poste || 'Joueur'}</p>
                               </div>
-                              <span style={{ fontSize: '18px', fontWeight: 800, color: '#fbbf24' }}>{item.count} ⭐</span>
+                              <span style={{ fontSize: '18px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
                             </div>
                           ))}
                         </div>
@@ -4675,12 +4676,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏅 {t('stats_classement_general', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {topAll.map((item, idx) => (
-                          <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: '#111', borderRadius: '8px' }}>
+                          <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: colors.background.surface, borderRadius: '8px' }}>
                             <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
                             <div style={{ flex: 1 }}>
                               <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
                             </div>
-                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>{item.pts} ⭐</span>
+                            <span style={{ fontSize: '16px', fontWeight: 800, color: colors.accent.amber }}>{item.pts} ⭐</span>
                           </div>
                         ))}
                       </div>
@@ -4697,13 +4698,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           if (!podium.length) return null
                           const winner = podium[0]
                           return (
-                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#111', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
                               <span style={{ fontSize: '20px' }}>🥇</span>
                               <div style={{ flex: 1 }}>
                                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{winner.joueur.prenom} {winner.joueur.nom}</p>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#555', textTransform: 'capitalize' }}>{moisLabel(k)}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{moisLabel(k)}</p>
                               </div>
-                              <span style={{ fontSize: '15px', fontWeight: 700, color: '#fbbf24' }}>{winner.count} ⭐</span>
+                              <span style={{ fontSize: '15px', fontWeight: 700, color: colors.accent.amber }}>{winner.count} ⭐</span>
                             </div>
                           )
                         })}
@@ -4724,7 +4725,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             </div>
 
             {permissions?.competition === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -4732,7 +4733,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* Sous-onglets */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['resultats',`⚽ ${t('comp_resultats', lang)}`],['calendrier',`🗓️ ${t('comp_calendrier', lang)}`],['classement',`🏆 ${t('comp_classement', lang)}`]].map(([k, label]) => (
-                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? '#60a5fa' : '#555', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
+                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
 
@@ -4744,7 +4745,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   {canEdit('competition') && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {canEdit('stats') && (
-                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #60a5fa40', color: '#60a5fa' }}>📸 {t('seance_scanner', lang)}</button>
+                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #60a5fa40', color: colors.accent.blue }}>📸 {t('seance_scanner', lang)}</button>
                       )}
                       <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ {t('comp_bouton_match', lang)}</button>
                     </div>
@@ -4764,19 +4765,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       )}
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
-                        <span style={{ color: '#555', paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                        <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={newMatch.score_eux} onChange={e => setNewMatch({ ...newMatch, score_eux: e.target.value })} /></div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
                         <input type="checkbox" checked={newMatch.domicile} onChange={e => setNewMatch({ ...newMatch, domicile: e.target.checked })} />
                         {t('comp_domicile', lang)}
                       </label>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={ajouterMatch} disabled={savingMatch} style={st.btnSolid}>{savingMatch ? 'Ajout...' : t('btn_ajouter', lang)}</button>
-                      <button onClick={() => setShowAddMatch(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                      <button onClick={() => setShowAddMatch(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                     </div>
                   </div>
                 )}
@@ -4784,14 +4785,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                   {grouperMatchsParMois(matchs.filter(matchJoue), true).map(([moisKey, { label, items }]) => (
                     <div key={moisKey}>
-                      <p style={{ fontSize: '11px', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
+                      <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {items.map(m => {
                           const aScore = true
                           const nous = parseInt(m.score_nous)
                           const eux = parseInt(m.score_eux)
                           const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
-                          const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#f87171' : '#f59e0b'
+                          const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? '#f87171' : '#f59e0b'
                           return (
                       <div key={m.id} style={{ ...st.card }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
@@ -4800,7 +4801,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                               {m.domicile ? 'vs' : '@'} {m.adversaire}
                             </p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                               {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                               {m.heure ? ` · ${m.heure}` : ''}
                               {m.competition ? ` · ${m.competition}` : ''}
@@ -4833,7 +4834,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
                           <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
-                            <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
+                            <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                               {joueurs.map(j => {
                                 const key = m.id
@@ -4864,7 +4865,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               })}
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
-                              <p style={{ fontSize: '13px', color: '#555', margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
+                              <p style={{ fontSize: '13px', color: colors.text.faint, margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
                               <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
@@ -4875,7 +4876,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                     </div>
                   ))}
-                  {matchs.filter(matchJoue).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>{t('comp_aucun_match', lang)}</p></div>}
+                  {matchs.filter(matchJoue).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
                 </div>
               </div>
             )}
@@ -4887,7 +4888,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* Upload zone */}
                 <div style={st.card}>
                   <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>📸 {t('comp_scanner_calendrier', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>{t('comp_uploade_photos', lang)}</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_uploade_photos', lang)}</p>
 
                   <label style={{ display: 'block', border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
                     <input type="file" accept="image/*" multiple style={{ display: 'none' }}
@@ -4903,7 +4904,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         })
                         e.target.value = ''
                       }} />
-                    <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>📁 {t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: '#333' }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
+                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>📁 {t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: colors.border.strong }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
                   </label>
 
                   {/* Thumbnails */}
@@ -4913,13 +4914,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         <div key={i} style={{ position: 'relative' }}>
                           <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
                           <button onClick={() => setCalendarImages(prev => prev.filter((_, idx) => idx !== i))}
-                            style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: '#fff', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                            style={{ position: 'absolute', top: '-6px', right: '-6px', background: colors.accent.red, border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: colors.text.primary, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {calendarError && <p style={{ color: '#ef4444', fontSize: '12px', margin: '0 0 10px' }}>⚠️ {calendarError}</p>}
+                  {calendarError && <p style={{ color: colors.accent.red, fontSize: '12px', margin: '0 0 10px' }}>⚠️ {calendarError}</p>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={scannerCalendrier} disabled={calendarLoading || !calendarImages.length}
@@ -4928,7 +4929,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     </button>
                     {calendarMatchs.length > 0 && (
                       <button onClick={() => { setCalendarMatchs([]); localStorage.removeItem('calendarMatchs') }}
-                        style={st.btn('#ef4444')}>🗑️ {t('comp_reinitialiser', lang)}</button>
+                        style={st.btn(colors.accent.red)}>🗑️ {t('comp_reinitialiser', lang)}</button>
                     )}
                   </div>
                 </div>
@@ -4948,28 +4949,28 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {calendarMatchs.map((m, i) => {
                         const isPast = m.date && new Date(m.date) < new Date()
                         return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#111', borderRadius: '10px', border: `1px solid ${isPast ? '#1a1a1a' : '#2a2a2a'}`, opacity: isPast ? 0.5 : 1 }}>
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${isPast ? colors.background.raised : colors.border.default}`, opacity: isPast ? 0.5 : 1 }}>
                             <div style={{ minWidth: '90px', textAlign: 'center' }}>
                               {m.date ? (
                                 <>
-                                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: isPast ? '#555' : '#fff' }}>
+                                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: isPast ? colors.text.faint : colors.text.primary }}>
                                     {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                   </p>
-                                  {m.heure && <p style={{ margin: 0, fontSize: '10px', color: '#555' }}>{m.heure}</p>}
+                                  {m.heure && <p style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>{m.heure}</p>}
                                 </>
                               ) : (
-                                <p style={{ margin: 0, fontSize: '11px', color: '#444' }}>{t('comp_date_tbd', lang)}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.disabled }}>{t('comp_date_tbd', lang)}</p>
                               )}
-                              {m.journee && <p style={{ margin: 0, fontSize: '10px', color: '#4ade80', fontWeight: 700 }}>{m.journee}</p>}
+                              {m.journee && <p style={{ margin: 0, fontSize: '10px', color: colors.accent.green, fontWeight: 700 }}>{m.journee}</p>}
                             </div>
                             <div style={{ flex: 1, textAlign: 'center' }}>
                               <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>
-                                {m.equipe_domicile} <span style={{ color: '#555', fontWeight: 400 }}>vs</span> {m.equipe_exterieur}
+                                {m.equipe_domicile} <span style={{ color: colors.text.faint, fontWeight: 400 }}>vs</span> {m.equipe_exterieur}
                               </p>
-                              {m.competition && <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#555' }}>{m.competition}</p>}
+                              {m.competition && <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>{m.competition}</p>}
                             </div>
                             <button onClick={() => { const updated = calendarMatchs.filter((_, idx) => idx !== i); setCalendarMatchs(updated); localStorage.setItem('calendarMatchs', JSON.stringify(updated)) }}
-                              style={{ background: 'none', border: 'none', color: '#333', fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>✕</button>
+                              style={{ background: 'none', border: 'none', color: colors.border.strong, fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>✕</button>
                           </div>
                         )
                       })}
@@ -4979,7 +4980,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 {calendarMatchs.length === 0 && !calendarLoading && (
                   <div style={{ ...st.card, textAlign: 'center', padding: '2rem', border: '1px dashed #1a1a1a' }}>
-                    <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>{t('comp_aucun_calendrier', lang)}</p>
+                    <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('comp_aucun_calendrier', lang)}</p>
                   </div>
                 )}
 
@@ -4994,7 +4995,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                     {grouperMatchsParMois(matchs.filter(m => !matchJoue(m)), false).map(([moisKey, { label, items }]) => (
                       <div key={moisKey}>
-                        <p style={{ fontSize: '11px', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
+                        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {items.map(m => {
                             const dispoStats = statsDispoMatch(m.id)
@@ -5004,16 +5005,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{ flex: 1 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                                     {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                                     {m.heure ? ` · ${m.heure}` : ''}
                                     {m.competition ? ` · ${m.competition}` : ''}
                                     {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                                   </p>
                                 </div>
-                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m) }} style={st.btn('#a855f7')}>📋 Sondage dispo</button>
+                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m) }} style={st.btn(colors.accent.purple)}>📋 Sondage dispo</button>
                                 {canEdit('competition') && (
-                                  <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
+                                  <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
                                 )}
                                 {canEdit('competition') && (
                                   <button
@@ -5026,23 +5027,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                       setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
                                       supprimerDeplacementLieAuMatch(m)
                                     }}
-                                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.red, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
                                     title="Supprimer ce match"
                                   >
                                     🗑️
                                   </button>
                                 )}
                                 {canEdit('stats') && (
-                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn('#4ade80')}>✅ {t('comp_marquer_joue', lang)}</button>
+                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn(colors.accent.green)}>✅ {t('comp_marquer_joue', lang)}</button>
                                 )}
                               </div>
                               {aDesReponses && (
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px' }}>
-                                  <span style={{ color: '#4ade80' }}>✅ {dispoStats.present}</span>
-                                  <span style={{ color: '#ef4444' }}>❌ {dispoStats.absent}</span>
-                                  <span style={{ color: '#f97316' }}>🤕 {dispoStats.blesse}</span>
-                                  {dispoStats.malade > 0 && <span style={{ color: '#a855f7' }}>🤒 {dispoStats.malade}</span>}
-                                  {dispoStats.convoque > 0 && <span style={{ color: '#60a5fa' }}>🏆 {dispoStats.convoque}</span>}
+                                  <span style={{ color: colors.accent.green }}>✅ {dispoStats.present}</span>
+                                  <span style={{ color: colors.accent.red }}>❌ {dispoStats.absent}</span>
+                                  <span style={{ color: colors.accent.orange }}>🤕 {dispoStats.blesse}</span>
+                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>🤒 {dispoStats.malade}</span>}
+                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>🏆 {dispoStats.convoque}</span>}
                                   <span style={{ color: '#6b7280' }}>⏳ {dispoStats.sans_reponse} en attente</span>
                                 </div>
                               )}
@@ -5053,7 +5054,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                     ))}
                     {matchs.filter(m => !matchJoue(m)).length === 0 && (
-                      <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
+                      <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
                     )}
                   </div>
                 </div>
@@ -5070,7 +5071,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     d'un navigateur/appareil à l'autre, et jamais visible des joueurs). */}
                 <div style={st.card}>
                   <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔗 {t('comp_classement_officiel', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555' }}>{t('comp_colle_lien_classement', lang)}</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_colle_lien_classement', lang)}</p>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       style={{ ...st.input, flex: 1 }}
@@ -5102,7 +5103,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                   {profilEdu?.ligue_url && (
                     <a href={profilEdu.ligue_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
                       🏆 {t('comp_voir_classement', lang)} ↗
                     </a>
                   )}
@@ -5124,12 +5125,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               }
               return (
                 <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                  <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#555', margin: '0 0 16px' }}>
+                    <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>
                       {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                       {m.heure ? ` · ${m.heure}` : ''}
                     </p>
@@ -5138,26 +5139,26 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {reponses.map(j => {
                         const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
                         return (
-                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#141414', borderRadius: '10px' }}>
+                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px' }}>
                             <Avatar person={j} size={32} />
                             <div style={{ flex: 1 }}>
                               <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
-                              {j.poste && <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>{j.poste}</p>}
+                              {j.poste && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{j.poste}</p>}
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || '#333', background: cfg?.bg || '#1a1a1a', border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
                               {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
                             </span>
                           </div>
                         )
                       })}
                       {reponses.length === 0 && (
-                        <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
+                        <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
                       )}
                     </div>
 
-                    <div style={{ ...st.card, background: '#0d0d0d' }}>
+                    <div style={{ ...st.card, background: colors.background.sunken }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>🎽 Générer les convocations</p>
-                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ✅ ou déjà convoqués 🏆. Décoche/coche pour ajuster, puis copie la liste.</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ✅ ou déjà convoqués 🏆. Décoche/coche pour ajuster, puis copie la liste.</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px', maxHeight: '200px', overflowY: 'auto' }}>
                         {reponses.map(j => {
                           const coche = convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')
@@ -5181,10 +5182,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modale "Marquer comme joué" ── */}
             {modalMatchJoue && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✅ {t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
-                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
 
                   {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
@@ -5196,7 +5197,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       }
                       <div style={{ flex: 1, minWidth: '180px' }}>
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>📸 {t('scan_feuille_titre', lang)}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{t('scan_feuille_desc', lang)}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
                       </div>
                       <input id="scanner-modal-input" type="file" accept="image/*" style={{ display: 'none' }}
                         onChange={e => {
@@ -5205,7 +5206,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           reader.onload = ev => { setScannerModalImageBase64(ev.target.result.split(',')[1]); setScannerModalImagePreview(ev.target.result) }
                           reader.readAsDataURL(file)
                         }} />
-                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn('#60a5fa')}>📁 {t('seance_scanner', lang)}</button>
+                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn(colors.accent.blue)}>📁 {t('seance_scanner', lang)}</button>
                       <button onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...st.btnSolid, opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
                         {scannerModalLoading ? `🔍 ${libelleStatutGroq(scannerModalStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
                       </button>
@@ -5215,11 +5216,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
                     <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
-                    <span style={{ color: '#555', paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                    <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
                     <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
                   </div>
 
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                     {joueurs.map(j => {
                       const key = modalMatchJoue.id
@@ -5248,11 +5249,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       )
                     })}
                   </div>
-                  <p style={{ fontSize: '13px', color: '#555', margin: '10px 0 0' }}>Min · Buts · PD · CS</p>
+                  <p style={{ fontSize: '13px', color: colors.text.faint, margin: '10px 0 0' }}>Min · Buts · PD · CS</p>
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
                     <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={fermerModalMatchJoue} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={fermerModalMatchJoue} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -5261,12 +5262,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modale "Ajouter / Modifier un match" ── */}
             {modalMatchForm && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
                       {modalMatchForm.id ? `✏️ ${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
                     </p>
-                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={modalMatchForm.adversaire} onChange={e => setModalMatchForm(f => ({ ...f, adversaire: e.target.value }))} /></div>
@@ -5292,7 +5293,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                     )}
                     <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: '#aaa' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
                         <input type="checkbox" checked={modalMatchForm.domicile} onChange={e => setModalMatchForm(f => ({ ...f, domicile: e.target.checked }))} />
                         {t('comp_domicile', lang)}
                       </label>
@@ -5302,7 +5303,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     <button onClick={sauvegarderMatchForm} disabled={savingMatchForm || !modalMatchForm.adversaire || !modalMatchForm.date} style={st.btnSolid}>
                       {savingMatchForm ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}
                     </button>
-                    <button onClick={() => setModalMatchForm(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={() => setModalMatchForm(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -5313,11 +5314,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <Deplacements clubId={clubAffiliation.club_id} accentColor="#60a5fa" />
+            <Deplacements clubId={clubAffiliation.club_id} accentColor={colors.accent.blue} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>
+              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
                 {clubAffiliation?.statut === 'en_attente'
                   ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.'}
@@ -5329,11 +5330,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {/* ===== TERRAINS ===== */}
         {activeSection === 'terrains' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor="#60a5fa" />
+            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor={colors.accent.blue} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ {t('nav_terrains', lang)}</h1>
-              <p style={{ color: '#555', fontSize: '13px', marginTop: '1rem' }}>
+              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
                 {clubAffiliation?.statut === 'en_attente'
                   ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.'}
@@ -5348,11 +5349,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('ent_titre', lang)}</h1>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{entrainements.length} {t('ent_seances_count', lang)} · {t('ent_sous_titre', lang)}</p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{entrainements.length} {t('ent_seances_count', lang)} · {t('ent_sous_titre', lang)}</p>
               </div>
               {canEdit('entrainements') && (
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn('#60a5fa')}>📅 {t('ent_planifier_saison', lang)}</button>
+                  <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn(colors.accent.blue)}>📅 {t('ent_planifier_saison', lang)}</button>
                   <button onClick={() => { setShowAddEntrainement(true); setShowPlanificateur(false) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
                 </div>
               )}
@@ -5365,7 +5366,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 { id: 'liste', label: `📁 ${t('ent_sous_onglet_liste', lang)}` },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setSousOngletEnt(tab.id)}
-                  style={{ background: sousOngletEnt === tab.id ? '#60a5fa15' : 'transparent', border: `1px solid ${sousOngletEnt === tab.id ? '#60a5fa40' : '#2a2a2a'}`, color: sousOngletEnt === tab.id ? '#60a5fa' : '#555', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: sousOngletEnt === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${sousOngletEnt === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: sousOngletEnt === tab.id ? colors.accent.blue : colors.text.faint, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {tab.label}
                 </button>
               ))}
@@ -5378,7 +5379,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               if (!prochaineSeance) {
                 return (
                   <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                    <p style={{ color: '#555', margin: '0 0 8px' }}>{t('ent_aucune_prochaine_seance', lang)}</p>
+                    <p style={{ color: colors.text.faint, margin: '0 0 8px' }}>{t('ent_aucune_prochaine_seance', lang)}</p>
                   </div>
                 )
               }
@@ -5444,27 +5445,27 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ ...st.card, marginBottom: '16px', background: 'linear-gradient(135deg, #0d1a0d, #111)', border: '1px solid #4ade8020' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                       <div>
-                        <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{t('ent_sous_onglet_prochaine', lang)}</p>
+                        <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{t('ent_sous_onglet_prochaine', lang)}</p>
                         <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
-                        <p style={{ fontSize: '13px', color: '#555' }}>
+                        <p style={{ fontSize: '13px', color: colors.text.faint }}>
                           {new Date(prochaineSeance.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                           {prochaineSeance.heure ? ` · ${prochaineSeance.heure}` : ''}
                         </p>
                       </div>
-                      <span style={{ background: clos ? '#ef444415' : '#4ade8015', border: `1px solid ${clos ? '#ef444440' : '#4ade8040'}`, color: clos ? '#ef4444' : '#4ade80', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
+                      <span style={{ background: clos ? colors.accent.red + alpha.subtle : colors.accent.green + alpha.subtle, border: `1px solid ${clos ? colors.accent.red + alpha.medium : colors.accent.green + alpha.medium}`, color: clos ? colors.accent.red : colors.accent.green, padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
                         {clos ? `🔒 ${t('ent_sondage_clos', lang)}` : `🟢 ${t('ent_sondage_ouvert', lang)}`}
                       </span>
                     </div>
                     {prochaineSeance.fiche_id ? (
                       <button
                         onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) setFicheApercu(s) }}
-                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         📄 Voir la fiche
                       </button>
                     ) : canEdit('entrainements') && (
                       <button
                         onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)}
-                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         🔗 Attacher une fiche
                       </button>
                     )}
@@ -5473,16 +5474,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   {/* Stats réponses */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginBottom: '20px' }}>
                     {[
-                      { key: 'present', label: t('ent_stat_presents', lang), emoji: '✅', color: '#4ade80' },
-                      { key: 'absent', label: t('ent_stat_absents', lang), emoji: '❌', color: '#ef4444' },
-                      { key: 'blesse', label: t('ent_stat_blesses', lang), emoji: '🤕', color: '#f97316' },
-                      { key: 'malade', label: t('ent_stat_malades', lang), emoji: '🤒', color: '#a855f7' },
-                      { key: 'convoque', label: t('ent_stat_convoques', lang), emoji: '🏆', color: '#60a5fa' },
-                      { key: 'sans_reponse', label: t('ent_stat_sans_reponse', lang), emoji: '⏳', color: '#555' },
+                      { key: 'present', label: t('ent_stat_presents', lang), emoji: '✅', color: colors.accent.green },
+                      { key: 'absent', label: t('ent_stat_absents', lang), emoji: '❌', color: colors.accent.red },
+                      { key: 'blesse', label: t('ent_stat_blesses', lang), emoji: '🤕', color: colors.accent.orange },
+                      { key: 'malade', label: t('ent_stat_malades', lang), emoji: '🤒', color: colors.accent.purple },
+                      { key: 'convoque', label: t('ent_stat_convoques', lang), emoji: '🏆', color: colors.accent.blue },
+                      { key: 'sans_reponse', label: t('ent_stat_sans_reponse', lang), emoji: '⏳', color: colors.text.faint },
                     ].map(s => (
-                      <div key={s.key} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                      <div key={s.key} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                         <p style={{ fontSize: '22px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{stats[s.key] || 0}</p>
-                        <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>{s.label}</p>
+                        <p style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>{s.label}</p>
                       </div>
                     ))}
                   </div>
@@ -5490,11 +5491,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   {/* Barre de progression */}
                   <div style={{ ...st.card, marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <p style={{ fontSize: '12px', color: '#555' }}>{t('ent_taux_reponse', lang)}</p>
+                      <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('ent_taux_reponse', lang)}</p>
                       <p style={{ fontSize: '12px', fontWeight: 700 }}>{total - stats.sans_reponse}/{total} {t('equipe_joueurs', lang)}</p>
                     </div>
-                    <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${total > 0 ? ((total - stats.sans_reponse) / total * 100) : 0}%`, height: '100%', background: '#4ade80', borderRadius: '6px', transition: 'width 0.3s' }} />
+                    <div style={{ background: colors.background.raised, borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${total > 0 ? ((total - stats.sans_reponse) / total * 100) : 0}%`, height: '100%', background: colors.accent.green, borderRadius: '6px', transition: 'width 0.3s' }} />
                     </div>
                   </div>
 
@@ -5505,13 +5506,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {reponses.map(j => {
                         const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
                         return (
-                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#141414', borderRadius: '10px' }}>
+                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px' }}>
                             <Avatar person={j} size={32} />
                             <div style={{ flex: 1 }}>
                               <p style={{ fontWeight: 600, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
-                              <p style={{ fontSize: '10px', color: '#555' }}>{j.poste}</p>
+                              <p style={{ fontSize: '10px', color: colors.text.faint }}>{j.poste}</p>
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || '#333', background: cfg?.bg || '#1a1a1a', border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
                               {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
                             </span>
                           </div>
@@ -5532,20 +5533,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           { val: 24, label: `24h ${t('ent_avant', lang)}` },
                         ].map(opt => (
                           <button key={String(opt.val)} onClick={() => sauvegarderDelaiCloture(opt.val)}
-                            style={{ background: delaiCloture === opt.val ? '#60a5fa20' : 'transparent', border: `1px solid ${delaiCloture === opt.val ? '#60a5fa50' : '#2a2a2a'}`, color: delaiCloture === opt.val ? '#60a5fa' : '#555', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: delaiCloture === opt.val ? colors.accent.blue + alpha.soft : 'transparent', border: `1px solid ${delaiCloture === opt.val ? '#60a5fa50' : colors.border.default}`, color: delaiCloture === opt.val ? colors.accent.blue : colors.text.faint, padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             {opt.label}
                           </button>
                         ))}
                       </div>
-                      <p style={{ fontSize: '11px', color: '#444', marginBottom: '14px' }}>
+                      <p style={{ fontSize: '11px', color: colors.text.disabled, marginBottom: '14px' }}>
                         {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
                         {delaiCloture && heureCloture && (
                           <> — clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
                         )}
                       </p>
                       {delaiCloture && !prochaineSeance.heure && (
-                        <div style={{ background: '#f9731615', border: '1px solid #f9731640', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <p style={{ fontSize: '11px', color: '#f97316', margin: 0, flex: 1, minWidth: '200px' }}>
+                        <div style={{ background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731640', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '11px', color: colors.accent.orange, margin: 0, flex: 1, minWidth: '200px' }}>
                             ⚠️ Cette séance n'a pas d'heure renseignée : la clôture auto ne peut pas se déclencher tant qu'elle est absente.
                           </p>
                           <input type="time" style={{ ...st.input, width: 'auto' }} disabled={savingHeureSeance}
@@ -5555,12 +5556,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ display: 'flex', gap: '10px' }}>
                         {!clos ? (
                           <button onClick={cloturerSondage} disabled={savingCloture}
-                            style={{ background: '#ef444415', border: '1px solid #ef444430', color: '#ef4444', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
+                            style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444430', color: colors.accent.red, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
                             🔒 {t('ent_cloturer_maintenant', lang)}
                           </button>
                         ) : (
                           <button onClick={rouvrirSondage}
-                            style={{ background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             🔓 {t('ent_rouvrir_sondage', lang)}
                           </button>
                         )}
@@ -5574,7 +5575,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {sousOngletEnt === 'liste' && (
             <>
             {permissions?.entrainements === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -5593,30 +5594,30 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* ── Import d'une fiche archivée ── */}
                 <div style={{ marginBottom: '12px' }}>
                   {newEntrainement.fiche_id ? (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#a78bfa15', border: '1px solid #a78bfa30', color: '#a78bfa', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa30', color: colors.accent.purpleLight, fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px' }}>
                       📄 {t('ent_fiche_importee', lang)}
                       <span onClick={() => setNewEntrainement({ ...newEntrainement, fiche_id: null })} style={{ cursor: 'pointer', fontWeight: 900 }}>✕</span>
                     </div>
                   ) : (
-                    <button onClick={() => setShowImportFiche(v => !v)} style={{ background: 'transparent', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => setShowImportFiche(v => !v)} style={{ background: 'transparent', border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       📥 {t('ent_importer_fiche', lang)}
                     </button>
                   )}
 
                   {showImportFiche && (
-                    <div style={{ marginTop: '10px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    <div style={{ marginTop: '10px', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                       {mesSeancesOuvertes.length === 0 ? (
-                        <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                        <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
                       ) : mesSeancesOuvertes.map(s => (
                         <div key={s.id} onClick={() => importerFicheDansEntrainement(s)}
                           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                          onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                           <div style={{ minWidth: 0 }}>
                             <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
                           </div>
-                          <span style={{ fontSize: '11px', color: '#a78bfa', flexShrink: 0 }}>{t('ent_choisir', lang)}</span>
+                          <span style={{ fontSize: '11px', color: colors.accent.purpleLight, flexShrink: 0 }}>{t('ent_choisir', lang)}</span>
                         </div>
                       ))}
                     </div>
@@ -5625,7 +5626,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={ajouterEntrainement} style={st.btnSolid}>{t('ent_creer_seance', lang)}</button>
-                  <button onClick={() => { setShowAddEntrainement(false); setShowImportFiche(false) }} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  <button onClick={() => { setShowAddEntrainement(false); setShowImportFiche(false) }} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -5633,8 +5634,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Planificateur récurrent ── */}
             {showPlanificateur && canEdit('entrainements') && (
               <div style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#60a5fa' }}>📅 {t('ent_planifier_saison', lang)}</p>
-                <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#555' }}>{t('ent_choisis_jours', lang)}</p>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: colors.accent.blue }}>📅 {t('ent_planifier_saison', lang)}</p>
+                <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('ent_choisis_jours', lang)}</p>
 
                 {/* Jours de la semaine */}
                 <label style={st.label}>{t('ent_jours_entrainement', lang)}</label>
@@ -5643,7 +5644,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     const actif = planSaison.joursActifs.includes(num)
                     return (
                       <button key={num} onClick={() => toggleJourPlan(num)}
-                        style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? '#60a5fa' : '#2a2a2a'}`, background: actif ? '#60a5fa20' : '#1a1a1a', color: actif ? '#60a5fa' : '#666', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
+                        style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.soft : colors.background.raised, color: actif ? colors.accent.blue : colors.text.dim, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
                         {label}
                       </button>
                     )
@@ -5668,7 +5669,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   const cur2 = new Date(planSaison.dateDebut)
                   while (cur2 <= end) { if (planSaison.joursActifs.includes(cur2.getDay()) && !existingDates.has(cur2.toISOString().split('T')[0])) newCount++; cur2.setDate(cur2.getDate() + 1) }
                   return (
-                    <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa20', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: '#60a5fa' }}>
+                    <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa20', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: colors.accent.blue }}>
                       📊 <strong>{count}</strong> séances au total · <strong>{newCount}</strong> nouvelles à créer ({count - newCount} déjà existantes)
                     </div>
                   )
@@ -5676,20 +5677,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 {/* Progression */}
                 {generatingPlan && (
-                  <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#60a5fa' }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
+                  <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.accent.blue }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
                     <div style={{ background: '#222', borderRadius: '4px', height: '6px' }}>
-                      <div style={{ background: '#60a5fa', borderRadius: '4px', height: '6px', width: `${planProgress.total > 0 ? (planProgress.done / planProgress.total) * 100 : 0}%`, transition: 'width 0.2s' }} />
+                      <div style={{ background: colors.accent.blue, borderRadius: '4px', height: '6px', width: `${planProgress.total > 0 ? (planProgress.done / planProgress.total) * 100 : 0}%`, transition: 'width 0.2s' }} />
                     </div>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={genererSaison} disabled={generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length}
-                    style={{ ...st.btnSolid, background: '#60a5fa', opacity: (generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) ? 0.5 : 1 }}>
+                    style={{ ...st.btnSolid, background: colors.accent.blue, opacity: (generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) ? 0.5 : 1 }}>
                     {generatingPlan ? 'Génération...' : `🚀 ${t('ent_generer_seances', lang)}`}
                   </button>
-                  <button onClick={() => setShowPlanificateur(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                  <button onClick={() => setShowPlanificateur(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -5702,15 +5703,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div key={moisKey} style={{ marginBottom: '8px' }}>
                     <div
                       onClick={() => setMoisOuverts(prev => { const next = new Set(prev); next.has(moisKey) ? next.delete(moisKey) : next.add(moisKey); return next })}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '16px' }}>📅</span>
-                        <span style={{ color: '#fff', fontWeight: 700, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
-                        <span style={{ background: '#1a1a1a', color: '#888', fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>
+                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
+                        <span style={{ background: colors.background.raised, color: colors.text.muted, fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>
                           {items.length} {items.length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
                         </span>
                       </div>
-                      <span style={{ color: '#4ade80', fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: moisOuvert ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                      <span style={{ color: colors.accent.green, fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: moisOuvert ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                     </div>
                     {moisOuvert && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid #1a1a1a', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
@@ -5730,19 +5731,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 const dateObj = new Date(e.date + 'T12:00:00')
                 const estFuture = dateObj > new Date()
                 return (
-                  <div key={e.id} style={{ ...st.card, borderLeft: `3px solid ${estFuture ? '#60a5fa40' : '#4ade8030'}` }}>
+                  <div key={e.id} style={{ ...st.card, borderLeft: `3px solid ${estFuture ? colors.accent.blue + alpha.medium : colors.accent.green + alpha.light}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                          {e.heure && <span style={{ fontSize: '12px', color: '#555' }}>{e.heure}</span>}
-                          {e.description && <span style={{ fontSize: '12px', color: '#555' }}>{e.description}</span>}
-                          {e.lieu && <span style={{ fontSize: '12px', color: '#555' }}>📍 {e.lieu}</span>}
+                          {e.heure && <span style={{ fontSize: '12px', color: colors.text.faint }}>{e.heure}</span>}
+                          {e.description && <span style={{ fontSize: '12px', color: colors.text.faint }}>{e.description}</span>}
+                          {e.lieu && <span style={{ fontSize: '12px', color: colors.text.faint }}>📍 {e.lieu}</span>}
                           {e.fiche_id && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
                               <span
                                 onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}
-                                style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px 0 0 10px', cursor: 'pointer' }}>
+                                style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px 0 0 10px', cursor: 'pointer' }}>
                                 📄 {t('ent_voir_fiche', lang)}
                               </span>
                               <span
@@ -5759,49 +5760,49 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                   }
                                 }}
                                 title="Détacher cette fiche"
-                                style={{ fontSize: '11px', color: '#a78bfa', background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '1px 6px', borderRadius: '0 10px 10px 0', cursor: 'pointer', lineHeight: 1.5 }}>
+                                style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '1px 6px', borderRadius: '0 10px 10px 0', cursor: 'pointer', lineHeight: 1.5 }}>
                                 ×
                               </span>
                             </span>
                           )}
                           {!estFuture && total > 0 && (
                             <>
-                              <span style={{ fontSize: '11px', color: '#4ade80', background: '#4ade8010', padding: '1px 7px', borderRadius: '10px' }}>✅ {nbPresents}</span>
-                              {nbConvoques > 0 && <span style={{ fontSize: '11px', color: '#60a5fa', background: '#60a5fa10', padding: '1px 7px', borderRadius: '10px' }}>🏆 {nbConvoques}</span>}
-                              {nbBlesses > 0 && <span style={{ fontSize: '11px', color: '#f97316', background: '#f9731610', padding: '1px 7px', borderRadius: '10px' }}>🤕 {nbBlesses}</span>}
-                              {nbMalades > 0 && <span style={{ fontSize: '11px', color: '#a855f7', background: '#a855f710', padding: '1px 7px', borderRadius: '10px' }}>🤒 {nbMalades}</span>}
+                              <span style={{ fontSize: '11px', color: colors.accent.green, background: '#4ade8010', padding: '1px 7px', borderRadius: '10px' }}>✅ {nbPresents}</span>
+                              {nbConvoques > 0 && <span style={{ fontSize: '11px', color: colors.accent.blue, background: '#60a5fa10', padding: '1px 7px', borderRadius: '10px' }}>🏆 {nbConvoques}</span>}
+                              {nbBlesses > 0 && <span style={{ fontSize: '11px', color: colors.accent.orange, background: '#f9731610', padding: '1px 7px', borderRadius: '10px' }}>🤕 {nbBlesses}</span>}
+                              {nbMalades > 0 && <span style={{ fontSize: '11px', color: colors.accent.purple, background: '#a855f710', padding: '1px 7px', borderRadius: '10px' }}>🤒 {nbMalades}</span>}
                             </>
                           )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {!estFuture && total > 0 && (
-                          <span style={{ background: nbPresents >= total * 0.8 ? '#4ade8015' : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? '#4ade8030' : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+                          <span style={{ background: nbPresents >= total * 0.8 ? colors.accent.green + alpha.subtle : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? colors.accent.green + alpha.light : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? colors.accent.green : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
                             {nbPresents}/{total}
                           </span>
                         )}
                         {canEdit('entrainements') && !e.fiche_id && (
                           <button onClick={ev => { ev.stopPropagation(); setModalImportFicheEntrainement(e.id) }}
                             title={t('ent_importer_fiche', lang)}
-                            style={{ background: '#1a2e1a', border: '1px solid #4ade80', borderRadius: '6px', color: '#4ade80', width: '28px', height: '28px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            style={{ background: '#1a2e1a', border: '1px solid #4ade80', borderRadius: '6px', color: colors.accent.green, width: '28px', height: '28px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             +
                           </button>
                         )}
                         {canEdit('entrainements') && (
                           <button onClick={ev => { ev.stopPropagation(); setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' }) }}
-                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
                         )}
                         {canEdit('entrainements') && (
-                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
+                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.disabled, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
                         )}
-                        <span style={{ color: '#444', cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
+                        <span style={{ color: colors.text.disabled, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
                       </div>
                     </div>
 
                     {ouvert && (
                       <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
                         {joueurs.length === 0 ? (
-                          <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>{t('ent_ajoute_joueurs', lang)}</p>
+                          <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('ent_ajoute_joueurs', lang)}</p>
                         ) : (
                           <>
                             {/* Légende */}
@@ -5811,11 +5812,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                   {s.emoji} {s.label}
                                 </span>
                               ))}
-                              <span style={{ fontSize: '11px', color: '#333' }}>· {t('ent_clique_statut', lang)}</span>
+                              <span style={{ fontSize: '11px', color: colors.border.strong }}>· {t('ent_clique_statut', lang)}</span>
                             </div>
                             {canEdit('entrainements') && (
                               <button onClick={() => importerReponsesSondage(e.id)}
-                                style={{ background: 'transparent', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
+                                style={{ background: 'transparent', border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
                                 📥 Importer les réponses au sondage
                               </button>
                             )}
@@ -5830,7 +5831,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 const cfg = nonSaisi
                                   ? (dispoAuto
                                       ? { ...(STATUT_CONFIG[dispoAuto] || STATUT_CONFIG.absent) }
-                                      : { emoji: '⬜', label: t('ent_non_saisi', lang), bg: '#ffffff05', border: '#2a2a2a', color: '#444' })
+                                      : { emoji: '⬜', label: t('ent_non_saisi', lang), bg: '#ffffff05', border: colors.border.default, color: colors.text.disabled })
                                   : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
                                 const hasPoint = !!p?.point_seance
                                 return (
@@ -5842,7 +5843,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                       <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         {cfg.label}
                                         {dispoAuto && (
-                                          <span style={{ fontSize: '8px', color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
+                                          <span style={{ fontSize: '8px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
                                             {t('ent_dispo_auto', lang)}
                                           </span>
                                         )}
@@ -5874,8 +5875,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               })}
               {entrainements.length === 0 && (
                 <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                  <p style={{ color: '#555', margin: '0 0 8px' }}>{t('ent_aucune_seance', lang)}</p>
-                  <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>{t('ent_utilise_planificateur', lang)}</p>
+                  <p style={{ color: colors.text.faint, margin: '0 0 8px' }}>{t('ent_aucune_seance', lang)}</p>
+                  <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('ent_utilise_planificateur', lang)}</p>
                 </div>
               )}
             </div>
@@ -5885,10 +5886,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {/* ── Modale "Modifier la séance" ── */}
             {entrainementEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ {t('ent_modifier_seance', lang)}</p>
-                    <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={entrainementEnEdition.date} onChange={e => setEntrainementEnEdition(p => ({ ...p, date: e.target.value }))} /></div>
@@ -5898,7 +5899,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderEntrainementEdite} disabled={savingEntrainementEdit} style={st.btnSolid}>{savingEntrainementEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={() => setEntrainementEnEdition(null)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                    <button onClick={() => setEntrainementEnEdition(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -5910,14 +5911,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {activeSection === 'notes' && (
           <>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📝 {t('eval_titre_joueurs', lang)}</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>{t('eval_note_chaque', lang)}</p>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>{t('eval_note_chaque', lang)}</p>
             {permissions?.notes === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
             {joueurs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: '#555' }}>{t('eval_ajoute_joueurs', lang)}</p></div>
+              <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('eval_ajoute_joueurs', lang)}</p></div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {joueurs.map(j => {
@@ -5928,14 +5929,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   return (
                     <div key={j.id} style={st.card}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '13px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '13px' }}>
                           {j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{j.poste || '—'}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
                         </div>
-                        {noteGlobale && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>⭐ {noteGlobale}</span>}
+                        {noteGlobale && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>⭐ {noteGlobale}</span>}
                       </div>
                       <div className="criteres-grid" style={{ marginBottom: '12px' }}>
                         {[['technique', `🎯 ${t('eval_technique', lang)}`], ['physique', `💪 ${t('eval_physique', lang)}`], ['mental', `🧠 ${t('eval_mental', lang)}`], ['tactique', `♟️ ${t('eval_tactique', lang)}`]].map(([key, label]) => (
@@ -5951,16 +5952,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         ))}
                       </div>
                       {/* Toggle visible par le joueur */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : '#1a1a1a', border: `1px solid ${ln.visible_joueur ? '#4ade8030' : '#2a2a2a'}`, borderRadius: '8px', marginBottom: '12px', cursor: canEdit('notes') ? 'pointer' : 'default' }}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : colors.background.raised, border: `1px solid ${ln.visible_joueur ? colors.accent.green + alpha.light : colors.border.default}`, borderRadius: '8px', marginBottom: '12px', cursor: canEdit('notes') ? 'pointer' : 'default' }}
                         onClick={() => canEdit('notes') && setLocalNote(j.id, { visible_joueur: !ln.visible_joueur })}>
-                        <div style={{ width: '36px', height: '20px', background: ln.visible_joueur ? '#4ade80' : '#333', borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                          <div style={{ position: 'absolute', top: '3px', left: ln.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                        <div style={{ width: '36px', height: '20px', background: ln.visible_joueur ? colors.accent.green : colors.border.strong, borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                          <div style={{ position: 'absolute', top: '3px', left: ln.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
                         </div>
                         <div>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? '#4ade80' : '#aaa' }}>
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? colors.accent.green : colors.text.secondary }}>
                             {ln.visible_joueur ? `👁️ ${t('eval_visible', lang)}` : `🔒 ${t('eval_prive_non_visible', lang)}`}
                           </p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                             {ln.visible_joueur ? t('eval_joueur_verra', lang) : t('eval_seul_vous', lang)}
                           </p>
                         </div>
@@ -6005,47 +6006,47 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             return true
           })
           const posteColor = (p) => {
-            const map = { Gardien: { bg: '#f59e0b20', text: '#f59e0b' }, Défenseur: { bg: '#60a5fa20', text: '#60a5fa' }, Milieu: { bg: '#4ade8020', text: '#4ade80' }, Attaquant: { bg: '#f9731620', text: '#f97316' } }
-            return map[p] || { bg: '#ffffff10', text: '#aaa' }
+            const map = { Gardien: { bg: '#f59e0b20', text: '#f59e0b' }, Défenseur: { bg: colors.accent.blue + alpha.soft, text: colors.accent.blue }, Milieu: { bg: colors.accent.green + alpha.soft, text: colors.accent.green }, Attaquant: { bg: colors.accent.orange + alpha.soft, text: colors.accent.orange } }
+            return map[p] || { bg: '#ffffff10', text: colors.text.secondary }
           }
           if (recrutSelectedJoueur) {
             const j = recrutSelectedJoueur
             return (
               <div>
-                <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#aaa', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
+                <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
                 <div style={{ maxWidth: '680px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
-                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#4ade8020', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: colors.accent.green + alpha.soft, border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
                     <div>
                       <h2 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff10', color: '#aaa', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.categorie}</span>}
-                        {j.region && <span style={{ background: '#ffffff10', color: '#aaa', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.region}</span>}
-                        {j.pied && <span style={{ background: '#ffffff10', color: '#aaa', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Pied {j.pied}</span>}
+                        {j.categorie && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.categorie}</span>}
+                        {j.region && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.region}</span>}
+                        {j.pied && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Pied {j.pied}</span>}
                       </div>
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
                     {[{ label: 'Matchs officiels', val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('comp_passes_dec', lang), val: j.passes_decisives || 0 }, { label: t('comp_clean_sheet', lang), val: j.cleansheets || 0 }, { label: t('comp_minutes', lang), val: j.minutes_jouees || 0 }, { label: 'Club', val: j.club || '—' }].map(s => (
-                      <div key={s.label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#4ade80' }}>{s.val}</div>
-                        <div style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
+                      <div key={s.label} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
+                        <div style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
                       </div>
                     ))}
                   </div>
                   {j.points_forts && <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_points_forts', lang)}</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{j.points_forts.split(', ').filter(Boolean).map(t => <span key={t} style={{ background: '#4ade8020', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>{t}</span>)}</div>
+                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_points_forts', lang)}</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{j.points_forts.split(', ').filter(Boolean).map(t => <span key={t} style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, border: '1px solid #4ade8040', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>{t}</span>)}</div>
                   </div>}
                   {j.a_ameliorer && <div style={{ marginBottom: '1rem' }}>
                     <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_axes_progression', lang)}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{j.a_ameliorer.split(', ').filter(Boolean).map(t => <span key={t} style={{ background: '#f59e0b15', color: '#f59e0b', border: '1px solid #f59e0b30', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>{t}</span>)}</div>
                   </div>}
                   {recrutParcours.length > 0 && <div>
-                    <p style={{ margin: '0 0 10px', fontSize: '11px', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_parcours', lang)}</p>
-                    <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {recrutParcours.map(p => <div key={p.id} style={{ fontSize: '13px' }}><span style={{ fontWeight: 700 }}>{p.club}</span> <span style={{ color: '#555' }}>· {[p.saison, p.niveau_championnat, p.poste].filter(Boolean).join(' · ')}</span></div>)}
+                    <p style={{ margin: '0 0 10px', fontSize: '11px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_parcours', lang)}</p>
+                    <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {recrutParcours.map(p => <div key={p.id} style={{ fontSize: '13px' }}><span style={{ fontWeight: 700 }}>{p.club}</span> <span style={{ color: colors.text.faint }}>· {[p.saison, p.niveau_championnat, p.poste].filter(Boolean).join(' · ')}</span></div>)}
                     </div>
                   </div>}
                   {j.clip_url && (() => {
@@ -6053,17 +6054,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     const estVeo = j.clip_url.includes('veo.co')
                     return (
                       <div style={{ marginTop: '1.5rem' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_video', lang)}</p>
+                        <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_video', lang)}</p>
                         {embed ? (
                           <iframe src={embed} title={t('recrut_video', lang)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
-                            style={{ width: '100%', aspectRatio: '16/9', borderRadius: '10px', border: 'none', background: '#000' }} />
+                            style={{ width: '100%', aspectRatio: '16/9', borderRadius: '10px', border: 'none', background: colors.black }} />
                         ) : estVeo ? (
                           <a href={j.clip_url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#111', border: '1px solid #2a2a2a', color: '#60a5fa', padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.surface, border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}>
                             {t('recrut_voir_sur_veo', lang)} <IcoExternal />
                           </a>
                         ) : (
-                          <video src={j.clip_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '360px', background: '#000' }} />
+                          <video src={j.clip_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '360px', background: colors.black }} />
                         )}
                       </div>
                     )
@@ -6077,49 +6078,49 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🔍 {t('nav_recrutement', lang)}</h1>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: '#fff', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 {t('recrut_feed', lang)}</button>
-                  <a href="/jogabonito" target="_blank" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>🎬 Jogabonito →</a>
+                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 {t('recrut_feed', lang)}</button>
+                  <a href="/jogabonito" target="_blank" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>🎬 Jogabonito →</a>
                 </div>
               </div>
               {/* Filtres */}
-              <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                 <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_recherche', lang)}</p>
-                  <input value={recrutSearch} onChange={e => setRecrutSearch(e.target.value)} placeholder="Nom, club, région..." style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_recherche', lang)}</p>
+                  <input value={recrutSearch} onChange={e => setRecrutSearch(e.target.value)} placeholder="Nom, club, région..." style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                 </div>
                 <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_poste', lang)}</p>
-                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_poste', lang)}</p>
+                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {postes.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
                 {recrutPoste !== 'Tous' && (
                   <div>
-                    <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_style_jeu', lang)}</p>
-                    <select value={recrutStyleDeJeu} onChange={e => setRecrutStyleDeJeu(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #60a5fa40', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_style_jeu', lang)}</p>
+                    <select value={recrutStyleDeJeu} onChange={e => setRecrutStyleDeJeu(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #60a5fa40', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                       {stylesDisponibles.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </div>
                 )}
                 <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_categorie', lang)}</p>
-                  <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_categorie', lang)}</p>
+                  <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {categories.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('profil_region', lang)}</p>
-                  <select value={recrutRegion} onChange={e => setRecrutRegion(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('profil_region', lang)}</p>
+                  <select value={recrutRegion} onChange={e => setRecrutRegion(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {regions.map(r => <option key={r}>{r}</option>)}
                   </select>
                 </div>
               </div>
-              <p style={{ margin: '0 0 1rem', fontSize: '12px', color: '#555' }}>{filtered.length} {t('recrut_joueurs_trouves', lang)}</p>
+              <p style={{ margin: '0 0 1rem', fontSize: '12px', color: colors.text.faint }}>{filtered.length} {t('recrut_joueurs_trouves', lang)}</p>
               {/* Grid joueurs */}
               {!recrutLoaded ? (
-                <p style={{ color: '#60a5fa', textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
+                <p style={{ color: colors.accent.blue, textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
               ) : filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: '#444' }}>
+                <div style={{ textAlign: 'center', padding: '4rem', color: colors.text.disabled }}>
                   <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
                   <p>{t('recrut_aucun_trouve', lang)}</p>
                 </div>
@@ -6127,26 +6128,26 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                   {filtered.map(j => (
                     <div key={j.id} onClick={async () => { setRecrutSelectedJoueur(j); const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }); setRecrutParcours(data || []) }}
-                      style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = '#4ade8040'}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+                      style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#4ade8015', border: '1px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
                         {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff08', color: '#666', fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.categorie}</span>}
-                        {j.region && <span style={{ background: '#ffffff08', color: '#666', fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
+                        {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.categorie}</span>}
+                        {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px', borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
                         {[{ label: t('recrut_matchs', lang), val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('recrut_passes', lang), val: j.passes_decisives || 0 }].map(s => (
                           <div key={s.label} style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '17px', fontWeight: 800, color: '#4ade80' }}>{s.val}</div>
-                            <div style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase' }}>{s.label}</div>
+                            <div style={{ fontSize: '17px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
+                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase' }}>{s.label}</div>
                           </div>
                         ))}
                       </div>
@@ -6164,31 +6165,31 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               <button
                 onClick={() => setModeSeance('enregistrer')}
-                style={{ background: modeSeance === 'enregistrer' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'enregistrer' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
               <button
                 onClick={() => setModalGenerationIA(true)}
-                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 🤖 Générer avec l'IA
               </button>
               <button
                 onClick={() => setModeSeance('rediger')}
-                style={{ background: modeSeance === 'rediger' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'rediger' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 ✏️ {t('seance_rediger_fiche', lang)}
               </button>
               <button
                 onClick={() => setModeSeance('scanner')}
-                style={{ background: modeSeance === 'scanner' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'scanner' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📷 {t('seance_scanner', lang)}
               </button>
               <button
                 onClick={() => setModeSeance('club')}
-                style={{ background: modeSeance === 'club' ? '#60a5fa' : '#1a1a1a', color: modeSeance === 'club' ? '#000' : '#666', border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 🏟️ {t('seance_eval_club', lang)}
               </button>
@@ -6197,12 +6198,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             {modalGenerationIA && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 onClick={() => !generatingIA && setModalGenerationIA(false)}>
-                <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
+                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
                   onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🤖 Générer une séance avec l'IA</p>
                     {!generatingIA && (
-                      <button onClick={() => setModalGenerationIA(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => setModalGenerationIA(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                     )}
                   </div>
 
@@ -6240,11 +6241,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
 
                   {generationIAError && (
-                    <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>❌ {generationIAError}</p>
+                    <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px' }}>❌ {generationIAError}</p>
                   )}
 
                   <button onClick={genererSeanceIA} disabled={generatingIA || !generationIAForm.objectif.trim()}
-                    style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (generatingIA || !generationIAForm.objectif.trim()) ? 0.6 : 1 }}>
+                    style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (generatingIA || !generationIAForm.objectif.trim()) ? 0.6 : 1 }}>
                     {generatingIA ? libelleStatutGroq(generationIAStatus) : '✨ Générer la séance'}
                   </button>
                 </div>
@@ -6252,19 +6253,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             )}
 
             {modeSeance === 'club' && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               {clubAffiliation?.statut === 'accepte' ? (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                       <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>🏟️ {t('seance_eval_club_titre', lang)}</p>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa' }}>{t('seance_uploade_2', lang)}</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary }}>{t('seance_uploade_2', lang)}</p>
                     </div>
                     <button onClick={() => setShowUploadSeance(true)} style={st.btnSolid}>+ {t('seance_uploader_une', lang)}</button>
                   </div>
 
                   {showUploadSeance && (
-                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                    <div style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                         <div>
                           <label style={st.label}>{t('profil_saison', lang)}</label>
@@ -6285,13 +6286,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                             {[{ val: 'upload', label: `📁 ${t('seance_uploader_fichier', lang)}` }, { val: 'veo', label: `🎥 ${t('seance_lien_veo', lang)}` }].map(opt => (
                               <button key={opt.val} onClick={() => setSeanceVideoMode(opt.val)}
-                                style={{ flex: 1, background: seanceVideoMode === opt.val ? '#60a5fa15' : '#1a1a1a', border: `1px solid ${seanceVideoMode === opt.val ? '#60a5fa' : '#333'}`, color: seanceVideoMode === opt.val ? '#60a5fa' : '#aaa', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ flex: 1, background: seanceVideoMode === opt.val ? colors.accent.blue + alpha.subtle : colors.background.raised, border: `1px solid ${seanceVideoMode === opt.val ? colors.accent.blue : colors.border.strong}`, color: seanceVideoMode === opt.val ? colors.accent.blue : colors.text.secondary, padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                                 {opt.label}
                               </button>
                             ))}
                           </div>
                           {seanceVideoMode === 'upload' ? (
-                            <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: '#aaa', fontSize: '13px' }} />
+                            <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: colors.text.secondary, fontSize: '13px' }} />
                           ) : (
                             <input style={st.input} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
                           )}
@@ -6299,45 +6300,45 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : t('seance_envoyer_club', lang)}</button>
-                        <button onClick={() => setShowUploadSeance(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                        <button onClick={() => setShowUploadSeance(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
 
                   {mesSeances.length === 0 ? (
-                    <p style={{ color: '#333', fontSize: '13px' }}>{t('seance_aucune_uploadee', lang)}</p>
+                    <p style={{ color: colors.border.strong, fontSize: '13px' }}>{t('seance_aucune_uploadee', lang)}</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {mesSeances.map(s => {
                         return (
-                        <div key={s.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <div key={s.id} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || t('seance_fallback', lang)} — {s.saison}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{
                               fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                              background: s.statut === 'analyse' ? '#4ade8015' : s.statut === 'transfere_coach' ? '#60a5fa15' : '#f59e0b15',
-                              color: s.statut === 'analyse' ? '#4ade80' : s.statut === 'transfere_coach' ? '#60a5fa' : '#f59e0b',
+                              background: s.statut === 'analyse' ? colors.accent.green + alpha.subtle : s.statut === 'transfere_coach' ? colors.accent.blue + alpha.subtle : '#f59e0b15',
+                              color: s.statut === 'analyse' ? colors.accent.green : s.statut === 'transfere_coach' ? colors.accent.blue : '#f59e0b',
                             }}>
                               {s.statut === 'analyse' ? `✅ ${t('etat_analyse', lang)}` : s.statut === 'transfere_coach' ? `🎙️ ${t('seance_chez_coach', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
                             </span>
                             {confirmSuppr === s.id ? (
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', color: '#ef4444' }}>{t('seance_supprimer_q', lang)}</span>
+                                <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
                                 <button onClick={() => supprimerDemande(s.id)}
-                                  style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                  style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                                   {t('etat_oui', lang)}
                                 </button>
                                 <button onClick={() => setConfirmSuppr(null)}
-                                  style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                  style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                                   {t('etat_non', lang)}
                                 </button>
                               </div>
                             ) : (
                               <button onClick={() => setConfirmSuppr(s.id)}
-                                style={{ background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                                 🗑
                               </button>
                             )}
@@ -6349,27 +6350,27 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   )}
                 </>
               ) : (
-                <p style={{ color: '#555', fontSize: '13px' }}>{t('seance_rejoins_club', lang)}</p>
+                <p style={{ color: colors.text.faint, fontSize: '13px' }}>{t('seance_rejoins_club', lang)}</p>
               )}
             </div>
             )}
 
             {modeSeance === 'scanner' && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px' }}>📷 {t('seance_scanner_titre', lang)}</p>
-              <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
+              <p style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '16px' }}>
                 {t('seance_prends_photo', lang)}
               </p>
               <div
                 onClick={() => document.getElementById('scan-fiche-input').click()}
-                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: '#0a0a0a' }}
+                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
               >
                 {scanImagePreview
                   ? <img src={scanImagePreview} alt="Fiche scannée" style={{ maxHeight: '360px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                   : <div>
                       <p style={{ fontSize: '36px', margin: '0 0 10px' }}>📄</p>
-                      <p style={{ margin: 0, fontWeight: 600, color: '#aaa' }}>{t('seance_clique_photo', lang)}</p>
-                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#444' }}>{t('seance_jpg_png', lang)}</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: colors.text.secondary }}>{t('seance_clique_photo', lang)}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.disabled }}>{t('seance_jpg_png', lang)}</p>
                     </div>
                 }
               </div>
@@ -6393,7 +6394,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 }}
               />
               {scanFicheError && (
-                <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {scanFicheError}</p>
+                <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>❌ {scanFicheError}</p>
               )}
               <button
                 onClick={analyserFicheScan}
@@ -6403,7 +6404,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {scanningFiche ? `🔄 ${libelleStatutGroq(scanFicheStatus)}` : `🤖 ${t('seance_analyser_ia', lang)}`}
               </button>
               {scanningFiche && (
-                <div style={{ marginTop: '14px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
+                <div style={{ marginTop: '14px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: colors.accent.green }}>
                   🤖 {t('seance_ia_lit_fiche', lang)}
                 </div>
               )}
@@ -6411,25 +6412,25 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             )}
 
             {modeSeance === 'enregistrer' && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 {t('seance_enregistrer_une', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input
                   placeholder={t('seance_placeholder_theme', lang)}
                   value={uploadSeanceOuverteForm.theme}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, theme: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <input
                   type="date"
                   value={uploadSeanceOuverteForm.date_seance}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, date_seance: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <select
                   value={uploadSeanceOuverteForm.categorie_tactique}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_tactique: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
@@ -6444,10 +6445,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   placeholder={t('seance_placeholder_video', lang)}
                   value={uploadSeanceOuverteForm.video_url}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <div>
-                  <p style={{ fontSize: '12px', color: '#666', marginBottom: '6px' }}>{t('seance_ou_upload', lang)}</p>
+                  <p style={{ fontSize: '12px', color: colors.text.dim, marginBottom: '6px' }}>{t('seance_ou_upload', lang)}</p>
                   <input
                     type="file"
                     accept=".pdf,image/*"
@@ -6459,10 +6460,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       setUploadSeanceOuverteForm(prev => ({ ...prev, fichier_url: url }))
                       setUploadingSeanceOuverte(false)
                     }}
-                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', width: '100%' }}
+                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', width: '100%' }}
                   />
                   {uploadSeanceOuverteForm.fichier_url && (
-                    <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '6px' }}>✅ {t('seance_fichier_pret', lang)}</p>
+                    <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '6px' }}>✅ {t('seance_fichier_pret', lang)}</p>
                   )}
                 </div>
                 <textarea
@@ -6470,12 +6471,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   value={uploadSeanceOuverteForm.commentaire_perso}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, commentaire_perso: e.target.value }))}
                   rows={3}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
                 />
                 <button
                   onClick={uploaderMaSeance}
                   disabled={uploadingSeanceOuverte}
-                  style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
+                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
                 >
                   {uploadingSeanceOuverte ? 'Envoi...' : t('seance_enregistrer_ma', lang)}
                 </button>
@@ -6484,12 +6485,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             )}
 
             {modeSeance === 'rediger' && (
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ {t('seance_rediger_titre', lang)}</p>
               {ficheExtraite && (
-                <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: '#4ade80', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: colors.accent.green, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                   <span>✅ {t('seance_fiche_extraite', lang)}</span>
-                  <button onClick={() => setFicheExtraite(false)} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}>✕</button>
+                  <button onClick={() => setFicheExtraite(false)} style={{ background: 'none', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}>✕</button>
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
@@ -6497,23 +6498,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   placeholder={t('seance_theme_intitule', lang)}
                   value={fiche.theme}
                   onChange={e => setFiche(f => ({ ...f, theme: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <div>
-                  <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px', display: 'block' }}>
+                  <label style={{ fontSize: '12px', color: colors.text.secondary, marginBottom: '4px', display: 'block' }}>
                     {t('seance_date_seance', lang)}
                   </label>
                   <input
                     type="date"
                     value={fiche.date}
                     onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
-                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <select
                   value={fiche.categorie_tactique}
                   onChange={e => setFiche(f => ({ ...f, categorie_tactique: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
@@ -6528,14 +6529,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <button
                     type="button"
                     onClick={() => setSport('football')}
-                    style={{ flex: 1, background: sport === 'football' ? '#60a5fa' : '#0a0a0a', color: sport === 'football' ? '#000' : '#666', border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, background: sport === 'football' ? colors.accent.blue : colors.background.base, color: sport === 'football' ? colors.black : colors.text.dim, border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
                   >
                     ⚽ Football
                   </button>
                   <button
                     type="button"
                     onClick={() => setSport('futsal')}
-                    style={{ flex: 1, background: sport === 'futsal' ? '#60a5fa' : '#0a0a0a', color: sport === 'futsal' ? '#000' : '#666', border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, background: sport === 'futsal' ? colors.accent.blue : colors.background.base, color: sport === 'futsal' ? colors.black : colors.text.dim, border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
                   >
                     🏟️ Futsal
                   </button>
@@ -6544,13 +6545,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   placeholder={t('seance_nb_joueurs', lang)}
                   value={fiche.nb_joueurs}
                   onChange={e => setFiche(f => ({ ...f, nb_joueurs: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <input
                   placeholder={t('seance_duree_totale', lang)}
                   value={fiche.duree_totale}
                   onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
 
                 {/* ── Mode diplôme (BMF/BEF/DEF) — objectif_general existe déjà comme champ
@@ -6567,9 +6568,9 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         onClick={() => setFiche(f => ({ ...f, mode_diplome: f.mode_diplome === m ? null : m }))}
                         style={{
                           padding: '7px 16px', borderRadius: '8px', border: '1px solid',
-                          borderColor: fiche.mode_diplome === m ? '#4ade80' : '#2a2a2a',
-                          background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.12)' : '#0a0a0a',
-                          color: fiche.mode_diplome === m ? '#4ade80' : '#9ca3af',
+                          borderColor: fiche.mode_diplome === m ? colors.accent.green : colors.border.default,
+                          background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.12)' : colors.background.base,
+                          color: fiche.mode_diplome === m ? colors.accent.green : '#9ca3af',
                           fontSize: '13px', fontWeight: fiche.mode_diplome === m ? 700 : 400, cursor: 'pointer',
                         }}>
                         {m === null ? 'Libre' : m}
@@ -6582,11 +6583,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 </div>
 
                 {fiche.mode_diplome ? (() => {
-                  const inputStyle = { background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
+                  const inputStyle = { background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
                   const labelStyle = { color: '#9ca3af', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', marginTop: '10px' }
                   return (
                     <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
-                      <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
+                      <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
 
                       <label style={labelStyle}>Phase de jeu *</label>
                       <select value={fiche.phase_jeu || ''} onChange={e => setFiche(f => ({ ...f, phase_jeu: e.target.value }))} style={inputStyle}>
@@ -6603,7 +6604,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
                         <>
                           <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
-                          <p style={{ color: '#60a5fa', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs complémentaires {fiche.mode_diplome}</p>
+                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs complémentaires {fiche.mode_diplome}</p>
 
                           <label style={labelStyle}>Constats réalisés (observation des joueurs)</label>
                           <textarea placeholder="Décris ce que tu as observé lors des matchs ou séances précédentes…" value={fiche.constats || ''} onChange={e => setFiche(f => ({ ...f, constats: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
@@ -6619,7 +6620,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       {fiche.mode_diplome === 'DEF' && (
                         <>
                           <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
-                          <p style={{ color: '#f97316', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs DEF — Analyse avancée</p>
+                          <p style={{ color: colors.accent.orange, fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs DEF — Analyse avancée</p>
 
                           <label style={labelStyle}>Analyse de l'équipe / Contexte (lien match → entraînement)</label>
                           <textarea placeholder="Situation de l'équipe, problèmes collectifs observés en match…" value={fiche.analyse_equipe || ''} onChange={e => setFiche(f => ({ ...f, analyse_equipe: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
@@ -6636,18 +6637,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     value={fiche.objectif_general}
                     onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
                     rows={2}
-                    style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                   />
                 )}
               </div>
 
               {fiche.procedes.map((p, i) => (
-                <div key={i} style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
+                <div key={i} style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: '#4ade80' }}>{t('seance_procede', lang)} {p.numero}</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: colors.accent.green }}>{t('seance_procede', lang)} {p.numero}</p>
                     {fiche.procedes.length > 1 && (
                       <button type="button" onClick={() => retirerProcedeFiche(i)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                        style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
                         title={t('btn_supprimer', lang)}>
                         ✕
                       </button>
@@ -6658,20 +6659,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       placeholder={t('seance_titre_procede', lang)}
                       value={p.titre}
                       onChange={e => updateProcede(i, 'titre', e.target.value)}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                     />
                     <div className="procede-duree-joueurs" style={{ display: 'flex', gap: '10px' }}>
                       <input
                         placeholder={t('seance_duree_min', lang)}
                         value={p.duree}
                         onChange={e => updateProcede(i, 'duree', e.target.value)}
-                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        style={{ flex: 1, background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                       <input
                         placeholder={t('seance_nb_joueurs', lang)}
                         value={p.nb_joueurs}
                         onChange={e => updateProcede(i, 'nb_joueurs', e.target.value)}
-                        style={{ flex: 1, background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        style={{ flex: 1, background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
 
@@ -6679,21 +6680,21 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <button
                         type="button"
                         onClick={() => setTactipadModal(i)}
-                        style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                       </button>
                       <button
                         type="button"
                         onClick={() => setModalBiblioImport(i)}
-                        style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         📚 {t('biblio_importer_procede', lang)}
                       </button>
                       <button
                         type="button"
                         onClick={() => sauvegarderProcedeDansBiblio(p)}
-                        style={{ background: '#1a2e1a', border: '1px solid #60a5fa', color: '#60a5fa', padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: '#1a2e1a', border: '1px solid #60a5fa', color: colors.accent.blue, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         💾 {t('biblio_sauvegarder_procede', lang)}
                       </button>
@@ -6706,28 +6707,28 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       value={p.but}
                       onChange={e => updateProcede(i, 'but', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_organisation', lang)}
                       value={p.organisation}
                       onChange={e => updateProcede(i, 'organisation', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_consignes', lang)}
                       value={p.consignes}
                       onChange={e => updateProcede(i, 'consignes', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_variables', lang)}
                       value={p.variables}
                       onChange={e => updateProcede(i, 'variables', e.target.value)}
                       rows={2}
-                      style={{ background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: '#fff', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
@@ -6736,7 +6737,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <button
                 type="button"
                 onClick={ajouterProcedeFiche}
-                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px dashed #4ade8040', background: 'transparent', color: '#4ade80', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '8px' }}
+                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px dashed #4ade8040', background: 'transparent', color: colors.accent.green, fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '8px' }}
               >
                 + {t('seance_ajouter_procede', lang)}
               </button>
@@ -6745,13 +6746,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <button
                   onClick={sauvegarderFiche}
                   disabled={savingFiche}
-                  style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
+                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
                 >
                   {savingFiche ? 'Enregistrement...' : `💾 ${t('seance_sauvegarder_fiche', lang)}`}
                 </button>
                 <button
                   onClick={() => window.print()}
-                  style={{ background: 'transparent', color: '#60a5fa', border: '1px solid #60a5fa40', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                  style={{ background: 'transparent', color: colors.accent.blue, border: '1px solid #60a5fa40', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   🖨️ {t('seance_imprimer_fiche', lang)}
                 </button>
@@ -6765,14 +6766,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       educateur: `${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim(),
                       phases: derniereGenerationIA.phases,
                     })}
-                    style={{ background: '#003893', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    style={{ background: '#003893', color: colors.text.primary, border: 'none', borderRadius: '10px', padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
                     📋 Format FFF
                   </button>
                 )}
                 <button
                   onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); setDerniereGenerationIA(null); window.print() }}
-                  style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                  style={{ background: 'transparent', color: colors.text.muted, border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   📄 {t('seance_fiche_vierge', lang)}
                 </button>
@@ -6782,7 +6783,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
             <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 {t('seance_mes_seances', lang)} ({mesSeancesOuvertes.length})</p>
             {mesSeancesOuvertes.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>{t('seance_aucune_envoyee', lang)}</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('seance_aucune_envoyee', lang)}</p>
             ) : (
               (() => {
                 const seancesParCategorie = mesSeancesOuvertes.reduce((acc, s) => {
@@ -6800,13 +6801,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         return (
                           <div key={categorie}
                             onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
-                            style={{ background: '#1a1a1a', border: `1px solid ${ouvert ? '#60a5fa' : '#2a2a2a'}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#60a5fa' }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? '#60a5fa' : '#2a2a2a' }}
+                            style={{ background: colors.background.raised, border: `1px solid ${ouvert ? colors.accent.blue : colors.border.default}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent.blue }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? colors.accent.blue : colors.border.default }}
                           >
-                            <IcoDossier size={36} color={ouvert ? '#60a5fa' : '#666'} />
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: '#fff' }}>{categorie}</p>
-                            <span style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
+                            <IcoDossier size={36} color={ouvert ? colors.accent.blue : colors.text.dim} />
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{categorie}</p>
+                            <span style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
                           </div>
                         )
                       })}
@@ -6816,14 +6817,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     {Object.entries(seancesParCategorie).filter(([categorie]) => dossiersOuverts[categorie]).map(([categorie, items]) => {
                       return (
                       <div key={categorie} style={{ marginBottom: '20px' }}>
-                        <p style={{ fontWeight: 700, fontSize: '13px', color: '#888', marginBottom: '10px' }}>
+                        <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
                           📁 {categorie} ({items.length})
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(s => {
                             const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
                             return (
-                              <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                              <div key={s.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                                 <div>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                                     {s.theme || t('seance_sans_theme', lang)}
@@ -6831,59 +6832,59 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                       <span style={{
                                         fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
                                         background: s.fiche_seance.mode_diplome === 'BMF' ? 'rgba(74,222,128,0.15)' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
-                                        color: s.fiche_seance.mode_diplome === 'BMF' ? '#4ade80' : s.fiche_seance.mode_diplome === 'BEF' ? '#60a5fa' : '#f97316',
-                                        border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? '#4ade80' : s.fiche_seance.mode_diplome === 'BEF' ? '#60a5fa' : '#f97316'}`,
+                                        color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange,
+                                        border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange}`,
                                       }}>
                                         {s.fiche_seance.mode_diplome}
                                       </span>
                                     )}
                                   </p>
                                   {s.date_seance && (
-                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
+                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.dim }}>
                                       {new Date(s.date_seance).toLocaleDateString('fr-FR')}
                                     </p>
                                   )}
                                   {s.commentaire_perso && (
-                                    <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
+                                    <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
                                   )}
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   <button onClick={() => setFicheApercu(s)}
-                                    style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                     📋 {t('seance_voir', lang)}
                                   </button>
                                   {eval_ ? (
                                     <>
-                                      <span style={{ background: '#4ade8015', color: '#4ade80', border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                                      <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
                                         ✅ {Math.round(eval_.note_totale)}/100
                                       </span>
                                     </>
                                   ) : (
-                                    <span style={{ background: '#ffffff08', color: '#888', border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                                    <span style={{ background: '#ffffff08', color: colors.text.muted, border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
                                       📁 {t('seance_archivee', lang)}
                                     </span>
                                   )}
                                   {s.video_url && (
-                                    <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
+                                    <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
                                   )}
                                   {s.fichier_url && (
-                                    <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
+                                    <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
                                   )}
                                   {confirmSuppr === s.id ? (
                                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                      <span style={{ fontSize: '12px', color: '#ef4444' }}>{t('seance_supprimer_q', lang)}</span>
+                                      <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
                                       <button onClick={() => supprimerDemande(s.id)}
-                                        style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                        style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                                         {t('etat_oui', lang)}
                                       </button>
                                       <button onClick={() => setConfirmSuppr(null)}
-                                        style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                        style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                                         {t('etat_non', lang)}
                                       </button>
                                     </div>
                                   ) : (
                                     <button onClick={() => setConfirmSuppr(s.id)}
-                                      style={{ background: '#ef444410', border: '1px solid #ef444430', color: '#ef4444', padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                      style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                                       🗑
                                     </button>
                                   )}
@@ -6907,14 +6908,14 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <IcoBiblioTitre size={24} color="#4ade80" />
+                  <IcoBiblioTitre size={24} color={colors.accent.green} />
                   {t('nav_bibliotheque', lang)}
                 </h1>
-                <p style={{ fontSize: '13px', color: '#555' }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
+                <p style={{ fontSize: '13px', color: colors.text.faint }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
               </div>
               {canEdit('entrainements') && (
                 <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
-                  style={{ background: '#60a5fa', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
                   + {t('biblio_nouveau_procede', lang)}
                 </button>
               )}
@@ -6929,23 +6930,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 { id: 'situation', label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                  style={{ background: biblioTab === tab.id ? '#60a5fa15' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#60a5fa40' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#60a5fa' : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <tab.Icon size={14} color={biblioTab === tab.id ? '#60a5fa' : '#555'} />
+                  style={{ background: biblioTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${biblioTab === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: biblioTab === tab.id ? colors.accent.blue : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <tab.Icon size={14} color={biblioTab === tab.id ? colors.accent.blue : colors.text.faint} />
                   {tab.label}
                 </button>
               ))}
             </div>
 
             <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
-              style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
+              style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
 
             {biblioLoading ? (
-              <p style={{ textAlign: 'center', color: '#444', padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
+              <p style={{ textAlign: 'center', color: colors.text.disabled, padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
             ) : (() => {
               const TYPE_CONFIG = {
-                jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: '#4ade80', bg: '#4ade8015', border: '#4ade8030' },
-                exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: '#60a5fa', bg: '#60a5fa15', border: '#60a5fa30' },
-                situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: '#f97316', bg: '#f9731615', border: '#f9731630' },
+                jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.light },
+                exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: colors.accent.blue, bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.light },
+                situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.light },
                 echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
               }
               const filtres = biblio.filter(p => {
@@ -6956,10 +6957,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               if (filtres.length === 0) return (
                 <div style={{ textAlign: 'center', padding: '64px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.4 }}>
-                    <IcoBiblioVide size={56} color="#4ade80" />
+                    <IcoBiblioVide size={56} color={colors.accent.green} />
                   </div>
-                  <p style={{ fontSize: '14px', color: '#444', marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
-                  <p style={{ fontSize: '12px', color: '#333' }}>{t('biblio_creer_premier', lang)}</p>
+                  <p style={{ fontSize: '14px', color: colors.text.disabled, marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
+                  <p style={{ fontSize: '12px', color: colors.border.strong }}>{t('biblio_creer_premier', lang)}</p>
                 </div>
               )
               return (
@@ -6967,15 +6968,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   {filtres.map(p => {
                     const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
                     return (
-                      <div key={p.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div key={p.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {cfg.emoji} {cfg.label}
                           </span>
                           {canEdit('entrainements') && (
                             <div style={{ display: 'flex', gap: '6px' }}>
-                              <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
-                              <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                              <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
+                              <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
                             </div>
                           )}
                         </div>
@@ -6984,16 +6985,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
                         </div>
                         {p.description && (
-                          <p style={{ fontSize: '12px', color: '#666', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
+                          <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
                         )}
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {p.duree && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
-                          {p.nb_joueurs && <span style={{ fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
+                          {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
+                          {p.nb_joueurs && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
                         </div>
                         {p.tags && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                              <span key={tag} style={{ fontSize: '9px', color: '#444', background: '#141414', border: '1px solid #222', padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
+                              <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: '1px solid #222', padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
                             ))}
                           </div>
                         )}
@@ -7010,15 +7011,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {modalProcede && (
           <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
             onClick={() => setModalProcede(false)}>
-            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ fontSize: '17px', fontWeight: 800 }}>{procedeEnEdition ? t('biblio_modifier_procede_titre', lang) : t('biblio_nouveau_procede_titre', lang)}</h2>
-                <button onClick={() => setModalProcede(false)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setModalProcede(false)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>{t('biblio_champ_type', lang)}</label>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>{t('biblio_champ_type', lang)}</label>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {[
                     { val: 'echauffement', label: `🔥 ${t('biblio_tab_echauffement', lang)}` },
@@ -7027,7 +7028,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     { val: 'situation', label: `🎯 ${t('biblio_tab_situation', lang)}` },
                   ].map(opt => (
                     <button key={opt.val} onClick={() => setProcedeForm(f => ({ ...f, type: opt.val }))}
-                      style={{ background: procedeForm.type === opt.val ? '#60a5fa15' : 'transparent', border: `1px solid ${procedeForm.type === opt.val ? '#60a5fa40' : '#2a2a2a'}`, color: procedeForm.type === opt.val ? '#60a5fa' : '#555', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: procedeForm.type === opt.val ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${procedeForm.type === opt.val ? colors.accent.blue + alpha.medium : colors.border.default}`, color: procedeForm.type === opt.val ? colors.accent.blue : colors.text.faint, padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {opt.label}
                     </button>
                   ))}
@@ -7045,19 +7046,19 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 { key: 'tags', label: t('biblio_champ_tags', lang), placeholder: t('biblio_placeholder_tags', lang) },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
                   {field.multiline ? (
                     <textarea value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
                   ) : (
                     <input type={field.type || 'text'} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: '#141414', border: '1px solid #2a2a2a', borderRadius: '10px', color: '#fff', padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                   )}
                 </div>
               ))}
 
               <button onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()}
-                style={{ width: '100%', background: '#60a5fa', color: '#000', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
+                style={{ width: '100%', background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
                 {savingProcede ? t('biblio_enregistrement_cours', lang) : procedeEnEdition ? t('biblio_mettre_a_jour', lang) : t('biblio_enregistrer', lang)}
               </button>
             </div>
@@ -7068,11 +7069,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {modalBiblioImport !== null && (
           <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
             onClick={() => setModalBiblioImport(null)}>
-            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📚 {t('biblio_importer_titre', lang)}</h3>
-                <button onClick={() => setModalBiblioImport(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setModalBiblioImport(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '18px', cursor: 'pointer' }}>✕</button>
               </div>
               <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
                 {[
@@ -7083,22 +7084,22 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   { id: 'situation', label: t('biblio_tab_situation', lang) },
                 ].map(tab => (
                   <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                    style={{ background: biblioTab === tab.id ? '#60a5fa15' : 'transparent', border: `1px solid ${biblioTab === tab.id ? '#60a5fa40' : '#2a2a2a'}`, color: biblioTab === tab.id ? '#60a5fa' : '#555', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: biblioTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${biblioTab === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: biblioTab === tab.id ? colors.accent.blue : colors.text.faint, padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {tab.label}
                   </button>
                 ))}
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).length === 0 ? (
-                  <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('biblio_aucun_dans_categorie', lang)}</p>
+                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('biblio_aucun_dans_categorie', lang)}</p>
                 ) : biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#141414', border: '1px solid #1f1f1f', borderRadius: '10px' }}>
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: '1px solid #1f1f1f', borderRadius: '10px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
-                      <p style={{ fontSize: '11px', color: '#555' }}>{p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
                     <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
-                      style={{ background: '#60a5fa', color: '#000', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
                       + {t('biblio_importer_action', lang)}
                     </button>
                   </div>
@@ -7112,25 +7113,25 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {modalImportFicheEntrainement !== null && (
           <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
             onClick={() => setModalImportFicheEntrainement(null)}>
-            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📥 {t('ent_importer_fiche', lang)}</h3>
-                <button onClick={() => setModalImportFicheEntrainement(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setModalImportFicheEntrainement(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '18px', cursor: 'pointer' }}>✕</button>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {mesSeancesOuvertes.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: '#444', padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
                 ) : mesSeancesOuvertes.map(s => (
                   <div key={s.id} onClick={() => importerFicheDansEntrainementExistant(s)}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#141414', border: '1px solid #1f1f1f', borderRadius: '10px', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#141414'}>
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: colors.background.surfaceAlt, border: '1px solid #1f1f1f', borderRadius: '10px', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
+                    onMouseLeave={e => e.currentTarget.style.background = colors.background.surfaceAlt}>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
                     </div>
-                    <span style={{ color: '#4ade80', fontSize: '18px', flexShrink: 0 }}>→</span>
+                    <span style={{ color: colors.accent.green, fontSize: '18px', flexShrink: 0 }}>→</span>
                   </div>
                 ))}
               </div>
@@ -7153,11 +7154,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {activeSection === 'tactipad' && (
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 {t('nav_tacticboard', lang)}</h1>
-            <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
             {isMobile ? (
-              <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
+              <div style={{ background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🖥️</div>
-                <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px', color: '#fff' }}>{t('tactic_dispo_ordinateur', lang)}</p>
+                <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px', color: colors.text.primary }}>{t('tactic_dispo_ordinateur', lang)}</p>
                 <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>{t('tactic_optimise_grands_ecrans', lang)}</p>
               </div>
             ) : (
@@ -7173,23 +7174,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         {activeSection === 'dirigeants' && (
           <div style={{ maxWidth: 700 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>👔 {t('dir_titre', lang)}</h2>
-            <p style={{ color: '#555', fontSize: 13, marginBottom: 24 }}>
+            <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 24 }}>
               {t('dir_invite_desc', lang)}
             </p>
 
             {/* Formulaire invitation */}
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
               <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
               <input
                 value={newDirigeantEmail}
                 onChange={e => setNewDirigeantEmail(e.target.value)}
                 placeholder={t('dir_email_placeholder', lang)}
                 type="email"
-                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+                style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
               />
 
               {/* Grille permissions */}
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
+              <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {[
                   { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
@@ -7199,15 +7200,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
                   { key: 'notes', label: '📝 Notes' },
                 ].map(({ key, label }) => (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#0a0a0a', borderRadius: 8 }}>
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
                     <span style={{ fontSize: 13, color: '#ccc' }}>{label}</span>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {['aucun', 'lecture', 'edition'].map(val => (
                         <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
                           style={{
                             padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                            background: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade8020' : val === 'lecture' ? '#60a5fa20' : '#ef444420') : '#1a1a1a',
-                            color: newDirigeantPerms[key] === val ? (val === 'edition' ? '#4ade80' : val === 'lecture' ? '#60a5fa' : '#ef4444') : '#444',
+                            background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
+                            color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red) : colors.text.disabled,
                           }}>
                           {val === 'aucun' ? `✕ ${t('dir_aucun', lang)}` : val === 'lecture' ? `👁 ${t('dir_lecture', lang)}` : `✏️ ${t('dir_edition', lang)}`}
                         </button>
@@ -7218,22 +7219,22 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               </div>
 
               <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
-                style={{ background: '#60a5fa', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+                style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
                 {invitingDirigeant ? 'Envoi...' : `📧 ${t('dir_envoyer_invitation', lang)}`}
               </button>
             </div>
 
             {/* Liste dirigeants existants */}
             {dirigeants.map(d => (
-              <div key={d.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+              <div key={d.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
-                    <p style={{ margin: '3px 0 0', fontSize: 11, color: '#555' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: 11, color: colors.text.faint }}>
                       {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ') || t('dir_aucun_acces', lang)}
                     </p>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? '#4ade8015' : '#f59e0b15', color: d.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.green + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.green : '#f59e0b' }}>
                     {d.statut === 'accepte' ? `✅ ${t('dir_actif', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
                   </span>
                 </div>
@@ -7248,8 +7249,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
                     { key: 'notes', label: '📝 Notes' },
                   ].map(({ key, label }) => (
-                    <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: '#0d0d0d', borderRadius: 6 }}>
-                      <span style={{ fontSize: 11, color: '#888' }}>{label}</span>
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: colors.background.sunken, borderRadius: 6 }}>
+                      <span style={{ fontSize: 11, color: colors.text.muted }}>{label}</span>
                       <div style={{ display: 'flex', gap: 3 }}>
                         {['aucun', 'lecture', 'edition'].map(val => (
                           <button key={val}
@@ -7257,11 +7258,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             style={{
                               padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                               background: (d.permissions?.[key] || 'aucun') === val
-                                ? (val === 'edition' ? '#4ade8020' : val === 'lecture' ? '#60a5fa20' : '#ef444420')
-                                : '#1a1a1a',
+                                ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft)
+                                : colors.background.raised,
                               color: (d.permissions?.[key] || 'aucun') === val
-                                ? (val === 'edition' ? '#4ade80' : val === 'lecture' ? '#60a5fa' : '#ef4444')
-                                : '#333',
+                                ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red)
+                                : colors.border.strong,
                             }}>
                             {val === 'aucun' ? '✕' : val === 'lecture' ? '👁' : '✏️'}
                           </button>
@@ -7274,11 +7275,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {d.statut === 'en_attente' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a1a1a' }}>
                     <button onClick={() => renvoyerInvitationDirigeant(d)}
-                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#60a5fa', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       🔁 {t('dir_renvoyer', lang)}
                     </button>
                     <button onClick={() => supprimerDirigeant(d.id)}
-                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       ✕ {t('btn_supprimer', lang)}
                     </button>
                   </div>
@@ -7343,7 +7344,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🎓 {t('profil_diplome', lang)}</p>
                     {profilEdu?.diplome_verifie && (
-                      <span style={{ background: '#4ade8020', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>✅ {t('profil_certifie', lang)}</span>
+                      <span style={{ background: colors.accent.green + alpha.soft, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>✅ {t('profil_certifie', lang)}</span>
                     )}
                     {profilEdu?.diplome_url && !profilEdu?.diplome_verifie && (
                       <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>⏳ {t('profil_en_attente_verif', lang)}</span>
@@ -7359,12 +7360,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     </div>
                     <div>
                       <label style={st.label}>{t('profil_preuve_diplome', lang)}</label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#0a0a0a', border: '1px dashed #2a2a2a', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, border: '1px dashed #2a2a2a', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
                         <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => uploadDiplome(e.target.files[0])} />
-                        <span style={{ fontSize: '13px', color: '#555' }}>{uploadingDiplome ? '⏳ Upload...' : profilEdu?.diplome_url ? `✅ ${t('profil_preuve_uploadee', lang)}` : `📎 ${t('profil_uploader_preuve', lang)}`}</span>
+                        <span style={{ fontSize: '13px', color: colors.text.faint }}>{uploadingDiplome ? '⏳ Upload...' : profilEdu?.diplome_url ? `✅ ${t('profil_preuve_uploadee', lang)}` : `📎 ${t('profil_uploader_preuve', lang)}`}</span>
                       </label>
                       {profilEdu?.diplome_url && (
-                        <a href={profilEdu.diplome_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px', display: 'block' }}>{t('profil_voir_document', lang)} ↗</a>
+                        <a href={profilEdu.diplome_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: colors.accent.green, marginTop: '4px', display: 'block' }}>{t('profil_voir_document', lang)} ↗</a>
                       )}
                     </div>
                   </div>
@@ -7384,7 +7385,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   </div>
 
                   {showAddParcours && (
-                    <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={st.label}>{t('profil_type', lang)}</label>
@@ -7416,27 +7417,27 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={ajouterParcours} style={st.btnSolid}>{t('btn_ajouter', lang)}</button>
-                        <button onClick={() => setShowAddParcours(false)} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                        <button onClick={() => setShowAddParcours(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
 
                   {parcoursEdu.length === 0 && !showAddParcours && (
-                    <p style={{ color: '#333', fontSize: '13px', textAlign: 'center', padding: '1.5rem 0', margin: 0 }}>{t('profil_aucun_parcours', lang)}</p>
+                    <p style={{ color: colors.border.strong, fontSize: '13px', textAlign: 'center', padding: '1.5rem 0', margin: 0 }}>{t('profil_aucun_parcours', lang)}</p>
                   )}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {parcoursEdu.map(p => (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
                         <span style={{ fontSize: '18px' }}>{p.type === 'coach' ? '🎙️' : '⚽'}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.club}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                             {p.poste && `${p.poste} · `}{p.niveau && `${p.niveau} · `}
                             {p.saison_debut && p.saison_fin ? `${p.saison_debut} → ${p.saison_fin}` : p.saison_debut || ''}
                           </p>
                         </div>
-                        <button onClick={() => supprimerParcours(p.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
+                        <button onClick={() => supprimerParcours(p.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
                       </div>
                     ))}
                   </div>
@@ -7445,24 +7446,24 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* Aperçu profil public */}
                 {profilEdu && (
                   <div className="profil-apercu" style={{ ...st.card, border: '1px solid #4ade8020' }}>
-                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>👁️ {t('profil_apercu_public', lang)}</p>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>👁️ {t('profil_apercu_public', lang)}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
-                      <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#4ade8020', border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#4ade80', flexShrink: 0 }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: colors.accent.green + alpha.soft, border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>
                         {profilEdu.prenom?.[0]}{profilEdu.nom?.[0]}
                       </div>
                       <div>
                         <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{profilEdu.prenom} {profilEdu.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profilEdu.club || t('profil_club_non_renseigne', lang)} · {profilEdu.categorie || '—'}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{profilEdu.club || t('profil_club_non_renseigne', lang)} · {profilEdu.categorie || '—'}</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {profilEdu.diplome && (
-                        <span style={{ background: profilEdu.diplome_verifie ? '#4ade8015' : '#1a1a1a', border: `1px solid ${profilEdu.diplome_verifie ? '#4ade8040' : '#2a2a2a'}`, color: profilEdu.diplome_verifie ? '#4ade80' : '#666', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
+                        <span style={{ background: profilEdu.diplome_verifie ? colors.accent.green + alpha.subtle : colors.background.raised, border: `1px solid ${profilEdu.diplome_verifie ? colors.accent.green + alpha.medium : colors.border.default}`, color: profilEdu.diplome_verifie ? colors.accent.green : colors.text.dim, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
                           {profilEdu.diplome_verifie ? '✅' : '🎓'} {profilEdu.diplome}
                         </span>
                       )}
                       {profilEdu.niveau_championnat && (
-                        <span style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
+                        <span style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.muted, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
                           🏆 {profilEdu.niveau_championnat}
                         </span>
                       )}
@@ -7473,10 +7474,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* Abonnement */}
                 <div className="profil-abonnement" style={st.card}>
                   <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('edu_offre_titre', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555', lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: '#60a5fa', color: '#000', border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -7488,17 +7489,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
                     <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>👥 {t('profil_joueurs_affilies', lang)}</p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{t('profil_seuls_joueurs', lang)}</p>
+                    <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>{t('profil_seuls_joueurs', lang)}</p>
                   </div>
                   {profilEdu?.code_equipe && (
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#555' }}>{t('profil_code_equipe', lang)}</p>
+                      <p style={{ margin: '0 0 4px', fontSize: '11px', color: colors.text.faint }}>{t('profil_code_equipe', lang)}</p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontWeight: 800, fontSize: '16px', padding: '6px 14px', borderRadius: '8px', letterSpacing: '2px', fontFamily: 'monospace' }}>
+                        <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '6px 14px', borderRadius: '8px', letterSpacing: '2px', fontFamily: 'monospace' }}>
                           {profilEdu.code_equipe.toUpperCase()}
                         </span>
                         <button onClick={() => navigator.clipboard.writeText(profilEdu.code_equipe.toUpperCase())}
-                          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                          style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
                           📋
                         </button>
                       </div>
@@ -7518,15 +7519,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                           </div>
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>{a.joueur ? t('profil_lie_effectif', lang) : `ID: ${a.joueur_id?.slice(0, 8)}…`}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{a.joueur ? t('profil_lie_effectif', lang) : `ID: ${a.joueur_id?.slice(0, 8)}…`}</p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
-                              style={{ background: '#60a5fa20', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              style={{ background: colors.accent.blue + alpha.soft, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                               ✅ {t('equipe_accepter', lang)}
                             </button>
                             <button onClick={() => gererAffiliation(a.id, 'refuse')}
-                              style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              style={{ background: colors.accent.red + alpha.soft, border: '1px solid #ef444440', color: colors.accent.red, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                               ✕ {t('equipe_refuser', lang)}
                             </button>
                           </div>
@@ -7538,21 +7539,21 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
                 {/* Joueurs acceptés */}
                 <div>
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#4ade80' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: colors.accent.green }}>
                     ✅ {t('profil_joueurs_affilies_count', lang)} ({affiliations.filter(a => a.statut === 'accepte').length})
                   </p>
                   {affiliations.filter(a => a.statut === 'accepte').length === 0 ? (
-                    <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>{t('profil_aucun_affilie', lang)}</p>
+                    <p style={{ color: colors.border.strong, fontSize: '12px', margin: 0 }}>{t('profil_aucun_affilie', lang)}</p>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {affiliations.filter(a => a.statut === 'accepte').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '20px' }}>
-                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#4ade80' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: colors.accent.green }}>
                             {a.joueur?.prenom?.[0] || '?'}{a.joueur?.nom?.[0] || ''}
                           </div>
                           <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</span>
                           <button onClick={() => gererAffiliation(a.id, 'refuse')}
-                            style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
+                            style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
                         </div>
                       ))}
                     </div>
@@ -7565,16 +7566,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
               <div style={st.card}>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🏟️ {t('profil_mon_club', lang)}</p>
-                <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#555' }}>{t('profil_rejoins_club_code', lang)}</p>
+                <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('profil_rejoins_club_code', lang)}</p>
 
                 {clubAffiliation ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px', background: clubAffiliation.statut === 'accepte' ? '#4ade8010' : '#f59e0b10', border: `1px solid ${clubAffiliation.statut === 'accepte' ? '#4ade8030' : '#f59e0b30'}`, borderRadius: '10px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#4ade80' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px', background: clubAffiliation.statut === 'accepte' ? '#4ade8010' : '#f59e0b10', border: `1px solid ${clubAffiliation.statut === 'accepte' ? colors.accent.green + alpha.light : '#f59e0b30'}`, borderRadius: '10px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: colors.accent.green }}>
                       {(clubAffiliation.club?.club || clubAffiliation.club?.prenom || '?')[0]}
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{clubAffiliation.club?.club || `${clubAffiliation.club?.prenom} ${clubAffiliation.club?.nom}`}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: clubAffiliation.statut === 'accepte' ? '#4ade80' : '#f59e0b' }}>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: clubAffiliation.statut === 'accepte' ? colors.accent.green : '#f59e0b' }}>
                         {clubAffiliation.statut === 'accepte' ? `✅ ${t('profil_affilie', lang)}` : clubAffiliation.statut === 'en_attente' ? `⏳ ${t('profil_en_attente_club', lang)}` : `✕ ${t('profil_refuse', lang)}`}
                       </p>
                     </div>
@@ -7593,8 +7594,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     </button>
                   </div>
                 )}
-                {codeClubError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '8px' }}>⚠️ {codeClubError}</p>}
-                {codeClubSuccess && <p style={{ color: '#4ade80', fontSize: '12px', marginTop: '8px' }}>✅ {t('profil_demande_envoyee', lang)}</p>}
+                {codeClubError && <p style={{ color: colors.accent.red, fontSize: '12px', marginTop: '8px' }}>⚠️ {codeClubError}</p>}
+                {codeClubSuccess && <p style={{ color: colors.accent.green, fontSize: '12px', marginTop: '8px' }}>✅ {t('profil_demande_envoyee', lang)}</p>}
               </div>
             </div>
 
@@ -7626,15 +7627,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
                     <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>⭐ {t('profil_evaluations_recues', lang)}</h2>
                     {moyGlobale !== null ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fbbf2415', border: '1px solid #fbbf2430', borderRadius: '12px', padding: '6px 16px' }}>
-                        <span style={{ fontSize: '24px', fontWeight: 900, color: '#fbbf24' }}>{moyGlobale.toFixed(1)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', borderRadius: '12px', padding: '6px 16px' }}>
+                        <span style={{ fontSize: '24px', fontWeight: 900, color: colors.accent.amber }}>{moyGlobale.toFixed(1)}</span>
                         <div>
-                          <div style={{ color: '#fbbf24', fontSize: '14px', lineHeight: 1 }}>{'★'.repeat(Math.round(moyGlobale))}{'☆'.repeat(5 - Math.round(moyGlobale))}</div>
-                          <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>{notesEdu.length} évaluation{notesEdu.length > 1 ? 's' : ''}</div>
+                          <div style={{ color: colors.accent.amber, fontSize: '14px', lineHeight: 1 }}>{'★'.repeat(Math.round(moyGlobale))}{'☆'.repeat(5 - Math.round(moyGlobale))}</div>
+                          <div style={{ fontSize: '10px', color: colors.text.faint, marginTop: '2px' }}>{notesEdu.length} évaluation{notesEdu.length > 1 ? 's' : ''}</div>
                         </div>
                       </div>
                     ) : (
-                      <span style={{ fontSize: '12px', color: '#333' }}>{t('profil_aucune_evaluation', lang)}</span>
+                      <span style={{ fontSize: '12px', color: colors.border.strong }}>{t('profil_aucune_evaluation', lang)}</span>
                     )}
                   </div>
 
@@ -7648,7 +7649,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                               <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
                               {mCat !== null && (
-                                <span style={{ fontSize: '16px', fontWeight: 800, color: cat.color }}>{mCat.toFixed(1)}<span style={{ fontSize: '10px', color: '#444' }}>/5</span></span>
+                                <span style={{ fontSize: '16px', fontWeight: 800, color: cat.color }}>{mCat.toFixed(1)}<span style={{ fontSize: '10px', color: colors.text.disabled }}>/5</span></span>
                               )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
@@ -7656,16 +7657,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                 const val = moyC(c.key)
                                 return (
                                   <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '11px', color: '#666', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</span>
+                                    <span style={{ fontSize: '11px', color: colors.text.dim, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</span>
                                     {val !== null ? (
                                       <>
-                                        <div style={{ width: '80px', height: '5px', background: '#1a1a1a', borderRadius: '3px', flexShrink: 0 }}>
+                                        <div style={{ width: '80px', height: '5px', background: colors.background.raised, borderRadius: '3px', flexShrink: 0 }}>
                                           <div style={{ width: `${(val / 5) * 100}%`, height: '100%', background: cat.color, borderRadius: '3px' }} />
                                         </div>
                                         <span style={{ fontSize: '11px', fontWeight: 700, color: cat.color, width: '24px', textAlign: 'right', flexShrink: 0 }}>{val.toFixed(1)}</span>
                                       </>
                                     ) : (
-                                      <span style={{ fontSize: '10px', color: '#333' }}>—</span>
+                                      <span style={{ fontSize: '10px', color: colors.border.strong }}>—</span>
                                     )}
                                   </div>
                                 )
@@ -7683,16 +7684,16 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px' }}>💬 {t('profil_commentaires', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {notesEdu.filter(n => n.commentaire).map(n => (
-                          <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: '#0a0a0a', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                          <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
                             <span style={{ fontSize: '18px', flexShrink: 0 }}>{n.auteur_type === 'club' ? '🏟️' : '⚽'}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 700 }}>{n.profiles?.prenom} {n.profiles?.nom}</span>
-                                <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? '#60a5fa' : '#4ade80' }}>{n.auteur_type === 'club' ? t('profil_club_label', lang) : t('profil_joueur_label', lang)}</span>
-                                {n.saison && <span style={{ fontSize: '10px', color: '#444' }}>{n.saison}</span>}
-                                {!n.visible_public && <span style={{ fontSize: '10px', color: '#444', background: '#111', padding: '1px 6px', borderRadius: '6px', marginLeft: 'auto' }}>🔒 {t('profil_prive', lang)}</span>}
+                                <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? colors.accent.blue : colors.accent.green }}>{n.auteur_type === 'club' ? t('profil_club_label', lang) : t('profil_joueur_label', lang)}</span>
+                                {n.saison && <span style={{ fontSize: '10px', color: colors.text.disabled }}>{n.saison}</span>}
+                                {!n.visible_public && <span style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.surface, padding: '1px 6px', borderRadius: '6px', marginLeft: 'auto' }}>🔒 {t('profil_prive', lang)}</span>}
                               </div>
-                              <p style={{ margin: 0, fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{n.commentaire}"</p>
+                              <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>"{n.commentaire}"</p>
                             </div>
                           </div>
                         ))}
@@ -7711,15 +7712,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     {/* ===== MODALE SCANNER FEUILLE DE MATCH ===== */}
     {showScanner && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '900px', padding: '24px' }}>
+        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '900px', padding: '24px' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>📸 {t('scan_feuille_titre', lang)}</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{t('scan_feuille_desc', lang)}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
             </div>
             <button onClick={() => { setShowScanner(false); setScannerResult(null); setScannerImageBase64(null); setScannerImagePreview(null); setScannerError(null) }}
-              style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+              style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer' }}>✕</button>
           </div>
 
           {!scannerResult ? (
@@ -7739,8 +7740,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                   ? <img src={scannerImagePreview} alt="Feuille" style={{ maxHeight: '400px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                   : <div>
                       <p style={{ fontSize: '40px', margin: '0 0 10px' }}>📄</p>
-                      <p style={{ margin: 0, fontWeight: 600, color: '#aaa' }}>{t('scan_clique_glisse', lang)}</p>
-                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#444' }}>{t('seance_jpg_png', lang)}</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: colors.text.secondary }}>{t('scan_clique_glisse', lang)}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.disabled }}>{t('seance_jpg_png', lang)}</p>
                     </div>
                 }
               </div>
@@ -7756,10 +7757,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
                   {scannerLoading ? `🔍 ${libelleStatutGroq(scannerStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
                 </button>
-                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn('#666')}>{t('btn_annuler', lang)}</button>
+                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
               </div>
               {scannerLoading && (
-                <div style={{ marginTop: '16px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: '#4ade80' }}>
+                <div style={{ marginTop: '16px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: colors.accent.green }}>
                   🤖 {t('scan_ia_lit_feuille', lang)}
                 </div>
               )}
@@ -7777,7 +7778,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                       <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>
                       <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" value={scannerMatchData.score_eux} onChange={e => setScannerMatchData(d => ({ ...d, score_eux: e.target.value }))} /></div>
                     </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aaa', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text.secondary, cursor: 'pointer' }}>
                       <input type="checkbox" checked={scannerMatchData.domicile} onChange={e => setScannerMatchData(d => ({ ...d, domicile: e.target.checked }))} />
                       {t('scan_match_domicile', lang)}
                     </label>
@@ -7785,12 +7786,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
-                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>
                     ✅ {Object.keys(scannerStats).length} joueur{Object.keys(scannerStats).length > 1 ? 's' : ''} détecté{Object.keys(scannerStats).length > 1 ? 's' : ''} automatiquement
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', marginBottom: '6px', minWidth: '380px' }}>
                     {['Joueur', 'Min', 'Buts', 'PD ✏️', 'CS', '🟨', '🟥'].map(h => (
-                      <span key={h} style={{ fontSize: '10px', color: '#444', textAlign: h === 'Joueur' ? 'left' : 'center', textTransform: 'uppercase' }}>{h}</span>
+                      <span key={h} style={{ fontSize: '10px', color: colors.text.disabled, textAlign: h === 'Joueur' ? 'left' : 'center', textTransform: 'uppercase' }}>{h}</span>
                     ))}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '460px', overflowY: 'auto' }}>
@@ -7802,29 +7803,29 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         [j.id]: { minutes: 0, buts: 0, passes_dec: 0, clean_sheet: false, carton_jaune: false, carton_rouge: false, ...(prev[j.id] || {}), [field]: val }
                       }))
                       return (
-                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? '#0d1a0d' : '#0a0a0a', borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : '#111'}`, minWidth: '380px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: detected ? 700 : 500, color: detected ? '#fff' : '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? '#0d1a0d' : colors.background.base, borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : colors.background.surface}`, minWidth: '380px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: detected ? 700 : 500, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ''}.
                           </span>
                           <input type="number" min="0" max="120" value={s.minutes ?? ''} placeholder="—"
                             onChange={e => setS('minutes', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
                           <input type="number" min="0" value={s.buts ?? ''} placeholder="—"
                             onChange={e => setS('buts', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
                           <input type="number" min="0" value={s.passes_dec ?? ''} placeholder="—"
                             onChange={e => setS('passes_dec', parseInt(e.target.value) || 0)}
                             style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
                           <input type="number" min="0" max="1" value={s.clean_sheet ? 1 : ''} placeholder="—"
                             onChange={e => setS('clean_sheet', e.target.value === '1')}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? '#111' : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
                           <span onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_jaune ? 1 : 0.2 }}>🟨</span>
                           <span onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_rouge ? 1 : 0.2 }}>🟥</span>
                         </div>
                       )
                     })}
                   </div>
-                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#333' }}>✏️ PD (passes décisives) et CS (clean sheet) sont à compléter manuellement</p>
+                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.border.strong }}>✏️ PD (passes décisives) et CS (clean sheet) sont à compléter manuellement</p>
                 </div>
               </div>
 
@@ -7832,7 +7833,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} style={{ ...st.btnSolid, flex: 1 }}>
                   {scannerSaving ? 'Enregistrement...' : `💾 ${t('scan_enregistrer_match', lang)}`}
                 </button>
-                <button onClick={() => { setScannerResult(null); setScannerError(null) }} style={st.btn('#666')}>← {t('scan_rescanner', lang)}</button>
+                <button onClick={() => { setScannerResult(null); setScannerError(null) }} style={st.btn(colors.text.dim)}>← {t('scan_rescanner', lang)}</button>
               </div>
             </div>
           )}
@@ -7842,17 +7843,17 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     {/* ===== MODAL LIAISON JOUEUR AFFILIÉ ===== */}
     {affiliationEnCours && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
           <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ {t('liaison_accepter_demande', lang)}</p>
-          <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>
-            {t('liaison_lier_joueur', lang)} <strong style={{ color: '#aaa' }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> {t('liaison_a_joueur_effectif', lang)}
+          <p style={{ margin: '0 0 20px', fontSize: '12px', color: colors.text.dim }}>
+            {t('liaison_lier_joueur', lang)} <strong style={{ color: colors.text.secondary }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> {t('liaison_a_joueur_effectif', lang)}
           </p>
 
-          <label style={{ display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px' }}>{t('liaison_joueur_correspondant', lang)}</label>
+          <label style={{ display: 'block', fontSize: '12px', color: colors.text.muted, marginBottom: '6px' }}>{t('liaison_joueur_correspondant', lang)}</label>
           <select
             value={joueurLieId}
             onChange={e => setJoueurLieId(e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #222', background: '#111', color: '#fff', fontSize: '13px', marginBottom: '20px' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #222', background: colors.background.surface, color: colors.text.primary, fontSize: '13px', marginBottom: '20px' }}
           >
             <option value="">{t('liaison_selectionner_joueur', lang)}</option>
             {joueurs.map(j => (
@@ -7864,18 +7865,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             <button
               onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId)}
               disabled={!joueurLieId}
-              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #60a5fa40', background: joueurLieId ? '#60a5fa20' : '#1a1a1a', color: joueurLieId ? '#60a5fa' : '#444', fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
+              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #60a5fa40', background: joueurLieId ? colors.accent.blue + alpha.soft : colors.background.raised, color: joueurLieId ? colors.accent.blue : colors.text.disabled, fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
             >
               ✅ {t('liaison_confirmer', lang)}
             </button>
             <button
               onClick={() => { setAffiliationEnCours(null); setJoueurLieId('') }}
-              style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: '#666', fontSize: '13px', cursor: 'pointer' }}
+              style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: colors.text.dim, fontSize: '13px', cursor: 'pointer' }}
             >
               {t('btn_annuler', lang)}
             </button>
           </div>
-          <p style={{ margin: '12px 0 0', fontSize: '11px', color: '#444', textAlign: 'center' }}>
+          <p style={{ margin: '12px 0 0', fontSize: '11px', color: colors.text.disabled, textAlign: 'center' }}>
             {t('liaison_optionnelle', lang)}
           </p>
         </div>
@@ -7888,7 +7889,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       // Le modal .fiche-render est une feuille blanche (texte noir, cf. index.css)
       // même en mode édition, pour rester visuellement cohérent avec l'aperçu en
       // lecture — juste un soulignement vert pour distinguer les champs éditables.
-      const champEditStyle = { border: 'none', borderBottom: '1px solid #4ade80', background: 'transparent', color: '#000', fontSize: '13px', width: '100%', outline: 'none', padding: '2px 0', fontFamily: 'inherit' }
+      const champEditStyle = { border: 'none', borderBottom: '1px solid #4ade80', background: 'transparent', color: colors.black, fontSize: '13px', width: '100%', outline: 'none', padding: '2px 0', fontFamily: 'inherit' }
       const champEditTextareaStyle = { ...champEditStyle, resize: 'vertical', display: 'block' }
       return (
       <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
@@ -7897,28 +7898,28 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
             {ficheApercu.fichier_url && !modeEditionApercu && (
               <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
-                style={{ background: '#60a5fa', color: '#000', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 ⬇️ {t('seance_fichier', lang)}
               </a>
             )}
             {modeEditionApercu ? (
               <>
                 <button onClick={sauvegarderFicheApercuEdit} disabled={savingFicheApercu}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: savingFicheApercu ? 0.6 : 1 }}>
+                  style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: savingFicheApercu ? 0.6 : 1 }}>
                   {savingFicheApercu ? 'Enregistrement...' : `✓ ${t('btn_sauvegarder', lang)}`}
                 </button>
                 <button onClick={annulerEditionApercu}
-                  style={{ background: '#1a1a1a', border: '1px solid #444', color: '#aaa', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.background.raised, border: '1px solid #444', color: colors.text.secondary, borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {t('btn_annuler', lang)}
                 </button>
               </>
             ) : (
               <>
                 <button onClick={ouvrirEditionApercu}
-                  style={{ background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.background.surface, border: '1px solid #333', color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ✏️ {t('btn_modifier', lang)}
                 </button>
-                <button onClick={() => setFicheApercu(null)} style={{ background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => setFicheApercu(null)} style={{ background: colors.background.raised, border: '1px solid #444', color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ✕ {t('btn_fermer', lang)}
                 </button>
               </>
@@ -8021,10 +8022,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
 
     {tactipadModal !== null && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
+        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {fiche.procedes[tactipadModal]?.numero}</p>
-            <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
           </div>
           <Tactipad
             userId={userId}

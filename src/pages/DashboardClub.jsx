@@ -16,6 +16,7 @@ import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { colors, alpha } from '../tokens'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -76,12 +77,12 @@ const ROLES_ORGANIGRAMME = [
 // l'arbre hiérarchique.
 const DEPT_COLORS = {
   'Direction':      { bg: '#1a1a2e', border: '#818cf8', text: '#818cf8', dot: '#818cf8' },
-  'Sportif':        { bg: '#0f1f0f', border: '#4ade80', text: '#4ade80', dot: '#4ade80' },
-  'Administration': { bg: '#1a1200', border: '#fbbf24', text: '#fbbf24', dot: '#fbbf24' },
+  'Sportif':        { bg: '#0f1f0f', border: colors.accent.green, text: colors.accent.green, dot: colors.accent.green },
+  'Administration': { bg: '#1a1200', border: colors.accent.amber, text: colors.accent.amber, dot: colors.accent.amber },
   'Communication':  { bg: '#1a0f1f', border: '#c084fc', text: '#c084fc', dot: '#c084fc' },
-  'Finance':        { bg: '#0f1a1a', border: '#22d3ee', text: '#22d3ee', dot: '#22d3ee' },
+  'Finance':        { bg: '#0f1a1a', border: colors.accent.cyan, text: colors.accent.cyan, dot: colors.accent.cyan },
   'Médical':        { bg: '#1f0f0f', border: '#f87171', text: '#f87171', dot: '#f87171' },
-  'Autre':          { bg: '#1a1a1a', border: '#6b7280', text: '#9ca3af', dot: '#6b7280' },
+  'Autre':          { bg: colors.background.raised, border: '#6b7280', text: '#9ca3af', dot: '#6b7280' },
 }
 const getDeptColor = (dept) => DEPT_COLORS[dept] || DEPT_COLORS['Autre']
 
@@ -142,8 +143,8 @@ const TYPE_EVENEMENT_INFO = (val) => TYPES_EVENEMENT.find(t => t.val === val) ||
 
 const STATUTS_PROJET = [
   { val: 'en_attente', label: 'En attente', color: '#f59e0b' },
-  { val: 'en_cours', label: 'En cours', color: '#60a5fa' },
-  { val: 'termine', label: 'Terminé', color: '#4ade80' },
+  { val: 'en_cours', label: 'En cours', color: colors.accent.blue },
+  { val: 'termine', label: 'Terminé', color: colors.accent.green },
 ]
 const MOIS_LABEL = (dateStr) => {
   const d = new Date(dateStr + 'T12:00:00')
@@ -151,12 +152,12 @@ const MOIS_LABEL = (dateStr) => {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-const STAT_CARD_COLORS = { green: '#4ade80', orange: '#f59e0b', red: '#ef4444' }
+const STAT_CARD_COLORS = { green: colors.accent.green, orange: '#f59e0b', red: colors.accent.red }
 function StatCard({ label, valeur, couleur }) {
-  const color = STAT_CARD_COLORS[couleur] || '#fff'
+  const color = STAT_CARD_COLORS[couleur] || colors.text.primary
   return (
-    <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-      <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+    <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+      <p style={{ margin: '0 0 4px', fontSize: '10px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
       <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color }}>{valeur}</p>
     </div>
   )
@@ -188,11 +189,11 @@ const CATEGORIES_RECETTE = [
 ]
 
 const COULEURS_BUDGET = [
-  '#4ade80', '#60a5fa', '#f59e0b', '#a78bfa',
+  colors.accent.green, colors.accent.blue, '#f59e0b', colors.accent.purpleLight,
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
-function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = 'fr' }) {
+function DonutChart({ segments, total, label, couleurCentrale = colors.text.primary, lang = 'fr' }) {
   const R = 70
   const STROKE = 18
   const C = 2 * Math.PI * R
@@ -200,9 +201,9 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   if (total === 0) return (
     <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width="180" height="180" viewBox="0 0 180 180">
-        <circle cx="90" cy="90" r={R} fill="none" stroke="#1a1a1a" strokeWidth={STROKE} />
-        <text x="90" y="86" textAnchor="middle" fill="#555" fontSize="11" fontFamily="Inter, sans-serif">Aucune</text>
-        <text x="90" y="102" textAnchor="middle" fill="#555" fontSize="11" fontFamily="Inter, sans-serif">entrée</text>
+        <circle cx="90" cy="90" r={R} fill="none" stroke={colors.background.raised} strokeWidth={STROKE} />
+        <text x="90" y="86" textAnchor="middle" fill={colors.text.faint} fontSize="11" fontFamily="Inter, sans-serif">Aucune</text>
+        <text x="90" y="102" textAnchor="middle" fill={colors.text.faint} fontSize="11" fontFamily="Inter, sans-serif">entrée</text>
       </svg>
     </div>
   )
@@ -216,7 +217,7 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
   return (
     <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
       <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="90" cy="90" r={R} fill="none" stroke="#1a1a1a" strokeWidth={STROKE} />
+        <circle cx="90" cy="90" r={R} fill="none" stroke={colors.background.raised} strokeWidth={STROKE} />
         {segmentsAvecOffset.map((seg, i) => {
           const dash = (seg.pct / 100) * C
           return (
@@ -233,13 +234,13 @@ function DonutChart({ segments, total, label, couleurCentrale = '#fff', lang = '
         <span style={{ fontSize: 18, fontWeight: 900, color: couleurCentrale, fontFamily: 'Inter, sans-serif' }}>
           {total.toLocaleString(localeOf(lang), { maximumFractionDigits: 0 })} €
         </span>
-        <span style={{ fontSize: 10, color: '#555', fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
+        <span style={{ fontSize: 10, color: colors.text.faint, fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
       </div>
     </div>
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = '#4ade80' }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -274,42 +275,42 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   return (
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> {t('club_accueil', lang)}</h1>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
+      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
 
       <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles ce jour" />
 
       {/* Planning club : matchs de toutes les équipes affiliées + événements club
           (tournois, soirées, réunions...) — volontairement pas les séances
           d'entraînement, qui restent une vue éducateur. */}
-      <div style={{ background: '#111', border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
+      <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
         <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '2rem' }}>
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{totalLicencies}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBallon /> {t('club_equipes_actives', lang)}</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBallon /> {t('club_equipes_actives', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEquipes}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> {t('club_tab_educateurs', lang)}</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> {t('club_tab_educateurs', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEducateurs}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoHorloge /> {t('club_demandes_affiliation', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? couleurPrincipale : '#fff' }}>{nbEnAttente}</p>
-          <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoHorloge /> {t('club_demandes_affiliation', lang)}</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? couleurPrincipale : colors.text.primary }}>{nbEnAttente}</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
         </div>
       </div>
 
@@ -318,9 +319,9 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
         {ACTIONS.map(a => (
           <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
-            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = couleurPrincipale + '40'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}>
+            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ fontSize: '26px' }}>{a.emoji}</span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
           </button>
@@ -330,17 +331,17 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       {/* Fil d'activité récente */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_activite_recente', lang)}</p>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
           {derniersResultats.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_resultat_accueil', lang)}</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_resultat_accueil', lang)}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {derniersResultats.map(m => {
                 const nous = parseInt(m.score_nous)
                 const eux = parseInt(m.score_eux)
                 const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
-                const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#ef4444' : '#f59e0b'
+                const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? colors.accent.red : '#f59e0b'
                 const label = catLabel(m.educateur_id)
                 return (
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
@@ -348,7 +349,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
                       <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>
                       <div style={{ minWidth: 0 }}>
                         <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || '—'}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
                       </div>
                     </div>
                     <span style={{ fontWeight: 800, fontSize: '13px', color: couleur, whiteSpace: 'nowrap' }}>{m.score_nous} - {m.score_eux}</span>
@@ -359,10 +360,10 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> {t('club_prochains_matchs', lang)}</p>
           {prochainsMatchs.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_match_venir', lang)}</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_match_venir', lang)}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {prochainsMatchs.map(m => {
@@ -371,9 +372,9 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.adversaire || '—'}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.heure ? ` · ${m.heure}` : ''}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.heure ? ` · ${m.heure}` : ''}</p>
                     </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? couleurPrincipale + '20' : '#60a5fa20', color: m.domicile ? couleurPrincipale : '#60a5fa', border: `1px solid ${m.domicile ? couleurPrincipale + '40' : '#60a5fa40'}` }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? couleurPrincipale + '20' : colors.accent.blue + alpha.soft, color: m.domicile ? couleurPrincipale : colors.accent.blue, border: `1px solid ${m.domicile ? couleurPrincipale + '40' : colors.accent.blue + alpha.medium}` }}>
                       {m.domicile ? <IcoHome /> : <IcoBus />} {m.domicile ? t('comp_domicile', lang) : t('club_deplacement', lang)}
                     </span>
                   </div>
@@ -383,16 +384,16 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           )}
         </div>
 
-        <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUserPlus /> {t('club_nouveaux_joueurs', lang)}</p>
           {joueursRecents.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{t('club_aucun_joueur_recent', lang)}</p>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_joueur_recent', lang)}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {joueursRecents.map(j => (
                 <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}{j.poste ? ` — ${j.poste}` : ''}</p>
-                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{j.created_at ? new Date(j.created_at).toLocaleDateString(localeOf(lang)) : ''}</span>
+                  <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap', flexShrink: 0 }}>{j.created_at ? new Date(j.created_at).toLocaleDateString(localeOf(lang)) : ''}</span>
                 </div>
               ))}
             </div>
@@ -408,17 +409,17 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 // sur le hero banner et la nav via sauvegarderTheme (optimistic sur `club`, parent).
 // Les uploads (fond/hero) se sauvegardent directement au choix du fichier — pas de
 // bouton "Appliquer" séparé pour ceux-là.
-const PRESETS_PRINCIPALE = ['#4ade80', '#f97316', '#60a5fa', '#f43f5e', '#fbbf24', '#a78bfa', '#22d3ee', '#ffffff']
-const PRESETS_SECONDAIRE = ['#22d3ee', '#4ade80', '#818cf8', '#f97316', '#ec4899', '#34d399', '#fbbf24', '#94a3b8']
+const PRESETS_PRINCIPALE = [colors.accent.green, colors.accent.orange, colors.accent.blue, '#f43f5e', colors.accent.amber, colors.accent.purpleLight, colors.accent.cyan, '#ffffff']
+const PRESETS_SECONDAIRE = [colors.accent.cyan, colors.accent.green, '#818cf8', colors.accent.orange, '#ec4899', '#34d399', colors.accent.amber, '#94a3b8']
 
 function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
   const label = { color: '#9ca3af', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
-  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
 
   return (
-    <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
+    <div style={{ background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-        <h3 style={{ margin: 0, color: '#fff', fontSize: '15px', fontWeight: 700 }}>Personnalisation du dashboard</h3>
+        <h3 style={{ margin: 0, color: colors.text.primary, fontSize: '15px', fontWeight: 700 }}>Personnalisation du dashboard</h3>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
       </div>
 
@@ -433,12 +434,12 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {PRESETS_PRINCIPALE.map(c => (
                 <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_principale: c })); sauvegarderTheme({ couleur_principale: c }) }}
-                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_principale || '#4ade80') === c ? '2px solid white' : '2px solid transparent' }} />
+                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_principale || colors.accent.green) === c ? '2px solid white' : '2px solid transparent' }} />
               ))}
             </div>
           </div>
           <button onClick={() => sauvegarderTheme({ couleur_principale: themeEdit.couleur_principale })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ marginTop: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Appliquer
           </button>
         </div>
@@ -453,12 +454,12 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {PRESETS_SECONDAIRE.map(c => (
                 <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_secondaire: c })); sauvegarderTheme({ couleur_secondaire: c }) }}
-                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_secondaire || '#22d3ee') === c ? '2px solid white' : '2px solid transparent' }} />
+                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_secondaire || colors.accent.cyan) === c ? '2px solid white' : '2px solid transparent' }} />
               ))}
             </div>
           </div>
           <button onClick={() => sauvegarderTheme({ couleur_secondaire: themeEdit.couleur_secondaire })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ marginTop: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Appliquer
           </button>
         </div>
@@ -477,7 +478,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </label>
             {club?.image_fond_url && (
               <button onClick={() => sauvegarderTheme({ image_fond_url: null })}
-                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: '#ef4444', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Supprimer
               </button>
             )}
@@ -498,7 +499,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </label>
             {club?.image_hero_url && (
               <button onClick={() => sauvegarderTheme({ image_hero_url: null })}
-                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: '#ef4444', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Supprimer
               </button>
             )}
@@ -511,9 +512,9 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <input type="text" placeholder="Ex: Ensemble, on va plus loin" value={themeEdit.slogan}
               onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
-              style={{ flex: 1, minWidth: '200px', background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+              style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
             <button onClick={() => sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })} disabled={savingTheme}
-              style={{ background: club?.couleur_principale || '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.black, fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Sauvegarder
             </button>
           </div>
@@ -527,7 +528,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
 // Grille : colonnes = PERMISSION_SECTIONS, lignes = ROLES_STAFF (hors président,
 // qui a tout et n'apparaît pas ici). Édite une copie locale, ne touche la base
 // qu'au clic sur "Enregistrer" via onSave (upsert complet de la matrice).
-function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPrincipale = '#4ade80' }) {
+function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPrincipale = colors.accent.green }) {
   const rolesConfigurables = ROLES_STAFF.filter(r => r.val !== 'president')
 
   const initMatrice = () => {
@@ -559,17 +560,17 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
 
   const cellBtn = (active, label, color) => ({
     padding: '3px 9px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-    background: active ? `${color}20` : '#1a1a1a', color: active ? color : '#3a3a3a',
+    background: active ? `${color}20` : colors.background.raised, color: active ? color : '#3a3a3a',
   })
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🔐 Permissions par rôle</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
-        <p style={{ margin: '0 0 18px', fontSize: '12px', color: '#666' }}>
+        <p style={{ margin: '0 0 18px', fontSize: '12px', color: colors.text.dim }}>
           Le Président voit et modifie tout, ce n'est pas configurable. Pour les autres rôles : « Voir » affiche l'onglet, « Modifier » autorise les actions d'écriture (ajout/suppression) dans cet onglet.
         </p>
 
@@ -577,9 +578,9 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '640px' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rôle</th>
+                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rôle</th>
                 {PERMISSION_SECTIONS.map(s => (
-                  <th key={s.id} style={{ textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
+                  <th key={s.id} style={{ textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
                 ))}
               </tr>
             </thead>
@@ -592,7 +593,7 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
                     return (
                       <td key={section.id} style={{ padding: '10px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                          <button onClick={() => toggle(role.val, section.id, 'can_view')} style={cellBtn(cell.can_view, 'Voir', '#60a5fa')}>👁 Voir</button>
+                          <button onClick={() => toggle(role.val, section.id, 'can_view')} style={cellBtn(cell.can_view, 'Voir', colors.accent.blue)}>👁 Voir</button>
                           <button onClick={() => toggle(role.val, section.id, 'can_edit')} style={cellBtn(cell.can_edit, 'Modifier', couleurPrincipale)}>✏️ Modifier</button>
                         </div>
                       </td>
@@ -606,10 +607,10 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
           <button onClick={() => onSave(matrice)} disabled={saving}
-            style={{ background: couleurPrincipale, color: '#000', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
+            style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Enregistrement...' : '✓ Enregistrer'}
           </button>
-          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={onClose} style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.muted, borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Annuler
           </button>
         </div>
@@ -639,8 +640,8 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: hasChildren && isExpanded ? '0' : '8px' }}>
         {depth > 0 && (
           <div style={{ width: '28px', minWidth: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginRight: '8px', paddingTop: '16px' }}>
-            <div style={{ width: '1px', flex: 1, background: '#2a2a2a', minHeight: '16px' }} />
-            <div style={{ width: '20px', height: '1px', background: '#2a2a2a' }} />
+            <div style={{ width: '1px', flex: 1, background: colors.border.default, minHeight: '16px' }} />
+            <div style={{ width: '20px', height: '1px', background: colors.border.default }} />
           </div>
         )}
 
@@ -651,7 +652,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
         }}>
           <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', background: colors.dot }} />
 
-          <p style={{ margin: '0 0 2px', color: '#fff', fontWeight: 700, fontSize: '14px', paddingRight: '16px' }}>{node.prenom} {node.nom}</p>
+          <p style={{ margin: '0 0 2px', color: colors.text.primary, fontWeight: 700, fontSize: '14px', paddingRight: '16px' }}>{node.prenom} {node.nom}</p>
           <p style={{ margin: '0 0 4px', color: colors.text, fontSize: '12px', fontWeight: 500 }}>{node.role}</p>
           <p style={{ margin: 0, color: '#4b5563', fontSize: '11px' }}>{node.departement}</p>
 
@@ -665,7 +666,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
           {canEdit && (
             <div style={{ display: 'flex', gap: '6px', marginTop: '8px', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
               <button onClick={() => onEdit(node)} style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>✏️ Modifier</button>
-              <button onClick={() => onDelete(node.id)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>🗑️</button>
+              <button onClick={() => onDelete(node.id)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #ef444440', color: colors.accent.red, borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>🗑️</button>
             </div>
           )}
 
@@ -676,7 +677,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
                 position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
                 background: colors.border, borderRadius: '50%', width: '20px', height: '20px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '11px', color: '#000', fontWeight: 700, zIndex: 1,
+                fontSize: '11px', color: colors.black, fontWeight: 700, zIndex: 1,
                 boxShadow: '0 0 0 3px #0a0a0a', cursor: 'pointer',
               }}
             >
@@ -777,7 +778,7 @@ export default function DashboardClub() {
   // — persisté sur profiles (pas de table clubs dans ce projet), affiché sur
   // le hero banner et repris sur la nav + les stats de l'Accueil.
   const [showThemeEditor, setShowThemeEditor] = useState(false)
-  const [themeEdit, setThemeEdit] = useState({ couleur_principale: '#4ade80', couleur_secondaire: '#22d3ee', slogan: '' })
+  const [themeEdit, setThemeEdit] = useState({ couleur_principale: colors.accent.green, couleur_secondaire: colors.accent.cyan, slogan: '' })
   const [savingTheme, setSavingTheme] = useState(false)
   const [themeUploading, setThemeUploading] = useState(null) // 'image_fond_url' | 'image_hero_url' | null
 
@@ -862,21 +863,21 @@ export default function DashboardClub() {
     return (PERMISSION_DEFAULTS[section] || []).includes(monRole)
   }
 
-  const couleurPrincipale = club?.couleur_principale || '#4ade80'
-  const couleurSecondaire = club?.couleur_secondaire || '#22d3ee'
+  const couleurPrincipale = club?.couleur_principale || colors.accent.green
+  const couleurSecondaire = club?.couleur_secondaire || colors.accent.cyan
 
   const st = {
-    page: { background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' },
-    navbar: { background: '#111', borderBottom: '1px solid #222', padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
-    logo: { color: '#4ade80', fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
+    page: { background: colors.background.base, minHeight: '100vh', color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    navbar: { background: colors.background.surface, borderBottom: '1px solid #222', padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
+    logo: { color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
-    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? couleurPrincipale : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
-    card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
-    btnSolid: { background: couleurPrincipale, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
-    btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-    input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
-    label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
+    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? couleurPrincipale : 'transparent', color: active ? colors.black : colors.text.secondary, fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
+    card: { background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
+    btnSolid: { background: couleurPrincipale, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
+    btnSecondary: { background: 'transparent', border: '1px solid #333', color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
+    input: { background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
+    label: { fontSize: '11px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
   }
 
   useEffect(() => { init() }, [])
@@ -953,8 +954,8 @@ export default function DashboardClub() {
     setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '' })
     setThemeEdit({
-      couleur_principale: clubProfile.couleur_principale || '#4ade80',
-      couleur_secondaire: clubProfile.couleur_secondaire || '#22d3ee',
+      couleur_principale: clubProfile.couleur_principale || colors.accent.green,
+      couleur_secondaire: clubProfile.couleur_secondaire || colors.accent.cyan,
       slogan: clubProfile.slogan || '',
     })
 
@@ -1597,10 +1598,10 @@ Règles :
 
   const GROUPES_POSTE = [
     { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-    { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: '#60a5fa', match: p => p && ['défenseur', 'defenseur', 'latéral', 'lateral'].some(k => p.toLowerCase().includes(k)) },
-    { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: '#a78bfa', match: p => p?.toLowerCase().includes('milieu') },
-    { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: '#4ade80', match: p => p && ['attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
-    { label: '❓ Autres', color: '#555', match: p => !p || !['gardien', 'défenseur', 'defenseur', 'latéral', 'lateral', 'milieu', 'attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
+    { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: colors.accent.blue, match: p => p && ['défenseur', 'defenseur', 'latéral', 'lateral'].some(k => p.toLowerCase().includes(k)) },
+    { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+    { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: colors.accent.green, match: p => p && ['attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
+    { label: '❓ Autres', color: colors.text.faint, match: p => !p || !['gardien', 'défenseur', 'defenseur', 'latéral', 'lateral', 'milieu', 'attaquant', 'ailier'].some(k => p.toLowerCase().includes(k)) },
   ]
 
   const chargerMatchsCategorie = async (categorieId) => {
@@ -1954,7 +1955,7 @@ Règles :
 
   const handleLogout = async () => { await signOutSafe(); navigate('/') }
 
-  if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#4ade80' }}>Chargement...</p></div>
+  if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: colors.accent.green }}>Chargement...</p></div>
 
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
@@ -2019,12 +2020,12 @@ Règles :
       <nav style={st.navbar}>
         <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
-          {!isMobile && <span style={{ fontSize: '13px', color: '#666' }}>{club?.club || club?.prenom}</span>}
+          {!isMobile && <span style={{ fontSize: '13px', color: colors.text.dim }}>{club?.club || club?.prenom}</span>}
           {!isMobile && (
             <div style={{ display: 'flex', gap: '4px' }}>
               {LANGS.map(l => (
                 <button key={l.code} onClick={() => setLang(l.code)}
-                  style={{ background: lang === l.code ? couleurPrincipale + '20' : 'transparent', border: `1px solid ${lang === l.code ? couleurPrincipale : '#2a2a2a'}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
+                  style={{ background: lang === l.code ? couleurPrincipale + '20' : 'transparent', border: `1px solid ${lang === l.code ? couleurPrincipale : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
                   {l.flag}
                 </button>
               ))}
@@ -2032,13 +2033,13 @@ Règles :
           )}
           {autreRole === 'educateur' && (
             <button onClick={() => navigate('/educateur')}
-              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
+              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
               {isMobile ? '🎓' : `🎓 ${t('club_vue_educateur', lang)}`}
             </button>
           )}
           {autreRole === 'joueur' && (
             <button onClick={() => navigate('/dashboard-joueur')}
-              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: '#1a1a1a', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
+              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
               {isMobile ? '⚽' : `⚽ ${t('club_vue_joueur', lang)}`}
             </button>
           )}
@@ -2079,7 +2080,7 @@ Règles :
             </div>
             <div style={{ flex: 1, minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>{club?.club || t('club_mon_club', lang)}</h1>
+                <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: colors.text.primary }}>{club?.club || t('club_mon_club', lang)}</h1>
                 {monRole === 'president' && (
                   <button onClick={() => setShowThemeEditor(v => !v)}
                     style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: '#ccc', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -2113,8 +2114,8 @@ Règles :
                   onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
                   style={{
                     padding: '12px 28px', borderRadius: '10px', border: 'none',
-                    background: activeCategorie === cat.id ? couleurPrincipale : '#1a1a1a',
-                    color: activeCategorie === cat.id ? '#000' : '#666',
+                    background: activeCategorie === cat.id ? couleurPrincipale : colors.background.raised,
+                    color: activeCategorie === cat.id ? colors.black : colors.text.dim,
                     fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
                     whiteSpace: 'nowrap', flexShrink: 0,
                   }}
@@ -2139,12 +2140,12 @@ Règles :
           <>
             {/* Mobile : bouton hamburger + fil d'ariane (catégorie › sous-onglet actifs) */}
             <button onClick={() => setSidebarOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: '#111', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: '#fff', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: colors.text.primary, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
               <span style={{ fontSize: '13px', fontWeight: 700, flex: 1, textAlign: 'left' }}>
                 {categoriesVisibles.find(c => c.id === activeCategorie)?.label}
                 {activeCategorie !== 'accueil' && sousOnglets.find(t => t.id === activeTab) && (
-                  <span style={{ color: '#555', fontWeight: 400 }}> › {sousOnglets.find(t => t.id === activeTab)?.label}</span>
+                  <span style={{ color: colors.text.faint, fontWeight: 400 }}> › {sousOnglets.find(t => t.id === activeTab)?.label}</span>
                 )}
               </span>
             </button>
@@ -2155,12 +2156,12 @@ Règles :
             )}
             <div style={{
               position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-85%', width: '85%', maxWidth: '320px', height: '100%',
-              background: '#0d0d0d', borderRight: '1px solid #1a1a1a', zIndex: 100, transition: 'left 0.25s ease',
+              background: colors.background.sunken, borderRight: '1px solid #1a1a1a', zIndex: 100, transition: 'left 0.25s ease',
               overflowY: 'auto', padding: '1.25rem 1rem', paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: '#4ade80' }}>⬡ Menu</span>
-                <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: colors.accent.green }}>⬡ Menu</span>
+                <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.25rem' }}>
@@ -2175,7 +2176,7 @@ Règles :
                     style={{
                       display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
                       background: activeCategorie === cat.id ? couleurPrincipale + '15' : 'transparent',
-                      color: activeCategorie === cat.id ? couleurPrincipale : '#aaa',
+                      color: activeCategorie === cat.id ? couleurPrincipale : colors.text.secondary,
                       fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
                     }}>
                     {cat.label}
@@ -2190,8 +2191,8 @@ Règles :
                       onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
                       style={{
                         display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                        background: activeTab === tab.id ? '#60a5fa15' : 'transparent',
-                        color: activeTab === tab.id ? '#60a5fa' : '#888',
+                        background: activeTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent',
+                        color: activeTab === tab.id ? colors.accent.blue : colors.text.muted,
                         fontWeight: activeTab === tab.id ? 700 : 400, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                       }}>
                       {tab.label}
@@ -2272,7 +2273,7 @@ Règles :
             )}
 
             {categories.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+              <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>
                 {t('club_aucune_categorie', lang)}
               </div>
             ) : (
@@ -2284,17 +2285,17 @@ Règles :
                     <div key={nom} style={st.card}>
                       <p style={{ margin: '0 0 10px', fontWeight: 800, color: couleurPrincipale, fontSize: '14px' }}>{nom}</p>
                       {cats.map(c => (
-                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
+                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{t('club_equipe_label', lang)} {c.equipe}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>
                               {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : t('club_pas_educateur_assigne', lang)}
                             </p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 {t('club_effectif', lang)}</button>
+                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 {t('club_effectif', lang)}</button>
                             {canEditSection('sportif') && (
-                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer' }}>✕</button>
                             )}
                           </div>
                         </div>
@@ -2319,7 +2320,7 @@ Règles :
             <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}30`, marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔑 {t('club_ton_code', lang)}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{t('club_partage_code_desc', lang)}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{t('club_partage_code_desc', lang)}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, fontWeight: 800, fontSize: '18px', padding: '8px 18px', borderRadius: '10px', letterSpacing: '3px', fontFamily: 'monospace' }}>{codeClub}</span>
@@ -2341,10 +2342,10 @@ Règles :
                   {resultatsEducateurs.map(e => {
                     const dejaInvite = educateursAffilies.some(a => a.educateur_id === e.id)
                     return (
-                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.prenom} {e.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{e.club || e.email}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{e.club || e.email}</p>
                         </div>
                         <button
                           onClick={() => inviterEducateur(e.id)}
@@ -2368,11 +2369,11 @@ Règles :
                     <div key={e.id} style={{ ...st.card, borderColor: '#f59e0b30', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
                       <div>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{t('club_methode_label', lang)} {e.methode === 'code' ? t('club_methode_code', lang) : t('club_methode_invite', lang)}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{t('club_methode_label', lang)} {e.methode === 'code' ? t('club_methode_code', lang) : t('club_methode_invite', lang)}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
                         <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>✅ {t('club_accepter', lang)}</button>
-                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>{t('club_refuser', lang)}</button>
+                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_refuser', lang)}</button>
                       </div>
                     </div>
                   ))}
@@ -2383,7 +2384,7 @@ Règles :
             {/* Affiliés */}
             <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: couleurPrincipale }}>✅ {t('club_educateurs_affilies_titre', lang)} ({educateursAcceptes.length})</p>
             {educateursAcceptes.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {educateursAcceptes.map(e => (
@@ -2395,8 +2396,8 @@ Règles :
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
-                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440', flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
+                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
+                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
                     </div>
                   </div>
                 ))}
@@ -2405,9 +2406,9 @@ Règles :
 
             {/* ── Séances reçues pour évaluation ── */}
             <div style={{ marginTop: '2rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#60a5fa' }}>🎥 {t('club_seances_recues_titre', lang)} ({seancesRecues.length})</p>
+              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.blue }}>🎥 {t('club_seances_recues_titre', lang)} ({seancesRecues.length})</p>
               {seancesRecues.length === 0 ? (
-                <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucune_seance_uploadee', lang)}</p>
+                <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucune_seance_uploadee', lang)}</p>
               ) : (() => {
                 const parSaison = seancesRecues.reduce((acc, s) => {
                   const k = s.saison || 'Non définie'
@@ -2425,17 +2426,17 @@ Règles :
                         onClick={() => toggleSaison(saison)}
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center',
-                          gap: '10px', padding: '10px 16px', background: '#1a1a1a',
+                          gap: '10px', padding: '10px 16px', background: colors.background.raised,
                           border: '1px solid #2a2a2a', borderRadius: '10px',
                           color: couleurPrincipale, fontWeight: 700, fontSize: '14px',
                           cursor: 'pointer', textAlign: 'left',
                         }}>
                         <span>{ouverte ? '📂' : '📁'}</span>
                         <span>{t('profil_saison', lang)} {saison}</span>
-                        <span style={{ marginLeft: 'auto', color: '#666', fontSize: '12px' }}>
+                        <span style={{ marginLeft: 'auto', color: colors.text.dim, fontSize: '12px' }}>
                           {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
                         </span>
-                        <span style={{ color: '#444' }}>{ouverte ? '▼' : '▶'}</span>
+                        <span style={{ color: colors.text.disabled }}>{ouverte ? '▼' : '▶'}</span>
                       </button>
 
                       {ouverte && parSaison[saison].map(s => {
@@ -2444,21 +2445,21 @@ Règles :
                           <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '6px', marginLeft: '16px' }}>
                             <div>
                               <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || t('seance_fallback', lang)}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
                               <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 {t('btn_voir', lang)}</a>
                               {s.statut === 'a_analyser' && (
                                 <>
                                   <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 {t('club_analyser', lang)}</button>
-                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? `🎙️ ${t('club_coach_mobile', lang)}` : `🎙️ ${t('club_transferer_coach', lang)}`}</button>
+                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? `🎙️ ${t('club_coach_mobile', lang)}` : `🎙️ ${t('club_transferer_coach', lang)}`}</button>
                                 </>
                               )}
-                              {s.statut === 'transfere_coach' && <span style={{ background: '#60a5fa15', color: '#60a5fa', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ {t('club_chez_coach', lang)}</span>}
+                              {s.statut === 'transfere_coach' && <span style={{ background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ {t('club_chez_coach', lang)}</span>}
                               {s.statut === 'analyse' && eval_ && (
                                 <span style={{ background: couleurPrincipale + '15', color: couleurPrincipale, fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
                               )}
-                              <button onClick={() => supprimerSeance(s.id)} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
+                              <button onClick={() => supprimerSeance(s.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer' }}>✕</button>
                             </div>
                           </div>
                         )
@@ -2473,11 +2474,11 @@ Règles :
 
         {activeTab === 'classements' && canViewSection('sportif') && (() => {
           const TRIS = [
-            { key: 'buts', label: t('stats_graph_buteurs', lang), color: '#4ade80' },
-            { key: 'passes', label: t('stats_filtre_passeurs', lang), color: '#60a5fa' },
-            { key: 'matchsJoues', label: t('stats_graph_matchs', lang), color: '#a78bfa' },
+            { key: 'buts', label: t('stats_graph_buteurs', lang), color: colors.accent.green },
+            { key: 'passes', label: t('stats_filtre_passeurs', lang), color: colors.accent.blue },
+            { key: 'matchsJoues', label: t('stats_graph_matchs', lang), color: colors.accent.purpleLight },
             { key: 'tauxPresence', label: t('stats_filtre_presence', lang), color: '#34d399', unit: '%' },
-            { key: 'pointsSeance', label: t('club_points_seance', lang), color: '#fbbf24' },
+            { key: 'pointsSeance', label: t('club_points_seance', lang), color: colors.accent.amber },
             { key: 'noteGlobale', label: t('club_note_educateur', lang), color: '#f59e0b', unit: '/5' },
           ]
           const catData = categorieActive ? statsParCategorie[categorieActive] : null
@@ -2485,7 +2486,7 @@ Règles :
           const sorted = catData ? [...catData.joueurs].sort((a, b) => (b.stats[triClassement] || 0) - (a.stats[triClassement] || 0)) : []
 
           if (categories.length === 0) {
-            return <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>{t('club_creer_categories_dabord', lang)}</div>
+            return <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>{t('club_creer_categories_dabord', lang)}</div>
           }
           if (loadingClassements) {
             return <p style={{ color: couleurPrincipale, textAlign: 'center', padding: '2rem' }}>{t('club_chargement_classements', lang)}</p>
@@ -2553,25 +2554,25 @@ Règles :
                         🏆 {t('club_voir_classement_ligue', lang)}
                       </a>
                     ) : (
-                      <p style={{ color: '#444', fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_lien_classement_manquant', lang)}</p>
+                      <p style={{ color: colors.text.disabled, fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_lien_classement_manquant', lang)}</p>
                     )}
 
                     {derniersMatchs.length > 0 && (
                       <>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.blue, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.5rem' }}>
                           {derniersMatchs.map(m => {
                             const aScore = m.score_nous !== '' && m.score_nous !== null
                             const nous = parseInt(m.score_nous)
                             const eux = parseInt(m.score_eux)
                             const resultat = aScore ? (nous > eux ? 'V' : nous < eux ? 'D' : 'N') : null
-                            const couleur = resultat === 'V' ? '#4ade80' : resultat === 'D' ? '#ef4444' : '#f59e0b'
+                            const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? colors.accent.red : '#f59e0b'
                             return (
                               <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px' }}>
                                 {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{resultat}</span>}
                                 <div style={{ flex: 1 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
                                 </div>
                                 {aScore && <span style={{ fontWeight: 800, fontSize: '14px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
                               </div>
@@ -2585,16 +2586,16 @@ Règles :
               })()}
 
               {!catData || catData.joueurs.length === 0 ? (
-                <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+                <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>
                   {t('club_aucun_joueur_categorie', lang)}<br />
-                  <span style={{ fontSize: '12px', color: '#444' }}>{t('club_educateur_doit_lier', lang)}</span>
+                  <span style={{ fontSize: '12px', color: colors.text.disabled }}>{t('club_educateur_doit_lier', lang)}</span>
                 </div>
               ) : (
                 <>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                     {TRIS.map(t => (
                       <button key={t.key} onClick={() => setTriClassement(t.key)}
-                        style={{ background: triClassement === t.key ? t.color + '20' : '#111', border: `1px solid ${triClassement === t.key ? t.color + '60' : '#222'}`, color: triClassement === t.key ? t.color : '#555', padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ background: triClassement === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${triClassement === t.key ? t.color + '60' : '#222'}`, color: triClassement === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                         {t.label}
                       </button>
                     ))}
@@ -2604,9 +2605,9 @@ Règles :
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                          <th style={{ padding: '8px 12px', textAlign: 'center', color: '#444', fontSize: '11px', width: '40px' }}>#</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>{t('equipe_col_joueur', lang)}</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: '#444', fontSize: '11px' }}>{t('equipe_poste', lang)}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'center', color: colors.text.disabled, fontSize: '11px', width: '40px' }}>#</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_col_joueur', lang)}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_poste', lang)}</th>
                           <th style={{ padding: '8px 12px', textAlign: 'right', color: triActif.color, fontSize: '11px' }}>{triActif.label}</th>
                         </tr>
                       </thead>
@@ -2615,9 +2616,9 @@ Règles :
                           const val = j.stats[triClassement]
                           return (
                             <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : '#444' }}>{i + 1}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled }}>{i + 1}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                              <td style={{ padding: '10px 12px', color: '#666' }}>{j.poste || '—'}</td>
+                              <td style={{ padding: '10px 12px', color: colors.text.dim }}>{j.poste || '—'}</td>
                               <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color }}>
                                 {val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '—'}{triActif.unit === '%' ? '%' : ''}
                               </td>
@@ -2663,11 +2664,11 @@ Règles :
                   <p style={{ fontWeight: 800, fontSize: '18px', margin: '0 0 4px' }}>{profilClubEdit.club || 'Nom du club'}</p>
                   {moyenne !== null ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#fbbf24', fontSize: '16px' }}>{'★'.repeat(Math.round(moyenne))}{'☆'.repeat(5 - Math.round(moyenne))}</span>
-                      <span style={{ fontSize: '13px', color: '#666' }}>{moyenne.toFixed(1)} ({avisRecus.length} avis)</span>
+                      <span style={{ color: colors.accent.amber, fontSize: '16px' }}>{'★'.repeat(Math.round(moyenne))}{'☆'.repeat(5 - Math.round(moyenne))}</span>
+                      <span style={{ fontSize: '13px', color: colors.text.dim }}>{moyenne.toFixed(1)} ({avisRecus.length} avis)</span>
                     </div>
                   ) : (
-                    <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>{t('club_aucun_avis_recu', lang)}</p>
+                    <p style={{ fontSize: '13px', color: colors.text.disabled, margin: 0 }}>{t('club_aucun_avis_recu', lang)}</p>
                   )}
                 </div>
               </div>
@@ -2687,7 +2688,7 @@ Règles :
                   <div>
                     <label style={st.label}>Ville (siège du club)</label>
                     <input style={st.input} value={profilClubEdit.ville} onChange={e => setProfilClubEdit(p => ({ ...p, ville: e.target.value }))} placeholder="Ex: Cannes" disabled={!canEditSection('profil')} />
-                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>Utilisée pour calculer automatiquement les horaires de départ/retour des déplacements en Extérieur.</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.muted }}>Utilisée pour calculer automatiquement les horaires de départ/retour des déplacements en Extérieur.</p>
                   </div>
                   <div>
                     <label style={st.label}>{t('seance_description', lang)}</label>
@@ -2710,17 +2711,17 @@ Règles :
               {/* Abonnement — paliers vérifiés manuellement par le support (nb. licenciés) */}
               <div style={{ ...st.card, marginBottom: '1.5rem' }}>
                 <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('club_abonnement_titre', lang)}</p>
-                <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555', lineHeight: 1.6 }}>{t('club_abonnement_desc', lang)}</p>
+                <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('club_abonnement_desc', lang)}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
                   {Object.values(STRIPE_LINKS_CLUB).map(p => (
-                    <div key={p.label} style={{ background: '#141414', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', color: '#aaa' }}>{p.label}</span>
+                    <div key={p.label} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: colors.text.secondary }}>{p.label}</span>
                       <span style={{ fontSize: '13px', color: couleurPrincipale, fontWeight: 700 }}>{p.mensuelPrix} · {p.annuelPrix}</span>
                     </div>
                   ))}
                 </div>
                 <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Activation abonnement club — ' + (profilClubEdit.club || club?.club || ''))}`}
-                  style={{ display: 'inline-block', background: couleurPrincipale, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                  style={{ display: 'inline-block', background: couleurPrincipale, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
                   {t('club_contacter_support', lang)}
                 </a>
               </div>
@@ -2729,16 +2730,16 @@ Règles :
               <div style={st.card}>
                 <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('club_avis_recus_titre', lang)} ({avisRecus.length})</p>
                 {avisRecus.length === 0 ? (
-                  <p style={{ color: '#444', fontSize: '13px' }}>{t('club_aucun_avis_desc', lang)}</p>
+                  <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_avis_desc', lang)}</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {avisRecus.map(a => (
-                      <div key={a.id} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '12px 16px' }}>
+                      <div key={a.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px 16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <span style={{ fontWeight: 600, fontSize: '13px' }}>{a.auteur?.prenom} {a.auteur?.nom}</span>
-                          <span style={{ color: '#fbbf24', fontSize: '13px' }}>{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
+                          <span style={{ color: colors.accent.amber, fontSize: '13px' }}>{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
                         </div>
-                        {a.commentaire && <p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>"{a.commentaire}"</p>}
+                        {a.commentaire && <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, fontStyle: 'italic' }}>"{a.commentaire}"</p>}
                       </div>
                     ))}
                   </div>
@@ -2773,7 +2774,7 @@ Règles :
             .reduce((acc, e) => { acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant); return acc }, {})
           const categoriesDepenseArr = Object.entries(categoriesDepense)
             .sort((a, b) => b[1] - a[1])
-            .map(([cat, montant], i) => ({ cat, montant, pct: totalDepenses > 0 ? (montant / totalDepenses) * 100 : 0, color: ['#ef4444', '#f97316', '#f59e0b', '#fb923c', '#fbbf24', '#fca5a5', '#fed7aa', '#fde68a', '#fef3c7'][i % 9] }))
+            .map(([cat, montant], i) => ({ cat, montant, pct: totalDepenses > 0 ? (montant / totalDepenses) * 100 : 0, color: [colors.accent.red, colors.accent.orange, '#f59e0b', '#fb923c', colors.accent.amber, '#fca5a5', '#fed7aa', '#fde68a', '#fef3c7'][i % 9] }))
 
           const categoriesRecette = entriesFiltrees
             .filter(e => e.type === 'recette')
@@ -2787,32 +2788,32 @@ Règles :
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 {t('club_budget_titre', lang)}</h2>
-                  <p style={{ color: '#555', fontSize: 13, margin: '4px 0 0' }}>{t('club_budget_desc', lang)}</p>
+                  <p style={{ color: colors.text.faint, fontSize: 13, margin: '4px 0 0' }}>{t('club_budget_desc', lang)}</p>
                 </div>
                 {canEditSection('budget') && (
                 <button onClick={() => setBudgetFormOuvert(v => !v)}
-                  style={{ background: couleurPrincipale, color: '#000', border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {budgetFormOuvert ? `✕ ${t('btn_annuler', lang)}` : `+ ${t('btn_ajouter', lang)}`}
                 </button>
                 )}
               </div>
 
               {budgetFormOuvert && canEditSection('budget') && (
-                <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
                   <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                     {['depense', 'recette'].map(bt => (
                       <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
-                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? '#4ade8020' : '#ef444420') : '#1a1a1a', color: budgetForm.type === bt ? (bt === 'recette' ? '#4ade80' : '#ef4444') : '#555' }}>
+                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised, color: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green : colors.accent.red) : colors.text.faint }}>
                         {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
                       </button>
                     ))}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
+                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
                       <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
-                        style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? '#fff' : '#555', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
                         <option value="">{t('club_choisir_pts', lang)}</option>
                         {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
                           <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
@@ -2820,25 +2821,25 @@ Règles :
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_montant', lang)}</label>
+                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_montant', lang)}</label>
                       <input type="number" min="0" step="0.01" placeholder="0,00" value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
-                        style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_libelle', lang)}</label>
+                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_libelle', lang)}</label>
                       <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
-                        style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, color: '#555', fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('ent_date', lang)}</label>
+                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('ent_date', lang)}</label>
                       <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
-                        style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                   </div>
                   <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
-                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
+                    style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
                   <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
-                    style={{ background: couleurPrincipale, color: '#000', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
+                    style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
                     {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
                   </button>
                 </div>
@@ -2847,7 +2848,7 @@ Règles :
               <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
                 {[['mois', t('club_ce_mois', lang)], ['saison', t('club_cette_saison', lang)], ['tout', t('club_tout', lang)]].map(([val, label]) => (
                   <button key={val} onClick={() => setBudgetPeriode(val)}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${budgetPeriode === val ? couleurPrincipale + '40' : '#1a1a1a'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetPeriode === val ? couleurPrincipale + '20' : '#111', color: budgetPeriode === val ? couleurPrincipale : '#555' }}>
+                    style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${budgetPeriode === val ? couleurPrincipale + '40' : colors.background.raised}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetPeriode === val ? couleurPrincipale + '20' : colors.background.surface, color: budgetPeriode === val ? couleurPrincipale : colors.text.faint }}>
                     {label}
                   </button>
                 ))}
@@ -2855,12 +2856,12 @@ Règles :
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
                 {[
-                  { label: t('club_recettes', lang), val: totalRecettes, color: '#4ade80', bg: '#4ade8010', sign: '+' },
-                  { label: t('club_depenses', lang), val: totalDepenses, color: '#ef4444', bg: '#ef444410', sign: '−' },
-                  { label: t('club_solde', lang), val: Math.abs(solde), color: solde >= 0 ? '#4ade80' : '#ef4444', bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
+                  { label: t('club_recettes', lang), val: totalRecettes, color: colors.accent.green, bg: '#4ade8010', sign: '+' },
+                  { label: t('club_depenses', lang), val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
+                  { label: t('club_solde', lang), val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
                 ].map(({ label, val, color, bg, sign }) => (
                   <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 16, padding: '16px 18px' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: 11, color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
+                    <p style={{ margin: '0 0 6px', fontSize: 11, color: colors.text.dim, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>
                       {sign}{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                     </p>
@@ -2870,64 +2871,64 @@ Règles :
 
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 20, marginBottom: 20 }}>
                 {/* Donut Recettes */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
                   <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {categoriesRecetteArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{t('club_aucune_entree', lang)}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: colors.border.strong }}>{t('club_aucune_entree', lang)}</p>
                     )}
                     {categoriesRecetteArr.slice(0, 4).map((seg, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
                           <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
                           {seg.cat}
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: colors.text.primary }}>{Math.round(seg.pct)}%</span>
                       </div>
                     ))}
-                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesRecetteArr.length - 4} {t('club_autres_suffix', lang)}</p>}
+                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: colors.border.strong }}>+{categoriesRecetteArr.length - 4} {t('club_autres_suffix', lang)}</p>}
                   </div>
                 </div>
 
                 {/* Donut Dépenses */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ {t('club_depenses', lang)}</p>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.red, textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ {t('club_depenses', lang)}</p>
                   <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label={t('club_depense_mot', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {categoriesDepenseArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{t('club_aucune_entree', lang)}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: colors.border.strong }}>{t('club_aucune_entree', lang)}</p>
                     )}
                     {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
                           <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
                           {seg.cat}
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{Math.round(seg.pct)}%</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: colors.text.primary }}>{Math.round(seg.pct)}%</span>
                       </div>
                     ))}
-                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: '#333' }}>+{categoriesDepenseArr.length - 4} {t('club_autres_suffix', lang)}</p>}
+                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: colors.border.strong }}>+{categoriesDepenseArr.length - 4} {t('club_autres_suffix', lang)}</p>}
                   </div>
                 </div>
 
                 {/* Donut Global */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: '#111', border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ {t('club_global', lang)}</p>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ {t('club_global', lang)}</p>
                   <DonutChart
                     segments={totalRecettes + totalDepenses > 0 ? [
-                      { pct: (totalRecettes / (totalRecettes + totalDepenses)) * 100, color: '#4ade80' },
-                      { pct: (totalDepenses / (totalRecettes + totalDepenses)) * 100, color: '#ef4444' },
+                      { pct: (totalRecettes / (totalRecettes + totalDepenses)) * 100, color: colors.accent.green },
+                      { pct: (totalDepenses / (totalRecettes + totalDepenses)) * 100, color: colors.accent.red },
                     ] : []}
                     total={Math.abs(solde)}
                     label={solde >= 0 ? t('club_benefice', lang) : t('club_deficit', lang)}
-                    couleurCentrale={solde >= 0 ? '#4ade80' : '#ef4444'}
+                    couleurCentrale={solde >= 0 ? colors.accent.green : colors.accent.red}
                     lang={lang}
                   />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {[{ label: t('club_recettes', lang), color: '#4ade80', val: totalRecettes }, { label: t('club_depenses', lang), color: '#ef4444', val: totalDepenses }].map(({ label, color, val }) => (
+                    {[{ label: t('club_recettes', lang), color: colors.accent.green, val: totalRecettes }, { label: t('club_depenses', lang), color: colors.accent.red, val: totalDepenses }].map(({ label, color, val }) => (
                       <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
                           <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
                           {label}
                         </span>
@@ -2938,10 +2939,10 @@ Règles :
                 </div>
               </div>
 
-              <p style={{ fontSize: 11, color: '#555', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>{t('jcoach_historique', lang)}</p>
+              <p style={{ fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>{t('jcoach_historique', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {entriesFiltrees.length === 0 && (
-                  <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: '#333', fontSize: 13 }}>
+                  <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: colors.border.strong, fontSize: 13 }}>
                     {t('club_aucune_entree_periode', lang)}
                   </div>
                 )}
@@ -2950,28 +2951,28 @@ Règles :
                   const meta = cats.find(c => c.label === e.categorie)
                   const categoriesArr = e.type === 'depense' ? categoriesDepenseArr : categoriesRecetteArr
                   const segCat = categoriesArr.find(c => c.cat === e.categorie)
-                  const couleur = segCat?.color || '#555'
+                  const couleur = segCat?.color || colors.text.faint
                   return (
-                    <div key={e.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? '#4ade8015' : '#ef444415' }}>
+                    <div key={e.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle }}>
                         {meta?.emoji || (e.type === 'recette' ? '↑' : '↓')}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{e.libelle}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: 11, color: '#555' }}>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: colors.text.faint }}>
                           <span style={{ color: couleur }}>{e.categorie}</span>
                           {' · '}{new Date(e.date).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
                           {e.note ? ` · ${e.note}` : ''}
                         </p>
                       </div>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: 15, flexShrink: 0, color: e.type === 'recette' ? '#4ade80' : '#ef4444' }}>
+                      <p style={{ margin: 0, fontWeight: 800, fontSize: 15, flexShrink: 0, color: e.type === 'recette' ? colors.accent.green : colors.accent.red }}>
                         {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                       </p>
                       {canEditSection('budget') && (
                         <button onClick={() => supprimerEntreeBudget(e.id)}
-                          style={{ background: 'transparent', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
-                          onMouseEnter={ev => ev.target.style.color = '#ef4444'}
-                          onMouseLeave={ev => ev.target.style.color = '#2a2a2a'}
+                          style={{ background: 'transparent', border: 'none', color: colors.border.default, cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
+                          onMouseEnter={ev => ev.target.style.color = colors.accent.red}
+                          onMouseLeave={ev => ev.target.style.color = colors.border.default}
                           title={t('btn_supprimer', lang)}>✕</button>
                       )}
                     </div>
@@ -3011,7 +3012,7 @@ Règles :
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
                 {[['evenements', '📅 Événements'], ['projets', '📊 Projets']].map(([val, label]) => (
                   <button key={val} onClick={() => setSousVueEvenements(val)}
-                    style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: sousVueEvenements === val ? couleurPrincipale : '#1a1a1a', color: sousVueEvenements === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: sousVueEvenements === val ? couleurPrincipale : colors.background.raised, color: sousVueEvenements === val ? colors.black : colors.text.muted, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {label}
                   </button>
                 ))}
@@ -3065,16 +3066,16 @@ Règles :
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
                         {groupesParticipants.map(g => (
                           <div key={g.type}>
-                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#666', fontWeight: 700 }}>{g.titre} ({g.liste.length})</p>
+                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.dim, fontWeight: 700 }}>{g.titre} ({g.liste.length})</p>
                             {g.liste.length === 0 ? (
-                              <p style={{ margin: 0, fontSize: '12px', color: '#333' }}>—</p>
+                              <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong }}>—</p>
                             ) : (
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
                                 {g.liste.map(p => {
                                   const actif = evenementForm.participants.some(pp => pp.id === p.id && pp.type === g.type)
                                   return (
                                     <button key={`${g.type}-${p.id}`} onClick={() => toggleParticipant({ id: p.id, nom: p.nom, type: g.type })}
-                                      style={{ padding: '4px 10px', borderRadius: '20px', border: actif ? 'none' : '1px solid #333', background: actif ? couleurPrincipale : 'transparent', color: actif ? '#000' : '#888', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      style={{ padding: '4px 10px', borderRadius: '20px', border: actif ? 'none' : '1px solid #333', background: actif ? couleurPrincipale : 'transparent', color: actif ? colors.black : colors.text.muted, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                                       {p.nom || '—'}
                                     </button>
                                   )
@@ -3095,7 +3096,7 @@ Règles :
                   )}
 
                   {Object.keys(evenementsParMois).length === 0 ? (
-                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Aucun événement à venir.</div>
+                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>Aucun événement à venir.</div>
                   ) : (
                     Object.entries(evenementsParMois).map(([mois, evs]) => (
                       <div key={mois} style={{ marginBottom: '1.5rem' }}>
@@ -3107,22 +3108,22 @@ Règles :
                               <div key={ev.id} style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                    <span style={{ background: '#a855f720', border: '1px solid #a855f750', color: '#a855f7', fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px' }}>{info.emoji} {info.label}</span>
+                                    <span style={{ background: colors.accent.purple + alpha.soft, border: '1px solid #a855f750', color: colors.accent.purple, fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px' }}>{info.emoji} {info.label}</span>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ev.titre}</p>
                                   </div>
-                                  <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+                                  <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
                                     {new Date(ev.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                                     {ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}{ev.lieu ? ` · ${ev.lieu}` : ''}
                                   </p>
-                                  {ev.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>{ev.description}</p>}
+                                  {ev.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.muted }}>{ev.description}</p>}
                                   {ev.participants?.length > 0 && (
-                                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>👥 {ev.participants.map(p => p.nom).join(', ')}</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>👥 {ev.participants.map(p => p.nom).join(', ')}</p>
                                   )}
                                 </div>
                                 {canEditSection('evenements') && (
                                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                                     <button onClick={() => ouvrirEditionEvenement(ev)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px' }}>{t('btn_modifier', lang)}</button>
-                                    <button onClick={() => supprimerEvenement(ev.id)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', color: '#ef4444', borderColor: '#ef444440' }}>{t('btn_supprimer', lang)}</button>
+                                    <button onClick={() => supprimerEvenement(ev.id)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('btn_supprimer', lang)}</button>
                                   </div>
                                 )}
                               </div>
@@ -3191,7 +3192,7 @@ Règles :
                   )}
 
                   {projetsClub.length === 0 ? (
-                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>Aucun projet pour l'instant.</div>
+                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>Aucun projet pour l'instant.</div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '14px', alignItems: 'start' }}>
                       {STATUTS_PROJET.map(colonne => (
@@ -3209,14 +3210,14 @@ Règles :
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{p.nom}</p>
                                     {canEditSection('evenements') && (
                                       <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                        <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✎</button>
-                                        <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                        <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
+                                        <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
                                       </div>
                                     )}
                                   </div>
-                                  {p.description && <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#888' }}>{p.description}</p>}
+                                  {p.description && <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.muted }}>{p.description}</p>}
                                   {(p.date_debut || p.date_fin) && (
-                                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666' }}>
+                                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: colors.text.dim }}>
                                       {p.date_debut ? new Date(p.date_debut + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
                                       {' → '}
                                       {p.date_fin ? new Date(p.date_fin + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
@@ -3226,23 +3227,23 @@ Règles :
 
                                   {canEditSection('evenements') && (
                                     <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
-                                      style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#ccc', padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
+                                      style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '6px', color: '#ccc', padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
                                       {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
                                     </select>
                                   )}
 
                                   {taches.length > 0 && (
-                                    <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#555' }}>{fait}/{taches.length} tâches terminées</p>
+                                    <p style={{ margin: '0 0 6px', fontSize: '10px', color: colors.text.faint }}>{fait}/{taches.length} tâches terminées</p>
                                   )}
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
                                     {taches.map(tc => (
                                       <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? '#4ade80' : '#555' }}>
+                                        <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? colors.accent.green : colors.text.faint }}>
                                           {tc.fait ? '☑' : '☐'}
                                         </span>
-                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? '#555' : '#ccc', textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
+                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : '#ccc', textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
                                         {canEditSection('evenements') && (
-                                          <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                                          <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '11px' }}>✕</button>
                                         )}
                                       </div>
                                     ))}
@@ -3251,13 +3252,13 @@ Règles :
                                     <div style={{ display: 'flex', gap: '6px' }}>
                                       <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
                                         onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
-                                        placeholder="+ Tâche..." style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#fff', padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                        placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                                     </div>
                                   )}
                                 </div>
                               )
                             })}
-                            {projetsParStatut(colonne.val).length === 0 && <p style={{ fontSize: '11px', color: '#333' }}>—</p>}
+                            {projetsParStatut(colonne.val).length === 0 && <p style={{ fontSize: '11px', color: colors.border.strong }}>—</p>}
                           </div>
                         </div>
                       ))}
@@ -3274,7 +3275,7 @@ Règles :
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <h2 style={{ margin: 0, color: '#fff', fontSize: '18px', fontWeight: 700 }}>🏛️ Organigramme</h2>
+                <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '18px', fontWeight: 700 }}>🏛️ Organigramme</h2>
                 <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''}</p>
               </div>
               {canEditSection('organigramme') && (
@@ -3282,7 +3283,7 @@ Règles :
                   <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
                   <button
                     onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
-                    style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: '#fbbf24', padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                   >
                     📊 Importer Excel
                   </button>
@@ -3298,7 +3299,7 @@ Règles :
                         const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
                         setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
                       }}
-                      style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
+                      style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
                     >
                       {orgExpandedNodes.size > 0 ? '↑ Tout réduire' : '↓ Tout développer'}
                     </button>
@@ -3308,16 +3309,16 @@ Règles :
             </div>
 
             {orgImportMode === 'excel' && (
-              <div style={{ background: '#111', border: '1px solid #fbbf24', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-                <h3 style={{ margin: '0 0 12px', color: '#fbbf24', fontSize: '15px' }}>📊 Import depuis Excel / CSV</h3>
+              <div style={{ background: colors.background.surface, border: '1px solid #fbbf24', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 12px', color: colors.accent.amber, fontSize: '15px' }}>📊 Import depuis Excel / CSV</h3>
                 <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
-                  Utilise le template avec les colonnes : <strong style={{ color: '#fff' }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
+                  Utilise le template avec les colonnes : <strong style={{ color: colors.text.primary }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button onClick={telechargerTemplateOrganigramme} style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: '#fbbf24', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                  <button onClick={telechargerTemplateOrganigramme} style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
                     ⬇️ Télécharger le template
                   </button>
-                  <label style={{ background: '#fbbf24', borderRadius: '8px', color: '#000', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                  <label style={{ background: colors.accent.amber, borderRadius: '8px', color: colors.black, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                     📂 Choisir un fichier
                     <input type="file" accept=".xlsx,.xls,.csv" onChange={importerOrganigrammeExcel} style={{ display: 'none' }} />
                   </label>
@@ -3328,7 +3329,7 @@ Règles :
             )}
 
             {orgImportMode === 'scan' && (
-              <div style={{ background: '#111', border: `1px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
                 <h3 style={{ margin: '0 0 12px', color: couleurPrincipale, fontSize: '15px' }}>📷 Scanner un organigramme</h3>
                 <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
                   Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
@@ -3342,7 +3343,7 @@ Règles :
                     <button
                       onClick={scannerOrganigramme}
                       disabled={orgScanLoading}
-                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: '#000', padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
+                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: colors.black, padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
                     >
                       {orgScanLoading ? libelleStatutGroq(orgScanStatus) : '🔍 Analyser'}
                     </button>
@@ -3357,7 +3358,7 @@ Règles :
                 placeholder="🔍 Rechercher un membre, un rôle, un département…"
                 value={orgSearchQuery}
                 onChange={e => setOrgSearchQuery(e.target.value)}
-                style={{ width: '100%', background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '8px', color: '#fff', padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
               />
             )}
 
@@ -3399,10 +3400,10 @@ Règles :
         {/* ── Modale ajout/modification organigramme ── */}
         {modalOrganigramme && (
           <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{membreOrganigrammeEdite ? '✏️ Modifier le membre' : '+ Ajouter un membre'}</p>
-                <button onClick={() => setModalOrganigramme(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setModalOrganigramme(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
@@ -3473,7 +3474,7 @@ Règles :
             <div style={{ ...st.card, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔐 Permissions par rôle</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+                <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
               </div>
               <button onClick={() => setShowPermissionsModal(true)} style={st.btnSolid}>Gérer les permissions</button>
             </div>
@@ -3496,10 +3497,10 @@ Règles :
                   {resultatsStaff.map(u => {
                     const dejaMembre = staffMembers.some(m => m.user_id === u.id)
                     return (
-                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
+                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{u.prenom} {u.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#666' }}>{u.email}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{u.email}</p>
                         </div>
                         <button
                           onClick={() => ajouterStaff(u.id)}
@@ -3516,7 +3517,7 @@ Règles :
 
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>✉️ {t('club_inviter_email_titre', lang)}</p>
-              <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666' }}>{t('club_inviter_email_desc_avant', lang)} {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
+              <p style={{ margin: '0 0 10px', fontSize: '12px', color: colors.text.dim }}>{t('club_inviter_email_desc_avant', lang)} {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input
                   style={{ ...st.input, flex: 1 }}
@@ -3531,7 +3532,7 @@ Règles :
                 </button>
               </div>
               {inviteMessage && (
-                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? '#4ade80' : '#ef4444' }}>
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? colors.accent.green : colors.accent.red }}>
                   {inviteMessage.type === 'ok' ? '✅' : '⚠️'} {inviteMessage.texte}
                 </p>
               )}
@@ -3544,14 +3545,14 @@ Règles :
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: couleurPrincipale, fontWeight: 700, fontSize: '12px' }}>
                     {(club?.club || club?.prenom || '?')[0]}
                   </div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: '#555', fontWeight: 400 }}>{t('club_vous', lang)}</span></p>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: colors.text.faint, fontWeight: 400 }}>{t('club_vous', lang)}</span></p>
                 </div>
                 <span style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>{t('club_president_badge', lang)}</span>
               </div>
               {staffMembers.map(m => (
                 <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 700, fontSize: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '12px' }}>
                       {m.membre?.prenom?.[0]}{m.membre?.nom?.[0]}
                     </div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{m.membre?.prenom} {m.membre?.nom}</p>
@@ -3560,7 +3561,7 @@ Règles :
                     <select style={{ ...st.input, width: 'auto' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
                       {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
                     </select>
-                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: '#ef4444', borderColor: '#ef444440' }}>{t('club_retirer', lang)}</button>
+                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('club_retirer', lang)}</button>
                   </div>
                 </div>
               ))}
@@ -3583,33 +3584,33 @@ Règles :
       {/* Modal notation éducateur */}
       {eduNoteModal && (
         <div onClick={() => setEduNoteModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ {t('club_evaluer', lang)} {eduNoteModal.educateur?.prenom} {eduNoteModal.educateur?.nom}</p>
               </div>
-              <button onClick={() => setEduNoteModal(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setEduNoteModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <label style={{ fontSize: '12px', color: '#555' }}>{t('club_saison_evaluee', lang)}</label>
-              <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '6px 10px', fontSize: '13px' }}>
+              <label style={{ fontSize: '12px', color: colors.text.faint }}>{t('club_saison_evaluee', lang)}</label>
+              <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px' }}>
                 {['2025-2026', '2024-2025', '2023-2024'].map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
               {CRITERES_EDU.map(cat => (
-                <div key={cat.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
+                <div key={cat.key} style={{ background: colors.background.surface, borderRadius: '12px', padding: '14px', border: `1px solid ${cat.color}20` }}>
                   <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: cat.color }}>{cat.label}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {cat.criteres.map(c => (
                       <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                        <span style={{ flex: 1, fontSize: '12px', color: colors.text.secondary }}>{c.label}</span>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           {[1,2,3,4,5].map(n => (
                             <button key={n} onClick={() => setEduNoteCriteres(prev => ({ ...prev, [c.key]: n }))}
-                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (eduNoteCriteres[c.key] || 0) >= n ? cat.color : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: (eduNoteCriteres[c.key] || 0) >= n ? cat.color : colors.border.default, padding: '2px', lineHeight: 1 }}>★</button>
                           ))}
                         </div>
                       </div>
@@ -3621,10 +3622,10 @@ Règles :
 
             <textarea value={eduNoteCommentaire} onChange={e => setEduNoteCommentaire(e.target.value)}
               placeholder={t('club_commentaire_optionnel_placeholder', lang)}
-              style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
+              style={{ width: '100%', background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
 
             <button onClick={soumettreNotationEducateur} disabled={savingEduNote || CRITERES_EDU.flatMap(c => c.criteres).some(c => !eduNoteCriteres[c.key])}
-              style={{ width: '100%', background: couleurPrincipale, color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
+              style={{ width: '100%', background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
               {savingEduNote ? `⏳ ${t('etat_envoi_cours', lang)}` : `✅ ${t('club_soumettre_evaluation', lang)}`}
             </button>
           </div>
@@ -3647,26 +3648,26 @@ Règles :
         const cat = categories.find(c => c.id === effectifModal)
         return (
           <div onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 {t('club_effectif', lang)} — {cat?.nom} {cat?.equipe}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
+                  <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
                     {[['poste', `⊞ ${t('equipe_vue_postes', lang)}`], ['liste', `☰ ${t('equipe_vue_liste', lang)}`]].map(([v, label]) => (
                       <button key={v} onClick={() => setEffectifVue(v)}
-                        style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: effectifVue === v ? couleurPrincipale : 'transparent', color: effectifVue === v ? '#000' : '#555', transition: 'all 0.15s' }}>
+                        style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif', background: effectifVue === v ? couleurPrincipale : 'transparent', color: effectifVue === v ? colors.black : colors.text.faint, transition: 'all 0.15s' }}>
                         {label}
                       </button>
                     ))}
                   </div>
-                  <button onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  <button onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
 
               {!catData ? (
                 <p style={{ color: couleurPrincipale, textAlign: 'center', padding: '2rem' }}>{t('jexp_chargement', lang)}</p>
               ) : catData.joueurs.length === 0 ? (
-                <p style={{ color: '#444', textAlign: 'center', padding: '2rem' }}>{t('club_aucun_joueur_categorie_court', lang)}</p>
+                <p style={{ color: colors.text.disabled, textAlign: 'center', padding: '2rem' }}>{t('club_aucun_joueur_categorie_court', lang)}</p>
               ) : effectifVue === 'liste' ? (() => {
                 const getGroupeIndex = (poste) => {
                   const idx = GROUPES_POSTE.findIndex(g => g.match(poste))
@@ -3680,7 +3681,7 @@ Règles :
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                           {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('comp_buts', lang), t('recrut_passes', lang), t('recrut_matchs', lang), t('stats_col_presence', lang), t('club_note_court', lang)].map((h, hi) => (
-                            <th key={h} style={{ padding: '10px 12px', textAlign: hi === 1 || hi === 2 ? 'left' : 'center', color: '#555', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                            <th key={h} style={{ padding: '10px 12px', textAlign: hi === 1 || hi === 2 ? 'left' : 'center', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -3689,17 +3690,17 @@ Règles :
                           const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
                           return (
                             <tr key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ borderBottom: '1px solid #141414', cursor: 'pointer' }}>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#555', fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.text.faint, fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#4ade80', fontWeight: 700 }}>{j.stats.buts}</td>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#60a5fa', fontWeight: 700 }}>{j.stats.passes}</td>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', color: '#a78bfa', fontWeight: 700 }}>{j.stats.matchsJoues}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.accent.green, fontWeight: 700 }}>{j.stats.buts}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.accent.blue, fontWeight: 700 }}>{j.stats.passes}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.accent.purpleLight, fontWeight: 700 }}>{j.stats.matchsJoues}</td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: '#333' }}>—</span>}
+                                {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: '#333' }}>—</span>}
+                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                             </tr>
                           )
@@ -3718,33 +3719,33 @@ Règles :
                         <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: groupe.color }}>{groupe.label} ({joueursGroupe.length})</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
                           {joueursGroupe.map(j => (
-                            <div key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ background: '#111', border: `1px solid ${groupe.color}20`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+                            <div key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ background: colors.background.surface, border: `1px solid ${groupe.color}20`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                 <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
                                   {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
                                 </div>
                                 <div>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{j.poste || '—'}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}</p>
                                 </div>
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px' }}>
                                 {[
-                                  { label: t('comp_buts', lang), val: j.stats.buts, color: '#4ade80' },
-                                  { label: t('recrut_passes', lang), val: j.stats.passes, color: '#60a5fa' },
-                                  { label: t('recrut_matchs', lang), val: j.stats.matchsJoues, color: '#a78bfa' },
+                                  { label: t('comp_buts', lang), val: j.stats.buts, color: colors.accent.green },
+                                  { label: t('recrut_passes', lang), val: j.stats.passes, color: colors.accent.blue },
+                                  { label: t('recrut_matchs', lang), val: j.stats.matchsJoues, color: colors.accent.purpleLight },
                                 ].map(s => (
-                                  <div key={s.label} style={{ background: '#0a0a0a', borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
+                                  <div key={s.label} style={{ background: colors.background.base, borderRadius: '8px', padding: '6px', textAlign: 'center' }}>
                                     <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: s.color }}>{s.val}</p>
-                                    <p style={{ margin: 0, fontSize: '9px', color: '#555', textTransform: 'uppercase' }}>{s.label}</p>
+                                    <p style={{ margin: 0, fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase' }}>{s.label}</p>
                                   </div>
                                 ))}
                               </div>
                               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                                 {j.stats.tauxPresence !== null && (
-                                  <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? '#4ade80' : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
+                                  <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
                                 )}
-                                {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: '#fbbf24' }}>⭐ {j.stats.pointsSeance}</span>}
+                                {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: colors.accent.amber }}>⭐ {j.stats.pointsSeance}</span>}
                                 {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/5</span>}
                               </div>
                               <button
@@ -3804,13 +3805,13 @@ Règles :
 
         return (
           <div onClick={() => setJoueurDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 2100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
                   <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>{j.prenom} {j.nom}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{j.poste || '—'}{j.numero_maillot ? ` · #${j.numero_maillot}` : ''}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}{j.numero_maillot ? ` · #${j.numero_maillot}` : ''}</p>
                 </div>
-                <button onClick={() => setJoueurDetail(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setJoueurDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '1.5rem' }}>
@@ -3827,19 +3828,19 @@ Règles :
               {/* Présence par mois */}
               {s.presenceMensuelle.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#a78bfa' }}>📅 {t('club_presence_par_mois', lang)}</p>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.purpleLight }}>📅 {t('club_presence_par_mois', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                       const label = new Date(month + '-02').toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                      const color = taux >= 80 ? '#4ade80' : taux >= 60 ? '#f59e0b' : '#ef4444'
+                      const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
                       return (
                         <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', color: '#555', width: '44px', flexShrink: 0 }}>{label}</span>
-                          <div style={{ flex: 1, height: '6px', background: '#1a1a1a', borderRadius: '3px' }}>
+                          <span style={{ fontSize: '11px', color: colors.text.faint, width: '44px', flexShrink: 0 }}>{label}</span>
+                          <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px' }}>
                             <div style={{ width: `${taux}%`, height: '100%', background: color, borderRadius: '3px' }} />
                           </div>
                           <span style={{ fontSize: '11px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
-                          <span style={{ fontSize: '10px', color: '#444', flexShrink: 0 }}>{present}/{total}</span>
+                          <span style={{ fontSize: '10px', color: colors.text.disabled, flexShrink: 0 }}>{present}/{total}</span>
                         </div>
                       )
                     })}
@@ -3850,13 +3851,13 @@ Règles :
               {/* Position points séance par mois */}
               {positionParMois.length > 0 && (
                 <div>
-                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>⭐ {t('club_position_points_mois', lang)}</p>
+                  <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.amber }}>⭐ {t('club_position_points_mois', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {positionParMois.map(({ month, label, rank, total, points }) => (
-                      <div key={month} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#111', borderRadius: '8px', padding: '8px 12px' }}>
-                        <span style={{ fontSize: '11px', color: '#555' }}>{label}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: rank === 1 ? '#fbbf24' : '#888' }}>#{rank}/{total} {rank === 1 ? '🏆' : ''}</span>
-                        <span style={{ fontSize: '11px', color: '#fbbf24' }}>{points} {t('club_pts', lang)}</span>
+                      <div key={month} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.surface, borderRadius: '8px', padding: '8px 12px' }}>
+                        <span style={{ fontSize: '11px', color: colors.text.faint }}>{label}</span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: rank === 1 ? colors.accent.amber : colors.text.muted }}>#{rank}/{total} {rank === 1 ? '🏆' : ''}</span>
+                        <span style={{ fontSize: '11px', color: colors.accent.amber }}>{points} {t('club_pts', lang)}</span>
                       </div>
                     ))}
                   </div>

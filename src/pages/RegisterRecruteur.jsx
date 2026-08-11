@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
+import { colors, alpha } from '../tokens'
 
 function RegisterRecruteur() {
   const navigate = useNavigate()
@@ -66,15 +67,15 @@ function RegisterRecruteur() {
   }
 
   return (
-    <div style={{minHeight:'100vh', background:'#0a0a0a', color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center'}}>
-      <div style={{background:'#111', border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'480px'}}>
+    <div style={{minHeight:'100vh', background:colors.background.base, color:'white', fontFamily:'sans-serif', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      <div style={{background:colors.background.surface, border:'1px solid #222', borderRadius:'16px', padding:'2.5rem', width:'100%', maxWidth:'480px'}}>
 
         <div style={{textAlign:'center', marginBottom:'2rem'}}>
           <div style={{fontSize:'20px', fontWeight:'700', marginBottom:'8px'}}>
-            Digital<span style={{color:'#4ade80'}}>Football</span>
+            Digital<span style={{color:colors.accent.green}}>Football</span>
           </div>
           <h1 style={{fontSize:'24px', fontWeight:'700'}}>{t('register_espace_recruteur', lang)}</h1>
-          <p style={{color:'#666', fontSize:'14px', marginTop:'4px'}}>{t('register_acces_base_joueurs', lang)}</p>
+          <p style={{color:colors.text.dim, fontSize:'14px', marginTop:'4px'}}>{t('register_acces_base_joueurs', lang)}</p>
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem', marginBottom:'1.5rem'}}>
@@ -87,7 +88,7 @@ function RegisterRecruteur() {
               onClick={() => typeItem.id === 'club' ? navigate('/offres') : setTypeCompte(typeItem.id)}
               style={{border: typeCompte === typeItem.id ? '2px solid #4ade80' : '1px solid #333', borderRadius:'10px', padding:'0.75rem', cursor:'pointer', background: typeCompte === typeItem.id ? '#4ade8010' : 'transparent', textAlign:'center'}}>
               <div style={{fontWeight:'700', fontSize:'13px'}}>{typeItem.label}</div>
-              <div style={{color:'#666', fontSize:'11px', marginTop:'4px'}}>{typeItem.desc}</div>
+              <div style={{color:colors.text.dim, fontSize:'11px', marginTop:'4px'}}>{typeItem.desc}</div>
             </div>
           ))}
         </div>
@@ -95,67 +96,67 @@ function RegisterRecruteur() {
         <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem'}}>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_prenom', lang)}</label>
+              <label style={{fontSize:'13px', color:colors.text.secondary, display:'block', marginBottom:'6px'}}>{t('equipe_prenom', lang)}</label>
               <input
                 value={prenom}
                 onChange={(e) => setPrenom(e.target.value)}
                 placeholder="Jean"
-                style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
+                style={{width:'100%', background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
               />
             </div>
             <div>
-              <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('equipe_nom', lang)}</label>
+              <label style={{fontSize:'13px', color:colors.text.secondary, display:'block', marginBottom:'6px'}}>{t('equipe_nom', lang)}</label>
               <input
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
                 placeholder="Dupont"
-                style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
+                style={{width:'100%', background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
               />
             </div>
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>
+            <label style={{fontSize:'13px', color:colors.text.secondary, display:'block', marginBottom:'6px'}}>
               {typeCompte === 'club' ? t('register_nom_du_club', lang) : typeCompte === 'educateur' ? t('register_nom_club_structure', lang) : t('register_nom_agence', lang)}
             </label>
             <input
               value={club}
               onChange={(e) => setClub(e.target.value)}
               placeholder={typeCompte === 'club' ? 'Ex: AS Monaco' : typeCompte === 'educateur' ? 'Ex: AS Bondy' : 'Ex: Sport Management'}
-              style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
+              style={{width:'100%', background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
             />
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('register_email_professionnel', lang)}</label>
+            <label style={{fontSize:'13px', color:colors.text.secondary, display:'block', marginBottom:'6px'}}>{t('register_email_professionnel', lang)}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="contact@monclub.com"
-              style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
+              style={{width:'100%', background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
             />
           </div>
 
           <div>
-            <label style={{fontSize:'13px', color:'#aaa', display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
+            <label style={{fontSize:'13px', color:colors.text.secondary, display:'block', marginBottom:'6px'}}>{t('auth_mot_de_passe', lang)}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t('register_min_6_caracteres', lang)}
-              style={{width:'100%', background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
+              style={{width:'100%', background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'10px 12px', color:'white', fontSize:'14px', boxSizing:'border-box'}}
             />
           </div>
         </div>
 
         {erreur && <p style={{color:'#ff4444', fontSize:'13px', textAlign:'center', marginTop:'1rem'}}>{erreur}</p>}
 
-        <div style={{background:'#1a1a1a', border:'1px solid #333', borderRadius:'8px', padding:'1rem', marginTop:'1.5rem', marginBottom:'1rem'}}>
-          <p style={{fontSize:'13px', color:'#aaa', margin:0}}>✅ {t('register_acces_illimite', lang)}</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_filtres_age', lang)}</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_messagerie_joueurs', lang)}</p>
-          <p style={{fontSize:'13px', color:'#aaa', margin:'6px 0 0 0'}}>✅ {t('register_acces_feed', lang)}</p>
+        <div style={{background:colors.background.raised, border:'1px solid #333', borderRadius:'8px', padding:'1rem', marginTop:'1.5rem', marginBottom:'1rem'}}>
+          <p style={{fontSize:'13px', color:colors.text.secondary, margin:0}}>✅ {t('register_acces_illimite', lang)}</p>
+          <p style={{fontSize:'13px', color:colors.text.secondary, margin:'6px 0 0 0'}}>✅ {t('register_filtres_age', lang)}</p>
+          <p style={{fontSize:'13px', color:colors.text.secondary, margin:'6px 0 0 0'}}>✅ {t('register_messagerie_joueurs', lang)}</p>
+          <p style={{fontSize:'13px', color:colors.text.secondary, margin:'6px 0 0 0'}}>✅ {t('register_acces_feed', lang)}</p>
         </div>
 
         <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginBottom:'1rem', cursor:'pointer'}}>
@@ -163,13 +164,13 @@ function RegisterRecruteur() {
             type="checkbox"
             checked={cguAcceptees}
             onChange={(e) => setCguAcceptees(e.target.checked)}
-            style={{marginTop:'2px', accentColor:'#4ade80', width:'16px', height:'16px', flexShrink:0}}
+            style={{marginTop:'2px', accentColor:colors.accent.green, width:'16px', height:'16px', flexShrink:0}}
           />
-          <span style={{fontSize:'13px', color:'#aaa', lineHeight:'1.5'}}>
+          <span style={{fontSize:'13px', color:colors.text.secondary, lineHeight:'1.5'}}>
             {t('register_jai_lu_accepte', lang)}{' '}
             <span
               onClick={(e) => { e.preventDefault(); window.open('/cgu', '_blank') }}
-              style={{color:'#4ade80', cursor:'pointer', textDecoration:'underline'}}
+              style={{color:colors.accent.green, cursor:'pointer', textDecoration:'underline'}}
             >
               {t('register_cgu_reglement', lang)}
             </span>
@@ -180,22 +181,22 @@ function RegisterRecruteur() {
         <button
           onClick={handleRegister}
           disabled={loading || !cguAcceptees}
-          style={{width:'100%', background: (!cguAcceptees || loading) ? '#333' : '#4ade80', color: (!cguAcceptees || loading) ? '#666' : '#0a0a0a', border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer'}}
+          style={{width:'100%', background: (!cguAcceptees || loading) ? colors.border.strong : colors.accent.green, color: (!cguAcceptees || loading) ? colors.text.dim : colors.background.base, border:'none', padding:'13px', borderRadius:'8px', fontSize:'15px', fontWeight:'700', cursor: (!cguAcceptees || loading) ? 'not-allowed' : 'pointer'}}
         >
           {loading ? t('register_creation_cours', lang) : t('register_creer_compte_payer', lang)}
         </button>
 
-        <p style={{fontSize:'12px', color:'#555', textAlign:'center', marginTop:'1rem'}}>
+        <p style={{fontSize:'12px', color:colors.text.faint, textAlign:'center', marginTop:'1rem'}}>
           {t('register_redirige_stripe_annuel', lang)}
         </p>
 
-        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'1rem'}}>
-          <span onClick={() => navigate('/login')} style={{color:'#4ade80', cursor:'pointer'}}>
+        <p style={{textAlign:'center', fontSize:'13px', color:colors.text.dim, marginTop:'1rem'}}>
+          <span onClick={() => navigate('/login')} style={{color:colors.accent.green, cursor:'pointer'}}>
             {t('register_deja_compte_connecter', lang)}
           </span>
         </p>
-        <p style={{textAlign:'center', fontSize:'13px', color:'#666', marginTop:'0.5rem'}}>
-          <span onClick={() => navigate('/')} style={{color:'#555', cursor:'pointer'}}>
+        <p style={{textAlign:'center', fontSize:'13px', color:colors.text.dim, marginTop:'0.5rem'}}>
+          <span onClick={() => navigate('/')} style={{color:colors.text.faint, cursor:'pointer'}}>
             {t('auth_retour_accueil', lang)}
           </span>
         </p>

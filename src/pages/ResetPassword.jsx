@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { colors, alpha } from '../tokens'
 
 function ResetPassword() {
   const navigate = useNavigate()
@@ -62,12 +63,12 @@ function ResetPassword() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '2.5rem', width: '100%', maxWidth: '400px' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '2.5rem', width: '100%', maxWidth: '400px' }}>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>
-            Digital<span style={{ color: '#4ade80' }}>Football</span>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
           </div>
           <h1 style={{ fontSize: '22px', fontWeight: '700' }}>{t('auth_nouveau_mdp', lang)}</h1>
         </div>
@@ -76,26 +77,26 @@ function ResetPassword() {
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '3rem', margin: '0 0 1rem' }}>✅</p>
             <p style={{ fontWeight: 700, marginBottom: '8px' }}>{t('auth_mdp_maj', lang)}</p>
-            <p style={{ color: '#666', fontSize: '14px' }}>{t('auth_redirection_connexion', lang)}</p>
+            <p style={{ color: colors.text.dim, fontSize: '14px' }}>{t('auth_redirection_connexion', lang)}</p>
           </div>
         ) : erreurLien ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#ff4444', fontSize: '14px', marginBottom: '1.5rem' }}>{erreurLien}</p>
-            <p style={{ fontSize: '12px', color: '#444' }}>
-              <span onClick={() => navigate('/forgot-password')} style={{ color: '#4ade80', cursor: 'pointer' }}>
+            <p style={{ fontSize: '12px', color: colors.text.disabled }}>
+              <span onClick={() => navigate('/forgot-password')} style={{ color: colors.accent.green, cursor: 'pointer' }}>
                 {t('auth_demander_nouveau_lien', lang)}
               </span>
             </p>
           </div>
         ) : !ready ? (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '1.5rem' }}>
+            <p style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '1.5rem' }}>
               {t('auth_clique_continuer', lang)}
             </p>
             <button
               onClick={finaliserSession}
               disabled={verif || !params}
-              style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
+              style={{ width: '100%', background: colors.accent.green, color: colors.background.base, border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: verif || !params ? 0.7 : 1 }}
             >
               {verif ? t('auth_verification_cours', lang) : t('auth_reinitialiser_mdp', lang)}
             </button>
@@ -104,24 +105,24 @@ function ResetPassword() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_nouveau_mdp', lang)}</label>
+                <label style={{ fontSize: '13px', color: colors.text.secondary, display: 'block', marginBottom: '6px' }}>{t('auth_nouveau_mdp', lang)}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('auth_8_caracteres_min', lang)}
-                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' }}>{t('auth_confirmer_mdp', lang)}</label>
+                <label style={{ fontSize: '13px', color: colors.text.secondary, display: 'block', marginBottom: '6px' }}>{t('auth_confirmer_mdp', lang)}</label>
                 <input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                   placeholder={t('auth_repete_mdp', lang)}
-                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -131,7 +132,7 @@ function ResetPassword() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              style={{ width: '100%', background: '#4ade80', color: '#0a0a0a', border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
+              style={{ width: '100%', background: colors.accent.green, color: colors.background.base, border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
             >
               {loading ? t('auth_mise_a_jour_cours', lang) : t('auth_mettre_a_jour_mdp', lang)}
             </button>

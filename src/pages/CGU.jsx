@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
+import { colors, alpha } from '../tokens'
 
 const Section = ({ titre, children }) => (
   <div style={{ marginBottom: '2.5rem' }}>
-    <h2 style={{ fontSize: '17px', fontWeight: '700', color: '#4ade80', marginBottom: '0.75rem', borderBottom: '1px solid #222', paddingBottom: '0.5rem' }}>
+    <h2 style={{ fontSize: '17px', fontWeight: '700', color: colors.accent.green, marginBottom: '0.75rem', borderBottom: '1px solid #222', paddingBottom: '0.5rem' }}>
       {titre}
     </h2>
-    <div style={{ fontSize: '14px', color: '#aaa', lineHeight: '1.7' }}>{children}</div>
+    <div style={{ fontSize: '14px', color: colors.text.secondary, lineHeight: '1.7' }}>{children}</div>
   </div>
 )
 
@@ -19,14 +20,14 @@ function CGU() {
   const navigate = useNavigate()
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
         <div style={{ fontSize: '18px', fontWeight: '700', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          Digital<span style={{ color: '#4ade80' }}>Football</span>
+          Digital<span style={{ color: colors.accent.green }}>Football</span>
         </div>
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}
+          style={{ background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}
         >
           ← Retour
         </button>
@@ -37,7 +38,7 @@ function CGU() {
           <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
             Conditions Générales d'Utilisation & Règlement
           </h1>
-          <p style={{ color: '#555', fontSize: '14px' }}>Dernière mise à jour : juin 2025</p>
+          <p style={{ color: colors.text.faint, fontSize: '14px' }}>Dernière mise à jour : juin 2025</p>
         </div>
 
         <Section titre="1. Objet de la plateforme">
@@ -69,10 +70,10 @@ function CGU() {
         <Section titre="3. Contenu interdit">
           <P>Les contenus suivants sont strictement interdits et entraîneront une suspension immédiate du compte :</P>
           <ul style={{ paddingLeft: '1.5rem', margin: '0 0 0.75rem' }}>
-            <Li><strong style={{ color: '#ef4444' }}>Contenu pornographique ou sexuellement explicite</strong></Li>
-            <Li><strong style={{ color: '#ef4444' }}>Violence gratuite, scènes de violences physiques ou psychologiques</strong></Li>
-            <Li><strong style={{ color: '#ef4444' }}>Actes criminels ou illégaux (trafic, armes, drogues, etc.)</strong></Li>
-            <Li><strong style={{ color: '#ef4444' }}>Contenu hors-football</strong> : tout média sans lien avec le football</Li>
+            <Li><strong style={{ color: colors.accent.red }}>Contenu pornographique ou sexuellement explicite</strong></Li>
+            <Li><strong style={{ color: colors.accent.red }}>Violence gratuite, scènes de violences physiques ou psychologiques</strong></Li>
+            <Li><strong style={{ color: colors.accent.red }}>Actes criminels ou illégaux (trafic, armes, drogues, etc.)</strong></Li>
+            <Li><strong style={{ color: colors.accent.red }}>Contenu hors-football</strong> : tout média sans lien avec le football</Li>
             <Li>Discours haineux, raciste, discriminatoire ou harcelant</Li>
             <Li>Usurpation d'identité de joueurs professionnels ou de clubs</Li>
             <Li>Spam, liens malveillants ou tentatives de phishing</Li>
@@ -123,7 +124,7 @@ function CGU() {
           </P>
           <P><strong style={{ color: 'white' }}>Politique de remboursement :</strong></P>
           <P>
-            Les abonnements sont <strong style={{ color: '#ef4444' }}>non remboursables</strong>. Aucun remboursement
+            Les abonnements sont <strong style={{ color: colors.accent.red }}>non remboursables</strong>. Aucun remboursement
             ne sera accordé pour une période entamée, une résiliation en cours de mois ou un bannissement.
             En souscrivant, l'utilisateur accepte expressément cette condition.
           </P>
@@ -144,7 +145,7 @@ function CGU() {
           </P>
         </Section>
 
-        <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', color: '#555', fontSize: '13px' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', color: colors.text.faint, fontSize: '13px' }}>
           <p style={{ margin: '0 0 4px' }}>Digital Football — contact@digital-football.fr</p>
           <p style={{ margin: 0 }}>En utilisant la plateforme, vous acceptez l'intégralité des présentes conditions.</p>
         </div>

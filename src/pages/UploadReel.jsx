@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { colors, alpha } from '../tokens'
 
 export default function UploadReel() {
   const navigate = useNavigate()
@@ -21,7 +22,7 @@ export default function UploadReel() {
     if (url.includes('tiktok.com')) return { label: 'TikTok', color: '#69C9D0' }
     if (url.includes('instagram.com')) return { label: 'Instagram', color: '#E1306C' }
     if (url.includes('youtube.com') || url.includes('youtu.be')) return { label: 'YouTube', color: '#ff0000' }
-    if (url.includes('veo.co')) return { label: 'Veo', color: '#60a5fa' }
+    if (url.includes('veo.co')) return { label: 'Veo', color: colors.accent.blue }
     return null
   }
 
@@ -108,12 +109,12 @@ export default function UploadReel() {
   }
 
   const st = {
-    page: { minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'sans-serif' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'sans-serif' },
     content: { maxWidth: '520px', margin: '0 auto', padding: '2rem 1rem' },
-    card: { background: '#111', border: '1px solid #222', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem' },
-    input: { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '12px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
-    label: { fontSize: '13px', color: '#aaa', display: 'block', marginBottom: '6px' },
-    btn: (active) => ({ padding: '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? '#4ade80' : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '14px' }),
+    card: { background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem' },
+    input: { width: '100%', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: colors.text.primary, padding: '12px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
+    label: { fontSize: '13px', color: colors.text.secondary, display: 'block', marginBottom: '6px' },
+    btn: (active) => ({ padding: '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? colors.accent.green : 'transparent', color: active ? colors.black : colors.text.secondary, fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '14px' }),
   }
 
   if (success) return (
@@ -121,10 +122,10 @@ export default function UploadReel() {
       <div style={{ textAlign: 'center', padding: '2rem' }}>
         <p style={{ fontSize: '4rem' }}>🎬</p>
         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{t('uploadreel_publie_titre', lang)}</h2>
-        <p style={{ color: '#666', marginBottom: '2rem' }}>{t('uploadreel_publie_desc', lang)}</p>
+        <p style={{ color: colors.text.dim, marginBottom: '2rem' }}>{t('uploadreel_publie_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => navigate('/reels')} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>{t('uploadreel_voir_reels', lang)}</button>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer' }}>Dashboard</button>
+          <button onClick={() => navigate('/reels')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>{t('uploadreel_voir_reels', lang)}</button>
+          <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer' }}>Dashboard</button>
         </div>
       </div>
     </div>
@@ -133,12 +134,12 @@ export default function UploadReel() {
   return (
     <div style={st.page}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
-        <div style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('upload_dashboard_retour', lang)}</button>
+        <div style={{ fontSize: '18px', fontWeight: 700 }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+        <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('upload_dashboard_retour', lang)}</button>
       </nav>
       <div style={st.content}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>🎬 {t('uploadreel_titre', lang)}</h1>
-        <p style={{ color: '#666', fontSize: '14px', margin: '0 0 1.5rem' }}>{t('uploadreel_desc', lang)}</p>
+        <p style={{ color: colors.text.dim, fontSize: '14px', margin: '0 0 1.5rem' }}>{t('uploadreel_desc', lang)}</p>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
           <button style={st.btn(mode === 'lien')} onClick={() => setMode('lien')}>{t('upload_lien_mode', lang)}</button>
@@ -167,29 +168,29 @@ export default function UploadReel() {
             <div>
               <label style={st.label}>{t('uploadreel_fichier_label', lang)}</label>
               <div onClick={() => document.getElementById('reel-file').click()}
-                style={{ border: '2px dashed ' + (file ? '#4ade80' : '#333'), borderRadius: '12px', padding: '2rem', textAlign: 'center', cursor: 'pointer', background: file ? '#4ade8008' : 'transparent' }}>
+                style={{ border: '2px dashed ' + (file ? colors.accent.green : colors.border.strong), borderRadius: '12px', padding: '2rem', textAlign: 'center', cursor: 'pointer', background: file ? colors.accent.green + alpha.faint : 'transparent' }}>
                 {file ? (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>✅</p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
+                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>✅</p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
                 ) : (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: '#666', fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
+                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: colors.text.dim, fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
                 )}
               </div>
               <input id="reel-file" type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} onChange={handleFileChange} />
               {uploading && uploadProgress > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ background: '#1a1a1a', borderRadius: '8px', overflow: 'hidden', height: '8px' }}>
-                    <div style={{ height: '100%', background: '#4ade80', width: uploadProgress + '%', transition: 'width 0.3s' }} />
+                  <div style={{ background: colors.background.raised, borderRadius: '8px', overflow: 'hidden', height: '8px' }}>
+                    <div style={{ height: '100%', background: colors.accent.green, width: uploadProgress + '%', transition: 'width 0.3s' }} />
                   </div>
-                  <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '4px', textAlign: 'center' }}>{uploadProgress}%</p>
+                  <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '4px', textAlign: 'center' }}>{uploadProgress}%</p>
                 </div>
               )}
             </div>
           )}
 
-          {error && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {error}</p>}
+          {error && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>❌ {error}</p>}
 
           <button onClick={mode === 'lien' ? handleSubmitLien : handleSubmitMp4} disabled={uploading}
-            style={{ marginTop: '1.5rem', width: '100%', background: uploading ? '#333' : '#4ade80', color: uploading ? '#666' : '#000', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 700, fontSize: '15px', cursor: uploading ? 'not-allowed' : 'pointer' }}>
+            style={{ marginTop: '1.5rem', width: '100%', background: uploading ? colors.border.strong : colors.accent.green, color: uploading ? colors.text.dim : colors.black, border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 700, fontSize: '15px', cursor: uploading ? 'not-allowed' : 'pointer' }}>
             {uploading ? (uploadProgress > 0 ? `Upload ${uploadProgress}%...` : t('upload_publication_cours', lang)) : t('uploadreel_publier_btn', lang)}
           </button>
         </div>

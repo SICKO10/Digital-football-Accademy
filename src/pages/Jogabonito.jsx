@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
+import { colors, alpha } from '../tokens'
 
 const detectType = (url) => {
   if (!url) return null
@@ -151,7 +152,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
   const joueur = reel.profiles
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#000', overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: '100%', height: '100vh', background: colors.black, overflow: 'hidden', flexShrink: 0 }}>
 
       {/* VIDÉO */}
       {type === 'mp4' && (
@@ -184,10 +185,10 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         />
       )}
       {(type === 'instagram' || type === 'link') && (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: colors.background.base }}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>{type === 'instagram' ? '📸' : '🎬'}</div>
           <a href={reel.video_url} target="_blank" rel="noreferrer"
-            style={{ background: type === 'instagram' ? '#E1306C' : '#4ade80', color: '#fff', padding: '14px 28px', borderRadius: '12px', fontWeight: 700, fontSize: '16px', textDecoration: 'none' }}>
+            style={{ background: type === 'instagram' ? '#E1306C' : colors.accent.green, color: colors.text.primary, padding: '14px 28px', borderRadius: '12px', fontWeight: 700, fontSize: '16px', textDecoration: 'none' }}>
             {t('feed_ouvrir_sur', lang)} {type === 'instagram' ? 'Instagram' : t('jogab_le_lien', lang)} →
           </a>
         </div>
@@ -203,7 +204,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
 
       {/* Badge "Ma vidéo" si propriétaire */}
       {isOwner && (
-        <div style={{ position: 'absolute', top: '70px', left: '16px', background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#4ade80', fontWeight: 700 }}>
+        <div style={{ position: 'absolute', top: '70px', left: '16px', background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: colors.accent.green, fontWeight: 700 }}>
           {t('feed_ma_video', lang)}
         </div>
       )}
@@ -213,23 +214,23 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         <div
           onClick={() => onOpenProfile(joueur)}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}>
-          <Avatar person={joueur} size={40} bg="#4ade8030" border="2px solid #4ade80" />
+          <Avatar person={joueur} size={40} bg={colors.accent.green + alpha.light} border="2px solid #4ade80" />
           <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: colors.text.primary, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
               {joueur?.prenom} {joueur?.nom}
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#4ade80' }}>{joueur?.poste} {joueur?.categorie ? `· ${joueur.categorie}` : ''}</p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.accent.green }}>{joueur?.poste} {joueur?.categorie ? `· ${joueur.categorie}` : ''}</p>
           </div>
         </div>
         {reel.titre && (
-          <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 600, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{reel.titre}</p>
+          <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 600, color: colors.text.primary, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{reel.titre}</p>
         )}
         {reel.description && (
           <p style={{ margin: 0, fontSize: '13px', color: '#ddd', textShadow: '0 1px 4px rgba(0,0,0,0.8)', lineHeight: '1.4' }}>{reel.description}</p>
         )}
         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-          {joueur?.club && <span style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{joueur.club}</span>}
-          {joueur?.region && <span style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{joueur.region}</span>}
+          {joueur?.club && <span style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', color: colors.text.primary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{joueur.club}</span>}
+          {joueur?.region && <span style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', color: colors.text.primary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{joueur.region}</span>}
         </div>
       </div>
 
@@ -239,31 +240,31 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         {/* Like */}
         <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px', filter: liked ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.1s', transform: liked ? 'scale(1.2)' : 'scale(1)' }}>❤️</div>
-          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{likeCount}</span>
+          <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{likeCount}</span>
         </button>
 
         {/* Commentaires */}
         <button onClick={() => user ? setShowComments(true) : setShowLoginPrompt(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px' }}>💬</div>
-          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{comments.length}</span>
+          <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{comments.length}</span>
         </button>
 
         {/* Republier */}
         <button onClick={handleRepost} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px', filter: reposted ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: reposted ? 'scale(1.15)' : 'scale(1)' }}>🔁</div>
-          <span style={{ color: reposted ? '#4ade80' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : t('feed_partager', lang)}</span>
+          <span style={{ color: reposted ? colors.accent.green : colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : t('feed_partager', lang)}</span>
         </button>
 
         {/* Favori */}
         <button onClick={handleFavori} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px', filter: favori ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: favori ? 'scale(1.15)' : 'scale(1)' }}>⭐</div>
-          <span style={{ color: favori ? '#f59e0b' : '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{t('jogab_save', lang)}</span>
+          <span style={{ color: favori ? '#f59e0b' : colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{t('jogab_save', lang)}</span>
         </button>
 
         {/* Profil raccourci */}
         <button onClick={() => onOpenProfile(joueur)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <div style={{ fontSize: '28px' }}>👤</div>
-          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_profil', lang)}</span>
+          <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_profil', lang)}</span>
         </button>
 
         {/* Son (MP4 seulement) */}
@@ -281,15 +282,15 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
           >
             <div style={{ fontSize: '24px' }}>🗑️</div>
-            <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_suppr', lang)}</span>
+            <span style={{ color: colors.accent.red, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_suppr', lang)}</span>
           </button>
         )}
       </div>
 
       {/* Indicateur scroll */}
       <div style={{ position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', opacity: 0.6 }}>
-        <div style={{ width: '2px', height: '20px', background: '#fff', borderRadius: '2px', animation: 'bounce 1.5s infinite' }} />
-        <span style={{ color: '#fff', fontSize: '10px' }}>{t('jogab_scroll', lang)}</span>
+        <div style={{ width: '2px', height: '20px', background: colors.text.primary, borderRadius: '2px', animation: 'bounce 1.5s infinite' }} />
+        <span style={{ color: colors.text.primary, fontSize: '10px' }}>{t('jogab_scroll', lang)}</span>
       </div>
 
       {/* PROMPT CONNEXION */}
@@ -297,23 +298,23 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => setShowLoginPrompt(false)}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: '#111', border: '1px solid #4ade8030', borderRadius: '20px 20px 0 0', padding: '2rem', width: '100%', maxWidth: '480px', textAlign: 'center' }}>
-            <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
+            style={{ background: colors.background.surface, border: '1px solid #4ade8030', borderRadius: '20px 20px 0 0', padding: '2rem', width: '100%', maxWidth: '480px', textAlign: 'center' }}>
+            <div style={{ width: '40px', height: '4px', background: colors.border.strong, borderRadius: '2px', margin: '0 auto 1.5rem' }} />
             <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚽</div>
             <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700 }}>{t('jogab_rejoins_communaute', lang)}</h3>
-            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: colors.text.muted }}>
               {t('jogab_cree_compte_liker_desc', lang)}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 onClick={() => { window.location.href = '/register' }}
-                style={{ background: '#4ade80', color: '#000', border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
               >
                 {t('jogab_creer_compte_gratuit', lang)}
               </button>
               <button
                 onClick={() => { window.location.href = '/login' }}
-                style={{ background: 'transparent', color: '#aaa', border: '1px solid #333', padding: '11px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer' }}
+                style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '11px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer' }}
               >
                 {t('jogab_jai_deja_compte', lang)}
               </button>
@@ -325,21 +326,21 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       {/* MODAL CONFIRMATION SUPPRESSION */}
       {showDeleteConfirm && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ background: '#111', border: '1px solid #ef444440', borderRadius: '16px', padding: '2rem', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
+          <div style={{ background: colors.background.surface, border: '1px solid #ef444440', borderRadius: '16px', padding: '2rem', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑️</div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#fff' }}>{t('jogab_supprimer_ce_reel', lang)}</h3>
-            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: '#888' }}>{t('jogab_reel_retire_desc', lang)}</p>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: colors.text.primary }}>{t('jogab_supprimer_ce_reel', lang)}</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: colors.text.muted }}>{t('jogab_reel_retire_desc', lang)}</p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+                style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
               >
                 {t('clubpub_annuler', lang)}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.6 : 1 }}
+                style={{ flex: 1, background: colors.accent.red, color: colors.text.primary, border: 'none', padding: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.6 : 1 }}
               >
                 {deleting ? t('feed_suppression_cours', lang) : t('jogab_supprimer', lang)}
               </button>
@@ -353,12 +354,12 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         <div style={{ position: 'absolute', inset: 0, zIndex: 50 }} onClick={() => setShowComments(false)}>
           <div
             onClick={e => e.stopPropagation()}
-            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#111', borderRadius: '20px 20px 0 0', padding: '1rem', maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1rem' }} />
+            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: colors.background.surface, borderRadius: '20px 20px 0 0', padding: '1rem', maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: '40px', height: '4px', background: colors.border.strong, borderRadius: '2px', margin: '0 auto 1rem' }} />
             <p style={{ margin: '0 0 1rem', fontWeight: 700, fontSize: '16px' }}>{t('jogab_commentaires', lang)}</p>
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
               {comments.length === 0 ? (
-                <p style={{ color: '#555', textAlign: 'center', padding: '2rem 0', fontSize: '14px' }}>{t('feed_aucun_commentaire', lang)}</p>
+                <p style={{ color: colors.text.faint, textAlign: 'center', padding: '2rem 0', fontSize: '14px' }}>{t('feed_aucun_commentaire', lang)}</p>
               ) : comments.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                   <Avatar person={c.author} size={32} bg="#1a2e1a" />
@@ -376,18 +377,18 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
                   onChange={e => setNewComment(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleComment()}
                   placeholder={t('jogab_ajouter_commentaire', lang)}
-                  style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '24px', color: '#fff', padding: '10px 16px', fontSize: '14px', outline: 'none' }}
+                  style={{ flex: 1, background: colors.background.raised, border: '1px solid #333', borderRadius: '24px', color: colors.text.primary, padding: '10px 16px', fontSize: '14px', outline: 'none' }}
                 />
                 <button onClick={handleComment} disabled={!newComment.trim()}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '24px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: !newComment.trim() ? 0.5 : 1 }}>
+                  style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '24px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: !newComment.trim() ? 0.5 : 1 }}>
                   →
                 </button>
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <p style={{ color: '#666', fontSize: '13px', margin: '0 0 10px' }}>{t('jogab_cree_compte_interagir', lang)}</p>
+                <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 10px' }}>{t('jogab_cree_compte_interagir', lang)}</p>
                 <button onClick={() => { setShowComments(false); setShowLoginPrompt(true) }}
-                  style={{ background: '#4ade80', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '20px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                  style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 24px', borderRadius: '20px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
                   {t('jogab_rejoindre_gratuitement', lang)}
                 </button>
               </div>
@@ -405,29 +406,29 @@ function ProfilModal({ joueur, onClose, lang }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
       onClick={onClose}>
-      <div style={{ background: '#111', border: '1px solid #222', borderRadius: '20px 20px 0 0', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}
+      <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '20px 20px 0 0', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
+        <div style={{ width: '40px', height: '4px', background: colors.border.strong, borderRadius: '2px', margin: '0 auto 1.5rem' }} />
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '1.5rem' }}>
           <Avatar person={joueur} size={60} border="2px solid #4ade80" />
           <div>
             <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueur?.prenom} {joueur?.nom}</h2>
-            <p style={{ margin: '4px 0 0', color: '#4ade80', fontSize: '14px' }}>{joueur?.poste} {joueur?.categorie ? `· ${joueur.categorie}` : ''}</p>
+            <p style={{ margin: '4px 0 0', color: colors.accent.green, fontSize: '14px' }}>{joueur?.poste} {joueur?.categorie ? `· ${joueur.categorie}` : ''}</p>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
           {[[`🏆 ${t('feed_stat_club', lang)}`, joueur?.club], [`📍 ${t('profil_region', lang)}`, joueur?.region], [`🦵 ${t('feed_stat_pied', lang)}`, joueur?.pied], [`🏟️ ${t('feed_stat_niveau', lang)}`, joueur?.niveau_equipe]].filter(([, v]) => v).map(([label, val]) => (
-            <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#666' }}>{label}</p>
+            <div key={label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>{label}</p>
               <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p>
             </div>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {[[t('feed_stat_buts', lang), joueur?.buts_total ?? 0], [t('comp_passes_dec', lang), joueur?.passes_decisives ?? 0], [t('feed_stat_matchs', lang), joueur?.matchs_officiel ?? 0]].map(([label, val]) => (
-            <div key={label} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#4ade80' }}>{val}</p>
-              <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#666' }}>{label}</p>
+            <div key={label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: colors.accent.green }}>{val}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.dim }}>{label}</p>
             </div>
           ))}
         </div>
@@ -516,32 +517,32 @@ function Jogabonito() {
   }, [])
 
   if (loading) return (
-    <div style={{ height: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontSize: '16px' }}>{t('jexp_chargement', lang)}</p>
+    <div style={{ height: '100vh', background: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: colors.accent.green, fontSize: '16px' }}>{t('jexp_chargement', lang)}</p>
     </div>
   )
 
   return (
-    <div style={{ position: 'relative', background: '#000', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', background: colors.black, height: '100vh', overflow: 'hidden' }}>
 
       {/* NAV overlay */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)' }}>
-        <div onClick={() => navigate('/')} style={{ fontSize: '16px', fontWeight: '700', cursor: 'pointer', color: '#fff' }}>
-          Digital<span style={{ color: '#4ade80' }}>Football</span>
+        <div onClick={() => navigate('/')} style={{ fontSize: '16px', fontWeight: '700', cursor: 'pointer', color: colors.text.primary }}>
+          Digital<span style={{ color: colors.accent.green }}>Football</span>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => navigate('/feed')}
-            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', color: colors.text.primary, padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
             📋 Feed
           </button>
           {user ? (
             <button onClick={() => navigate('/dashboard')}
-              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
               {t('feed_mon_espace', lang)}
             </button>
           ) : (
             <button onClick={() => navigate('/login')}
-              style={{ background: '#4ade80', color: '#000', border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
               {t('jogab_connexion', lang)}
             </button>
           )}
@@ -549,16 +550,16 @@ function Jogabonito() {
       </div>
 
       {/* Compteur */}
-      <div style={{ position: 'fixed', top: '70px', right: '16px', zIndex: 100, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#aaa' }}>
+      <div style={{ position: 'fixed', top: '70px', right: '16px', zIndex: 100, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: colors.text.secondary }}>
         {activeIndex + 1} / {reels.length}
       </div>
 
       {/* FEED VERTICAL */}
       {reels.length === 0 ? (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: colors.text.faint }}>
           <p style={{ fontSize: '3rem' }}>🎬</p>
           <p style={{ fontSize: '18px' }}>{t('jogab_aucun_reel_moment', lang)}</p>
-          <p style={{ fontSize: '14px', color: '#444', marginTop: '8px' }}>{t('jogab_joueurs_publient_desc', lang)}</p>
+          <p style={{ fontSize: '14px', color: colors.text.disabled, marginTop: '8px' }}>{t('jogab_joueurs_publient_desc', lang)}</p>
         </div>
       ) : (
         <div

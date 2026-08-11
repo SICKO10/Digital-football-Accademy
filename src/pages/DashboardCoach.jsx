@@ -7,6 +7,7 @@ import { notifierJoueur } from '../lib/notifications'
 import AnalyseurIA from '../components/AnalyseurIA'
 import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
+import { colors, alpha } from '../tokens'
 
 function DashboardCoach() {
   const navigate = useNavigate()
@@ -397,10 +398,10 @@ function DashboardCoach() {
 
   const getStatutColor = (statut) => {
     if (statut === 'en_attente') return '#f59e0b'
-    if (statut === 'validé') return '#4ade80'
+    if (statut === 'validé') return colors.accent.green
     if (statut === 'rejeté') return '#f87171'
-    if (statut === 'analyse') return '#4ade80'
-    return '#666'
+    if (statut === 'analyse') return colors.accent.green
+    return colors.text.dim
   }
 
   const getStatutLabel = (statut) => {
@@ -433,8 +434,8 @@ function DashboardCoach() {
   const toggleJoueur = (id) => setJoueursOuverts(prev => ({ ...prev, [id]: !prev[id] }))
 
   if (loading && certifLoading) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontFamily: 'sans-serif' }}>Chargement...</p>
+    <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: colors.accent.green, fontFamily: 'sans-serif' }}>Chargement...</p>
     </div>
   )
 
@@ -465,24 +466,24 @@ function DashboardCoach() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif' }}>
 
       {/* ── Header fin ─────────────────────────────────────────────────── */}
-      <div style={{ height: 52, background: '#111', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
+      <div style={{ height: 52, background: colors.background.surface, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
+            style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
             ☰
           </button>
         )}
-        <span style={{ fontWeight: 900, fontSize: 15, color: '#fff', letterSpacing: -0.5 }}>
-          Digital<span style={{ color: '#4ade80' }}>Football</span>
+        <span style={{ fontWeight: 900, fontSize: 15, color: colors.text.primary, letterSpacing: -0.5 }}>
+          Digital<span style={{ color: colors.accent.green }}>Football</span>
         </span>
-        <span style={{ background: '#4ade8020', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: '1px solid #4ade8040' }}>
+        <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: '1px solid #4ade8040' }}>
           COACH
         </span>
         <button onClick={() => { signOutSafe(); navigate('/') }}
-          style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2a2a', color: '#555', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           Déconnexion
         </button>
       </div>
@@ -498,7 +499,7 @@ function DashboardCoach() {
 
         {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
         <div style={{
-          width: 220, background: '#111', borderRight: '1px solid #1a1a1a',
+          width: 220, background: colors.background.surface, borderRight: '1px solid #1a1a1a',
           display: 'flex', flexDirection: 'column', flexShrink: 0,
           ...(isMobile ? {
             position: 'fixed', top: 52, left: sidebarOpen ? 0 : -240,
@@ -512,25 +513,25 @@ function DashboardCoach() {
 
           {/* Stats résumé dans la sidebar */}
           <div style={{ padding: '20px 16px 0' }}>
-            <p style={{ fontSize: 10, color: '#444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>
+            <p style={{ fontSize: 10, color: colors.text.disabled, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>
               VUE D'ENSEMBLE
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {[
-                { label: 'Total demandes', val: demandes.length, color: '#fff' },
+                { label: 'Total demandes', val: demandes.length, color: colors.text.primary },
                 { label: 'En attente', val: enAttente.length, color: '#f59e0b' },
-                { label: 'Analyses envoyées', val: analysees.length, color: '#4ade80' },
-                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? '#f59e0b' : '#4ade80' },
+                { label: 'Analyses envoyées', val: analysees.length, color: colors.accent.green },
+                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? '#f59e0b' : colors.accent.green },
               ].map(s => (
-                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#0d0d0d', borderRadius: 8 }}>
-                  <span style={{ fontSize: 12, color: '#555' }}>{s.label}</span>
+                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: colors.background.sunken, borderRadius: 8 }}>
+                  <span style={{ fontSize: 12, color: colors.text.faint }}>{s.label}</span>
                   <span style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.val}</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ height: 1, background: '#1a1a1a', margin: '0 0 16px' }} />
-            <p style={{ fontSize: 10, color: '#444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>
+            <div style={{ height: 1, background: colors.background.raised, margin: '0 0 16px' }} />
+            <p style={{ fontSize: 10, color: colors.text.disabled, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>
               NAVIGATION
             </p>
           </div>
@@ -543,16 +544,16 @@ function DashboardCoach() {
                 onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '11px 16px', background: actif ? '#4ade8015' : 'transparent',
-                  border: 'none', borderLeft: `3px solid ${actif ? '#4ade80' : 'transparent'}`,
-                  color: actif ? '#4ade80' : '#666', cursor: 'pointer',
+                  padding: '11px 16px', background: actif ? colors.accent.green + alpha.subtle : 'transparent',
+                  border: 'none', borderLeft: `3px solid ${actif ? colors.accent.green : 'transparent'}`,
+                  color: actif ? colors.accent.green : colors.text.dim, cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: actif ? 700 : 400,
                   textAlign: 'left', transition: 'all 0.15s',
                 }}>
                 <span style={{ fontSize: 16 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.badge > 0 && (
-                  <span style={{ background: '#f59e0b', color: '#000', fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10 }}>
+                  <span style={{ background: '#f59e0b', color: colors.black, fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10 }}>
                     {item.badge}
                   </span>
                 )}
@@ -561,9 +562,9 @@ function DashboardCoach() {
           })}
 
           <div style={{ marginTop: 'auto', padding: 16 }}>
-            <div style={{ background: '#0d0d0d', borderRadius: 10, padding: '10px 12px' }}>
-              <p style={{ margin: 0, fontSize: 11, color: '#4ade80', fontWeight: 700 }}>🎙️ Analyseur IA</p>
-              <p style={{ margin: '3px 0 0', fontSize: 10, color: '#444', lineHeight: 1.4 }}>Transcription + rapport PDF gratuit</p>
+            <div style={{ background: colors.background.sunken, borderRadius: 10, padding: '10px 12px' }}>
+              <p style={{ margin: 0, fontSize: 11, color: colors.accent.green, fontWeight: 700 }}>🎙️ Analyseur IA</p>
+              <p style={{ margin: '3px 0 0', fontSize: 10, color: colors.text.disabled, lineHeight: 1.4 }}>Transcription + rapport PDF gratuit</p>
             </div>
           </div>
         </div>
@@ -600,9 +601,9 @@ function DashboardCoach() {
           {activeSection === 'analyses' && (
             <>
               {demandes.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📭</p>
-                  <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
+                  <p style={{ color: colors.text.dim }}>Aucune demande pour le moment</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -613,21 +614,21 @@ function DashboardCoach() {
                     const nbAnalysees = demandesJoueur.filter(d => d.statut === 'analyse').length
                     const initiales = `${(profil?.prenom || '?')[0]}${(profil?.nom || '?')[0]}`
                     return (
-                      <div key={joueurId} style={{ background: '#111', border: `1px solid ${nbAttente > 0 ? '#f59e0b30' : '#222'}`, borderRadius: '14px', overflow: 'hidden' }}>
+                      <div key={joueurId} style={{ background: colors.background.surface, border: `1px solid ${nbAttente > 0 ? '#f59e0b30' : '#222'}`, borderRadius: '14px', overflow: 'hidden' }}>
                         {/* En-tête joueur (toujours visible) */}
                         <div onClick={() => toggleJoueur(joueurId)}
                           style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', userSelect: 'none' }}>
-                          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+                          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
                             {initiales}
                           </div>
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{profil?.prenom} {profil?.nom}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555' }}>{profil?.email}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{profil?.email}</p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                             {nbAttente > 0 && <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>⏳ {nbAttente} en attente</span>}
-                            {nbAnalysees > 0 && <span style={{ background: '#4ade8015', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</span>}
-                            <span style={{ color: '#444', fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
+                            {nbAnalysees > 0 && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</span>}
+                            <span style={{ color: colors.text.disabled, fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
                           </div>
                         </div>
 
@@ -638,7 +639,7 @@ function DashboardCoach() {
                               const videoUrl = getVideoUrl(demande)
                               const isSending = sending[demande.id]
                               return (
-                                <div key={demande.id} style={{ background: '#0d0d0d', border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b20' : '#1a1a1a'}`, borderRadius: '10px', padding: '1.25rem' }}>
+                                <div key={demande.id} style={{ background: colors.background.sunken, border: `1px solid ${demande.statut === 'en_attente' ? '#f59e0b20' : colors.background.raised}`, borderRadius: '10px', padding: '1.25rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                     <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{demande.titre}</h3>
                                     <span style={{ background: getStatutColor(demande.statut) + '20', color: getStatutColor(demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
@@ -649,61 +650,61 @@ function DashboardCoach() {
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                                     {demande.pris_en_charge_par ? (
                                       <>
-                                        <span style={{ background: demande.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${demande.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: demande.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
+                                        <span style={{ background: demande.pris_en_charge_par === coachId ? colors.accent.green + alpha.subtle : '#f59e0b15', border: `1px solid ${demande.pris_en_charge_par === coachId ? colors.accent.green + alpha.medium : '#f59e0b40'}`, color: demande.pris_en_charge_par === coachId ? colors.accent.green : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
                                           {demande.pris_en_charge_par === coachId ? '✅ Pris en charge par toi' : `🔒 Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
                                         </span>
                                         {demande.pris_en_charge_par === coachId && (
-                                          <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                                          <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: '1px solid #333', color: colors.text.dim, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
                                         )}
                                       </>
                                     ) : (
-                                      <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                                      <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
                                     )}
                                   </div>
 
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Poste</p>
+                                    <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Poste</p>
                                       <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{demande.poste}</p>
                                     </div>
-                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Plan</p>
-                                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#4ade80', textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
+                                    <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Plan</p>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', color: colors.accent.green, textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
                                     </div>
-                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Date</p>
+                                    <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Date</p>
                                       <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0' }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
                                     </div>
                                   </div>
 
                                   {demande.description && (
-                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                                      <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Ce que le joueur veut analyser</p>
-                                      <p style={{ fontSize: '13px', color: '#aaa', margin: '4px 0 0' }}>{demande.description}</p>
+                                    <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Ce que le joueur veut analyser</p>
+                                      <p style={{ fontSize: '13px', color: colors.text.secondary, margin: '4px 0 0' }}>{demande.description}</p>
                                     </div>
                                   )}
 
                                   {videoUrl ? (
                                     <div style={{ marginBottom: '1rem' }}>
-                                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Vidéo</p>
+                                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 8px' }}>Vidéo</p>
                                       {isVeo(videoUrl) || isYoutube(videoUrl) ? (
                                         <a href={videoUrl} target="_blank" rel="noreferrer"
-                                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
+                                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
                                           🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
                                         </a>
                                       ) : (
-                                        <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: '#000' }} />
+                                        <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: colors.black }} />
                                       )}
                                     </div>
                                   ) : (
-                                    <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                                      <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucune vidéo fournie</p>
+                                    <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                                      <p style={{ fontSize: '13px', color: colors.text.faint, margin: 0 }}>⚠️ Aucune vidéo fournie</p>
                                     </div>
                                   )}
 
                                   {demande.statut === 'en_attente' && (
-                                    <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
-                                      <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+                                    <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '1rem' }}>
+                                      <p style={{ fontSize: '12px', color: colors.text.dim, margin: '0 0 10px' }}>
                                         📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
                                       </p>
                                       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -711,24 +712,24 @@ function DashboardCoach() {
                                           placeholder="Colle ton lien vidéo (YouTube, Veo...) ici..."
                                           value={loomUrls[demande.id] || ''}
                                           onChange={e => setLoomUrls(prev => ({ ...prev, [demande.id]: e.target.value }))}
-                                          style={{ flex: 1, background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}
+                                          style={{ flex: 1, background: colors.background.surface, border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', color: 'white', fontSize: '14px', outline: 'none' }}
                                         />
                                         <button
                                           onClick={() => envoyerAnalyse(demande.id, demande.profiles?.id)}
                                           disabled={isSending || !loomUrls[demande.id]?.trim()}
-                                          style={{ background: isSending ? '#333' : '#4ade80', color: isSending ? '#666' : '#0a0a0a', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: isSending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (!loomUrls[demande.id]?.trim() && !isSending) ? 0.5 : 1 }}>
+                                          style={{ background: isSending ? colors.border.strong : colors.accent.green, color: isSending ? colors.text.dim : colors.background.base, border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: isSending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (!loomUrls[demande.id]?.trim() && !isSending) ? 0.5 : 1 }}>
                                           {isSending ? 'Envoi...' : '🚀 Envoyer l\'analyse'}
                                         </button>
                                       </div>
                                       <div style={{ marginTop: '10px' }}>
-                                        <label style={{ fontSize: '11px', color: '#555', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                                        <label style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 700, display: 'block', marginBottom: '6px' }}>
                                           📄 Joindre un rapport PDF (optionnel)
                                         </label>
                                         <input type="file" accept=".pdf"
                                           onChange={e => setRapportPdfFiles(prev => ({ ...prev, [demande.id]: e.target.files[0] || null }))}
-                                          style={{ fontSize: '12px', color: '#888', width: '100%' }} />
+                                          style={{ fontSize: '12px', color: colors.text.muted, width: '100%' }} />
                                         {rapportPdfFiles[demande.id] && (
-                                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#4ade80' }}>✓ {rapportPdfFiles[demande.id].name}</p>
+                                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.accent.green }}>✓ {rapportPdfFiles[demande.id].name}</p>
                                         )}
                                       </div>
                                     </div>
@@ -736,20 +737,20 @@ function DashboardCoach() {
 
                                   {demande.statut === 'analyse' && demande.loom_url && (
                                     <div style={{ background: '#4ade8010', border: '1px solid #4ade8033', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                                      <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
+                                      <p style={{ fontSize: '12px', color: colors.accent.green, marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                         <a href={demande.loom_url} target="_blank" rel="noreferrer"
-                                          style={{ fontSize: '13px', color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          style={{ fontSize: '13px', color: colors.text.secondary, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                           {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
                                         </a>
                                         {demande.rapport_pdf_url && (
                                           <a href={demande.rapport_pdf_url} target="_blank" rel="noreferrer"
-                                            style={{ fontSize: '13px', color: '#4ade80', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            style={{ fontSize: '13px', color: colors.accent.green, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             📄 <span style={{ textDecoration: 'underline' }}>Rapport PDF</span>
                                           </a>
                                         )}
                                         <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
-                                          style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                                          style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
                                           ⭐ Noter {profil?.prenom || 'le joueur'}
                                         </button>
                                       </div>
@@ -772,11 +773,11 @@ function DashboardCoach() {
           {activeSection === 'certifications' && (
             <>
               {certifLoading ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>Chargement...</p>
+                <p style={{ color: colors.text.dim, textAlign: 'center', padding: '2rem' }}>Chargement...</p>
               ) : certifs.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</p>
-                  <p style={{ color: '#666' }}>Aucune demande de certification pour le moment</p>
+                  <p style={{ color: colors.text.dim }}>Aucune demande de certification pour le moment</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -785,8 +786,8 @@ function DashboardCoach() {
                     const isPending = certif.statut === 'en_attente'
                     return (
                       <div key={certif.id} style={{
-                        background: '#111',
-                        border: `1px solid ${isPending ? '#f59e0b30' : certif.statut === 'validé' ? '#4ade8030' : '#f8717130'}`,
+                        background: colors.background.surface,
+                        border: `1px solid ${isPending ? '#f59e0b30' : certif.statut === 'validé' ? colors.accent.green + alpha.light : '#f8717130'}`,
                         borderRadius: '12px', padding: '1.5rem'
                       }}>
                         {/* Header */}
@@ -795,7 +796,7 @@ function DashboardCoach() {
                             <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px' }}>
                               {certif.profiles?.prenom} {certif.profiles?.nom}
                             </h3>
-                            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{certif.profiles?.email}</p>
+                            <p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{certif.profiles?.email}</p>
                           </div>
                           <span style={{
                             background: getStatutColor(certif.statut) + '20',
@@ -808,23 +809,23 @@ function DashboardCoach() {
 
                         {/* Infos */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Niveau</p>
-                            <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: '#fbbf24' }}>{certif.niveau}</p>
+                          <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Niveau</p>
+                            <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: colors.accent.amber }}>{certif.niveau}</p>
                           </div>
-                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Saison</p>
+                          <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Saison</p>
                             <p style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>{certif.saison}</p>
                           </div>
-                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Soumis le</p>
+                          <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                            <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Soumis le</p>
                             <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>{new Date(certif.created_at).toLocaleDateString('fr-FR')}</p>
                           </div>
                         </div>
 
                         {/* Documents (feuilles de match) */}
                         <div style={{ marginBottom: '1rem' }}>
-                          <p style={{ fontSize: '12px', color: '#555', margin: '0 0 8px' }}>
+                          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 8px' }}>
                             📄 Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
                           </p>
                           {certif.documents?.length > 0 ? (
@@ -835,8 +836,8 @@ function DashboardCoach() {
                                   <a key={i} href={url} target="_blank" rel="noreferrer"
                                     style={{
                                       display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                      background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px',
-                                      padding: '8px 12px', color: '#4ade80', fontSize: '13px',
+                                      background: colors.background.raised, border: '1px solid #333', borderRadius: '8px',
+                                      padding: '8px 12px', color: colors.accent.green, fontSize: '13px',
                                       textDecoration: 'none', fontWeight: '500'
                                     }}>
                                     {isPdf ? '📄' : '🖼️'} Feuille {i + 1}
@@ -845,22 +846,22 @@ function DashboardCoach() {
                               })}
                             </div>
                           ) : (
-                            <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>⚠️ Aucun document joint</p>
+                            <p style={{ fontSize: '13px', color: colors.text.faint, margin: 0 }}>⚠️ Aucun document joint</p>
                           )}
                         </div>
 
                         {/* Commentaire admin (déjà rejeté ou validé) */}
                         {certif.commentaire_admin && !isPending && (
-                          <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                            <p style={{ fontSize: '11px', color: '#555', margin: '0 0 4px' }}>Commentaire admin</p>
-                            <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>{certif.commentaire_admin}</p>
+                          <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                            <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Commentaire admin</p>
+                            <p style={{ fontSize: '13px', color: colors.text.secondary, margin: 0 }}>{certif.commentaire_admin}</p>
                           </div>
                         )}
 
                         {/* Actions */}
                         {isPending && (
-                          <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '1rem' }}>
-                            <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+                          <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '1rem' }}>
+                            <p style={{ fontSize: '12px', color: colors.text.dim, margin: '0 0 10px' }}>
                               💬 Commentaire (obligatoire en cas de rejet)
                             </p>
                             <textarea
@@ -869,7 +870,7 @@ function DashboardCoach() {
                               onChange={e => setCommentaires(prev => ({ ...prev, [certif.id]: e.target.value }))}
                               rows={2}
                               style={{
-                                width: '100%', background: '#111', border: '1px solid #333', borderRadius: '8px',
+                                width: '100%', background: colors.background.surface, border: '1px solid #333', borderRadius: '8px',
                                 padding: '10px 14px', color: 'white', fontSize: '13px', outline: 'none',
                                 resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'sans-serif'
                               }}
@@ -879,8 +880,8 @@ function DashboardCoach() {
                                 onClick={() => validerCertification(certif)}
                                 disabled={!!isProcessing}
                                 style={{
-                                  flex: 1, background: isProcessing === 'validating' ? '#333' : '#4ade80',
-                                  color: isProcessing === 'validating' ? '#666' : '#0a0a0a',
+                                  flex: 1, background: isProcessing === 'validating' ? colors.border.strong : colors.accent.green,
+                                  color: isProcessing === 'validating' ? colors.text.dim : colors.background.base,
                                   border: 'none', padding: '10px 0', borderRadius: '8px',
                                   fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                                 }}>
@@ -890,8 +891,8 @@ function DashboardCoach() {
                                 onClick={() => rejeterCertification(certif)}
                                 disabled={!!isProcessing}
                                 style={{
-                                  flex: 1, background: isProcessing === 'rejecting' ? '#333' : '#f8717120',
-                                  color: isProcessing === 'rejecting' ? '#666' : '#f87171',
+                                  flex: 1, background: isProcessing === 'rejecting' ? colors.border.strong : '#f8717120',
+                                  color: isProcessing === 'rejecting' ? colors.text.dim : '#f87171',
                                   border: '1px solid #f8717140', padding: '10px 0', borderRadius: '8px',
                                   fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                                 }}>
@@ -904,7 +905,7 @@ function DashboardCoach() {
                         {/* Validé */}
                         {certif.statut === 'validé' && certif.validated_at && (
                           <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '13px', color: '#4ade80', margin: 0, fontWeight: 600 }}>
+                            <p style={{ fontSize: '13px', color: colors.accent.green, margin: 0, fontWeight: 600 }}>
                               ⭐ Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
                             </p>
                           </div>
@@ -921,34 +922,34 @@ function DashboardCoach() {
           {activeSection === 'recruteurs' && (
             <>
               {recruteurs.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏢</p>
-                  <p style={{ color: '#666' }}>Aucun recruteur inscrit pour le moment</p>
+                  <p style={{ color: colors.text.dim }}>Aucun recruteur inscrit pour le moment</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {recruteurs.map(r => {
                     const initiales = `${(r.prenom || '?')[0]}${(r.nom || '?')[0]}`
                     return (
-                      <div key={r.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div key={r.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
                         {/* Avatar */}
                         {r.avatar_url ? (
                           <img src={r.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                         ) : (
-                          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>
+                          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>
                             {initiales}
                           </div>
                         )}
                         {/* Infos */}
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{r.prenom} {r.nom}</p>
-                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>
                             {r.type_recruteur || 'Recruteur'}{r.club ? ` — ${r.club}` : ''}{r.region ? ` · ${r.region}` : ''}
                           </p>
                         </div>
                         {/* Bouton profil */}
                         <button onClick={() => setRecruteurModal(r)}
-                          style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           👤 Voir le profil
                         </button>
                       </div>
@@ -963,19 +964,19 @@ function DashboardCoach() {
           {activeSection === 'seances_club' && (
             <>
               {seancesTransferees.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🎥</p>
-                  <p style={{ color: '#666' }}>Aucune séance transférée par un club pour l'instant</p>
+                  <p style={{ color: colors.text.dim }}>Aucune séance transférée par un club pour l'instant</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {seancesTransferees.map(s => {
                     const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
                     return (
-                      <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div key={s.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || 'Séance'}</p>
-                          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>
+                          <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.dim }}>
                             Club : {s.club?.club || `${s.club?.prenom} ${s.club?.nom}`} · {s.saison}
                             {s.date_seance ? ` · ${new Date(s.date_seance).toLocaleDateString('fr-FR')}` : ''}
                           </p>
@@ -983,22 +984,22 @@ function DashboardCoach() {
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {s.pris_en_charge_par ? (
                             <>
-                              <span style={{ background: s.pris_en_charge_par === coachId ? '#4ade8015' : '#f59e0b15', border: `1px solid ${s.pris_en_charge_par === coachId ? '#4ade8040' : '#f59e0b40'}`, color: s.pris_en_charge_par === coachId ? '#4ade80' : '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                              <span style={{ background: s.pris_en_charge_par === coachId ? colors.accent.green + alpha.subtle : '#f59e0b15', border: `1px solid ${s.pris_en_charge_par === coachId ? colors.accent.green + alpha.medium : '#f59e0b40'}`, color: s.pris_en_charge_par === coachId ? colors.accent.green : '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
                                 {s.pris_en_charge_par === coachId ? '✅ Toi' : `🔒 ${s.coach?.prenom || 'Autre coach'}`}
                               </span>
                               {s.pris_en_charge_par === coachId && (
-                                <button onClick={() => prendreEnCharge('seances_uploadees', s.id, true)} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
+                                <button onClick={() => prendreEnCharge('seances_uploadees', s.id, true)} style={{ background: 'none', border: '1px solid #333', color: colors.text.dim, padding: '4px 8px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
                               )}
                             </>
                           ) : (
-                            <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                            <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
                           )}
-                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 Voir</a>
                           {s.statut === 'transfere_coach' && (
-                            <button onClick={() => setSeanceEvalModal(s)} style={{ background: '#4ade80', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
+                            <button onClick={() => setSeanceEvalModal(s)} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 Analyser</button>
                           )}
                           {eval_ && (
-                            <span style={{ background: '#4ade8015', color: '#4ade80', fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
+                            <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
                           )}
                         </div>
                       </div>
@@ -1015,47 +1016,47 @@ function DashboardCoach() {
           {activeSection === 'support' && (
             <>
               {ticketsError && (
-                <div style={{ background: '#f9731610', border: '1px solid #f9731640', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem', color: '#f97316', fontSize: '13px' }}>
+                <div style={{ background: '#f9731610', border: '1px solid #f9731640', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem', color: colors.accent.orange, fontSize: '13px' }}>
                   ⚠️ {ticketsError}
                 </div>
               )}
               {tickets.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>💬</p>
-                  <p style={{ color: '#666' }}>Aucun ticket pour le moment</p>
+                  <p style={{ color: colors.text.dim }}>Aucun ticket pour le moment</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {tickets.map(t => (
-                    <div key={t.id} style={{ background: '#111', border: `1px solid ${t.statut === 'ouvert' ? '#f9731640' : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
+                    <div key={t.id} style={{ background: colors.background.surface, border: `1px solid ${t.statut === 'ouvert' ? colors.accent.orange + alpha.medium : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{t.sujet}</p>
                             {t.statut === 'ouvert' ? (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: '#f9731615', border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>OUVERT</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.orange, background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>OUVERT</span>
                             ) : (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#4ade80', background: '#4ade8015', border: '1px solid #4ade8040', padding: '2px 8px', borderRadius: '20px' }}>✓ RÉSOLU</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.green, background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', padding: '2px 8px', borderRadius: '20px' }}>✓ RÉSOLU</span>
                             )}
                           </div>
-                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>
                             {t.expediteur ? `${t.expediteur.prenom || ''} ${t.expediteur.nom || ''}`.trim() || t.expediteur.email : 'Utilisateur inconnu'}
                             {t.expediteur?.email ? ` · ${t.expediteur.email}` : ''}
                           </p>
-                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>{new Date(t.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.disabled }}>{new Date(t.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         {t.statut === 'ouvert' && (
                           <button onClick={() => marquerTicketResolu(t.id)} disabled={savingTicket === t.id}
-                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             {savingTicket === t.id ? 'Mise à jour...' : '✓ Marquer comme résolu'}
                           </button>
                         )}
                       </div>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa', lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{t.message}</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{t.message}</p>
 
                       {t.reponse && (
                         <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1f1f1f' }}>
-                          <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ta réponse</p>
+                          <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 700, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ta réponse</p>
                           <p style={{ margin: 0, fontSize: '13px', color: '#ddd', lineHeight: 1.6 }}>{t.reponse}</p>
                         </div>
                       )}
@@ -1066,12 +1067,12 @@ function DashboardCoach() {
                           onChange={e => setReponseDrafts(prev => ({ ...prev, [t.id]: e.target.value }))}
                           placeholder={t.reponse ? 'Modifier la réponse...' : 'Écrire une réponse...'}
                           rows={2}
-                          style={{ flex: '1 1 200px', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 10px', color: '#e4e4e7', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical' }}
+                          style={{ flex: '1 1 200px', background: colors.background.sunken, border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 10px', color: '#e4e4e7', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical' }}
                         />
                         <button
                           onClick={() => envoyerReponseTicket(t.id)}
                           disabled={savingTicket === t.id || !(reponseDrafts[t.id] ?? '').trim()}
-                          style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: !(reponseDrafts[t.id] ?? '').trim() ? 0.5 : 1, alignSelf: 'flex-start' }}
+                          style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: !(reponseDrafts[t.id] ?? '').trim() ? 0.5 : 1, alignSelf: 'flex-start' }}
                         >
                           ✉️ Envoyer la réponse
                         </button>
@@ -1086,47 +1087,47 @@ function DashboardCoach() {
           {/* ===== SECTION CLUBS EN ATTENTE (accès restreint) ===== */}
           {activeSection === 'clubs_admin' && isAdminClubs && (
             <>
-              <p style={{ color: '#666', fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+              <p style={{ color: colors.text.dim, fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
                 Comptes club (créés manuellement après un premier contact — voir aussi l'onglet
                 "Demandes Club") en attente d'activation. Vérifie le nombre de licenciés avec le club,
                 choisis le palier correspondant, copie le lien de paiement adapté et envoie-le par email.
                 « Activer manuellement » sert uniquement si le paiement se fait hors Stripe (virement...).
               </p>
               {clubsEnAttente.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏟️</p>
-                  <p style={{ color: '#666' }}>Aucun club en attente d'activation</p>
+                  <p style={{ color: colors.text.dim }}>Aucun club en attente d'activation</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {clubsEnAttente.map(c => {
                     const palier = palierChoisi[c.id] || 'c0'
                     return (
-                      <div key={c.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '14px', padding: '1.25rem' }}>
+                      <div key={c.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{c.club || '(nom du club non renseigné)'}</p>
-                            <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>{c.prenom} {c.nom} · {c.email}</p>
-                            <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>Inscrit le {new Date(c.created_at).toLocaleDateString('fr-FR')}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>{c.prenom} {c.nom} · {c.email}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.disabled }}>Inscrit le {new Date(c.created_at).toLocaleDateString('fr-FR')}</p>
                           </div>
                           <button onClick={() => activerClub(c.id)} disabled={activatingClub === c.id}
-                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             {activatingClub === c.id ? 'Activation...' : '✓ Activer manuellement'}
                           </button>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <select value={palier} onChange={e => setPalierChoisi(prev => ({ ...prev, [c.id]: e.target.value }))}
-                            style={{ background: '#0a0a0a', border: '1px solid #333', color: 'white', borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: colors.background.base, border: '1px solid #333', color: 'white', borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>
                             {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
                               <option key={key} value={key}>{p.label} — {p.mensuelPrix} / {p.annuelPrix}</option>
                             ))}
                           </select>
                           <button onClick={() => copierLienClub(c.id, palier, 'mensuel')}
-                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#aaa', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
                             📋 Copier lien mensuel
                           </button>
                           <button onClick={() => copierLienClub(c.id, palier, 'annuel')}
-                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#aaa', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
                             📋 Copier lien annuel
                           </button>
                         </div>
@@ -1141,43 +1142,43 @@ function DashboardCoach() {
           {/* ===== SECTION DEMANDES CLUB (accès restreint) ===== */}
           {activeSection === 'demandes_club' && isAdminClubs && (
             <>
-              <p style={{ color: '#666', fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+              <p style={{ color: colors.text.dim, fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
                 Demandes de contact envoyées depuis la page /offres (formulaire club — pas de paiement en
                 libre-service). Recontacte sous 24-48h, puis marque comme traité une fois le club activé
                 ou la demande close.
               </p>
               {demandesClub.length === 0 ? (
-                <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+                <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📨</p>
-                  <p style={{ color: '#666' }}>Aucune demande pour le moment</p>
+                  <p style={{ color: colors.text.dim }}>Aucune demande pour le moment</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {demandesClub.map(d => (
-                    <div key={d.id} style={{ background: '#111', border: `1px solid ${d.statut === 'nouveau' ? '#f9731640' : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
+                    <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${d.statut === 'nouveau' ? colors.accent.orange + alpha.medium : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{d.prenom} {d.nom}</p>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#60a5fa', background: '#60a5fa15', border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
                             {d.statut === 'nouveau' && (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: '#f9731615', border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>NOUVEAU</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.orange, background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>NOUVEAU</span>
                             )}
                           </div>
-                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#666' }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
-                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#444' }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                          <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
+                          <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.disabled }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         </div>
                         {d.statut === 'nouveau' ? (
                           <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
-                            style={{ background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             {traitantDemande === d.id ? 'Mise à jour...' : '✓ Marquer comme traité'}
                           </button>
                         ) : (
-                          <span style={{ fontSize: '11px', color: '#4ade80', fontWeight: 600 }}>✓ Traité</span>
+                          <span style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 600 }}>✓ Traité</span>
                         )}
                       </div>
                       {d.message && (
-                        <p style={{ margin: 0, fontSize: '13px', color: '#aaa', lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{d.message}</p>
+                        <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{d.message}</p>
                       )}
                     </div>
                   ))}
@@ -1192,58 +1193,58 @@ function DashboardCoach() {
       {/* MODAL PROFIL RECRUTEUR */}
       {recruteurModal && (
         <div onClick={() => setRecruteurModal(null)} style={{ position: 'fixed', inset: 0, background: '#000000bb', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
               {recruteurModal.avatar_url ? (
                 <img src={recruteurModal.avatar_url} alt="" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontWeight: 800, fontSize: '20px' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 800, fontSize: '20px' }}>
                   {`${(recruteurModal.prenom || '?')[0]}${(recruteurModal.nom || '?')[0]}`}
                 </div>
               )}
               <div>
                 <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#60a5fa', fontWeight: 600 }}>{recruteurModal.type_recruteur || 'Recruteur'}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.accent.blue, fontWeight: 600 }}>{recruteurModal.type_recruteur || 'Recruteur'}</p>
               </div>
             </div>
 
             {/* Infos */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1rem' }}>
               {recruteurModal.club && (
-                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Club / Structure</p>
+                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Club / Structure</p>
                   <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.club}</p>
                 </div>
               )}
               {recruteurModal.region && (
-                <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Région</p>
+                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Région</p>
                   <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.region}</p>
                 </div>
               )}
             </div>
 
             {recruteurModal.description && (
-              <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: '#555', margin: '0 0 6px' }}>À propos</p>
+              <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 6px' }}>À propos</p>
                 <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.description}</p>
               </div>
             )}
 
             {recruteurModal.recherche_profil && (
               <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa30', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: '#60a5fa', margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
+                <p style={{ fontSize: '11px', color: colors.accent.blue, margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
                 <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.recherche_profil}</p>
               </div>
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '1rem' }}>
-              <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>📧 {recruteurModal.email}</p>
+              <p style={{ fontSize: '13px', color: colors.text.faint, margin: 0 }}>📧 {recruteurModal.email}</p>
             </div>
 
             <button onClick={() => setRecruteurModal(null)}
-              style={{ width: '100%', marginTop: '1.5rem', background: '#1a1a1a', color: '#aaa', border: '1px solid #333', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+              style={{ width: '100%', marginTop: '1.5rem', background: colors.background.raised, color: colors.text.secondary, border: '1px solid #333', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
               Fermer
             </button>
           </div>

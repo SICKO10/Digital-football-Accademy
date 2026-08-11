@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { colors, alpha } from "../tokens";
 import { useNavigate } from "react-router-dom";
 import ScoutCenter from "../components/ScoutCenter";
 
@@ -22,7 +23,7 @@ export default function DashboardScoutClub() {
     checkAuth();
   }, []);
 
-  if (loading) return <div style={{ background: "#0a0a0a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ color: "#4ade80" }}>Chargement...</p></div>;
+  if (loading) return <div style={{ background: colors.background.base, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ color: colors.accent.green }}>Chargement...</p></div>;
 
   return <ScoutCenter userId={userId} profil={profil} embedded={false} />;
 }

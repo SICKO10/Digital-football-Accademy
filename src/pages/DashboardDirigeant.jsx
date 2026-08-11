@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import DashboardEducateur from './DashboardEducateur'
+import { colors, alpha } from '../tokens'
 
 // Petit wrapper : charge l'accès délégué du dirigeant connecté, puis rend le dashboard
 // éducateur habituel ciblé sur l'éducateur délégant, avec les permissions en prop pour
@@ -29,8 +30,8 @@ export default function DashboardDirigeant() {
   }, [])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4ade80', fontFamily: 'Inter, sans-serif' }}>Chargement...</p>
+    <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: colors.accent.green, fontFamily: 'Inter, sans-serif' }}>Chargement...</p>
     </div>
   )
 
