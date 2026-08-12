@@ -4,7 +4,17 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
+
+const PILLS = ['⚽ 500+ joueurs', '🏟️ 50+ clubs', '🔍 Scouts actifs']
+
+const SPLIT_MEDIA_QUERY = `
+  @media (max-width: 768px) {
+    .register-left { display: none !important; }
+    .register-right { width: 100% !important; max-width: 540px !important; flex: none !important; margin: 0 auto; }
+    .register-mobile-logo { display: block !important; }
+  }
+`
 
 export default function Register() {
   const navigate = useNavigate()
@@ -110,6 +120,108 @@ export default function Register() {
     }
   }
 
+  const cardsProfil = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {PROFILS.map(p => (
+        <button key={p.id}
+          onClick={() => {
+            // Club : pas de création de compte — vente humaine via le
+            // formulaire de contact de la page Offres (voir demandes_club).
+            if (p.contact) { navigate('/offres'); return }
+            setProfil(p); setCycle('mensuel'); setEtape(2)
+          }}
+          style={{
+            background: colors.background.surface, border: '1px solid #1a1a1a',
+            borderRadius: '14px', padding: '16px 18px',
+            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            color: colors.text.primary, textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: '14px',
+            transition: 'border-color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = p.color; e.currentTarget.style.background = p.color + '08' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = colors.background.raised; e.currentTarget.style.background = colors.background.surface }}>
+
+          <span style={{ fontSize: '26px', flexShrink: 0 }}>{p.emoji}</span>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+              <span style={{ fontWeight: 800, fontSize: '14px' }}>{p.label}</span>
+              {p.badge && (
+                <span style={{
+                  background: p.color + '18', color: p.color,
+                  border: `1px solid ${p.color}35`,
+                  fontSize: '10px', fontWeight: 700,
+                  padding: '2px 8px', borderRadius: '20px',
+                }}>{p.badge}</span>
+              )}
+            </div>
+            <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0, lineHeight: 1.5 }}>{p.desc}</p>
+          </div>
+
+          <span style={{ color: colors.border.default, fontSize: '20px', flexShrink: 0 }}>›</span>
+        </button>
+      ))}
+    </div>
+  )
+
+  // ── Étape 1 : choix du profil, en split-screen (même structure que Login.jsx) ──
+  if (etape === 1) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
+        <style>{SPLIT_MEDIA_QUERY}</style>
+
+        {/* ── Colonne gauche — vitrine, cachée sur mobile ── */}
+        <div className="register-left" style={{
+          flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80)',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, rgba(6,26,14,0.92) 0%, rgba(10,32,16,0.88) 100%)' }} />
+
+          <div style={{ position: 'relative', fontSize: '20px', fontWeight: 800 }}>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Rejoins la communauté.</h2>
+            <p style={{ color: colors.text.dim, fontSize: '15px', marginTop: '12px' }}>Joueur, éducateur, recruteur ou club — ta place est ici.</p>
+          </div>
+
+          <div style={{ position: 'relative', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {PILLS.map(pill => (
+              <span key={pill} style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
+                {pill}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Colonne droite — cards de profil ── */}
+        <div className="register-right" style={{ flex: 'none', width: '540px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div style={{ width: '100%', maxWidth: '480px' }}>
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+              <div className="register-mobile-logo" style={{ display: 'none', fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+                ⚽ <span style={{ color: colors.accent.green }}>Digital</span>Football
+              </div>
+              <p style={{ fontSize: '13px', color: colors.text.disabled, margin: 0 }}>{t('reginsc_quel_profil', lang)}</p>
+            </div>
+
+            {cardsProfil}
+
+            <p style={{ textAlign: 'center', fontSize: '13px', color: colors.text.disabled, marginTop: '20px' }}>
+              {t('register_deja_compte', lang)}{' '}
+              <button onClick={() => navigate('/login')}
+                style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                {t('auth_se_connecter', lang)}
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Étape 2 : formulaire, layout centré inchangé (pas de split-screen) ──
   return (
     <div style={{
       background: colors.background.base, minHeight: '100vh', color: colors.text.primary,
@@ -122,65 +234,11 @@ export default function Register() {
           ⚽ <span style={{ color: colors.accent.green }}>Digital</span>Football
         </p>
         <p style={{ fontSize: '12px', color: colors.text.disabled, margin: '4px 0 0' }}>
-          {etape === 1 ? t('reginsc_quel_profil', lang) : `${t('reginsc_inscription_prefix', lang)} ${profilChoisi?.label}`}
+          {`${t('reginsc_inscription_prefix', lang)} ${profilChoisi?.label}`}
         </p>
       </div>
 
-      {etape === 1 && (
-        <div style={{ width: '100%', maxWidth: '540px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {PROFILS.map(p => (
-              <button key={p.id}
-                onClick={() => {
-                  // Club : pas de création de compte — vente humaine via le
-                  // formulaire de contact de la page Offres (voir demandes_club).
-                  if (p.contact) { navigate('/offres'); return }
-                  setProfil(p); setCycle('mensuel'); setEtape(2)
-                }}
-                style={{
-                  background: colors.background.surface, border: '1px solid #1a1a1a',
-                  borderRadius: '14px', padding: '16px 18px',
-                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                  color: colors.text.primary, textAlign: 'left',
-                  display: 'flex', alignItems: 'center', gap: '14px',
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = p.color; e.currentTarget.style.background = p.color + '08' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = colors.background.raised; e.currentTarget.style.background = colors.background.surface }}>
-
-                <span style={{ fontSize: '26px', flexShrink: 0 }}>{p.emoji}</span>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '14px' }}>{p.label}</span>
-                    {p.badge && (
-                      <span style={{
-                        background: p.color + '18', color: p.color,
-                        border: `1px solid ${p.color}35`,
-                        fontSize: '10px', fontWeight: 700,
-                        padding: '2px 8px', borderRadius: '20px',
-                      }}>{p.badge}</span>
-                    )}
-                  </div>
-                  <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0, lineHeight: 1.5 }}>{p.desc}</p>
-                </div>
-
-                <span style={{ color: colors.border.default, fontSize: '20px', flexShrink: 0 }}>›</span>
-              </button>
-            ))}
-          </div>
-
-          <p style={{ textAlign: 'center', fontSize: '13px', color: colors.text.disabled, marginTop: '20px' }}>
-            {t('register_deja_compte', lang)}{' '}
-            <button onClick={() => navigate('/login')}
-              style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
-              {t('auth_se_connecter', lang)}
-            </button>
-          </p>
-        </div>
-      )}
-
-      {etape === 2 && profilChoisi && (
+      {profilChoisi && (
         <div style={{ width: '100%', maxWidth: '400px' }}>
 
           <div style={{
