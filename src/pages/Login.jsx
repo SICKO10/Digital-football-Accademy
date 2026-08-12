@@ -72,17 +72,23 @@ function Login() {
       `}</style>
 
       {/* ── Colonne gauche — vitrine, cachée sur mobile ── */}
-      <div className="login-left" style={{ flex: 1, background: 'linear-gradient(160deg, #061a0e 0%, #0a2010 50%, #030d07 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem' }}>
-        <div style={{ fontSize: '20px', fontWeight: 800 }}>
+      <div className="login-left" style={{
+        flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem',
+        backgroundImage: 'url(https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80)',
+        backgroundSize: 'cover', backgroundPosition: 'center',
+      }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(160deg, rgba(6,26,14,0.92) 0%, rgba(10,32,16,0.88) 100%)' }} />
+
+        <div style={{ position: 'relative', zIndex: 1, fontSize: '20px', fontWeight: 800 }}>
           Digital<span style={{ color: colors.accent.green }}>Football</span>
         </div>
 
-        <div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Ton terrain, ta carrière.</h2>
           <p style={{ color: colors.text.dim, fontSize: '15px', marginTop: '12px' }}>La plateforme qui connecte joueurs, clubs et recruteurs.</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {PILLS.map(pill => (
             <span key={pill} style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
               {pill}

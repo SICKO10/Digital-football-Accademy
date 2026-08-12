@@ -2140,27 +2140,65 @@ function DashboardJoueur() {
 
   // ── FAN ──
   if (profil?.plan === 'fan') {
+    const fanNavItems = [
+      { id: 'accueil', label: 'Accueil' },
+      { id: 'favoris', label: 'Mes Favoris' },
+      { id: 'messages', label: 'Messages' },
+    ]
+    const allerVersFanOnglet = (id) => {
+      setFanOnglet(id)
+      if (id === 'favoris') chargerFanFavoris()
+      setSidebarOpen(false)
+    }
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif' }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; }`}</style>
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #141414' }}>
-          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: colors.text.faint }}>Bonjour {profil?.prenom}</span>
-            <button onClick={handleLogout} style={{ background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déconnexion</button>
-          </div>
-        </nav>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; } .fan-nav-btn:hover { background: #111 !important; }`}</style>
 
-        <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
-          <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #141414', marginBottom: '2rem', paddingBottom: '0' }}>
-            {[['accueil', 'Accueil'], ['favoris', 'Mes Favoris'], ['messages', 'Messages']].map(([id, label]) => (
-              <button key={id} onClick={() => { setFanOnglet(id); if (id === 'favoris') chargerFanFavoris() }}
-                style={{ background: 'transparent', border: 'none', color: fanOnglet === id ? colors.accent.green : colors.text.faint, fontSize: '13px', fontWeight: fanOnglet === id ? 700 : 400, cursor: 'pointer', padding: '10px 16px', borderBottom: fanOnglet === id ? '2px solid #4ade80' : '2px solid transparent', fontFamily: 'Inter, sans-serif', marginBottom: '-1px' }}>
-                {label}
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 190 }} />
+        )}
+
+        {/* ── Sidebar fixe (drawer sur mobile) ── */}
+        <aside style={{
+          position: 'fixed', top: 0, left: isMobile ? (sidebarOpen ? 0 : -240) : 0, height: '100vh', width: '220px',
+          background: '#080808', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column',
+          padding: '24px 12px', zIndex: 200, transition: isMobile ? 'left 0.25s ease' : 'none',
+        }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, padding: '0 8px', marginBottom: '28px' }}>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
+          </div>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+            {fanNavItems.map(item => (
+              <button key={item.id} className="fan-nav-btn" onClick={() => allerVersFanOnglet(item.id)}
+                style={{
+                  padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+                  background: fanOnglet === item.id ? colors.accent.green + alpha.soft : 'transparent',
+                  color: fanOnglet === item.id ? colors.accent.green : colors.text.dim,
+                  border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s',
+                }}>
+                {item.label}
               </button>
             ))}
+          </nav>
+          <div style={{ paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
+            <p style={{ fontSize: '11px', color: colors.text.disabled, padding: '0 8px', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profil?.prenom}</p>
+            <button onClick={handleLogout}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+              Déconnexion
+            </button>
           </div>
+        </aside>
 
+        {/* ── Contenu ── */}
+        <div style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : '220px' }}>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer', padding: '1rem 1.5rem 0' }}>
+              ☰
+            </button>
+          )}
+
+          <div style={{ maxWidth: '680px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
           {fanOnglet === 'accueil' && (
             <>
               <div style={{ background: colors.background.surface, border: '1px solid #4ade8020', borderRadius: '20px', padding: '2.5rem', marginBottom: '16px', textAlign: 'center' }}>
@@ -2228,6 +2266,7 @@ function DashboardJoueur() {
               <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={st.btnSolid()}>{t('aff_pro_prix', lang)}</button>
             </div>
           )}
+          </div>
         </div>
       </div>
     )
