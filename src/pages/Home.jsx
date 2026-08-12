@@ -226,9 +226,9 @@ function Home() {
           </button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
-          {[['⚽', t('home_reels_foot_direct', lang)], ['❤️', t('home_like_commente', lang)], ['🔔', t('home_suis_talents', lang)]].map(([icon, label]) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: colors.text.faint }}>
-              <span style={{ fontSize: '20px' }}>{icon}</span> {label}
+          {[t('home_reels_foot_direct', lang), t('home_like_commente', lang), t('home_suis_talents', lang)].map(label => (
+            <div key={label} style={{ fontSize: '14px', color: colors.text.faint }}>
+              {label}
             </div>
           ))}
         </div>

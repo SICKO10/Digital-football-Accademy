@@ -6,7 +6,7 @@ import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
 import { colors } from '../tokens'
 
-const PILLS = ['⚽ 500+ joueurs', '🏟️ 50+ clubs', '🔍 Scouts actifs']
+const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
 const SPLIT_MEDIA_QUERY = `
   @media (max-width: 768px) {
@@ -22,30 +22,30 @@ export default function Register() {
 
   const PROFILS = [
     {
-      id: 'joueur_starter', emoji: '👟', label: t('regchoix_starter_titre', lang), desc: t('reginsc_starter_desc', lang),
+      id: 'joueur_starter', label: t('regchoix_starter_titre', lang), desc: t('reginsc_starter_desc', lang),
       gratuit: true, color: colors.text.muted,
       features: [t('reginsc_feat_starter_1', lang), t('reginsc_feat_starter_2', lang), t('reginsc_feat_starter_3', lang), t('reginsc_feat_starter_4', lang)],
     },
     {
-      id: 'joueur_pro', emoji: '⚽', label: t('regchoix_pro_titre', lang), desc: t('reginsc_pro_desc', lang),
+      id: 'joueur_pro', label: t('regchoix_pro_titre', lang), desc: t('reginsc_pro_desc', lang),
       color: colors.accent.green, badge: 'Dès 10€/mois',
       stripeMensuel: STRIPE_LINKS.starter, stripeAnnuel: STRIPE_LINKS.pro,
       features: [t('reginsc_feat_pro_1', lang), t('reginsc_feat_pro_2', lang), t('reginsc_feat_pro_3', lang), t('reginsc_feat_pro_4', lang), t('reginsc_feat_pro_5', lang)],
     },
     {
-      id: 'educateur', emoji: '🎓', label: t('regchoix_educateur_titre', lang), desc: t('reginsc_educateur_desc', lang),
+      id: 'educateur', label: t('regchoix_educateur_titre', lang), desc: t('reginsc_educateur_desc', lang),
       color: colors.accent.blue, badge: 'Dès 10€/mois',
       stripeMensuel: STRIPE_LINKS_EDU.edu_mensuel, stripeAnnuel: STRIPE_LINKS_EDU.edu_annuel,
       features: [t('reginsc_feat_edu_1', lang), t('reginsc_feat_edu_2', lang), t('reginsc_feat_edu_3', lang), t('reginsc_feat_edu_4', lang), t('reginsc_feat_edu_5', lang)],
     },
     {
-      id: 'scout', emoji: '🔍', label: t('regchoix_scout_titre', lang), desc: t('reginsc_scout_desc', lang),
+      id: 'scout', label: t('regchoix_scout_titre', lang), desc: t('reginsc_scout_desc', lang),
       color: colors.accent.orange, badge: 'Dès 10€/mois',
       stripeMensuel: STRIPE_LINKS_RECRUTEUR.mensuel, stripeAnnuel: STRIPE_LINKS_RECRUTEUR.annuel,
       features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
     },
     {
-      id: 'club', emoji: '🏟️', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
+      id: 'club', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
       color: colors.accent.purpleLight, badge: t('regchoix_sur_devis', lang), contact: true,
       features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
     },
@@ -141,8 +141,6 @@ export default function Register() {
           onMouseEnter={e => { e.currentTarget.style.borderColor = p.color; e.currentTarget.style.background = p.color + '08' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = colors.background.raised; e.currentTarget.style.background = colors.background.surface }}>
 
-          <span style={{ fontSize: '26px', flexShrink: 0 }}>{p.emoji}</span>
-
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
               <span style={{ fontWeight: 800, fontSize: '14px' }}>{p.label}</span>
@@ -201,7 +199,7 @@ export default function Register() {
           <div style={{ width: '100%', maxWidth: '480px' }}>
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
               <div className="register-mobile-logo" style={{ display: 'none', fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', marginBottom: '8px' }}>
-                ⚽ <span style={{ color: colors.accent.green }}>Digital</span>Football
+                <span style={{ color: colors.accent.green }}>Digital</span>Football
               </div>
               <p style={{ fontSize: '13px', color: colors.text.disabled, margin: 0 }}>{t('reginsc_quel_profil', lang)}</p>
             </div>
@@ -231,7 +229,7 @@ export default function Register() {
 
       <div style={{ marginBottom: '40px', textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
         <p style={{ fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', margin: 0 }}>
-          ⚽ <span style={{ color: colors.accent.green }}>Digital</span>Football
+          <span style={{ color: colors.accent.green }}>Digital</span>Football
         </p>
         <p style={{ fontSize: '12px', color: colors.text.disabled, margin: '4px 0 0' }}>
           {`${t('reginsc_inscription_prefix', lang)} ${profilChoisi?.label}`}
@@ -247,7 +245,6 @@ export default function Register() {
             border: `1px solid ${profilChoisi.color}30`,
             borderRadius: '12px', padding: '12px 16px', marginBottom: '24px',
           }}>
-            <span style={{ fontSize: '22px' }}>{profilChoisi.emoji}</span>
             <div style={{ flex: 1 }}>
               <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, color: profilChoisi.color }}>{profilChoisi.label}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>

@@ -5,7 +5,7 @@ import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors } from '../tokens'
 
-const PILLS = ['⚽ 500+ joueurs', '🏟️ 50+ clubs', '🔍 Scouts actifs']
+const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
 function Login() {
   const navigate = useNavigate()

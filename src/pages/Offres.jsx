@@ -29,7 +29,7 @@ const recommandeStyle = (color) => ({ position: 'relative', boxShadow: `0 0 40px
 function BadgeRecommande({ color }) {
   return (
     <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: color, color: colors.black, fontSize: '11px', fontWeight: 800, padding: '4px 14px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
-      ⭐ Recommandé
+      Recommandé
     </div>
   )
 }
@@ -41,17 +41,14 @@ function Feature({ children }) {
 // Une seule card à la fois (mensuelle ou annuelle selon `cycle`, piloté par le
 // toggle global de la page) — avant, les deux étaient affichées côte à côte
 // en permanence.
-function OffrePro({ emoji, titre, color, features, profilId, cycle }) {
+function OffrePro({ titre, color, features, profilId, cycle }) {
   const navigate = useNavigate()
   const isAnnuel = cycle === 'annuel'
   return (
     <div style={{ maxWidth: '340px', margin: '0 auto' }}>
       <div style={{ ...st.card(color, true), ...(isAnnuel ? recommandeStyle(color) : {}) }}>
         {isAnnuel && <BadgeRecommande color={color} />}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <span style={{ fontSize: '24px' }}>{emoji}</span>
-          <h3 style={{ fontSize: '19px', fontWeight: 800, margin: 0 }}>{titre}</h3>
-        </div>
+        <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>{titre}</h3>
         {isAnnuel ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px' }}>
@@ -139,7 +136,6 @@ function FormulaireClub() {
   if (envoye) {
     return (
       <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-        <p style={{ fontSize: '32px', margin: '0 0 0.75rem' }}>✅</p>
         <p style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>Demande envoyée</p>
         <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Nous vous recontactons sous 24-48h.</p>
       </div>
@@ -265,7 +261,7 @@ export default function Offres() {
           <div style={st.eyebrow}>ÉDUCATEURS</div>
           <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
           <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques — tout au même endroit.</p>
-          <OffrePro emoji="🎓" titre="Éducateur" color={colors.accent.blue} profilId="educateur" cycle={cycle} features={[
+          <OffrePro titre="Éducateur" color={colors.accent.blue} profilId="educateur" cycle={cycle} features={[
             'Gestion de l\'effectif',
             'Suivi des présences',
             'Analyse joueurs',
@@ -285,7 +281,7 @@ export default function Offres() {
           <div style={st.eyebrow}>SCOUTS / RECRUTEURS</div>
           <h2 style={st.titre}>Trouve tes prochains talents</h2>
           <p style={st.sousTitre}>Recherche par profil, messagerie directe avec les joueurs et statistiques automatisées.</p>
-          <OffrePro emoji="🔍" titre="Scout / Recruteur" color={colors.accent.orange} profilId="scout" cycle={cycle} features={[
+          <OffrePro titre="Scout / Recruteur" color={colors.accent.orange} profilId="scout" cycle={cycle} features={[
             'Accès à la base de joueurs',
             'Trouver des joueurs par profil (poste, niveau, région…)',
             'Messagerie directe avec les joueurs',
