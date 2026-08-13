@@ -64,6 +64,33 @@ function boardEstRempli(board) {
   return (board?.etapes || []).some(e => (e.joueurs || []).length > 0 || e.ballon)
 }
 
+// Filet de sécurité : les colonnes jsonb (animation_avec_ballon, cpa_*,
+// tireurs) doivent revenir de Supabase comme de vrais tableaux JS, mais si
+// une ligne a été insérée autrement (import manuel, ancien format...) la
+// valeur peut arriver en string JSON — un .filter() dessus plante sinon.
+const parseListe = (val) => {
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string') {
+    try { const p = JSON.parse(val); return Array.isArray(p) ? p : [] } catch { return [] }
+  }
+  return []
+}
+
+// Normalise les 5 champs liste d'une fiche brute renvoyée par Supabase —
+// appliqué une seule fois à la source (charger/sauvegarder) pour que tout
+// le reste du composant (editer, contenuFiche...) puisse faire confiance
+// à ces champs sans reparser à chaque lecture.
+function normaliserFiche(f) {
+  return {
+    ...f,
+    animation_avec_ballon: parseListe(f.animation_avec_ballon),
+    animation_sans_ballon: parseListe(f.animation_sans_ballon),
+    cpa_offensifs: parseListe(f.cpa_offensifs),
+    cpa_defensifs: parseListe(f.cpa_defensifs),
+    tireurs: parseListe(f.tireurs),
+  }
+}
+
 // Portail vers document.body (même mécanisme que FicheSeancePrint plus haut
 // dans DashboardEducateur.jsx) : #fiche-print est déjà utilisé et stylé pour
 // l'impression des fiches de séance (index.css, fond blanc/texte noir,
@@ -93,7 +120,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       return
     }
     setTableMissing(false)
-    setFiches(data || [])
+    setFiches((data || []).map(normaliserFiche))
   }
 
   useEffect(() => { if (userId) charger() }, [userId])
@@ -153,7 +180,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       : await supabase.from('causeries').insert(payload).select().single()
     setSaving(false)
     if (res.error) { alert('Erreur : ' + res.error.message); return }
-    setFicheCourante(res.data)
+    setFicheCourante(normaliserFiche(res.data))
     await charger()
     setVue('fiche')
   }
