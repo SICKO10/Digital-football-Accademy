@@ -120,6 +120,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [reclamingId, setReclamingId] = useState(null)
   const [semaineOffset, setSemaineOffset] = useState(0) // 0 = semaine courante, -1 = précédente, +1 = suivante
   const [exceptions, setExceptions] = useState([]) // planning_terrains_exceptions de la semaine affichée
+  const [matchsSemaine, setMatchsSemaine] = useState([]) // matchs_equipe de toutes les catégories du club, semaine affichée — informatif (pas de terrain_id en base, donc pas assignable à un créneau précis)
 
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
@@ -172,6 +173,19 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     setExceptions(data || [])
   }
 
+  // Matchs de toutes les catégories affiliées au club (pas seulement celle de
+  // l'éducateur qui consulte), pour la semaine affichée — matchs_equipe n'a
+  // pas de terrain_id, donc affichés comme simple repère informatif par jour
+  // plutôt que rattachés à un créneau/terrain précis.
+  const chargerMatchsSemaine = async (offset) => {
+    const ids = educateurs.map(e => e.educateur_id)
+    if (ids.length === 0) { setMatchsSemaine([]); return }
+    const dates = getDatesSemaine(offset)
+    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id')
+      .in('educateur_id', ids).gte('date', dates[0].dateStr).lte('date', dates[6].dateStr)
+    setMatchsSemaine(data || [])
+  }
+
   useEffect(() => {
     if (!clubId) return
     chargerTerrains()
@@ -196,6 +210,12 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     chargerExceptions(semaineOffset)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clubId, semaineOffset])
+
+  useEffect(() => {
+    if (!clubId) return
+    chargerMatchsSemaine(semaineOffset)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, semaineOffset, educateurs])
 
   // ── Configuration terrains (dirigeant) ──────────────────────────────────────
   const ajouterTerrain = async () => {
@@ -501,6 +521,10 @@ Règles :
   const creneauxDuJour = (jour) => planning
     .filter(c => c.terrain_id === terrainActif && c.jour === jour)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
+
+  const matchsDuJour = (dateStr) => matchsSemaine
+    .filter(m => m.date === dateStr)
+    .sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
 
   // Fusionne un créneau du gabarit avec son exception (s'il y en a une) pour
   // UNE date précise — vue "effective" utilisée uniquement pour l'affichage
@@ -878,12 +902,34 @@ Règles :
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                   {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
+                    const matchsJour = matchsDuJour(j.dateStr)
                     return (
                       <div key={j.val}>
                         <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px', textAlign: 'center' }}>{j.label.slice(0, 3)}</p>
                         <p style={{ fontSize: '11px', color: '#333', margin: '0 0 8px', textAlign: 'center' }}>{j.labelCourt}</p>
+                        {matchsJour.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                            {matchsJour.map(m => {
+                              const cat = categories.find(c => c.educateur_id === m.educateur_id)
+                              const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
+                              const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
+                              const couleur = cat?.couleur || couleurEquipe(nomEquipe, categories)
+                              return (
+                                <div key={m.id} title="Match d'une autre catégorie du club — non rattaché à un terrain précis" style={{ background: `${couleur}18`, border: `1px solid ${couleur}44`, borderRadius: '8px', padding: '5px 7px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: couleur, flexShrink: 0 }} />
+                                    <span style={{ color: couleur, fontWeight: 700, fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomEquipe || 'Équipe'}</span>
+                                  </div>
+                                  <p style={{ margin: '2px 0 0', color: '#888', fontSize: '9px' }}>
+                                    ⚽ {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
+                                  </p>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                         {liste.length === 0 ? (
-                          <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
+                          matchsJour.length === 0 && <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
                         ) : (
                           liste.map(c => renderCreneauCard(c, j.dateStr, liste))
                         )}
