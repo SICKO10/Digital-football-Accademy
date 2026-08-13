@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 
 const W = 520
 const H = 340
+const GRID_SIZE = 40 // espacement du quadrillage repère, en unités SVG
 
 const emptyEtape = () => ({ joueurs: [], ballon: null })
 const EMPTY_DATA = { etapes: [emptyEtape()] }
@@ -30,6 +31,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const ballon = etape.ballon || null
 
   const [mode, setMode] = useState('select')
+  const [showGrid, setShowGrid] = useState(false)
   const [drag, setDrag] = useState(null) // { type:'joueur'|'ballon', id }
   const [editId, setEditId] = useState(null)
   const [editVal, setEditVal] = useState('')
@@ -213,6 +215,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             <button style={tb(mode === 'add_nous', '#4ade80')} onClick={() => setMode('add_nous')}>🟢 +Nous</button>
             <button style={tb(mode === 'add_adv', '#f87171')} onClick={() => setMode('add_adv')}>🔴 +Adv</button>
             <button style={tb(mode === 'add_ball', '#fde68a')} onClick={() => setMode('add_ball')}>⚽ Ballon</button>
+            <button style={tb(showGrid)} onClick={() => setShowGrid(v => !v)} title="Quadrillage">⊞</button>
             <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
             <input type="number" min={1} max={15} value={serieN} onChange={e => setSerieN(e.target.value)}
               style={{ width: '36px', background: '#0d0d0d', border: '1px solid #1f2937', borderRadius: '6px', color: '#fff', fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
@@ -257,6 +260,18 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         <rect x={218} y={H - 10} width={W - 436} height={10} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
         <circle cx={W / 2} cy={H - 74} r={3} fill="#fff" fillOpacity={0.5} />
         <path d={`M 158 ${H - 108} A 88 88 0 0 0 ${W - 158} ${H - 108}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
+
+        {/* Quadrillage repère */}
+        {showGrid && (
+          <g pointerEvents="none">
+            {Array.from({ length: Math.floor(W / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(x => (
+              <line key={`gv-${x}`} x1={x} y1={0} x2={x} y2={H} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} strokeDasharray="4 4" />
+            ))}
+            {Array.from({ length: Math.floor(H / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(y => (
+              <line key={`gh-${y}`} x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} strokeDasharray="4 4" />
+            ))}
+          </g>
+        )}
 
         {/* Ballon */}
         {displayBallon && (
