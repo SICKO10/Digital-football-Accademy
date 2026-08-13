@@ -4634,20 +4634,20 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             {[0, 1, 2].filter(i => podiumActuel[i]).map((i) => {
                               const item = podiumActuel[i]
                               const heights = [130, 100, 80]
-                              const colors = [colors.accent.amber, '#9ca3af', '#cd7f32']
+                              const medalColors = [colors.accent.amber, '#9ca3af', '#cd7f32']
                               return (
                                 <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontSize: '20px' }}>{medals[i]}</span>
-                                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: `${colors[i]}20`, border: `2px solid ${colors[i]}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: `${medalColors[i]}20`, border: `2px solid ${medalColors[i]}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
                                     {item.joueur.prenom?.[0]}{item.joueur.nom?.[0]}
                                   </div>
                                   <div style={{ textAlign: 'center' }}>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom}</p>
                                     <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.nom}</p>
-                                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: colors[i] }}>{item.count}⭐</p>
+                                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: medalColors[i] }}>{item.count}⭐</p>
                                   </div>
-                                  <div style={{ width: '80px', height: `${heights[i]}px`, background: `${colors[i]}30`, border: `1px solid ${colors[i]}50`, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
-                                    <span style={{ fontWeight: 800, color: colors[i], fontSize: '18px' }}>{i === 0 ? '1er' : i === 1 ? '2ème' : '3ème'}</span>
+                                  <div style={{ width: '80px', height: `${heights[i]}px`, background: `${medalColors[i]}30`, border: `1px solid ${medalColors[i]}50`, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
+                                    <span style={{ fontWeight: 800, color: medalColors[i], fontSize: '18px' }}>{i === 0 ? '1er' : i === 1 ? '2ème' : '3ème'}</span>
                                   </div>
                                 </div>
                               )
