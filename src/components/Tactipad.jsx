@@ -426,7 +426,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // première mesure n'est pas encore arrivée ; useLayoutEffect (avant peinture)
   // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
   const canvasRef = useRef(null)
-  const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 800))
+  const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
   const height = Math.round(width * 10 / 16)
 
   useLayoutEffect(() => {
@@ -434,13 +434,42 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (!el) return
     const mettreAJourLargeur = () => {
       const disponible = el.getBoundingClientRect().width
-      if (disponible > 0) setWidth(Math.max(280, Math.min(Math.round(disponible), 800)))
+      if (disponible > 0) setWidth(Math.max(280, Math.min(Math.round(disponible), 1000)))
     }
     mettreAJourLargeur()
     const observer = new ResizeObserver(mettreAJourLargeur)
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+
+  // Konva stocke les positions en unités absolues (pixels du Stage au moment
+  // du placement), pas en coordonnées relatives 0-1 comme DISPOSITIFS. Si le
+  // conteneur se rétrécit après coup (le panneau joueurs apparaît dès qu'un
+  // joueur est posé, cf. plus bas), le ResizeObserver ci-dessus recalcule
+  // bien `width`/`height` et le Stage/l'image du terrain suivent — mais les
+  // joueurs/flèches/zones déjà posés restent à leurs anciennes coordonnées
+  // absolues, désormais fausses par rapport au terrain rétréci. On rescale
+  // donc tous les éléments (de l'étape active ET des autres étapes) au même
+  // ratio que le Stage à chaque changement de largeur, sans passer par
+  // l'historique undo (correction automatique, pas une action de l'utilisateur).
+  const prevDimsRef = useRef({ width, height })
+  useEffect(() => {
+    const { width: prevW, height: prevH } = prevDimsRef.current
+    if (prevW === width && prevH === height) return
+    if (prevW > 0 && prevH > 0) {
+      const rx = width / prevW
+      const ry = height / prevH
+      const rescaleEl = (el) => {
+        if (el.type === 'fleche') return { ...el, points: el.points.map((p, i) => (i % 2 === 0 ? p * rx : p * ry)) }
+        if (el.type === 'zone-rect') return { ...el, x: el.x * rx, y: el.y * ry, width: el.width * rx, height: el.height * ry }
+        if (el.type === 'zone-cercle') return { ...el, x: el.x * rx, y: el.y * ry, radius: el.radius * ((rx + ry) / 2) }
+        return { ...el, x: el.x * rx, y: el.y * ry }
+      }
+      setElements(prev => prev.map(rescaleEl))
+      setSequences(prev => prev.map(seq => seq.map(rescaleEl)))
+    }
+    prevDimsRef.current = { width, height }
+  }, [width, height])
 
   const svgString = useMemo(() => terrainSvgString({ sport, vue, fond, w: width, h: height }), [sport, vue, fond, width, height])
   const terrainImg = useSvgImage(svgString)
@@ -573,10 +602,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSelectedId(null)
   }
 
+  // Équipes A/D attaquent vers la droite (côté gauche du terrain), B/C vers
+  // la gauche (côté droit) — sans ce mirroring, B était le seul côté
+  // inversé et C se retrouvait superposée à A au lieu d'être en face de B.
   const appliquerDispositif = (cle) => {
     if (!cle || !DISPOSITIFS[cle]) return
+    const mirror = equipeActive === 'B' || equipeActive === 'C'
     const nouveauxJoueurs = DISPOSITIFS[cle].map(p => {
-      const px = equipeActive === 'B' ? 1 - p.x : p.x
+      const px = mirror ? 1 - p.x : p.x
       const ancien = elements.find(e => e.type === 'joueur' && e.equipe === equipeActive && String(e.numero) === String(p.num))
       return {
         id: uid(),
@@ -1239,7 +1272,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             padding de la modale...), que canvasRef mesure pour dimensionner
             le Stage Konva. overflow:hidden en filet de sécurité contre tout
             débordement d'1-2px (arrondi sub-pixel). */}
-        <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '800px', overflow: 'hidden' }}>
+        <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '1000px', overflow: 'hidden' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
               Clique le point d'arrivée de la flèche… <span style={{ color: '#666' }}>(Échap pour annuler)</span>
