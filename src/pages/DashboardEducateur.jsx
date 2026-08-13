@@ -11,7 +11,7 @@ import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSai
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import CauserieAvantMatch from '../components/CauserieAvantMatch'
-import DispoSemaine from '../components/DispoSemaine'
+import SondageSemaine from '../components/SondageSemaine'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -5373,7 +5373,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               ))}
             </div>
 
-            <DispoSemaine mode="educateur" educateurId={userId} accentColor={colors.accent.blue} />
+            <SondageSemaine mode="educateur" userId={userId} accentColor={colors.accent.blue} />
 
             {sousOngletEnt === 'prochaine' && (() => {
               const aujourdHui = new Date().toISOString().split('T')[0]

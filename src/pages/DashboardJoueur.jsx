@@ -6,7 +6,6 @@ import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
-import { sondageEstClos } from '../lib/sondage'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
@@ -20,7 +19,7 @@ import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
-import DispoSemaine from '../components/DispoSemaine'
+import SondageSemaine from '../components/SondageSemaine'
 
 // Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
 // dans DashboardEducateur.jsx/DashboardCoach.jsx/GestionSponsors.jsx. Défini au
@@ -403,7 +402,6 @@ function DashboardJoueur() {
   const [moisResultatsCompetition, setMoisResultatsCompetition] = useState(null)
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
-  const [pendingDispo, setPendingDispo] = useState({}) // { [eventId]: statut } — choix pas encore validé (avant clic sur "Valider")
   const [codeEquipe, setCodeEquipe] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
   const [codeError, setCodeError] = useState(null)
@@ -2557,102 +2555,17 @@ function DashboardJoueur() {
               </div>
             )}
 
-            {/* PROCHAINES ÉCHÉANCES (si affilié à un éducateur) */}
-            {widgetCalendrier.length > 0 && (() => {
-              const OPTIONS_SONDAGE = [
-                { val: 'present',  label: t('ent_present', lang),  emoji: '✅', color: colors.accent.green },
-                { val: 'absent',   label: t('ent_absent', lang),   emoji: '❌', color: colors.accent.red },
-                { val: 'blesse',   label: t('ent_blesse', lang),   emoji: '🤕', color: colors.accent.orange },
-                { val: 'malade',   label: t('ent_malade', lang),   emoji: '😷', color: colors.accent.purple },
-                { val: 'convoque', label: t('ent_convoque', lang), emoji: '🏆', color: colors.accent.blue },
-              ]
-              return (
-                <div style={{ marginBottom: '20px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px' }}>
-                    {t('jd_prochaines_echeances', lang)}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'stretch', gap: '16px' }}>
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '6px' }}>
-                    {widgetCalendrier.map(ev => {
-                      const date = new Date(ev.date + 'T12:00:00')
-                      const isToday = date.toDateString() === new Date().toDateString()
-                      const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
-                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })
-                      const isMatch = ev.type === 'match'
-                      const statut = dispoMap[ev.id] || null
-                      const sondageClos = sondageEstClos(ev)
-                      const accentColor = isMatch ? colors.accent.blue : colors.accent.green
-                      const optStatut = OPTIONS_SONDAGE.find(o => o.val === statut)
-                      const pending = pendingDispo[ev.id]
-                      const selected = pending !== undefined ? pending : statut
-                      const hasUnsavedChoice = pending !== undefined && pending !== statut
-
-                      return (
-                        <div key={ev.id} style={{
-                          flexShrink: 0, width: '150px', minHeight: '158px',
-                          background: isMatch ? 'linear-gradient(135deg, #0d1220 0%, #0f0f0f 100%)' : 'linear-gradient(135deg, #0d1a0d 0%, #0f0f0f 100%)',
-                          border: `1px solid ${isToday ? accentColor + '40' : accentColor + '20'}`,
-                          borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                            {isToday && (
-                              <span style={{ fontSize: '8px', fontWeight: 800, color: '#f0c030', background: '#f0c03015', border: '1px solid #f0c03030', padding: '1px 6px', borderRadius: '20px' }}>
-                                {t('aff_aujourdhui', lang)}
-                              </span>
-                            )}
-                            {sondageClos && <span style={{ fontSize: '10px' }} title={t('ent_sondage_clos', lang)}>🔒</span>}
-                          </div>
-                          <p style={{ fontWeight: 800, fontSize: '12px', margin: 0, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.titre}</p>
-                          <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</p>
-                          {ev.lieu && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {ev.lieu}</p>}
-
-                          {!sondageClos ? (
-                            <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '4px' }}>
-                                {OPTIONS_SONDAGE.map(opt => {
-                                  const isSelected = selected === opt.val
-                                  return (
-                                    <button key={opt.val} title={opt.label}
-                                      onClick={() => setPendingDispo(prev => ({ ...prev, [ev.id]: opt.val }))} disabled={savingDispo}
-                                      style={{ flexShrink: 0, width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: isSelected ? `${opt.color}20` : 'transparent', border: `1px solid ${isSelected ? opt.color + '60' : colors.border.default}`, color: isSelected ? opt.color : colors.text.faint, fontSize: '12px', lineHeight: 1, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      {opt.emoji}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                              {/* Sur mobile, le title="" (infobulle) ne s'affiche jamais — pas de hover
-                                  au tactile. On montre donc l'intitulé de l'option choisie dès le clic. */}
-                              {selected && (
-                                <p style={{ fontSize: '9px', fontWeight: 700, color: OPTIONS_SONDAGE.find(o => o.val === selected)?.color || colors.text.faint, margin: '0 0 6px' }}>
-                                  {OPTIONS_SONDAGE.find(o => o.val === selected)?.label}
-                                </p>
-                              )}
-                              {hasUnsavedChoice && (
-                                <button disabled={savingDispo}
-                                  onClick={async () => {
-                                    await repondreDisponibilite(ev.id, ev.type, pending)
-                                    setPendingDispo(prev => { const next = { ...prev }; delete next[ev.id]; return next })
-                                  }}
-                                  style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', padding: '5px 0', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                  {t('aff_valider', lang)}
-                                </button>
-                              )}
-                              {statut && !hasUnsavedChoice && <p style={{ fontSize: '9px', color: colors.accent.green, margin: 0 }}>✓ {t('aff_reponse_envoyee', lang)}</p>}
-                            </div>
-                          ) : statut && (
-                            <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: `1px solid ${accentColor}12` }}>
-                              <p style={{ fontSize: '10px', color: optStatut?.color, fontWeight: 700, margin: 0 }}>{optStatut?.emoji} {optStatut?.label}</p>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {tauxPresenceAccueil && <CerclePresence {...tauxPresenceAccueil} style={{ flexShrink: 0, alignSelf: 'stretch', height: 'auto' }} />}
-                  </div>
-                </div>
-              )
+            {/* SONDAGE DE PRÉSENCE — semaine par semaine (si affilié à un éducateur) */}
+            {(() => {
+              const aff = mesAffiliations.find(af => af.statut === 'accepte')
+              if (!aff) return null
+              return <SondageSemaine mode="joueur" userId={userId} educateurId={aff.educateur_id} accentColor={colors.accent.green} />
             })()}
+            {tauxPresenceAccueil && (
+              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                <CerclePresence {...tauxPresenceAccueil} />
+              </div>
+            )}
 
             {/* Grille 2 colonnes desktop (1fr / 340px) — 1 colonne pleine largeur sur mobile */}
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '20px', alignItems: 'start' }}>
@@ -2724,11 +2637,6 @@ function DashboardJoueur() {
                     </button>
                   )
                 })()}
-
-                {/* DISPONIBILITÉS DE LA SEMAINE */}
-                {mesAffiliations.find(af => af.statut === 'accepte') && (
-                  <DispoSemaine mode="joueur" userId={userId} accentColor={colors.accent.green} />
-                )}
 
                 {/* MESSAGES PREVIEW */}
                 {conversations.length > 0 && (
