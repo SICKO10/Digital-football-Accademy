@@ -7168,7 +7168,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         )}
 
         {activeSection === 'causerie' && (
-          <CauserieAvantMatch userId={userId} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} />
+          clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
+            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} />
+          ) : (
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ {t('nav_causerie', lang)}</h1>
+              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
+                {clubAffiliation?.statut === 'en_attente'
+                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
+                  : 'Rejoins un club (code club, dans ton profil) pour accéder à la causerie avant match.'}
+              </p>
+            </div>
+          )
         )}
 
         {activeSection === 'dirigeants' && (

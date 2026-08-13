@@ -73,7 +73,7 @@ function FicheCauseriePrint({ children }) {
   return createPortal(<div id="fiche-causerie-print">{children}</div>, document.body)
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom }) {
+export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
   const [ficheCourante, setFicheCourante] = useState(null)
@@ -116,10 +116,12 @@ export default function CauserieAvantMatch({ userId, equipeNom }) {
 
   const sauvegarder = async () => {
     if (!form.adversaire.trim()) { alert("Renseigne le nom de l'adversaire.") ; return }
+    if (!clubId) { alert("Impossible d'enregistrer : aucun club affilié trouvé sur ton profil."); return }
     setSaving(true)
     const numOuNull = (v) => (v === '' || v === null || v === undefined ? null : parseInt(v, 10))
     const payload = {
       educateur_id: userId,
+      club_id: clubId,
       equipe: equipeNom || null,
       adversaire: form.adversaire.trim(),
       date_match: form.date_match || null,
