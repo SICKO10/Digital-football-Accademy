@@ -414,6 +414,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [tableMissing, setTableMissing] = useState(false)
   const [currentSchemaId, setCurrentSchemaId] = useState(null)
 
+  // Dossiers pour organiser les schémas sauvegardés (cf. supabase_schemas_dossiers.sql)
+  const [dossiers, setDossiers] = useState([])
+  const [dossierActif, setDossierActif] = useState(null) // filtre affiché — null = tous
+  const [dossierSauvegarde, setDossierSauvegarde] = useState('') // dossier assigné au prochain enregistrement
+  const [newDossierNom, setNewDossierNom] = useState('')
+  const [showAddDossier, setShowAddDossier] = useState(false)
+
   const stageRef = useRef(null)
   const trRef = useRef(null)
   const nodeRefs = useRef({})
@@ -479,7 +486,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const terrainImg = useSvgImage(svgString)
 
   useEffect(() => {
-    if (!isMobile && !isModal) chargerSchemas()
+    if (!isMobile && !isModal) { chargerSchemas(); chargerDossiers() }
   }, [])
 
   // Effectif réel de l'éducateur, pour proposer ses vrais joueurs dans le
@@ -989,10 +996,33 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setLoadingSchemas(false)
   }
 
+  const chargerDossiers = async () => {
+    const { data, error } = await supabase.from('schemas_dossiers').select('*').eq('educateur_id', userId).order('ordre').order('created_at')
+    if (error) return // table pas encore créée (supabase_schemas_dossiers.sql) — les dossiers restent simplement indisponibles
+    setDossiers(data || [])
+  }
+
+  const ajouterDossier = async () => {
+    if (!newDossierNom.trim()) return
+    const { error } = await supabase.from('schemas_dossiers').insert({ educateur_id: userId, nom: newDossierNom.trim(), ordre: dossiers.length })
+    if (error) { alert('Erreur lors de la création du dossier : ' + error.message); return }
+    setNewDossierNom('')
+    setShowAddDossier(false)
+    await chargerDossiers()
+  }
+
+  const supprimerDossier = async (id) => {
+    if (!confirm('Supprimer ce dossier ? Les schémas qu\'il contient ne seront pas supprimés.')) return
+    const { error } = await supabase.from('schemas_dossiers').delete().eq('id', id).eq('educateur_id', userId)
+    if (error) { alert('Erreur lors de la suppression : ' + error.message); return }
+    if (dossierActif === id) setDossierActif(null)
+    await Promise.all([chargerDossiers(), chargerSchemas()])
+  }
+
   const sauvegarderSchema = async () => {
     const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
     const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences, equipesCouleurs }
-    const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema }
+    const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema, dossier_id: dossierSauvegarde || null }
     const idEnEdition = currentSchemaId
     const nomSnapshot = nomSchema
     // Optimistic : le champ nom se réinitialise tout de suite (schéma
@@ -1030,6 +1060,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (schema.equipesCouleurs) setEquipesCouleurs(schema.equipesCouleurs)
     setNomSchema(s.nom || '')
     setCurrentSchemaId(s.id)
+    setDossierSauvegarde(s.dossier_id || '')
   }
 
   const supprimerSchema = async (id) => {
@@ -1537,14 +1568,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
-                style={{ flex: 1, background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px' }} />
+                style={{ flex: 1, minWidth: '160px', background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px' }} />
+              {dossiers.length > 0 && (
+                <select value={dossierSauvegarde} onChange={e => setDossierSauvegarde(e.target.value)}
+                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '8px 10px', cursor: 'pointer' }}>
+                  <option value="">📁 Sans dossier</option>
+                  {dossiers.map(d => <option key={d.id} value={d.id}>🗂 {d.nom}</option>)}
+                </select>
+              )}
               <button onClick={sauvegarderSchema} disabled={savingSchema || tableMissing} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: tableMissing ? 0.4 : 1 }}>
                 {savingSchema ? '...' : currentSchemaId ? '💾 Mettre à jour' : '💾 Sauvegarder'}
               </button>
               {currentSchemaId && (
-                <button onClick={() => { setCurrentSchemaId(null); setNomSchema('') }} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
+                <button onClick={() => { setCurrentSchemaId(null); setNomSchema(''); setDossierSauvegarde('') }} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
               )}
             </div>
           )}
@@ -1605,32 +1643,79 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       </div>
 
       {/* Bibliothèque */}
-      {!isModal && (
-        <div style={{ marginTop: '2rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
-          {loadingSchemas ? (
-            <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-          ) : schemas.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '13px' }}>Aucun schéma sauvegardé pour l'instant.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {schemas.map(s => (
-                <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.nom || 'Sans titre'}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{s.partage ? ' · 🔗 partagé' : ''}</p>
+      {!isModal && (() => {
+        const schemasAffiches = dossierActif === null ? schemas : schemas.filter(s => s.dossier_id === dossierActif)
+        return (
+          <div style={{ marginTop: '2rem' }}>
+            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
+
+            {(dossiers.length > 0 || showAddDossier) && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
+                <button onClick={() => setDossierActif(null)}
+                  style={{ background: dossierActif === null ? '#4ade8020' : '#111', border: `1px solid ${dossierActif === null ? '#4ade80' : '#222'}`, color: dossierActif === null ? '#4ade80' : '#888', borderRadius: '20px', padding: '5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                  Tous ({schemas.length})
+                </button>
+                {dossiers.map(d => {
+                  const count = schemas.filter(s => s.dossier_id === d.id).length
+                  const actif = dossierActif === d.id
+                  return (
+                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <button onClick={() => setDossierActif(d.id)}
+                        style={{ background: actif ? `${d.couleur}20` : '#111', border: `1px solid ${actif ? d.couleur : '#222'}`, color: actif ? d.couleur : '#888', borderRadius: '20px 0 0 20px', padding: '5px 4px 5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                        🗂 {d.nom} ({count})
+                      </button>
+                      <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
+                        style={{ background: actif ? `${d.couleur}20` : '#111', border: `1px solid ${actif ? d.couleur : '#222'}`, borderLeft: 'none', color: '#666', borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>
+                    </div>
+                  )
+                })}
+                {showAddDossier ? (
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <input autoFocus value={newDossierNom} onChange={e => setNewDossierNom(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && ajouterDossier()}
+                      placeholder="Nom du dossier" style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '5px 10px', fontSize: '11px', width: '130px' }} />
+                    <button onClick={ajouterDossier} style={{ background: '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>OK</button>
+                    <button onClick={() => { setShowAddDossier(false); setNewDossierNom('') }} style={{ background: 'none', border: 'none', color: '#666', fontSize: '11px', cursor: 'pointer' }}>✕</button>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
-                    <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
-                    <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                ) : (
+                  <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: '1px dashed #333', borderRadius: '20px', color: '#666', fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>+ Dossier</button>
+                )}
+              </div>
+            )}
+            {dossiers.length === 0 && !showAddDossier && (
+              <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: '1px dashed #333', borderRadius: '20px', color: '#666', fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', marginBottom: '14px' }}>+ Créer un dossier</button>
+            )}
+
+            {loadingSchemas ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+            ) : schemasAffiches.length === 0 ? (
+              <p style={{ color: '#444', fontSize: '13px' }}>{schemas.length === 0 ? 'Aucun schéma sauvegardé pour l\'instant.' : 'Aucun schéma dans ce dossier.'}</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {schemasAffiches.map(s => {
+                  const dossier = dossiers.find(d => d.id === s.dossier_id)
+                  return (
+                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {dossier && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dossier.couleur, flexShrink: 0 }} />}
+                          {s.nom || 'Sans titre'}
+                        </p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
+                        <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
+                        <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Picker "Ajouter un joueur" — ouvert par l'outil 👤, positionné au clic ── */}
       {showPickerJoueur && (
