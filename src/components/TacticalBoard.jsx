@@ -32,6 +32,8 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
 
   const [mode, setMode] = useState('select')
   const [showGrid, setShowGrid] = useState(false)
+  const [zonesH, setZonesH] = useState(0) // 0 = désactivé, sinon nb de bandes horizontales
+  const [zonesV, setZonesV] = useState(0) // 0 = désactivé, sinon nb de colonnes verticales
   const [drag, setDrag] = useState(null) // { type:'joueur'|'ballon', id }
   const [editId, setEditId] = useState(null)
   const [editVal, setEditVal] = useState('')
@@ -216,6 +218,21 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             <button style={tb(mode === 'add_adv', '#f87171')} onClick={() => setMode('add_adv')}>🔴 +Adv</button>
             <button style={tb(mode === 'add_ball', '#fde68a')} onClick={() => setMode('add_ball')}>⚽ Ballon</button>
             <button style={tb(showGrid)} onClick={() => setShowGrid(v => !v)} title="Quadrillage">⊞</button>
+            <select value={zonesH} onChange={e => setZonesH(Number(e.target.value))} title="Zones horizontales"
+              style={{ background: zonesH > 0 ? '#4ade8020' : '#0d0d0d', border: `1px solid ${zonesH > 0 ? '#4ade80' : '#1f2937'}`, color: zonesH > 0 ? '#4ade80' : '#9ca3af', borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <option value={0}>⬛ Zones H</option>
+              <option value={2}>2 zones</option>
+              <option value={3}>3 zones</option>
+              <option value={4}>4 zones</option>
+              <option value={5}>5 zones</option>
+            </select>
+            <select value={zonesV} onChange={e => setZonesV(Number(e.target.value))} title="Colonnes verticales"
+              style={{ background: zonesV > 0 ? '#4ade8020' : '#0d0d0d', border: `1px solid ${zonesV > 0 ? '#4ade80' : '#1f2937'}`, color: zonesV > 0 ? '#4ade80' : '#9ca3af', borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <option value={0}>⬛ Colonnes V</option>
+              <option value={2}>2 colonnes</option>
+              <option value={3}>3 colonnes</option>
+              <option value={4}>4 colonnes</option>
+            </select>
             <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
             <input type="number" min={1} max={15} value={serieN} onChange={e => setSerieN(e.target.value)}
               style={{ width: '36px', background: '#0d0d0d', border: '1px solid #1f2937', borderRadius: '6px', color: '#fff', fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
@@ -269,6 +286,32 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             ))}
             {Array.from({ length: Math.floor(H / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(y => (
               <line key={`gh-${y}`} x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} strokeDasharray="4 4" />
+            ))}
+          </g>
+        )}
+
+        {/* Zones horizontales */}
+        {zonesH > 0 && (
+          <g pointerEvents="none">
+            {Array.from({ length: zonesH - 1 }, (_, i) => {
+              const y = H * ((i + 1) / zonesH)
+              return <line key={`zh-${i}`} x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.55)" strokeWidth={2} strokeDasharray="8 5" />
+            })}
+            {zonesH === 3 && ['Zone défensive', 'Zone médiane', 'Zone offensive'].map((label, i) => (
+              <text key={`zlh-${i}`} x={W - 8} y={H * ((i + 0.5) / zonesH)} textAnchor="end" dominantBaseline="middle" fill="rgba(255,255,255,0.3)" fontSize={11} fontStyle="italic">{label}</text>
+            ))}
+          </g>
+        )}
+
+        {/* Colonnes verticales */}
+        {zonesV > 0 && (
+          <g pointerEvents="none">
+            {Array.from({ length: zonesV - 1 }, (_, i) => {
+              const x = W * ((i + 1) / zonesV)
+              return <line key={`zv-${i}`} x1={x} y1={0} x2={x} y2={H} stroke="rgba(255,255,255,0.55)" strokeWidth={2} strokeDasharray="8 5" />
+            })}
+            {zonesV === 3 && ['Couloir G', 'Axe', 'Couloir D'].map((label, i) => (
+              <text key={`zlv-${i}`} x={W * ((i + 0.5) / zonesV)} y={12} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize={10} fontStyle="italic">{label}</text>
             ))}
           </g>
         )}
