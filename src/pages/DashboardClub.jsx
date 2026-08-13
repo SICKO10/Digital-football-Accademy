@@ -52,14 +52,38 @@ const EQUIPES = ['A', 'B']
 const ROLES_STAFF = [
   { val: 'president', label: 'Président' },
   { val: 'directeur_sportif', label: 'Directeur sportif' },
+  { val: 'responsable_formation', label: 'Responsable Formation' },
+  { val: 'responsable_ecole_foot', label: 'Responsable École de Foot' },
+  { val: 'responsable_preformation', label: 'Responsable Préformation' },
+  { val: 'entraineur', label: 'Entraîneur' },
+  { val: 'educateur', label: 'Éducateur' },
   { val: 'marketing', label: 'Marketing' },
   { val: 'secretaire', label: 'Secrétaire' },
+  { val: 'tresorier', label: 'Trésorier' },
+  { val: 'responsable_communication', label: 'Responsable Communication' },
   { val: 'coach_adjoint', label: 'Coach adjoint' },
   { val: 'kine', label: 'Kinésithérapeute' },
   { val: 'intendant', label: 'Intendant' },
   { val: 'preparateur_physique', label: 'Préparateur physique' },
   { val: 'comptable', label: 'Comptable' },
 ]
+
+// Catégories d'équipes concernées par l'accès délégué par rôle (cf.
+// role_categories_access) — réutilise la liste réelle des catégories que le
+// club peut créer (src/lib/categories.js), pas une liste inventée : cocher
+// une catégorie qui ne peut jamais exister côté équipes serait inutile.
+const ACCES_CATEGORIES_DEFAUT = {
+  responsable_formation: ['U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Seniors'],
+  responsable_ecole_foot: ['U7', 'U8', 'U9', 'U10'],
+  responsable_preformation: ['U11', 'U12', 'U13', 'U14'],
+}
+// Rôles avec accès complet aux catégories par défaut (hors président, qui a
+// déjà tout et n'apparaît pas dans la matrice configurable).
+const ROLES_ACCES_COMPLET_DEFAUT = ['directeur_sportif', 'secretaire']
+// 'entraineur'/'educateur' sont volontairement absents de cette matrice : leur
+// périmètre (leur propre équipe) est déjà déterminé par l'affectation
+// educateur_id existante sur chaque catégorie, pas par cette liste.
+const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur']
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
 // Rôles de l'organigramme (annuaire de contacts) — texte libre, distinct de
@@ -115,6 +139,7 @@ const PERMISSION_SECTIONS = [
   { id: 'profil', label: 'Profil club' },
   { id: 'evenements', label: 'Événements & Projets' },
   { id: 'organigramme', label: 'Organigramme' },
+  { id: 'staff', label: 'Staff' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -131,6 +156,7 @@ const PERMISSION_DEFAULTS = {
   profil: ['president', 'marketing', 'secretaire'],
   evenements: [],
   organigramme: [],
+  staff: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -528,8 +554,12 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
 // Grille : colonnes = PERMISSION_SECTIONS, lignes = ROLES_STAFF (hors président,
 // qui a tout et n'apparaît pas ici). Édite une copie locale, ne touche la base
 // qu'au clic sur "Enregistrer" via onSave (upsert complet de la matrice).
-function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPrincipale = colors.accent.green }) {
+function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSave, onClose, couleurPrincipale = colors.accent.green }) {
   const rolesConfigurables = ROLES_STAFF.filter(r => r.val !== 'president')
+  // Sous-liste pour l'accès par catégorie : 'entraineur'/'educateur' en sont
+  // exclus (cf. ROLES_HORS_ACCES_CATEGORIES, leur périmètre vient de
+  // l'affectation educateur_id existante, pas de cette matrice).
+  const rolesCategorisables = rolesConfigurables.filter(r => !ROLES_HORS_ACCES_CATEGORIES.includes(r.val))
 
   const initMatrice = () => {
     const m = {}
@@ -555,6 +585,35 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
       if (cle === 'can_view' && !next.can_view) next.can_edit = false
       if (cle === 'can_edit' && next.can_edit) next.can_view = true
       return { ...prev, [role]: { ...prev[role], [section]: next } }
+    })
+  }
+
+  const initCatAccess = () => {
+    const m = {}
+    for (const role of rolesCategorisables) {
+      const row = roleCategoriesAccess.find(r => r.role === role.val)
+      if (row) {
+        m[role.val] = { acces_complet: row.acces_complet, categories: row.categories || [] }
+      } else {
+        m[role.val] = {
+          acces_complet: ROLES_ACCES_COMPLET_DEFAUT.includes(role.val),
+          categories: ACCES_CATEGORIES_DEFAUT[role.val] || [],
+        }
+      }
+    }
+    return m
+  }
+
+  const [catAccess, setCatAccess] = useState(initCatAccess)
+
+  const toggleAccesComplet = (role) => {
+    setCatAccess(prev => ({ ...prev, [role]: { ...prev[role], acces_complet: !prev[role].acces_complet } }))
+  }
+  const toggleCategorie = (role, categorie) => {
+    setCatAccess(prev => {
+      const cats = prev[role].categories
+      const next = cats.includes(categorie) ? cats.filter(c => c !== categorie) : [...cats, categorie]
+      return { ...prev, [role]: { ...prev[role], categories: next } }
     })
   }
 
@@ -605,8 +664,40 @@ function PermissionsModal({ rolePermissions, saving, onSave, onClose, couleurPri
           </table>
         </div>
 
+        <p style={{ margin: '24px 0 4px', fontWeight: 800, fontSize: '14px' }}>⚽ Accès par catégorie d'équipe</p>
+        <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.dim }}>
+          Pour les rôles sans accès complet, limite les catégories d'équipes visibles (ex : U15 à U20 pour un Responsable Formation).
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {rolesCategorisables.map(role => {
+            const cfg = catAccess[role.val]
+            return (
+              <div key={role.val} style={{ background: colors.background.raised, borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700 }}>{role.label}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.dim, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={cfg.acces_complet} onChange={() => toggleAccesComplet(role.val)} />
+                    Accès complet (toutes catégories)
+                  </label>
+                </div>
+                {!cfg.acces_complet && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                    {CATEGORIES_STANDARD.map(cat => (
+                      <button key={cat} onClick={() => toggleCategorie(role.val, cat)}
+                        style={cellBtn(cfg.categories.includes(cat), cat, colors.accent.green)}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => onSave(matrice)} disabled={saving}
+          <button onClick={() => onSave(matrice, catAccess)} disabled={saving}
             style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Enregistrement...' : '✓ Enregistrer'}
           </button>
@@ -752,6 +843,7 @@ export default function DashboardClub() {
 
   // Permissions par rôle (section Staff → "Gérer les permissions")
   const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
+  const [roleCategoriesAccess, setRoleCategoriesAccess] = useState([]) // [{ role, categories, acces_complet }]
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
   const [savingPermissions, setSavingPermissions] = useState(false)
 
@@ -895,7 +987,7 @@ export default function DashboardClub() {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
     const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme']
-    const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection)
+    const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection) || canViewSection('staff')
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
       setActiveTab(administratifSections.find(canViewSection) || 'sponsors')
@@ -906,7 +998,7 @@ export default function DashboardClub() {
       const sportifOnglets = ['categories', 'classements', 'recrutement', 'educateurs'].filter(() => canViewSection('sportif')).concat(canViewSection('terrains') ? ['terrains'] : [])
       if (!sportifOnglets.includes(activeTab)) setActiveTab(sportifOnglets[0])
     } else if (activeCategorie === 'administratif' && administratifVisible) {
-      const adminOnglets = administratifSections.filter(canViewSection).concat(monRole === 'president' ? ['staff'] : [])
+      const adminOnglets = administratifSections.filter(canViewSection).concat(canViewSection('staff') ? ['staff'] : [])
       if (!adminOnglets.includes(activeTab)) setActiveTab(adminOnglets[0])
     }
   }, [monRole, rolePermissions])
@@ -972,7 +1064,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId)])
     setLoading(false)
   }
 
@@ -1233,9 +1325,18 @@ export default function DashboardClub() {
     setRolePermissions(data || [])
   }
 
-  // Sauvegarde toute la matrice en une fois (upsert ligne par ligne, clé (club_id, role, section)).
+  const chargerRoleCategoriesAccess = async (uid) => {
+    const { data } = await supabase
+      .from('role_categories_access')
+      .select('role, categories, acces_complet')
+      .eq('club_id', uid)
+    setRoleCategoriesAccess(data || [])
+  }
+
+  // Sauvegarde toute la matrice en une fois (upsert ligne par ligne, clé (club_id, role, section)),
+  // et si fourni, la config d'accès par catégorie (clé (club_id, role)) en une seconde passe.
   // Le président n'a jamais de ligne : il garde tout, en dur, quoi qu'il arrive (cf. canViewSection).
-  const sauvegarderPermissions = async (matrice) => {
+  const sauvegarderPermissions = async (matrice, catMatrice) => {
     if (!clubId) return
     const rows = []
     for (const role of Object.keys(matrice)) {
@@ -1244,18 +1345,27 @@ export default function DashboardClub() {
         rows.push({ club_id: clubId, role, section, can_view: matrice[role][section].can_view, can_edit: matrice[role][section].can_edit })
       }
     }
-    // Optimistic : on connaît déjà exactement ce que sera la matrice, donc la
+    const catRows = catMatrice ? Object.keys(catMatrice).map(role => ({
+      club_id: clubId, role, acces_complet: catMatrice[role].acces_complet, categories: catMatrice[role].categories,
+    })) : []
+    // Optimistic : on connaît déjà exactement ce que seront les matrices, donc la
     // modale se ferme et l'état local se met à jour tout de suite, sans
     // attendre la réponse Supabase.
     const avant = rolePermissions
+    const avantCat = roleCategoriesAccess
     setRolePermissions(rows)
+    if (catMatrice) setRoleCategoriesAccess(catRows)
     setShowPermissionsModal(false)
     setSavingPermissions(true)
-    const { error } = await supabase.from('role_permissions').upsert(rows, { onConflict: 'club_id,role,section' })
+    const [{ error }, { error: errorCat }] = await Promise.all([
+      supabase.from('role_permissions').upsert(rows, { onConflict: 'club_id,role,section' }),
+      catMatrice ? supabase.from('role_categories_access').upsert(catRows, { onConflict: 'club_id,role' }) : Promise.resolve({ error: null }),
+    ])
     setSavingPermissions(false)
-    if (error) {
-      alert('Erreur : ' + error.message)
+    if (error || errorCat) {
+      alert('Erreur : ' + (error?.message || errorCat?.message))
       setRolePermissions(avant)
+      setRoleCategoriesAccess(avantCat)
       setShowPermissionsModal(true)
     }
   }
@@ -1973,7 +2083,7 @@ Règles :
   })()
 
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection)
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection) || canViewSection('staff')
 
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
@@ -2002,7 +2112,7 @@ Règles :
     ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
     ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
     ...(canViewSection('organigramme') ? [{ id: 'organigramme', label: iconLabel(IcoCarteBadge, t('club_tab_organigramme', lang)) }] : []),
-    ...(monRole === 'president' ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
+    ...(canViewSection('staff') ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
   ] : []
 
   const clubOnboardingSteps = [
@@ -3468,17 +3578,26 @@ Règles :
           </div>
         )}
 
-        {/* ── STAFF (président uniquement) ── */}
-        {activeTab === 'staff' && monRole === 'president' && (
+        {/* ── STAFF (visible/éditable selon la matrice de permissions ; "Gérer les permissions" reste réservé au président) ── */}
+        {activeTab === 'staff' && canViewSection('staff') && (() => {
+          // Un rôle délégué (can_edit sur 'staff', pas le propriétaire réel du compte club)
+          // ne doit jamais pouvoir s'assigner ou assigner à quelqu'un d'autre le rôle
+          // 'président', qui donnerait un accès total non restreint.
+          const rolesAssignables = monRole === 'president' ? ROLES_STAFF : ROLES_STAFF.filter(r => r.val !== 'president')
+          return (
           <div style={{ maxWidth: '700px' }}>
-            <div style={{ ...st.card, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔐 Permissions par rôle</p>
-                <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+            {monRole === 'president' && (
+              <div style={{ ...st.card, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔐 Permissions par rôle</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+                </div>
+                <button onClick={() => setShowPermissionsModal(true)} style={st.btnSolid}>Gérer les permissions</button>
               </div>
-              <button onClick={() => setShowPermissionsModal(true)} style={st.btnSolid}>Gérer les permissions</button>
-            </div>
+            )}
 
+            {canEditSection('staff') && (
+            <>
             <div style={{ ...st.card, marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 {t('club_ajouter_membre_staff', lang)}</p>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
@@ -3489,7 +3608,7 @@ Règles :
                   onChange={e => rechercherUtilisateurs(e.target.value)}
                 />
                 <select style={{ ...st.input, width: 'auto' }} value={roleAAssigner} onChange={e => setRoleAAssigner(e.target.value)}>
-                  {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                  {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
                 </select>
               </div>
               {resultatsStaff.length > 0 && (
@@ -3537,6 +3656,8 @@ Règles :
                 </p>
               )}
             </div>
+            </>
+            )}
 
             <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: couleurPrincipale }}>👥 {t('club_membres_staff_titre', lang)} ({staffMembers.length + 1})</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -3558,22 +3679,30 @@ Règles :
                     <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{m.membre?.prenom} {m.membre?.nom}</p>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <select style={{ ...st.input, width: 'auto' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
-                      {ROLES_STAFF.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
-                    </select>
-                    <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('club_retirer', lang)}</button>
+                    {canEditSection('staff') ? (
+                      <>
+                        <select style={{ ...st.input, width: 'auto' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
+                          {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                        </select>
+                        <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('club_retirer', lang)}</button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: colors.text.dim }}>{ROLE_STAFF_LABEL(m.role)}</span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Modal gestion des permissions par rôle */}
       {showPermissionsModal && (
         <PermissionsModal
           rolePermissions={rolePermissions}
+          roleCategoriesAccess={roleCategoriesAccess}
           saving={savingPermissions}
           onSave={sauvegarderPermissions}
           onClose={() => setShowPermissionsModal(false)}
