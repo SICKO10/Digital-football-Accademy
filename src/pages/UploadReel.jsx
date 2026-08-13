@@ -28,10 +28,25 @@ export default function UploadReel() {
 
   const platform = lien ? detectPlatform(lien) : null
 
-  const handleFileChange = (e) => {
+  const lireDureeVideo = (f) => new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    const url = URL.createObjectURL(f)
+    video.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(video.duration) }
+    video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('lecture impossible')) }
+    video.src = url
+  })
+
+  const handleFileChange = async (e) => {
     const f = e.target.files[0]
     if (!f) return
     if (f.size > 200 * 1024 * 1024) { setError(t('upload_fichier_trop_volumineux_200', lang)); return }
+    try {
+      const duree = await lireDureeVideo(f)
+      if (duree > 90) { setError(t('upload_video_trop_longue_90s', lang)); e.target.value = ''; return }
+    } catch {
+      setError(t('upload_lecture_video_impossible', lang)); e.target.value = ''; return
+    }
     setError('')
     setFile(f)
   }

@@ -20,6 +20,7 @@ import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
+import DispoSemaine from '../components/DispoSemaine'
 
 // Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
 // dans DashboardEducateur.jsx/DashboardCoach.jsx/GestionSponsors.jsx. Défini au
@@ -2723,6 +2724,11 @@ function DashboardJoueur() {
                     </button>
                   )
                 })()}
+
+                {/* DISPONIBILITÉS DE LA SEMAINE */}
+                {mesAffiliations.find(af => af.statut === 'accepte') && (
+                  <DispoSemaine mode="joueur" userId={userId} accentColor={colors.accent.green} />
+                )}
 
                 {/* MESSAGES PREVIEW */}
                 {conversations.length > 0 && (
