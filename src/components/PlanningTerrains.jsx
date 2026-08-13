@@ -94,6 +94,24 @@ const getDatesSemaine = (offsetSemaines = 0) => {
 // chevauche pas celui qui commence à 18:00).
 const seChevauchent = (a, b) => a.heure_debut < b.heure_fin && b.heure_debut < a.heure_fin
 
+// Durée estimée d'un match pour la détection de conflit (matchs_equipe n'a
+// pas d'heure de fin en base, contrairement aux créneaux) — 2h, valeur
+// raisonnable pour un match + échauffement, jamais persistée.
+const DUREE_MATCH_MIN = 120
+const heureFinMatch = (heureDebut) => {
+  if (!heureDebut) return null
+  const [h, m] = heureDebut.split(':').map(Number)
+  const total = h * 60 + m + DUREE_MATCH_MIN
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+// Jour de la semaine (lundi..dimanche, cf. JOURS) pour une date donnée — sert
+// à comparer un match (daté) aux créneaux récurrents (jour de semaine).
+const jourDepuisDate = (dateStr) => {
+  const jsDay = new Date(`${dateStr}T12:00:00`).getDay() // 0=dimanche..6=samedi
+  return JOURS[(jsDay + 6) % 7].val
+}
+
 const st = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -173,16 +191,18 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     setExceptions(data || [])
   }
 
-  // Matchs de toutes les catégories affiliées au club (pas seulement celle de
-  // l'éducateur qui consulte), pour la semaine affichée — matchs_equipe n'a
-  // pas de terrain_id, donc affichés comme simple repère informatif par jour
-  // plutôt que rattachés à un créneau/terrain précis.
+  // Matchs À DOMICILE de toutes les catégories affiliées au club (pas
+  // seulement celle de l'éducateur qui consulte), pour la semaine affichée.
+  // Un match à l'extérieur ne se joue pas sur un terrain du club, donc n'a
+  // rien à faire dans ce planning (domicile=false exclu à la source).
+  // Rattachés à un terrain via terrain_id quand renseigné ; sinon affichés à
+  // part dans "Matchs sans terrain assigné" (cf. matchsSansTerrainSemaine).
   const chargerMatchsSemaine = async (offset) => {
     const ids = educateurs.map(e => e.educateur_id)
     if (ids.length === 0) { setMatchsSemaine([]); return }
     const dates = getDatesSemaine(offset)
-    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id')
-      .in('educateur_id', ids).gte('date', dates[0].dateStr).lte('date', dates[6].dateStr)
+    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id')
+      .in('educateur_id', ids).eq('domicile', true).gte('date', dates[0].dateStr).lte('date', dates[6].dateStr)
     setMatchsSemaine(data || [])
   }
 
@@ -522,9 +542,15 @@ Règles :
     .filter(c => c.terrain_id === terrainActif && c.jour === jour)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
 
+  // Seulement les matchs affectés au terrain actif — un match sans terrain
+  // n'apparaît plus ici (cf. matchsSansTerrainSemaine, liste à part).
   const matchsDuJour = (dateStr) => matchsSemaine
-    .filter(m => m.date === dateStr)
+    .filter(m => m.date === dateStr && m.terrain_id === terrainActif)
     .sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
+
+  const matchsSansTerrainSemaine = matchsSemaine
+    .filter(m => !m.terrain_id)
+    .sort((a, b) => a.date === b.date ? (a.heure || '').localeCompare(b.heure || '') : a.date.localeCompare(b.date))
 
   // Fusionne un créneau du gabarit avec son exception (s'il y en a une) pour
   // UNE date précise — vue "effective" utilisée uniquement pour l'affichage
@@ -537,6 +563,59 @@ Règles :
     }
     // remplacement : une autre équipe occupe ce créneau, ce jour-là uniquement
     return { ...c, exception, libere: false, estRemplacement: true, equipe: exception.equipe_remplacante || c.equipe, educateur_id: exception.educateur_id }
+  }
+
+  // Conflits d'un match sur un terrain donné, à sa date/heure — contre les
+  // créneaux récurrents (gabarit, exceptions incluses) ET les autres matchs
+  // du même terrain/jour. Règle métier : un terrain "foot à 11" est occupé en
+  // entier par un match (toute zone confondue, y compris demi-A/demi-B —
+  // un vrai match prend toute la largeur même si l'entraînement s'y partage
+  // habituellement en demi-terrains) ; les autres formats (foot à 8, 5 contre
+  // 5) suivent la même règle de partage par zone que les créneaux entre eux
+  // (le match, qui n'a pas de zone, est traité comme "plein").
+  const conflitsMatch = (match, terrainId) => {
+    if (!terrainId || !match.heure) return []
+    const terrain = terrains.find(t => t.id === terrainId)
+    const ignorerZone = terrain?.type === 'foot_11'
+    const jour = jourDepuisDate(match.date)
+    const horaireMatch = { heure_debut: match.heure, heure_fin: heureFinMatch(match.heure) }
+
+    const conflitsCreneaux = planning
+      .filter(c => c.terrain_id === terrainId && c.jour === jour)
+      .map(c => creneauPourDate(c, match.date))
+      .filter(c => !c.libere && (ignorerZone || (c.zone || 'plein') === 'plein') && seChevauchent(horaireMatch, c))
+
+    const conflitsAutresMatchs = matchsSemaine
+      .filter(m => m.id !== match.id && m.terrain_id === terrainId && m.date === match.date && m.heure)
+      .filter(m => seChevauchent(horaireMatch, { heure_debut: m.heure, heure_fin: heureFinMatch(m.heure) }))
+
+    return [...conflitsCreneaux, ...conflitsAutresMatchs]
+  }
+
+  const [assigningMatchId, setAssigningMatchId] = useState(null)
+
+  // Passe par la RPC affecter_terrain_match plutôt qu'un .update() direct :
+  // matchs_equipe n'autorise en écriture que l'éducateur propriétaire du match
+  // (cf. policy "educateur_matchs"), pas le club — la RPC (security definer)
+  // vérifie elle-même que l'appelant a le droit ('terrains' can_edit ou
+  // président) avant de ne toucher qu'à terrain_id.
+  const assignerTerrainMatch = async (match, terrainId) => {
+    if (!terrainId) {
+      const { error } = await supabase.rpc('affecter_terrain_match', { p_match_id: match.id, p_terrain_id: null })
+      if (error) { alert('Erreur : ' + error.message); return }
+      setMatchsSemaine(prev => prev.map(m => m.id === match.id ? { ...m, terrain_id: null } : m))
+      return
+    }
+    const conflits = conflitsMatch(match, terrainId)
+    if (conflits.length > 0) {
+      const noms = conflits.map(c => c.equipe || c.adversaire || 'créneau').join(', ')
+      if (!window.confirm(`⚠️ Ce terrain est déjà occupé à cet horaire par : ${noms}.\n\nAffecter quand même ?`)) return
+    }
+    setAssigningMatchId(match.id)
+    const { error } = await supabase.rpc('affecter_terrain_match', { p_match_id: match.id, p_terrain_id: terrainId })
+    setAssigningMatchId(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setMatchsSemaine(prev => prev.map(m => m.id === match.id ? { ...m, terrain_id: terrainId } : m))
   }
 
   // conflit = un autre créneau du même terrain/jour, sur la MÊME zone, à un
@@ -896,6 +975,34 @@ Règles :
                 )}
               </div>
 
+              {matchsSansTerrainSemaine.length > 0 && (
+                <div style={{ background: '#1a1505', border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné cette semaine</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {matchsSansTerrainSemaine.map(m => {
+                      const cat = categories.find(c => c.educateur_id === m.educateur_id)
+                      const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
+                      const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
+                      return (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px' }}>
+                          <span style={{ color: '#ccc' }}>
+                            {nomEquipe || 'Équipe'} · {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'} · {new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.heure ? ` ${m.heure.slice(0, 5)}` : ''}
+                          </span>
+                          <select
+                            disabled={assigningMatchId === m.id}
+                            value=""
+                            onChange={e => assignerTerrainMatch(m, e.target.value)}
+                            style={{ ...st.input, width: 'auto', fontSize: '11px', padding: '4px 8px' }}>
+                            <option value="" disabled>+ Affecter un terrain</option>
+                            {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
+                          </select>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {loadingPlanning ? (
                 <p style={{ color: '#444', fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
@@ -914,8 +1021,9 @@ Règles :
                               const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
                               const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
                               const couleur = cat?.couleur || couleurEquipe(nomEquipe, categories)
+                              const conflits = conflitsMatch(m, terrainActif)
                               return (
-                                <div key={m.id} title="Match d'une autre catégorie du club — non rattaché à un terrain précis" style={{ background: `${couleur}18`, border: `1px solid ${couleur}44`, borderRadius: '8px', padding: '5px 7px' }}>
+                                <div key={m.id} style={{ background: `${couleur}18`, border: `1px solid ${couleur}44`, borderRadius: '8px', padding: '5px 7px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: couleur, flexShrink: 0 }} />
                                     <span style={{ color: couleur, fontWeight: 700, fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomEquipe || 'Équipe'}</span>
@@ -923,6 +1031,9 @@ Règles :
                                   <p style={{ margin: '2px 0 0', color: '#888', fontSize: '9px' }}>
                                     ⚽ {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
                                   </p>
+                                  {conflits.length > 0 && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '9px', color: '#ef4444', fontWeight: 600 }}>⚠️ Terrain déjà occupé à cet horaire</p>
+                                  )}
                                 </div>
                               )
                             })}

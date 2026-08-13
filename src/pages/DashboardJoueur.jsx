@@ -2547,15 +2547,9 @@ function DashboardJoueur() {
               </div>
             </div>
 
-            {/* PLANNING DE LA SEMAINE (si affilié à un éducateur) */}
-            {mesAffiliations.some(a => a.statut === 'accepte') && (
-              <div style={{ background: colors.background.surface, border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '20px', boxShadow: '0 0 0 1px #4ade8010' }}>
-                <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: colors.accent.green, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-                <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
-              </div>
-            )}
-
-            {/* SONDAGE DE PRÉSENCE — semaine par semaine (si affilié à un éducateur) */}
+            {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
+                section : mêmes événements, boutons de présence en plus) au lieu de deux
+                blocs redondants côte à côte (si affilié à un éducateur) */}
             {(() => {
               const aff = mesAffiliations.find(af => af.statut === 'accepte')
               if (!aff) return null

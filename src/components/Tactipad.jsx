@@ -16,6 +16,10 @@ const COULEURS = [
 // centre d'un élement glissé ne sorte jamais visuellement du terrain.
 const ELEMENT_DRAG_MARGIN = 18
 
+// Espacement du quadrillage repère, en unités Stage (le Stage se redimensionne
+// dynamiquement — pas de largeur/hauteur fixes comme TacticalBoard.jsx).
+const GRID_SIZE = 50
+
 // Jusqu'à 4 équipes sur le plateau (utile pour les exercices à plusieurs
 // groupes, pas seulement une opposition A vs B) — couleur/label lookupés
 // partout au lieu d'un ternaire binaire A/B codé en dur.
@@ -378,6 +382,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [colorPickerOpen, setColorPickerOpen] = useState(null) // 'A' | 'B' | 'C' | 'D' | null
   const [tool, setTool] = useState('select')
   const [showMaterielPanel, setShowMaterielPanel] = useState(false)
+  const [showGrid, setShowGrid] = useState(false)
   const [arrowColor, setArrowColor] = useState('#ffffff')
   const [pendingStart, setPendingStart] = useState(null)
   // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
@@ -1251,6 +1256,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         {/* Toolbar gauche */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
           <button onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
+          <button onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
           <div style={{ height: '1px', background: '#222' }} />
           {outilsFlêches.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
@@ -1334,6 +1340,19 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           >
             <Layer>
               {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
+
+              {/* Quadrillage repère — listening=false, comme dans TacticalBoard.jsx : ne
+                  capte jamais les clics/drag, purement visuel. */}
+              {showGrid && (
+                <>
+                  {Array.from({ length: Math.floor(width / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(x => (
+                    <Line key={`gv-${x}`} points={[x, 0, x, height]} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} dash={[4, 4]} listening={false} />
+                  ))}
+                  {Array.from({ length: Math.floor(height / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(y => (
+                    <Line key={`gh-${y}`} points={[0, y, width, y]} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} dash={[4, 4]} listening={false} />
+                  ))}
+                </>
+              )}
 
               {elements.filter(e => e.type === 'zone-rect').map(e => (
                 <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}

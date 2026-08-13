@@ -106,7 +106,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 
   const header = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-      <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 Sondage de présence — semaine</p>
+      <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
         <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
@@ -174,7 +174,14 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
   return (
     <div style={{ background: colors.background.surface, border: `1px solid ${couleurType}25`, borderRadius: '8px', padding: '6px' }}>
       <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: couleurType, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
-      {ev.heure && <p style={{ margin: '1px 0 5px', fontSize: '9px', color: colors.text.faint }}>{ev.heure.slice(0, 5)}</p>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '1px 0 5px', flexWrap: 'wrap' }}>
+        {ev.heure && <p style={{ margin: 0, fontSize: '9px', color: colors.text.faint }}>{ev.heure.slice(0, 5)}</p>}
+        {ev.type === 'match' && (
+          <span style={{ background: ev.domicile ? '#166534' : '#7c2d12', color: '#fff', padding: '1px 5px', borderRadius: '4px', fontSize: '8px', fontWeight: 700 }}>
+            {ev.domicile ? 'Domicile' : 'Extérieur'}
+          </span>
+        )}
+      </div>
       {clos ? (
         <p style={{ margin: '5px 0 0', fontSize: '9px', color: colors.text.ghost }}>🔒 Clos</p>
       ) : (
