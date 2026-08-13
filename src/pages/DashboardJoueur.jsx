@@ -1089,10 +1089,10 @@ function DashboardJoueur() {
   }
 
   const getClubColor = (name) => {
-    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', colors.accent.red, '#10b981', colors.accent.orange, '#06b6d4', '#ec4899']
+    const clubColors = ['#3b82f6', '#8b5cf6', '#f59e0b', colors.accent.red, '#10b981', colors.accent.orange, '#06b6d4', '#ec4899']
     let hash = 0
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-    return colors[Math.abs(hash) % colors.length]
+    return clubColors[Math.abs(hash) % clubColors.length]
   }
 
   const searchClubDebounceRef = useRef(null)

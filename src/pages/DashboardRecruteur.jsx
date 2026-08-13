@@ -509,10 +509,10 @@ export default function DashboardRecruteur() {
     return words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : words[0].slice(0, 2).toUpperCase()
   }
   const getClubColor = (name) => {
-    const colors = ['#3b82f6','#8b5cf6','#f59e0b',colors.accent.red,'#10b981',colors.accent.orange,'#06b6d4','#ec4899']
+    const clubColors = ['#3b82f6','#8b5cf6','#f59e0b',colors.accent.red,'#10b981',colors.accent.orange,'#06b6d4','#ec4899']
     let hash = 0
     for (let i = 0; i < (name || '').length; i++) hash = (name || '').charCodeAt(i) + ((hash << 5) - hash)
-    return colors[Math.abs(hash) % colors.length]
+    return clubColors[Math.abs(hash) % clubColors.length]
   }
 
   const ouvrirProfilJoueur = async (j) => {
