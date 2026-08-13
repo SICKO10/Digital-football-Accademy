@@ -12,6 +12,10 @@ const COULEURS = [
   { val: '#111111', label: 'Noir' },
 ]
 
+// Rayon approximatif d'un joueur/objet en unités Stage — marge pour que le
+// centre d'un élement glissé ne sorte jamais visuellement du terrain.
+const ELEMENT_DRAG_MARGIN = 18
+
 // Jusqu'à 4 équipes sur le plateau (utile pour les exercices à plusieurs
 // groupes, pas seulement une opposition A vs B) — couleur/label lookupés
 // partout au lieu d'un ternaire binaire A/B codé en dur.
@@ -211,12 +215,12 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
 // personnaliser les couleurs d'équipe (cf. equipesCouleurs) sans toucher aux
 // couleurs par défaut d'EQUIPES_CONFIG, réutilisées telles quelles par
 // TactipadPublic.jsx quand un schéma n'a pas de couleurs personnalisées.
-export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true, couleurs = null }) {
+export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onEdit = () => {}, draggable = true, couleurs = null, dragBoundFunc }) {
   const isJoker = el.type === 'joker'
   const color = isJoker ? '#ffffff' : (couleurs?.[el.equipe] ?? EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color)
   return (
     <Group
-      x={el.x} y={el.y} draggable={draggable}
+      x={el.x} y={el.y} draggable={draggable} dragBoundFunc={dragBoundFunc}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDblClick={() => onEdit(el.id)}
@@ -251,7 +255,7 @@ const MATERIEL_COULEURS = {
   cone_rouge: { fill: '#e53e3e', dark: '#c53030' },
 }
 
-export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onDelete = () => {}, onRotate = () => {}, draggable = true }) {
+export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onDelete = () => {}, onRotate = () => {}, draggable = true, dragBoundFunc }) {
   const [hovered, setHovered] = useState(false)
   const isCage = el.kind === 'petite_cage' || el.kind === 'grande_cage'
   const isPlot = el.kind === 'plot'
@@ -278,7 +282,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
 
   return (
     <Group
-      x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable}
+      x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable} dragBoundFunc={dragBoundFunc}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDblClick={() => isCage && draggable && onRotate()}
@@ -1107,6 +1111,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   })
 
+  // Empêche de glisser un joueur/joker/objet hors du terrain — Konva n'a
+  // aucune contrainte native, dragBoundFunc est le mécanisme prévu pour ça
+  // (appliqué en direct pendant le drag, pas seulement au drop).
+  const dragBound = (pos) => ({
+    x: Math.max(ELEMENT_DRAG_MARGIN, Math.min(width - ELEMENT_DRAG_MARGIN, pos.x)),
+    y: Math.max(ELEMENT_DRAG_MARGIN, Math.min(height - ELEMENT_DRAG_MARGIN, pos.y)),
+  })
+
   // ── Panneau joueurs droit ─────────────────────────────────────────────────
   const joueursParEquipe = Object.keys(EQUIPES_CONFIG)
     .map(eq => ({ eq, joueurs: elements.filter(e => e.type === 'joueur' && e.equipe === eq).sort((a, b) => Number(a.numero) - Number(b.numero)) }))
@@ -1347,10 +1359,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement}
                   onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
                   onRotate={() => updateElement({ ...e, rotation: (e.rotation || 0) === 0 ? 90 : 0 })}
+                  dragBoundFunc={dragBound}
                 />
               ))}
               {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} />
+                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
               ))}
 
               {/* ── Rectangle de sélection multiple en cours de glisser ────────── */}
