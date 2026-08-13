@@ -100,22 +100,47 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
     ...matchs.filter(m => m.date === dStr).map(m => ({ ...m, type: 'match', titre: m.adversaire ? `vs ${m.adversaire}` : 'Match' })),
   ].sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
 
+  const evenementsSemaine = jours.flatMap(d => evenementsDuJour(dateStr(d)))
+
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }
+
+  const header = (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+      <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 Sondage de présence — semaine</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
+        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
+        <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
+        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>Cette semaine</button>}
+      </div>
+    </div>
+  )
 
   if (loading) return null
 
+  if (mode === 'educateur') {
+    return (
+      <div style={card}>
+        {header}
+        {evenementsSemaine.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <p style={{ color: colors.text.ghost, fontSize: '13px', margin: 0 }}>Aucun entraînement ni match planifié cette semaine</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {evenementsSemaine.map(ev => (
+              <CarteEvenementEducateur key={ev.id} ev={ev} roster={roster} reponses={dispoEquipe[ev.id] || {}}
+                ouvert={evenementOuvert === ev.id} onToggle={() => setEvenementOuvert(o => o === ev.id ? null : ev.id)} accentColor={accentColor} />
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={card}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 Sondage de présence — semaine</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
-          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
-          {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>Cette semaine</button>}
-        </div>
-      </div>
-
+      {header}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto' }}>
         {jours.map((d, i) => {
           const dStr = dateStr(d)
@@ -133,9 +158,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
               {evs.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '11px', color: colors.text.ghost, textAlign: 'center' }}>—</p>
               ) : evs.map(ev => (
-                mode === 'joueur'
-                  ? <EvenementJoueur key={ev.id} ev={ev} statut={mesDispos[ev.id]} onChoisir={s => repondre(ev, s)} saving={saving === ev.id} />
-                  : <EvenementEducateur key={ev.id} ev={ev} roster={roster} reponses={dispoEquipe[ev.id] || {}} ouvert={evenementOuvert === ev.id} onToggle={() => setEvenementOuvert(o => o === ev.id ? null : ev.id)} />
+                <EvenementJoueur key={ev.id} ev={ev} statut={mesDispos[ev.id]} onChoisir={s => repondre(ev, s)} saving={saving === ev.id} />
               ))}
             </div>
           )
@@ -171,28 +194,82 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
   )
 }
 
-function EvenementEducateur({ ev, roster, reponses, ouvert, onToggle }) {
+const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', emoji: '⏳', color: colors.text.faint }
+
+// Carte détaillée par événement (entraînement/match) : compteurs par statut,
+// taux de réponse avec barre de progression, clic → détail des joueurs
+// groupés par statut (y compris "sans réponse", qui n'est pas un statut
+// stocké mais l'absence de ligne dans `disponibilites` pour ce joueur).
+function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor }) {
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   const compte = (val) => Object.values(reponses).filter(s => s === val).length
+  const repondu = Object.keys(reponses).length
+  const total = roster.length
+  const sansReponse = Math.max(0, total - repondu)
+  const tauxReponse = total > 0 ? Math.round((repondu / total) * 100) : 0
+  const couleurTaux = tauxReponse >= 70 ? colors.accent.green : tauxReponse >= 40 ? colors.accent.amber : colors.accent.red
+  const dateLabel = new Date(ev.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })
+
+  const joueursParStatut = (val) => roster.filter(j => (reponses[j.joueur_id] || 'sans_reponse') === val)
+
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${couleurType}25`, borderRadius: '8px', padding: '6px', cursor: 'pointer' }} onClick={onToggle}>
-      <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: couleurType, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
-      {ev.heure && <p style={{ margin: '1px 0 4px', fontSize: '9px', color: colors.text.faint }}>{ev.heure.slice(0, 5)}</p>}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', fontSize: '9px' }}>
-        {OPTIONS_SONDAGE.map(opt => compte(opt.val) > 0 && (
-          <span key={opt.val} style={{ color: opt.color, fontWeight: 700 }}>{opt.emoji}{compte(opt.val)}</span>
-        ))}
-        {Object.keys(reponses).length === 0 && <span style={{ color: colors.text.ghost }}>Aucune réponse</span>}
+    <div>
+      <div onClick={onToggle} style={{
+        background: ouvert ? `${accentColor}0d` : colors.background.sunken,
+        border: `1px solid ${ouvert ? `${accentColor}55` : colors.border.faint}`,
+        borderRadius: ouvert ? '14px 14px 0 0' : '14px', padding: '14px 16px', cursor: 'pointer',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: '140px' }}>
+            <p style={{ margin: 0, color: couleurType, fontWeight: 700, fontSize: '13px', textTransform: 'capitalize' }}>{dateLabel}</p>
+            <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{ev.heure ? ev.heure.slice(0, 5) : '—'} · {ev.titre}</p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
+            {[...OPTIONS_SONDAGE, SANS_REPONSE].map(opt => {
+              const n = opt.val === 'sans_reponse' ? sansReponse : compte(opt.val)
+              if (n === 0 && opt.val !== 'present' && opt.val !== 'sans_reponse') return null
+              return (
+                <div key={opt.val} style={{ background: `${opt.color}18`, border: `1px solid ${opt.color}33`, borderRadius: '8px', padding: '4px 10px', textAlign: 'center', minWidth: '48px' }}>
+                  <p style={{ margin: 0, color: opt.color, fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>{n}</p>
+                  <p style={{ margin: '1px 0 0', color: opt.color, fontSize: '9px', fontWeight: 600, opacity: 0.85 }}>{opt.label.split(' ')[0]}</p>
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, color: couleurTaux, fontWeight: 700, fontSize: '14px' }}>{tauxReponse}%</p>
+              <p style={{ margin: 0, color: colors.text.faint, fontSize: '9px' }}>{repondu}/{total}</p>
+            </div>
+            <span style={{ color: colors.text.faint, fontSize: '16px', transition: 'transform 0.2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '10px', height: '4px', background: colors.border.faint, borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${tauxReponse}%`, background: couleurTaux, borderRadius: '2px' }} />
+        </div>
       </div>
+
       {ouvert && (
-        <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: `1px solid ${colors.border.faint}`, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {roster.map(j => {
-            const s = reponses[j.joueur_id]
-            const opt = OPTIONS_SONDAGE.find(o => o.val === s)
+        <div style={{ background: colors.background.sunken, border: `1px solid ${accentColor}55`, borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '14px 16px' }}>
+          {[...OPTIONS_SONDAGE, SANS_REPONSE].map(opt => {
+            const js = joueursParStatut(opt.val)
+            if (js.length === 0) return null
             return (
-              <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px', fontSize: '9px' }}>
-                <span style={{ color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom}</span>
-                <span style={{ color: opt?.color || colors.text.ghost, flexShrink: 0 }}>{opt ? opt.emoji : '?'}</span>
+              <div key={opt.val} style={{ marginBottom: '12px' }}>
+                <p style={{ margin: '0 0 6px', color: opt.color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{opt.emoji} {opt.label} ({js.length})</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {js.map(j => (
+                    <div key={j.id} style={{ background: `${opt.color}18`, border: `1px solid ${opt.color}33`, borderRadius: '8px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: `${opt.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: opt.color, flexShrink: 0 }}>
+                        {(j.prenom?.[0] || '') + (j.nom?.[0] || '')}
+                      </div>
+                      <p style={{ margin: 0, color: colors.text.primary, fontSize: '12px', fontWeight: 600 }}>{j.prenom} {j.nom}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )
           })}
