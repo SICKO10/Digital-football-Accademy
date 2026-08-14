@@ -30,6 +30,10 @@ const formVide = () => ({
   cpa_offensifs: [''],
   cpa_defensifs: [''],
   tireurs: [''],
+  transitions: [''],
+  cles_du_match: [''],
+  premieres_minutes: [''],
+  message_coach: '',
   schema_cpa_offensif: { etapes: [{ joueurs: [], ballon: null }] },
   schema_cpa_defensif: { etapes: [{ joueurs: [], ballon: null }] },
 })
@@ -76,7 +80,7 @@ const parseListe = (val) => {
   return []
 }
 
-// Normalise les 5 champs liste d'une fiche brute renvoyée par Supabase —
+// Normalise les champs liste d'une fiche brute renvoyée par Supabase —
 // appliqué une seule fois à la source (charger/sauvegarder) pour que tout
 // le reste du composant (editer, contenuFiche...) puisse faire confiance
 // à ces champs sans reparser à chaque lecture.
@@ -88,6 +92,9 @@ function normaliserFiche(f) {
     cpa_offensifs: parseListe(f.cpa_offensifs),
     cpa_defensifs: parseListe(f.cpa_defensifs),
     tireurs: parseListe(f.tireurs),
+    transitions: parseListe(f.transitions),
+    cles_du_match: parseListe(f.cles_du_match),
+    premieres_minutes: parseListe(f.premieres_minutes),
   }
 }
 
@@ -100,11 +107,119 @@ function FicheCauseriePrint({ children }) {
   return createPortal(<div id="fiche-causerie-print">{children}</div>, document.body)
 }
 
+// Mode présentation plein écran ("Présenter la causerie") — pensé pour
+// vidéoprojecteur/TV (AirPlay, Chromecast ou HDMI se branchent sur la
+// fenêtre du navigateur, rien à gérer côté app au-delà du plein écran natif
+// via requestFullscreen). Une slide par section non vide, navigation
+// clavier ← → (+ Échap pour quitter), grand texte lisible de loin.
+function PresentationCauserie({ f, equipeNom, onFermer }) {
+  const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
+  const ajouterListe = (titre, accent, icone, valeurs) => {
+    const items = (valeurs || []).filter(Boolean)
+    if (items.length) slides.push({ titre, accent, icone, type: 'liste', items })
+  }
+  ajouterListe('AVEC LE BALLON', '#818cf8', '⚽', f.animation_avec_ballon)
+  ajouterListe('SANS LE BALLON', '#f97316', '🛡️', f.animation_sans_ballon)
+  ajouterListe('TRANSITIONS', '#2dd4bf', '🔄', f.transitions)
+  if (f.notre_classement || f.adversaire_classement) {
+    slides.push({ titre: 'ADVERSAIRE', accent: '#f87171', type: 'adversaire' })
+  }
+  ajouterListe('NOS CLÉS DU MATCH', '#fbbf24', '🔑', f.cles_du_match)
+  ajouterListe('PREMIÈRES MINUTES', '#60a5fa', '⏱️', f.premieres_minutes)
+  if (f.message_coach) slides.push({ titre: 'MESSAGE DU COACH', accent: '#a78bfa', type: 'message' })
+
+  const [slideIdx, setSlideIdx] = useState(0)
+  const total = slides.length
+  const idx = Math.min(slideIdx, total - 1)
+  const slide = slides[idx]
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); setSlideIdx(i => Math.min(i + 1, total - 1)) }
+      else if (e.key === 'ArrowLeft') setSlideIdx(i => Math.max(i - 1, 0))
+      else if (e.key === 'Escape') onFermer()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [total, onFermer])
+
+  useEffect(() => {
+    document.documentElement.requestFullscreen?.().catch(() => {})
+    return () => { if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}) }
+  }, [])
+
+  if (!slide) return null
+
+  const navBtn = { background: 'none', border: '1px solid #333', color: '#fff', borderRadius: '50%', width: '44px', height: '44px', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }
+
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, background: '#050505', zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 40px', flexShrink: 0 }}>
+        <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
+        <button onClick={onFermer} style={{ background: 'none', border: '1px solid #333', color: '#9ca3af', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitter [Échap]</button>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 60px', textAlign: 'center', overflow: 'hidden' }}>
+        <p style={{ margin: '0 0 32px', color: slide.accent, fontSize: '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
+
+        {slide.type === 'intro' && (
+          <>
+            <h1 style={{ margin: '0 0 24px', color: '#fff', fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
+            {f.objectifs ? <p style={{ color: '#d1d5db', fontSize: 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.6, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: '#374151' }}>—</p>}
+          </>
+        )}
+
+        {slide.type === 'liste' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', alignItems: 'flex-start' }}>
+            {slide.items.map((it, i) => (
+              <p key={i} style={{ margin: 0, color: '#fff', fontSize: 'clamp(20px, 3vw, 34px)', fontWeight: 600, lineHeight: 1.4, display: 'flex', gap: '16px', textAlign: 'left' }}>
+                <span style={{ color: slide.accent }}>›</span>{it}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {slide.type === 'adversaire' && (
+          <div style={{ display: 'flex', gap: '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { nom: equipeNom || 'Nous', rang: f.notre_classement, pts: f.notre_points, color: '#4ade80' },
+              { nom: f.adversaire, rang: f.adversaire_classement, pts: f.adversaire_points, color: slide.accent },
+            ].map((e, i) => (
+              <div key={i}>
+                <p style={{ margin: 0, color: e.color, fontWeight: 900, fontSize: 'clamp(48px, 8vw, 96px)', lineHeight: 1 }}>{e.rang ? `${e.rang}e` : '—'}</p>
+                <p style={{ margin: '8px 0 0', color: '#9ca3af', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.nom}</p>
+                {e.pts != null && <p style={{ margin: '4px 0 0', color: '#fff', fontSize: '18px' }}>{e.pts} pts</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {slide.type === 'message' && (
+          <p style={{ margin: 0, color: '#fff', fontSize: 'clamp(24px, 3.5vw, 40px)', fontWeight: 700, fontStyle: 'italic', lineHeight: 1.5, maxWidth: '1000px' }}>« {f.message_coach} »</p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px 40px', flexShrink: 0 }}>
+        <button onClick={() => setSlideIdx(i => Math.max(i - 1, 0))} disabled={idx === 0} style={{ ...navBtn, opacity: idx === 0 ? 0.3 : 1 }}>‹</button>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {slides.map((s, i) => (
+            <button key={i} onClick={() => setSlideIdx(i)} title={s.titre}
+              style={{ width: i === idx ? '24px' : '8px', height: '8px', borderRadius: '4px', background: i === idx ? s.accent : '#333', border: 'none', cursor: 'pointer', transition: 'width 0.2s' }} />
+          ))}
+        </div>
+        <button onClick={() => setSlideIdx(i => Math.min(i + 1, total - 1))} disabled={idx === total - 1} style={{ ...navBtn, opacity: idx === total - 1 ? 0.3 : 1 }}>›</button>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
   const [ficheCourante, setFicheCourante] = useState(null)
   const [tableMissing, setTableMissing] = useState(false)
+  const [presentationOuverte, setPresentationOuverte] = useState(false)
 
   const [form, setForm] = useState(formVide)
   const [saving, setSaving] = useState(false)
@@ -172,6 +287,10 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       cpa_offensifs: form.cpa_offensifs.filter(Boolean),
       cpa_defensifs: form.cpa_defensifs.filter(Boolean),
       tireurs: form.tireurs.filter(Boolean),
+      transitions: form.transitions.filter(Boolean),
+      cles_du_match: form.cles_du_match.filter(Boolean),
+      premieres_minutes: form.premieres_minutes.filter(Boolean),
+      message_coach: form.message_coach.trim() || null,
       schema_cpa_offensif: form.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
       schema_cpa_defensif: form.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
     }
@@ -215,6 +334,10 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       cpa_offensifs: f.cpa_offensifs?.length ? f.cpa_offensifs : [''],
       cpa_defensifs: f.cpa_defensifs?.length ? f.cpa_defensifs : [''],
       tireurs: f.tireurs?.length ? f.tireurs : [''],
+      transitions: f.transitions?.length ? f.transitions : [''],
+      cles_du_match: f.cles_du_match?.length ? f.cles_du_match : [''],
+      premieres_minutes: f.premieres_minutes?.length ? f.premieres_minutes : [''],
+      message_coach: f.message_coach || '',
       schema_cpa_offensif: f.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
       schema_cpa_defensif: f.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
     })
@@ -439,6 +562,30 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
           </div>
         </div>
 
+        <div style={card}>
+          {sectionTitle('07', '#2dd4bf', 'Transitions')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Ce qu'on fait dès la perte ou la récupération du ballon</p>
+          <ListeChamp valeurs={form.transitions} onChange={(i, v) => setLigne('transitions', i, v)} onAjouter={() => ajouterLigne('transitions')} onSupprimer={i => supprimerLigne('transitions', i)} inputStyle={inp} placeholder="Ex: Contre-presser 5 secondes après la perte…" />
+        </div>
+
+        <div style={card}>
+          {sectionTitle('08', '#fbbf24', 'Nos clés du match')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Les points à ne pas oublier — l'essentiel à retenir</p>
+          <ListeChamp valeurs={form.cles_du_match} onChange={(i, v) => setLigne('cles_du_match', i, v)} onAjouter={() => ajouterLigne('cles_du_match')} onSupprimer={i => supprimerLigne('cles_du_match', i)} inputStyle={inp} placeholder="Ex: Gagner les duels aériens sur coup de pied arrêté…" />
+        </div>
+
+        <div style={card}>
+          {sectionTitle('09', '#60a5fa', 'Premières minutes')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Comment on démarre le match</p>
+          <ListeChamp valeurs={form.premieres_minutes} onChange={(i, v) => setLigne('premieres_minutes', i, v)} onAjouter={() => ajouterLigne('premieres_minutes')} onSupprimer={i => supprimerLigne('premieres_minutes', i)} inputStyle={inp} placeholder="Ex: Presser haut d'entrée, montrer qu'on est prêts…" />
+        </div>
+
+        <div style={card}>
+          {sectionTitle('10', '#a78bfa', 'Message du coach')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Le mot de la fin, celui qu'on garde en tête en rentrant sur le terrain</p>
+          <textarea style={txa} placeholder="Ex: On a tout ce qu'il faut pour gagner ce match, on y croit du premier au dernier ballon…" value={form.message_coach} onChange={e => set('message_coach', e.target.value)} />
+        </div>
+
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
           <button onClick={() => setVue('liste')} style={btnO}>Annuler</button>
           <button onClick={sauvegarder} disabled={saving} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
@@ -576,6 +723,48 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
         </div>
       </div>
 
+      {((f.transitions || []).filter(Boolean).length > 0 || (f.cles_du_match || []).filter(Boolean).length > 0 || (f.premieres_minutes || []).filter(Boolean).length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #222' }}>
+          <div style={{ padding: '24px', borderRight: '1px solid #222' }}>
+            <p style={{ margin: '0 0 14px', color: '#2dd4bf', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔄 Transitions</p>
+            {(f.transitions || []).filter(Boolean).map((pt, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ color: '#2dd4bf', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
+                <p style={{ margin: 0, color: '#d1d5db', fontSize: '13px', lineHeight: 1.6 }}>{pt}</p>
+              </div>
+            ))}
+            {!(f.transitions || []).filter(Boolean).length && <p style={{ color: '#374151', fontSize: '13px', fontStyle: 'italic' }}>—</p>}
+          </div>
+          <div style={{ padding: '24px', borderRight: '1px solid #222' }}>
+            <p style={{ margin: '0 0 14px', color: '#fbbf24', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔑 Nos clés du match</p>
+            {(f.cles_du_match || []).filter(Boolean).map((pt, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ color: '#fbbf24', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
+                <p style={{ margin: 0, color: '#d1d5db', fontSize: '13px', lineHeight: 1.6 }}>{pt}</p>
+              </div>
+            ))}
+            {!(f.cles_du_match || []).filter(Boolean).length && <p style={{ color: '#374151', fontSize: '13px', fontStyle: 'italic' }}>—</p>}
+          </div>
+          <div style={{ padding: '24px' }}>
+            <p style={{ margin: '0 0 14px', color: '#60a5fa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>⏱️ Premières minutes</p>
+            {(f.premieres_minutes || []).filter(Boolean).map((pt, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ color: '#60a5fa', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
+                <p style={{ margin: 0, color: '#d1d5db', fontSize: '13px', lineHeight: 1.6 }}>{pt}</p>
+              </div>
+            ))}
+            {!(f.premieres_minutes || []).filter(Boolean).length && <p style={{ color: '#374151', fontSize: '13px', fontStyle: 'italic' }}>—</p>}
+          </div>
+        </div>
+      )}
+
+      {f.message_coach && (
+        <div style={{ padding: '28px 32px', borderBottom: '1px solid #222', background: 'rgba(167,139,250,0.04)' }}>
+          <p style={{ margin: '0 0 10px', color: '#a78bfa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎤 Message du coach</p>
+          <p style={{ margin: 0, color: '#e5e7eb', fontSize: '16px', lineHeight: 1.7, fontStyle: 'italic' }}>« {f.message_coach} »</p>
+        </div>
+      )}
+
       <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>Digital Football — Fiche préparée par {equipeNom || "l'équipe"}</p>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>{dateLabel}</p>
@@ -588,6 +777,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button onClick={() => setVue('liste')} style={btnO}>← Fiches</button>
         <button onClick={() => editer(f)} style={btnO}>✏️ Modifier</button>
+        <button onClick={() => setPresentationOuverte(true)} style={{ ...btnO, color: '#a78bfa', borderColor: '#a78bfa44' }}>📺 Présenter la causerie</button>
         <button onClick={() => window.print()} style={{ ...btnO, color: '#4ade80', borderColor: '#4ade8044' }}>🖨️ Imprimer</button>
         <button onClick={() => supprimer(f.id)} style={{ ...btnO, color: '#f87171', borderColor: '#f8717133' }}>Supprimer</button>
       </div>
@@ -604,6 +794,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
           #fiche-causerie-print { display: block !important; }
         }
       `}</style>
+
+      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} onFermer={() => setPresentationOuverte(false)} />}
     </div>
   )
 }
