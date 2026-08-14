@@ -118,9 +118,19 @@ function PresentationCauserie({ f, equipeNom, onFermer }) {
     const items = (valeurs || []).filter(Boolean)
     if (items.length) slides.push({ titre, accent, icone, type: 'liste', items })
   }
+  // boardEstRempli() est déjà défini plus haut dans ce fichier (format
+  // multi-étapes {etapes:[{joueurs,ballon}]}, pas {joueurs,ball,arrows}).
+  const ajouterSchema = (titre, accent, icone, board) => {
+    if (boardEstRempli(board)) slides.push({ titre, accent, icone, type: 'board', board })
+  }
   ajouterListe('AVEC LE BALLON', '#818cf8', '⚽', f.animation_avec_ballon)
   ajouterListe('SANS LE BALLON', '#f97316', '🛡️', f.animation_sans_ballon)
   ajouterListe('TRANSITIONS', '#2dd4bf', '🔄', f.transitions)
+  ajouterListe('CPA OFFENSIFS', '#4ade80', '⚽', f.cpa_offensifs)
+  ajouterSchema('SCHÉMA CPA OFFENSIF', '#4ade80', '🟢', f.schema_cpa_offensif)
+  ajouterListe('TIREURS', '#facc15', '🎯', f.tireurs)
+  ajouterListe('CPA DÉFENSIFS', '#f87171', '🛡️', f.cpa_defensifs)
+  ajouterSchema('SCHÉMA CPA DÉFENSIF', '#f87171', '🔴', f.schema_cpa_defensif)
   if (f.notre_classement || f.adversaire_classement) {
     slides.push({ titre: 'ADVERSAIRE', accent: '#f87171', type: 'adversaire' })
   }
@@ -176,6 +186,12 @@ function PresentationCauserie({ f, equipeNom, onFermer }) {
                 <span style={{ color: slide.accent }}>›</span>{it}
               </p>
             ))}
+          </div>
+        )}
+
+        {slide.type === 'board' && (
+          <div style={{ width: '100%', maxWidth: '780px' }}>
+            <TacticalBoard data={slide.board} onChange={() => {}} readOnly />
           </div>
         )}
 
