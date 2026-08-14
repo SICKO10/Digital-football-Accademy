@@ -67,6 +67,14 @@ const creneauVide = (terrainId) => ({
 const normaliserJour = (val) => JOURS.find(j => normaliserCle(val).includes(j.val))?.val || ''
 const normaliserZone = (val) => ZONES.find(z => z.val === String(val || '').trim().toLowerCase())?.val || 'plein'
 
+// date.toISOString() convertit en UTC — en France (UTC+1/+2), minuit local
+// devient 22h/23h la veille en UTC, donc .toISOString().split('T')[0] renvoie
+// la date de la veille. Reconstruit la date à partir des composants LOCAUX
+// (année/mois/jour), jamais via toISOString, pour rester alignée avec les
+// dates stockées en base (YYYY-MM-DD, sans fuseau) et avec labelCourt
+// (toLocaleDateString, déjà en local).
+const dateLocaleStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 // Les 7 dates (lundi→dimanche) de la semaine affichée, décalée de
 // `offsetSemaines` par rapport à la semaine courante (0 = cette semaine,
 // -1 = précédente, +1 = suivante). JOURS est déjà ordonné lundi→dimanche,
@@ -83,7 +91,7 @@ const getDatesSemaine = (offsetSemaines = 0) => {
     return {
       val: j.val,
       label: j.label,
-      dateStr: date.toISOString().split('T')[0],
+      dateStr: dateLocaleStr(date),
       labelCourt: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
     }
   })

@@ -88,11 +88,16 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 
   const repondre = async (ev, statut) => {
     setSaving(ev.id)
+    const avant = mesDispos[ev.id]
     setMesDispos(prev => ({ ...prev, [ev.id]: statut }))
     const payload = { joueur_id: userId, statut, ...(ev.type === 'entrainement' ? { seance_id: ev.id } : { match_id: ev.id }) }
     const { error } = await supabase.from('disponibilites').upsert(payload, { onConflict: ev.type === 'entrainement' ? 'joueur_id,seance_id' : 'joueur_id,match_id' })
     setSaving(null)
-    if (error) charger()
+    if (error) {
+      console.error('disponibilites upsert error:', error)
+      alert('Erreur : ' + error.message)
+      setMesDispos(prev => ({ ...prev, [ev.id]: avant }))
+    }
   }
 
   const evenementsDuJour = (dStr) => [
