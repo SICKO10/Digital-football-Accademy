@@ -625,6 +625,12 @@ export const T = {
   jexp_aucun:               { fr: 'Aucun profil trouvé.',     en: 'No profile found.',     pt: 'Nenhum perfil encontrado.', es: 'Ningún perfil encontrado.', it: 'Nessun profilo trovato.', de: 'Kein Profil gefunden.' },
   jexp_club_badge:          { fr: '🏟️ Club',                  en: '🏟️ Club',              pt: '🏟️ Clube',              es: '🏟️ Club',               it: '🏟️ Club',               de: '🏟️ Verein'             },
   jexp_rec_badge:           { fr: '🔍 Recruteur',             en: '🔍 Recruiter',          pt: '🔍 Recrutador',         es: '🔍 Reclutador',         it: '🔍 Reclutatore',        de: '🔍 Scout'              },
+  jexp_tab_educateurs:      { fr: '👨‍🏫 Éducateurs',           en: '👨‍🏫 Coaches',           pt: '👨‍🏫 Educadores',         es: '👨‍🏫 Entrenadores',       it: '👨‍🏫 Educatori',          de: '👨‍🏫 Trainer'            },
+  jexp_tab_clubs:           { fr: '🏟️ Clubs',                 en: '🏟️ Clubs',             pt: '🏟️ Clubes',             es: '🏟️ Clubes',             it: '🏟️ Club',               de: '🏟️ Vereine'            },
+  jexp_tab_scouts:          { fr: '🔍 Scouts / Recruteurs',   en: '🔍 Scouts / Recruiters', pt: '🔍 Scouts / Recrutadores', es: '🔍 Scouts / Reclutadores', it: '🔍 Scout / Reclutatori', de: '🔍 Scouts'            },
+  jexp_recherche_placeholder: { fr: 'Rechercher un nom, un club…', en: 'Search a name, a club…', pt: 'Pesquisar um nome, um clube…', es: 'Buscar un nombre, un club…', it: 'Cerca un nome, un club…', de: 'Name oder Verein suchen…' },
+  jexp_toute_region:        { fr: 'Toute région',             en: 'All regions',           pt: 'Todas as regiões',      es: 'Todas las regiones',    it: 'Tutte le regioni',      de: 'Alle Regionen'         },
+  jexp_recrute:             { fr: 'Recrute',                  en: 'Recruiting',            pt: 'Recruta',               es: 'Recluta',               it: 'Recluta',               de: 'Sucht'                 },
 
   // ── Dashboard joueur — Mon Équipe ────────────────────────────────────────────────
   jeq_titre:                { fr: '🏟️ Mon Équipe',           en: '🏟️ My Team',           pt: '🏟️ A minha Equipa',    es: '🏟️ Mi Equipo',         it: '🏟️ La mia Squadra',    de: '🏟️ Mein Team'         },

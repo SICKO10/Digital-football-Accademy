@@ -369,11 +369,18 @@ function DashboardJoueur() {
   const [recruteurModal, setRecruteurModal] = useState(null)
   const [notationCible, setNotationCible] = useState(null)
 
-  // Explorer (clubs + recruteurs)
+  // Explorer (éducateurs + clubs + scouts) — 3 onglets distincts, chacun sur
+  // sa vraie valeur profiles.plan ('educateur' / 'club' / 'scout' — 'recruteur'
+  // n'existe pas en base, cf. RegisterRecruteur.jsx, vérifié directement
+  // contre la base : la contrainte CHECK de profiles.plan la rejette).
+  const [educateursListe, setEducateursListe] = useState([])
   const [clubsListe, setClubsListe] = useState([])
   const [recruteursList, setRecruteursList] = useState([])
+  const [recrutementsParClub, setRecrutementsParClub] = useState({}) // { [club_id]: [{categorie,poste,niveau}] }
   const [clubsLoading, setClubsLoading] = useState(false)
-  const [explorerFiltre, setExplorerFiltre] = useState('tous') // 'tous' | 'clubs' | 'recruteurs'
+  const [explorerOnglet, setExplorerOnglet] = useState('educateurs') // 'educateurs' | 'clubs' | 'scouts'
+  const [explorerRecherche, setExplorerRecherche] = useState('')
+  const [explorerRegion, setExplorerRegion] = useState('')
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
@@ -463,14 +470,20 @@ function DashboardJoueur() {
     if (onglet === 'analyses' && userId) {
       marquerAnalysesLues(userId)
     }
-    if (onglet === 'clubs' && clubsListe.length === 0 && recruteursList.length === 0) {
+    if (onglet === 'clubs' && educateursListe.length === 0 && clubsListe.length === 0 && recruteursList.length === 0) {
       setClubsLoading(true)
       Promise.all([
         supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur'),
-        supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'recruteur'),
-      ]).then(([{ data: edu }, { data: rec }]) => {
-        setClubsListe(edu || [])
+        supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club'),
+        supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout'),
+        supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true),
+      ]).then(([{ data: edu }, { data: clu }, { data: rec }, { data: recrut }]) => {
+        setEducateursListe(edu || [])
+        setClubsListe(clu || [])
         setRecruteursList(rec || [])
+        const parClub = {}
+        ;(recrut || []).forEach(r => { if (!parClub[r.club_id]) parClub[r.club_id] = []; parClub[r.club_id].push(r) })
+        setRecrutementsParClub(parClub)
         setClubsLoading(false)
       })
     }
@@ -3521,90 +3534,107 @@ function DashboardJoueur() {
           </div>
         )}
         {/* ── EXPLORER ── */}
-        {onglet === 'clubs' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t('jexp_titre', lang)}</h1>
-            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jexp_desc', lang)}</p>
+        {onglet === 'clubs' && (() => {
+          const ONGLETS_EXPLORER = [
+            { id: 'educateurs', label: t('jexp_tab_educateurs', lang), liste: educateursListe, accent: colors.accent.green },
+            { id: 'clubs', label: t('jexp_tab_clubs', lang), liste: clubsListe, accent: colors.accent.green },
+            { id: 'scouts', label: t('jexp_tab_scouts', lang), liste: recruteursList, accent: colors.accent.blue },
+          ]
+          const active = ONGLETS_EXPLORER.find(o => o.id === explorerOnglet) || ONGLETS_EXPLORER[0]
+          const q = explorerRecherche.trim().toLowerCase()
+          const regionQ = explorerRegion.trim().toLowerCase()
+          const listeFiltree = active.liste.filter(p => {
+            if (regionQ && !(p.region || '').toLowerCase().includes(regionQ)) return false
+            if (!q) return true
+            const hay = `${p.prenom || ''} ${p.nom || ''} ${p.club || ''}`.toLowerCase()
+            return hay.includes(q)
+          })
 
-            {/* Filtres */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'tous', label: `${t('jexp_filtre_tous', lang)} (${clubsListe.length + recruteursList.length})` },
-                { id: 'clubs', label: `🏟️ ${t('jexp_filtre_clubs', lang)} (${clubsListe.length})` },
-                { id: 'recruteurs', label: `🔍 ${t('jexp_filtre_rec', lang)} (${recruteursList.length})` },
-              ].map(f => (
-                <button key={f.id} onClick={() => setExplorerFiltre(f.id)}
-                  style={{ padding: '7px 16px', borderRadius: '20px', border: `1px solid ${explorerFiltre === f.id ? colors.accent.green : colors.border.default}`, background: explorerFiltre === f.id ? colors.accent.green + alpha.subtle : 'transparent', color: explorerFiltre === f.id ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: explorerFiltre === f.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
+          return (
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t('jexp_titre', lang)}</h1>
+              <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jexp_desc', lang)}</p>
 
-            {clubsLoading && <p style={{ color: colors.text.disabled, textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
+              {/* Onglets */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                {ONGLETS_EXPLORER.map(o => (
+                  <button key={o.id} onClick={() => setExplorerOnglet(o.id)}
+                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${explorerOnglet === o.id ? o.accent : colors.border.default}`, background: explorerOnglet === o.id ? o.accent + alpha.subtle : 'transparent', color: explorerOnglet === o.id ? o.accent : colors.text.faint, fontSize: '13px', fontWeight: explorerOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {o.label} ({o.liste.length})
+                  </button>
+                ))}
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Recherche + région */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <input value={explorerRecherche} onChange={e => setExplorerRecherche(e.target.value)}
+                  placeholder={t('jexp_recherche_placeholder', lang)}
+                  style={{ flex: 1, minWidth: '200px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                <input value={explorerRegion} onChange={e => setExplorerRegion(e.target.value)}
+                  placeholder={t('jexp_toute_region', lang)}
+                  style={{ width: '180px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+              </div>
 
-              {/* Clubs / Éducateurs */}
-              {(explorerFiltre === 'tous' || explorerFiltre === 'clubs') && clubsListe.map(edu => (
-                <div key={`edu-${edu.id}`}
-                  style={{ background: colors.background.surface, border: `1px solid ${hoveredCard === `club-${edu.id}` ? colors.accent.green : colors.background.raised}`, borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', transform: hoveredCard === `club-${edu.id}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}
-                  onClick={() => navigate(`/clubs/${edu.id}`)}
-                  onMouseEnter={() => setHoveredCard(`club-${edu.id}`)}
-                  onMouseLeave={() => setHoveredCard(null)}>
-                  {edu.avatar_url
-                    ? <img src={edu.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8030', flexShrink: 0 }} />
-                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8020', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>
-                        {(edu.club || edu.prenom || '?')[0].toUpperCase()}
-                      </div>
-                  }
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{edu.club || `${edu.prenom} ${edu.nom}`}</p>
-                      <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #4ade8030' }}>{t('jexp_club_badge', lang)}</span>
-                      <BadgeNote cibleId={edu.id} />
-                    </div>
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint }}>
-                      {[edu.niveau_equipe, edu.region].filter(Boolean).join(' · ')}
-                    </p>
-                    {edu.description && <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edu.description}</p>}
-                  </div>
-                  <span style={{ color: colors.accent.green, fontSize: '16px', flexShrink: 0 }}>→</span>
-                </div>
-              ))}
+              {clubsLoading && <p style={{ color: colors.text.disabled, textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
 
-              {/* Recruteurs */}
-              {(explorerFiltre === 'tous' || explorerFiltre === 'recruteurs') && recruteursList.map(rec => (
-                <div key={`rec-${rec.id}`}
-                  style={{ background: colors.background.surface, border: `1px solid ${hoveredCard === `rec-${rec.id}` ? colors.accent.blue : colors.background.raised}`, borderRadius: '14px', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', transform: hoveredCard === `rec-${rec.id}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}
-                  onClick={() => setRecruteurModal(rec)}
-                  onMouseEnter={() => setHoveredCard(`rec-${rec.id}`)}
-                  onMouseLeave={() => setHoveredCard(null)}>
-                  {rec.avatar_url
-                    ? <img src={rec.avatar_url} alt="" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #60a5fa30', flexShrink: 0 }} />
-                    : <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#0d0d1a', border: '2px solid #60a5fa20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: colors.accent.blue, flexShrink: 0 }}>
-                        {(rec.prenom || '?')[0]}{(rec.nom || '')[0]}
-                      </div>
-                  }
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{rec.prenom} {rec.nom}</p>
-                      <span style={{ background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', border: '1px solid #60a5fa30' }}>{t('jexp_rec_badge', lang)}</span>
-                      <BadgeNote cibleId={rec.id} />
-                    </div>
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint }}>
-                      {[rec.type_recruteur, rec.club, rec.region].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <span style={{ color: colors.accent.blue, fontSize: '16px', flexShrink: 0 }}>⭐</span>
-                </div>
-              ))}
-
-              {!clubsLoading && (explorerFiltre === 'tous' ? clubsListe.length + recruteursList.length : explorerFiltre === 'clubs' ? clubsListe.length : recruteursList.length) === 0 && (
+              {!clubsLoading && listeFiltree.length === 0 ? (
                 <EmptyState dashed icon="🔍" title={t('jexp_aucun', lang)} />
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                  {listeFiltree.map(p => {
+                    const cardKey = `${active.id}-${p.id}`
+                    const recrutements = explorerOnglet === 'clubs' ? (recrutementsParClub[p.id] || []) : []
+                    const nomAffiche = explorerOnglet === 'scouts' ? `${p.prenom || ''} ${p.nom || ''}`.trim() : (p.club || `${p.prenom || ''} ${p.nom || ''}`.trim())
+                    return (
+                      <div key={cardKey}
+                        style={{ background: colors.background.surface, border: `1px solid ${hoveredCard === cardKey ? active.accent : colors.background.raised}`, borderRadius: '14px', padding: '18px', cursor: 'pointer', transform: hoveredCard === cardKey ? 'translateY(-2px)' : 'none', transition: 'all 0.15s ease' }}
+                        onClick={() => explorerOnglet === 'scouts' ? setRecruteurModal(p) : navigate(`/clubs/${p.id}`)}
+                        onMouseEnter={() => setHoveredCard(cardKey)}
+                        onMouseLeave={() => setHoveredCard(null)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                          {p.avatar_url
+                            ? <img src={p.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${active.accent}30`, flexShrink: 0 }} />
+                            : <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: colors.background.raised, border: `2px solid ${active.accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px', fontWeight: 800, color: active.accent, flexShrink: 0 }}>
+                                {(nomAffiche || '?')[0].toUpperCase()}
+                              </div>
+                          }
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
+                              {explorerOnglet === 'clubs' && p.verified && <span title="Profil vérifié" style={{ fontSize: '12px' }}>✅</span>}
+                            </div>
+                            <BadgeNote cibleId={p.id} />
+                          </div>
+                        </div>
+
+                        <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.text.faint }}>
+                          {explorerOnglet === 'educateurs' && [p.niveau_equipe, p.region].filter(Boolean).join(' · ')}
+                          {explorerOnglet === 'clubs' && p.region}
+                          {explorerOnglet === 'scouts' && [p.type_recruteur, p.club, p.region].filter(Boolean).join(' · ')}
+                        </p>
+                        {(p.description || p.bio) && (
+                          <p style={{ margin: '0 0 8px', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
+                        )}
+
+                        {recrutements.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                            {recrutements.map((r, i) => (
+                              <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
+                                {t('jexp_recrute', lang)} · {r.categorie} · {r.poste}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <p style={{ margin: '8px 0 0', color: active.accent, fontSize: '12px', textAlign: 'right' }}>Voir le profil →</p>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── COMPÉTITION (lecture seule) ── */}
         {onglet === 'competition' && renduCompetition()}
