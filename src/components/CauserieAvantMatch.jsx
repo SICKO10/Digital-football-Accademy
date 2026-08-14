@@ -532,7 +532,13 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
         </div>
 
         <div style={card}>
-          {sectionTitle('06', '#22d3ee', 'Coups de pied arrêtés')}
+          {sectionTitle('06', '#2dd4bf', 'Transitions')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Ce qu'on fait dès la perte ou la récupération du ballon</p>
+          <ListeChamp valeurs={form.transitions} onChange={(i, v) => setLigne('transitions', i, v)} onAjouter={() => ajouterLigne('transitions')} onSupprimer={i => supprimerLigne('transitions', i)} inputStyle={inp} placeholder="Ex: Contre-presser 5 secondes après la perte…" />
+        </div>
+
+        <div style={card}>
+          {sectionTitle('07', '#22d3ee', 'Coups de pied arrêtés')}
 
           <div style={{ marginBottom: '24px' }}>
             <p style={{ ...label, color: '#4ade80', marginBottom: '10px' }}>⚽ Offensifs — Corners, CFL, Penalties</p>
@@ -560,12 +566,6 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
             <p style={{ ...label, color: '#fbbf24', marginBottom: '10px' }}>🎯 Tireurs</p>
             <ListeChamp valeurs={form.tireurs} onChange={(i, v) => setLigne('tireurs', i, v)} onAjouter={() => ajouterLigne('tireurs')} onSupprimer={i => supprimerLigne('tireurs', i)} inputStyle={inp} placeholder="Ex: Kevin (penaltys), Mehdi (CFL directs)…" />
           </div>
-        </div>
-
-        <div style={card}>
-          {sectionTitle('07', '#2dd4bf', 'Transitions')}
-          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>Ce qu'on fait dès la perte ou la récupération du ballon</p>
-          <ListeChamp valeurs={form.transitions} onChange={(i, v) => setLigne('transitions', i, v)} onAjouter={() => ajouterLigne('transitions')} onSupprimer={i => supprimerLigne('transitions', i)} inputStyle={inp} placeholder="Ex: Contre-presser 5 secondes après la perte…" />
         </div>
 
         <div style={card}>
