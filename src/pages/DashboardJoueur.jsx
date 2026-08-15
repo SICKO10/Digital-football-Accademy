@@ -3793,14 +3793,8 @@ function DashboardJoueur() {
                             style={{ width: '100%', background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
                             {statsLoading[a.id] ? '...' : '📊 Mes stats'}
                           </button>
-                          {/* Plus de bouton "Évaluer" permanent ici — le rappel apparaît en
-                              pop-up quand le coach clôture la saison (cf. cloturesAEvaluer),
-                              avec ce lien discret en secours pour évaluer à la demande. */}
-                          <button
-                            onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
-                            style={{ width: '100%', marginTop: '8px', background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', textAlign: 'center', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
-                            ⭐ Demander à évaluer mon coach
-                          </button>
+                          {/* Plus de bouton "Évaluer" ici — le rappel apparaît en pop-up
+                              quand le coach clôture la saison (cf. cloturesAEvaluer). */}
 
                           {/* Stats chargées */}
                           {statsJoueur[a.id] && (() => {

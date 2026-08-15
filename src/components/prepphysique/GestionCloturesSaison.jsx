@@ -152,6 +152,7 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
   const [saison, setSaison] = useState(getSaison())
   const [modalJoueur, setModalJoueur] = useState(null)
   const [archiving, setArchiving] = useState(false)
+  const [notesEdu, setNotesEdu] = useState([]) // notes_educateur reçues (tous joueurs, toutes saisons)
 
   const load = async () => {
     setLoading(true)
@@ -207,6 +208,15 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
       })
     }
 
+    // Évaluations reçues (notes_educateur, tous joueurs confondus, toutes
+    // saisons) — moyenne générale affichée en en-tête de cet historique.
+    const { data: notesData } = await supabase
+      .from('notes_educateur')
+      .select('note')
+      .eq('educateur_id', educateurId)
+      .eq('auteur_type', 'joueur')
+    setNotesEdu(notesData || [])
+
     setJoueurs(joueursData || [])
     setHistoriques(histData || [])
     setPresences(presenceMap)
@@ -249,6 +259,7 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
 
   const saisonsDispo = ['2026-2027', '2025-2026', '2024-2025', '2023-2024']
   const nbClotures = joueurs.filter(j => getHistorique(j.id)?.cloturee).length
+  const moyGeneraleNotes = notesEdu.length ? notesEdu.reduce((s, n) => s + n.note, 0) / notesEdu.length : null
 
   return (
     <div style={{ padding: 16 }}>
@@ -266,7 +277,16 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ color: st.text, margin: 0 }}>📅 {t('cloture_titre', lang)}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <h2 style={{ color: st.text, margin: 0 }}>📅 {t('cloture_titre', lang)}</h2>
+            {moyGeneraleNotes !== null && (
+              <div title="Moyenne générale des évaluations reçues, tous joueurs confondus" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#2a220a', border: `1px solid ${st.yellow}40`, borderRadius: 20, padding: '3px 10px' }}>
+                <span style={{ color: st.yellow, fontWeight: 800, fontSize: 14 }}>{moyGeneraleNotes.toFixed(1)}</span>
+                <span style={{ color: st.yellow, fontSize: 12 }}>{'★'.repeat(Math.round(moyGeneraleNotes))}{'☆'.repeat(5 - Math.round(moyGeneraleNotes))}</span>
+                <span style={{ color: st.muted, fontSize: 11 }}>({notesEdu.length})</span>
+              </div>
+            )}
+          </div>
           <p style={{ color: st.muted, fontSize: 13, margin: '4px 0 0' }}>{nbClotures}/{joueurs.length} {t('cloture_joueurs_clotures', lang)}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
