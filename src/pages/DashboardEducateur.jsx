@@ -1233,6 +1233,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Notes / Évaluations
   const [notes, setNotes] = useState({})
   const [localNotes, setLocalNotes] = useState({}) // édition en cours par joueur_id
+  const [notationsMatch, setNotationsMatch] = useState([]) // notations_match brutes : [{ joueur_id, note, match_id }]
+  const [filtreCompTableau, setFiltreCompTableau] = useState('all') // filtre compétition, onglet Stats > Tableau
   const [savingNote, setSavingNote] = useState(false)
 
   // Mon Profil éducateur
@@ -1300,7 +1302,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
+    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
     setLoading(false)
   }
 
@@ -1421,6 +1423,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setNotes(map)
       setLocalNotes(localMap)
     }
+  }
+
+  // Notes de match (notations_match, une note/10 par joueur et par match — distinct
+  // de notes_joueurs ci-dessus qui est une notation technique/physique/mental/tactique).
+  const chargerNotationsMatch = async (uid) => {
+    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id').eq('educateur_id', uid).eq('est_note_equipe', false)
+    setNotationsMatch(data || [])
   }
 
   const getLocalNote = (joueurId) => localNotes[joueurId] || { technique: 0, physique: 0, mental: 0, tactique: 0, commentaire: '', visible_joueur: false }
@@ -3428,8 +3437,8 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
   }
 
   // Stats globales joueur
-  const statsGlobalesJoueur = (joueurId) => {
-    const allStats = matchs.flatMap(m => {
+  const statsGlobalesJoueur = (joueurId, matchsScope = matchs) => {
+    const allStats = matchsScope.flatMap(m => {
       const ps = (m.stats_match || []).filter(s => s.joueur_id === joueurId)
       return ps.map(s => ({ ...s, _match: m }))
     })
@@ -4242,20 +4251,52 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
             ) : (
               <>
                 {/* ─ Tableau ─ */}
-                {statsSubTab === 'tableau' && (
+                {statsSubTab === 'tableau' && (() => {
+                  // Compétitions réellement présentes dans les matchs (competition est un
+                  // champ texte libre, pas un enum — pas de liste championnat/coupe/amical
+                  // figée en dur, StatsEquipe.jsx utilise déjà ce même principe).
+                  const competitionsDispo = [...new Set(matchs.map(m => m.competition).filter(Boolean))]
+                  const matchsTableauFiltres = filtreCompTableau === 'all' ? matchs : matchs.filter(m => m.competition === filtreCompTableau)
+                  const matchIdsFiltres = new Set(matchsTableauFiltres.map(m => m.id))
+                  const noteMoyenne = (joueurId) => {
+                    const notesJoueur = notationsMatch.filter(n => n.joueur_id === joueurId && matchIdsFiltres.has(n.match_id))
+                    if (!notesJoueur.length) return null
+                    const moy = notesJoueur.reduce((s, n) => s + Number(n.note), 0) / notesJoueur.length
+                    return { moyenne: moy.toFixed(1), nb: notesJoueur.length }
+                  }
+                  return (
                   <div style={{ ...st.card, overflow: 'auto' }}>
+                    {competitionsDispo.length > 1 && (
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => (
+                          <button
+                            key={f.key}
+                            onClick={() => setFiltreCompTableau(f.key)}
+                            style={{
+                              padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px',
+                              background: filtreCompTableau === f.key ? colors.accent.green : colors.background.raised,
+                              color: filtreCompTableau === f.key ? colors.black : colors.text.dim,
+                              fontWeight: filtreCompTableau === f.key ? 700 : 400,
+                            }}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                          {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang)].map(h => (
+                          {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang), 'Note'].map(h => (
                             <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {joueurs.map(j => {
-                          const s = statsGlobalesJoueur(j.id)
+                          const s = statsGlobalesJoueur(j.id, matchsTableauFiltres)
                           const tx = tauxPresence(j.id)
+                          const note = noteMoyenne(j.id)
                           return (
                             <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
@@ -4272,13 +4313,23 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                                   ? <span style={{ color: tx.taux >= 80 ? colors.accent.green : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
                                   : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                {note ? (
+                                  <span style={{ fontWeight: 700, fontSize: '14px', color: note.moyenne >= 7 ? colors.accent.green : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red }}>
+                                    {note.moyenne}<span style={{ color: colors.text.ghost, fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>/10</span>
+                                  </span>
+                                ) : (
+                                  <span style={{ color: colors.border.strong }}>—</span>
+                                )}
+                              </td>
                             </tr>
                           )
                         })}
                       </tbody>
                     </table>
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* ─ Stats équipe ─ */}
                 {statsSubTab === 'tableau' && (
