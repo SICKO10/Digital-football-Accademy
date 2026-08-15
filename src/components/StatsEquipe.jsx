@@ -81,7 +81,7 @@ export default function StatsEquipe({ matchs = [], masquerVND = false }) {
             <button key={c} onClick={() => setFiltreCompetition(c)} style={chip(filtreCompetition === c, colors.accent.green)}>{c}</button>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
-            {[{ k: 'all', l: 'Tout' }, { k: 'domicile', l: '🏠 Domicile' }, { k: 'exterieur', l: '✈️ Extérieur' }].map(f => (
+            {[{ k: 'all', l: 'Tout' }, { k: 'domicile', l: 'Domicile' }, { k: 'exterieur', l: 'Extérieur' }].map(f => (
               <button key={f.k} onClick={() => setFiltreLieu(f.k)} style={chip(filtreLieu === f.k, colors.accent.amber)}>{f.l}</button>
             ))}
           </div>
@@ -93,17 +93,22 @@ export default function StatsEquipe({ matchs = [], masquerVND = false }) {
       ) : (
         <>
           {forme.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', flexWrap: 'wrap' }}>
-              <span style={{ color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', fontWeight: 700 }}>Forme récente :</span>
-              {forme.map((m, i) => (
-                <span key={i} title={`vs ${m.adversaire} · ${m.bp}-${m.bc}`}
-                  style={{ width: '26px', height: '26px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700,
-                    background: m.resultat === 'victoire' ? colors.accent.green + alpha.subtle : m.resultat === 'nul' ? colors.accent.amber + alpha.subtle : colors.accent.red + alpha.subtle,
-                    color: m.resultat === 'victoire' ? colors.accent.green : m.resultat === 'nul' ? colors.accent.amber : colors.accent.red }}>
-                  {m.resultat === 'victoire' ? 'V' : m.resultat === 'nul' ? 'N' : 'D'}
-                </span>
-              ))}
-              {serie && <span style={{ color: colors.accent.green, fontSize: '12px', marginLeft: '4px' }}>🔥 {serie}</span>}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <span style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', flexShrink: 0 }}>Forme récente</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {forme.map((m, i) => {
+                  const c = m.resultat === 'victoire' ? colors.accent.green : m.resultat === 'nul' ? colors.accent.amber : colors.accent.red
+                  return (
+                    <div key={i} title={`vs ${m.adversaire} · ${m.bp}-${m.bc}`}
+                      style={{ width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700,
+                        background: m.resultat === 'victoire' ? colors.accent.green + alpha.subtle : m.resultat === 'nul' ? colors.accent.amber + alpha.subtle : colors.accent.red + alpha.subtle,
+                        color: c, border: `1px solid ${c}22` }}>
+                      {m.resultat === 'victoire' ? 'V' : m.resultat === 'nul' ? 'N' : 'D'}
+                    </div>
+                  )
+                })}
+              </div>
+              {serie && <span style={{ color: colors.text.secondary, fontSize: '13px' }}>— {serie}</span>}
             </div>
           )}
 
@@ -144,8 +149,8 @@ export default function StatsEquipe({ matchs = [], masquerVND = false }) {
           {filtreLieu === 'all' && (dom.length > 0 || ext.length > 0) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[
-                { label: '🏠 Domicile', liste: dom, color: colors.accent.green },
-                { label: '✈️ Extérieur', liste: ext, color: colors.accent.blue },
+                { label: 'Domicile', liste: dom, color: colors.accent.green },
+                { label: 'Extérieur', liste: ext, color: colors.accent.blue },
               ].map(({ label, liste, color }) => {
                 const pctV = pctVictoire(liste)
                 return (
