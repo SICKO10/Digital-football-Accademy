@@ -2497,7 +2497,10 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setSavingJoueur(true)
     setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
     setShowAddJoueur(false)
-    const { error } = await supabase.from('equipe_joueurs').insert({ ...snapshot, educateur_id: userId })
+    // date_naissance vaut '' par défaut (input date vide) — Postgres rejette
+    // '' pour une colonne date ("invalid input syntax for type date"), il
+    // faut null.
+    const { error } = await supabase.from('equipe_joueurs').insert({ ...snapshot, date_naissance: snapshot.date_naissance || null, educateur_id: userId })
     setSavingJoueur(false)
     if (error) {
       alert('Erreur : ' + error.message)
@@ -2646,7 +2649,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const sauvegarderJoueur = async () => {
     if (!joueurEnEdition) return
-    const { id, ...fields } = joueurEnEdition
+    // Même correctif que ajouterJoueur : '' n'est pas une date Postgres valide.
+    const { id, ...fields } = { ...joueurEnEdition, date_naissance: joueurEnEdition.date_naissance || null }
     // Optimistic : on connaît déjà exactement les nouvelles valeurs, donc la
     // liste locale se met à jour et la modale se ferme tout de suite, sans
     // attendre la réponse Supabase (aucune vérification d'erreur n'existait
