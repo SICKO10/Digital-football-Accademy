@@ -420,7 +420,8 @@ function DashboardJoueur() {
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
-  const [derniereNoteCoach, setDerniereNoteCoach] = useState(null) // { note, commentaire, match: {...} } | null
+  const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
+  const [moyennePerso, setMoyennePerso] = useState(null)
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
   const [resultatsCompetition, setResultatsCompetition] = useState([])
   const [calendrierCompetition, setCalendrierCompetition] = useState([])
@@ -532,17 +533,17 @@ function DashboardJoueur() {
     })
   }
 
-  async function chargerDerniereNote(equipeJoueurId) {
-    if (!equipeJoueurId) { setDerniereNoteCoach(null); return }
+  async function chargerMesNotes(equipeJoueurId) {
+    if (!equipeJoueurId) { setMesNotes([]); setMoyennePerso(null); return }
     const { data } = await supabase
       .from('notations_match')
       .select('note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)')
       .eq('joueur_id', equipeJoueurId)
       .eq('est_note_equipe', false)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    setDerniereNoteCoach(data || null)
+    const notes = data || []
+    setMesNotes(notes)
+    setMoyennePerso(notes.length ? (notes.reduce((s, n) => s + Number(n.note), 0) / notes.length).toFixed(1) : null)
   }
 
   useEffect(() => {
@@ -580,7 +581,7 @@ function DashboardJoueur() {
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id); chargerDerniereNote(a.equipe_joueur_id) }
+      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id); chargerMesNotes(a.equipe_joueur_id) }
     }
     if (onglet === 'competition') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
@@ -2691,41 +2692,66 @@ function DashboardJoueur() {
                     {tauxPresenceAccueil.matchsJoues > 0 ? `${Math.round(tauxPresenceAccueil.minutesJouees / tauxPresenceAccueil.matchsJoues)} min/match` : '—'}
                   </p>
                 </div>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                  <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: colors.accent.amber }}>{tauxPresenceAccueil.serie}</p>
-                  <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>
-                    {tauxPresenceAccueil.serie > 1 ? 'présences de suite' : tauxPresenceAccueil.serie === 1 ? 'présent au dernier entraînement' : 'aucune série en cours'}
-                  </p>
+                <div style={{
+                  background: colors.background.surface,
+                  border: moyennePerso ? `1px solid ${moyennePerso >= 7 ? colors.accent.green : moyennePerso >= 5 ? colors.accent.amber : colors.accent.red}` : `1px solid ${colors.border.default}`,
+                  borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box'
+                }}>
+                  {moyennePerso ? (
+                    <>
+                      <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: moyennePerso >= 7 ? colors.accent.green : moyennePerso >= 5 ? colors.accent.amber : colors.accent.red }}>
+                        {moyennePerso}<span style={{ fontSize: '14px', color: colors.text.faint, marginLeft: '2px' }}>/10</span>
+                      </p>
+                      <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary }}>Note coach</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, textAlign: 'center' }}>
+                        sur {mesNotes.length} match{mesNotes.length > 1 ? 's' : ''} évalué{mesNotes.length > 1 ? 's' : ''}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: colors.accent.amber }}>{tauxPresenceAccueil.serie}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>
+                        {tauxPresenceAccueil.serie > 1 ? 'présences de suite' : tauxPresenceAccueil.serie === 1 ? 'présent au dernier entraînement' : 'aucune série en cours'}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             )}
 
-            {derniereNoteCoach && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-                <div style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-                  Dernière évaluation coach
+            {mesNotes.length > 0 && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ color: colors.text.primary, fontSize: '15px', fontWeight: 600, margin: 0 }}>Mes évaluations coach</h3>
+                  <span style={{ color: colors.text.faint, fontSize: '12px' }}>
+                    Moyenne : <strong style={{ color: moyennePerso >= 7 ? colors.accent.green : moyennePerso >= 5 ? colors.accent.amber : colors.accent.red }}>{moyennePerso}/10</strong>
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ color: colors.text.primary, fontSize: '14px' }}>
-                      {derniereNoteCoach.matchs_equipe?.domicile ? 'vs' : '@'} {derniereNoteCoach.matchs_equipe?.adversaire}
-                    </div>
-                    <div style={{ color: colors.text.ghost, fontSize: '12px' }}>
-                      {derniereNoteCoach.matchs_equipe?.date && new Date(derniereNoteCoach.matchs_equipe.date + 'T00:00:00').toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: '32px', fontWeight: 700,
-                    color: derniereNoteCoach.note >= 8 ? colors.accent.green : derniereNoteCoach.note >= 5 ? colors.accent.amber : colors.accent.red
+                {mesNotes.slice(0, 5).map((n, i) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0',
+                    borderBottom: i < Math.min(mesNotes.length, 5) - 1 ? `1px solid ${colors.border.faint}` : 'none'
                   }}>
-                    {derniereNoteCoach.note}/10
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>
+                        {n.matchs_equipe?.domicile ? 'vs' : '@'} {n.matchs_equipe?.adversaire || 'Match'}
+                      </div>
+                      <div style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '2px' }}>
+                        {n.matchs_equipe?.date ? new Date(n.matchs_equipe.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : ''}
+                        {n.matchs_equipe?.score_nous != null ? ` · ${n.matchs_equipe.score_nous} - ${n.matchs_equipe.score_eux}` : ''}
+                      </div>
+                      {n.commentaire && (
+                        <div style={{ color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>"{n.commentaire}"</div>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: '22px', fontWeight: 700, marginLeft: '16px', flexShrink: 0,
+                      color: n.note >= 7 ? colors.accent.green : n.note >= 5 ? colors.accent.amber : colors.accent.red
+                    }}>
+                      {n.note}/10
+                    </div>
                   </div>
-                </div>
-                {derniereNoteCoach.commentaire && (
-                  <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '10px', fontStyle: 'italic', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '10px' }}>
-                    "{derniereNoteCoach.commentaire}"
-                  </p>
-                )}
+                ))}
               </div>
             )}
 

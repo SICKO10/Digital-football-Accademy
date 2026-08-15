@@ -17,7 +17,11 @@ import { colors, alpha } from '../tokens'
 // masquerVND : DashboardClub.jsx affiche déjà victoires/nuls/défaites +
 // clean sheets dans l'onglet Classements existant — évite de les répéter
 // une seconde fois juste en dessous.
-export default function StatsEquipe({ matchs = [], masquerVND = false }) {
+// noteEquipe (optionnel) : { moyenne, nb } — moyenne des notations_match d'équipe
+// (est_note_equipe=true), calculée par l'appelant. Seul DashboardEducateur.jsx la
+// passe : c'est l'éducateur qui note ses propres matchs, cette donnée n'existe pas
+// côté DashboardJoueur.jsx/DashboardClub.jsx qui réutilisent aussi ce composant.
+export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquipe = null }) {
   const [filtreCompetition, setFiltreCompetition] = useState('all')
   const [filtreLieu, setFiltreLieu] = useState('all')
 
@@ -74,6 +78,24 @@ export default function StatsEquipe({ matchs = [], masquerVND = false }) {
 
   return (
     <div>
+      {noteEquipe && (
+        <div style={{
+          background: colors.background.surface,
+          border: `1px solid ${noteEquipe.moyenne >= 7 ? colors.accent.green : noteEquipe.moyenne >= 5 ? colors.accent.amber : colors.accent.red}`,
+          borderRadius: '14px', padding: '20px 24px', marginBottom: '20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px',
+        }}>
+          <div>
+            <div style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Note globale équipe</div>
+            <div style={{ color: colors.text.primary, fontSize: '13px', marginTop: '4px' }}>
+              Moyenne sur {noteEquipe.nb} match{noteEquipe.nb > 1 ? 's' : ''} évalué{noteEquipe.nb > 1 ? 's' : ''}
+            </div>
+          </div>
+          <div style={{ fontSize: '42px', fontWeight: 800, color: noteEquipe.moyenne >= 7 ? colors.accent.green : noteEquipe.moyenne >= 5 ? colors.accent.amber : colors.accent.red }}>
+            {noteEquipe.moyenne}<span style={{ fontSize: '18px', color: colors.text.faint, marginLeft: '4px' }}>/10</span>
+          </div>
+        </div>
+      )}
       {(competitionsDisponibles.length > 1) && (
         <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <button onClick={() => setFiltreCompetition('all')} style={chip(filtreCompetition === 'all', colors.accent.green)}>Toutes compétitions</button>

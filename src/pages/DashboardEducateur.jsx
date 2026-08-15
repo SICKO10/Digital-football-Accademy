@@ -1427,8 +1427,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Notes de match (notations_match, une note/10 par joueur et par match — distinct
   // de notes_joueurs ci-dessus qui est une notation technique/physique/mental/tactique).
+  // Inclut aussi les notes d'équipe (joueur_id NULL, est_note_equipe=true) pour la
+  // card "Note globale équipe" — les lignes équipe n'ont jamais de joueur_id, donc
+  // elles ne perturbent pas le calcul de moyenne par joueur ci-dessous.
   const chargerNotationsMatch = async (uid) => {
-    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id').eq('educateur_id', uid).eq('est_note_equipe', false)
+    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid)
     setNotationsMatch(data || [])
   }
 
@@ -4315,9 +4318,12 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                                 {note ? (
-                                  <span style={{ fontWeight: 700, fontSize: '14px', color: note.moyenne >= 7 ? colors.accent.green : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red }}>
-                                    {note.moyenne}<span style={{ color: colors.text.ghost, fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>/10</span>
-                                  </span>
+                                  <div>
+                                    <span style={{ fontWeight: 700, fontSize: '14px', color: note.moyenne >= 7 ? colors.accent.green : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red }}>
+                                      {note.moyenne}<span style={{ color: colors.text.ghost, fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>/10</span>
+                                    </span>
+                                    <div style={{ color: colors.text.ghost, fontSize: '10px' }}>{note.nb} match{note.nb > 1 ? 's' : ''}</div>
+                                  </div>
                                 ) : (
                                   <span style={{ color: colors.border.strong }}>—</span>
                                 )}
@@ -4332,12 +4338,18 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 })()}
 
                 {/* ─ Stats équipe ─ */}
-                {statsSubTab === 'tableau' && (
+                {statsSubTab === 'tableau' && (() => {
+                  const notesEquipeMatch = notationsMatch.filter(n => n.est_note_equipe)
+                  const noteEquipe = notesEquipeMatch.length
+                    ? { moyenne: (notesEquipeMatch.reduce((s, n) => s + Number(n.note), 0) / notesEquipeMatch.length).toFixed(1), nb: notesEquipeMatch.length }
+                    : null
+                  return (
                   <div style={{ ...st.card, marginTop: '16px' }}>
                     <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Bilan de l'équipe</p>
-                    <StatsEquipe matchs={matchs} />
+                    <StatsEquipe matchs={matchs} noteEquipe={noteEquipe} />
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* ─ Classement ─ */}
                 {statsSubTab === 'classement' && (() => {
