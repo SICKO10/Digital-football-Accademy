@@ -4281,7 +4281,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 {/* ─ Stats équipe ─ */}
                 {statsSubTab === 'tableau' && (
                   <div style={{ ...st.card, marginTop: '16px' }}>
-                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Stats équipe</p>
+                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Bilan de l'équipe</p>
                     <StatsEquipe matchs={matchs} />
                   </div>
                 )}

@@ -12,7 +12,7 @@ export const T = {
   // ── Navigation ──────────────────────────────────────────────────────────────
   nav_accueil:          { fr: 'Accueil',             en: 'Home',              pt: 'Início',            es: 'Inicio',            it: 'Home',              de: 'Startseite'        },
   nav_equipe:           { fr: 'Mon équipe',           en: 'My team',           pt: 'Minha equipa',      es: 'Mi equipo',         it: 'La mia squadra',    de: 'Mein Team'         },
-  nav_stats:            { fr: 'Stats joueurs',        en: 'Player stats',      pt: 'Estatísticas',      es: 'Estadísticas',      it: 'Statistiche',       de: 'Spielerstatistik'  },
+  nav_stats:            { fr: 'Stats équipe',         en: 'Team stats',        pt: 'Estatísticas da equipa', es: 'Estadísticas del equipo', it: 'Statistiche squadra', de: 'Team-Statistik'  },
   nav_competition:      { fr: 'Compétition',          en: 'Competition',       pt: 'Competição',        es: 'Competición',       it: 'Competizione',      de: 'Wettbewerb'        },
   nav_deplacements:     { fr: 'Déplacements',         en: 'Travel',            pt: 'Deslocações',       es: 'Desplazamientos',   it: 'Trasferte',         de: 'Fahrten'           },
   nav_terrains:         { fr: 'Terrains',             en: 'Pitches',           pt: 'Campos',            es: 'Campos',            it: 'Campi',             de: 'Plätze'            },
