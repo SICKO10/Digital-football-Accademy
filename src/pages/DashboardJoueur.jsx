@@ -278,33 +278,57 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
 // variantes accentuées/anglaises/booléennes, cf. sessions précédentes.
 const estPresent = (statut) => statut === 'present' || statut === 'convoque'
 
-// Cercle de taux de présence — utilisé sur l'Accueil, à côté du widget
-// "Prochaines échéances". `taux`/`present`/`total` viennent de
-// presences_entrainement (saisie de l'éducateur), pas de disponibilites (le
-// sondage n'exprime qu'une intention, pas une présence constatée).
-function AnneauTaux({ taux, size = 90, strokeWidth = 8, fontSize = 16 }) {
-  const r = (size - strokeWidth) / 2
-  const c = size / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (taux / 100) * circ
-  const couleur = taux >= 75 ? colors.accent.green : taux >= 50 ? '#facc15' : colors.accent.red
+// Camembert multi-segment (présence / convocation / absence / blessure / maladie)
+// — même technique et mêmes couleurs que DonutMulti côté éducateur
+// (DashboardEducateur.jsx), pour rester cohérent entre les deux dashboards.
+function DonutPresenceMulti({ presents, convoque, absents, blesses, malade, size = 96 }) {
+  const total = (presents || 0) + (convoque || 0) + (absents || 0) + (blesses || 0) + (malade || 0)
+  const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
+  const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
+  if (!total) return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ color: colors.border.strong, fontSize: '10px' }}>—</span>
+    </div>
+  )
+  const p = (presents || 0) / total * 100
+  const c = (convoque || 0) / total * 100
+  const a = (absents || 0) / total * 100
+  const b = (blesses || 0) / total * 100
+  const pEnd = p + c
+  const aEnd = pEnd + a
+  const bEnd = aEnd + b
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={c} cy={c} r={r} fill="none" stroke="#1f2937" strokeWidth={strokeWidth} />
-      <circle cx={c} cy={c} r={r} fill="none" stroke={couleur} strokeWidth={strokeWidth}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        transform={`rotate(-90 ${c} ${c})`} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
-      <text x={c} y={c} textAnchor="middle" dominantBaseline="central" fontSize={fontSize} fontWeight="800" fill={couleur}>{taux}%</text>
-    </svg>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: `conic-gradient(#4ade80 0% ${p}%, #60a5fa ${p}% ${pEnd}%, #ef4444 ${pEnd}% ${aEnd}%, #f97316 ${aEnd}% ${bEnd}%, #a855f7 ${bEnd}% 100%)`,
+      }} />
+      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1 }}>{taux}%</span>
+      </div>
+    </div>
   )
 }
 
-function CerclePresence({ taux, present, total, style }) {
+function CerclePresence({ presents, convoque, absents, blesses, malade, total, style }) {
   return (
-    <div style={{ background: '#111827', borderRadius: '16px', padding: '20px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '140px', boxSizing: 'border-box', ...style }}>
-      <AnneauTaux taux={taux} />
-      <div style={{ fontSize: '12px', fontWeight: '700', color: 'white', marginTop: '8px' }}>Présence</div>
-      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{present}/{total} séances</div>
+    <div style={{ background: '#111827', borderRadius: '16px', padding: '18px', border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box', ...style }}>
+      <DonutPresenceMulti presents={presents} convoque={convoque} absents={absents} blesses={blesses} malade={malade} size={88} />
+      <div style={{ fontSize: '11px', color: '#6b7280', margin: '8px 0 10px' }}>{total} séance{total > 1 ? 's' : ''} au total</div>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {[
+          { emoji: '✅', label: 'Présent', val: presents, color: colors.accent.green },
+          { emoji: '🏆', label: 'Convoqué', val: convoque, color: colors.accent.blue },
+          { emoji: '❌', label: 'Absent', val: absents, color: colors.accent.red },
+          { emoji: '🤕', label: 'Blessé', val: blesses, color: colors.accent.orange },
+          { emoji: '🤒', label: 'Malade', val: malade, color: colors.accent.purple },
+        ].filter(s => s.val > 0).map(s => (
+          <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+            <span style={{ color: '#9ca3af' }}>{s.emoji} {s.label}</span>
+            <span style={{ fontWeight: 700, color: s.color }}>{s.val}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -482,7 +506,13 @@ function DashboardJoueur() {
     const saisies = (entrainementsData || []).filter(e => statutEffectif(e.id) !== null)
     if (saisies.length === 0) { setTauxPresenceAccueil(null); return }
     const total = saisies.length
-    const present = saisies.filter(e => estPresent(statutEffectif(e.id))).length
+    const statuts = saisies.map(e => statutEffectif(e.id))
+    const presents = statuts.filter(s => s === 'present').length
+    const convoque = statuts.filter(s => s === 'convoque').length
+    const absents = statuts.filter(s => s === 'absent').length
+    const blesses = statuts.filter(s => s === 'blesse').length
+    const malade = statuts.filter(s => s === 'malade').length
+    const present = presents + convoque // présent + convoqué comptent comme présence, cf. estPresent
 
     // Série de présences consécutives : mêmes séances "saisies", triées de la
     // plus récente à la plus ancienne, jusqu'à la première absence.
@@ -497,6 +527,7 @@ function DashboardJoueur() {
 
     setTauxPresenceAccueil({
       taux: Math.round((present / total) * 100), present, total, serie,
+      presents, convoque, absents, blesses, malade,
       buts, passes, minutesJouees, matchsJoues,
     })
   }
