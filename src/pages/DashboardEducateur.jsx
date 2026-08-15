@@ -13,6 +13,7 @@ import PlanningTerrains from '../components/PlanningTerrains'
 import CauserieAvantMatch from '../components/CauserieAvantMatch'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
+import NotationMatch from '../components/NotationMatch'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -1194,6 +1195,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerError, setScannerError] = useState(null)
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
+  const [matchANoter, setMatchANoter] = useState(null)
   const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
   const [modalSondageMatch, setModalSondageMatch] = useState(null) // match affiché dans la modale résultats
   const [convocationsCoches, setConvocationsCoches] = useState({}) // { [joueur_id]: bool }, pré-coché ✅/🏆 à l'ouverture de la modale
@@ -1367,7 +1369,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const chargerMatchs = async (uid) => {
-    const { data } = await supabase.from('matchs_equipe').select('*, stats_match(*)').eq('educateur_id', uid).order('date', { ascending: false })
+    const { data } = await supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid).order('date', { ascending: false })
     setMatchs(data || [])
 
     // Dispos auto-déclarées par les joueurs pour ces matchs (mêmes disponibilites
@@ -4876,7 +4878,13 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
                               <p style={{ fontSize: '13px', color: colors.text.faint, margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
-                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, marginLeft: 'auto', padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
+                              <button onClick={() => setMatchANoter(m)} style={{
+                                marginLeft: 'auto', padding: '7px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700,
+                                background: m.notations_match?.length > 0 ? colors.accent.green + alpha.subtle : colors.background.raised,
+                                border: `1px solid ${m.notations_match?.length > 0 ? colors.accent.green : colors.border.strong}`,
+                                color: m.notations_match?.length > 0 ? colors.accent.green : colors.text.secondary,
+                              }}>{m.notations_match?.length > 0 ? '✓ Noté' : '📝 Noter'}</button>
+                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
                         )}
@@ -4887,6 +4895,21 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                     </div>
                   ))}
                   {matchs.filter(matchJoue).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
+                </div>
+              </div>
+            )}
+
+            {/* Modal notation match */}
+            {matchANoter && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, overflowY: 'auto', padding: '24px' }}
+                onClick={() => setMatchANoter(null)}>
+                <div onClick={e => e.stopPropagation()}>
+                  <NotationMatch
+                    match={matchANoter}
+                    joueurs={joueurs}
+                    educateurId={userId}
+                    onClose={() => { setMatchANoter(null); chargerMatchs(userId) }}
+                  />
                 </div>
               </div>
             )}

@@ -396,6 +396,7 @@ function DashboardJoueur() {
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
+  const [derniereNoteCoach, setDerniereNoteCoach] = useState(null) // { note, commentaire, match: {...} } | null
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
   const [resultatsCompetition, setResultatsCompetition] = useState([])
   const [calendrierCompetition, setCalendrierCompetition] = useState([])
@@ -456,31 +457,38 @@ function DashboardJoueur() {
   // compte que present/convoque comme "présent" (même convention que
   // tauxPresence côté DashboardEducateur.jsx — un joueur convoqué en équipe
   // sup n'est pas un absent).
-  async function chargerTauxPresence(equipeJoueurId) {
+  async function chargerTauxPresence(equipeJoueurId, educateurId) {
     if (!equipeJoueurId) { setTauxPresenceAccueil(null); return }
-    const [{ data: presences }, { data: statsMatch }] = await Promise.all([
+    // Le total ne doit pas se limiter aux séances déjà saisies manuellement par
+    // l'éducateur dans presences_entrainement (souvent très partiel, l'éducateur
+    // n'ayant pas forcément pointé chaque séance) : on part de TOUTES les séances
+    // de l'équipe (entrainements), et pour chacune, on prend le statut saisi
+    // manuellement si présent, sinon on retombe sur la réponse au sondage de
+    // présence (disponibilites) — même logique que tauxPresence() côté éducateur
+    // (DashboardEducateur.jsx), pour rester cohérent des deux côtés.
+    const [{ data: entrainementsData }, { data: presences }, { data: dispos }, { data: statsMatch }] = await Promise.all([
+      supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0]),
       supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', equipeJoueurId),
+      supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
       supabase.from('stats_match').select('buts, passes_dec, minutes').eq('joueur_id', equipeJoueurId),
     ])
-    if (!presences || presences.length === 0) { setTauxPresenceAccueil(null); return }
-    const total = presences.length
-    const present = presences.filter(p => estPresent(p.statut)).length
 
-    // Série de présences consécutives : trie les séances par date (via un join sur
-    // entrainements, presences_entrainement n'a pas de colonne date) et compte depuis
-    // la plus récente jusqu'à la première absence.
-    const entrainementIds = presences.map(p => p.entrainement_id).filter(Boolean)
-    const { data: entDates } = entrainementIds.length
-      ? await supabase.from('entrainements').select('id, date').in('id', entrainementIds)
-      : { data: [] }
-    const dateMap = {}
-    entDates?.forEach(e => { dateMap[e.id] = e.date })
-    const parDate = presences
-      .map(p => ({ ...p, date: dateMap[p.entrainement_id] }))
-      .filter(p => p.date)
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    const presenceMap = {}
+    presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+    const dispoMap = {}
+    dispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
+    const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+
+    const saisies = (entrainementsData || []).filter(e => statutEffectif(e.id) !== null)
+    if (saisies.length === 0) { setTauxPresenceAccueil(null); return }
+    const total = saisies.length
+    const present = saisies.filter(e => estPresent(statutEffectif(e.id))).length
+
+    // Série de présences consécutives : mêmes séances "saisies", triées de la
+    // plus récente à la plus ancienne, jusqu'à la première absence.
+    const parDate = saisies.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
     let serie = 0
-    for (const p of parDate) { if (estPresent(p.statut)) serie++; else break }
+    for (const e of parDate) { if (estPresent(statutEffectif(e.id))) serie++; else break }
 
     const buts = statsMatch?.reduce((s, m) => s + (m.buts || 0), 0) || 0
     const passes = statsMatch?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
@@ -491,6 +499,19 @@ function DashboardJoueur() {
       taux: Math.round((present / total) * 100), present, total, serie,
       buts, passes, minutesJouees, matchsJoues,
     })
+  }
+
+  async function chargerDerniereNote(equipeJoueurId) {
+    if (!equipeJoueurId) { setDerniereNoteCoach(null); return }
+    const { data } = await supabase
+      .from('notations_match')
+      .select('note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)')
+      .eq('joueur_id', equipeJoueurId)
+      .eq('est_note_equipe', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setDerniereNoteCoach(data || null)
   }
 
   useEffect(() => {
@@ -528,7 +549,7 @@ function DashboardJoueur() {
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id) }
+      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id); chargerDerniereNote(a.equipe_joueur_id) }
     }
     if (onglet === 'competition') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
@@ -2645,6 +2666,35 @@ function DashboardJoueur() {
                     {tauxPresenceAccueil.serie > 1 ? 'présences de suite' : tauxPresenceAccueil.serie === 1 ? 'présent au dernier entraînement' : 'aucune série en cours'}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {derniereNoteCoach && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  Dernière évaluation coach
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ color: colors.text.primary, fontSize: '14px' }}>
+                      {derniereNoteCoach.matchs_equipe?.domicile ? 'vs' : '@'} {derniereNoteCoach.matchs_equipe?.adversaire}
+                    </div>
+                    <div style={{ color: colors.text.ghost, fontSize: '12px' }}>
+                      {derniereNoteCoach.matchs_equipe?.date && new Date(derniereNoteCoach.matchs_equipe.date + 'T00:00:00').toLocaleDateString('fr-FR')}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '32px', fontWeight: 700,
+                    color: derniereNoteCoach.note >= 8 ? colors.accent.green : derniereNoteCoach.note >= 5 ? colors.accent.amber : colors.accent.red
+                  }}>
+                    {derniereNoteCoach.note}/10
+                  </div>
+                </div>
+                {derniereNoteCoach.commentaire && (
+                  <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '10px', fontStyle: 'italic', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '10px' }}>
+                    "{derniereNoteCoach.commentaire}"
+                  </p>
+                )}
               </div>
             )}
 
