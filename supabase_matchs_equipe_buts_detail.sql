@@ -1,0 +1,14 @@
+-- Minute des buts (pour les stats "par quart d'heure"), extraite par le scanner IA
+-- de feuille de match. Stockée en JSONB directement sur matchs_equipe plutôt que
+-- dans une table séparée :
+-- - une table `match_buts` existe déjà en base (vide, non référencée nulle part
+--   dans le code) mais avec des colonnes incompatibles (equipe_id en UUID, pas de
+--   RLS) et un club_id qui suppose une table `clubs` qui n'existe pas dans ce
+--   projet (les clubs sont des profiles avec plan='club', pas une entité séparée).
+--   Elle n'est pas réutilisée ici.
+-- - matchs_equipe a déjà toutes les RLS nécessaires (scope educateur_id) : une
+--   colonne jsonb dessus n'a besoin d'aucune politique supplémentaire.
+--
+-- Format : [{ "minute": 23, "equipe": "nous" }, { "minute": 67, "equipe": "nous" },
+--           { "minute": 45, "equipe": "eux" }]
+ALTER TABLE matchs_equipe ADD COLUMN IF NOT EXISTS buts_detail JSONB DEFAULT '[]';

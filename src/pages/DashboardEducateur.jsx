@@ -1191,6 +1191,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerResult, setScannerResult] = useState(null)
   const [scannerMatchData, setScannerMatchData] = useState({ date: '', adversaire: '', competition: '', score_nous: '', score_eux: '', domicile: true })
   const [scannerStats, setScannerStats] = useState({})
+  const [scannerButsDetail, setScannerButsDetail] = useState([]) // [{ minute, equipe }] — pour matchs_equipe.buts_detail
   const [scannerSaving, setScannerSaving] = useState(false)
   const [scannerError, setScannerError] = useState(null)
   const [scannerWarning, setScannerWarning] = useState(null) // avertissement si peu de joueurs détectés vs effectif
@@ -1205,6 +1206,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingMatchForm, setSavingMatchForm] = useState(false)
   const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
+  const [scannerModalButsDetail, setScannerModalButsDetail] = useState([]) // [{ minute, equipe }] — pour matchs_equipe.buts_detail
   const [scannerModalImageBase64, setScannerModalImageBase64] = useState(null)
   const [scannerModalImagePreview, setScannerModalImagePreview] = useState(null)
   const [scannerModalLoading, setScannerModalLoading] = useState(false)
@@ -2846,6 +2848,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setScannerModalImageBase64(null)
     setScannerModalImagePreview(null)
     setScannerModalError(null)
+    setScannerModalButsDetail(m.buts_detail || [])
   }
 
   const marquerMatchJoue = async () => {
@@ -2856,13 +2859,16 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const matchSnapshot = modalMatchJoue
     const matchId = matchSnapshot.id
     const scoreSnapshot = scoreJoueForm
+    const butsDetailSnapshot = scannerModalButsDetail
     setSavingMatchJoue(true)
     setModalMatchJoue(null)
     setScoreJoueForm({ score_nous: '', score_eux: '' })
+    setScannerModalButsDetail([])
     const [{ error }] = await Promise.all([
       supabase.from('matchs_equipe').update({
         score_nous: scoreSnapshot.score_nous === '' ? null : parseInt(scoreSnapshot.score_nous),
         score_eux: scoreSnapshot.score_eux === '' ? null : parseInt(scoreSnapshot.score_eux),
+        buts_detail: butsDetailSnapshot,
       }).eq('id', matchId),
       sauvegarderStatsMatch(matchId).catch(e => console.error('Erreur sauvegarde stats match:', e)), // upsert stats_match + recharge matchs
     ])
@@ -3109,11 +3115,16 @@ Format exact attendu :
   "buts_gauche": ["PRENOM NOM", ...],
   "buts_droite": ["PRENOM NOM", ...],
   "cartons_jaunes": ["PRENOM NOM", ...],
-  "cartons_rouges": ["PRENOM NOM", ...]
+  "cartons_rouges": ["PRENOM NOM", ...],
+  "buts_minutes": [{ "colonne": "gauche ou droite", "minute": 23 }, ...]
 }
 
 Lis chaque nom exactement comme écrit sur la feuille.
-Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
+Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.
+Pour "buts_minutes" : un élément par but marqué, avec la colonne (gauche/droite,
+même convention que equipe_gauche/equipe_droite) et la minute indiquée à côté du
+but (souvent près d'un symbole ⚽). Si la minute d'un but n'est pas visible, ne
+mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -3168,7 +3179,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       }
     })
 
-    return { parsed, scoreNous, scoreAdv, statsParJoueur }
+    // Minutes des buts, pour les stats "par quart d'heure" (StatsEquipe.jsx) —
+    // "gauche"/"droite" (convention de la feuille) reconverti en "nous"/"eux"
+    // maintenant qu'on sait quel côté est le nôtre. Les buts sans minute lisible
+    // ne sont pas gardés (mieux vaut absent qu'une minute inventée).
+    const butsDetail = (parsed.buts_minutes || [])
+      .filter(b => typeof b.minute === 'number' && (b.colonne === 'gauche' || b.colonne === 'droite'))
+      .map(b => ({ minute: b.minute, equipe: b.colonne === notreEquipeCote ? 'nous' : 'eux' }))
+
+    return { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail }
   }
 
   const scannerMatch = async () => {
@@ -3176,7 +3195,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     setScannerLoading(true)
     setScannerError(null)
     try {
-      const { parsed, scoreNous, scoreAdv, statsParJoueur } = await scannerFeuilleDeMatch(scannerImageBase64, setScannerStatus)
+      const { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail } = await scannerFeuilleDeMatch(scannerImageBase64, setScannerStatus)
       setScannerResult(parsed)
       setScannerMatchData({
         date: parsed.date || '',
@@ -3187,6 +3206,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         domicile: parsed.domicile !== false
       })
       setScannerStats(statsParJoueur)
+      setScannerButsDetail(butsDetail)
       // Avertit si l'IA a détecté sensiblement moins de joueurs que l'effectif
       // de l'équipe — seuil relatif (70%) plutôt qu'un nombre fixe, une petite
       // équipe (U7...) pouvant légitimement avoir un effectif réduit.
@@ -3209,9 +3229,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     setScannerModalLoading(true)
     setScannerModalError(null)
     try {
-      const { scoreNous, scoreAdv, statsParJoueur } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
+      const { scoreNous, scoreAdv, statsParJoueur, butsDetail } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
       setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
       setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
+      setScannerModalButsDetail(butsDetail)
     } catch (e) {
       setScannerModalError(e.message)
     } finally {
@@ -3228,6 +3249,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
       educateur_id: userId,
       score_nous: parseInt(scannerMatchData.score_nous) || 0,
       score_eux: parseInt(scannerMatchData.score_eux) || 0,
+      buts_detail: scannerButsDetail,
     }).select().single()
     if (matchInserted) {
       for (const [joueurId, s] of Object.entries(scannerStats)) {
@@ -3244,6 +3266,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
     setScannerImageBase64(null)
     setScannerImagePreview(null)
     setScannerStats({})
+    setScannerButsDetail([])
     setScannerSaving(false)
   }
 

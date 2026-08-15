@@ -56,6 +56,23 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
   const ext = avecResultat.filter(m => !m.domicile)
   const pctVictoire = (liste) => liste.length ? Math.round(liste.filter(m => m.resultat === 'victoire').length / liste.length * 100) : null
 
+  // Buts par quart d'heure — alimenté par matchs_equipe.buts_detail (minute extraite
+  // par le scanner IA de feuille de match). Absent tant qu'aucun match n'a été scanné
+  // avec des minutes lisibles : la section reste cachée plutôt que d'afficher un
+  // graphique à zéro partout.
+  const butsAvecMinute = avecResultat.flatMap(m => (m.buts_detail || []).filter(b => typeof b.minute === 'number'))
+  const quartsGraphique = [0, 1, 2, 3, 4, 5].map(idx => {
+    const minDebut = idx * 15
+    const minFin = idx === 5 ? 999 : (idx + 1) * 15
+    const butsQuart = butsAvecMinute.filter(b => b.minute >= minDebut && b.minute < minFin)
+    return {
+      label: idx === 5 ? "75-90'+" : `${minDebut}-${minFin}'`,
+      marques: butsQuart.filter(b => b.equipe === 'nous').length,
+      encaisses: butsQuart.filter(b => b.equipe === 'eux').length,
+    }
+  })
+  const maxQuart = Math.max(1, ...quartsGraphique.flatMap(q => [q.marques, q.encaisses]))
+
   const forme = avecResultat.slice(0, 5)
   const serie = (() => {
     if (!forme.length) return null
@@ -188,6 +205,27 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {butsAvecMinute.length > 0 && (
+            <div style={{ ...card, textAlign: 'left', marginTop: '10px' }}>
+              <p style={{ margin: '0 0 14px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>Buts par quart d'heure</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '110px' }}>
+                {quartsGraphique.map(q => (
+                  <div key={q.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '86px' }}>
+                      <div title={`${q.marques} but(s) marqué(s)`} style={{ width: '14px', height: `${(q.marques / maxQuart) * 86}px`, minHeight: q.marques > 0 ? '4px' : 0, background: colors.accent.green, borderRadius: '3px 3px 0 0' }} />
+                      <div title={`${q.encaisses} but(s) encaissé(s)`} style={{ width: '14px', height: `${(q.encaisses / maxQuart) * 86}px`, minHeight: q.encaisses > 0 ? '4px' : 0, background: colors.accent.red, borderRadius: '3px 3px 0 0' }} />
+                    </div>
+                    <p style={{ margin: '6px 0 0', color: colors.text.ghost, fontSize: '10px' }}>{q.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.green, display: 'inline-block' }} /> Marqués</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.red, display: 'inline-block' }} /> Encaissés</span>
+              </div>
             </div>
           )}
 
