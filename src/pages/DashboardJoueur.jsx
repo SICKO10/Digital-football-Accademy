@@ -20,6 +20,7 @@ import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import SondageSemaine from '../components/SondageSemaine'
+import StatsEquipe from '../components/StatsEquipe'
 
 // Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
 // dans DashboardEducateur.jsx/DashboardCoach.jsx/GestionSponsors.jsx. Défini au
@@ -753,7 +754,7 @@ function DashboardJoueur() {
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
-      supabase.from('matchs_equipe').select('id, score_nous, score_eux').eq('educateur_id', educateurId),
+      supabase.from('matchs_equipe').select('id, date, adversaire, domicile, competition, score_nous, score_eux').eq('educateur_id', educateurId),
     ])
 
     // --- Stats personnelles ---
@@ -836,6 +837,7 @@ function DashboardJoueur() {
         ligueUrl: profilEdu?.ligue_url || null,
         prochainMatchs: prochainMatchs || [],
         leaderButs, leaderPasses, leaderVictoires, leaderPoints,
+        matchsEquipe: matchsEquipe || [],
       }
     }))
     setStatsLoading(prev => ({ ...prev, [affiliationId]: false }))
@@ -3906,6 +3908,12 @@ function DashboardJoueur() {
                                     🏆 {t('aff_classement_championnat', lang)} →
                                   </a>
                                 )}
+
+                                {/* Stats équipe */}
+                                <div style={{ paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+                                  <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📊 Stats de l'équipe</p>
+                                  <StatsEquipe matchs={s.matchsEquipe || []} />
+                                </div>
                               </div>
                             )
                           })()}

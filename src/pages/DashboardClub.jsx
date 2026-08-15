@@ -17,6 +17,7 @@ import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
+import StatsEquipe from '../components/StatsEquipe'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -2649,6 +2650,12 @@ Règles :
                           <StatCard label={t('club_taux_defaite', lang)} valeur={`${tauxD}%`} couleur="red" />
                         </div>
                         <StatCard label={t('jp_clean_sheets', lang)} valeur={`${tauxCS}%`} />
+                      </div>
+                    )}
+                    {nbMatchsJoues > 0 && (
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <p style={{ fontSize: '13px', fontWeight: 700, color: couleurPrincipale, marginBottom: '10px' }}>📊 Stats détaillées</p>
+                        <StatsEquipe matchs={matchsCat} masquerVND />
                       </div>
                     )}
                     {totalPresencesEffectif > 0 && (
