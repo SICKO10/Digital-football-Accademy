@@ -395,7 +395,7 @@ function DashboardJoueur() {
   const [widgetDispoEnt, setWidgetDispoEnt] = useState(null)
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
-  const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total } | null
+  const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
   const [resultatsCompetition, setResultatsCompetition] = useState([])
   const [calendrierCompetition, setCalendrierCompetition] = useState([])
@@ -421,6 +421,8 @@ function DashboardJoueur() {
   const [noteSaison, setNoteSaison] = useState('2024-2025')
   const [savingNote, setSavingNoteEdu] = useState(false)
   const [noteSaved, setNoteSaved] = useState(false)
+  const [cloturesAEvaluer, setCloturesAEvaluer] = useState([]) // saisons clôturées par le coach, pas encore évaluées
+  const [rappelClotureFerme, setRappelClotureFerme] = useState(false)
 
   const { lang, setLang } = useLang()
 
@@ -456,11 +458,39 @@ function DashboardJoueur() {
   // sup n'est pas un absent).
   async function chargerTauxPresence(equipeJoueurId) {
     if (!equipeJoueurId) { setTauxPresenceAccueil(null); return }
-    const { data } = await supabase.from('presences_entrainement').select('statut').eq('joueur_id', equipeJoueurId)
-    if (!data || data.length === 0) { setTauxPresenceAccueil(null); return }
-    const total = data.length
-    const present = data.filter(p => estPresent(p.statut)).length
-    setTauxPresenceAccueil({ taux: Math.round((present / total) * 100), present, total })
+    const [{ data: presences }, { data: statsMatch }] = await Promise.all([
+      supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', equipeJoueurId),
+      supabase.from('stats_match').select('buts, passes_dec, minutes').eq('joueur_id', equipeJoueurId),
+    ])
+    if (!presences || presences.length === 0) { setTauxPresenceAccueil(null); return }
+    const total = presences.length
+    const present = presences.filter(p => estPresent(p.statut)).length
+
+    // Série de présences consécutives : trie les séances par date (via un join sur
+    // entrainements, presences_entrainement n'a pas de colonne date) et compte depuis
+    // la plus récente jusqu'à la première absence.
+    const entrainementIds = presences.map(p => p.entrainement_id).filter(Boolean)
+    const { data: entDates } = entrainementIds.length
+      ? await supabase.from('entrainements').select('id, date').in('id', entrainementIds)
+      : { data: [] }
+    const dateMap = {}
+    entDates?.forEach(e => { dateMap[e.id] = e.date })
+    const parDate = presences
+      .map(p => ({ ...p, date: dateMap[p.entrainement_id] }))
+      .filter(p => p.date)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    let serie = 0
+    for (const p of parDate) { if (estPresent(p.statut)) serie++; else break }
+
+    const buts = statsMatch?.reduce((s, m) => s + (m.buts || 0), 0) || 0
+    const passes = statsMatch?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
+    const minutesJouees = statsMatch?.reduce((s, m) => s + (m.minutes || 0), 0) || 0
+    const matchsJoues = statsMatch?.filter(m => (m.minutes || 0) > 0).length || 0
+
+    setTauxPresenceAccueil({
+      taux: Math.round((present / total) * 100), present, total, serie,
+      buts, passes, minutesJouees, matchsJoues,
+    })
   }
 
   useEffect(() => {
@@ -550,7 +580,8 @@ function DashboardJoueur() {
     console.log('[DashboardJoueur] reelRows:', reelRows, 'error:', reelErr)
     setReelJogabonito(reelRows?.[0] || null)
     await chargerConversations(user.id)
-    await chargerAffiliations(user.id)
+    const mesAff = await chargerAffiliations(user.id)
+    await verifierCloturesSaison(user.id, mesAff || [])
     setLoading(false)
   }
 
@@ -608,7 +639,7 @@ function DashboardJoueur() {
       .select('*')
       .eq('joueur_id', uid)
       .order('date_fin', { ascending: false, nullsFirst: true })
-    if (!afData || afData.length === 0) { setMesAffiliations([]); return }
+    if (!afData || afData.length === 0) { setMesAffiliations([]); return [] }
 
     // Charger les profils éducateurs séparément
     const educateurIds = [...new Set(afData.map(a => a.educateur_id))]
@@ -620,7 +651,28 @@ function DashboardJoueur() {
     const peMap = {}
     peData?.forEach(pe => { peMap[pe.user_id] = pe })
 
-    setMesAffiliations(afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null })))
+    const enrichies = afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null }))
+    setMesAffiliations(enrichies)
+    return enrichies
+  }
+
+  // Saisons clôturées par le coach (historique_saisons.cloturee) pour
+  // lesquelles ce joueur n'a pas encore laissé de note (notes_educateur) —
+  // déclenche le rappel d'évaluation au chargement du dashboard, plutôt que
+  // d'afficher le bouton "Évaluer" en permanence à côté des stats.
+  const verifierCloturesSaison = async (uid, affiliations) => {
+    const educateurIds = [...new Set(affiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]
+    if (educateurIds.length === 0) return
+    const [{ data: histData }, { data: notesData }] = await Promise.all([
+      supabase.from('historique_saisons').select('educateur_id, saison').eq('joueur_id', uid).eq('cloturee', true).in('educateur_id', educateurIds),
+      supabase.from('notes_educateur').select('educateur_id, saison').eq('auteur_id', uid).in('educateur_id', educateurIds),
+    ])
+    const dejaNotes = new Set((notesData || []).map(n => `${n.educateur_id}_${n.saison}`))
+    const enAttente = (histData || [])
+      .filter(h => !dejaNotes.has(`${h.educateur_id}_${h.saison}`))
+      .map(h => ({ ...h, affiliation: affiliations.find(a => a.educateur_id === h.educateur_id) }))
+      .filter(x => x.affiliation)
+    setCloturesAEvaluer(enAttente)
   }
 
   // Widget accueil : prochain entraînement + prochain match de l'éducateur, avec ma dispo déclarée
@@ -879,9 +931,11 @@ function DashboardJoueur() {
     // Optimistic : la modale se ferme et la confirmation s'affiche tout de
     // suite, sans attendre la réponse Supabase. Erreur → réouverte.
     const eduNoteSnapshot = eduNote
+    const saisonSnapshot = noteSaison
     setSavingNoteEdu(true)
     setNoteSaved(true)
     setEduNote(null)
+    setCloturesAEvaluer(prev => prev.filter(h => !(h.educateur_id === eduNoteSnapshot.educateur_id && h.saison === saisonSnapshot)))
     setTimeout(() => setNoteSaved(false), 3000)
     const { error } = await supabase.from('notes_educateur').upsert({
       educateur_id: eduNoteSnapshot.educateur_id,
@@ -2571,8 +2625,26 @@ function DashboardJoueur() {
               return <SondageSemaine mode="joueur" userId={userId} educateurId={aff.educateur_id} accentColor={colors.accent.green} />
             })()}
             {tauxPresenceAccueil && (
-              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-                <CerclePresence {...tauxPresenceAccueil} />
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
+                <CerclePresence {...tauxPresenceAccueil} style={{ minWidth: 0, width: '100%' }} />
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: colors.accent.green }}>{tauxPresenceAccueil.buts}<span style={{ fontSize: '15px', fontWeight: 700, color: colors.text.faint }}> / {tauxPresenceAccueil.passes}</span></p>
+                  <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary }}>Buts / Passes D.</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>cette saison</p>
+                </div>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: colors.accent.blue }}>{tauxPresenceAccueil.minutesJouees}</p>
+                  <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary }}>Minutes jouées</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
+                    {tauxPresenceAccueil.matchsJoues > 0 ? `${Math.round(tauxPresenceAccueil.minutesJouees / tauxPresenceAccueil.matchsJoues)} min/match` : '—'}
+                  </p>
+                </div>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <p style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: colors.accent.amber }}>{tauxPresenceAccueil.serie}</p>
+                  <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>
+                    {tauxPresenceAccueil.serie > 1 ? 'présences de suite' : tauxPresenceAccueil.serie === 1 ? 'présent au dernier entraînement' : 'aucune série en cours'}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -3715,19 +3787,20 @@ function DashboardJoueur() {
 
                       {isAccepted && (
                         <div style={{ padding: '16px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '4px' }}>
-                            <button
-                              onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
-                              disabled={!a.equipe_joueur_id || statsLoading[a.id]}
-                              style={{ background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
-                              {statsLoading[a.id] ? '...' : '📊 Mes stats'}
-                            </button>
-                            <button
-                              onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
-                              style={{ background: '#1f2937', color: 'white', border: '1px solid #374151', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-                              ⭐ Évaluer
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id)}
+                            disabled={!a.equipe_joueur_id || statsLoading[a.id]}
+                            style={{ width: '100%', background: '#22c55e', color: 'black', border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: a.equipe_joueur_id ? 'pointer' : 'not-allowed', opacity: a.equipe_joueur_id ? 1 : 0.4 }}>
+                            {statsLoading[a.id] ? '...' : '📊 Mes stats'}
+                          </button>
+                          {/* Plus de bouton "Évaluer" permanent ici — le rappel apparaît en
+                              pop-up quand le coach clôture la saison (cf. cloturesAEvaluer),
+                              avec ce lien discret en secours pour évaluer à la demande. */}
+                          <button
+                            onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
+                            style={{ width: '100%', marginTop: '8px', background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', textAlign: 'center', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+                            ⭐ Demander à évaluer mon coach
+                          </button>
 
                           {/* Stats chargées */}
                           {statsJoueur[a.id] && (() => {
@@ -3939,6 +4012,39 @@ function DashboardJoueur() {
         )}
 
       </main>
+
+      {/* Rappel d'évaluation — apparaît quand le coach a clôturé une saison
+          (historique_saisons.cloturee) et que ce joueur ne l'a pas encore
+          évalué pour cette saison (notes_educateur). Remplace l'ancien bouton
+          "Évaluer" permanent à côté des stats. */}
+      {cloturesAEvaluer.length > 0 && !rappelClotureFerme && !eduNote && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: colors.background.base, border: '2px solid #4ade8050', boxShadow: '0 0 0 1px #4ade8010', borderRadius: '20px', width: '100%', maxWidth: '440px', padding: '28px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', margin: '0 0 12px' }}>🏆</p>
+            <p style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '17px' }}>Saison terminée !</p>
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>
+              {cloturesAEvaluer[0].affiliation?.profil_educateur?.prenom} {cloturesAEvaluer[0].affiliation?.profil_educateur?.nom} a clôturé la saison {cloturesAEvaluer[0].saison}. Donne ton avis sur ton coach !
+            </p>
+            <button
+              onClick={() => {
+                const h = cloturesAEvaluer[0]
+                setNoteSaison(h.saison)
+                setEduNote(h.affiliation)
+                setNoteCriteres({})
+                setNoteCommentaire('')
+                setNotePublic(true)
+              }}
+              style={{ width: '100%', background: colors.accent.green, color: colors.background.base, border: 'none', padding: '13px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginBottom: '10px' }}>
+              ⭐ Évaluer maintenant
+            </button>
+            <button
+              onClick={() => setRappelClotureFerme(true)}
+              style={{ width: '100%', background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}>
+              Plus tard
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal notation éducateur */}
       {eduNote && (
