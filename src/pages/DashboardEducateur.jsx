@@ -1193,6 +1193,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerStats, setScannerStats] = useState({})
   const [scannerSaving, setScannerSaving] = useState(false)
   const [scannerError, setScannerError] = useState(null)
+  const [scannerWarning, setScannerWarning] = useState(null) // avertissement si peu de joueurs détectés vs effectif
   const [matchActif, setMatchActif] = useState(null)
   const [statsMatch, setStatsMatch] = useState({})
   const [matchANoter, setMatchANoter] = useState(null)
@@ -3052,6 +3053,31 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     ) || null
   }
 
+  // Redimensionne (sans jamais agrandir) et recompresse une photo de feuille de
+  // match avant envoi à l'IA — les photos prises directement au téléphone sont
+  // souvent bien plus larges que nécessaire, ce qui alourdit l'upload sans
+  // gagner en lisibilité de texte ; 1600px de large garde largement assez de
+  // détail pour lire des petits noms manuscrits/imprimés.
+  const redimensionnerImagePourScan = (file, maxWidth = 1600) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const img = new Image()
+      img.onload = () => {
+        const ratio = Math.min(maxWidth / img.width, 1)
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width * ratio
+        canvas.height = img.height * ratio
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+        resolve({ base64: dataUrl.split(',')[1], preview: dataUrl })
+      }
+      img.onerror = reject
+      img.src = ev.target.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
   // Cœur du scan de feuille de match (appel Groq + matching JS contre le roster) —
   // partagé entre le scanner "nouveau match" (scannerMatch) et le scanner de la
   // modale "Marquer comme joué" (scannerFeuilleModal), pour ne pas dupliquer la
@@ -3061,6 +3087,14 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
     const prompt = `Analyse cette feuille de match football et extrais les données visibles.
 Réponds UNIQUEMENT avec un objet JSON valide, aucun texte avant ou après, aucune balise markdown.
+
+RÈGLE ABSOLUE : liste TOUS les joueurs visibles sur la feuille, dans les deux
+colonnes (equipe_gauche ET equipe_droite), sans exception — titulaires,
+remplaçants, joueurs sans but ni carton. Ne t'arrête pas après quelques noms.
+Relis l'image de haut en bas deux fois avant de répondre : une feuille de
+match contient généralement 11 à 20 noms par équipe, si tu en listes beaucoup
+moins c'est probablement que tu en as manqué. Si tu n'es pas sûr d'un nom,
+mets quand même ta meilleure lecture plutôt que de sauter le joueur.
 
 Format exact attendu :
 {
@@ -3153,6 +3187,15 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
         domicile: parsed.domicile !== false
       })
       setScannerStats(statsParJoueur)
+      // Avertit si l'IA a détecté sensiblement moins de joueurs que l'effectif
+      // de l'équipe — seuil relatif (70%) plutôt qu'un nombre fixe, une petite
+      // équipe (U7...) pouvant légitimement avoir un effectif réduit.
+      const nbDetectes = Object.keys(statsParJoueur).length
+      setScannerWarning(
+        joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
+          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées).`
+          : null
+      )
     } catch (e) {
       setScannerError(e.message)
     } finally {
@@ -5296,11 +5339,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
                       </div>
                       <input id="scanner-modal-input" type="file" accept="image/*" style={{ display: 'none' }}
-                        onChange={e => {
+                        onChange={async e => {
                           const file = e.target.files[0]; if (!file) return
-                          const reader = new FileReader()
-                          reader.onload = ev => { setScannerModalImageBase64(ev.target.result.split(',')[1]); setScannerModalImagePreview(ev.target.result) }
-                          reader.readAsDataURL(file)
+                          const { base64, preview } = await redimensionnerImagePourScan(file)
+                          setScannerModalImageBase64(base64); setScannerModalImagePreview(preview)
                         }} />
                       <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn(colors.accent.blue)}>📁 {t('seance_scanner', lang)}</button>
                       <button onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...st.btnSolid, opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
@@ -7828,7 +7870,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>📸 {t('scan_feuille_titre', lang)}</h2>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
             </div>
-            <button onClick={() => { setShowScanner(false); setScannerResult(null); setScannerImageBase64(null); setScannerImagePreview(null); setScannerError(null) }}
+            <button onClick={() => { setShowScanner(false); setScannerResult(null); setScannerImageBase64(null); setScannerImagePreview(null); setScannerError(null); setScannerWarning(null) }}
               style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer' }}>✕</button>
           </div>
 
@@ -7837,12 +7879,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
               <div
                 onClick={() => document.getElementById('scanner-input').click()}
                 onDragOver={e => e.preventDefault()}
-                onDrop={e => {
+                onDrop={async e => {
                   e.preventDefault()
                   const file = e.dataTransfer.files[0]; if (!file) return
-                  const reader = new FileReader()
-                  reader.onload = ev => { setScannerImageBase64(ev.target.result.split(',')[1]); setScannerImagePreview(ev.target.result) }
-                  reader.readAsDataURL(file)
+                  const { base64, preview } = await redimensionnerImagePourScan(file)
+                  setScannerImageBase64(base64); setScannerImagePreview(preview)
                 }}
                 style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', background: '#050505' }}>
                 {scannerImagePreview
@@ -7855,11 +7896,10 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 }
               </div>
               <input id="scanner-input" type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => {
+                onChange={async e => {
                   const file = e.target.files[0]; if (!file) return
-                  const reader = new FileReader()
-                  reader.onload = ev => { setScannerImageBase64(ev.target.result.split(',')[1]); setScannerImagePreview(ev.target.result) }
-                  reader.readAsDataURL(file)
+                  const { base64, preview } = await redimensionnerImagePourScan(file)
+                  setScannerImageBase64(base64); setScannerImagePreview(preview)
                 }} />
               {scannerError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '12px' }}>⚠️ {scannerError}</p>}
               <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
@@ -7895,6 +7935,11 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
+                  {scannerWarning && (
+                    <div style={{ background: '#2d1500', border: '1px solid #854d0e', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', color: '#facc15', fontSize: '13px' }}>
+                      {scannerWarning}
+                    </div>
+                  )}
                   <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>
                     ✅ {Object.keys(scannerStats).length} joueur{Object.keys(scannerStats).length > 1 ? 's' : ''} détecté{Object.keys(scannerStats).length > 1 ? 's' : ''} automatiquement
                   </p>
@@ -7942,7 +7987,7 @@ Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.`
                 <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} style={{ ...st.btnSolid, flex: 1 }}>
                   {scannerSaving ? 'Enregistrement...' : `💾 ${t('scan_enregistrer_match', lang)}`}
                 </button>
-                <button onClick={() => { setScannerResult(null); setScannerError(null) }} style={st.btn(colors.text.dim)}>← {t('scan_rescanner', lang)}</button>
+                <button onClick={() => { setScannerResult(null); setScannerError(null); setScannerWarning(null) }} style={st.btn(colors.text.dim)}>← {t('scan_rescanner', lang)}</button>
               </div>
             </div>
           )}
