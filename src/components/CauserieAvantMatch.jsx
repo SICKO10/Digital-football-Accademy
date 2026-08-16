@@ -452,9 +452,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
                     <>
                       <div onClick={e => { e.stopPropagation(); setMenuOuvert(null) }} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
                       <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', right: 0, background: '#161616', border: '1px solid #262626', borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                        <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#e5e7eb', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✏️ Modifier</button>
-                        <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#e5e7eb', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: '1px solid #222' }}>⎘ Dupliquer</button>
-                        <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#f87171', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: '1px solid #222' }}>🗑️ Supprimer</button>
+                        <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#e5e7eb', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Modifier</button>
+                        <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#e5e7eb', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: '1px solid #222' }}>Dupliquer</button>
+                        <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#f87171', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: '1px solid #222' }}>Supprimer</button>
                       </div>
                     </>
                   )}
@@ -818,8 +818,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button onClick={() => setVue('liste')} style={btnO}>← Fiches</button>
-        <button onClick={() => editer(f)} style={btnO}>✏️ Modifier</button>
-        <button onClick={async () => { await dupliquer(f); setVue('liste') }} style={btnO}>⎘ Dupliquer</button>
+        <button onClick={() => editer(f)} style={btnO}>Modifier</button>
+        <button onClick={async () => { await dupliquer(f); setVue('liste') }} style={btnO}>Dupliquer</button>
         <button onClick={() => setPresentationOuverte(true)} style={{ ...btnO, color: '#a78bfa', borderColor: '#a78bfa44' }}>📺 Présenter la causerie</button>
         <button onClick={() => window.print()} style={{ ...btnO, color: '#4ade80', borderColor: '#4ade8044' }}>🖨️ Imprimer</button>
         <button onClick={() => supprimer(f.id)} style={{ ...btnO, color: '#f87171', borderColor: '#f8717133' }}>Supprimer</button>
