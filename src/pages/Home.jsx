@@ -18,6 +18,30 @@ const etapesRecruteur = [
   { num: 'ÉTAPE 4', titre: 'Tu recrutes', desc: "Contacte directement les talents qui t'intéressent" },
 ]
 
+const profilsCards = [
+  { emoji: '⚽', color: colors.accent.green, label: 'JOUEUR',
+    titre: 'Tu veux progresser et être repéré',
+    solution: 'Ton coach te note après chaque match. Ton profil tourne auprès des recruteurs, même quand tu ne cherches pas.' },
+  { emoji: '🎓', color: colors.accent.blue, label: 'ÉDUCATEUR',
+    titre: 'Tu prépares tes matchs sur 3 outils différents',
+    solution: 'Causerie, tactique, notation joueurs, scanner feuille de match IA — tout en un, en 20 minutes.' },
+  { emoji: '🏟️', color: colors.accent.purpleLight, label: 'CLUB',
+    titre: "Le recrutement se fait encore à l'aveugle",
+    solution: 'Affiche les postes que tu cherches. Les joueurs postulent directement. Gère tout en un seul espace.' },
+  { emoji: '🔍', color: colors.accent.orange, label: 'RECRUTEUR',
+    titre: 'Le repérage coûte cher et prend du temps',
+    solution: 'Un ailier gauche U19 sur la Côte d\'Azur ? 3 filtres, résultats immédiats. Sans te déplacer.' },
+]
+
+const quotesUtilisateurs = [
+  { quote: '"Ton coach te donne une note après chaque match. Tu sais enfin ce qu\'il pense vraiment."',
+    profil: '⚽ Joueur', color: colors.accent.green },
+  { quote: '"Tu prépares ta causerie en 20 minutes au lieu de 3 heures. L\'IA scanne ta feuille de match."',
+    profil: '🎓 Éducateur', color: colors.accent.blue },
+  { quote: '"Accède à des centaines de joueurs qualifiés sans bouger de ton bureau."',
+    profil: '🔍 Recruteur / Scout', color: colors.accent.orange },
+]
+
 const etapesClub = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton espace club selon ta taille' },
   { num: 'ÉTAPE 2', titre: 'Tu organises', desc: 'Invite gratuitement tes éducateurs, dirigeants et secrétaires' },
@@ -121,9 +145,9 @@ function Home() {
 
       <section style={{ position: 'relative', padding: '3.5rem 2rem 3rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '480px', background: 'radial-gradient(ellipse 60% 40% at 50% 50%, #4ade8018 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>{t('home_badge_plateforme', lang)}</div>
-        <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>{t('home_hero_titre_1', lang)}<br /><span style={{ color: colors.accent.green }}>{t('home_hero_titre_2', lang)}</span><br />{t('home_hero_titre_3', lang)}</h1>
-        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>{t('home_hero_desc', lang)}</p>
+        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>NOUVEAU · SAISON 2025/2026</div>
+        <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>L'écosystème numérique<br/>du <span style={{ color: colors.accent.green }}>football amateur.</span></h1>
+        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, recrutement, feed vidéo — une seule plateforme pour joueurs, éducateurs, clubs et recruteurs.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/register')}
@@ -165,6 +189,23 @@ function Home() {
         </div>
       </section>
 
+      <section style={{ padding: '3.5rem 2rem', maxWidth: '960px', margin: '0 auto' }}>
+        <h2 style={{ textAlign: 'center', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, marginBottom: '0.5rem' }}>Une plateforme. Quatre acteurs.</h2>
+        <p style={{ textAlign: 'center', color: colors.text.dim, fontSize: '14px', marginBottom: '2.5rem', maxWidth: '560px', margin: '0 auto 2.5rem' }}>
+          Là où les autres outils s'adressent à un seul maillon, DigitalFootball crée de la valeur pour tous simultanément.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          {profilsCards.map(card => (
+            <div key={card.label} style={{ background: colors.background.surface, border: `1px solid ${card.color}`, borderRadius: '14px', padding: '1.25rem' }}>
+              <div style={{ fontSize: '24px' }}>{card.emoji}</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: card.color, marginTop: '8px' }}>{card.label}</div>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '8px 0 6px' }}>{card.titre}</h3>
+              <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{card.solution}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section style={{ background: '#0f0f0f', padding: '3.5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731640', color: colors.accent.orange, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_nouveau', lang)}</div>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.75rem' }}>{t('home_tiktok_football', lang)}</h2>
@@ -180,6 +221,19 @@ function Home() {
           ))}
         </div>
         <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>{t('home_voir_jogabonito', lang)}</button>
+      </section>
+
+      <section style={{ background: '#0d0d0d', padding: '3.5rem 2rem', textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', letterSpacing: '1px', fontWeight: 600 }}>ILS EN PARLENT MIEUX QUE NOUS</div>
+        <h2 style={{ fontSize: 'clamp(22px, 4vw, 30px)', fontWeight: 800, marginBottom: '3rem' }}>Ce que nos utilisateurs retiennent</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
+          {quotesUtilisateurs.map((q, i) => (
+            <div key={i} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.75rem', textAlign: 'left' }}>
+              <p style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1.5, color: 'white', marginBottom: '1rem' }}>{q.quote}</p>
+              <div style={{ fontSize: '10px', textTransform: 'uppercase', color: q.color, fontWeight: 700, letterSpacing: '1px' }}>{q.profil}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section id="comment" style={{ padding: '3.5rem 2rem 0', textAlign: 'center' }}>
@@ -207,9 +261,9 @@ function Home() {
       <section style={{ position: 'relative', overflow: 'hidden', background: '#0f0f0f', padding: '3.5rem 2rem', textAlign: 'center' }}>
         <div style={{ position: 'absolute', top: '-1px', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, #4ade8040, transparent)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <h2 style={{ position: 'relative', zIndex: 1, fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>{t('home_pret_niveau_sup', lang)}</h2>
+        <h2 style={{ position: 'relative', zIndex: 1, fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>Prêt à rejoindre l'écosystème ?</h2>
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>{t('home_creer_mon_profil', lang)}</button>
+          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Créer mon profil — Gratuit</button>
           <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>{t('auth_connexion_titre', lang)}</button>
         </div>
       </section>
