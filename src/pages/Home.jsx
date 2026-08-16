@@ -19,27 +19,27 @@ const etapesRecruteur = [
 ]
 
 const profilsCards = [
-  { emoji: '⚽', color: colors.accent.green, label: 'JOUEUR',
+  { color: colors.accent.green, label: 'JOUEUR',
     titre: 'Tu veux progresser et être repéré',
     solution: 'Ton coach te note après chaque match. Ton profil tourne auprès des recruteurs, même quand tu ne cherches pas.' },
-  { emoji: '🎓', color: colors.accent.blue, label: 'ÉDUCATEUR',
+  { color: colors.accent.blue, label: 'ÉDUCATEUR',
     titre: 'Tu prépares tes matchs sur 3 outils différents',
     solution: 'Causerie, tactique, notation joueurs, scanner feuille de match IA — tout en un, en 20 minutes.' },
-  { emoji: '🏟️', color: colors.accent.purpleLight, label: 'CLUB',
+  { color: colors.accent.purpleLight, label: 'CLUB',
     titre: "Faire tourner un club, c'est un travail à plein temps",
     solution: "Planning terrains, gestion d'équipes, déplacements, recrutement — centralisé en un seul endroit. Nos outils et notre IA te font gagner des heures chaque semaine." },
-  { emoji: '🔍', color: colors.accent.orange, label: 'RECRUTEUR',
+  { color: colors.accent.orange, label: 'RECRUTEUR',
     titre: 'Le repérage coûte cher et prend du temps',
-    solution: 'Un ailier gauche U19 sur la Côte d\'Azur ? 3 filtres, résultats immédiats. Sans te déplacer.' },
+    solution: 'Un ailier gauche U19 sur la Côte d\'Azur ? 3 filtres, résultats immédiats. Sans quitter ton bureau.' },
 ]
 
 const quotesUtilisateurs = [
   { quote: '"Grâce à tes stats et la connexion à ton coach, tu sais ce qu\'il attend exactement de toi pour progresser."',
-    profil: '⚽ Joueur', color: colors.accent.green },
+    profil: 'Joueur', color: colors.accent.green },
   { quote: '"Tu prépares tes matchs et tes séances en quelques minutes au lieu de plusieurs heures grâce à l\'IA et aux outils à notre disposition."',
-    profil: '🎓 Éducateur', color: colors.accent.blue },
-  { quote: '"Accède à des centaines de joueurs qualifiés sans bouger de ton bureau."',
-    profil: '🔍 Recruteur / Scout', color: colors.accent.orange },
+    profil: 'Éducateur', color: colors.accent.blue },
+  { quote: '"Accède à des centaines de joueurs qualifiés sans quitter ton bureau."',
+    profil: 'Recruteur / Scout', color: colors.accent.orange },
 ]
 
 const etapesClub = [
@@ -197,8 +197,7 @@ function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           {profilsCards.map(card => (
             <div key={card.label} style={{ background: colors.background.surface, border: `1px solid ${card.color}`, borderRadius: '14px', padding: '1.25rem' }}>
-              <div style={{ fontSize: '24px' }}>{card.emoji}</div>
-              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: card.color, marginTop: '8px' }}>{card.label}</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: card.color }}>{card.label}</div>
               <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '8px 0 6px' }}>{card.titre}</h3>
               <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{card.solution}</p>
             </div>
