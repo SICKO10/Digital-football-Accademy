@@ -2421,7 +2421,12 @@ function DashboardJoueur() {
   }
 
   // ── PAS ABONNÉ ──
-  if (!profil?.abonnement_actif) {
+  // Un joueur affilié (accepté) à un éducateur/club a un accès inclus via son
+  // club — abonnement_actif ne concerne que les comptes "fan" indépendants,
+  // pas encore rattachés à une équipe. mesAffiliations est déjà chargé à ce
+  // stade (chargerAffiliations() termine avant setLoading(false), cf. getProfil()).
+  const affilieAccepte = mesAffiliations.some(a => a.statut === 'accepte')
+  if (!profil?.abonnement_actif && !affilieAccepte) {
     return (
       <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
