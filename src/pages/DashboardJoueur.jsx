@@ -278,6 +278,15 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
 // variantes accentuées/anglaises/booléennes, cf. sessions précédentes.
 const estPresent = (statut) => statut === 'present' || statut === 'convoque'
 
+// Saison "YYYY-YYYY" (juillet N → juin N+1) — même convention que getSaison()
+// dans GestionCloturesSaison.jsx, appliquée ici à la date d'un match plutôt
+// qu'à "aujourd'hui" pour pouvoir regrouper un historique par saison.
+const saisonDeDate = (dateStr) => {
+  const d = new Date(dateStr)
+  const y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1
+  return `${y}-${y + 1}`
+}
+
 // Camembert multi-segment (présence / convocation / absence / blessure / maladie)
 // — même technique et mêmes couleurs que DonutMulti côté éducateur
 // (DashboardEducateur.jsx), pour rester cohérent entre les deux dashboards.
@@ -421,6 +430,7 @@ function DashboardJoueur() {
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
+  const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
   const [resultatsCompetition, setResultatsCompetition] = useState([])
@@ -852,6 +862,7 @@ function DashboardJoueur() {
       { data: prochainMatchs },
       { data: effectif },
       { data: matchsEquipe },
+      { data: notationsMoi },
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
       supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
@@ -860,6 +871,7 @@ function DashboardJoueur() {
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
       supabase.from('matchs_equipe').select('id, date, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId),
+      supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
     ])
 
     // --- Stats personnelles ---
@@ -931,6 +943,20 @@ function DashboardJoueur() {
     const leaderVictoires = buildLeader(tousMatchs, r => (r.match_id && victoireMap[r.match_id]) ? 1 : 0)
     const leaderPoints = buildLeader(toutesPresences, r => r.point_seance ? 1 : 0)
 
+    // --- Évaluations coach par match (notations_match) — regroupées par saison
+    // (juillet-juin) à partir de la date du match, pas d'archivage séparé : les
+    // lignes restent en base indéfiniment, seule la lecture est bucketée.
+    const saisonActuelle = saisonDeDate(new Date().toISOString())
+    const notationsAvecDate = (notationsMoi || []).filter(n => n.matchs_equipe?.date)
+    const evals = notationsAvecDate.filter(n => saisonDeDate(n.matchs_equipe.date) === saisonActuelle)
+    const evalsParSaison = {}
+    notationsAvecDate.forEach(n => {
+      const s = saisonDeDate(n.matchs_equipe.date)
+      if (s === saisonActuelle) return
+      if (!evalsParSaison[s]) evalsParSaison[s] = []
+      evalsParSaison[s].push(n)
+    })
+
     setStatsJoueur(prev => ({
       ...prev,
       [affiliationId]: {
@@ -943,6 +969,7 @@ function DashboardJoueur() {
         prochainMatchs: prochainMatchs || [],
         leaderButs, leaderPasses, leaderVictoires, leaderPoints,
         matchsEquipe: matchsEquipe || [],
+        evals, evalsParSaison, saisonActuelle,
       }
     }))
     setStatsLoading(prev => ({ ...prev, [affiliationId]: false }))
@@ -4087,6 +4114,118 @@ function DashboardJoueur() {
                                 <div style={{ paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
                                   <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📊 Stats de l'équipe</p>
                                   <StatsEquipe matchs={s.matchsEquipe || []} />
+                                </div>
+
+                                {/* Mes évaluations — notations_match par match, regroupées par saison
+                                    (juillet-juin) à partir de la date du match plutôt qu'un archivage
+                                    séparé : ces lignes ne sont jamais "remises à zéro", elles restent
+                                    consultables indéfiniment. */}
+                                <div style={{ paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>📝 Mes évaluations</p>
+                                    <span style={{ color: colors.text.ghost, fontSize: '11px' }}>Saison {s.saisonActuelle}</span>
+                                  </div>
+
+                                  {(!s.evals || s.evals.length === 0) ? (
+                                    <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>Aucune évaluation cette saison.</p>
+                                  ) : (() => {
+                                    const moy = (s.evals.reduce((sum, n) => sum + Number(n.note), 0) / s.evals.length).toFixed(1)
+                                    const couleurMoy = moy >= 7 ? colors.accent.green : moy >= 5 ? colors.accent.amber : colors.accent.red
+                                    const ouvert = evalOuverte?.affiliationId === a.id ? evalOuverte.index : null
+                                    return (
+                                      <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px 16px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${couleurMoy}` }}>
+                                          <span style={{ color: colors.text.faint, fontSize: '13px' }}>Moyenne saison :</span>
+                                          <span style={{ fontSize: '20px', fontWeight: 800, color: couleurMoy }}>{moy}/10</span>
+                                          <span style={{ color: colors.text.ghost, fontSize: '12px', marginLeft: 'auto' }}>{s.evals.length} match{s.evals.length > 1 ? 's' : ''} évalué{s.evals.length > 1 ? 's' : ''}</span>
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: ouvert !== null ? '16px' : 0 }}>
+                                          {s.evals.map((n, i) => {
+                                            const note = Number(n.note)
+                                            const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
+                                            const m = n.matchs_equipe
+                                            return (
+                                              <div key={i}
+                                                onClick={() => setEvalOuverte(ouvert === i ? null : { affiliationId: a.id, index: i })}
+                                                title={`${m?.domicile ? 'vs' : '@'} ${m?.adversaire || 'Match'}${m?.date ? ' · ' + new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}`}
+                                                style={{
+                                                  width: '52px', height: '52px', borderRadius: '10px', cursor: 'pointer',
+                                                  background: c + alpha.subtle, border: `2px solid ${ouvert === i ? c : c + alpha.light}`,
+                                                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                  transform: ouvert === i ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.15s',
+                                                }}>
+                                                <span style={{ color: c, fontWeight: 800, fontSize: '17px', lineHeight: 1 }}>{n.note}</span>
+                                                <span style={{ color: colors.text.ghost, fontSize: '9px' }}>/10</span>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+
+                                        {ouvert !== null && s.evals[ouvert] && (() => {
+                                          const ev = s.evals[ouvert]
+                                          const m = ev.matchs_equipe
+                                          const note = Number(ev.note)
+                                          const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
+                                          const criteres = ev.criteres || {}
+                                          const aCriteres = criteres.technique || criteres.physique || criteres.mental || criteres.tactique
+                                          return (
+                                            <div style={{ background: colors.background.surface, border: `1px solid ${c}40`, borderRadius: '14px', padding: '18px', marginBottom: '4px' }}>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: aCriteres || ev.commentaire ? '14px' : 0 }}>
+                                                <div>
+                                                  <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>
+                                                    {m?.domicile ? 'vs' : '@'} {m?.adversaire || 'Match'}
+                                                    {m?.score_nous != null ? ` · ${m.score_nous} - ${m.score_eux}` : ''}
+                                                  </p>
+                                                  <p style={{ margin: '2px 0 0', color: colors.text.ghost, fontSize: '12px' }}>
+                                                    {m?.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+                                                    {m?.competition ? ` · ${m.competition}` : ''}
+                                                  </p>
+                                                </div>
+                                                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                                                  <p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: c }}>{ev.note}<span style={{ fontSize: '13px', color: colors.text.ghost }}>/10</span></p>
+                                                </div>
+                                              </div>
+                                              {aCriteres && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: ev.commentaire ? '14px' : 0 }}>
+                                                  {['technique', 'physique', 'mental', 'tactique'].map(cl => criteres[cl] ? (
+                                                    <div key={cl} style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                                                      <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{criteres[cl]}</p>
+                                                      <p style={{ margin: 0, color: colors.text.ghost, fontSize: '10px', textTransform: 'capitalize' }}>{cl}</p>
+                                                    </div>
+                                                  ) : null)}
+                                                </div>
+                                              )}
+                                              {ev.commentaire && (
+                                                <div style={{ background: colors.background.base, borderRadius: '8px', padding: '12px 14px', borderLeft: `3px solid ${c}` }}>
+                                                  <p style={{ margin: 0, color: colors.text.secondary, fontSize: '13px', fontStyle: 'italic', lineHeight: 1.5 }}>"{ev.commentaire}"</p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })()}
+                                      </>
+                                    )
+                                  })()}
+
+                                  {s.evalsParSaison && Object.keys(s.evalsParSaison).length > 0 && (
+                                    <div style={{ marginTop: '20px' }}>
+                                      <p style={{ margin: '0 0 12px', color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Saisons précédentes</p>
+                                      {Object.entries(s.evalsParSaison).sort(([a2], [b2]) => b2.localeCompare(a2)).map(([saison, list]) => {
+                                        const moySaison = (list.reduce((sum, n) => sum + Number(n.note), 0) / list.length).toFixed(1)
+                                        const c = moySaison >= 7 ? colors.accent.green : moySaison >= 5 ? colors.accent.amber : colors.accent.red
+                                        return (
+                                          <div key={saison} style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                              <p style={{ margin: 0, color: colors.text.primary, fontWeight: 600, fontSize: '13px' }}>Saison {saison}</p>
+                                              <p style={{ margin: 0, color: colors.text.ghost, fontSize: '11px' }}>{list.length} match{list.length > 1 ? 's' : ''} évalué{list.length > 1 ? 's' : ''}</p>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: c }}>{moySaison}<span style={{ fontSize: '10px', color: colors.text.ghost }}>/10</span></p>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )
