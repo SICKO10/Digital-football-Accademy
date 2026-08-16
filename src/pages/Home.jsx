@@ -34,7 +34,7 @@ const profilsCards = [
 ]
 
 const quotesUtilisateurs = [
-  { quote: '"Ton coach te donne une note après chaque match. Tu sais enfin ce qu\'il pense vraiment."',
+  { quote: '"Grâce à tes stats et la connexion à ton coach, tu sais ce qu\'il attend exactement de toi pour progresser."',
     profil: '⚽ Joueur', color: colors.accent.green },
   { quote: '"Tu prépares tes matchs et tes séances en quelques minutes au lieu de plusieurs heures. L\'IA et nos outils sont là pour toi."',
     profil: '🎓 Éducateur', color: colors.accent.blue },
