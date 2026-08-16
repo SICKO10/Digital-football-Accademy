@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text } from 'react-konva'
 import { supabase } from '../supabase'
-import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode } from '../components/Tactipad'
+import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from '../components/Tactipad'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import { colors, alpha } from '../tokens'
@@ -30,7 +30,9 @@ export default function TactipadPublic() {
 
   const schema = tactipad?.schema || {}
   const terrain = schema.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
-  const elements = schema.elements || []
+  // Remet à l'échelle si enregistré à une autre largeur (cf. rescaleElements
+  // dans Tactipad.jsx) — même correctif que TactipadViewer.jsx (Causerie).
+  const elements = terrain.w ? rescaleElements(schema.elements || [], terrain.w, width) : (schema.elements || [])
 
   const svgString = terrainSvgString({ ...terrain, w: width, h: height })
   const terrainImg = useSvgImage(svgString)

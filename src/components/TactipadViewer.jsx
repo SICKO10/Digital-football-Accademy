@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text } from 'react-konva'
-import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode } from './Tactipad'
+import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from './Tactipad'
 import { colors } from '../tokens'
 
 const lerp = (a, b, t) => a + (b - a) * t
@@ -14,7 +14,12 @@ const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 // le schéma (Tactipad.jsx ne la persiste pas non plus), 2s par étape par défaut.
 export default function TactipadViewer({ schema, width = 640 }) {
   const terrain = schema?.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
-  const sequences = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
+  const sequencesRaw = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
+  // Remet à l'échelle si le schéma a été enregistré à une autre largeur que
+  // celle d'affichage ici (cf. rescaleElements dans Tactipad.jsx) — sans ça,
+  // un élément placé près d'un bord sur un grand écran déborderait du canvas
+  // plus étroit de la Causerie.
+  const sequences = schema?.terrain?.w ? sequencesRaw.map(seq => rescaleElements(seq, schema.terrain.w, width)) : sequencesRaw
   const hasAnimation = sequences.length > 1
 
   const height = Math.round(width * 10 / 16)

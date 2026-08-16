@@ -68,16 +68,25 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     setEtapeIdx(p => Math.min(p, next.length - 1))
   }
 
+  // Marge = rayon du jeton (15, cf. cercle des joueurs plus bas) + un peu de
+  // jeu, pas 5 : sinon un jeton dragué près du bord a son cercle à moitié
+  // hors du viewBox (donc rogné/invisible côté SVG). Même marge que
+  // ELEMENT_DRAG_MARGIN dans Tactipad.jsx, pour rester cohérent.
+  const MARGIN = 18
   const svgPos = (e) => {
     const r = svgRef.current?.getBoundingClientRect()
     if (!r) return { x: W / 2, y: H / 2 }
     const cx = e.touches ? e.touches[0].clientX : e.clientX
     const cy = e.touches ? e.touches[0].clientY : e.clientY
     return {
-      x: Math.max(5, Math.min(W - 5, ((cx - r.left) / r.width) * W)),
-      y: Math.max(5, Math.min(H - 5, ((cy - r.top) / r.height) * H)),
+      x: Math.max(MARGIN, Math.min(W - MARGIN, ((cx - r.left) / r.width) * W)),
+      y: Math.max(MARGIN, Math.min(H - MARGIN, ((cy - r.top) / r.height) * H)),
     }
   }
+  // Même clamp appliqué à l'affichage (pas seulement au drag) : couvre aussi
+  // les positions déjà enregistrées hors limites avant ce correctif, et le
+  // mode lecture seule (readOnly) où startDrag/svgPos ne sont jamais appelés.
+  const clampPos = (p) => ({ x: Math.max(MARGIN, Math.min(W - MARGIN, p.x)), y: Math.max(MARGIN, Math.min(H - MARGIN, p.y)) })
 
   const clickSVG = (e) => {
     if (readOnly || drag || playIdx !== null) return
@@ -317,9 +326,9 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         )}
 
         {/* Ballon */}
-        {displayBallon && (
+        {displayBallon && (() => { const bp = clampPos(displayBallon); return (
           <g className="dot"
-            style={{ transform: `translate(${displayBallon.x}px, ${displayBallon.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
+            style={{ transform: `translate(${bp.x}px, ${bp.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
             onMouseDown={e => startDrag(e, 'ballon', null)}
             onTouchStart={e => startDrag(e, 'ballon', null)}
             onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (!readOnly && playIdx === null) majEtape({ ballon: null }) }}
@@ -327,16 +336,17 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             <circle r={13} fill="#fff" fillOpacity={0.12} stroke="#fff" strokeWidth={1} />
             <text textAnchor="middle" y={6} fontSize={17}>⚽</text>
           </g>
-        )}
+        )})()}
 
         {/* Joueurs */}
         {displayJoueurs.map(j => {
           const isN = j.equipe === 'nous'
           const c = isN ? '#4ade80' : '#f87171'
           const initiales = (j.nom || '').slice(0, 3)
+          const jp = clampPos(j)
           return (
             <g key={j.id} className="dot"
-              style={{ transform: `translate(${j.x}px, ${j.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
+              style={{ transform: `translate(${jp.x}px, ${jp.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
               onMouseDown={e => startDrag(e, 'joueur', j.id)}
               onTouchStart={e => startDrag(e, 'joueur', j.id)}
               onDoubleClick={e => beginEdit(e, j)}

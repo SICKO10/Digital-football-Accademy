@@ -176,6 +176,28 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
   </svg>`
 }
 
+// Les éléments d'un schéma sont enregistrés en pixels absolus du Stage de
+// l'éditeur au moment de la saisie (cf. terrain.w/h dans sauvegarderSchema).
+// Rejoués tels quels à une autre largeur (TactipadViewer/TactipadPublic,
+// souvent plus étroits que l'éditeur), un élément placé près d'un bord se
+// retrouve hors du canvas plus petit. Schémas enregistrés avant l'ajout de
+// terrain.w/h (fromW absent) : retournés tels quels, impossible de deviner
+// l'échelle d'origine.
+export function rescaleElements(elements, fromW, toW) {
+  if (!fromW || !toW || fromW === toW) return elements
+  const s = toW / fromW
+  return (elements || []).map(e => {
+    const scaled = { ...e }
+    if (typeof scaled.x === 'number') scaled.x *= s
+    if (typeof scaled.y === 'number') scaled.y *= s
+    if (typeof scaled.width === 'number') scaled.width *= s
+    if (typeof scaled.height === 'number') scaled.height *= s
+    if (typeof scaled.radius === 'number') scaled.radius *= s
+    if (Array.isArray(scaled.points)) scaled.points = scaled.points.map(p => p * s)
+    return scaled
+  })
+}
+
 export function useSvgImage(svgString) {
   const [img, setImg] = useState(null)
   useEffect(() => {
@@ -1026,7 +1048,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   const sauvegarderSchema = async () => {
     const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
-    const schema = { terrain: { sport, vue, fond }, elements, sequences: syncedSequences, equipesCouleurs }
+    // w/h : largeur/hauteur du Stage au moment de la saisie (coordonnées des
+    // éléments en pixels absolus, cf. width dans useState plus haut) — sans
+    // ça, TactipadViewer (Causerie) n'a aucun moyen de savoir à quelle échelle
+    // ces positions ont été placées, et les rejoue telles quelles à une autre
+    // largeur : un joueur placé près du bord droit sur un grand écran (Stage
+    // jusqu'à 1000px) se retrouve hors du canvas plus étroit de la Causerie
+    // (680-900px).
+    const schema = { terrain: { sport, vue, fond, w: width, h: height }, elements, sequences: syncedSequences, equipesCouleurs }
     const payload = { educateur_id: userId, nom: nomSchema.trim() || 'Sans titre', schema, dossier_id: dossierSauvegarde || null }
     const idEnEdition = currentSchemaId
     const nomSnapshot = nomSchema
