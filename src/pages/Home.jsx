@@ -214,29 +214,6 @@ function Home() {
         </div>
       </section>
 
-      <section style={{ padding: '3.5rem 2rem', textAlign: 'center', background: colors.background.base }}>
-        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('register_gratuit', lang)}</div>
-        <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.75rem' }}>{t('home_rejoins_communaute', lang)}</h2>
-        <p style={{ color: colors.text.dim, fontSize: '16px', maxWidth: '480px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          {t('home_suis_talents_desc', lang)}
-        </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
-          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
-            {t('home_creer_compte_fan_gratuit', lang)}
-          </button>
-          <button onClick={() => navigate('/jogabonito')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>
-            {t('home_voir_jogabonito_dabord', lang)}
-          </button>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
-          {[t('home_reels_foot_direct', lang), t('home_like_commente', lang), t('home_suis_talents', lang)].map(label => (
-            <div key={label} style={{ fontSize: '14px', color: colors.text.faint }}>
-              {label}
-            </div>
-          ))}
-        </div>
-      </section>
-
       <footer style={{ borderTop: '1px solid #1a1a1a', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
         <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '16px' }}>La plateforme qui connecte les talents du football.</p>
