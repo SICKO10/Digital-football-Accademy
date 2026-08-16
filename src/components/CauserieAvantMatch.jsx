@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
 import TacticalBoard from './TacticalBoard'
+import TactipadViewer from './TactipadViewer'
 
 const METEO_OPTIONS = [
   { val: 'soleil', icon: '☀️', label: 'Soleil' },
@@ -36,6 +37,7 @@ const formVide = () => ({
   message_coach: '',
   schema_cpa_offensif: { etapes: [{ joueurs: [], ballon: null }] },
   schema_cpa_defensif: { etapes: [{ joueurs: [], ballon: null }] },
+  tactipad_ids: [],
 })
 
 // Liste de points éditable (animation avec/sans ballon, CPA, tireurs) — au
@@ -112,7 +114,7 @@ function FicheCauseriePrint({ children }) {
 // fenêtre du navigateur, rien à gérer côté app au-delà du plein écran natif
 // via requestFullscreen). Une slide par section non vide, navigation
 // clavier ← → (+ Échap pour quitter), grand texte lisible de loin.
-function PresentationCauserie({ f, equipeNom, onFermer }) {
+function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
   const ajouterListe = (titre, accent, icone, valeurs) => {
     const items = (valeurs || []).filter(Boolean)
@@ -126,6 +128,12 @@ function PresentationCauserie({ f, equipeNom, onFermer }) {
   ajouterListe('AVEC LE BALLON', '#818cf8', '⚽', f.animation_avec_ballon)
   ajouterListe('SANS LE BALLON', '#f97316', '🛡️', f.animation_sans_ballon)
   ajouterListe('TRANSITIONS', '#2dd4bf', '🔄', f.transitions)
+  // Une slide par mouvement tactique sélectionné (chacun peut être lu
+  // indépendamment, pas de rythme imposé au coach pendant la causerie).
+  ;(f.tactipad_ids || []).forEach(id => {
+    const tp = tactipadsDispo?.find(t => t.id === id)
+    if (tp) slides.push({ titre: tp.nom || 'MOUVEMENT TACTIQUE', accent: '#38bdf8', icone: '🎯', type: 'mouvement', schema: tp.schema })
+  })
   ajouterListe('CPA OFFENSIFS', '#4ade80', '⚽', f.cpa_offensifs)
   ajouterSchema('SCHÉMA CPA OFFENSIF', '#4ade80', '🟢', f.schema_cpa_offensif)
   ajouterListe('TIREURS', '#facc15', '🎯', f.tireurs)
@@ -195,6 +203,12 @@ function PresentationCauserie({ f, equipeNom, onFermer }) {
           </div>
         )}
 
+        {slide.type === 'mouvement' && (
+          <div style={{ width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'center' }}>
+            <TactipadViewer schema={slide.schema} width={Math.min(window.innerWidth - 120, 900)} />
+          </div>
+        )}
+
         {slide.type === 'adversaire' && (
           <div style={{ display: 'flex', gap: '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
@@ -237,6 +251,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
   const [tableMissing, setTableMissing] = useState(false)
   const [presentationOuverte, setPresentationOuverte] = useState(false)
   const [menuOuvert, setMenuOuvert] = useState(null) // id de la fiche dont le menu "…" est ouvert, vue liste
+  const [tactipadsDispo, setTactipadsDispo] = useState([]) // schémas Tactipad de l'éducateur, pour le sélecteur "Mouvement tactique"
 
   const [form, setForm] = useState(formVide)
   const [saving, setSaving] = useState(false)
@@ -255,7 +270,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
     setFiches((data || []).map(normaliserFiche))
   }
 
-  useEffect(() => { if (userId) charger() }, [userId])
+  const chargerTactipads = async () => {
+    const { data } = await supabase.from('tactipads').select('id, nom, schema').eq('educateur_id', userId).order('created_at', { ascending: false })
+    setTactipadsDispo(data || [])
+  }
+
+  useEffect(() => { if (userId) { charger(); chargerTactipads() } }, [userId])
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -268,6 +288,10 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
     })
   }
   const ajouterLigne = (champ) => setForm(p => ({ ...p, [champ]: [...p[champ], ''] }))
+  const toggleTactipad = (id) => setForm(p => ({
+    ...p,
+    tactipad_ids: p.tactipad_ids.includes(id) ? p.tactipad_ids.filter(i => i !== id) : [...p.tactipad_ids, id],
+  }))
   const supprimerLigne = (champ, i) => setForm(p => {
     const arr = p[champ].filter((_, idx) => idx !== i)
     return { ...p, [champ]: arr.length ? arr : [''] }
@@ -310,6 +334,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       message_coach: form.message_coach.trim() || null,
       schema_cpa_offensif: form.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
       schema_cpa_defensif: form.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
+      tactipad_ids: form.tactipad_ids || [],
     }
     const res = ficheCourante?.id
       ? await supabase.from('causeries').update(payload).eq('id', ficheCourante.id).select().single()
@@ -357,6 +382,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
       message_coach: f.message_coach || '',
       schema_cpa_offensif: f.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
       schema_cpa_defensif: f.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
+      tactipad_ids: f.tactipad_ids || [],
     })
     setVue('form')
   }
@@ -628,6 +654,38 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
           <textarea style={txa} placeholder="Ex: On a tout ce qu'il faut pour gagner ce match, on y croit du premier au dernier ballon…" value={form.message_coach} onChange={e => set('message_coach', e.target.value)} />
         </div>
 
+        <div style={card}>
+          {sectionTitle('11', '#38bdf8', 'Mouvement tactique')}
+          <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '12px' }}>
+            Mouvements enregistrés dans le Tactipad à montrer à l'équipe pendant la causerie (schémas animés)
+          </p>
+          {tactipadsDispo.length === 0 ? (
+            <p style={{ color: '#4b5563', fontSize: '13px', fontStyle: 'italic' }}>
+              Aucun schéma enregistré pour l'instant — crée-en un dans l'onglet Tactipad.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {tactipadsDispo.map(tp => {
+                const selectionne = form.tactipad_ids.includes(tp.id)
+                const nbEtapes = tp.schema?.sequences?.length || 1
+                return (
+                  <label key={tp.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                    background: selectionne ? '#0d1f2a' : '#0a0a0a', border: `1px solid ${selectionne ? '#38bdf866' : '#222'}`,
+                    borderRadius: '8px', cursor: 'pointer',
+                  }}>
+                    <input type="checkbox" checked={selectionne} onChange={() => toggleTactipad(tp.id)} style={{ accentColor: '#38bdf8' }} />
+                    <span style={{ color: '#fff', fontSize: '13px', flex: 1 }}>{tp.nom || 'Sans titre'}</span>
+                    <span style={{ color: nbEtapes > 1 ? '#38bdf8' : '#4b5563', fontSize: '11px', fontWeight: 600 }}>
+                      {nbEtapes > 1 ? `Animation · ${nbEtapes} étapes` : 'Schéma statique'}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
           <button onClick={() => setVue('liste')} style={btnO}>Annuler</button>
           <button onClick={sauvegarder} disabled={saving} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
@@ -807,6 +865,24 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
         </div>
       )}
 
+      {(f.tactipad_ids || []).length > 0 && (
+        <div style={{ padding: '28px 32px', borderBottom: '1px solid #222' }}>
+          <p style={{ margin: '0 0 16px', color: '#38bdf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎯 Mouvement tactique</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {f.tactipad_ids.map(id => {
+              const tp = tactipadsDispo.find(t => t.id === id)
+              if (!tp) return null
+              return (
+                <div key={id}>
+                  <p style={{ margin: '0 0 8px', color: '#9ca3af', fontSize: '13px', fontWeight: 600 }}>{tp.nom || 'Sans titre'}</p>
+                  <TactipadViewer schema={tp.schema} width={Math.min(680, window.innerWidth - 96)} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>Digital Football — Fiche préparée par {equipeNom || "l'équipe"}</p>
         <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>{dateLabel}</p>
@@ -838,7 +914,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
         }
       `}</style>
 
-      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} onFermer={() => setPresentationOuverte(false)} />}
+      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} tactipadsDispo={tactipadsDispo} onFermer={() => setPresentationOuverte(false)} />}
     </div>
   )
 }

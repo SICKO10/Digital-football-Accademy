@@ -1,0 +1,11 @@
+-- Mouvements tactiques attachés à une causerie : références (par id) vers des
+-- schémas déjà enregistrés dans tactipads, pas une copie du schéma. Simple
+-- tableau d'uuid plutôt qu'une table de jointure : pas de contrainte FK
+-- possible sur les éléments d'un tableau Postgres, donc si un tactipad
+-- référencé est supprimé plus tard, son id reste dans le tableau mais est
+-- simplement ignoré côté client (CauserieAvantMatch.jsx filtre sur les
+-- tactipads encore chargeables).
+--
+-- Additif uniquement : la table causeries a déjà toutes ses autres colonnes
+-- (cf. supabase_causeries.sql et les fichiers additifs suivants).
+alter table causeries add column if not exists tactipad_ids uuid[] default '{}';
