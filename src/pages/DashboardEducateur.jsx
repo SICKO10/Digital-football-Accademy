@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
@@ -4337,6 +4337,22 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     const moy = notesJoueur.reduce((s, n) => s + Number(n.note), 0) / notesJoueur.length
                     return { moyenne: moy.toFixed(1), nb: notesJoueur.length }
                   }
+                  // Regroupe par ligne (gardien → défenseurs → milieux →
+                  // attaquants) plutôt que l'ordre brut du roster, avec une
+                  // légère séparation entre chaque groupe pour la lisibilité.
+                  // Postes détaillés (cf. select "Poste" du profil joueur,
+                  // ligne ~3556) regroupés dans leur ligne correspondante.
+                  const LIGNES_POSTE = [
+                    { label: 'Gardiens', postes: ['Gardien'] },
+                    { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'] },
+                    { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'] },
+                    { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'] },
+                  ]
+                  const ligneDuPoste = (poste) => LIGNES_POSTE.findIndex(l => l.postes.includes(poste))
+                  const joueursTries = [...joueurs].sort((a, b) => {
+                    const la = ligneDuPoste(a.poste), lb = ligneDuPoste(b.poste)
+                    return (la === -1 ? LIGNES_POSTE.length : la) - (lb === -1 ? LIGNES_POSTE.length : lb)
+                  })
                   return (
                   <div style={{ ...st.card, overflow: 'auto' }}>
                     {competitionsDispo.length > 1 && (
@@ -4366,12 +4382,22 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         </tr>
                       </thead>
                       <tbody>
-                        {joueurs.map(j => {
+                        {joueursTries.map((j, i) => {
                           const s = statsGlobalesJoueur(j.id, matchsTableauFiltres)
                           const tx = tauxPresence(j.id)
                           const note = noteMoyenne(j.id)
+                          const ligne = ligneDuPoste(j.poste)
+                          const nouvelleLigne = i === 0 || ligneDuPoste(joueursTries[i - 1].poste) !== ligne
                           return (
-                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                            <Fragment key={j.id}>
+                              {nouvelleLigne && ligne !== -1 && (
+                                <tr>
+                                  <td colSpan={11} style={{ padding: i === 0 ? '2px 12px 6px' : '16px 12px 6px', color: colors.text.disabled, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: '1px solid #1a1a1a' }}>
+                                    {LIGNES_POSTE[ligne].label}
+                                  </td>
+                                </tr>
+                              )}
+                              <tr style={{ borderBottom: '1px solid #141414' }}>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
                               <td style={{ padding: '10px 12px', color: s.matchs > 0 ? colors.text.primary : colors.border.strong }}>{s.matchs}</td>
@@ -4399,6 +4425,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 )}
                               </td>
                             </tr>
+                            </Fragment>
                           )
                         })}
                       </tbody>
