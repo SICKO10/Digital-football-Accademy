@@ -293,15 +293,21 @@ function loadSheetJS() {
   })
 }
 
-// ── Normalise les en-têtes Excel vers nos champs ──────────────────────────────
+// ── Normalise les en-têtes Excel vers nos champs — insensible à la casse et
+// aux accents/espaces/ponctuation via normaliserCle (même utilitaire que les
+// autres imports Excel de l'app, cf. src/lib/excelImport.js), donc plus
+// besoin de lister séparément chaque variante accentuée/avec espaces : une
+// seule clé normalisée par champ suffit ('numero maillot' et 'numéro
+// maillot' se réduisent tous les deux à 'numeromaillot'). ──
 const HEADER_MAP = {
-  prenom: 'prenom', prénom: 'prenom', firstname: 'prenom', 'first name': 'prenom',
-  nom: 'nom', lastname: 'nom', 'last name': 'nom',
+  prenom: 'prenom', firstname: 'prenom',
+  nom: 'nom', name: 'nom', lastname: 'nom',
   poste: 'poste', position: 'poste',
-  categorie: 'categorie', catégorie: 'categorie', category: 'categorie',
-  'numero maillot': 'numero_maillot', 'numéro maillot': 'numero_maillot', maillot: 'numero_maillot', numero: 'numero_maillot', '#': 'numero_maillot',
-  'date naissance': 'date_naissance', 'date de naissance': 'date_naissance', ddn: 'date_naissance', birthdate: 'date_naissance',
-  'numero licence': 'numero_licence', 'numéro licence': 'numero_licence', licence: 'numero_licence',
+  categorie: 'categorie', category: 'categorie',
+  numeromaillot: 'numero_maillot', maillot: 'numero_maillot', numero: 'numero_maillot',
+  datenaissance: 'date_naissance', ddn: 'date_naissance', naissance: 'date_naissance', birthdate: 'date_naissance',
+  numerolicence: 'numero_licence', licence: 'numero_licence',
+  email: 'email', mail: 'email', adressemail: 'email',
 }
 
 function parseRows(raw) {
@@ -309,7 +315,7 @@ function parseRows(raw) {
     .map(row => {
       const j = {}
       for (const [k, v] of Object.entries(row)) {
-        const key = HEADER_MAP[k.toLowerCase().trim()]
+        const key = HEADER_MAP[normaliserCle(k)]
         if (key && v !== undefined && v !== null && String(v).trim() !== '') {
           j[key] = String(v).trim()
         }
@@ -2686,6 +2692,18 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const file = e.target.files[0]
     if (!file) return
     setImportError('')
+    // .numbers est un format Protobuf binaire propriétaire Apple, illisible
+    // en JS navigateur — et pas de conversion serveur viable ici : LibreOffice
+    // n'est pas installé sur les fonctions serverless Vercel (ni installable
+    // facilement, le binaire dépasse largement la limite de taille), un appel
+    // execSync('libreoffice ...') échouerait systématiquement en production.
+    // Autant guider tout de suite vers l'export xlsx/csv plutôt que de faire
+    // un aller-retour serveur voué à échouer.
+    if (file.name.toLowerCase().endsWith('.numbers')) {
+      setImportError("Les fichiers Apple Numbers (.numbers) ne peuvent pas être importés directement. Dans Numbers : Fichier → Exporter vers → Excel (.xlsx) ou CSV, puis réimporte le fichier exporté.")
+      e.target.value = ''
+      return
+    }
     try {
       const XLSX = await loadSheetJS()
       const buffer = await file.arrayBuffer()
@@ -3789,7 +3807,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {canEdit('effectif') && (
                   <>
                     <button onClick={() => importRef.current?.click()} style={st.btn(colors.accent.purpleLight)}>{t('equipe_importer_excel_csv', lang)}</button>
-                    <input ref={importRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
+                    <input ref={importRef} type="file" accept=".xlsx,.xls,.csv,.numbers" style={{ display: 'none' }} onChange={handleImportFile} />
                     <button onClick={() => setShowAddJoueur(true)} style={st.btnSolid}>+ {t('equipe_ajouter', lang)}</button>
                   </>
                 )}
