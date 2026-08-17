@@ -1154,7 +1154,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Équipe
   const [joueurs, setJoueurs] = useState([])
   const [showAddJoueur, setShowAddJoueur] = useState(false)
-  const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '', club_categorie_id: '' })
+  const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
   const importRef = useRef(null)
   const [importPreview, setImportPreview] = useState(null) // { rows: [], importing: false, done: 0 }
   const [importError, setImportError] = useState('')
@@ -1210,6 +1210,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [convocationExistante, setConvocationExistante] = useState(null) // ligne convocations déjà publiée pour ce match, si existante
   const [convocationForm, setConvocationForm] = useState({ type_terrain: 'Herbe', arbitre_nom: '', notes: '', timeline: [] })
   const [publiantConvocation, setPubliantConvocation] = useState(false)
+  const [scrollVersConvocation, setScrollVersConvocation] = useState(false) // ouverture via le bouton "📢 Convocation" plutôt que "📋 Sondage dispo" → scroll direct à la section
+  const convocationSectionRef = useRef(null)
+
+  useEffect(() => {
+    if (modalSondageMatch && scrollVersConvocation) {
+      convocationSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setScrollVersConvocation(false)
+    }
+  }, [modalSondageMatch, scrollVersConvocation])
+
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
   const [modalMatchForm, setModalMatchForm] = useState(null)
   const [savingMatchForm, setSavingMatchForm] = useState(false)
@@ -1372,9 +1382,27 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const chargerClubCategories = async (uid) => {
     const { data: aff } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', uid).eq('statut', 'accepte').maybeSingle()
-    if (!aff) { setClubCategories([]); return }
+    if (!aff) { setClubCategories([]); setClubCategoriesChargees(true); return }
     const { data } = await supabase.from('club_categories').select('*').eq('club_id', aff.club_id).order('nom')
     setClubCategories(data || [])
+    setClubCategoriesChargees(true)
+  }
+
+  // Déclare la catégorie/équipe gérée par cet éducateur (un dashboard educateur =
+  // une équipe) — réclame une ligne club_categories déjà créée par le club mais
+  // pas encore assignée (educateur_id null) si elle existe, sinon en crée une
+  // nouvelle. Une fois déclarée, tous les nouveaux joueurs ajoutés en héritent
+  // automatiquement (cf. ajouterJoueur) — plus besoin de le choisir à chaque fois.
+  const declarerMaCategorie = async () => {
+    if (!clubAffiliation?.club_id) return
+    setSavingCategorieClub(true)
+    const vacante = clubCategories.find(c => !c.educateur_id && c.nom === promptCategorieForm.nom && c.equipe === promptCategorieForm.equipe)
+    const { error } = vacante
+      ? await supabase.from('club_categories').update({ educateur_id: userId }).eq('id', vacante.id)
+      : await supabase.from('club_categories').insert({ club_id: clubAffiliation.club_id, nom: promptCategorieForm.nom, equipe: promptCategorieForm.equipe, educateur_id: userId })
+    setSavingCategorieClub(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    await chargerClubCategories(userId)
   }
 
   const chargerJoueurs = async (uid) => {
@@ -1458,6 +1486,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [clubCategories, setClubCategories] = useState([])
+  const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
+  const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
+  const [savingCategorieClub, setSavingCategorieClub] = useState(false)
+  // Un dashboard educateur = une équipe : la catégorie/équipe club que gère cet
+  // éducateur, une fois déclarée (cf. declarerMaCategorie) — undefined tant
+  // qu'il ne l'a pas encore fait.
+  const monCategorieClub = clubCategories.find(c => c.educateur_id === userId)
 
   const [mesSeances, setMesSeances] = useState([])
   const [showUploadSeance, setShowUploadSeance] = useState(false)
@@ -2504,14 +2539,17 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     // vérification d'erreur n'existait avant, on en ajoute a minima).
     const snapshot = { ...newJoueur }
     setSavingJoueur(true)
-    setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '', club_categorie_id: '' })
+    setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
     setShowAddJoueur(false)
-    // date_naissance/club_categorie_id valent '' par défaut (input vide/select
-    // non choisi) — Postgres rejette '' pour une colonne date ou uuid, il faut null.
+    // date_naissance vaut '' par défaut (input vide) — Postgres rejette '' pour
+    // une colonne date, il faut null. club_categorie_id/categorie héritent
+    // automatiquement de la catégorie déclarée par l'éducateur (monCategorieClub) :
+    // plus besoin de le choisir à chaque joueur (cf. declarerMaCategorie).
     const { error } = await supabase.from('equipe_joueurs').insert({
       ...snapshot,
       date_naissance: snapshot.date_naissance || null,
-      club_categorie_id: snapshot.club_categorie_id || null,
+      club_categorie_id: monCategorieClub?.id || null,
+      categorie: snapshot.categorie || monCategorieClub?.nom || '',
       educateur_id: userId,
     })
     setSavingJoueur(false)
@@ -3664,6 +3702,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     card: { background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
     btn: (color = colors.accent.blue) => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
     btnSolid: { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
+    // Bouton icône discret — pour les actions secondaires groupées sur une
+    // carte (sondage/convocation/édition/suppression) : fond quasi
+    // transparent, icône teintée mais atténuée, moins voyant qu'un st.btn
+    // plein avec libellé texte à côté du CTA principal de la carte.
+    iconBtnDiscret: (color) => ({ background: color + '0d', border: `1px solid ${color}25`, color: color + 'cc', width: '30px', height: '30px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
   }
 
   if (loading) return (
@@ -3873,6 +3916,40 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== MON ÉQUIPE ===== */}
         {activeSection === 'equipe' && (
           <>
+            {/* Déclaration obligatoire de la catégorie/équipe gérée, à la première
+                visite de cet onglet (affilié à un club, aucune ligne club_categories
+                assignée à cet éducateur pour l'instant) — un dashboard educateur =
+                une équipe, cf. declarerMaCategorie. Non dismissable : tant que ce
+                n'est pas répondu, les nouveaux joueurs n'auraient nulle part où
+                s'auto-rattacher. */}
+            {clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && !monCategorieClub && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
+                  <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '17px' }}>Quelle catégorie et équipe gères-tu ?</p>
+                  <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint }}>
+                    Nécessaire une seule fois : tes prochains joueurs ajoutés seront ensuite rattachés automatiquement, sans avoir à le refaire à chaque fois.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                    <div>
+                      <label style={st.label}>{t('equipe_categorie', lang)}</label>
+                      <select style={st.input} value={promptCategorieForm.nom} onChange={e => setPromptCategorieForm(p => ({ ...p, nom: e.target.value }))}>
+                        {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={st.label}>{t('club_equipe_label', lang)}</label>
+                      <select style={st.input} value={promptCategorieForm.equipe} onChange={e => setPromptCategorieForm(p => ({ ...p, equipe: e.target.value }))}>
+                        {['A', 'B'].map(e => <option key={e}>{e}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <button onClick={declarerMaCategorie} disabled={savingCategorieClub} style={{ ...st.btnSolid, width: '100%' }}>
+                    {savingCategorieClub ? 'Enregistrement...' : 'Confirmer'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('equipe_titre', lang)}</h1>
@@ -4274,19 +4351,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
                   <div><label style={st.label}>{t('equipe_date_naissance', lang)}</label><input style={st.input} type="date" value={newJoueur.date_naissance} onChange={e => setNewJoueur({ ...newJoueur, date_naissance: e.target.value })} /></div>
                   <div><label style={st.label}>{t('equipe_licence_fff', lang)}</label><input style={st.input} placeholder={t('equipe_numero_licence', lang)} value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
-                  {clubCategories.length > 0 && (
-                    <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
-                      <label style={st.label}>{t('equipe_categorie_club', lang)}</label>
-                      <select style={st.input} value={newJoueur.club_categorie_id} onChange={e => {
-                        const cat = clubCategories.find(c => c.id === e.target.value)
-                        setNewJoueur({ ...newJoueur, club_categorie_id: e.target.value, categorie: cat?.nom || newJoueur.categorie })
-                      }}>
-                        <option value="">{t('equipe_non_assigne', lang)}</option>
-                        {clubCategories.map(c => <option key={c.id} value={c.id}>{c.nom} — Équipe {c.equipe}</option>)}
-                      </select>
-                    </div>
-                  )}
                 </div>
+                {monCategorieClub && (
+                  <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>
+                    Sera automatiquement rattaché à {monCategorieClub.nom} — Équipe {monCategorieClub.equipe}.
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
                   <button onClick={() => setShowAddJoueur(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
@@ -5320,30 +5390,33 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                                   </p>
                                 </div>
-                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} style={st.btn(colors.accent.purple)}>📋 Sondage dispo</button>
-                                {canEdit('competition') && (
-                                  <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
-                                )}
-                                {canEdit('competition') && (
-                                  <button
-                                    onClick={async () => {
-                                      if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
-                                      const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
-                                      if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
-                                      const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
-                                      if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
-                                      setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
-                                      supprimerDeplacementLieAuMatch(m)
-                                    }}
-                                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.red, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
-                                    title="Supprimer ce match"
-                                  >
-                                    🗑️
-                                  </button>
-                                )}
-                                {canEdit('stats') && (
-                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={st.btn(colors.accent.green)}>✅ {t('comp_marquer_joue', lang)}</button>
-                                )}
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} title="Sondage dispo" style={st.iconBtnDiscret(colors.accent.purple)}>📋</button>
+                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) }} title="Convocation" style={st.iconBtnDiscret(colors.accent.green)}>📢</button>
+                                  {canEdit('competition') && (
+                                    <button onClick={() => ouvrirModalModifierMatch(m)} title={t('comp_modifier_match', lang)} style={st.iconBtnDiscret(colors.accent.blue)}>✏️</button>
+                                  )}
+                                  {canEdit('competition') && (
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
+                                        const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                        if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
+                                        const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                        if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
+                                        setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                        supprimerDeplacementLieAuMatch(m)
+                                      }}
+                                      title="Supprimer ce match"
+                                      style={st.iconBtnDiscret(colors.accent.red)}
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                  {canEdit('stats') && (
+                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>✅ {t('comp_marquer_joue', lang)}</button>
+                                  )}
+                                </div>
                               </div>
                               {aDesReponses && (
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px' }}>
@@ -5485,7 +5558,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                     {/* ── Convocation officielle — publiée, visible en widget sur le
                         dashboard de chaque joueur convoqué jusqu'à expiration ── */}
-                    <div style={{ ...st.card, background: colors.background.sunken, marginTop: '16px' }}>
+                    <div ref={convocationSectionRef} style={{ ...st.card, background: colors.background.sunken, marginTop: '16px' }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>📢 Convocation officielle</p>
                       <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>
                         {convocationExistante ? `Publiée — disparaît du dashboard des joueurs le dimanche à 20h.` : `Reprend le groupe coché ci-dessus. Publier l'affiche comme un widget sur le dashboard de chaque joueur convoqué.`}

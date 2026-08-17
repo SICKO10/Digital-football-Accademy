@@ -238,6 +238,14 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
       .update({ statut: 'archive', saison, date_fin: new Date().toISOString() })
       .eq('educateur_id', educateurId)
       .eq('statut', 'accepte')
+
+    // Libère la catégorie/équipe club déclarée par cet éducateur (cf.
+    // declarerMaCategorie côté DashboardEducateur.jsx) : à la nouvelle saison,
+    // lui (ou qui reprend cette équipe) sera re-invité à la déclarer plutôt que
+    // de garder silencieusement le rattachement de la saison précédente. Best
+    // effort — une erreur ici ne doit pas faire échouer l'archivage des affiliations.
+    await supabase.from('club_categories').update({ educateur_id: null }).eq('educateur_id', educateurId)
+
     setArchiving(false)
 
     if (error) { alert('Erreur lors de l\'archivage : ' + error.message); return }
