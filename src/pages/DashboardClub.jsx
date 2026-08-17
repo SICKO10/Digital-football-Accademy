@@ -916,7 +916,7 @@ export default function DashboardClub() {
   const [evenementsClub, setEvenementsClub] = useState([])
   const [showEvenementForm, setShowEvenementForm] = useState(false)
   const [editingEvenementId, setEditingEvenementId] = useState(null)
-  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [] })
+  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [] })
   const [savingEvenement, setSavingEvenement] = useState(false)
 
   const [projetsClub, setProjetsClub] = useState([])
@@ -1162,13 +1162,13 @@ export default function DashboardClub() {
 
   const ouvrirNouvelEvenement = () => {
     setEditingEvenementId(null)
-    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [] })
+    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [] })
     setShowEvenementForm(true)
   }
 
   const ouvrirEditionEvenement = (ev) => {
     setEditingEvenementId(ev.id)
-    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [] })
+    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [] })
     setShowEvenementForm(true)
   }
 
@@ -1177,6 +1177,42 @@ export default function DashboardClub() {
       const existe = f.participants.some(p => p.id === participant.id && p.type === participant.type)
       return { ...f, participants: existe ? f.participants.filter(p => !(p.id === participant.id && p.type === participant.type)) : [...f.participants, participant] }
     })
+  }
+
+  // ── Ressources matérielles d'un événement ──
+  const ajouterRessource = () => {
+    setEvenementForm(f => ({ ...f, ressources_materielles: [...f.ressources_materielles, { item: '', quantite: 1 }] }))
+  }
+  const modifierRessource = (index, champ, valeur) => {
+    setEvenementForm(f => ({ ...f, ressources_materielles: f.ressources_materielles.map((r, i) => i === index ? { ...r, [champ]: valeur } : r) }))
+  }
+  const supprimerRessource = (index) => {
+    setEvenementForm(f => ({ ...f, ressources_materielles: f.ressources_materielles.filter((_, i) => i !== index) }))
+  }
+
+  // ── Missions d'un événement — responsable_id/responsable_nom, même
+  // convention que projetForm (responsable de projet), pas "référent". ──
+  const ajouterMission = () => {
+    setEvenementForm(f => ({ ...f, missions: [...f.missions, { id: crypto.randomUUID(), titre: '', responsable_id: '', responsable_nom: '', participants: [], objectif: '', comment: '' }] }))
+  }
+  const modifierMission = (id, champ, valeur) => {
+    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === id ? { ...m, [champ]: valeur } : m) }))
+  }
+  const supprimerMission = (id) => {
+    setEvenementForm(f => ({ ...f, missions: f.missions.filter(m => m.id !== id) }))
+  }
+  const choisirResponsableMission = (missionId, personne) => {
+    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: personne.id, responsable_nom: personne.nom } : m) }))
+  }
+  const toggleParticipantMission = (missionId, personne) => {
+    setEvenementForm(f => ({
+      ...f,
+      missions: f.missions.map(m => {
+        if (m.id !== missionId) return m
+        const existe = m.participants.some(p => p.id === personne.id)
+        return { ...m, participants: existe ? m.participants.filter(p => p.id !== personne.id) : [...m.participants, personne] }
+      }),
+    }))
   }
 
   const sauvegarderEvenement = async () => {
@@ -1190,6 +1226,8 @@ export default function DashboardClub() {
       type: evenementForm.type,
       description: evenementForm.description.trim() || null,
       participants: evenementForm.participants,
+      ressources_materielles: evenementForm.ressources_materielles,
+      missions: evenementForm.missions,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -3151,6 +3189,9 @@ Règles :
             { type: 'staff', titre: 'Staff', liste: staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })) },
             { type: 'joueur', titre: 'Joueurs', liste: joueursClub.map(j => ({ id: j.id, nom: `${j.prenom || ''} ${j.nom || ''}`.trim() })) },
           ]
+          // Liste à plat (éducateurs + staff + joueurs) pour choisir un
+          // responsable/participant de mission, sans distinction de groupe.
+          const tousParticipants = groupesParticipants.flatMap(g => g.liste)
 
           const responsablesOptions = [
             { id: clubId, nom: `${club?.club || club?.prenom || 'Le club'} (Président)` },
@@ -3238,6 +3279,86 @@ Règles :
                         ))}
                       </div>
 
+                      {/* ── Ressources matérielles ── */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <label style={st.label}>📦 Ressources matérielles</label>
+                          <button type="button" onClick={ajouterRessource} style={st.btnSecondary}>+ Ajouter</button>
+                        </div>
+                        {evenementForm.ressources_materielles.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucune ressource ajoutée.</p>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {evenementForm.ressources_materielles.map((r, i) => (
+                            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <input placeholder="Ex: Ballons, Chasubles, Cônes…" value={r.item} onChange={e => modifierRessource(i, 'item', e.target.value)} style={{ ...st.input, flex: 1 }} />
+                              <input type="number" min="1" value={r.quantite} onChange={e => modifierRessource(i, 'quantite', parseInt(e.target.value) || 1)} style={{ ...st.input, width: '70px', textAlign: 'center' }} />
+                              <button type="button" onClick={() => supprimerRessource(i)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer', padding: '4px' }}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ── Missions ── */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <label style={st.label}>🎯 Missions</label>
+                          <button type="button" onClick={ajouterMission} style={st.btnSecondary}>+ Créer une mission</button>
+                        </div>
+                        {evenementForm.missions.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucune mission créée.</p>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {evenementForm.missions.map(mission => (
+                            <div key={mission.id} style={{ background: colors.background.raised, border: '1px solid #222', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input placeholder="Titre de la mission (ex: Accueil équipes, Gestion vestiaires…)" value={mission.titre} onChange={e => modifierMission(mission.id, 'titre', e.target.value)} style={{ ...st.input, flex: 1, fontWeight: 700 }} />
+                                <button type="button" onClick={() => supprimerMission(mission.id)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer' }}>✕</button>
+                              </div>
+
+                              <div>
+                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Responsable de la mission</p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                  {tousParticipants.map(p => {
+                                    const estResp = mission.responsable_id === p.id
+                                    return (
+                                      <button key={p.id} type="button" onClick={() => choisirResponsableMission(mission.id, p)}
+                                        style={{ background: estResp ? couleurPrincipale + alpha.soft : 'transparent', border: `1px solid ${estResp ? couleurPrincipale : '#333'}`, color: estResp ? couleurPrincipale : colors.text.muted, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: estResp ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                        {estResp ? '⭐ ' : ''}{p.nom || '—'}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+
+                              <div>
+                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Participants ({mission.participants.length})</p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                  {tousParticipants.map(p => {
+                                    const dedans = mission.participants.some(mp => mp.id === p.id)
+                                    return (
+                                      <button key={p.id} type="button" onClick={() => toggleParticipantMission(mission.id, p)}
+                                        style={{ background: dedans ? colors.accent.blue + alpha.soft : 'transparent', border: `1px solid ${dedans ? colors.accent.blue : '#333'}`, color: dedans ? colors.accent.blue : colors.text.muted, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                        {p.nom || '—'}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label style={st.label}>Objectif</label>
+                                <textarea placeholder="Quel est l'objectif de cette mission ?" value={mission.objectif} onChange={e => modifierMission(mission.id, 'objectif', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+                              <div>
+                                <label style={st.label}>Comment</label>
+                                <textarea placeholder="Comment réaliser cette mission ? (étapes, consignes, timing…)" value={mission.comment} onChange={e => modifierMission(mission.id, 'comment', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={sauvegarderEvenement} disabled={savingEvenement || !evenementForm.titre.trim() || !evenementForm.date} style={st.btnSolid}>
                           {savingEvenement ? t('jp_enregistrement', lang) : editingEvenementId ? t('btn_sauvegarder', lang) : t('btn_ajouter', lang)}
@@ -3270,6 +3391,18 @@ Règles :
                                   {ev.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.muted }}>{ev.description}</p>}
                                   {ev.participants?.length > 0 && (
                                     <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>👥 {ev.participants.map(p => p.nom).join(', ')}</p>
+                                  )}
+                                  {ev.ressources_materielles?.length > 0 && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>📦 {ev.ressources_materielles.map(r => `${r.quantite}× ${r.item}`).join(', ')}</p>
+                                  )}
+                                  {ev.missions?.length > 0 && (
+                                    <div style={{ margin: '4px 0 0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      {ev.missions.map(m => (
+                                        <p key={m.id} style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>
+                                          🎯 {m.titre}{m.responsable_nom ? ` — ⭐ ${m.responsable_nom}` : ''}
+                                        </p>
+                                      ))}
+                                    </div>
                                   )}
                                 </div>
                                 {canEditSection('evenements') && (
