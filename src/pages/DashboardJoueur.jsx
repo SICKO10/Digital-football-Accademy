@@ -429,6 +429,7 @@ function DashboardJoueur() {
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
+  const [convocationActive, setConvocationActive] = useState(null) // convocation publiée non expirée pour ce joueur, avec le match joint
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
@@ -645,7 +646,21 @@ function DashboardJoueur() {
     await chargerConversations(user.id)
     const mesAff = await chargerAffiliations(user.id)
     await verifierCloturesSaison(user.id, mesAff || [])
+    await chargerConvocationActive(user.id)
     setLoading(false)
+  }
+
+  // Convocation active : jointure via convocation_joueurs (le joueur ne voit,
+  // par RLS, que ses lignes) → convocations (RLS déjà limitée à publiee=true
+  // et expire_at > now(), donc pas besoin de refiltrer côté client).
+  const chargerConvocationActive = async (uid) => {
+    const { data } = await supabase
+      .from('convocation_joueurs')
+      .select('convocations(*, matchs_equipe(adversaire, date, heure, lieu, domicile, competition))')
+      .eq('joueur_id', uid)
+    const convocations = (data || []).map(row => row.convocations).filter(Boolean)
+    convocations.sort((a, b) => (a.matchs_equipe?.date || '').localeCompare(b.matchs_equipe?.date || ''))
+    setConvocationActive(convocations[0] || null)
   }
 
   const chargerNotifications = async (uid) => {
@@ -2700,6 +2715,59 @@ function DashboardJoueur() {
                 </div>
               </div>
             </div>
+
+            {/* CONVOCATION — publiée par l'éducateur pour un match à venir, disparaît
+                automatiquement le dimanche 20h suivant le match (filtré côté RLS, cf.
+                chargerConvocationActive) */}
+            {convocationActive && (() => {
+              const m = convocationActive.matchs_equipe
+              return (
+                <div style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #111 100%)', border: '2px solid #4ade80', borderRadius: '16px', padding: '20px', marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
+                  {m?.competition && (
+                    <div style={{ position: 'absolute', top: 12, right: 12, background: colors.accent.green, color: colors.black, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                      {m.competition}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>📋 Tu es convoqué !</div>
+                  <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+                    {m?.domicile ? 'vs' : '@'} {m?.adversaire}
+                  </div>
+                  <div style={{ color: colors.text.faint, fontSize: 13, marginBottom: 16 }}>
+                    {m?.date && new Date(`${m.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {m?.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
+                    {m?.lieu ? ` · ${m.lieu}` : ''}
+                  </div>
+
+                  {convocationActive.timeline?.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ color: colors.text.disabled, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Programme</div>
+                      {convocationActive.timeline.map((step, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '6px 0', borderBottom: i < convocationActive.timeline.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
+                          <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: 13, minWidth: 50 }}>{step.heure}</span>
+                          <span style={{ fontSize: 14 }}>{step.icone || '📌'}</span>
+                          <span style={{ color: '#ccc', fontSize: 13 }}>{step.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {convocationActive.notes && (
+                    <p style={{ color: '#ccc', fontSize: 13, fontStyle: 'italic', background: '#0a0a0a', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                      {convocationActive.notes}
+                    </p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {convocationActive.type_terrain && (
+                      <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>🌿 {convocationActive.type_terrain}</div>
+                    )}
+                    {convocationActive.arbitre_nom && (
+                      <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>🏳️ Arbitre : {convocationActive.arbitre_nom}</div>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
                 section : mêmes événements, boutons de présence en plus) au lieu de deux

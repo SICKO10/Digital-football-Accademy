@@ -1207,6 +1207,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
   const [modalSondageMatch, setModalSondageMatch] = useState(null) // match affiché dans la modale résultats
   const [convocationsCoches, setConvocationsCoches] = useState({}) // { [joueur_id]: bool }, pré-coché ✅/🏆 à l'ouverture de la modale
+  const [convocationExistante, setConvocationExistante] = useState(null) // ligne convocations déjà publiée pour ce match, si existante
+  const [convocationForm, setConvocationForm] = useState({ type_terrain: 'Herbe', arbitre_nom: '', notes: '', timeline: [] })
+  const [publiantConvocation, setPubliantConvocation] = useState(false)
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
   const [modalMatchForm, setModalMatchForm] = useState(null)
   const [savingMatchForm, setSavingMatchForm] = useState(false)
@@ -3431,6 +3434,84 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     return stats
   }
 
+  const TIMELINE_DEFAUT = [
+    { heure: '', label: 'RDV Vestiaire', icone: '🚪' },
+    { heure: '', label: 'Causerie', icone: '🎙️' },
+    { heure: '', label: 'Sortie échauffement', icone: '🏃' },
+    { heure: '', label: "Coup d'envoi", icone: '⚽' },
+  ]
+
+  // Convocation déjà publiée pour ce match, si elle existe — pré-remplit le
+  // formulaire et les cases cochées à l'ouverture de la modale "Sondage dispo".
+  const chargerConvocation = async (matchId) => {
+    const { data: conv } = await supabase.from('convocations').select('*').eq('match_id', matchId).maybeSingle()
+    if (!conv) {
+      setConvocationExistante(null)
+      setConvocationForm({ type_terrain: 'Herbe', arbitre_nom: '', notes: '', timeline: TIMELINE_DEFAUT })
+      return
+    }
+    setConvocationExistante(conv)
+    setConvocationForm({
+      type_terrain: conv.type_terrain || 'Herbe',
+      arbitre_nom: conv.arbitre_nom || '',
+      notes: conv.notes || '',
+      timeline: conv.timeline?.length ? conv.timeline : TIMELINE_DEFAUT,
+    })
+    const { data: cj } = await supabase.from('convocation_joueurs').select('joueur_id').eq('convocation_id', conv.id)
+    const parJoueurId = {}
+    ;(cj || []).forEach(row => {
+      const j = joueurs.find(x => x.joueur_id === row.joueur_id)
+      if (j) parJoueurId[j.id] = true
+    })
+    setConvocationsCoches(parJoueurId)
+  }
+
+  // Dimanche suivant le match, 20h — le widget joueur (lecture filtrée sur
+  // expire_at > now()) disparaît tout seul à ce moment-là, pas de tâche
+  // planifiée nécessaire.
+  const calculerExpirationConvocation = (dateMatch) => {
+    const d = new Date(`${dateMatch}T00:00:00`)
+    const jourSemaine = d.getDay() // 0=dimanche..6=samedi
+    const joursVersDimanche = (7 - jourSemaine) % 7 || 7
+    const dimanche = new Date(d)
+    dimanche.setDate(d.getDate() + joursVersDimanche)
+    dimanche.setHours(20, 0, 0, 0)
+    return dimanche.toISOString()
+  }
+
+  const publierConvocation = async (match) => {
+    setPubliantConvocation(true)
+    const payload = {
+      match_id: match.id,
+      educateur_id: userId,
+      type_terrain: convocationForm.type_terrain,
+      arbitre_nom: convocationForm.arbitre_nom.trim() || null,
+      notes: convocationForm.notes.trim() || null,
+      timeline: convocationForm.timeline.filter(step => step.heure.trim() || step.label.trim()),
+      publiee: true,
+      publiee_at: new Date().toISOString(),
+      expire_at: calculerExpirationConvocation(match.date),
+    }
+    const { data: conv, error } = await supabase.from('convocations').upsert(payload, { onConflict: 'match_id' }).select().single()
+    if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); setPubliantConvocation(false); return }
+
+    const joueurIds = reponsesDispoMatch(match.id)
+      .filter(j => (convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')) && j.joueur_id)
+      .map(j => j.joueur_id)
+
+    // Remplace le groupe convoqué en entier (delete + insert) plutôt que de
+    // calculer un diff — plus simple, et le volume (effectif d'une équipe)
+    // ne justifie pas l'optimisation.
+    await supabase.from('convocation_joueurs').delete().eq('convocation_id', conv.id)
+    if (joueurIds.length > 0) {
+      await supabase.from('convocation_joueurs').insert(joueurIds.map(joueur_id => ({ convocation_id: conv.id, joueur_id })))
+    }
+
+    setConvocationExistante(conv)
+    setPubliantConvocation(false)
+    afficherToast(`✅ Convocation publiée — ${joueurIds.length} joueur${joueurIds.length > 1 ? 's' : ''}`)
+  }
+
   // sondageEstClos importée de ../lib/sondage — partagée avec DashboardJoueur.jsx
   // (avant ce partage, seul ce fichier calculait la clôture en direct ; le
   // dashboard joueur se fiait au champ sondage_clos brut, jamais mis à jour
@@ -5223,7 +5304,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                                   </p>
                                 </div>
-                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m) }} style={st.btn(colors.accent.purple)}>📋 Sondage dispo</button>
+                                <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} style={st.btn(colors.accent.purple)}>📋 Sondage dispo</button>
                                 {canEdit('competition') && (
                                   <button onClick={() => ouvrirModalModifierMatch(m)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title={t('comp_modifier_match', lang)}>✏️</button>
                                 )}
@@ -5383,6 +5464,58 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       </div>
                       <button onClick={copierConvocations} style={st.btnSolid} disabled={nomsCoches.length === 0}>
                         📋 Copier la liste ({nomsCoches.length})
+                      </button>
+                    </div>
+
+                    {/* ── Convocation officielle — publiée, visible en widget sur le
+                        dashboard de chaque joueur convoqué jusqu'à expiration ── */}
+                    <div style={{ ...st.card, background: colors.background.sunken, marginTop: '16px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>📢 Convocation officielle</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>
+                        {convocationExistante ? `Publiée — disparaît du dashboard des joueurs le dimanche à 20h.` : `Reprend le groupe coché ci-dessus. Publier l'affiche comme un widget sur le dashboard de chaque joueur convoqué.`}
+                      </p>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={st.label}>Terrain</label>
+                          <select style={st.input} value={convocationForm.type_terrain} onChange={e => setConvocationForm(f => ({ ...f, type_terrain: e.target.value }))}>
+                            <option>Herbe</option>
+                            <option>Synthétique</option>
+                            <option>Indoor</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Arbitre</label>
+                          <input style={st.input} placeholder="Nom de l'arbitre" value={convocationForm.arbitre_nom} onChange={e => setConvocationForm(f => ({ ...f, arbitre_nom: e.target.value }))} />
+                        </div>
+                      </div>
+
+                      <label style={st.label}>Programme de la journée</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                        {convocationForm.timeline.map((step, i) => (
+                          <div key={i} style={{ display: 'flex', gap: '6px' }}>
+                            <input placeholder="19h15" value={step.heure}
+                              onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, heure: e.target.value } : s) }))}
+                              style={{ ...st.input, width: '80px', flexShrink: 0 }} />
+                            <input placeholder="Étape" value={step.label}
+                              onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, label: e.target.value } : s) }))}
+                              style={{ ...st.input, flex: 1 }} />
+                            <button onClick={() => setConvocationForm(f => ({ ...f, timeline: f.timeline.filter((_, idx) => idx !== i) }))}
+                              style={{ background: 'none', border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                          </div>
+                        ))}
+                        <button onClick={() => setConvocationForm(f => ({ ...f, timeline: [...f.timeline, { heure: '', label: '', icone: '📌' }] }))}
+                          style={{ background: 'none', border: '1px dashed #333', color: colors.text.faint, padding: '6px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                          + Ajouter une étape
+                        </button>
+                      </div>
+
+                      <label style={st.label}>Notes (facultatif)</label>
+                      <textarea style={{ ...st.input, minHeight: '50px', resize: 'vertical', marginBottom: '12px' }} placeholder="Infos utiles pour les joueurs (adversaire, consignes...)"
+                        value={convocationForm.notes} onChange={e => setConvocationForm(f => ({ ...f, notes: e.target.value }))} />
+
+                      <button onClick={() => publierConvocation(m)} disabled={publiantConvocation} style={{ ...st.btnSolid, background: colors.accent.green, width: '100%', opacity: publiantConvocation ? 0.6 : 1 }}>
+                        {publiantConvocation ? '...' : convocationExistante ? '📤 Mettre à jour la convocation' : '📤 Publier la convocation'}
                       </button>
                     </div>
                   </div>
