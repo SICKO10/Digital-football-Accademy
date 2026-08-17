@@ -916,7 +916,7 @@ export default function DashboardClub() {
   const [evenementsClub, setEvenementsClub] = useState([])
   const [showEvenementForm, setShowEvenementForm] = useState(false)
   const [editingEvenementId, setEditingEvenementId] = useState(null)
-  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [] })
+  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [] })
   // Saisie libre prénom/nom du responsable/participant en cours, par mission —
   // { [missionId]: { prenom, nom } } — remplace la liste de badges
   // tousParticipants (50+ personnes) pour le responsable et les participants
@@ -929,14 +929,20 @@ export default function DashboardClub() {
   // raison que pour les missions (cf. note plus haut) : la liste de badges
   // (éducateurs/staff/joueurs, 50+ personnes) était trop lourde pour ce cas.
   const [saisieParticipant, setSaisieParticipant] = useState({ prenom: '', nom: '' })
+  const [saisieReferent, setSaisieReferent] = useState({ prenom: '', nom: '' })
   const [savingEvenement, setSavingEvenement] = useState(false)
+  const [exportingPdfId, setExportingPdfId] = useState(null)
 
   const [projetsClub, setProjetsClub] = useState([])
   const [showProjetForm, setShowProjetForm] = useState(false)
   const [editingProjetId, setEditingProjetId] = useState(null)
-  const [projetForm, setProjetForm] = useState({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente' })
+  const [projetForm, setProjetForm] = useState({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
   const [savingProjet, setSavingProjet] = useState(false)
   const [nouvelleTache, setNouvelleTache] = useState({}) // { [projetId]: titre en cours de saisie }
+  // Référents du projet — même saisie libre nom/prénom que pour les
+  // événements (cf. ajouterReferent), en plus du responsable existant
+  // (sélectionné parmi le staff, inchangé).
+  const [saisieReferentProjet, setSaisieReferentProjet] = useState({ prenom: '', nom: '' })
   const [sousVueEvenements, setSousVueEvenements] = useState('evenements') // 'evenements' | 'projets'
 
   // Budget
@@ -1174,13 +1180,13 @@ export default function DashboardClub() {
 
   const ouvrirNouvelEvenement = () => {
     setEditingEvenementId(null)
-    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [] })
+    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [] })
     setShowEvenementForm(true)
   }
 
   const ouvrirEditionEvenement = (ev) => {
     setEditingEvenementId(ev.id)
-    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [] })
+    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [], referents: ev.referents || [] })
     setShowEvenementForm(true)
   }
 
@@ -1195,6 +1201,19 @@ export default function DashboardClub() {
   }
   const retirerParticipant = (id) => {
     setEvenementForm(f => ({ ...f, participants: f.participants.filter(p => p.id !== id) }))
+  }
+
+  const ajouterReferent = () => {
+    const nom = `${saisieReferent.prenom} ${saisieReferent.nom}`.trim()
+    if (!nom) return
+    setEvenementForm(f => {
+      if (f.referents.some(r => r.nom.toLowerCase() === nom.toLowerCase())) return f
+      return { ...f, referents: [...f.referents, { id: crypto.randomUUID(), nom }] }
+    })
+    setSaisieReferent({ prenom: '', nom: '' })
+  }
+  const retirerReferent = (id) => {
+    setEvenementForm(f => ({ ...f, referents: f.referents.filter(r => r.id !== id) }))
   }
 
   // ── Ressources matérielles d'un événement ──
@@ -1261,6 +1280,7 @@ export default function DashboardClub() {
       type: evenementForm.type,
       description: evenementForm.description.trim() || null,
       participants: evenementForm.participants,
+      referents: evenementForm.referents,
       ressources_materielles: evenementForm.ressources_materielles,
       missions: evenementForm.missions,
     }
@@ -1291,6 +1311,98 @@ export default function DashboardClub() {
     await chargerEvenements(clubId)
   }
 
+  // Export PDF d'un événement complet (infos, référents, participants,
+  // ressources, missions) — même approche que Deplacements.jsx
+  // (exporterPlanningPDF) : import dynamique de jsPDF, positionnement
+  // manuel du texte avec vérification de saut de page, pas d'autoTable.
+  const exporterEvenementPDF = async (ev) => {
+    setExportingPdfId(ev.id)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const margin = 14
+      const largeurPage = doc.internal.pageSize.getWidth()
+      const hauteurPage = doc.internal.pageSize.getHeight()
+      const NOIR = [30, 30, 30]
+      const GRIS = [110, 110, 110]
+      const VERT = [22, 101, 52]
+      let y = 18
+
+      const sautDePage = (marge = 20) => { if (y > hauteurPage - marge) { doc.addPage(); y = 18 } }
+      const titreSection = (texte) => {
+        sautDePage(30)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...NOIR)
+        doc.text(texte, margin, y)
+        y += 5
+        doc.setDrawColor(210, 210, 210)
+        doc.line(margin, y, largeurPage - margin, y)
+        y += 6
+      }
+      const ligne = (texte, { gras = false, couleur = NOIR, taille = 10, indent = 0 } = {}) => {
+        sautDePage(18)
+        doc.setFontSize(taille)
+        doc.setFont('helvetica', gras ? 'bold' : 'normal')
+        doc.setTextColor(...couleur)
+        const largeurUtile = largeurPage - margin * 2 - indent
+        const lignes = doc.splitTextToSize(texte, largeurUtile)
+        lignes.forEach(l => { sautDePage(18); doc.text(l, margin + indent, y); y += 5 })
+      }
+
+      const info = TYPE_EVENEMENT_INFO(ev.type)
+      doc.setFontSize(17)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...NOIR)
+      doc.text(ev.titre || 'Événement', margin, y)
+      y += 7
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...GRIS)
+      const dateLabel = ev.date ? new Date(`${ev.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
+      doc.text(`${info.emoji} ${info.label}  ·  ${dateLabel}${ev.heure ? `  ·  ${ev.heure.slice(0, 5)}` : ''}${ev.lieu ? `  ·  ${ev.lieu}` : ''}`, margin, y)
+      y += 10
+
+      if (ev.description) { titreSection('Description'); ligne(ev.description); y += 4 }
+
+      if (ev.referents?.length > 0) {
+        titreSection('Référents')
+        ev.referents.forEach(r => ligne(`⭐ ${r.nom}`))
+        y += 4
+      }
+
+      if (ev.participants?.length > 0) {
+        titreSection(`Participants invités (${ev.participants.length})`)
+        ligne(ev.participants.map(p => p.nom).join(', '))
+        y += 4
+      }
+
+      if (ev.ressources_materielles?.length > 0) {
+        titreSection('Ressources matérielles')
+        ev.ressources_materielles.forEach(r => ligne(`•  ${r.quantite}× ${r.item}`))
+        y += 4
+      }
+
+      if (ev.missions?.length > 0) {
+        titreSection(`Missions (${ev.missions.length})`)
+        ev.missions.forEach(m => {
+          sautDePage(30)
+          ligne(m.titre || 'Mission', { gras: true, taille: 11 })
+          if (m.responsable_nom) ligne(`Responsable : ${m.responsable_nom}`, { couleur: VERT, indent: 3 })
+          if (m.participants?.length > 0) ligne(`Participants : ${m.participants.map(p => p.nom).join(', ')}`, { couleur: GRIS, indent: 3 })
+          if (m.objectif) ligne(`Objectif : ${m.objectif}`, { indent: 3 })
+          if (m.comment) ligne(`Comment : ${m.comment}`, { indent: 3 })
+          y += 3
+        })
+      }
+
+      doc.save(`evenement-${(ev.titre || 'sans-titre').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`)
+    } finally {
+      setExportingPdfId(null)
+    }
+  }
+
   // ── Projets club ─────────────────────────────────────────────────────────────
   const chargerProjets = async (uid) => {
     const { data } = await supabase.from('projets_club').select('*, taches_projet(*)').eq('club_id', uid).order('created_at', { ascending: false })
@@ -1299,14 +1411,27 @@ export default function DashboardClub() {
 
   const ouvrirNouveauProjet = () => {
     setEditingProjetId(null)
-    setProjetForm({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente' })
+    setProjetForm({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
     setShowProjetForm(true)
   }
 
   const ouvrirEditionProjet = (p) => {
     setEditingProjetId(p.id)
-    setProjetForm({ nom: p.nom || '', description: p.description || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente' })
+    setProjetForm({ nom: p.nom || '', description: p.description || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente', referents: p.referents || [] })
     setShowProjetForm(true)
+  }
+
+  const ajouterReferentProjet = () => {
+    const nom = `${saisieReferentProjet.prenom} ${saisieReferentProjet.nom}`.trim()
+    if (!nom) return
+    setProjetForm(f => {
+      if (f.referents.some(r => r.nom.toLowerCase() === nom.toLowerCase())) return f
+      return { ...f, referents: [...f.referents, { id: crypto.randomUUID(), nom }] }
+    })
+    setSaisieReferentProjet({ prenom: '', nom: '' })
+  }
+  const retirerReferentProjet = (id) => {
+    setProjetForm(f => ({ ...f, referents: f.referents.filter(r => r.id !== id) }))
   }
 
   const sauvegarderProjet = async () => {
@@ -1320,6 +1445,7 @@ export default function DashboardClub() {
       responsable_id: projetForm.responsable_id || null,
       responsable_nom: projetForm.responsable_nom || null,
       statut: projetForm.statut,
+      referents: projetForm.referents,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -1357,6 +1483,79 @@ export default function DashboardClub() {
     if (!confirm('Supprimer ce projet et toutes ses tâches ?')) return
     await supabase.from('projets_club').delete().eq('id', id)
     await chargerProjets(clubId)
+  }
+
+  // Export PDF d'un projet — même construction que exporterEvenementPDF.
+  const exporterProjetPDF = async (p) => {
+    setExportingPdfId(p.id)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const margin = 14
+      const largeurPage = doc.internal.pageSize.getWidth()
+      const hauteurPage = doc.internal.pageSize.getHeight()
+      const NOIR = [30, 30, 30]
+      const GRIS = [110, 110, 110]
+      let y = 18
+
+      const sautDePage = (marge = 20) => { if (y > hauteurPage - marge) { doc.addPage(); y = 18 } }
+      const titreSection = (texte) => {
+        sautDePage(30)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...NOIR)
+        doc.text(texte, margin, y)
+        y += 5
+        doc.setDrawColor(210, 210, 210)
+        doc.line(margin, y, largeurPage - margin, y)
+        y += 6
+      }
+      const ligne = (texte, { couleur = NOIR, taille = 10, indent = 0 } = {}) => {
+        sautDePage(18)
+        doc.setFontSize(taille)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(...couleur)
+        const lignes = doc.splitTextToSize(texte, largeurPage - margin * 2 - indent)
+        lignes.forEach(l => { sautDePage(18); doc.text(l, margin + indent, y); y += 5 })
+      }
+
+      doc.setFontSize(17)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...NOIR)
+      doc.text(p.nom || 'Projet', margin, y)
+      y += 7
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...GRIS)
+      const statutLabel = STATUTS_PROJET.find(s => s.val === p.statut)?.label || p.statut
+      const dates = (p.date_debut || p.date_fin)
+        ? `${p.date_debut ? new Date(`${p.date_debut}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} → ${p.date_fin ? new Date(`${p.date_fin}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'}`
+        : null
+      doc.text([statutLabel, dates].filter(Boolean).join('  ·  '), margin, y)
+      y += 10
+
+      if (p.description) { titreSection('Description'); ligne(p.description); y += 4 }
+
+      if (p.responsable_nom) { titreSection('Responsable'); ligne(`👤 ${p.responsable_nom}`); y += 4 }
+
+      if (p.referents?.length > 0) {
+        titreSection('Référents')
+        p.referents.forEach(r => ligne(`⭐ ${r.nom}`))
+        y += 4
+      }
+
+      const taches = p.taches_projet || []
+      if (taches.length > 0) {
+        const fait = taches.filter(t => t.fait).length
+        titreSection(`Tâches (${fait}/${taches.length} terminées)`)
+        taches.forEach(tc => ligne(`${tc.fait ? '☑' : '☐'}  ${tc.titre}`, { couleur: tc.fait ? GRIS : NOIR }))
+      }
+
+      doc.save(`projet-${(p.nom || 'sans-nom').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`)
+    } finally {
+      setExportingPdfId(null)
+    }
   }
 
   const ajouterTache = async (projetId) => {
@@ -3281,6 +3480,37 @@ Règles :
                         <textarea style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} value={evenementForm.description} onChange={e => setEvenementForm(f => ({ ...f, description: e.target.value }))} />
                       </div>
 
+                      <label style={st.label}>Référents de l'événement</label>
+                      <div style={{ marginBottom: '14px' }}>
+                        {evenementForm.referents.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                            {evenementForm.referents.map(r => (
+                              <span key={r.id} style={{ background: couleurPrincipale + alpha.subtle, border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                ⭐ {r.nom}
+                                <button type="button" onClick={() => retirerReferent(r.id)} style={{ background: 'none', border: 'none', color: couleurPrincipale, opacity: 0.6, fontSize: '13px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <input placeholder="Prénom" value={saisieReferent.prenom}
+                            onChange={e => setSaisieReferent(prev => ({ ...prev, prenom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterReferent()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <input placeholder="Nom" value={saisieReferent.nom}
+                            onChange={e => setSaisieReferent(prev => ({ ...prev, nom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterReferent()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <button type="button" onClick={ajouterReferent}
+                            style={{ background: colors.background.base, border: '1px solid #333', color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            + Ajouter
+                          </button>
+                        </div>
+                        {evenementForm.referents.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: '8px 0 0' }}>Aucun référent ajouté.</p>
+                        )}
+                      </div>
+
                       <label style={st.label}>Participants invités</label>
                       <div style={{ marginBottom: '14px' }}>
                         {evenementForm.participants.length > 0 && (
@@ -3447,6 +3677,9 @@ Règles :
                                     {ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}{ev.lieu ? ` · ${ev.lieu}` : ''}
                                   </p>
                                   {ev.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.muted }}>{ev.description}</p>}
+                                  {ev.referents?.length > 0 && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: couleurPrincipale }}>⭐ {ev.referents.map(r => r.nom).join(', ')}</p>
+                                  )}
                                   {ev.participants?.length > 0 && (
                                     <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>👥 {ev.participants.map(p => p.nom).join(', ')}</p>
                                   )}
@@ -3463,12 +3696,15 @@ Règles :
                                     </div>
                                   )}
                                 </div>
-                                {canEditSection('evenements') && (
-                                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                                    <button onClick={() => ouvrirEditionEvenement(ev)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px' }}>{t('btn_modifier', lang)}</button>
-                                    <button onClick={() => supprimerEvenement(ev.id)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('btn_supprimer', lang)}</button>
-                                  </div>
-                                )}
+                                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                  <button onClick={() => exporterEvenementPDF(ev)} disabled={exportingPdfId === ev.id} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', opacity: exportingPdfId === ev.id ? 0.6 : 1 }}>📄 PDF</button>
+                                  {canEditSection('evenements') && (
+                                    <>
+                                      <button onClick={() => ouvrirEditionEvenement(ev)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px' }}>{t('btn_modifier', lang)}</button>
+                                      <button onClick={() => supprimerEvenement(ev.id)} style={{ ...st.btnSecondary, fontSize: '11px', padding: '5px 10px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('btn_supprimer', lang)}</button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             )
                           })}
@@ -3525,6 +3761,37 @@ Règles :
                           </select>
                         </div>
                       </div>
+                      <label style={st.label}>Référents du projet</label>
+                      <div style={{ marginBottom: '14px' }}>
+                        {projetForm.referents.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                            {projetForm.referents.map(r => (
+                              <span key={r.id} style={{ background: couleurPrincipale + alpha.subtle, border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                ⭐ {r.nom}
+                                <button type="button" onClick={() => retirerReferentProjet(r.id)} style={{ background: 'none', border: 'none', color: couleurPrincipale, opacity: 0.6, fontSize: '13px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <input placeholder="Prénom" value={saisieReferentProjet.prenom}
+                            onChange={e => setSaisieReferentProjet(prev => ({ ...prev, prenom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterReferentProjet()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <input placeholder="Nom" value={saisieReferentProjet.nom}
+                            onChange={e => setSaisieReferentProjet(prev => ({ ...prev, nom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterReferentProjet()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <button type="button" onClick={ajouterReferentProjet}
+                            style={{ background: colors.background.base, border: '1px solid #333', color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            + Ajouter
+                          </button>
+                        </div>
+                        {projetForm.referents.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: '8px 0 0' }}>Aucun référent ajouté.</p>
+                        )}
+                      </div>
+
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={sauvegarderProjet} disabled={savingProjet || !projetForm.nom.trim()} style={st.btnSolid}>
                           {savingProjet ? t('jp_enregistrement', lang) : editingProjetId ? t('btn_sauvegarder', lang) : t('btn_ajouter', lang)}
@@ -3551,12 +3818,15 @@ Règles :
                                 <div key={p.id} style={{ ...st.card, borderLeft: `3px solid ${colonne.color}` }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{p.nom}</p>
-                                    {canEditSection('evenements') && (
-                                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                        <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
-                                        <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
-                                      </div>
-                                    )}
+                                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                      <button onClick={() => exporterProjetPDF(p)} disabled={exportingPdfId === p.id} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', opacity: exportingPdfId === p.id ? 0.5 : 1 }} title="Export PDF">📄</button>
+                                      {canEditSection('evenements') && (
+                                        <>
+                                          <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
+                                          <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                   {p.description && <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.muted }}>{p.description}</p>}
                                   {(p.date_debut || p.date_fin) && (
@@ -3566,7 +3836,8 @@ Règles :
                                       {p.date_fin ? new Date(p.date_fin + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
                                     </p>
                                   )}
-                                  {p.responsable_nom && <p style={{ margin: '0 0 8px', fontSize: '11px', color: couleurPrincipale }}>👤 {p.responsable_nom}</p>}
+                                  {p.responsable_nom && <p style={{ margin: '0 0 4px', fontSize: '11px', color: couleurPrincipale }}>👤 {p.responsable_nom}</p>}
+                                  {p.referents?.length > 0 && <p style={{ margin: '0 0 8px', fontSize: '11px', color: couleurPrincipale }}>⭐ {p.referents.map(r => r.nom).join(', ')}</p>}
 
                                   {canEditSection('evenements') && (
                                     <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
