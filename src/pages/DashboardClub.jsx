@@ -1696,15 +1696,37 @@ Règles :
       }
     }
 
+    // club_categorie_id n'est assigné automatiquement qu'une fois, au moment
+    // où le club accepte l'éducateur (accepterEducateur) — un joueur ajouté à
+    // son effectif après coup (le cas normal, en continu pendant la saison)
+    // reste avec club_categorie_id = null : compté dans le total du club
+    // (qui n'en dépend pas) mais absent de "Effectif" par catégorie (qui
+    // filtre dessus). Repli par correspondance texte (même règle que
+    // accepterEducateur/autoAssignerJoueurs : équipe 'A' par défaut, faute de
+    // distinction A/B dans le champ libre categorie) pour ne pas dépendre
+    // d'une resynchronisation manuelle.
     const grouped = {}
+    const aReassigner = []
     categories.forEach(cat => {
-      const joueursCat = joueurs.filter(j => j.club_categorie_id === cat.id)
+      const joueursCat = joueurs.filter(j => {
+        if (j.club_categorie_id === cat.id) return true
+        if (j.club_categorie_id || !j.categorie) return false
+        return cat.equipe === 'A' && cat.nom.toLowerCase() === j.categorie.trim().toLowerCase()
+      })
+      joueursCat.forEach(j => { if (!j.club_categorie_id) aReassigner.push({ id: j.id, club_categorie_id: cat.id }) })
       grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j.id) })) }
     })
 
     setStatsParCategorie(grouped)
     if (!categorieActive && categories.length > 0) setCategorieActive(categories[0].id)
     setLoadingClassements(false)
+
+    // Persiste le rattachement trouvé par repli, pour que les prochains
+    // chargements n'aient plus besoin de ce repli (auto-réparation, sans
+    // bouton manuel à cliquer).
+    for (const r of aReassigner) {
+      await supabase.from('equipe_joueurs').update({ club_categorie_id: r.club_categorie_id }).eq('id', r.id)
+    }
   }
 
   const GROUPES_POSTE = [
