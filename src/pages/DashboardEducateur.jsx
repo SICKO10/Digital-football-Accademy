@@ -1154,7 +1154,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Équipe
   const [joueurs, setJoueurs] = useState([])
   const [showAddJoueur, setShowAddJoueur] = useState(false)
-  const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
+  const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '', club_categorie_id: '' })
   const importRef = useRef(null)
   const [importPreview, setImportPreview] = useState(null) // { rows: [], importing: false, done: 0 }
   const [importError, setImportError] = useState('')
@@ -2504,12 +2504,16 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     // vérification d'erreur n'existait avant, on en ajoute a minima).
     const snapshot = { ...newJoueur }
     setSavingJoueur(true)
-    setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
+    setNewJoueur({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '', club_categorie_id: '' })
     setShowAddJoueur(false)
-    // date_naissance vaut '' par défaut (input date vide) — Postgres rejette
-    // '' pour une colonne date ("invalid input syntax for type date"), il
-    // faut null.
-    const { error } = await supabase.from('equipe_joueurs').insert({ ...snapshot, date_naissance: snapshot.date_naissance || null, educateur_id: userId })
+    // date_naissance/club_categorie_id valent '' par défaut (input vide/select
+    // non choisi) — Postgres rejette '' pour une colonne date ou uuid, il faut null.
+    const { error } = await supabase.from('equipe_joueurs').insert({
+      ...snapshot,
+      date_naissance: snapshot.date_naissance || null,
+      club_categorie_id: snapshot.club_categorie_id || null,
+      educateur_id: userId,
+    })
     setSavingJoueur(false)
     if (error) {
       alert('Erreur : ' + error.message)
@@ -4270,6 +4274,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
                   <div><label style={st.label}>{t('equipe_date_naissance', lang)}</label><input style={st.input} type="date" value={newJoueur.date_naissance} onChange={e => setNewJoueur({ ...newJoueur, date_naissance: e.target.value })} /></div>
                   <div><label style={st.label}>{t('equipe_licence_fff', lang)}</label><input style={st.input} placeholder={t('equipe_numero_licence', lang)} value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
+                  {clubCategories.length > 0 && (
+                    <div style={{ gridColumn: isMobile ? 'auto' : '1 / -1' }}>
+                      <label style={st.label}>{t('equipe_categorie_club', lang)}</label>
+                      <select style={st.input} value={newJoueur.club_categorie_id} onChange={e => {
+                        const cat = clubCategories.find(c => c.id === e.target.value)
+                        setNewJoueur({ ...newJoueur, club_categorie_id: e.target.value, categorie: cat?.nom || newJoueur.categorie })
+                      }}>
+                        <option value="">{t('equipe_non_assigne', lang)}</option>
+                        {clubCategories.map(c => <option key={c.id} value={c.id}>{c.nom} — Équipe {c.equipe}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
