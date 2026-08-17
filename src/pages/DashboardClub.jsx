@@ -833,6 +833,7 @@ export default function DashboardClub() {
   // Organigramme du club (annuaire de contacts, table organigramme_club — distincte de staff_club)
   const [organigramme, setOrganigramme] = useState([])
   const [parentsClub, setParentsClub] = useState([])
+  const [parentsSearchQuery, setParentsSearchQuery] = useState('')
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
@@ -4031,11 +4032,29 @@ Règles :
             <div style={{ marginTop: '32px' }}>
               <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>👨‍👩‍👦 Parents ({parentsClub.length})</h3>
               <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Coordonnées des parents ayant complété leur profil, tous joueurs du club confondus.</p>
-              {parentsClub.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent enregistré pour l'instant.</p>
-              ) : (
+              {parentsClub.length > 0 && (
+                <input
+                  type="text"
+                  placeholder="🔍 Rechercher un parent, un joueur, une catégorie, une profession…"
+                  value={parentsSearchQuery}
+                  onChange={e => setParentsSearchQuery(e.target.value)}
+                  style={{ width: '100%', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box', outline: 'none' }}
+                />
+              )}
+              {(() => {
+                const q = parentsSearchQuery.trim().toLowerCase()
+                const parentsFiltres = !q ? parentsClub : parentsClub.filter(p => [
+                  p.prenom, p.nom, p.profession, p.joueur?.prenom, p.joueur?.nom, p.joueur?.categorie, p.joueur?.niveau_equipe,
+                ].some(v => v?.toLowerCase().includes(q)))
+                if (parentsClub.length === 0) {
+                  return <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent enregistré pour l'instant.</p>
+                }
+                if (parentsFiltres.length === 0) {
+                  return <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent ne correspond à cette recherche.</p>
+                }
+                return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {parentsClub.map(p => (
+                  {parentsFiltres.map(p => (
                     <div key={p.id} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr 1.2fr 1fr 1fr', gap: '10px', alignItems: 'center', background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '10px', padding: '14px' }}>
                       <div>
                         <p style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
@@ -4048,7 +4067,8 @@ Règles :
                     </div>
                   ))}
                 </div>
-              )}
+                )
+              })()}
             </div>
           </div>
         )}
