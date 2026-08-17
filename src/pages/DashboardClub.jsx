@@ -917,6 +917,14 @@ export default function DashboardClub() {
   const [showEvenementForm, setShowEvenementForm] = useState(false)
   const [editingEvenementId, setEditingEvenementId] = useState(null)
   const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [] })
+  // Saisie libre prénom/nom du responsable/participant en cours, par mission —
+  // { [missionId]: { prenom, nom } } — remplace la liste de badges
+  // tousParticipants (50+ personnes) pour le responsable et les participants
+  // d'une mission, trop lourde pour ce cas (cf. groupesParticipants/
+  // tousParticipants, toujours utilisés par le sélecteur de participants au
+  // niveau de l'événement, différent, pas concerné par ce changement).
+  const [saisieResponsableMission, setSaisieResponsableMission] = useState({})
+  const [saisieParticipantMission, setSaisieParticipantMission] = useState({})
   const [savingEvenement, setSavingEvenement] = useState(false)
 
   const [projetsClub, setProjetsClub] = useState([])
@@ -1201,18 +1209,35 @@ export default function DashboardClub() {
   const supprimerMission = (id) => {
     setEvenementForm(f => ({ ...f, missions: f.missions.filter(m => m.id !== id) }))
   }
-  const choisirResponsableMission = (missionId, personne) => {
-    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: personne.id, responsable_nom: personne.nom } : m) }))
+  // Saisie libre (plus de sélection dans tousParticipants, cf. note plus haut) :
+  // responsable_id n'a plus de sens (aucun profil réel n'est lié), seul
+  // responsable_nom est renseigné.
+  const validerResponsableMission = (missionId) => {
+    const s = saisieResponsableMission[missionId] || {}
+    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
+    if (!nom) return
+    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: nom } : m) }))
+    setSaisieResponsableMission(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
   }
-  const toggleParticipantMission = (missionId, personne) => {
+  const effacerResponsableMission = (missionId) => {
+    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: '' } : m) }))
+  }
+  const ajouterParticipantMission = (missionId) => {
+    const s = saisieParticipantMission[missionId] || {}
+    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
+    if (!nom) return
     setEvenementForm(f => ({
       ...f,
       missions: f.missions.map(m => {
         if (m.id !== missionId) return m
-        const existe = m.participants.some(p => p.id === personne.id)
-        return { ...m, participants: existe ? m.participants.filter(p => p.id !== personne.id) : [...m.participants, personne] }
+        if (m.participants.some(p => p.nom.toLowerCase() === nom.toLowerCase())) return m
+        return { ...m, participants: [...m.participants, { id: crypto.randomUUID(), nom }] }
       }),
     }))
+    setSaisieParticipantMission(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
+  }
+  const retirerParticipantMission = (missionId, participantId) => {
+    setEvenementForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, participants: m.participants.filter(p => p.id !== participantId) } : m) }))
   }
 
   const sauvegarderEvenement = async () => {
@@ -3189,9 +3214,6 @@ Règles :
             { type: 'staff', titre: 'Staff', liste: staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })) },
             { type: 'joueur', titre: 'Joueurs', liste: joueursClub.map(j => ({ id: j.id, nom: `${j.prenom || ''} ${j.nom || ''}`.trim() })) },
           ]
-          // Liste à plat (éducateurs + staff + joueurs) pour choisir un
-          // responsable/participant de mission, sans distinction de groupe.
-          const tousParticipants = groupesParticipants.flatMap(g => g.liste)
 
           const responsablesOptions = [
             { id: clubId, nom: `${club?.club || club?.prenom || 'Le club'} (Président)` },
@@ -3318,31 +3340,56 @@ Règles :
 
                               <div>
                                 <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Responsable de la mission</p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                  {tousParticipants.map(p => {
-                                    const estResp = mission.responsable_id === p.id
-                                    return (
-                                      <button key={p.id} type="button" onClick={() => choisirResponsableMission(mission.id, p)}
-                                        style={{ background: estResp ? couleurPrincipale + alpha.soft : 'transparent', border: `1px solid ${estResp ? couleurPrincipale : '#333'}`, color: estResp ? couleurPrincipale : colors.text.muted, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: estResp ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                        {estResp ? '⭐ ' : ''}{p.nom || '—'}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
+                                {mission.responsable_nom ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ background: couleurPrincipale + alpha.soft, border: `1px solid ${couleurPrincipale}`, color: couleurPrincipale, padding: '5px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
+                                      ⭐ {mission.responsable_nom}
+                                    </span>
+                                    <button type="button" onClick={() => effacerResponsableMission(mission.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '14px', cursor: 'pointer' }}>✕</button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    <input placeholder="Prénom" value={(saisieResponsableMission[mission.id] || {}).prenom || ''}
+                                      onChange={e => setSaisieResponsableMission(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
+                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMission(mission.id)}
+                                      style={{ ...st.input, width: '130px' }} />
+                                    <input placeholder="Nom" value={(saisieResponsableMission[mission.id] || {}).nom || ''}
+                                      onChange={e => setSaisieResponsableMission(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
+                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMission(mission.id)}
+                                      style={{ ...st.input, width: '130px' }} />
+                                    <button type="button" onClick={() => validerResponsableMission(mission.id)}
+                                      style={{ background: couleurPrincipale + alpha.subtle, border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                      Valider
+                                    </button>
+                                  </div>
+                                )}
                               </div>
 
                               <div>
                                 <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Participants ({mission.participants.length})</p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                  {tousParticipants.map(p => {
-                                    const dedans = mission.participants.some(mp => mp.id === p.id)
-                                    return (
-                                      <button key={p.id} type="button" onClick={() => toggleParticipantMission(mission.id, p)}
-                                        style={{ background: dedans ? colors.accent.blue + alpha.soft : 'transparent', border: `1px solid ${dedans ? colors.accent.blue : '#333'}`, color: dedans ? colors.accent.blue : colors.text.muted, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                        {p.nom || '—'}
-                                      </button>
-                                    )
-                                  })}
+                                {mission.participants.length > 0 && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                                    {mission.participants.map(p => (
+                                      <span key={p.id} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {p.nom}
+                                        <button type="button" onClick={() => retirerParticipantMission(mission.id, p.id)} style={{ background: 'none', border: 'none', color: colors.accent.blue, opacity: 0.6, fontSize: '12px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                  <input placeholder="Prénom" value={(saisieParticipantMission[mission.id] || {}).prenom || ''}
+                                    onChange={e => setSaisieParticipantMission(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
+                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMission(mission.id)}
+                                    style={{ ...st.input, width: '130px' }} />
+                                  <input placeholder="Nom" value={(saisieParticipantMission[mission.id] || {}).nom || ''}
+                                    onChange={e => setSaisieParticipantMission(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
+                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMission(mission.id)}
+                                    style={{ ...st.input, width: '130px' }} />
+                                  <button type="button" onClick={() => ajouterParticipantMission(mission.id)}
+                                    style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                    + Ajouter
+                                  </button>
                                 </div>
                               </div>
 
