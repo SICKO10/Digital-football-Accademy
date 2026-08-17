@@ -832,6 +832,7 @@ export default function DashboardClub() {
 
   // Organigramme du club (annuaire de contacts, table organigramme_club — distincte de staff_club)
   const [organigramme, setOrganigramme] = useState([])
+  const [parentsClub, setParentsClub] = useState([])
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
@@ -1088,7 +1089,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub()])
     setLoading(false)
   }
 
@@ -1707,6 +1708,23 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('ordre', { ascending: true })
     setOrganigramme(data || [])
+  }
+
+  // Parents des joueurs du club (profil_parent) — pas de club_id sur cette
+  // table, la RLS club_lit_profils_parents scope déjà le résultat aux
+  // joueurs affiliés à l'un des éducateurs de CE club (club_educateurs/
+  // staff_club), donc aucun filtre supplémentaire nécessaire ici. Jointure
+  // manuelle en 2 requêtes plutôt que joueur:joueur_id(...) : profil_parent
+  // référence auth.users(id), pas profiles(id), l'alias d'embed PostgREST
+  // n'est pas garanti de résoudre vers profiles dans ce cas.
+  const chargerParentsClub = async () => {
+    const { data: parents } = await supabase.from('profil_parent').select('*').eq('profil_complet', true)
+    if (!parents?.length) { setParentsClub([]); return }
+    const joueurIds = [...new Set(parents.map(p => p.joueur_id))]
+    const { data: joueurs } = await supabase.from('profiles').select('id, prenom, nom, categorie, niveau_equipe, club').in('id', joueurIds)
+    const joueurMap = {}
+    joueurs?.forEach(j => { joueurMap[j.id] = j })
+    setParentsClub(parents.map(p => ({ ...p, joueur: joueurMap[p.joueur_id] })))
   }
 
   const ouvrirModalOrganigramme = (membre) => {
@@ -4008,6 +4026,30 @@ Règles :
                 </div>
               </div>
             )}
+
+            {/* ── Parents ── */}
+            <div style={{ marginTop: '32px' }}>
+              <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>👨‍👩‍👦 Parents ({parentsClub.length})</h3>
+              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Coordonnées des parents ayant complété leur profil, tous joueurs du club confondus.</p>
+              {parentsClub.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent enregistré pour l'instant.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {parentsClub.map(p => (
+                    <div key={p.id} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr 1.2fr 1fr 1fr', gap: '10px', alignItems: 'center', background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '10px', padding: '14px' }}>
+                      <div>
+                        <p style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
+                        <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>Parent de {p.joueur?.prenom} {p.joueur?.nom}</p>
+                      </div>
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>{p.telephone || '—'}</p>
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email || '—'}</p>
+                      <p style={{ color: colors.accent.green, fontSize: '13px', margin: 0 }}>{p.profession || '—'}</p>
+                      <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>{p.joueur?.categorie || p.joueur?.niveau_equipe || '—'}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
