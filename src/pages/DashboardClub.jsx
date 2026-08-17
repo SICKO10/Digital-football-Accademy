@@ -1711,7 +1711,15 @@ Règles :
       const joueursCat = joueurs.filter(j => {
         if (j.club_categorie_id === cat.id) return true
         if (j.club_categorie_id || !j.categorie) return false
-        return cat.equipe === 'A' && cat.nom.toLowerCase() === j.categorie.trim().toLowerCase()
+        const memeNom = cat.nom.toLowerCase() === j.categorie.trim().toLowerCase()
+        if (!memeNom) return false
+        // Repli équipe 'A' par défaut (cf. accepterEducateur/autoAssignerJoueurs),
+        // sauf si ce nom de catégorie n'existe qu'une fois chez cet éducateur —
+        // là, pas d'ambiguïté A/B possible, on peut rattacher même une équipe B
+        // (jusqu'ici jamais couverte par ce repli, effectif qui reste vide en
+        // permanence pour toute catégorie B tant qu'aucun bouton manuel n'existe).
+        const candidats = categories.filter(c => c.educateur_id === j.educateur_id && c.nom.toLowerCase() === j.categorie.trim().toLowerCase())
+        return cat.equipe === 'A' || candidats.length === 1
       })
       joueursCat.forEach(j => { if (!j.club_categorie_id) aReassigner.push({ id: j.id, club_categorie_id: cat.id }) })
       grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j.id) })) }
