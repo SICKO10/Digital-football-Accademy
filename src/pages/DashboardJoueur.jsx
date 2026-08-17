@@ -349,6 +349,9 @@ function DashboardJoueur() {
   const [notifications, setNotifications] = useState([])
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({ email_analyse: true, email_like: true, email_commentaire: true, email_message: true })
+  const [parentsInvites, setParentsInvites] = useState([])
+  const [emailParentInput, setEmailParentInput] = useState('')
+  const [invitantParent, setInvitantParent] = useState(false)
   const [savingPrefs, setSavingPrefs] = useState(false)
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -647,7 +650,39 @@ function DashboardJoueur() {
     const mesAff = await chargerAffiliations(user.id)
     await verifierCloturesSaison(user.id, mesAff || [])
     await chargerConvocationActive(user.id)
+    await chargerParentsInvites(user.id)
     setLoading(false)
+  }
+
+  const chargerParentsInvites = async (uid) => {
+    const { data } = await supabase.from('parents_acces').select('*').eq('joueur_id', uid)
+    setParentsInvites(data || [])
+  }
+
+  // Réutilise l'edge function envoyer-invitation existante (Resend + table
+  // invitations, cf. dirigeant_acces) plutôt qu'une fonction séparée basée sur
+  // supabase.auth.admin.inviteUserByEmail — jamais utilisé ailleurs dans ce
+  // projet, aurait fait cohabiter deux flows d'invitation et deux templates
+  // d'email différents pour le même besoin.
+  const inviterParent = async () => {
+    const email = emailParentInput.trim()
+    if (!email) return
+    if (parentsInvites.length >= 2) { alert('Maximum 2 parents autorisés.'); return }
+    if (parentsInvites.some(p => p.email_invite.toLowerCase() === email.toLowerCase())) { alert('Cet email a déjà été invité.'); return }
+
+    setInvitantParent(true)
+    const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+      body: { email, role: 'parent', joueur_id: userId },
+    })
+    setInvitantParent(false)
+    if (error || data?.error) { alert('Erreur : ' + (data?.error || error.message)); return }
+    setEmailParentInput('')
+    await chargerParentsInvites(userId)
+  }
+
+  const supprimerInvitationParent = async (emailInvite) => {
+    await supabase.from('parents_acces').delete().eq('joueur_id', userId).eq('email_invite', emailInvite)
+    setParentsInvites(prev => prev.filter(p => p.email_invite !== emailInvite))
   }
 
   // Convocation active : jointure via convocation_joueurs (le joueur ne voit,
@@ -3415,6 +3450,42 @@ function DashboardJoueur() {
               style={{ ...st.btnSolid(statsSaved ? '#22c55e' : colors.accent.green), width: '100%', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
               {savingStats ? t('jp_sauvegarde_cours', lang) : statsSaved ? t('jp_profil_sauvegarde', lang) : t('profil_sauvegarder_profil', lang)}
             </button>
+
+            {/* ── ACCÈS PARENTS ── */}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '20px' }}>👨‍👩‍👦</span>
+                <div>
+                  <p style={{ ...labelStyle, margin: 0 }}>Accès parents</p>
+                  <p style={{ color: colors.text.ghost, fontSize: '12px', margin: '2px 0 0' }}>Invite jusqu'à 2 parents — accès lecture seule à ton profil</p>
+                </div>
+              </div>
+
+              {parentsInvites.map((p, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '8px' }}>
+                  <div>
+                    <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>{p.email_invite}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: p.statut === 'accepte' ? colors.accent.green : p.statut === 'refuse' ? colors.accent.red : colors.accent.amber }}>
+                      {p.statut === 'accepte' ? '✅ Compte créé' : p.statut === 'refuse' ? '❌ Refusé' : '⏳ Invitation en attente'}
+                    </p>
+                  </div>
+                  <button onClick={() => supprimerInvitationParent(p.email_invite)} style={{ background: 'none', border: 'none', color: colors.text.ghost, fontSize: '16px', cursor: 'pointer' }}>✕</button>
+                </div>
+              ))}
+
+              {parentsInvites.length < 2 ? (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input type="email" placeholder="Email du parent" value={emailParentInput} onChange={e => setEmailParentInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterParent()}
+                    style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                  <button onClick={inviterParent} disabled={invitantParent || !emailParentInput.trim()}
+                    style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: invitantParent ? 0.6 : 1 }}>
+                    {invitantParent ? '...' : '📧 Inviter'}
+                  </button>
+                </div>
+              ) : (
+                <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
+              )}
+            </div>
           </div>
         )}
 

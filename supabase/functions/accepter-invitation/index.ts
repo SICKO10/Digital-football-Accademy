@@ -9,10 +9,11 @@ const corsHeaders = {
 // Toutes les opérations passent par le service role : la table `invitations` n'a
 // volontairement aucune policy de lecture publique (un token = un accès direct au
 // compte concerné, elle ne doit jamais être listable via la clé anon), et les
-// écritures qui suivent (profils, affiliations, dirigeant_acces) ne peuvent pas
-// s'appuyer sur la RLS classique "auth.uid() = educateur_id" puisque c'est le
-// nouvel utilisateur, pas l'éducateur, qui doit pouvoir les créer. Le serveur
-// vérifie donc lui-même la validité du token avant d'agir avec des droits élevés.
+// écritures qui suivent (profils, affiliations, dirigeant_acces, parents_acces) ne
+// peuvent pas s'appuyer sur la RLS classique "auth.uid() = educateur_id" puisque
+// c'est le nouvel utilisateur, pas l'éducateur/joueur, qui doit pouvoir les créer.
+// Le serveur vérifie donc lui-même la validité du token avant d'agir avec des
+// droits élevés.
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -45,12 +46,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Cette invitation a expiré. Demande à ton éducateur d'en envoyer une nouvelle." }), { status: 400, headers: corsHeaders })
     }
 
-    // Récupère aussi le contexte club/éducateur pour l'affichage (aperçu), utilisé
-    // par AcceptInvite.jsx avant que l'utilisateur ne saisisse un mot de passe.
-    const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
-      supabase.from('profiles').select('prenom, nom').eq('id', inv.educateur_id).single(),
-      supabase.from('profil_educateur').select('club, categorie').eq('user_id', inv.educateur_id).single(),
-    ])
+    // Contexte pour l'affichage (aperçu), utilisé par AcceptInvite.jsx avant que
+    // l'utilisateur ne saisisse un mot de passe — différent pour un parent (pas
+    // d'éducateur/club, le contexte c'est le joueur qui invite).
+    let nomEdu = null
+    let club = null
+    let categorie = null
+    if (inv.role === 'parent') {
+      const { data: joueurProfile } = await supabase.from('profiles').select('prenom, nom').eq('id', inv.joueur_id).maybeSingle()
+      nomEdu = joueurProfile ? `${joueurProfile.prenom} ${joueurProfile.nom}` : null
+    } else {
+      const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
+        supabase.from('profiles').select('prenom, nom').eq('id', inv.educateur_id).maybeSingle(),
+        supabase.from('profil_educateur').select('club, categorie').eq('user_id', inv.educateur_id).maybeSingle(),
+      ])
+      nomEdu = eduProfile ? `${eduProfile.prenom} ${eduProfile.nom}` : null
+      club = profilEdu?.club || null
+      categorie = profilEdu?.categorie || null
+    }
 
     if (action === 'lire' || !action) {
       return new Response(
@@ -60,9 +73,9 @@ serve(async (req) => {
           role: inv.role,
           prenom: inv.prenom,
           nom: inv.nom,
-          club: profilEdu?.club || null,
-          categorie: profilEdu?.categorie || null,
-          nomEdu: eduProfile ? `${eduProfile.prenom} ${eduProfile.nom}` : null,
+          club,
+          categorie,
+          nomEdu,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -115,6 +128,16 @@ serve(async (req) => {
           statut: 'accepte', permissions: inv.permissions || {},
         }, { onConflict: 'educateur_id,email' })
         if (errDirigeant) throw errDirigeant
+      }
+
+      if (inv.role === 'parent') {
+        // profil_parent n'est PAS créé ici : la modale obligatoire (prénom, nom,
+        // téléphone, profession) s'affiche à la première connexion réelle sur
+        // DashboardParent.jsx, cf. profil_complet = false.
+        const { error: errParent } = await supabase.from('parents_acces').upsert({
+          joueur_id: inv.joueur_id, parent_id: userId, email_invite: inv.email, statut: 'accepte',
+        }, { onConflict: 'joueur_id,email_invite' })
+        if (errParent) throw errParent
       }
 
       const { error: errInvUpdate } = await supabase.from('invitations').update({ statut: 'accepte' }).eq('id', inv.id)

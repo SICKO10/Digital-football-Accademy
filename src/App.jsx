@@ -15,6 +15,7 @@ import DashboardClub from './pages/DashboardClub'
 import DashboardRecruteur from './pages/DashboardRecruteur'
 import DashboardEducateur from './pages/DashboardEducateur'
 import DashboardDirigeant from './pages/DashboardDirigeant'
+import DashboardParent from './pages/DashboardParent'
 import Upload from './pages/Upload'
 import Feed from './pages/Feed'
 import UploadClip from './pages/UploadClip'
@@ -39,11 +40,14 @@ function SmartDashboard() {
         supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
         supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),
         supabase.from('dirigeant_acces').select('id').eq('dirigeant_id', user.id).eq('statut', 'accepte').maybeSingle(),
-      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }]) => {
+        supabase.from('parents_acces').select('id').eq('parent_id', user.id).eq('statut', 'accepte').maybeSingle(),
+      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }, { data: parentAcces }]) => {
         // Membre du staff d'un club (rôle géré et détecté par DashboardClub lui-même)
         if (staff) { setDest('/club'); return }
         // Dirigeant délégué par un éducateur (plan reste 'fan', accès géré par dirigeant_acces)
         if (dirigeant) { setDest('/dashboard-dirigeant'); return }
+        // Parent d'un joueur (plan reste 'fan' aussi, accès géré par parents_acces)
+        if (parentAcces) { setDest('/dashboard-parent'); return }
         const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'scout') setDest('/recruteur')
@@ -75,6 +79,7 @@ function App() {
         <Route path="/recruteur" element={<DashboardRecruteur />} />
         <Route path="/educateur" element={<DashboardEducateur />} />
         <Route path="/dashboard-dirigeant" element={<DashboardDirigeant />} />
+        <Route path="/dashboard-parent" element={<DashboardParent />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/upload-clip" element={<UploadClip />} />
