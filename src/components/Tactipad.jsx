@@ -180,12 +180,16 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
 // l'éditeur au moment de la saisie (cf. terrain.w/h dans sauvegarderSchema).
 // Rejoués tels quels à une autre largeur (TactipadViewer/TactipadPublic,
 // souvent plus étroits que l'éditeur), un élément placé près d'un bord se
-// retrouve hors du canvas plus petit. Schémas enregistrés avant l'ajout de
-// terrain.w/h (fromW absent) : retournés tels quels, impossible de deviner
-// l'échelle d'origine.
-export function rescaleElements(elements, fromW, toW) {
-  if (!fromW || !toW || fromW === toW) return elements
-  const s = toW / fromW
+// retrouve hors du canvas plus petit.
+// - Si fromW est connu (schéma enregistré après l'ajout de terrain.w/h) :
+//   remise à l'échelle proportionnelle en plus du clamp.
+// - Si fromW est inconnu (schéma plus ancien) : pas de mise à l'échelle
+//   possible (impossible de deviner l'échelle d'origine), mais le clamp
+//   défensif ci-dessous s'applique quand même — un élément près du bord
+//   est ramené dans le canvas plutôt que de rester hors champ.
+export function rescaleElements(elements, fromW, toW, margin = 22) {
+  const s = (fromW && toW && fromW !== toW) ? toW / fromW : 1
+  const toH = toW ? Math.round(toW * 10 / 16) : null
   return (elements || []).map(e => {
     const scaled = { ...e }
     if (typeof scaled.x === 'number') scaled.x *= s
@@ -194,6 +198,8 @@ export function rescaleElements(elements, fromW, toW) {
     if (typeof scaled.height === 'number') scaled.height *= s
     if (typeof scaled.radius === 'number') scaled.radius *= s
     if (Array.isArray(scaled.points)) scaled.points = scaled.points.map(p => p * s)
+    if (toW && typeof scaled.x === 'number') scaled.x = Math.max(margin, Math.min(toW - margin, scaled.x))
+    if (toH && typeof scaled.y === 'number') scaled.y = Math.max(margin, Math.min(toH - margin, scaled.y))
     return scaled
   })
 }

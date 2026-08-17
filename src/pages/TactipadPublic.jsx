@@ -30,9 +30,10 @@ export default function TactipadPublic() {
 
   const schema = tactipad?.schema || {}
   const terrain = schema.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
-  // Remet à l'échelle si enregistré à une autre largeur (cf. rescaleElements
-  // dans Tactipad.jsx) — même correctif que TactipadViewer.jsx (Causerie).
-  const elements = terrain.w ? rescaleElements(schema.elements || [], terrain.w, width) : (schema.elements || [])
+  // Remet à l'échelle si enregistré à une autre largeur, et clampe dans tous
+  // les cas y compris schémas plus anciens (terrain.w absent) — cf.
+  // rescaleElements dans Tactipad.jsx, même correctif que TactipadViewer.jsx.
+  const elements = rescaleElements(schema.elements || [], terrain.w, width)
 
   const svgString = terrainSvgString({ ...terrain, w: width, h: height })
   const terrainImg = useSvgImage(svgString)

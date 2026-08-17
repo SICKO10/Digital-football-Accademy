@@ -16,10 +16,10 @@ export default function TactipadViewer({ schema, width = 640 }) {
   const terrain = schema?.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
   const sequencesRaw = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
   // Remet à l'échelle si le schéma a été enregistré à une autre largeur que
-  // celle d'affichage ici (cf. rescaleElements dans Tactipad.jsx) — sans ça,
-  // un élément placé près d'un bord sur un grand écran déborderait du canvas
-  // plus étroit de la Causerie.
-  const sequences = schema?.terrain?.w ? sequencesRaw.map(seq => rescaleElements(seq, schema.terrain.w, width)) : sequencesRaw
+  // celle d'affichage ici, et clampe dans tous les cas (y compris schémas
+  // enregistrés avant l'ajout de terrain.w/h, où fromW est undefined) — cf.
+  // rescaleElements dans Tactipad.jsx.
+  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, width))
   const hasAnimation = sequences.length > 1
 
   const height = Math.round(width * 10 / 16)
