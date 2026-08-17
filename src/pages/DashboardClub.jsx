@@ -67,6 +67,8 @@ const ROLES_STAFF = [
   { val: 'intendant', label: 'Intendant' },
   { val: 'preparateur_physique', label: 'Préparateur physique' },
   { val: 'comptable', label: 'Comptable' },
+  { val: 'responsable_buvette', label: 'Responsable Buvette' },
+  { val: 'responsable_securite', label: 'Responsable Sécurité' },
 ]
 
 // Catégories d'équipes concernées par l'accès délégué par rôle (cf.
@@ -84,7 +86,10 @@ const ROLES_ACCES_COMPLET_DEFAUT = ['directeur_sportif', 'secretaire']
 // 'entraineur'/'educateur' sont volontairement absents de cette matrice : leur
 // périmètre (leur propre équipe) est déjà déterminé par l'affectation
 // educateur_id existante sur chaque catégorie, pas par cette liste.
-const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur']
+// 'responsable_buvette'/'responsable_securite' : rôles événementiels/club
+// entier, sans lien avec une équipe précise — un accès "par catégorie" n'a
+// pas de sens pour eux.
+const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur', 'responsable_buvette', 'responsable_securite']
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
 // Rôles de l'organigramme (annuaire de contacts) — texte libre, distinct de
