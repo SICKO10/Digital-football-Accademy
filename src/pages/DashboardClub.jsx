@@ -925,6 +925,10 @@ export default function DashboardClub() {
   // niveau de l'événement, différent, pas concerné par ce changement).
   const [saisieResponsableMission, setSaisieResponsableMission] = useState({})
   const [saisieParticipantMission, setSaisieParticipantMission] = useState({})
+  // Saisie libre prénom/nom des participants invités à l'événement — même
+  // raison que pour les missions (cf. note plus haut) : la liste de badges
+  // (éducateurs/staff/joueurs, 50+ personnes) était trop lourde pour ce cas.
+  const [saisieParticipant, setSaisieParticipant] = useState({ prenom: '', nom: '' })
   const [savingEvenement, setSavingEvenement] = useState(false)
 
   const [projetsClub, setProjetsClub] = useState([])
@@ -1180,11 +1184,17 @@ export default function DashboardClub() {
     setShowEvenementForm(true)
   }
 
-  const toggleParticipant = (participant) => {
+  const ajouterParticipant = () => {
+    const nom = `${saisieParticipant.prenom} ${saisieParticipant.nom}`.trim()
+    if (!nom) return
     setEvenementForm(f => {
-      const existe = f.participants.some(p => p.id === participant.id && p.type === participant.type)
-      return { ...f, participants: existe ? f.participants.filter(p => !(p.id === participant.id && p.type === participant.type)) : [...f.participants, participant] }
+      if (f.participants.some(p => p.nom.toLowerCase() === nom.toLowerCase())) return f
+      return { ...f, participants: [...f.participants, { id: crypto.randomUUID(), nom }] }
     })
+    setSaisieParticipant({ prenom: '', nom: '' })
+  }
+  const retirerParticipant = (id) => {
+    setEvenementForm(f => ({ ...f, participants: f.participants.filter(p => p.id !== id) }))
   }
 
   // ── Ressources matérielles d'un événement ──
@@ -3209,12 +3219,6 @@ Règles :
             return acc
           }, {})
 
-          const groupesParticipants = [
-            { type: 'educateur', titre: 'Éducateurs', liste: educateursAcceptes.map(e => ({ id: e.educateur_id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim() })) },
-            { type: 'staff', titre: 'Staff', liste: staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })) },
-            { type: 'joueur', titre: 'Joueurs', liste: joueursClub.map(j => ({ id: j.id, nom: `${j.prenom || ''} ${j.nom || ''}`.trim() })) },
-          ]
-
           const responsablesOptions = [
             { id: clubId, nom: `${club?.club || club?.prenom || 'Le club'} (Président)` },
             ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim() })),
@@ -3278,27 +3282,34 @@ Règles :
                       </div>
 
                       <label style={st.label}>Participants invités</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-                        {groupesParticipants.map(g => (
-                          <div key={g.type}>
-                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.dim, fontWeight: 700 }}>{g.titre} ({g.liste.length})</p>
-                            {g.liste.length === 0 ? (
-                              <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong }}>—</p>
-                            ) : (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
-                                {g.liste.map(p => {
-                                  const actif = evenementForm.participants.some(pp => pp.id === p.id && pp.type === g.type)
-                                  return (
-                                    <button key={`${g.type}-${p.id}`} onClick={() => toggleParticipant({ id: p.id, nom: p.nom, type: g.type })}
-                                      style={{ padding: '4px 10px', borderRadius: '20px', border: actif ? 'none' : '1px solid #333', background: actif ? couleurPrincipale : 'transparent', color: actif ? colors.black : colors.text.muted, fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                      {p.nom || '—'}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            )}
+                      <div style={{ marginBottom: '14px' }}>
+                        {evenementForm.participants.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                            {evenementForm.participants.map(p => (
+                              <span key={p.id} style={{ background: colors.accent.purpleLight + alpha.subtle, border: `1px solid ${colors.accent.purpleLight}40`, color: colors.accent.purpleLight, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {p.nom}
+                                <button type="button" onClick={() => retirerParticipant(p.id)} style={{ background: 'none', border: 'none', color: colors.accent.purpleLight, opacity: 0.6, fontSize: '13px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+                              </span>
+                            ))}
                           </div>
-                        ))}
+                        )}
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <input placeholder="Prénom" value={saisieParticipant.prenom}
+                            onChange={e => setSaisieParticipant(prev => ({ ...prev, prenom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterParticipant()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <input placeholder="Nom" value={saisieParticipant.nom}
+                            onChange={e => setSaisieParticipant(prev => ({ ...prev, nom: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && ajouterParticipant()}
+                            style={{ ...st.input, width: '130px' }} />
+                          <button type="button" onClick={ajouterParticipant}
+                            style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.purpleLight, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            + Ajouter
+                          </button>
+                        </div>
+                        {evenementForm.participants.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: '8px 0 0' }}>Aucun participant ajouté.</p>
+                        )}
                       </div>
 
                       {/* ── Ressources matérielles ── */}
