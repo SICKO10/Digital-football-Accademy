@@ -71,6 +71,7 @@ const ROLES_STAFF = [
   { val: 'responsable_buvette', label: 'Responsable Buvette' },
   { val: 'responsable_securite', label: 'Responsable Sécurité' },
   { val: 'responsable_equipements', label: 'Responsable Équipements' },
+  { val: 'responsable_arbitre', label: 'Responsable Arbitre' },
 ]
 
 // Catégories d'équipes concernées par l'accès délégué par rôle (cf.
