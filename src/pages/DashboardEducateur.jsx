@@ -1313,7 +1313,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return () => clearInterval(id)
   }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
-  useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) chargerMonMateriel() }, [activeSection, clubAffiliation])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -1488,6 +1487,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [monMateriel, setMonMateriel] = useState([]) // materiel_distribution où educateur_id = userId
+  useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) chargerMonMateriel() }, [activeSection, clubAffiliation])
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
   const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
