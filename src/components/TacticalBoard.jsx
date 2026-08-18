@@ -265,7 +265,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         overflow="hidden"
-        style={{ width: '100%', borderRadius: '10px', userSelect: 'none', touchAction: 'none', cursor: !readOnly && mode !== 'select' && playIdx === null ? 'crosshair' : 'default' }}
+        style={{ width: '100%', aspectRatio: `${W} / ${H}`, borderRadius: '10px', userSelect: 'none', touchAction: 'none', cursor: !readOnly && mode !== 'select' && playIdx === null ? 'crosshair' : 'default' }}
         onClick={clickSVG}
         onMouseMove={onMove}
         onMouseUp={stopDrag}

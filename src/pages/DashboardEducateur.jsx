@@ -2091,13 +2091,15 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          // llama-3.3-70b-versatile plutôt que qwen3.6-27b : qwen3.6 est un modèle
-          // de raisonnement qui continue de "penser" longuement même avec
-          // /no_think (jusqu'à ~3000 tokens de <think>), au point de ne parfois
-          // plus laisser assez de budget pour produire le JSON demandé — c'est un
-          // problème de modèle, pas de parsing. llama-3.3-70b-versatile ne
-          // "réfléchit" pas avant de répondre, donc /no_think est inutile ici.
-          model: 'llama-3.3-70b-versatile',
+          // openai/gpt-oss-20b avec reasoning_effort: 'low' plutôt que qwen3.6-27b :
+          // qwen3.6 est un modèle de raisonnement qui continue de "penser"
+          // longuement même avec /no_think (jusqu'à ~3000 tokens de <think>), au
+          // point de ne parfois plus laisser assez de budget pour produire le JSON
+          // demandé — c'est un problème de modèle, pas de parsing. Sur gpt-oss, le
+          // raisonnement est renvoyé dans un champ "reasoning" séparé (message.content
+          // reste le JSON final), et reasoning_effort: 'low' limite ce raisonnement.
+          model: 'openai/gpt-oss-20b',
+          reasoning_effort: 'low',
           messages: [
             { role: 'system', content: `${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après.` },
             { role: 'user', content: userPrompt },

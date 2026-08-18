@@ -437,9 +437,10 @@ Règles :
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-20b',
+          reasoning_effort: 'low',
           messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
+            { role: 'system', content: 'Réponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
             { role: 'user', content: prompt },
           ],
           temperature: 0.1,
