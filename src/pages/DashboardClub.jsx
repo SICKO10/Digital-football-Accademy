@@ -47,6 +47,7 @@ const IcoTerrain   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoLink      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
 const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
+const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 
 const EQUIPES = ['A', 'B']
 
@@ -69,6 +70,7 @@ const ROLES_STAFF = [
   { val: 'comptable', label: 'Comptable' },
   { val: 'responsable_buvette', label: 'Responsable Buvette' },
   { val: 'responsable_securite', label: 'Responsable Sécurité' },
+  { val: 'responsable_equipements', label: 'Responsable Équipements' },
 ]
 
 // Catégories d'équipes concernées par l'accès délégué par rôle (cf.
@@ -86,10 +88,10 @@ const ROLES_ACCES_COMPLET_DEFAUT = ['directeur_sportif', 'secretaire']
 // 'entraineur'/'educateur' sont volontairement absents de cette matrice : leur
 // périmètre (leur propre équipe) est déjà déterminé par l'affectation
 // educateur_id existante sur chaque catégorie, pas par cette liste.
-// 'responsable_buvette'/'responsable_securite' : rôles événementiels/club
-// entier, sans lien avec une équipe précise — un accès "par catégorie" n'a
-// pas de sens pour eux.
-const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur', 'responsable_buvette', 'responsable_securite']
+// 'responsable_buvette'/'responsable_securite'/'responsable_equipements' :
+// rôles événementiels/club entier, sans lien avec une équipe précise — un
+// accès "par catégorie" n'a pas de sens pour eux.
+const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur', 'responsable_buvette', 'responsable_securite', 'responsable_equipements']
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
 // Rôles de l'organigramme (annuaire de contacts) — texte libre, distinct de
@@ -146,6 +148,7 @@ const PERMISSION_SECTIONS = [
   { id: 'evenements', label: 'Événements & Projets' },
   { id: 'organigramme', label: 'Organigramme' },
   { id: 'staff', label: 'Staff' },
+  { id: 'inventaire', label: 'Inventaire' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -163,6 +166,7 @@ const PERMISSION_DEFAULTS = {
   evenements: [],
   organigramme: [],
   staff: [],
+  inventaire: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -914,6 +918,20 @@ export default function DashboardClub() {
   const [matchsClub, setMatchsClub] = useState([])
   const [joueursClub, setJoueursClub] = useState([])
 
+  // Inventaire (onglet Administratif) — Équipement (tailles par personne) + Matériel (stock/distribution)
+  const [inventaireVue, setInventaireVue] = useState('equipement')
+  const [joueursInventaire, setJoueursInventaire] = useState([]) // colonnes complètes (categorie, numero_maillot) — joueursClub n'a pas assez de colonnes pour ça
+  const [equipementChamps, setEquipementChamps] = useState([])
+  const [equipementTailles, setEquipementTailles] = useState([])
+  const [equipementCommandes, setEquipementCommandes] = useState([])
+  const [modaleChampOuverte, setModaleChampOuverte] = useState(false)
+  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: 'XS, S, M, L, XL, XXL' })
+  const [modalePreparation, setModalePreparation] = useState(null) // { userId, nom, items: [{champ_id, champ_nom, valeur}], jours, heure_debut, heure_fin }
+  const [materielCatalogue, setMaterielCatalogue] = useState([])
+  const [materielStock, setMaterielStock] = useState([])
+  const [materielDistribution, setMaterielDistribution] = useState([])
+  const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', catalogue_id: '', quantite: 1, saison: '' })
+
   // Événements & Projets (onglet Administratif)
   const [evenementsClub, setEvenementsClub] = useState([])
   const [showEvenementForm, setShowEvenementForm] = useState(false)
@@ -938,7 +956,13 @@ export default function DashboardClub() {
   const [projetsClub, setProjetsClub] = useState([])
   const [showProjetForm, setShowProjetForm] = useState(false)
   const [editingProjetId, setEditingProjetId] = useState(null)
-  const [projetForm, setProjetForm] = useState({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
+  const [projetForm, setProjetForm] = useState({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [], missions: [] })
+  // Saisie libre du responsable/participant en cours, par mission de projet —
+  // même principe que saisieResponsableMission/saisieParticipantMission pour
+  // les événements (cf. note plus haut), dupliqué plutôt que généralisé : ces
+  // deux formulaires (événement/projet) évoluent indépendamment dans ce fichier.
+  const [saisieResponsableMissionProjet, setSaisieResponsableMissionProjet] = useState({})
+  const [saisieParticipantMissionProjet, setSaisieParticipantMissionProjet] = useState({})
   const [savingProjet, setSavingProjet] = useState(false)
   const [nouvelleTache, setNouvelleTache] = useState({}) // { [projetId]: titre en cours de saisie }
   // Référents du projet — même saisie libre nom/prénom que pour les
@@ -1012,7 +1036,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme']
+    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire']
     const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection) || canViewSection('staff')
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
@@ -1090,7 +1114,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub()])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId)])
     setLoading(false)
   }
 
@@ -1107,6 +1131,150 @@ export default function DashboardClub() {
     ])
     setMatchsClub(matchs || [])
     setJoueursClub(joueurs || [])
+  }
+
+  // Inventaire (Équipement + Matériel) — joueursClub n'a pas categorie/numero_maillot
+  // (colonnes non chargées par chargerAccueilData), d'où une requête équipe_joueurs
+  // dédiée ici avec toutes les colonnes utiles à l'affichage des tailles.
+  const chargerInventaire = async (uid) => {
+    const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
+    const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
+    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: stock }, { data: distribution }] = await Promise.all([
+      educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
+      supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
+      supabase.from('equipement_tailles').select('*').eq('club_id', uid),
+      supabase.from('equipement_commandes').select('*').eq('club_id', uid),
+      supabase.from('materiel_catalogue').select('*').order('categorie').order('nom'),
+      supabase.from('materiel_stock').select('*').eq('club_id', uid),
+      supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
+    ])
+    setJoueursInventaire(joueurs || [])
+    setEquipementChamps(champs || [])
+    setEquipementTailles(tailles || [])
+    setEquipementCommandes(commandes || [])
+    setMaterielCatalogue(catalogue || [])
+    setMaterielStock(stock || [])
+    setMaterielDistribution(distribution || [])
+  }
+
+  const ajouterChampEquipement = async () => {
+    const nom = nouveauChamp.nom.trim()
+    if (!nom) return
+    const options = nouveauChamp.options.split(',').map(o => o.trim()).filter(Boolean)
+    if (options.length === 0) return
+    await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, ordre: equipementChamps.length })
+    setNouveauChamp({ nom: '', options: 'XS, S, M, L, XL, XXL' })
+    setModaleChampOuverte(false)
+    chargerInventaire(clubId)
+  }
+
+  const supprimerChampEquipement = async (champId) => {
+    if (!confirm('Supprimer ce champ de taille ? Les tailles déjà renseignées pour ce champ seront perdues.')) return
+    await supabase.from('equipement_champs').delete().eq('id', champId)
+    chargerInventaire(clubId)
+  }
+
+  // Upsert direct depuis le tableau club (le responsable peut renseigner/corriger
+  // la taille de n'importe qui, en plus de la saisie par la personne elle-même
+  // côté DashboardJoueur.jsx — même ligne, RLS permet les deux).
+  const sauvegarderTailleDepuisClub = async (userId, champId, valeur) => {
+    await supabase.from('equipement_tailles').upsert(
+      { user_id: userId, club_id: clubId, champ_id: champId, valeur, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id, champ_id' }
+    )
+    setEquipementTailles(prev => {
+      const idx = prev.findIndex(t => t.user_id === userId && t.champ_id === champId)
+      if (idx === -1) return [...prev, { user_id: userId, club_id: clubId, champ_id: champId, valeur }]
+      const next = [...prev]
+      next[idx] = { ...next[idx], valeur }
+      return next
+    })
+  }
+
+  const ouvrirPreparation = (personne) => {
+    const items = equipementChamps.map(c => ({
+      champ_id: c.id,
+      champ_nom: c.nom,
+      valeur: equipementTailles.find(t => t.user_id === personne.id && t.champ_id === c.id)?.valeur || '',
+    }))
+    const existante = equipementCommandes.find(c => c.destinataire_id === personne.id)
+    setModalePreparation({
+      userId: personne.id,
+      nom: personne.nom,
+      items,
+      jours: existante?.jours || '',
+      heure_debut: existante?.heure_debut || '',
+      heure_fin: existante?.heure_fin || '',
+    })
+  }
+
+  const marquerEquipementPret = async () => {
+    if (!modalePreparation) return
+    const { userId, nom, items, jours, heure_debut, heure_fin } = modalePreparation
+    await supabase.from('equipement_commandes').upsert({
+      club_id: clubId,
+      responsable_id: clubId,
+      destinataire_id: userId,
+      destinataire_nom: nom,
+      items,
+      statut: 'pret',
+      jours, heure_debut, heure_fin,
+    }, { onConflict: 'club_id, destinataire_id' })
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      type: 'equipement_pret',
+      titre: '👕 Ton équipement est prêt !',
+      contenu: [jours, heure_debut && heure_fin ? `entre ${heure_debut} et ${heure_fin}` : null].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.',
+      lien: '/dashboard-joueur',
+      lu: false,
+    })
+    setModalePreparation(null)
+    chargerInventaire(clubId)
+  }
+
+  const mettreAJourStockMateriel = async (catalogueId, quantite) => {
+    await supabase.from('materiel_stock').upsert(
+      { club_id: clubId, catalogue_id: catalogueId, quantite_totale: quantite, updated_at: new Date().toISOString() },
+      { onConflict: 'club_id, catalogue_id' }
+    )
+    setMaterielStock(prev => {
+      const idx = prev.findIndex(s => s.catalogue_id === catalogueId)
+      if (idx === -1) return [...prev, { club_id: clubId, catalogue_id: catalogueId, quantite_totale: quantite }]
+      const next = [...prev]
+      next[idx] = { ...next[idx], quantite_totale: quantite }
+      return next
+    })
+  }
+
+  const distribuerMateriel = async () => {
+    const { educateur_id, equipe_nom, catalogue_id, quantite, saison } = distributionForm
+    if (!educateur_id || !catalogue_id || !saison.trim()) return
+    const item = materielCatalogue.find(c => c.id === catalogue_id)
+    const educ = educateursAffilies.find(e => e.educateur_id === educateur_id)
+    await supabase.from('materiel_distribution').insert({
+      club_id: clubId,
+      educateur_id,
+      educateur_nom: `${educ?.educateur?.prenom || ''} ${educ?.educateur?.nom || ''}`.trim(),
+      equipe_nom: equipe_nom.trim() || null,
+      catalogue_id,
+      nom_materiel: item?.nom,
+      categorie: item?.categorie,
+      quantite: Number(quantite) || 1,
+      saison: saison.trim(),
+      statut: 'distribue',
+    })
+    setDistributionForm({ educateur_id: '', equipe_nom: '', catalogue_id: '', quantite: 1, saison: '' })
+    chargerInventaire(clubId)
+  }
+
+  const validerRemiseMateriel = async (distId) => {
+    await supabase.from('materiel_distribution').update({ statut: 'remis', date_remise: new Date().toISOString() }).eq('id', distId)
+    chargerInventaire(clubId)
+  }
+
+  const refuserRemiseMateriel = async (distId) => {
+    await supabase.from('materiel_distribution').update({ statut: 'distribue' }).eq('id', distId)
+    chargerInventaire(clubId)
   }
 
   const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -1413,13 +1581,13 @@ export default function DashboardClub() {
 
   const ouvrirNouveauProjet = () => {
     setEditingProjetId(null)
-    setProjetForm({ nom: '', description: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
+    setProjetForm({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [], missions: [] })
     setShowProjetForm(true)
   }
 
   const ouvrirEditionProjet = (p) => {
     setEditingProjetId(p.id)
-    setProjetForm({ nom: p.nom || '', description: p.description || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente', referents: p.referents || [] })
+    setProjetForm({ nom: p.nom || '', description: p.description || '', objectif: p.objectif || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente', referents: p.referents || [], missions: p.missions || [] })
     setShowProjetForm(true)
   }
 
@@ -1436,18 +1604,70 @@ export default function DashboardClub() {
     setProjetForm(f => ({ ...f, referents: f.referents.filter(r => r.id !== id) }))
   }
 
+  // ── Missions d'un projet — même structure que les missions d'événement
+  // (responsable_id/responsable_nom, participants en saisie libre), étendue
+  // avec dates propres à la mission, les 3 catégories de ressources et le
+  // suivi (résultats / problème rencontré) demandés spécifiquement pour les
+  // projets. ──
+  const ajouterMissionProjet = () => {
+    setProjetForm(f => ({
+      ...f,
+      missions: [...f.missions, {
+        id: crypto.randomUUID(), titre: '', responsable_id: '', responsable_nom: '', participants: [],
+        objectif: '', comment: '', date_debut: '', date_fin: '',
+        ressource_humaine: '', ressource_materielle: '', ressource_financiere: '',
+        resultats: '', probleme_rencontre: '',
+      }],
+    }))
+  }
+  const modifierMissionProjet = (id, champ, valeur) => {
+    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === id ? { ...m, [champ]: valeur } : m) }))
+  }
+  const supprimerMissionProjet = (id) => {
+    setProjetForm(f => ({ ...f, missions: f.missions.filter(m => m.id !== id) }))
+  }
+  const validerResponsableMissionProjet = (missionId) => {
+    const s = saisieResponsableMissionProjet[missionId] || {}
+    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
+    if (!nom) return
+    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: nom } : m) }))
+    setSaisieResponsableMissionProjet(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
+  }
+  const effacerResponsableMissionProjet = (missionId) => {
+    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: '' } : m) }))
+  }
+  const ajouterParticipantMissionProjet = (missionId) => {
+    const s = saisieParticipantMissionProjet[missionId] || {}
+    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
+    if (!nom) return
+    setProjetForm(f => ({
+      ...f,
+      missions: f.missions.map(m => {
+        if (m.id !== missionId) return m
+        if (m.participants.some(p => p.nom.toLowerCase() === nom.toLowerCase())) return m
+        return { ...m, participants: [...m.participants, { id: crypto.randomUUID(), nom }] }
+      }),
+    }))
+    setSaisieParticipantMissionProjet(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
+  }
+  const retirerParticipantMissionProjet = (missionId, participantId) => {
+    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, participants: m.participants.filter(p => p.id !== participantId) } : m) }))
+  }
+
   const sauvegarderProjet = async () => {
     if (!projetForm.nom.trim()) return
     const payload = {
       club_id: clubId,
       nom: projetForm.nom.trim(),
       description: projetForm.description.trim() || null,
+      objectif: projetForm.objectif.trim() || null,
       date_debut: projetForm.date_debut || null,
       date_fin: projetForm.date_fin || null,
       responsable_id: projetForm.responsable_id || null,
       responsable_nom: projetForm.responsable_nom || null,
       statut: projetForm.statut,
       referents: projetForm.referents,
+      missions: projetForm.missions,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -2440,6 +2660,7 @@ Règles :
     ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
     ...(canViewSection('organigramme') ? [{ id: 'organigramme', label: iconLabel(IcoCarteBadge, t('club_tab_organigramme', lang)) }] : []),
     ...(canViewSection('staff') ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
+    ...(canViewSection('inventaire') ? [{ id: 'inventaire', label: iconLabel(IcoBox, 'Inventaire') }] : []),
   ] : []
 
   const clubOnboardingSteps = [
@@ -3755,6 +3976,10 @@ Règles :
                         <label style={st.label}>Description</label>
                         <textarea style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} value={projetForm.description} onChange={e => setProjetForm(f => ({ ...f, description: e.target.value }))} />
                       </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={st.label}>Objectif du projet</label>
+                        <textarea placeholder="Que veut-on accomplir avec ce projet ?" style={{ ...st.input, minHeight: '60px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} value={projetForm.objectif} onChange={e => setProjetForm(f => ({ ...f, objectif: e.target.value }))} />
+                      </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                         <div>
                           <label style={st.label}>Date de début</label>
@@ -3809,6 +4034,126 @@ Règles :
                         {projetForm.referents.length === 0 && (
                           <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: '8px 0 0' }}>Aucun référent ajouté.</p>
                         )}
+                      </div>
+
+                      {/* ── Missions du projet ── */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <label style={st.label}>🎯 Missions</label>
+                          <button type="button" onClick={ajouterMissionProjet} style={st.btnSecondary}>+ Créer une mission</button>
+                        </div>
+                        {projetForm.missions.length === 0 && (
+                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucune mission créée.</p>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {projetForm.missions.map(mission => (
+                            <div key={mission.id} style={{ background: colors.background.raised, border: '1px solid #222', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input placeholder="Titre de la mission (ex: Devis entreprises, Suivi chantier…)" value={mission.titre} onChange={e => modifierMissionProjet(mission.id, 'titre', e.target.value)} style={{ ...st.input, flex: 1, fontWeight: 700 }} />
+                                <button type="button" onClick={() => supprimerMissionProjet(mission.id)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer' }}>✕</button>
+                              </div>
+
+                              <div>
+                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Référent de la mission</p>
+                                {mission.responsable_nom ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ background: couleurPrincipale + alpha.soft, border: `1px solid ${couleurPrincipale}`, color: couleurPrincipale, padding: '5px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
+                                      ⭐ {mission.responsable_nom}
+                                    </span>
+                                    <button type="button" onClick={() => effacerResponsableMissionProjet(mission.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '14px', cursor: 'pointer' }}>✕</button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    <input placeholder="Prénom" value={(saisieResponsableMissionProjet[mission.id] || {}).prenom || ''}
+                                      onChange={e => setSaisieResponsableMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
+                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMissionProjet(mission.id)}
+                                      style={{ ...st.input, width: '130px' }} />
+                                    <input placeholder="Nom" value={(saisieResponsableMissionProjet[mission.id] || {}).nom || ''}
+                                      onChange={e => setSaisieResponsableMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
+                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMissionProjet(mission.id)}
+                                      style={{ ...st.input, width: '130px' }} />
+                                    <button type="button" onClick={() => validerResponsableMissionProjet(mission.id)}
+                                      style={{ background: couleurPrincipale + alpha.subtle, border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                      Valider
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Participants à la mission ({mission.participants.length})</p>
+                                {mission.participants.length > 0 && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                                    {mission.participants.map(p => (
+                                      <span key={p.id} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {p.nom}
+                                        <button type="button" onClick={() => retirerParticipantMissionProjet(mission.id, p.id)} style={{ background: 'none', border: 'none', color: colors.accent.blue, opacity: 0.6, fontSize: '12px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                  <input placeholder="Prénom" value={(saisieParticipantMissionProjet[mission.id] || {}).prenom || ''}
+                                    onChange={e => setSaisieParticipantMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
+                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMissionProjet(mission.id)}
+                                    style={{ ...st.input, width: '130px' }} />
+                                  <input placeholder="Nom" value={(saisieParticipantMissionProjet[mission.id] || {}).nom || ''}
+                                    onChange={e => setSaisieParticipantMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
+                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMissionProjet(mission.id)}
+                                    style={{ ...st.input, width: '130px' }} />
+                                  <button type="button" onClick={() => ajouterParticipantMissionProjet(mission.id)}
+                                    style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                    + Ajouter
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                                <div>
+                                  <label style={st.label}>Date de début</label>
+                                  <input style={st.input} type="date" value={mission.date_debut} onChange={e => modifierMissionProjet(mission.id, 'date_debut', e.target.value)} />
+                                </div>
+                                <div>
+                                  <label style={st.label}>Date de fin</label>
+                                  <input style={st.input} type="date" value={mission.date_fin} onChange={e => modifierMissionProjet(mission.id, 'date_fin', e.target.value)} />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label style={st.label}>Objectif</label>
+                                <textarea placeholder="Quel est l'objectif de cette mission ?" value={mission.objectif} onChange={e => modifierMissionProjet(mission.id, 'objectif', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+                              <div>
+                                <label style={st.label}>Comment</label>
+                                <textarea placeholder="Comment réaliser cette mission ? (étapes, consignes, timing…)" value={mission.comment} onChange={e => modifierMissionProjet(mission.id, 'comment', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '10px' }}>
+                                <div>
+                                  <label style={st.label}>Ressource humaine</label>
+                                  <input placeholder="Ex: 2 bénévoles" style={st.input} value={mission.ressource_humaine} onChange={e => modifierMissionProjet(mission.id, 'ressource_humaine', e.target.value)} />
+                                </div>
+                                <div>
+                                  <label style={st.label}>Ressource matérielle</label>
+                                  <input placeholder="Ex: Camionnette, outillage" style={st.input} value={mission.ressource_materielle} onChange={e => modifierMissionProjet(mission.id, 'ressource_materielle', e.target.value)} />
+                                </div>
+                                <div>
+                                  <label style={st.label}>Ressource financière</label>
+                                  <input placeholder="Ex: 500€ budget matériel" style={st.input} value={mission.ressource_financiere} onChange={e => modifierMissionProjet(mission.id, 'ressource_financiere', e.target.value)} />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label style={st.label}>Résultats de la mission</label>
+                                <textarea placeholder="Ce qui a été accompli" value={mission.resultats} onChange={e => modifierMissionProjet(mission.id, 'resultats', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+                              <div>
+                                <label style={st.label}>Problème rencontré</label>
+                                <textarea placeholder="Difficultés, retards, blocages…" value={mission.probleme_rencontre} onChange={e => modifierMissionProjet(mission.id, 'probleme_rencontre', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', gap: '10px' }}>
