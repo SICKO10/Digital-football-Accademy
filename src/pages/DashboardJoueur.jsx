@@ -433,6 +433,11 @@ function DashboardJoueur() {
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   const [convocationActive, setConvocationActive] = useState(null) // convocation publiée non expirée pour ce joueur, avec le match joint
+  // Inventaire club (Équipement) — tailles déclarées par le joueur + statut de préparation
+  const [clubIdInventaire, setClubIdInventaire] = useState(null)
+  const [champsEquipement, setChampsEquipement] = useState([])
+  const [mesTailles, setMesTailles] = useState([])
+  const [equipementPret, setEquipementPret] = useState(null) // ligne equipement_commandes si statut='pret'
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
@@ -649,6 +654,7 @@ function DashboardJoueur() {
     await chargerConversations(user.id)
     const mesAff = await chargerAffiliations(user.id)
     await verifierCloturesSaison(user.id, mesAff || [])
+    await chargerInventaireJoueur(user.id, mesAff || [])
     await chargerConvocationActive(user.id)
     await chargerParentsInvites(user.id)
     setLoading(false)
@@ -767,6 +773,45 @@ function DashboardJoueur() {
     const enrichies = afData.map(a => ({ ...a, profil_educateur: peMap[a.educateur_id] || null }))
     setMesAffiliations(enrichies)
     return enrichies
+  }
+
+  // Inventaire (Équipement) du club auquel appartient l'éducateur affilié —
+  // même résolution educateur_id → club_id que côté club (club_educateurs),
+  // il n'y a pas de club_id direct sur affiliations/equipe_joueurs.
+  const chargerInventaireJoueur = async (uid, affiliations) => {
+    const a = (affiliations || []).find(af => af.statut === 'accepte')
+    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); return }
+    const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
+    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); return }
+    setClubIdInventaire(ce.club_id)
+    const [{ data: champs }, { data: tailles }, { data: commande }] = await Promise.all([
+      supabase.from('equipement_champs').select('*').eq('club_id', ce.club_id).eq('actif', true).order('ordre'),
+      supabase.from('equipement_tailles').select('*').eq('user_id', uid),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
+    ])
+    setChampsEquipement(champs || [])
+    setMesTailles(tailles || [])
+    setEquipementPret(commande || null)
+  }
+
+  const sauvegarderMaTaille = async (champId, valeur) => {
+    await supabase.from('equipement_tailles').upsert(
+      { user_id: userId, club_id: clubIdInventaire, champ_id: champId, valeur, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id, champ_id' }
+    )
+    setMesTailles(prev => {
+      const idx = prev.findIndex(t => t.champ_id === champId)
+      if (idx === -1) return [...prev, { user_id: userId, club_id: clubIdInventaire, champ_id: champId, valeur }]
+      const next = [...prev]
+      next[idx] = { ...next[idx], valeur }
+      return next
+    })
+  }
+
+  const marquerEquipementRecupere = async () => {
+    if (!equipementPret) return
+    await supabase.from('equipement_commandes').update({ statut: 'recupere' }).eq('id', equipementPret.id)
+    setEquipementPret(null)
   }
 
   // Saisons clôturées par le coach (historique_saisons.cloturee) pour
@@ -2803,6 +2848,46 @@ function DashboardJoueur() {
                 </div>
               )
             })()}
+
+            {/* ÉQUIPEMENT PRÊT — notification "à récupérer" laissée par le club
+                (equipement_commandes.statut='pret'), disparaît une fois récupéré */}
+            {equipementPret && (
+              <div style={{ background: 'linear-gradient(135deg, #1a1200 0%, #111 100%)', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>👕 Ton équipement est prêt !</div>
+                <div style={{ color: colors.text.faint, fontSize: 13, marginBottom: 16 }}>
+                  {equipementPret.jours || 'Passe le récupérer auprès du club'}
+                  {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
+                </div>
+                <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
+              </div>
+            )}
+
+            {/* MES TAILLES — saisie libre par le joueur, mêmes champs que ceux
+                configurés côté club (equipement_champs) */}
+            {champsEquipement.length > 0 && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15, color: '#fff' }}>📏 Mes tailles</p>
+                <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {champsEquipement.map(c => {
+                    const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
+                    return (
+                      <div key={c.id}>
+                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {c.options.map(o => (
+                            <button key={o} onClick={() => sauvegarderMaTaille(c.id, o)}
+                              style={{ background: valeur === o ? colors.accent.green : '#1a1a1a', color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                              {o}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
                 section : mêmes événements, boutons de présence en plus) au lieu de deux

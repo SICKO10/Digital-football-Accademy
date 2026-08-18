@@ -160,6 +160,7 @@ const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -1312,6 +1313,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return () => clearInterval(id)
   }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
+  useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) chargerMonMateriel() }, [activeSection, clubAffiliation])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -1485,6 +1487,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [affiliations, setAffiliations] = useState([])
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  const [monMateriel, setMonMateriel] = useState([]) // materiel_distribution où educateur_id = userId
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
   const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
@@ -3723,6 +3726,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       { key: 'causerie', label: t('nav_causerie', lang), icon: <IcoMic /> },
       { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
       { key: 'terrains', label: t('nav_terrains', lang), icon: <IcoCalendar /> },
+      { key: 'materiel', label: 'Mon matériel', icon: <IcoBox /> },
     ] },
     { titre: t('section_entrainement', lang), items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
@@ -3767,6 +3771,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'joueur_pro').eq('abonnement_actif', true)
     setRecrutJoueurs(data || [])
     setRecrutLoaded(true)
+  }
+
+  // Matériel confié par le club (materiel_distribution.educateur_id = cet éducateur) —
+  // demande de remise en fin de saison, validée/refusée côté club (Inventaire > Matériel).
+  const chargerMonMateriel = async () => {
+    const { data } = await supabase.from('materiel_distribution').select('*').eq('educateur_id', userId).order('date_distribution', { ascending: false })
+    setMonMateriel(data || [])
+  }
+
+  const demanderRemiseMateriel = async (distId) => {
+    await supabase.from('materiel_distribution').update({ statut: 'remise_demandee' }).eq('id', distId)
+    setMonMateriel(prev => prev.map(d => d.id === distId ? { ...d, statut: 'remise_demandee' } : d))
   }
 
   return (
@@ -5774,6 +5790,49 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
           )
         )}
+
+        {/* ===== MON MATÉRIEL ===== */}
+        {activeSection === 'materiel' && (() => {
+          const STATUT_MATERIEL = {
+            distribue:        { label: 'Distribué',        color: colors.accent.blue,  desc: 'En ta possession.' },
+            remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber, desc: 'En attente de validation par le club.' },
+            remis:            { label: 'Remis',            color: colors.accent.green, desc: 'Remise validée par le club.' },
+            refuse:           { label: 'Refusé',            color: colors.accent.red,   desc: "La demande de remise n'a pas été validée." },
+          }
+          return (
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📦 Mon matériel</h1>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
+            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
+              <p style={{ color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
+            ) : monMateriel.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun matériel confié pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {monMateriel.map(d => {
+                  const conf = STATUT_MATERIEL[d.statut] || STATUT_MATERIEL.distribue
+                  return (
+                    <div key={d.id} style={st.card}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: conf.color, display: 'inline-block', flexShrink: 0 }} />
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.nom_materiel} × {d.quantite}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
+                            <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>Saison {d.saison} · <span style={{ color: conf.color, fontWeight: 600 }}>{conf.label}</span> — {conf.desc}</p>
+                          </div>
+                        </div>
+                        {d.statut === 'distribue' && (
+                          <button onClick={() => demanderRemiseMateriel(d.id)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          )
+        })()}
 
         {/* ===== ENTRAÎNEMENTS ===== */}
         {activeSection === 'entrainements' && (

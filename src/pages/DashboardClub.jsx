@@ -4607,7 +4607,229 @@ Règles :
           </div>
           )
         })()}
+
+        {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
+          const personnes = [
+            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '' })),
+            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role) })),
+          ]
+          const STATUT_DISTRIB = {
+            distribue:        { label: 'Distribué',        color: colors.accent.blue },
+            remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber },
+            remis:            { label: 'Remis',            color: colors.accent.green },
+            refuse:           { label: 'Refusé',            color: colors.accent.red },
+          }
+          return (
+          <div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
+              <button onClick={() => setInventaireVue('equipement')} style={inventaireVue === 'equipement' ? st.btnSolid : st.btnSecondary}>👕 Équipement</button>
+              <button onClick={() => setInventaireVue('materiel')} style={inventaireVue === 'materiel' ? st.btnSolid : st.btnSecondary}>⚽ Matériel</button>
+            </div>
+
+            {inventaireVue === 'equipement' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Tailles déclarées par joueur/staff — {equipementChamps.length} champ(s) configuré(s).</p>
+                  {canEditSection('inventaire') && <button onClick={() => setModaleChampOuverte(true)} style={st.btnSecondary}>+ Champ de taille</button>}
+                </div>
+
+                {equipementChamps.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun champ de taille configuré. {canEditSection('inventaire') && 'Ajoutez-en un pour commencer (ex : Survêtement, Short, Chaussures...).'}</p>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
+                          <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Personne</th>
+                          {equipementChamps.map(c => <th key={c.id} style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>{c.nom}{canEditSection('inventaire') && <button onClick={() => supprimerChampEquipement(c.id)} style={{ marginLeft: '6px', background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '11px' }}>✕</button>}</th>)}
+                          {canEditSection('inventaire') && <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Statut</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {personnes.map(p => {
+                          const commande = equipementCommandes.find(c => c.destinataire_id === p.id)
+                          return (
+                          <tr key={p.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
+                            <td style={{ padding: '8px' }}>
+                              <p style={{ margin: 0, fontWeight: 600 }}>{p.nom}</p>
+                              {p.sousLabel && <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{p.sousLabel}</p>}
+                            </td>
+                            {equipementChamps.map(c => {
+                              const valeur = equipementTailles.find(t => t.user_id === p.id && t.champ_id === c.id)?.valeur || ''
+                              return (
+                                <td key={c.id} style={{ padding: '8px' }}>
+                                  {canEditSection('inventaire') ? (
+                                    <select value={valeur} onChange={e => sauvegarderTailleDepuisClub(p.id, c.id, e.target.value)} style={{ ...st.input, width: 'auto', padding: '4px 8px' }}>
+                                      <option value="">—</option>
+                                      {c.options.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                  ) : (valeur || '—')}
+                                </td>
+                              )
+                            })}
+                            {canEditSection('inventaire') && (
+                              <td style={{ padding: '8px' }}>
+                                {commande ? (
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'Récupéré'}</span>
+                                ) : (
+                                  <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Préparer</button>
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {inventaireVue === 'materiel' && (
+              <div>
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📦 Stock du club</p>
+                <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
+                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Catégorie</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Matériel</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Quantité</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materielCatalogue.map(item => {
+                        const s = materielStock.find(st2 => st2.catalogue_id === item.id)
+                        return (
+                          <tr key={item.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
+                            <td style={{ padding: '8px', color: colors.text.faint }}>{item.categorie}</td>
+                            <td style={{ padding: '8px' }}>{item.nom}</td>
+                            <td style={{ padding: '8px' }}>
+                              {canEditSection('inventaire') ? (
+                                <input type="number" min="0" defaultValue={s?.quantite_totale || 0} onBlur={e => mettreAJourStockMateriel(item.id, Math.max(0, Number(e.target.value) || 0))} style={{ ...st.input, width: '80px', padding: '4px 8px' }} />
+                              ) : (s?.quantite_totale || 0)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {canEditSection('inventaire') && (
+                  <>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🚚 Distribuer du matériel</p>
+                    <div style={{ ...st.card, display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '2rem' }}>
+                      <div>
+                        <label style={st.label}>Éducateur</label>
+                        <select value={distributionForm.educateur_id} onChange={e => setDistributionForm(f => ({ ...f, educateur_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
+                          <option value="">Choisir...</option>
+                          {educateursAffilies.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={st.label}>Équipe</label>
+                        <input value={distributionForm.equipe_nom} onChange={e => setDistributionForm(f => ({ ...f, equipe_nom: e.target.value }))} placeholder="Ex : U15 A" style={{ ...st.input, width: '120px' }} />
+                      </div>
+                      <div>
+                        <label style={st.label}>Matériel</label>
+                        <select value={distributionForm.catalogue_id} onChange={e => setDistributionForm(f => ({ ...f, catalogue_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
+                          <option value="">Choisir...</option>
+                          {materielCatalogue.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={st.label}>Quantité</label>
+                        <input type="number" min="1" value={distributionForm.quantite} onChange={e => setDistributionForm(f => ({ ...f, quantite: e.target.value }))} style={{ ...st.input, width: '70px' }} />
+                      </div>
+                      <div>
+                        <label style={st.label}>Saison</label>
+                        <input value={distributionForm.saison} onChange={e => setDistributionForm(f => ({ ...f, saison: e.target.value }))} placeholder="2025-2026" style={{ ...st.input, width: '110px' }} />
+                      </div>
+                      <button onClick={distribuerMateriel} style={st.btnSolid}>Distribuer</button>
+                    </div>
+                  </>
+                )}
+
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📋 Matériel distribué ({materielDistribution.length})</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {materielDistribution.length === 0 && <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>}
+                  {materielDistribution.map(d => {
+                    const stConf = STATUT_DISTRIB[d.statut] || STATUT_DISTRIB.distribue
+                    return (
+                      <div key={d.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{d.nom_materiel} × {d.quantite} — {d.educateur_nom}{d.equipe_nom ? ` (${d.equipe_nom})` : ''}</p>
+                          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>Saison {d.saison}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
+                          {canEditSection('inventaire') && d.statut === 'remise_demandee' && (
+                            <>
+                              <button onClick={() => validerRemiseMateriel(d.id)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Valider</button>
+                              <button onClick={() => refuserRemiseMateriel(d.id)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          )
+        })()}
       </div>
+
+      {/* Modale ajout d'un champ de taille équipement */}
+      {modaleChampOuverte && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '420px' }}>
+            <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '15px' }}>Nouveau champ de taille</p>
+            <label style={st.label}>Nom (ex : Survêtement)</label>
+            <input value={nouveauChamp.nom} onChange={e => setNouveauChamp(f => ({ ...f, nom: e.target.value }))} style={{ ...st.input, marginBottom: '12px' }} />
+            <label style={st.label}>Options (séparées par des virgules)</label>
+            <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} style={{ ...st.input, marginBottom: '16px' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setModaleChampOuverte(false)} style={st.btnSecondary}>Annuler</button>
+              <button onClick={ajouterChampEquipement} style={st.btnSolid}>Ajouter</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale préparation équipement + notification */}
+      {modalePreparation && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '460px' }}>
+            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>Préparer l'équipement</p>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: colors.text.dim }}>{modalePreparation.nom}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+              {modalePreparation.items.map(it => (
+                <p key={it.champ_id} style={{ margin: 0, fontSize: '13px' }}>{it.champ_nom} : <strong>{it.valeur || '—'}</strong></p>
+              ))}
+            </div>
+            <label style={st.label}>Jours de récupération</label>
+            <input value={modalePreparation.jours} onChange={e => setModalePreparation(m => ({ ...m, jours: e.target.value }))} placeholder="Ex : Lundi et mercredi" style={{ ...st.input, marginBottom: '12px' }} />
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={st.label}>Heure début</label>
+                <input type="time" value={modalePreparation.heure_debut} onChange={e => setModalePreparation(m => ({ ...m, heure_debut: e.target.value }))} style={st.input} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={st.label}>Heure fin</label>
+                <input type="time" value={modalePreparation.heure_fin} onChange={e => setModalePreparation(m => ({ ...m, heure_fin: e.target.value }))} style={st.input} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setModalePreparation(null)} style={st.btnSecondary}>Annuler</button>
+              <button onClick={marquerEquipementPret} style={st.btnSolid}>✅ Marquer prêt & notifier</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal gestion des permissions par rôle */}
       {showPermissionsModal && (
