@@ -4996,9 +4996,16 @@ Règles :
             const cat = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
             return cat?.nom || null
           }
+          // id doit être le compte plateforme réel (profiles.id = equipe_joueurs.joueur_id),
+          // pas equipe_joueurs.id (la ligne d'effectif) — equipement_attributions/
+          // equipement_tailles référencent profiles(id) par clé étrangère, jamais
+          // equipe_joueurs. Un joueur sans compte encore lié (joueur_id NULL, n'a
+          // pas encore créé/relié son compte) ne peut pas recevoir de pack tant
+          // qu'il n'a pas de ligne profiles — identifiant de secours pour l'
+          // affichage (clé React) uniquement, jamais utilisé pour écrire en base.
           const personnes = [
-            ...joueursInventaire.map(j => { const cat = resoudreCategorie(j); return { id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: cat || j.poste || '', type: 'joueur', categorie: cat } }),
-            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur', categorie: null })),
+            ...joueursInventaire.map(j => { const cat = resoudreCategorie(j); return { id: j.joueur_id || `sans-compte-${j.id}`, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: cat || j.poste || '', type: 'joueur', categorie: cat, compteLie: !!j.joueur_id } }),
+            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur', categorie: null, compteLie: true })),
           ]
           // Catégories réellement configurées par le club (club_categories), pas
           // seulement celles qui ont déjà un joueur affecté dans equipe_joueurs —
@@ -5141,7 +5148,9 @@ Règles :
                                   {p.sousLabel && <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{p.sousLabel}</p>}
                                 </td>
                                 <td style={{ padding: '8px' }}>
-                                  {canEditSection('inventaire') ? (
+                                  {!p.compteLie ? (
+                                    <span style={{ fontSize: '11px', color: colors.text.faint, fontStyle: 'italic' }}>Compte non lié</span>
+                                  ) : canEditSection('inventaire') ? (
                                     <select value={packAttribue} onChange={e => attribuerPack(p.id, e.target.value)} style={{ ...st.input, width: 'auto', padding: '4px 8px' }}>
                                       <option value="">— Aucun pack —</option>
                                       {packsPourPersonne(p).map(pk => <option key={pk.id} value={pk.id}>{pk.icone} {pk.nom}</option>)}
@@ -5157,7 +5166,9 @@ Règles :
                                 </td>
                                 {canEditSection('inventaire') && (
                                   <td style={{ padding: '8px' }}>
-                                    {commande ? (
+                                    {!p.compteLie ? (
+                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
+                                    ) : commande ? (
                                       <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'Récupéré'}</span>
                                     ) : !pack ? (
                                       <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
