@@ -139,29 +139,6 @@ const construireArbreOrganigramme = (membres) => {
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
 // classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
-// Packs de champs de taille équipement — ajout en un clic plutôt qu'un par
-// un. 'educateur' ici vise le staff du club au sens large (pas seulement les
-// entraîneurs) : la cible 'educateur' d'un champ est déjà lue par
-// DashboardEducateur.jsx pour tout le staff affilié via club_educateurs, pas
-// spécifiquement un rôle "dirigeant" séparé — un futur pack dirigeant
-// réutiliserait la même cible 'educateur' plutôt qu'une 3e valeur d'enum.
-const PACKS_EQUIPEMENT = [
-  { id: 'joueur', label: '⚽ Pack Joueur', cible: 'joueur', champs: [
-    { nom: 'Maillot', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-    { nom: 'Short', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-    { nom: 'Chaussettes', options: ['XS', 'S', 'M', 'L', 'XL'] },
-    { nom: 'Chaussures', options: ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'] },
-    { nom: 'Survêtement veste', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-    { nom: 'Survêtement pantalon', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-  ] },
-  { id: 'educateur', label: '📋 Pack Éducateur', cible: 'educateur', champs: [
-    { nom: 'Veste staff', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] },
-    { nom: 'Pantalon staff', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-    { nom: 'Polo', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-    { nom: 'Chaussures', options: ['38', '39', '40', '41', '42', '43', '44', '45', '46', '47'] },
-  ] },
-]
-
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
   { id: 'terrains', label: 'Planning terrains' },
@@ -976,6 +953,8 @@ export default function DashboardClub() {
   const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
   const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
   const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
+  const [nouveauChampPack, setNouveauChampPack] = useState({ nom: '', options: [] })
+  const [optionPackInput, setOptionPackInput] = useState('')
   const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
   // Événements & Projets (onglet Administratif)
@@ -1221,31 +1200,45 @@ export default function DashboardClub() {
     chargerInventaire(clubId)
   }
 
-  // Ajout en un clic d'un jeu de champs standard (évite de recréer un par un
-  // Maillot/Short/Chaussures... pour chaque public). Ignore les noms déjà
-  // configurés (insensible à la casse) pour rester sans risque si le
-  // président re-clique après avoir déjà ajouté le pack, ou après avoir
-  // supprimé/modifié certains champs entre-temps.
-  const ajouterPackEquipement = async (pack) => {
-    const nomsExistants = new Set(equipementChamps.map(c => c.nom.trim().toLowerCase()))
-    const aCreer = pack.champs.filter(c => !nomsExistants.has(c.nom.toLowerCase()))
-    if (aCreer.length === 0) return
-    const rows = aCreer.map((c, i) => ({ club_id: clubId, nom: c.nom, options: c.options, cible: pack.cible, ordre: equipementChamps.length + i }))
-    await supabase.from('equipement_champs').insert(rows)
-    chargerInventaire(clubId)
-  }
-
   // Packs configurables (equipement_packs) — regroupement nommé de champs déjà
   // créés, distinct des boutons ci-dessus qui créent les champs eux-mêmes.
   const ouvrirNouveauPack = () => {
     setPackEnEdition(null)
     setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+    setNouveauChampPack({ nom: '', options: [] })
+    setOptionPackInput('')
     setModalPack(true)
   }
   const ouvrirEditionPack = (pack) => {
     setPackEnEdition(pack)
     setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
+    setNouveauChampPack({ nom: '', options: [] })
+    setOptionPackInput('')
     setModalPack(true)
+  }
+  // Créer un champ à la volée depuis la modale pack, et l'ajouter directement
+  // à la sélection en cours — évite l'aller-retour "fermer la modale pack →
+  // créer le champ ailleurs → rouvrir la modale pack pour le cocher".
+  const ajouterChampAuPack = async () => {
+    if (!nouveauChampPack.nom.trim() || nouveauChampPack.options.length === 0) return
+    // equipement_champs.cible n'accepte que joueur/educateur/les deux — la
+    // cible d'un pack peut être plus large (ex: 'dirigeant', une simple
+    // étiquette), donc on retombe sur 'educateur' pour le champ créé dans ce cas.
+    const cibleChamp = ['joueur', 'educateur', 'les deux'].includes(packForm.cible) ? packForm.cible : 'educateur'
+    const { data: newChamp } = await supabase.from('equipement_champs').insert({
+      club_id: clubId,
+      nom: nouveauChampPack.nom.trim(),
+      cible: cibleChamp,
+      options: nouveauChampPack.options,
+      ordre: equipementChamps.length,
+      actif: true,
+    }).select().single()
+    if (newChamp) {
+      setPackForm(p => ({ ...p, champs_ids: [...p.champs_ids, newChamp.id] }))
+      setEquipementChamps(prev => [...prev, newChamp])
+      setNouveauChampPack({ nom: '', options: [] })
+      setOptionPackInput('')
+    }
   }
   const sauvegarderPack = async () => {
     if (!packForm.nom.trim() || packForm.champs_ids.length === 0) return
@@ -4896,11 +4889,6 @@ Règles :
                   <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Tailles déclarées par joueur/staff — {equipementChamps.length} champ(s) configuré(s).</p>
                   {canEditSection('inventaire') && (
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {PACKS_EQUIPEMENT.map(pack => (
-                        <button key={pack.id} onClick={() => ajouterPackEquipement(pack)} style={st.btnSecondary} title={pack.champs.map(c => c.nom).join(', ')}>
-                          + {pack.label}
-                        </button>
-                      ))}
                       <button onClick={() => setModaleChampOuverte(true)} style={st.btnSecondary}>+ Champ de taille</button>
                     </div>
                   )}
@@ -5302,6 +5290,31 @@ Règles :
                   </div>
                 )
               })}
+            </div>
+
+            <div style={{ borderTop: `1px solid ${colors.border.default}`, paddingTop: '14px', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Créer un nouveau champ</p>
+              <input placeholder="Nom du champ (ex : Coupe-vent)" value={nouveauChampPack.nom} onChange={e => setNouveauChampPack(p => ({ ...p, nom: e.target.value }))} style={{ ...st.input, marginBottom: '8px' }} />
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input placeholder="Ajouter une taille (ex : M)" value={optionPackInput}
+                  onChange={e => setOptionPackInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && optionPackInput.trim()) { setNouveauChampPack(p => ({ ...p, options: [...p.options, optionPackInput.trim()] })); setOptionPackInput('') } }}
+                  style={{ ...st.input, flex: 1 }} />
+                <button onClick={() => { if (optionPackInput.trim()) { setNouveauChampPack(p => ({ ...p, options: [...p.options, optionPackInput.trim()] })); setOptionPackInput('') } }} style={st.btnSecondary}>Ajouter</button>
+              </div>
+              {nouveauChampPack.options.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                  {nouveauChampPack.options.map((opt, i) => (
+                    <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '3px 10px', borderRadius: '6px', fontSize: '12px' }}>
+                      {opt} <button onClick={() => setNouveauChampPack(p => ({ ...p, options: p.options.filter((_, j) => j !== i) }))} style={{ background: 'none', border: 'none', color: colors.accent.green, opacity: 0.6, cursor: 'pointer', padding: 0, marginLeft: '4px' }}>✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <button onClick={ajouterChampAuPack} disabled={!nouveauChampPack.nom.trim() || nouveauChampPack.options.length === 0}
+                style={{ width: '100%', background: colors.background.raised, border: `1px dashed ${colors.border.default}`, color: colors.text.faint, padding: '9px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!nouveauChampPack.nom.trim() || nouveauChampPack.options.length === 0) ? 0.5 : 1 }}>
+                Créer ce champ et l'ajouter au pack
+              </button>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
