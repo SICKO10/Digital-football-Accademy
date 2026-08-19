@@ -436,18 +436,25 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
                 </div>
               ))}
             </div>
+            {/* Liste déroulante des prestations déjà utilisées sur d'autres niveaux de
+                ce club (niveaux_partenariat.contreparties, dédupliquées) — en choisir
+                une l'ajoute directement à ce niveau sans avoir à la retaper. Elle
+                reste disponible pour être réutilisée sur n'importe quel autre niveau
+                (retirée uniquement de CETTE liste tant qu'elle est déjà dans ce
+                niveau, jamais supprimée de la liste globale). */}
+            {suggestionsContreparties.filter(c => !contreparties.includes(c)).length > 0 && (
+              <select style={{ ...st.input, marginBottom: '8px' }} value=""
+                onChange={e => { if (e.target.value) { setContreparties(c => [...c, e.target.value]) } }}>
+                <option value="">— Choisir une prestation existante —</option>
+                {suggestionsContreparties.filter(c => !contreparties.includes(c)).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            )}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input style={st.input} placeholder="Ex: Logo sur maillot" value={nouvelleContrepartie} list="suggestions-contreparties"
+              <input style={st.input} placeholder="Ou saisir une nouvelle prestation" value={nouvelleContrepartie}
                 onChange={e => setNouvelleContrepartie(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); ajouterContrepartie() } }} />
               <button onClick={ajouterContrepartie} style={st.btnSecondary}>+ Ajouter</button>
             </div>
-            {/* Suggestions tirées des contreparties déjà saisies sur les autres niveaux
-                de ce club — s'enrichit naturellement avec le temps, sans table dédiée :
-                la liste vient directement de niveaux_partenariat.contreparties. */}
-            <datalist id="suggestions-contreparties">
-              {suggestionsContreparties.filter(c => !contreparties.includes(c)).map(c => <option key={c} value={c} />)}
-            </datalist>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -475,6 +482,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const [modalNiveau, setModalNiveau] = useState(null) // null | 'new' | niveau
   const [modalPaiement, setModalPaiement] = useState(null) // null | sponsor
   const [saving, setSaving] = useState(false)
+  const [triSponsors, setTriSponsors] = useState('defaut')
 
   const loadData = async () => {
     setLoading(true)
@@ -599,6 +607,25 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
   if (loading) return <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
 
+  // Tri/filtre appliqué uniquement à l'affichage de l'onglet "Sponsors" — ne
+  // touche ni les KPI ni le dashboard, calculés sur `sponsors` en entier.
+  const sponsorsAffiches = (() => {
+    if (triSponsors === 'date_fin') {
+      return [...sponsors].sort((a, b) => {
+        if (!a.date_fin) return 1
+        if (!b.date_fin) return -1
+        return new Date(a.date_fin) - new Date(b.date_fin)
+      })
+    }
+    if (triSponsors === 'montant') {
+      return [...sponsors].sort((a, b) => (Number(b.montant_contrat) || 0) - (Number(a.montant_contrat) || 0))
+    }
+    if (triSponsors === 'impayes') {
+      return sponsors.filter(s => getStatutPaiement(s).label !== 'Payé')
+    }
+    return sponsors
+  })()
+
   const alerts = getAlerts(sponsors)
   const budgetTotal = sponsors.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
   const encaisse = sponsors.reduce((s, sp) => s + getMontantRecu(sp), 0)
@@ -682,16 +709,30 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
       {vue === 'sponsors' && (
         <div>
-          {!readOnly && (
-            <button onClick={() => setModalSponsor('new')} style={{ ...st.btnSolid(accentColor), marginBottom: '1.25rem' }}>+ Nouveau sponsor</button>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1.25rem' }}>
+            {!readOnly ? (
+              <button onClick={() => setModalSponsor('new')} style={st.btnSolid(accentColor)}>+ Nouveau sponsor</button>
+            ) : <span />}
+            {sponsors.length > 0 && (
+              <select style={{ ...st.input, width: 'auto' }} value={triSponsors} onChange={e => setTriSponsors(e.target.value)}>
+                <option value="defaut">Trier / filtrer</option>
+                <option value="date_fin">Date de fin de contrat</option>
+                <option value="montant">Sponsor le plus élevé</option>
+                <option value="impayes">Impayés</option>
+              </select>
+            )}
+          </div>
           {sponsors.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
               Aucun sponsor pour la saison {saisonActive}. Clique sur "+ Nouveau sponsor" pour commencer.
             </div>
+          ) : sponsorsAffiches.length === 0 ? (
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+              Aucun sponsor impayé — tout est à jour 🎉
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {sponsors.map(s => (
+              {sponsorsAffiches.map(s => (
                 <SponsorCard key={s.id} sponsor={s}
                   onEdit={setModalSponsor}
                   onDelete={supprimerSponsor}
