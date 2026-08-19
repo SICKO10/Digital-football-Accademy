@@ -37,7 +37,9 @@ Palier sélectionné : ${palier.label} — ${prix}
 
 Une fois le paiement effectué, vous recevrez automatiquement un email pour créer votre compte et accéder à votre espace club Digital Football.
 
-N'hésitez pas à nous contacter si vous avez la moindre question.
+Nous proposons également un accompagnement personnalisé pour vous aider à configurer votre dashboard selon les besoins spécifiques de votre club : import de l'effectif, paramétrage des équipes, formation à l'outil.
+
+Si vous souhaitez bénéficier de cet accompagnement, répondez simplement à ce mail en nous indiquant vos disponibilités et nous organiserons un rendez-vous à votre convenance.
 
 L'équipe Digital Football`
     : `Bonjour ${demande.prenom},
