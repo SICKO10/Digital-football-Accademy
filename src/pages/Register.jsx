@@ -287,7 +287,19 @@ export default function Register() {
               style={{ background: colors.background.surface, border: '1px solid #1f1f1f', borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
           </div>
 
-          {profilChoisi.stripeMensuel && (
+          {/* Club (palier présélectionné via l'URL) : palier + cycle déjà fixés par le
+              lien d'inscription envoyé (cf. EmailBlockClub) — pas de toggle 10€/100€
+              qui n'a aucun rapport avec le prix réel, juste un récapitulatif en lecture
+              seule. cycle reste passé silencieusement à inscrire() via le state déjà
+              initialisé depuis l'URL (searchParams.get('cycle')). */}
+          {profilChoisi.id === 'club' && palierClub ? (
+            <div style={{ background: profilChoisi.color + '10', border: `1px solid ${profilChoisi.color}30`, borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: profilChoisi.color }}>Abonnement Club — {palierClub.label}</p>
+              <p style={{ margin: '4px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>
+                {cycle === 'annuel' ? palierClub.annuelPrix : palierClub.mensuelPrix}
+              </p>
+            </div>
+          ) : profilChoisi.stripeMensuel && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
               {[
                 { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: '10€/mois', desc: t('reginsc_cycle_mensuel_desc', lang) },
@@ -337,7 +349,9 @@ export default function Register() {
           )}
           {profilChoisi.id === 'club' && (
             <div style={{ background: '#a78bfa10', border: '1px solid #a78bfa25', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
-              <p style={{ fontSize: '12px', color: colors.accent.purpleLight, margin: 0, lineHeight: 1.6 }}>{t('reginsc_club_info', lang)}</p>
+              <p style={{ fontSize: '12px', color: colors.accent.purpleLight, margin: 0, lineHeight: 1.6 }}>
+                {palierClub ? t('reginsc_club_palier_info', lang) : t('reginsc_club_info', lang)}
+              </p>
             </div>
           )}
 
