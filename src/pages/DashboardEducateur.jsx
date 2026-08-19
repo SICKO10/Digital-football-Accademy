@@ -7825,14 +7825,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'dirigeants' && (
-          <div style={{ maxWidth: 700 }}>
+          <div style={{ maxWidth: 1100 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>👔 {t('dir_titre', lang)}</h2>
             <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 24 }}>
               {t('dir_invite_desc', lang)}
             </p>
 
-            {/* Formulaire invitation */}
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+            {/* Formulaire invitation — largeur propre, plus étroite que le
+                conteneur : un input email + des lignes de permissions restent
+                lisibles, pas besoin de s'étirer sur toute la page. */}
+            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
               <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
               <input
                 value={newDirigeantEmail}
@@ -7877,9 +7879,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               </button>
             </div>
 
-            {/* Liste dirigeants existants */}
+            {/* Liste dirigeants existants — grille plutôt qu'une colonne unique,
+                pour remplir l'espace gagné sur la largeur du conteneur. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
             {dirigeants.map(d => (
-              <div key={d.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+              <div key={d.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
@@ -7939,6 +7943,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 )}
               </div>
             ))}
+            </div>
           </div>
         )}
 
