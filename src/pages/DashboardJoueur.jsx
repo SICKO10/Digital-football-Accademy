@@ -100,6 +100,11 @@ const IconBadge = () => (
     <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
   </svg>
 )
+const IconShirt = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 3l5 4-3 3-2-2v12a1 1 0 01-1 1H9a1 1 0 01-1-1V8l-2 2-3-3 5-4a4 4 0 008 0z"/>
+  </svg>
+)
 const IconBuilding = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/>
@@ -1677,6 +1682,7 @@ function DashboardJoueur() {
       { id: 'recruteurs',    label: t('jnav_recruteurs', lang),     icon: <IconMessage />, locked: true },
 
       { id: 'profil',        label: t('jnav_profil', lang),         icon: <IconUser />, section: t('section_compte', lang) },
+      { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
     ]
 
     return (
@@ -2384,6 +2390,56 @@ function DashboardJoueur() {
             </div>
           )}
           {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} />}
+          {onglet === 'equipement' && (
+            <div>
+              <h2 style={{ color: colors.text.primary, fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>Mon équipement</h2>
+
+              {equipementPret && (
+                <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15 }}>Ton équipement est prêt !</p>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
+                    {equipementPret.jours || 'Passe le récupérer auprès du club'}
+                    {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
+                  </p>
+                  <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
+                </div>
+              )}
+
+              {!packAttribue ? (
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
+                  <p style={{ color: colors.text.faint, fontSize: 14 }}>Aucun pack ne t'a encore été attribué. Ton club te l'assignera prochainement.</p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '18px 22px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>{packAttribue.icone}</span>
+                    <div>
+                      <p style={{ margin: 0, color: colors.accent.green, fontWeight: 700, fontSize: 15 }}>{packAttribue.nom}</p>
+                      <p style={{ margin: 0, color: colors.text.faint, fontSize: 12 }}>{champsEquipement.length} article{champsEquipement.length > 1 ? 's' : ''} à renseigner</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {champsEquipement.map(c => {
+                      const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
+                      return (
+                        <div key={c.id}>
+                          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {c.options.map(o => (
+                              <button key={o} onClick={() => sauvegarderMaTaille(c.id, o)}
+                                style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                {o}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           {onglet === 'analyses' && <UpgradeCard titre={t('aff_analyse_video_titre', lang)} texte={t('aff_analyse_video_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
           {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
           {onglet === 'recruteurs' && <UpgradeCard titre={t('aff_messagerie_recruteurs_titre', lang)} texte={t('aff_messagerie_recruteurs_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
@@ -2859,47 +2915,6 @@ function DashboardJoueur() {
                 </div>
               )
             })()}
-
-            {/* ÉQUIPEMENT PRÊT — notification "à récupérer" laissée par le club
-                (equipement_commandes.statut='pret'), disparaît une fois récupéré */}
-            {equipementPret && (
-              <div style={{ background: 'linear-gradient(135deg, #1a1200 0%, #111 100%)', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>👕 Ton équipement est prêt !</div>
-                <div style={{ color: colors.text.faint, fontSize: 13, marginBottom: 16 }}>
-                  {equipementPret.jours || 'Passe le récupérer auprès du club'}
-                  {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
-                </div>
-                <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
-              </div>
-            )}
-
-            {/* MON ÉQUIPEMENT — champs du pack attribué à ce joueur par le club
-                (equipement_attributions → equipement_packs.champs_ids), pas tous
-                les champs du club (qui peuvent appartenir à d'autres packs). */}
-            {champsEquipement.length > 0 && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15, color: '#fff' }}>Mon équipement — {packAttribue?.icone} {packAttribue?.nom}</p>
-                <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {champsEquipement.map(c => {
-                    const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
-                    return (
-                      <div key={c.id}>
-                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {c.options.map(o => (
-                            <button key={o} onClick={() => sauvegarderMaTaille(c.id, o)}
-                              style={{ background: valeur === o ? colors.accent.green : '#1a1a1a', color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                              {o}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
                 section : mêmes événements, boutons de présence en plus) au lieu de deux
