@@ -933,7 +933,7 @@ export default function DashboardClub() {
   const [equipementTailles, setEquipementTailles] = useState([])
   const [equipementCommandes, setEquipementCommandes] = useState([])
   const [modaleChampOuverte, setModaleChampOuverte] = useState(false)
-  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: 'XS, S, M, L, XL, XXL', cible: 'les deux' })
+  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: '', cible: 'les deux' })
   const [modalePreparation, setModalePreparation] = useState(null) // { userId, nom, items: [{champ_id, champ_nom, valeur}], jours, heure_debut, heure_fin }
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
@@ -955,6 +955,7 @@ export default function DashboardClub() {
   const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
   const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
   const [nouveauChampNom, setNouveauChampNom] = useState('')
+  const [nouveauChampOptions, setNouveauChampOptions] = useState('')
   const [creationChampLoading, setCreationChampLoading] = useState(false)
   const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
@@ -1198,7 +1199,7 @@ export default function DashboardClub() {
     const options = nouveauChamp.options.split(',').map(o => o.trim()).filter(Boolean)
     if (options.length === 0) return
     await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, cible: nouveauChamp.cible, ordre: equipementChamps.length })
-    setNouveauChamp({ nom: '', options: 'XS, S, M, L, XL, XXL', cible: 'les deux' })
+    setNouveauChamp({ nom: '', options: '', cible: 'les deux' })
     setModaleChampOuverte(false)
     chargerInventaire(clubId)
   }
@@ -1209,21 +1210,24 @@ export default function DashboardClub() {
     setPackEnEdition(null)
     setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
     setNouveauChampNom('')
+    setNouveauChampOptions('')
     setModalPack(true)
   }
   const ouvrirEditionPack = (pack) => {
     setPackEnEdition(pack)
     setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
     setNouveauChampNom('')
+    setNouveauChampOptions('')
     setModalPack(true)
   }
   // Créer un champ à la volée depuis la modale pack, et l'ajouter directement
   // à la sélection en cours — évite l'aller-retour "fermer la modale pack →
-  // créer le champ ailleurs → rouvrir la modale pack pour le cocher". Tailles
-  // par défaut (XS→XXL, comme "+ Champ de taille") plutôt qu'un champ sans
-  // options : sans ça, personne ne pourrait choisir de taille pour lui ensuite.
+  // créer le champ ailleurs → rouvrir la modale pack pour le cocher". Pas de
+  // tailles par défaut imposées : chaque club définit ses propres champs et
+  // ses propres options, rien de préréglé côté plateforme.
   const ajouterNouveauChamp = async () => {
-    if (!nouveauChampNom.trim()) return
+    const options = nouveauChampOptions.split(',').map(o => o.trim()).filter(Boolean)
+    if (!nouveauChampNom.trim() || options.length === 0) return
     setCreationChampLoading(true)
     // equipement_champs.cible n'accepte que joueur/educateur/les deux — la
     // cible d'un pack peut être plus large (ex: 'dirigeant', une simple
@@ -1233,7 +1237,7 @@ export default function DashboardClub() {
       club_id: clubId,
       nom: nouveauChampNom.trim(),
       cible: cibleChamp,
-      options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+      options,
       ordre: equipementChamps.length,
       actif: true,
     }).select().single()
@@ -1241,6 +1245,7 @@ export default function DashboardClub() {
       setPackForm(p => ({ ...p, champs_ids: [...p.champs_ids, newChamp.id] }))
       setEquipementChamps(prev => [...prev, newChamp])
       setNouveauChampNom('')
+      setNouveauChampOptions('')
     }
     setCreationChampLoading(false)
   }
@@ -5218,7 +5223,7 @@ Règles :
               ))}
             </div>
             <label style={st.label}>Options (séparées par des virgules)</label>
-            <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} style={{ ...st.input, marginBottom: '16px' }} />
+            <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} placeholder="Ex : XS, S, M, L, XL, XXL" style={{ ...st.input, marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModaleChampOuverte(false)} style={st.btnSecondary}>Annuler</button>
               <button onClick={ajouterChampEquipement} style={st.btnSolid}>Ajouter</button>
@@ -5330,16 +5335,17 @@ Règles :
 
             <div style={{ borderTop: `1px solid ${colors.border.default}`, paddingTop: '14px', marginBottom: '20px' }}>
               <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Créer un nouveau champ</p>
+              <input placeholder="Nom du champ (ex : Kway, Sac, Parka...)" value={nouveauChampNom} onChange={e => setNouveauChampNom(e.target.value)} style={{ ...st.input, marginBottom: '8px' }} />
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input placeholder="Nom du champ (ex : Kway, Sac, Parka...)" value={nouveauChampNom}
-                  onChange={e => setNouveauChampNom(e.target.value)}
+                <input placeholder="Options (ex : XS, S, M, L, XL)" value={nouveauChampOptions}
+                  onChange={e => setNouveauChampOptions(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && ajouterNouveauChamp()}
                   style={{ ...st.input, flex: 1 }} />
-                <button onClick={ajouterNouveauChamp} disabled={!nouveauChampNom.trim() || creationChampLoading} style={{ ...st.btnSolid, opacity: (!nouveauChampNom.trim() || creationChampLoading) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                <button onClick={ajouterNouveauChamp} disabled={!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading} style={{ ...st.btnSolid, opacity: (!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
                   {creationChampLoading ? '...' : 'Ajouter'}
                 </button>
               </div>
-              <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Le champ sera créé (tailles XS à XXL) et ajouté automatiquement à ce pack.</p>
+              <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Le champ sera créé avec ces options et ajouté automatiquement à ce pack.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
