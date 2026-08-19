@@ -873,6 +873,7 @@ export default function DashboardClub() {
   const [organigramme, setOrganigramme] = useState([])
   const [parentsClub, setParentsClub] = useState([])
   const [parentsSearchQuery, setParentsSearchQuery] = useState('')
+  const [parentDetail, setParentDetail] = useState(null)
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
@@ -4720,22 +4721,51 @@ Règles :
                   return <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent ne correspond à cette recherche.</p>
                 }
                 return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                   {parentsFiltres.map(p => (
-                    <div key={p.id} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr 1.2fr 1fr 1fr', gap: '10px', alignItems: 'center', background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '10px', padding: '14px' }}>
-                      <div>
-                        <p style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
-                        <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>Parent de {p.joueur?.prenom} {p.joueur?.nom}</p>
+                    <div key={p.id} style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
+                        {p.prenom?.[0]}{p.nom?.[0]}
                       </div>
-                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>{p.telephone || '—'}</p>
-                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email || '—'}</p>
-                      <p style={{ color: colors.accent.green, fontSize: '13px', margin: 0 }}>{p.profession || '—'}</p>
-                      <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>{p.joueur?.categorie || p.joueur?.niveau_equipe || '—'}</p>
+                      <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
+                      {p.profession && <p style={{ color: colors.text.faint, fontSize: '11px', margin: '2px 0 0' }}>{p.profession}</p>}
+                      <p style={{ color: colors.text.faint, fontSize: '11px', margin: '6px 0 0', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
+                        Parent de {p.joueur?.prenom} {p.joueur?.nom} · {p.joueur?.categorie || p.joueur?.niveau_equipe || '—'}
+                      </p>
+                      <button onClick={() => setParentDetail(p)} style={{ width: '100%', marginTop: '10px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '7px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        Voir les infos
+                      </button>
                     </div>
                   ))}
                 </div>
                 )
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* ── Modale détail parent ── */}
+        {parentDetail && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ ...st.card, width: '100%', maxWidth: '400px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{parentDetail.prenom} {parentDetail.nom}</p>
+                <button onClick={() => setParentDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { label: 'Profession', val: parentDetail.profession },
+                  { label: 'Email', val: parentDetail.email },
+                  { label: 'Téléphone', val: parentDetail.telephone },
+                  { label: 'Enfant', val: `${parentDetail.joueur?.prenom || ''} ${parentDetail.joueur?.nom || ''}`.trim() },
+                  { label: 'Catégorie', val: parentDetail.joueur?.categorie || parentDetail.joueur?.niveau_equipe },
+                ].map(({ label, val }) => val && (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${colors.border.default}` }}>
+                    <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+                    <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{val}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
