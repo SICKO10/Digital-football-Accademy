@@ -1487,7 +1487,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   const [monMateriel, setMonMateriel] = useState([]) // materiel_distribution où educateur_id = userId
-  useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) chargerMonMateriel() }, [activeSection, clubAffiliation])
+  const [champsEquipementEduc, setChampsEquipementEduc] = useState([])
+  const [mesTaillesEduc, setMesTaillesEduc] = useState([])
+  const [equipementPretEduc, setEquipementPretEduc] = useState(null) // ligne equipement_commandes si statut='pret'
+  useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
   const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
@@ -3788,6 +3791,39 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     setMonMateriel(prev => prev.map(d => d.id === distId ? { ...d, statut: 'remise_demandee' } : d))
   }
 
+  // Tailles équipement (equipement_champs/tailles) côté éducateur — mêmes
+  // tables que DashboardJoueur.jsx, filtrées sur cible 'educateur'/'les deux'.
+  const chargerMesTaillesEquipementEduc = async () => {
+    const [{ data: champs }, { data: tailles }, { data: commande }] = await Promise.all([
+      supabase.from('equipement_champs').select('*').eq('club_id', clubAffiliation.club_id).eq('actif', true).in('cible', ['educateur', 'les deux']).order('ordre'),
+      supabase.from('equipement_tailles').select('*').eq('user_id', userId),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', userId).eq('statut', 'pret').maybeSingle(),
+    ])
+    setChampsEquipementEduc(champs || [])
+    setMesTaillesEduc(tailles || [])
+    setEquipementPretEduc(commande || null)
+  }
+
+  const sauvegarderMaTailleEduc = async (champId, valeur) => {
+    await supabase.from('equipement_tailles').upsert(
+      { user_id: userId, club_id: clubAffiliation.club_id, champ_id: champId, valeur, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id, champ_id' }
+    )
+    setMesTaillesEduc(prev => {
+      const idx = prev.findIndex(t => t.champ_id === champId)
+      if (idx === -1) return [...prev, { user_id: userId, club_id: clubAffiliation.club_id, champ_id: champId, valeur }]
+      const next = [...prev]
+      next[idx] = { ...next[idx], valeur }
+      return next
+    })
+  }
+
+  const marquerEquipementRecupereEduc = async () => {
+    if (!equipementPretEduc) return
+    await supabase.from('equipement_commandes').update({ statut: 'recupere' }).eq('id', equipementPretEduc.id)
+    setEquipementPretEduc(null)
+  }
+
   return (
     <>
     {toastMsg && (
@@ -5808,7 +5844,46 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
             {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
               <p style={{ color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
-            ) : monMateriel.length === 0 ? (
+            ) : (
+              <>
+              {equipementPretEduc && (
+                <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>👕 Ton équipement est prêt !</p>
+                  <p style={{ margin: '0 0 12px', fontSize: '13px', color: colors.text.faint }}>
+                    {equipementPretEduc.jours || 'Passe le récupérer auprès du club'}
+                    {equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}
+                  </p>
+                  <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
+                </div>
+              )}
+
+              {champsEquipementEduc.length > 0 && (
+                <div style={{ ...st.card, marginBottom: '20px' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>📏 Mes tailles</p>
+                  <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {champsEquipementEduc.map(c => {
+                      const valeur = mesTaillesEduc.find(t => t.champ_id === c.id)?.valeur || ''
+                      return (
+                        <div key={c.id}>
+                          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {c.options.map(o => (
+                              <button key={o} onClick={() => sauvegarderMaTailleEduc(c.id, o)}
+                                style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                {o}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              </>
+            )}
+            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? null : monMateriel.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun matériel confié pour l'instant.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

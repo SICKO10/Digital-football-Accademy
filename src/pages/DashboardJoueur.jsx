@@ -785,7 +785,7 @@ function DashboardJoueur() {
     if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); return }
     setClubIdInventaire(ce.club_id)
     const [{ data: champs }, { data: tailles }, { data: commande }] = await Promise.all([
-      supabase.from('equipement_champs').select('*').eq('club_id', ce.club_id).eq('actif', true).order('ordre'),
+      supabase.from('equipement_champs').select('*').eq('club_id', ce.club_id).eq('actif', true).in('cible', ['joueur', 'les deux']).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
       supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
     ])

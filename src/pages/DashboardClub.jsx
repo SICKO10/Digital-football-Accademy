@@ -926,7 +926,7 @@ export default function DashboardClub() {
   const [equipementTailles, setEquipementTailles] = useState([])
   const [equipementCommandes, setEquipementCommandes] = useState([])
   const [modaleChampOuverte, setModaleChampOuverte] = useState(false)
-  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: 'XS, S, M, L, XL, XXL' })
+  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: 'XS, S, M, L, XL, XXL', cible: 'les deux' })
   const [modalePreparation, setModalePreparation] = useState(null) // { userId, nom, items: [{champ_id, champ_nom, valeur}], jours, heure_debut, heure_fin }
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
@@ -1163,8 +1163,8 @@ export default function DashboardClub() {
     if (!nom) return
     const options = nouveauChamp.options.split(',').map(o => o.trim()).filter(Boolean)
     if (options.length === 0) return
-    await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, ordre: equipementChamps.length })
-    setNouveauChamp({ nom: '', options: 'XS, S, M, L, XL, XXL' })
+    await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, cible: nouveauChamp.cible, ordre: equipementChamps.length })
+    setNouveauChamp({ nom: '', options: 'XS, S, M, L, XL, XXL', cible: 'les deux' })
     setModaleChampOuverte(false)
     chargerInventaire(clubId)
   }
@@ -4642,9 +4642,13 @@ Règles :
 
         {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
           const personnes = [
-            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '' })),
-            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role) })),
+            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '', type: 'joueur' })),
+            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur' })),
           ]
+          // Un champ 'joueur'/'educateur' ne concerne qu'un des deux publics —
+          // colonne masquée (pas juste vide) pour la personne non concernée,
+          // plutôt qu'une matrice pleine de "—" hors-sujet.
+          const champConcerne = (champ, personne) => champ.cible === 'les deux' || champ.cible === personne.type
           const STATUT_DISTRIB = {
             distribue:        { label: 'Distribué',        color: colors.accent.blue },
             remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber },
@@ -4673,7 +4677,12 @@ Règles :
                       <thead>
                         <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
                           <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Personne</th>
-                          {equipementChamps.map(c => <th key={c.id} style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>{c.nom}{canEditSection('inventaire') && <button onClick={() => supprimerChampEquipement(c.id)} style={{ marginLeft: '6px', background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '11px' }}>✕</button>}</th>)}
+                          {equipementChamps.map(c => (
+                            <th key={c.id} style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>
+                              {c.nom} <span style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 400 }}>({c.cible === 'les deux' ? 'tous' : c.cible === 'joueur' ? 'joueurs' : 'éducateurs'})</span>
+                              {canEditSection('inventaire') && <button onClick={() => supprimerChampEquipement(c.id)} style={{ marginLeft: '6px', background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '11px' }}>✕</button>}
+                            </th>
+                          ))}
                           {canEditSection('inventaire') && <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Statut</th>}
                         </tr>
                       </thead>
@@ -4687,6 +4696,7 @@ Règles :
                               {p.sousLabel && <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{p.sousLabel}</p>}
                             </td>
                             {equipementChamps.map(c => {
+                              if (!champConcerne(c, p)) return <td key={c.id} style={{ padding: '8px', color: colors.text.faint }}>·</td>
                               const valeur = equipementTailles.find(t => t.user_id === p.id && t.champ_id === c.id)?.valeur || ''
                               return (
                                 <td key={c.id} style={{ padding: '8px' }}>
@@ -4822,6 +4832,19 @@ Règles :
             <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '15px' }}>Nouveau champ de taille</p>
             <label style={st.label}>Nom (ex : Survêtement)</label>
             <input value={nouveauChamp.nom} onChange={e => setNouveauChamp(f => ({ ...f, nom: e.target.value }))} style={{ ...st.input, marginBottom: '12px' }} />
+            <label style={st.label}>Pour qui ?</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              {[
+                { val: 'joueur', label: '⚽ Joueurs' },
+                { val: 'educateur', label: '📋 Éducateurs' },
+                { val: 'les deux', label: '👥 Les deux' },
+              ].map(opt => (
+                <button key={opt.val} type="button" onClick={() => setNouveauChamp(f => ({ ...f, cible: opt.val }))}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${nouveauChamp.cible === opt.val ? colors.accent.green : colors.border.default}`, background: nouveauChamp.cible === opt.val ? colors.accent.green + alpha.subtle : colors.background.raised, color: nouveauChamp.cible === opt.val ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <label style={st.label}>Options (séparées par des virgules)</label>
             <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} style={{ ...st.input, marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
