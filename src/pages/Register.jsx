@@ -126,7 +126,12 @@ export default function Register() {
     if (profilChoisi.stripeMensuel) {
       const lien = cycle === 'annuel' ? profilChoisi.stripeAnnuel : profilChoisi.stripeMensuel
       window.open(stripeUrl(lien, userId, email), '_blank')
-      navigate('/login')
+      // signUp() ne garantit pas de session active (même problème résolu dans
+      // AcceptInvite.jsx après création de compte) — reconnexion explicite
+      // avec le mot de passe qu'on vient de saisir, pour atterrir directement
+      // sur le dashboard déjà connecté plutôt que de repasser par /login.
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+      navigate(signInErr ? '/login' : '/dashboard')
     } else {
       navigate('/dashboard')
     }
