@@ -968,6 +968,7 @@ export default function DashboardClub() {
   const [modalPack, setModalPack] = useState(false)
   const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
   const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+  const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
   const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
   // Événements & Projets (onglet Administratif)
@@ -1247,7 +1248,13 @@ export default function DashboardClub() {
   const supprimerPack = async (packId) => {
     await supabase.from('equipement_packs').delete().eq('id', packId)
     setModalPack(false)
+    setPackMenuOuvert(null)
     chargerInventaire(clubId)
+  }
+  const supprimerPackDepuisMenu = (pack) => {
+    setPackMenuOuvert(null)
+    if (!confirm(`Supprimer le pack "${pack.nom}" ? Les champs qu'il contient ne seront pas supprimés.`)) return
+    supprimerPack(pack.id)
   }
 
   const supprimerChampEquipement = async (champId) => {
@@ -4789,10 +4796,13 @@ Règles :
           // colonne masquée (pas juste vide) pour la personne non concernée,
           // plutôt qu'une matrice pleine de "—" hors-sujet.
           const champConcerne = (champ, personne) => champ.cible === 'les deux' || champ.cible === personne.type
-          // Catégories des joueurs uniquement — le staff (categorie=null) reste
+          // Catégories réellement configurées par le club (club_categories), pas
+          // seulement celles qui ont déjà un joueur affecté dans equipe_joueurs —
+          // sinon une catégorie fraîchement créée (ex: U20) sans joueur assigné
+          // n'apparaîtrait jamais dans le filtre. Le staff (categorie=null) reste
           // toujours affiché quel que soit le filtre, une catégorie d'équipe
           // n'ayant pas de sens pour lui.
-          const categoriesDisponibles = [...new Set(joueursInventaire.map(j => j.categorie).filter(Boolean))].sort()
+          const categoriesDisponibles = [...new Set(categories.map(c => c.nom).filter(Boolean))].sort()
           const personnesFiltrees = filtreCategorieEquipement === 'tous' ? personnes : personnes.filter(p => p.categorie === null || p.categorie === filtreCategorieEquipement)
           const STATUT_DISTRIB = {
             distribue:        { label: 'Distribué',        color: colors.accent.blue },
@@ -4827,12 +4837,21 @@ Règles :
                 {(equipementPacks.length > 0 || canEditSection('inventaire')) && (
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
                     {equipementPacks.map(pack => (
-                      <div key={pack.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: `1px solid ${pack.couleur}40`, borderRadius: '8px', padding: '6px 10px' }}>
+                      <div key={pack.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: `1px solid ${pack.couleur}40`, borderRadius: '8px', padding: '6px 10px' }}>
                         <span style={{ fontSize: '14px' }}>{pack.icone}</span>
                         <span style={{ color: pack.couleur, fontSize: '12px', fontWeight: 600 }}>{pack.nom}</span>
                         <span style={{ color: colors.text.faint, fontSize: '11px' }}>({pack.champs_ids.length})</span>
                         {canEditSection('inventaire') && (
-                          <button onClick={() => ouvrirEditionPack(pack)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', padding: '0 2px' }}>✏️</button>
+                          <button onClick={() => setPackMenuOuvert(packMenuOuvert === pack.id ? null : pack.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '13px', cursor: 'pointer', padding: '0 2px', fontWeight: 700 }}>⋮</button>
+                        )}
+                        {packMenuOuvert === pack.id && (
+                          <>
+                            <div onClick={() => setPackMenuOuvert(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', zIndex: 11, minWidth: '140px', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+                              <button onClick={() => { setPackMenuOuvert(null); ouvrirEditionPack(pack) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '12px', padding: '9px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Modifier</button>
+                              <button onClick={() => supprimerPackDepuisMenu(pack)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: `1px solid ${colors.border.default}`, color: colors.accent.red, fontSize: '12px', padding: '9px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Supprimer</button>
+                            </div>
+                          </>
                         )}
                       </div>
                     ))}
