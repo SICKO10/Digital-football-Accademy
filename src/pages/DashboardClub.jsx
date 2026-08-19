@@ -966,6 +966,9 @@ export default function DashboardClub() {
   const [articleAjoutForm, setArticleAjoutForm] = useState({ catalogue_id: '', quantite: 1 })
   const [modalCatalogue, setModalCatalogue] = useState(false)
   const [nouvelArticleCatalogue, setNouvelArticleCatalogue] = useState({ categorie: '', nom: '', unite: 'unité' })
+  const [categorieEstNouvelle, setCategorieEstNouvelle] = useState(false)
+  const [rechercheArticle, setRechercheArticle] = useState('')
+  const [showSuggestionsArticle, setShowSuggestionsArticle] = useState(false)
   // Packs équipement configurables — regroupements nommés de champs déjà créés
   // (distinct des boutons "Pack Joueur/Éducateur" qui, eux, créent les champs).
   const [equipementPacks, setEquipementPacks] = useState([])
@@ -1182,12 +1185,13 @@ export default function DashboardClub() {
   const chargerInventaire = async (uid) => {
     const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
-    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: stock }, { data: distribution }, { data: packs }] = await Promise.all([
+    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: masque }, { data: stock }, { data: distribution }, { data: packs }] = await Promise.all([
       educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('club_id', uid),
       supabase.from('equipement_commandes').select('*').eq('club_id', uid),
       supabase.from('materiel_catalogue').select('*').eq('actif', true).or(`club_id.is.null,club_id.eq.${uid}`).order('categorie').order('nom'),
+      supabase.from('materiel_catalogue_masque').select('catalogue_id').eq('club_id', uid),
       supabase.from('materiel_stock').select('*').eq('club_id', uid),
       supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
       supabase.from('equipement_packs').select('*').eq('club_id', uid).eq('actif', true).order('created_at'),
@@ -1196,7 +1200,11 @@ export default function DashboardClub() {
     setEquipementChamps(champs || [])
     setEquipementTailles(tailles || [])
     setEquipementCommandes(commandes || [])
-    setMaterielCatalogue(catalogue || [])
+    // Articles globaux masqués par ce club (materiel_catalogue_masque) — retirés
+    // ici une bonne fois pour toutes plutôt que filtrés à chaque endroit qui lit
+    // materielCatalogue (stock, recherche de distribution, modale catalogue...).
+    const idsMasques = new Set((masque || []).map(m => m.catalogue_id))
+    setMaterielCatalogue((catalogue || []).filter(c => !idsMasques.has(c.id)))
     setMaterielStock(stock || [])
     setMaterielDistribution(distribution || [])
     setEquipementPacks(packs || [])
@@ -1353,6 +1361,7 @@ export default function DashboardClub() {
       return [...prev, { catalogue_id: item.id, nom: item.nom, categorie: item.categorie, unite: item.unite, quantite }]
     })
     setArticleAjoutForm({ catalogue_id: '', quantite: 1 })
+    setRechercheArticle('')
   }
 
   const retirerDuPanierMateriel = (catalogueId) => {
@@ -1411,13 +1420,22 @@ export default function DashboardClub() {
       actif: true,
     })
     setNouvelArticleCatalogue({ categorie: '', nom: '', unite: 'unité' })
+    setCategorieEstNouvelle(false)
     chargerInventaire(clubId)
   }
 
-  // Désactivé plutôt que supprimé pour ne pas casser les distributions déjà
-  // enregistrées qui référencent cet article (catalogue_id).
-  const desactiverArticleCatalogue = async (id) => {
-    await supabase.from('materiel_catalogue').update({ actif: false }).eq('id', id).eq('club_id', clubId)
+  // Retirer un article : "actif: false" pour un article personnalisé de ce
+  // club (sa propre ligne, sans impact ailleurs), ou une ligne de masquage
+  // pour un article global (club_id NULL, partagé par tous les clubs — le
+  // désactiver directement le masquerait pour tout le monde, pas seulement
+  // ce club). Dans les deux cas la donnée reste intacte pour l'historique
+  // des distributions déjà enregistrées.
+  const retirerArticleCatalogue = async (item) => {
+    if (item.club_id) {
+      await supabase.from('materiel_catalogue').update({ actif: false }).eq('id', item.id).eq('club_id', clubId)
+    } else {
+      await supabase.from('materiel_catalogue_masque').insert({ club_id: clubId, catalogue_id: item.id })
+    }
     chargerInventaire(clubId)
   }
 
@@ -5058,16 +5076,32 @@ Règles :
                       </div>
 
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
-                        <div>
+                        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '200px' }}>
                           <label style={st.label}>Article</label>
-                          <select value={articleAjoutForm.catalogue_id} onChange={e => setArticleAjoutForm(f => ({ ...f, catalogue_id: e.target.value }))} style={{ ...st.input, width: 'auto', minWidth: '200px' }}>
-                            <option value="">Choisir...</option>
-                            {Object.entries(materielCatalogue.reduce((acc, item) => { (acc[item.categorie] ||= []).push(item); return acc }, {})).map(([cat, items]) => (
-                              <optgroup key={cat} label={cat}>
-                                {items.map(item => <option key={item.id} value={item.id}>{item.nom} ({item.unite})</option>)}
-                              </optgroup>
-                            ))}
-                          </select>
+                          <input
+                            placeholder="Rechercher un article..."
+                            value={rechercheArticle}
+                            onChange={e => { setRechercheArticle(e.target.value); setShowSuggestionsArticle(true); setArticleAjoutForm(f => ({ ...f, catalogue_id: '' })) }}
+                            onFocus={() => setShowSuggestionsArticle(true)}
+                            onBlur={() => setTimeout(() => setShowSuggestionsArticle(false), 150)}
+                            style={{ ...st.input, border: articleAjoutForm.catalogue_id ? `1px solid ${colors.accent.green}` : st.input.border }}
+                          />
+                          {showSuggestionsArticle && rechercheArticle.length >= 1 && (() => {
+                            const suggestions = materielCatalogue.filter(c => c.nom.toLowerCase().includes(rechercheArticle.toLowerCase()) || c.categorie.toLowerCase().includes(rechercheArticle.toLowerCase())).slice(0, 10)
+                            if (suggestions.length === 0) return null
+                            return (
+                              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', zIndex: 100, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
+                                {suggestions.map(item => (
+                                  <div key={item.id}
+                                    onMouseDown={() => { setArticleAjoutForm(f => ({ ...f, catalogue_id: item.id })); setRechercheArticle(item.nom); setShowSuggestionsArticle(false) }}
+                                    style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.default}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{item.nom}</span>
+                                    <span style={{ color: colors.text.faint, fontSize: '11px' }}>{item.categorie} · {item.unite}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          })()}
                         </div>
                         <div>
                           <label style={st.label}>Quantité</label>
@@ -5179,18 +5213,32 @@ Règles :
               <button onClick={() => setModalCatalogue(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
+            {(() => {
+              const categoriesExistantes = [...new Set(materielCatalogue.map(c => c.categorie))].sort()
+              return (
             <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
               <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Ajouter un article</p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <input placeholder="Catégorie (ex : Ballons)" value={nouvelArticleCatalogue.categorie} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, categorie: e.target.value }))} style={{ ...st.input, flex: '1 1 160px' }} />
+                <select value={categorieEstNouvelle ? '__new__' : nouvelArticleCatalogue.categorie}
+                  onChange={e => { if (e.target.value === '__new__') { setCategorieEstNouvelle(true); setNouvelArticleCatalogue(p => ({ ...p, categorie: '' })) } else { setCategorieEstNouvelle(false); setNouvelArticleCatalogue(p => ({ ...p, categorie: e.target.value })) } }}
+                  style={{ ...st.input, flex: '1 1 160px' }}>
+                  <option value="">Sélectionner une catégorie</option>
+                  {categoriesExistantes.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  <option value="__new__">+ Nouvelle catégorie</option>
+                </select>
                 <input placeholder="Unité (ex : unité, lot de 10)" value={nouvelArticleCatalogue.unite} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, unite: e.target.value }))} style={{ ...st.input, flex: '1 1 160px' }} />
               </div>
+              {categorieEstNouvelle && (
+                <input placeholder="Nom de la nouvelle catégorie" value={nouvelArticleCatalogue.categorie} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, categorie: e.target.value }))} style={{ ...st.input, marginBottom: '8px' }} />
+              )}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input placeholder="Nom de l'article" value={nouvelArticleCatalogue.nom} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, nom: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && ajouterArticleCatalogue()} style={{ ...st.input, flex: 1 }} />
                 <button onClick={ajouterArticleCatalogue} style={st.btnSolid}>Ajouter</button>
               </div>
             </div>
+              )
+            })()}
 
             {Object.entries(materielCatalogue.reduce((acc, item) => { (acc[item.categorie] ||= []).push(item); return acc }, {})).map(([categorie, items]) => (
               <div key={categorie} style={{ marginBottom: '14px' }}>
@@ -5198,9 +5246,7 @@ Règles :
                 {items.map(item => (
                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '6px', background: colors.background.raised, marginBottom: '4px' }}>
                     <span style={{ fontSize: '13px', color: colors.text.secondary }}>{item.nom} <span style={{ color: colors.text.faint, fontSize: '11px' }}>({item.unite})</span></span>
-                    {item.club_id && (
-                      <button onClick={() => desactiverArticleCatalogue(item.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: '2px 6px' }}>Retirer</button>
-                    )}
+                    <button onClick={() => retirerArticleCatalogue(item)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: '2px 6px' }}>Retirer</button>
                   </div>
                 ))}
               </div>
