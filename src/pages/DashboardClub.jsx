@@ -730,7 +730,12 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
   const hasChildren = node.children && node.children.length > 0
   const nodeKey = `${node.nom} ${node.prenom}`.trim()
   const isExpanded = expandedNodes.has(nodeKey)
-  const colors = getDeptColor(node.departement)
+  // Nommé différemment du `colors` importé (tokens de design) : {bg, border,
+  // text, dot} n'a pas la même forme (pas de .accent, .text est une string
+  // et non {primary}) — les confondre plante dès qu'un nœud existe (colors
+  // .accent.red devient undefined.red), invisible tant que l'organigramme
+  // était vide.
+  const deptColors = getDeptColor(node.departement)
 
   const matchSearch = !searchQuery ||
     `${node.nom} ${node.prenom} ${node.role} ${node.departement}`.toLowerCase().includes(searchQuery.toLowerCase())
@@ -748,14 +753,14 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
         )}
 
         <div style={{
-          background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: '10px',
+          background: deptColors.bg, border: `1px solid ${deptColors.border}`, borderRadius: '10px',
           padding: '10px 14px', minWidth: '200px', maxWidth: '260px', position: 'relative',
           opacity: matchSearch ? 1 : 0.3, transition: 'opacity 0.2s',
         }}>
-          <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', background: colors.dot }} />
+          <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', background: deptColors.dot }} />
 
           <p style={{ margin: '0 0 2px', color: colors.text.primary, fontWeight: 700, fontSize: '14px', paddingRight: '16px' }}>{node.prenom} {node.nom}</p>
-          <p style={{ margin: '0 0 4px', color: colors.text, fontSize: '12px', fontWeight: 500 }}>{node.role}</p>
+          <p style={{ margin: '0 0 4px', color: deptColors.text, fontSize: '12px', fontWeight: 500 }}>{node.role}</p>
           <p style={{ margin: 0, color: '#4b5563', fontSize: '11px' }}>{node.departement}</p>
 
           {(node.email || node.telephone) && (
@@ -777,7 +782,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
               onClick={() => onToggle(nodeKey)}
               style={{
                 position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
-                background: colors.border, borderRadius: '50%', width: '20px', height: '20px',
+                background: deptColors.border, borderRadius: '50%', width: '20px', height: '20px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '11px', color: colors.black, fontWeight: 700, zIndex: 1,
                 boxShadow: '0 0 0 3px #0a0a0a', cursor: 'pointer',
