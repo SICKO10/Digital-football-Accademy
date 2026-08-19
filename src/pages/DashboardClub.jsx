@@ -1344,19 +1344,25 @@ export default function DashboardClub() {
   // depuis son propre dashboard (equipement_tailles, inchangée).
   const attribuerPack = async (userId, packId) => {
     if (!packId) {
-      await supabase.from('equipement_attributions').delete().eq('club_id', clubId).eq('user_id', userId)
+      const { error } = await supabase.from('equipement_attributions').delete().eq('club_id', clubId).eq('user_id', userId)
+      if (error) { alert('Erreur : ' + error.message); return }
       setEquipementAttributions(prev => prev.filter(a => a.user_id !== userId))
       return
     }
-    const { data } = await supabase.from('equipement_attributions').upsert(
+    const { data, error } = await supabase.from('equipement_attributions').upsert(
       { club_id: clubId, user_id: userId, pack_id: packId },
       { onConflict: 'club_id, user_id' }
     ).select().single()
+    // Ne jamais mettre à jour l'état local sans confirmation d'écriture réelle
+    // (l'ancien code le faisait même en cas d'échec — l'attribution semblait
+    // fonctionner à l'écran, mais disparaissait au rechargement de la page
+    // car rien n'avait été réellement enregistré).
+    if (error) { alert('Erreur : ' + error.message); return }
     setEquipementAttributions(prev => {
       const idx = prev.findIndex(a => a.user_id === userId)
-      if (idx === -1) return [...prev, data || { club_id: clubId, user_id: userId, pack_id: packId }]
+      if (idx === -1) return [...prev, data]
       const next = [...prev]
-      next[idx] = data || { ...next[idx], pack_id: packId }
+      next[idx] = data
       return next
     })
   }
