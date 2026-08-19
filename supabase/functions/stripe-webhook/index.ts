@@ -69,6 +69,61 @@ async function crediterAnalyses(profileId: string, delta: number) {
   if (error) console.error('[stripe-webhook] erreur increment_analyses', error)
 }
 
+// Paiement club sans compte préalable (nouveau flow : le club paie depuis un
+// lien envoyé après une demande sur /offres, avant même d'avoir un compte —
+// cf. DashboardCoach.jsx copierLienDemandeClub). Crée une invitation par
+// token, même mécanisme que joueur/dirigeant/parent (table `invitations` +
+// email Resend, PAS supabase.auth.admin.inviteUserByEmail qui n'est utilisé
+// nulle part ailleurs dans ce projet) — accepter-invitation/AcceptInvite.jsx
+// gèrent déjà la création de compte + mot de passe pour ce token.
+async function creerInvitationClub(email: string, stripeCustomerId: string | null) {
+  const { data: invitation, error: invErr } = await supabaseAdmin
+    .from('invitations')
+    .insert({ email, role: 'club', stripe_customer_id: stripeCustomerId })
+    .select()
+    .single()
+  if (invErr || !invitation) { console.error('[stripe-webhook] erreur création invitation club', invErr); return }
+
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
+  if (!RESEND_API_KEY) { console.error(`[stripe-webhook] RESEND_API_KEY manquant — invitation club créée mais email non envoyé (token: ${invitation.token})`); return }
+
+  const lienAccept = `https://digital-football-accademy.vercel.app/accept-invite?code=${invitation.token}`
+  const resendRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'Digital Football <noreply@digitalfootball.academy>',
+      to: [email],
+      subject: 'Paiement confirmé — créez votre compte club Digital Football',
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:Inter,sans-serif;color:#fff;">
+  <div style="max-width:480px;margin:40px auto;padding:32px;background:#111;border-radius:16px;border:1px solid #1a1a1a;">
+    <h1 style="margin:0 0 4px;font-size:20px;">
+      <span style="color:#fff;">Digital</span><span style="color:#4ade80;">Football</span>
+    </h1>
+    <p style="color:#555;font-size:12px;margin:0 0 28px;">La plateforme de coaching vidéo football</p>
+    <h2 style="font-size:18px;font-weight:800;margin:0 0 12px;">✅ Paiement confirmé</h2>
+    <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 24px;">
+      Merci ! Ton abonnement club est activé. Crée ton mot de passe pour accéder à ton espace.
+    </p>
+    <a href="${lienAccept}"
+       style="display:inline-block;background:#4ade80;color:#000;font-weight:800;font-size:15px;
+              padding:14px 28px;border-radius:10px;text-decoration:none;">
+      Créer mon compte
+    </a>
+    <p style="color:#333;font-size:11px;margin:24px 0 0;line-height:1.5;">
+      Ce lien est valable 7 jours.
+    </p>
+  </div>
+</body>
+</html>`,
+    }),
+  })
+  if (!resendRes.ok) console.error('[stripe-webhook] erreur envoi email invitation club', await resendRes.text())
+}
+
 // Détermine (cycle, estClub) à partir du montant. Les paliers club sont
 // reconnus par leur montant SEUL, indépendamment du plan déjà en base : un
 // compte peut payer un abonnement club avant même d'avoir plan='club' (ex.
@@ -132,7 +187,23 @@ Deno.serve(async (req) => {
 
         if (session.mode === 'subscription') {
           const profileId = await trouverProfilId({ clientReferenceId: session.client_reference_id, email })
-          if (!profileId) { console.error('[stripe-webhook] checkout.session.completed (abonnement): profil introuvable', { clientReferenceId: session.client_reference_id, email }); break }
+
+          if (!profileId) {
+            // Pas de compte : uniquement possible en pratique pour un paiement
+            // club payé avant inscription (cf. nouveau flow demandes_club — les
+            // liens joueur/educateur/recruteur ne sont accessibles que depuis un
+            // dashboard déjà connecté, donc profileId y est toujours résolu).
+            // 10000 centimes (100€, normalement ambigu) est donc traité comme
+            // club ici : l'autre interprétation (joueur/edu annuel) suppose un
+            // compte déjà existant, qu'on vient d'exclure.
+            const estMontantClub = MONTANTS_CLUB_MENSUEL.includes(montant) || MONTANTS_CLUB_ANNUEL.includes(montant)
+            if (estMontantClub && email) {
+              await creerInvitationClub(email, stripeCustomerId)
+            } else {
+              console.error('[stripe-webhook] checkout.session.completed (abonnement): profil introuvable', { clientReferenceId: session.client_reference_id, email, montant })
+            }
+            break
+          }
 
           const { data: profilActuel, error: profilErr } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).maybeSingle()
           if (profilErr) console.error('[stripe-webhook] erreur lecture profil', profilErr)

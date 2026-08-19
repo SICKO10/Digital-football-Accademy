@@ -55,6 +55,10 @@ serve(async (req) => {
     if (inv.role === 'parent') {
       const { data: joueurProfile } = await supabase.from('profiles').select('prenom, nom').eq('id', inv.joueur_id).maybeSingle()
       nomEdu = joueurProfile ? `${joueurProfile.prenom} ${joueurProfile.nom}` : null
+    } else if (inv.role === 'club') {
+      // Rien à afficher ici : l'invitation vient du webhook Stripe après
+      // paiement, pas d'un éducateur ni d'un joueur (educateur_id/joueur_id
+      // sont null pour ce rôle).
     } else {
       const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
         supabase.from('profiles').select('prenom, nom').eq('id', inv.educateur_id).maybeSingle(),
@@ -138,6 +142,17 @@ serve(async (req) => {
           joueur_id: inv.joueur_id, parent_id: userId, email_invite: inv.email, statut: 'accepte',
         }, { onConflict: 'joueur_id,email_invite' })
         if (errParent) throw errParent
+      }
+
+      if (inv.role === 'club') {
+        // Le paiement a déjà eu lieu (l'invitation n'est créée par le webhook
+        // Stripe qu'après checkout.session.completed) — on écrase le plan='fan'
+        // par défaut posé plus haut, que le profil vienne d'être créé ou
+        // existait déjà (compte créé entre le paiement et l'acceptation).
+        const { error: errClub } = await supabase.from('profiles').update({
+          plan: 'club', abonnement_actif: true, stripe_customer_id: inv.stripe_customer_id || null,
+        }).eq('id', userId)
+        if (errClub) throw errClub
       }
 
       const { error: errInvUpdate } = await supabase.from('invitations').update({ statut: 'accepte' }).eq('id', inv.id)

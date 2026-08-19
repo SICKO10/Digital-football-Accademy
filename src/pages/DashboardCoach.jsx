@@ -28,6 +28,7 @@ function DashboardCoach() {
   // Demandes de contact club envoyées depuis /offres (accès restreint, cf. COACH_ADMIN_EMAILS)
   const [demandesClub, setDemandesClub] = useState([])
   const [traitantDemande, setTraitantDemande] = useState(null)
+  const [lienCopieDemande, setLienCopieDemande] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -139,6 +140,24 @@ function DashboardCoach() {
       alert('Erreur : ' + error.message)
       if (avant) setDemandesClub(prev => [avant, ...prev])
     }
+  }
+
+  // Copie le lien Stripe du palier demandé — pas de client_reference_id ici,
+  // contrairement à copierLienClub (clubs déjà inscrits, cf. section
+  // clubs_admin) : à ce stade la demande n'a pas encore de compte, donc pas
+  // d'id de profil à y accrocher. Le webhook Stripe identifie le paiement par
+  // montant + email (cf. supabase/functions/stripe-webhook), et crée le
+  // compte via invitation s'il n'existe pas encore.
+  const copierLienDemandeClub = async (demande, cycle) => {
+    const lien = STRIPE_LINKS_CLUB[demande.nb_licencies]?.[cycle]
+    if (!lien) { alert('Palier inconnu pour cette demande.'); return }
+    await navigator.clipboard.writeText(lien)
+    setLienCopieDemande(`${demande.id}-${cycle}`)
+    setTimeout(() => setLienCopieDemande(null), 2000)
+    await supabase.from('demandes_club')
+      .update({ lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() })
+      .eq('id', demande.id)
+    setDemandesClub(prev => prev.map(d => d.id === demande.id ? { ...d, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : d))
   }
 
   const getClubsEnAttente = async () => {
@@ -1158,24 +1177,56 @@ function DashboardCoach() {
                     <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${d.statut === 'nouveau' ? colors.accent.orange + alpha.medium : '#222'}`, borderRadius: '14px', padding: '1.25rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{d.prenom} {d.nom}</p>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
+                            {/* d.type existe seulement pour les demandes envoyées depuis le nouveau
+                                formulaire (Offres.jsx) — anciennes demandes : fallback sur d.role. */}
+                            {d.type ? (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: d.type === 'abonnement' ? colors.accent.green : colors.accent.blue, background: (d.type === 'abonnement' ? colors.accent.green : colors.accent.blue) + alpha.subtle, border: `1px solid ${d.type === 'abonnement' ? '#4ade8040' : '#60a5fa30'}`, padding: '2px 8px', borderRadius: '20px' }}>
+                                {d.type === 'abonnement' ? '💳 Abonnement' : '💬 Question'}
+                              </span>
+                            ) : d.role ? (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
+                            ) : null}
                             {d.statut === 'nouveau' && (
                               <span style={{ fontSize: '10px', fontWeight: 700, color: colors.accent.orange, background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731630', padding: '2px 8px', borderRadius: '20px' }}>NOUVEAU</span>
                             )}
                           </div>
                           <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
+                          {d.nom_club && (
+                            <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.dim }}>
+                              🏟️ {d.nom_club}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}
+                            </p>
+                          )}
                           <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.disabled }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                          {d.lien_paiement_envoye && (
+                            <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.accent.green }}>
+                              ✓ Lien copié le {new Date(d.lien_paiement_envoye_le).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
                         </div>
-                        {d.statut === 'nouveau' ? (
-                          <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
-                            style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                            {traitantDemande === d.id ? 'Mise à jour...' : '✓ Marquer comme traité'}
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 600 }}>✓ Traité</span>
-                        )}
+                        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          {d.type === 'abonnement' && d.nb_licencies && (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => copierLienDemandeClub(d, 'mensuel')}
+                                style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                {lienCopieDemande === `${d.id}-mensuel` ? '✓ Copié' : '📋 Lien mensuel'}
+                              </button>
+                              <button onClick={() => copierLienDemandeClub(d, 'annuel')}
+                                style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                {lienCopieDemande === `${d.id}-annuel` ? '✓ Copié' : '📋 Lien annuel'}
+                              </button>
+                            </div>
+                          )}
+                          {d.statut === 'nouveau' ? (
+                            <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
+                              style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                              {traitantDemande === d.id ? 'Mise à jour...' : '✓ Marquer comme traité'}
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 600 }}>✓ Traité</span>
+                          )}
+                        </div>
                       </div>
                       {d.message && (
                         <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{d.message}</p>

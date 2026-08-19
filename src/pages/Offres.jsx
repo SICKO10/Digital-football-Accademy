@@ -99,37 +99,47 @@ function CycleToggle({ cycle, setCycle }) {
 }
 
 const inputStyle = { width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '11px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }
-const ROLES_CLUB = ['Président', 'Directeur sportif', 'Dirigeant', 'Autre']
 
 // Formulaire de contact club — pas de paiement en libre-service, une vente
-// humaine convient mieux pour des contrats B2B à 50-250€/mois.
+// humaine convient mieux pour des contrats B2B à 50-250€/mois. Les paliers
+// viennent de STRIPE_LINKS_CLUB (lib/stripeLinks.js), pas d'une liste dupliquée
+// ici, pour ne jamais afficher un prix différent de celui réellement facturé.
 function FormulaireClub() {
   const [ouvert, setOuvert] = useState(false)
   const [envoye, setEnvoye] = useState(false)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
-  const [form, setForm] = useState({ prenom: '', nom: '', role: ROLES_CLUB[0], email: '', telephone: '', message: '' })
+  const [typeEnvoye, setTypeEnvoye] = useState(null)
+  const [nbLicencies, setNbLicencies] = useState('')
+  const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', message: '' })
 
   const champ = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
-  const soumettre = async () => {
-    if (!form.prenom.trim() || !form.nom.trim() || !form.email.trim()) {
-      setErreur('Prénom, nom et email sont obligatoires.')
+  const envoyerDemande = async (type) => {
+    if (!form.prenom.trim() || !form.nom.trim() || !form.email.trim() || !form.nomClub.trim()) {
+      setErreur('Prénom, nom, email et nom du club sont obligatoires.')
+      return
+    }
+    if (type === 'abonnement' && !nbLicencies) {
+      setErreur('Sélectionnez le nombre de licenciés.')
       return
     }
     setEnvoi(true)
     setErreur('')
+    const palierLabel = STRIPE_LINKS_CLUB[nbLicencies]?.label
     const { error } = await supabase.from('demandes_club').insert({
       prenom: form.prenom.trim(),
       nom: form.nom.trim(),
-      role: form.role,
       email: form.email.trim().toLowerCase(),
-      telephone: form.telephone.trim(),
-      message: form.message.trim(),
+      nom_club: form.nomClub.trim(),
+      nb_licencies: type === 'abonnement' ? nbLicencies : null,
+      type,
       statut: 'nouveau',
+      message: form.message.trim() || (type === 'abonnement' ? `Demande abonnement — ${palierLabel}` : 'Question via messagerie'),
     })
     setEnvoi(false)
     if (error) { setErreur("Une erreur est survenue, réessaie ou écris-nous directement à contact@digital-football.fr."); return }
+    setTypeEnvoye(type)
     setEnvoye(true)
   }
 
@@ -137,7 +147,9 @@ function FormulaireClub() {
     return (
       <div style={{ textAlign: 'center', padding: '1rem 0' }}>
         <p style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>Demande envoyée</p>
-        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Nous vous recontactons sous 24-48h.</p>
+        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
+          {typeEnvoye === 'question' ? 'Notre équipe vous répondra sous 24h.' : 'Vous recevrez votre lien de paiement par email sous 24-48h.'}
+        </p>
       </div>
     )
   }
@@ -148,21 +160,32 @@ function FormulaireClub() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <label style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nombre de licenciés</label>
+      <select value={nbLicencies} onChange={e => setNbLicencies(e.target.value)} style={{ ...inputStyle, color: nbLicencies ? colors.text.primary : colors.text.faint, cursor: 'pointer' }}>
+        <option value="">Sélectionnez votre tranche</option>
+        {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
+          <option key={key} value={key}>{p.label} — {p.mensuelPrix}</option>
+        ))}
+      </select>
       <div style={{ display: 'flex', gap: '10px' }}>
         <input placeholder="Prénom *" value={form.prenom} onChange={champ('prenom')} style={inputStyle} />
         <input placeholder="Nom *" value={form.nom} onChange={champ('nom')} style={inputStyle} />
       </div>
-      <select value={form.role} onChange={champ('role')} style={inputStyle}>
-        {ROLES_CLUB.map(r => <option key={r} value={r}>{r}</option>)}
-      </select>
       <input type="email" placeholder="Email de contact *" value={form.email} onChange={champ('email')} style={inputStyle} />
-      <input type="tel" placeholder="Numéro de téléphone" value={form.telephone} onChange={champ('telephone')} style={inputStyle} />
-      <textarea placeholder="Nombre de licenciés, besoins, questions…" value={form.message} onChange={champ('message')} rows={3}
+      <input placeholder="Nom du club *" value={form.nomClub} onChange={champ('nomClub')} style={inputStyle} />
+      <textarea placeholder="Message (optionnel)" value={form.message} onChange={champ('message')} rows={3}
         style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
       {erreur && <p style={{ color: '#f87171', fontSize: '12px', margin: 0 }}>{erreur}</p>}
-      <button onClick={soumettre} disabled={envoi} style={{ ...st.cta(colors.accent.purpleLight, true), opacity: envoi ? 0.7 : 1, cursor: envoi ? 'not-allowed' : 'pointer' }}>
-        {envoi ? 'Envoi...' : 'Envoyer la demande'}
-      </button>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button onClick={() => envoyerDemande('question')} disabled={envoi}
+          style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '13px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: envoi ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: envoi ? 0.7 : 1 }}>
+          💬 Poser une question
+        </button>
+        <button onClick={() => envoyerDemande('abonnement')} disabled={envoi || !nbLicencies}
+          style={{ flex: 1.5, ...st.cta(colors.accent.purpleLight, true), marginTop: 0, opacity: (envoi || !nbLicencies) ? 0.6 : 1, cursor: (envoi || !nbLicencies) ? 'not-allowed' : 'pointer' }}>
+          {envoi ? 'Envoi...' : '→ Demander un abonnement'}
+        </button>
+      </div>
     </div>
   )
 }
