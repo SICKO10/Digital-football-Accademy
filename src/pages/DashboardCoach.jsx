@@ -234,10 +234,12 @@ function DashboardCoach() {
   }
 
   const getDemandesClub = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('demandes_club')
       .select('*')
       .order('created_at', { ascending: false })
+    if (error) console.error('❌ Chargement des demandes club échoué :', error.code, error.message)
+    console.log('[getDemandesClub] data reçue :', data)
     setDemandesClub(data || [])
   }
 
