@@ -3786,9 +3786,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     setMonMateriel(data || [])
   }
 
-  const demanderRemiseMateriel = async (distId) => {
-    await supabase.from('materiel_distribution').update({ statut: 'remise_demandee' }).eq('id', distId)
-    setMonMateriel(prev => prev.map(d => d.id === distId ? { ...d, statut: 'remise_demandee' } : d))
+  // dist représente une ligne du lot (plusieurs articles distribués ensemble
+  // partagent un lot_id) — la demande de remise porte sur tout le lot.
+  const demanderRemiseMateriel = async (dist) => {
+    const query = supabase.from('materiel_distribution').update({ statut: 'remise_demandee' })
+    await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
+    const cle = dist.lot_id || dist.id
+    setMonMateriel(prev => prev.map(d => (d.lot_id || d.id) === cle ? { ...d, statut: 'remise_demandee' } : d))
   }
 
   // Tailles équipement (equipement_champs/tailles) côté éducateur — mêmes
@@ -5838,6 +5842,15 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             remis:            { label: 'Remis',            color: colors.accent.green, desc: 'Remise validée par le club.' },
             refuse:           { label: 'Refusé',            color: colors.accent.red,   desc: "La demande de remise n'a pas été validée." },
           }
+          // Regroupe par lot_id (plusieurs articles distribués en une seule fois) —
+          // les lignes sans lot_id (anciennes distributions) forment leur propre groupe.
+          const lotsMateriel = []
+          const lotsMaterielParId = {}
+          monMateriel.forEach(d => {
+            const cle = d.lot_id || d.id
+            if (!lotsMaterielParId[cle]) { lotsMaterielParId[cle] = { cle, items: [], ref: d }; lotsMateriel.push(lotsMaterielParId[cle]) }
+            lotsMaterielParId[cle].items.push(d)
+          })
           return (
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📦 Mon matériel</h1>
@@ -5883,24 +5896,28 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               )}
               </>
             )}
-            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? null : monMateriel.length === 0 ? (
+            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? null : lotsMateriel.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun matériel confié pour l'instant.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {monMateriel.map(d => {
+                {lotsMateriel.map(lot => {
+                  const d = lot.ref
                   const conf = STATUT_MATERIEL[d.statut] || STATUT_MATERIEL.distribue
                   return (
-                    <div key={d.id} style={st.card}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: conf.color, display: 'inline-block', flexShrink: 0 }} />
+                    <div key={lot.cle} style={st.card}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: conf.color, display: 'inline-block', flexShrink: 0, marginTop: '4px' }} />
                           <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.nom_materiel} × {d.quantite}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>Saison {d.saison} · <span style={{ color: conf.color, fontWeight: 600 }}>{conf.label}</span> — {conf.desc}</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.equipe_nom || 'Matériel'}</p>
+                            <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.text.faint }}>Saison {d.saison} · <span style={{ color: conf.color, fontWeight: 600 }}>{conf.label}</span> — {conf.desc}</p>
+                            {lot.items.map(item => (
+                              <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{item.nom_materiel} × {item.quantite}</p>
+                            ))}
                           </div>
                         </div>
                         {d.statut === 'distribue' && (
-                          <button onClick={() => demanderRemiseMateriel(d.id)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
+                          <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
                         )}
                       </div>
                     </div>

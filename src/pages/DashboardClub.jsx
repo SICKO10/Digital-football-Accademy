@@ -961,7 +961,11 @@ export default function DashboardClub() {
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
   const [materielDistribution, setMaterielDistribution] = useState([])
-  const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', catalogue_id: '', quantite: 1, saison: '' })
+  const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', saison: '' })
+  const [panierMateriel, setPanierMateriel] = useState([]) // [{ catalogue_id, nom, categorie, unite, quantite }]
+  const [articleAjoutForm, setArticleAjoutForm] = useState({ catalogue_id: '', quantite: 1 })
+  const [modalCatalogue, setModalCatalogue] = useState(false)
+  const [nouvelArticleCatalogue, setNouvelArticleCatalogue] = useState({ categorie: '', nom: '', unite: 'unité' })
   // Packs équipement configurables — regroupements nommés de champs déjà créés
   // (distinct des boutons "Pack Joueur/Éducateur" qui, eux, créent les champs).
   const [equipementPacks, setEquipementPacks] = useState([])
@@ -1183,7 +1187,7 @@ export default function DashboardClub() {
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('club_id', uid),
       supabase.from('equipement_commandes').select('*').eq('club_id', uid),
-      supabase.from('materiel_catalogue').select('*').order('categorie').order('nom'),
+      supabase.from('materiel_catalogue').select('*').eq('actif', true).or(`club_id.is.null,club_id.eq.${uid}`).order('categorie').order('nom'),
       supabase.from('materiel_stock').select('*').eq('club_id', uid),
       supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
       supabase.from('equipement_packs').select('*').eq('club_id', uid).eq('actif', true).order('created_at'),
@@ -1335,34 +1339,85 @@ export default function DashboardClub() {
     })
   }
 
+  // Panier — plusieurs articles ajoutés avant une distribution unique, plutôt
+  // qu'un aller-retour au formulaire par article. Toutes les lignes créées
+  // partagent un lot_id commun pour pouvoir être affichées/validées/refusées
+  // ensemble côté club et côté éducateur.
+  const ajouterAuPanierMateriel = () => {
+    const item = materielCatalogue.find(c => c.id === articleAjoutForm.catalogue_id)
+    const quantite = Number(articleAjoutForm.quantite) || 1
+    if (!item || quantite < 1) return
+    setPanierMateriel(prev => {
+      const existant = prev.find(p => p.catalogue_id === item.id)
+      if (existant) return prev.map(p => p.catalogue_id === item.id ? { ...p, quantite: p.quantite + quantite } : p)
+      return [...prev, { catalogue_id: item.id, nom: item.nom, categorie: item.categorie, unite: item.unite, quantite }]
+    })
+    setArticleAjoutForm({ catalogue_id: '', quantite: 1 })
+  }
+
+  const retirerDuPanierMateriel = (catalogueId) => {
+    setPanierMateriel(prev => prev.filter(p => p.catalogue_id !== catalogueId))
+  }
+
   const distribuerMateriel = async () => {
-    const { educateur_id, equipe_nom, catalogue_id, quantite, saison } = distributionForm
-    if (!educateur_id || !catalogue_id || !saison.trim()) return
-    const item = materielCatalogue.find(c => c.id === catalogue_id)
+    const { educateur_id, equipe_nom, saison } = distributionForm
+    if (!educateur_id || !saison.trim() || panierMateriel.length === 0) return
     const educ = educateursAffilies.find(e => e.educateur_id === educateur_id)
-    await supabase.from('materiel_distribution').insert({
+    const educateur_nom = `${educ?.educateur?.prenom || ''} ${educ?.educateur?.nom || ''}`.trim()
+    const lot_id = crypto.randomUUID()
+    const rows = panierMateriel.map(item => ({
       club_id: clubId,
       educateur_id,
-      educateur_nom: `${educ?.educateur?.prenom || ''} ${educ?.educateur?.nom || ''}`.trim(),
+      educateur_nom,
       equipe_nom: equipe_nom.trim() || null,
-      catalogue_id,
-      nom_materiel: item?.nom,
-      categorie: item?.categorie,
-      quantite: Number(quantite) || 1,
+      catalogue_id: item.catalogue_id,
+      nom_materiel: item.nom,
+      categorie: item.categorie,
+      quantite: item.quantite,
       saison: saison.trim(),
       statut: 'distribue',
+      lot_id,
+    }))
+    await supabase.from('materiel_distribution').insert(rows)
+    setPanierMateriel([])
+    setDistributionForm({ educateur_id: '', equipe_nom: '', saison: '' })
+    chargerInventaire(clubId)
+  }
+
+  // dist représente une ligne du groupe (lot_id) — la mise à jour porte sur
+  // tout le lot s'il y en a un, sinon sur cette seule ligne (anciennes
+  // distributions créées avant l'ajout du panier, sans lot_id).
+  const validerRemiseMateriel = async (dist) => {
+    const query = supabase.from('materiel_distribution').update({ statut: 'remis', date_remise: new Date().toISOString() })
+    await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
+    chargerInventaire(clubId)
+  }
+
+  const refuserRemiseMateriel = async (dist) => {
+    const query = supabase.from('materiel_distribution').update({ statut: 'distribue' })
+    await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
+    chargerInventaire(clubId)
+  }
+
+  // Catalogue matériel — articles globaux (club_id NULL, en lecture seule)
+  // et articles personnalisés par club (club_id = ce club, éditables).
+  const ajouterArticleCatalogue = async () => {
+    if (!nouvelArticleCatalogue.nom.trim() || !nouvelArticleCatalogue.categorie.trim()) return
+    await supabase.from('materiel_catalogue').insert({
+      categorie: nouvelArticleCatalogue.categorie.trim(),
+      nom: nouvelArticleCatalogue.nom.trim(),
+      unite: nouvelArticleCatalogue.unite.trim() || 'unité',
+      club_id: clubId,
+      actif: true,
     })
-    setDistributionForm({ educateur_id: '', equipe_nom: '', catalogue_id: '', quantite: 1, saison: '' })
+    setNouvelArticleCatalogue({ categorie: '', nom: '', unite: 'unité' })
     chargerInventaire(clubId)
   }
 
-  const validerRemiseMateriel = async (distId) => {
-    await supabase.from('materiel_distribution').update({ statut: 'remis', date_remise: new Date().toISOString() }).eq('id', distId)
-    chargerInventaire(clubId)
-  }
-
-  const refuserRemiseMateriel = async (distId) => {
-    await supabase.from('materiel_distribution').update({ statut: 'distribue' }).eq('id', distId)
+  // Désactivé plutôt que supprimé pour ne pas casser les distributions déjà
+  // enregistrées qui référencent cet article (catalogue_id).
+  const desactiverArticleCatalogue = async (id) => {
+    await supabase.from('materiel_catalogue').update({ actif: false }).eq('id', id).eq('club_id', clubId)
     chargerInventaire(clubId)
   }
 
@@ -4933,9 +4988,25 @@ Règles :
               </div>
             )}
 
-            {inventaireVue === 'materiel' && (
+            {inventaireVue === 'materiel' && (() => {
+              // Regroupe les lignes materiel_distribution par lot_id (une même
+              // action de distribution avec plusieurs articles) — les lignes sans
+              // lot_id (anciennes distributions, un seul article) forment chacune
+              // leur propre groupe.
+              const lots = []
+              const lotsParId = {}
+              materielDistribution.forEach(d => {
+                const cle = d.lot_id || d.id
+                if (!lotsParId[cle]) { lotsParId[cle] = { cle, items: [], ref: d }; lots.push(lotsParId[cle]) }
+                lotsParId[cle].items.push(d)
+              })
+
+              return (
               <div>
-                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📦 Stock du club</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Stock du club</p>
+                  {canEditSection('inventaire') && <button onClick={() => setModalCatalogue(true)} style={st.btnSecondary}>Gérer le catalogue</button>}
+                </div>
                 <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
@@ -4966,65 +5037,103 @@ Règles :
 
                 {canEditSection('inventaire') && (
                   <>
-                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🚚 Distribuer du matériel</p>
-                    <div style={{ ...st.card, display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '2rem' }}>
-                      <div>
-                        <label style={st.label}>Éducateur</label>
-                        <select value={distributionForm.educateur_id} onChange={e => setDistributionForm(f => ({ ...f, educateur_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
-                          <option value="">Choisir...</option>
-                          {educateursAffilies.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
-                        </select>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Distribuer du matériel</p>
+                    <div style={{ ...st.card, marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
+                        <div>
+                          <label style={st.label}>Éducateur</label>
+                          <select value={distributionForm.educateur_id} onChange={e => setDistributionForm(f => ({ ...f, educateur_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
+                            <option value="">Choisir...</option>
+                            {educateursAffilies.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Équipe</label>
+                          <input value={distributionForm.equipe_nom} onChange={e => setDistributionForm(f => ({ ...f, equipe_nom: e.target.value }))} placeholder="Ex : U15 A" style={{ ...st.input, width: '120px' }} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Saison</label>
+                          <input value={distributionForm.saison} onChange={e => setDistributionForm(f => ({ ...f, saison: e.target.value }))} placeholder="2025-2026" style={{ ...st.input, width: '110px' }} />
+                        </div>
                       </div>
-                      <div>
-                        <label style={st.label}>Équipe</label>
-                        <input value={distributionForm.equipe_nom} onChange={e => setDistributionForm(f => ({ ...f, equipe_nom: e.target.value }))} placeholder="Ex : U15 A" style={{ ...st.input, width: '120px' }} />
+
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
+                        <div>
+                          <label style={st.label}>Article</label>
+                          <select value={articleAjoutForm.catalogue_id} onChange={e => setArticleAjoutForm(f => ({ ...f, catalogue_id: e.target.value }))} style={{ ...st.input, width: 'auto', minWidth: '200px' }}>
+                            <option value="">Choisir...</option>
+                            {Object.entries(materielCatalogue.reduce((acc, item) => { (acc[item.categorie] ||= []).push(item); return acc }, {})).map(([cat, items]) => (
+                              <optgroup key={cat} label={cat}>
+                                {items.map(item => <option key={item.id} value={item.id}>{item.nom} ({item.unite})</option>)}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={st.label}>Quantité</label>
+                          <input type="number" min="1" value={articleAjoutForm.quantite} onChange={e => setArticleAjoutForm(f => ({ ...f, quantite: e.target.value }))} style={{ ...st.input, width: '70px' }} />
+                        </div>
+                        <button onClick={ajouterAuPanierMateriel} style={st.btnSecondary}>Ajouter au panier</button>
                       </div>
-                      <div>
-                        <label style={st.label}>Matériel</label>
-                        <select value={distributionForm.catalogue_id} onChange={e => setDistributionForm(f => ({ ...f, catalogue_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
-                          <option value="">Choisir...</option>
-                          {materielCatalogue.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={st.label}>Quantité</label>
-                        <input type="number" min="1" value={distributionForm.quantite} onChange={e => setDistributionForm(f => ({ ...f, quantite: e.target.value }))} style={{ ...st.input, width: '70px' }} />
-                      </div>
-                      <div>
-                        <label style={st.label}>Saison</label>
-                        <input value={distributionForm.saison} onChange={e => setDistributionForm(f => ({ ...f, saison: e.target.value }))} placeholder="2025-2026" style={{ ...st.input, width: '110px' }} />
-                      </div>
-                      <button onClick={distribuerMateriel} style={st.btnSolid}>Distribuer</button>
+
+                      {panierMateriel.length > 0 && (
+                        <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
+                          <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Panier — {panierMateriel.length} article{panierMateriel.length > 1 ? 's' : ''}</p>
+                          {panierMateriel.map(item => (
+                            <div key={item.catalogue_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${colors.border.default}40` }}>
+                              <span style={{ fontSize: '13px', color: colors.text.secondary }}>{item.nom}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.green }}>{item.quantite} {item.unite}</span>
+                                <button onClick={() => retirerDuPanierMateriel(item.catalogue_id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '13px', cursor: 'pointer' }}>✕</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button onClick={distribuerMateriel} disabled={!distributionForm.educateur_id || !distributionForm.saison.trim() || panierMateriel.length === 0}
+                        style={{ ...st.btnSolid, opacity: (!distributionForm.educateur_id || !distributionForm.saison.trim() || panierMateriel.length === 0) ? 0.5 : 1 }}>
+                        Distribuer{panierMateriel.length > 0 ? ` (${panierMateriel.length})` : ''}
+                      </button>
                     </div>
                   </>
                 )}
 
-                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📋 Matériel distribué ({materielDistribution.length})</p>
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Matériel distribué ({lots.length})</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {materielDistribution.length === 0 && <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>}
-                  {materielDistribution.map(d => {
+                  {lots.length === 0 && <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>}
+                  {lots.map(lot => {
+                    const d = lot.ref
                     const stConf = STATUT_DISTRIB[d.statut] || STATUT_DISTRIB.distribue
                     return (
-                      <div key={d.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                        <div>
-                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{d.nom_materiel} × {d.quantite} — {d.educateur_nom}{d.equipe_nom ? ` (${d.equipe_nom})` : ''}</p>
-                          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>Saison {d.saison}</p>
+                      <div key={lot.cle} style={st.card}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{d.educateur_nom}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>Saison {d.saison}</p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
+                            {canEditSection('inventaire') && d.statut === 'remise_demandee' && (
+                              <>
+                                <button onClick={() => validerRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Valider</button>
+                                <button onClick={() => refuserRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
-                          {canEditSection('inventaire') && d.statut === 'remise_demandee' && (
-                            <>
-                              <button onClick={() => validerRemiseMateriel(d.id)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Valider</button>
-                              <button onClick={() => refuserRemiseMateriel(d.id)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
-                            </>
-                          )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {lot.items.map(item => (
+                            <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{item.nom_materiel} × {item.quantite}</p>
+                          ))}
                         </div>
                       </div>
                     )
                   })}
                 </div>
               </div>
-            )}
+              )
+            })()}
           </div>
           )
         })()}
@@ -5056,6 +5165,46 @@ Règles :
               <button onClick={() => setModaleChampOuverte(false)} style={st.btnSecondary}>Annuler</button>
               <button onClick={ajouterChampEquipement} style={st.btnSolid}>Ajouter</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale gestion du catalogue matériel — articles globaux (lecture seule)
+          + articles personnalisés du club (ajout/désactivation) */}
+      {modalCatalogue && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '520px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>Gérer le catalogue</p>
+              <button onClick={() => setModalCatalogue(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Ajouter un article</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <input placeholder="Catégorie (ex : Ballons)" value={nouvelArticleCatalogue.categorie} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, categorie: e.target.value }))} style={{ ...st.input, flex: '1 1 160px' }} />
+                <input placeholder="Unité (ex : unité, lot de 10)" value={nouvelArticleCatalogue.unite} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, unite: e.target.value }))} style={{ ...st.input, flex: '1 1 160px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input placeholder="Nom de l'article" value={nouvelArticleCatalogue.nom} onChange={e => setNouvelArticleCatalogue(p => ({ ...p, nom: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && ajouterArticleCatalogue()} style={{ ...st.input, flex: 1 }} />
+                <button onClick={ajouterArticleCatalogue} style={st.btnSolid}>Ajouter</button>
+              </div>
+            </div>
+
+            {Object.entries(materielCatalogue.reduce((acc, item) => { (acc[item.categorie] ||= []).push(item); return acc }, {})).map(([categorie, items]) => (
+              <div key={categorie} style={{ marginBottom: '14px' }}>
+                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>{categorie}</p>
+                {items.map(item => (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: '6px', background: colors.background.raised, marginBottom: '4px' }}>
+                    <span style={{ fontSize: '13px', color: colors.text.secondary }}>{item.nom} <span style={{ color: colors.text.faint, fontSize: '11px' }}>({item.unite})</span></span>
+                    {item.club_id && (
+                      <button onClick={() => desactiverArticleCatalogue(item.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: '2px 6px' }}>Retirer</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       )}
