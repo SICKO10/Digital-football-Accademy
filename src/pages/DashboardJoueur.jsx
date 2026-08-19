@@ -438,6 +438,7 @@ function DashboardJoueur() {
   const [champsEquipement, setChampsEquipement] = useState([])
   const [mesTailles, setMesTailles] = useState([])
   const [equipementPret, setEquipementPret] = useState(null) // ligne equipement_commandes si statut='pret'
+  const [packAttribue, setPackAttribue] = useState(null) // equipement_packs attribué à ce joueur (equipement_attributions)
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
@@ -780,16 +781,26 @@ function DashboardJoueur() {
   // il n'y a pas de club_id direct sur affiliations/equipe_joueurs.
   const chargerInventaireJoueur = async (uid, affiliations) => {
     const a = (affiliations || []).find(af => af.statut === 'accepte')
-    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); return }
+    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setPackAttribue(null); return }
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
-    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); return }
+    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setPackAttribue(null); return }
     setClubIdInventaire(ce.club_id)
-    const [{ data: champs }, { data: tailles }, { data: commande }] = await Promise.all([
-      supabase.from('equipement_champs').select('*').eq('club_id', ce.club_id).eq('actif', true).in('cible', ['joueur', 'les deux']).order('ordre'),
+    const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
+      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
       supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
     ])
-    setChampsEquipement(champs || [])
+    // "Mon équipement" n'affiche que les champs du pack qui a été attribué à
+    // ce joueur — pas tous les champs du club, qui peuvent appartenir à
+    // d'autres packs (staff, autres catégories...) qui ne le concernent pas.
+    const pack = attribution?.pack || null
+    setPackAttribue(pack)
+    if (pack?.champs_ids?.length) {
+      const { data: champs } = await supabase.from('equipement_champs').select('*').in('id', pack.champs_ids).eq('actif', true).order('ordre')
+      setChampsEquipement(champs || [])
+    } else {
+      setChampsEquipement([])
+    }
     setMesTailles(tailles || [])
     setEquipementPret(commande || null)
   }
@@ -2862,11 +2873,12 @@ function DashboardJoueur() {
               </div>
             )}
 
-            {/* MES TAILLES — saisie libre par le joueur, mêmes champs que ceux
-                configurés côté club (equipement_champs) */}
+            {/* MON ÉQUIPEMENT — champs du pack attribué à ce joueur par le club
+                (equipement_attributions → equipement_packs.champs_ids), pas tous
+                les champs du club (qui peuvent appartenir à d'autres packs). */}
             {champsEquipement.length > 0 && (
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15, color: '#fff' }}>📏 Mes tailles</p>
+                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15, color: '#fff' }}>Mon équipement — {packAttribue?.icone} {packAttribue?.nom}</p>
                 <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {champsEquipement.map(c => {

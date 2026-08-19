@@ -139,6 +139,23 @@ const construireArbreOrganigramme = (membres) => {
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
 // classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
+// Suggestions à cocher dans la modale pack (pas de création automatique :
+// rien n'est inséré en base tant que le club ne coche pas explicitement).
+const CHAMPS_SUGGERES = [
+  { nom: 'Maillot', cible: 'joueur' },
+  { nom: 'Short', cible: 'joueur' },
+  { nom: 'Chaussettes', cible: 'joueur' },
+  { nom: 'Chaussures', cible: 'joueur' },
+  { nom: 'Survêtement veste', cible: 'joueur' },
+  { nom: 'Survêtement pantalon', cible: 'joueur' },
+  { nom: 'Kway', cible: 'joueur' },
+  { nom: 'Sac', cible: 'joueur' },
+  { nom: 'Veste staff', cible: 'educateur' },
+  { nom: 'Pantalon staff', cible: 'educateur' },
+  { nom: 'Polo', cible: 'educateur' },
+  { nom: 'Parka', cible: 'les deux' },
+]
+
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
   { id: 'terrains', label: 'Planning terrains' },
@@ -1225,6 +1242,32 @@ export default function DashboardClub() {
     setNouveauChampOptions('')
     setModalPack(true)
   }
+  // Coche une suggestion (CHAMPS_SUGGERES) : rien n'est créé tant que le club
+  // ne coche pas explicitement. Si un champ de même nom existe déjà pour ce
+  // club, on ne le recrée pas — on bascule juste son inclusion dans le pack.
+  // Options par défaut (XS→XXL) pour que le champ soit utilisable directement
+  // sans étape de saisie supplémentaire — c'est le point même d'une suggestion
+  // "à cocher" ; la création manuelle, elle, reste sans défaut imposé.
+  const toggleChampSuggere = async (suggestion) => {
+    const existant = equipementChamps.find(c => c.nom.trim().toLowerCase() === suggestion.nom.toLowerCase())
+    if (existant) {
+      setPackForm(p => ({ ...p, champs_ids: p.champs_ids.includes(existant.id) ? p.champs_ids.filter(id => id !== existant.id) : [...p.champs_ids, existant.id] }))
+      return
+    }
+    const { data: newChamp, error } = await supabase.from('equipement_champs').insert({
+      club_id: clubId,
+      nom: suggestion.nom,
+      cible: suggestion.cible,
+      options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+      ordre: equipementChamps.length,
+      actif: true,
+    }).select().single()
+    if (!error && newChamp) {
+      setEquipementChamps(prev => [...prev, newChamp])
+      setPackForm(p => ({ ...p, champs_ids: [...p.champs_ids, newChamp.id] }))
+    }
+  }
+
   // Créer un champ à la volée depuis la modale pack, et l'ajouter directement
   // à la sélection en cours — évite l'aller-retour "fermer la modale pack →
   // créer le champ ailleurs → rouvrir la modale pack pour le cocher". Pas de
@@ -1305,7 +1348,12 @@ export default function DashboardClub() {
   }
 
   const ouvrirPreparation = (personne) => {
-    const items = equipementChamps.map(c => ({
+    // Scopé aux champs du pack attribué à cette personne — sinon (pas encore
+    // de pack attribué) on retombe sur tous les champs du club, comme avant.
+    const packId = equipementAttributions.find(a => a.user_id === personne.id)?.pack_id
+    const champsIds = packId ? equipementPacks.find(p => p.id === packId)?.champs_ids : null
+    const champsPertinents = champsIds ? equipementChamps.filter(c => champsIds.includes(c.id)) : equipementChamps
+    const items = champsPertinents.map(c => ({
       champ_id: c.id,
       champ_nom: c.nom,
       valeur: equipementTailles.find(t => t.user_id === personne.id && t.champ_id === c.id)?.valeur || '',
@@ -5349,6 +5397,22 @@ Règles :
                   </div>
                 )
               })}
+            </div>
+
+            <div style={{ borderTop: `1px solid ${colors.border.default}`, paddingTop: '14px', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Suggestions</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                {CHAMPS_SUGGERES.map(s => {
+                  const existant = equipementChamps.find(c => c.nom.trim().toLowerCase() === s.nom.toLowerCase())
+                  const coche = existant ? packForm.champs_ids.includes(existant.id) : false
+                  return (
+                    <label key={s.nom} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 4px', fontSize: '13px', color: coche ? colors.accent.green : colors.text.dim, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={coche} onChange={() => toggleChampSuggere(s)} />
+                      {s.nom} <span style={{ color: colors.text.faint, fontSize: '11px' }}>({s.cible === 'les deux' ? 'tous' : s.cible === 'joueur' ? 'joueurs' : 'éducateurs'})</span>
+                    </label>
+                  )
+                })}
+              </div>
             </div>
 
             <div style={{ borderTop: `1px solid ${colors.border.default}`, paddingTop: '14px', marginBottom: '20px' }}>
