@@ -174,6 +174,11 @@ const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fil
 const IcoXCircle     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
 const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+const IcoMail        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+const IcoRefreshCw   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+const IcoTrash       = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+const IcoEye         = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+const IcoEdit3       = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
 const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
@@ -7825,62 +7830,63 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'dirigeants' && (
-          <div style={{ maxWidth: 1100 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>👔 {t('dir_titre', lang)}</h2>
-            <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 24 }}>
-              {t('dir_invite_desc', lang)}
-            </p>
+          <div className="dirigeants-grid" style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24, alignItems: 'start' }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoBuilding /> {t('dir_titre', lang)}</h2>
+              <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 24 }}>
+                {t('dir_invite_desc', lang)}
+              </p>
 
-            {/* Formulaire invitation — largeur propre, plus étroite que le
-                conteneur : un input email + des lignes de permissions restent
-                lisibles, pas besoin de s'étirer sur toute la page. */}
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
-              <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
-              <input
-                value={newDirigeantEmail}
-                onChange={e => setNewDirigeantEmail(e.target.value)}
-                placeholder={t('dir_email_placeholder', lang)}
-                type="email"
-                style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
-              />
+              {/* Formulaire invitation */}
+              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
+                <input
+                  value={newDirigeantEmail}
+                  onChange={e => setNewDirigeantEmail(e.target.value)}
+                  placeholder={t('dir_email_placeholder', lang)}
+                  type="email"
+                  style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+                />
 
-              {/* Grille permissions */}
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                {[
-                  { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
-                  { key: 'stats', label: `📊 ${t('nav_stats', lang)}` },
-                  { key: 'competition', label: `🏆 ${t('comp_competition', lang)}` },
-                  { key: 'entrainements', label: `🏃 ${t('nav_entrainements', lang)}` },
-                  { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
-                  { key: 'notes', label: '📝 Notes' },
-                ].map(({ key, label }) => (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, color: '#ccc' }}>{label}</span>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {['aucun', 'lecture', 'edition'].map(val => (
-                        <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
-                          style={{
-                            padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                            background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
-                            color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red) : colors.text.disabled,
-                          }}>
-                          {val === 'aucun' ? `✕ ${t('dir_aucun', lang)}` : val === 'lecture' ? `👁 ${t('dir_lecture', lang)}` : `✏️ ${t('dir_edition', lang)}`}
-                        </button>
-                      ))}
+                {/* Grille permissions */}
+                <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 16 }}>
+                  {[
+                    { key: 'effectif', label: t('equipe_effectif', lang), Icon: IcoUsers },
+                    { key: 'stats', label: t('nav_stats', lang), Icon: IcoChart },
+                    { key: 'competition', label: t('comp_competition', lang), Icon: IcoTrophy },
+                    { key: 'entrainements', label: t('nav_entrainements', lang), Icon: IcoRun },
+                    { key: 'prep_physique', label: t('nav_prep_physique', lang), Icon: IcoDumbbell },
+                    { key: 'notes', label: 'Notes', Icon: IcoFileText },
+                  ].map(({ key, label, Icon }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: colors.background.base, borderRadius: 8 }}>
+                      <span style={{ fontSize: 13, color: '#ccc', display: 'flex', alignItems: 'center', gap: 8 }}><Icon /> {label}</span>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {['aucun', 'lecture', 'edition'].map(val => (
+                          <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
+                            style={{
+                              display: 'flex', alignItems: 'center',
+                              padding: '4px 8px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                              background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
+                              color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red) : colors.text.disabled,
+                            }}>
+                            {val === 'aucun' ? <IcoXCircle /> : val === 'lecture' ? <IcoEye /> : <IcoEdit3 />}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
-                style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
-                {invitingDirigeant ? 'Envoi...' : `📧 ${t('dir_envoyer_invitation', lang)}`}
-              </button>
+                <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+                  <IcoMail /> {invitingDirigeant ? 'Envoi...' : t('dir_envoyer_invitation', lang)}
+                </button>
+              </div>
             </div>
 
             {/* Liste dirigeants existants — grille plutôt qu'une colonne unique,
-                pour remplir l'espace gagné sur la largeur du conteneur. */}
+                pour remplir l'espace gagné sur la largeur de la colonne droite. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
             {dirigeants.map(d => (
               <div key={d.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px' }}>
@@ -7891,28 +7897,30 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ') || t('dir_aucun_acces', lang)}
                     </p>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.green + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.green : '#f59e0b' }}>
-                    {d.statut === 'accepte' ? `✅ ${t('dir_actif', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.green + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.green : '#f59e0b' }}>
+                    {d.statut === 'accepte' ? <IcoCheckCircle /> : <IcoAlertCircle />}
+                    {d.statut === 'accepte' ? t('dir_actif', lang) : t('etat_en_attente', lang)}
                   </span>
                 </div>
 
                 {/* Modifier permissions inline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[
-                    { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
-                    { key: 'stats', label: `📊 ${t('nav_stats', lang)}` },
-                    { key: 'competition', label: `🏆 ${t('comp_competition', lang)}` },
-                    { key: 'entrainements', label: `🏃 ${t('nav_entrainements', lang)}` },
-                    { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
-                    { key: 'notes', label: '📝 Notes' },
-                  ].map(({ key, label }) => (
+                    { key: 'effectif', label: t('equipe_effectif', lang), Icon: IcoUsers },
+                    { key: 'stats', label: t('nav_stats', lang), Icon: IcoChart },
+                    { key: 'competition', label: t('comp_competition', lang), Icon: IcoTrophy },
+                    { key: 'entrainements', label: t('nav_entrainements', lang), Icon: IcoRun },
+                    { key: 'prep_physique', label: t('nav_prep_physique', lang), Icon: IcoDumbbell },
+                    { key: 'notes', label: 'Notes', Icon: IcoFileText },
+                  ].map(({ key, label, Icon }) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: colors.background.sunken, borderRadius: 6 }}>
-                      <span style={{ fontSize: 11, color: colors.text.muted }}>{label}</span>
+                      <span style={{ fontSize: 11, color: colors.text.muted, display: 'flex', alignItems: 'center', gap: 6 }}><Icon /> {label}</span>
                       <div style={{ display: 'flex', gap: 3 }}>
                         {['aucun', 'lecture', 'edition'].map(val => (
                           <button key={val}
                             onClick={() => modifierPermissions(d.id, key, val)}
                             style={{
+                              display: 'flex', alignItems: 'center',
                               padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                               background: (d.permissions?.[key] || 'aucun') === val
                                 ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft)
@@ -7921,7 +7929,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red)
                                 : colors.border.strong,
                             }}>
-                            {val === 'aucun' ? '✕' : val === 'lecture' ? '👁' : '✏️'}
+                            {val === 'aucun' ? <IcoXCircle /> : val === 'lecture' ? <IcoEye /> : <IcoEdit3 />}
                           </button>
                         ))}
                       </div>
@@ -7932,18 +7940,21 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {d.statut === 'en_attente' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a1a1a' }}>
                     <button onClick={() => renvoyerInvitationDirigeant(d)}
-                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      🔁 {t('dir_renvoyer', lang)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <IcoRefreshCw /> {t('dir_renvoyer', lang)}
                     </button>
                     <button onClick={() => supprimerDirigeant(d.id)}
-                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      ✕ {t('btn_supprimer', lang)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <IcoTrash /> {t('btn_supprimer', lang)}
                     </button>
                   </div>
                 )}
               </div>
             ))}
             </div>
+            <style>{`
+              @media (max-width: 768px) { .dirigeants-grid { grid-template-columns: 1fr !important; } }
+            `}</style>
           </div>
         )}
 
