@@ -962,6 +962,13 @@ export default function DashboardClub() {
   const [materielStock, setMaterielStock] = useState([])
   const [materielDistribution, setMaterielDistribution] = useState([])
   const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', catalogue_id: '', quantite: 1, saison: '' })
+  // Packs équipement configurables — regroupements nommés de champs déjà créés
+  // (distinct des boutons "Pack Joueur/Éducateur" qui, eux, créent les champs).
+  const [equipementPacks, setEquipementPacks] = useState([])
+  const [modalPack, setModalPack] = useState(false)
+  const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
+  const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+  const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
   // Événements & Projets (onglet Administratif)
   const [evenementsClub, setEvenementsClub] = useState([])
@@ -1170,7 +1177,7 @@ export default function DashboardClub() {
   const chargerInventaire = async (uid) => {
     const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
-    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: stock }, { data: distribution }] = await Promise.all([
+    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: stock }, { data: distribution }, { data: packs }] = await Promise.all([
       educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('club_id', uid),
@@ -1178,6 +1185,7 @@ export default function DashboardClub() {
       supabase.from('materiel_catalogue').select('*').order('categorie').order('nom'),
       supabase.from('materiel_stock').select('*').eq('club_id', uid),
       supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
+      supabase.from('equipement_packs').select('*').eq('club_id', uid).eq('actif', true).order('created_at'),
     ])
     setJoueursInventaire(joueurs || [])
     setEquipementChamps(champs || [])
@@ -1186,6 +1194,7 @@ export default function DashboardClub() {
     setMaterielCatalogue(catalogue || [])
     setMaterielStock(stock || [])
     setMaterielDistribution(distribution || [])
+    setEquipementPacks(packs || [])
   }
 
   const ajouterChampEquipement = async () => {
@@ -1210,6 +1219,34 @@ export default function DashboardClub() {
     if (aCreer.length === 0) return
     const rows = aCreer.map((c, i) => ({ club_id: clubId, nom: c.nom, options: c.options, cible: pack.cible, ordre: equipementChamps.length + i }))
     await supabase.from('equipement_champs').insert(rows)
+    chargerInventaire(clubId)
+  }
+
+  // Packs configurables (equipement_packs) — regroupement nommé de champs déjà
+  // créés, distinct des boutons ci-dessus qui créent les champs eux-mêmes.
+  const ouvrirNouveauPack = () => {
+    setPackEnEdition(null)
+    setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+    setModalPack(true)
+  }
+  const ouvrirEditionPack = (pack) => {
+    setPackEnEdition(pack)
+    setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
+    setModalPack(true)
+  }
+  const sauvegarderPack = async () => {
+    if (!packForm.nom.trim() || packForm.champs_ids.length === 0) return
+    if (packEnEdition) {
+      await supabase.from('equipement_packs').update({ nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone }).eq('id', packEnEdition.id)
+    } else {
+      await supabase.from('equipement_packs').insert({ club_id: clubId, nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone })
+    }
+    setModalPack(false)
+    chargerInventaire(clubId)
+  }
+  const supprimerPack = async (packId) => {
+    await supabase.from('equipement_packs').delete().eq('id', packId)
+    setModalPack(false)
     chargerInventaire(clubId)
   }
 
@@ -4745,13 +4782,18 @@ Règles :
 
         {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
           const personnes = [
-            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '', type: 'joueur' })),
-            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur' })),
+            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '', type: 'joueur', categorie: j.categorie || null })),
+            ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur', categorie: null })),
           ]
           // Un champ 'joueur'/'educateur' ne concerne qu'un des deux publics —
           // colonne masquée (pas juste vide) pour la personne non concernée,
           // plutôt qu'une matrice pleine de "—" hors-sujet.
           const champConcerne = (champ, personne) => champ.cible === 'les deux' || champ.cible === personne.type
+          // Catégories des joueurs uniquement — le staff (categorie=null) reste
+          // toujours affiché quel que soit le filtre, une catégorie d'équipe
+          // n'ayant pas de sens pour lui.
+          const categoriesDisponibles = [...new Set(joueursInventaire.map(j => j.categorie).filter(Boolean))].sort()
+          const personnesFiltrees = filtreCategorieEquipement === 'tous' ? personnes : personnes.filter(p => p.categorie === null || p.categorie === filtreCategorieEquipement)
           const STATUT_DISTRIB = {
             distribue:        { label: 'Distribué',        color: colors.accent.blue },
             remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber },
@@ -4781,6 +4823,38 @@ Règles :
                   )}
                 </div>
 
+                {/* Packs configurables — regroupements nommés de champs déjà créés */}
+                {(equipementPacks.length > 0 || canEditSection('inventaire')) && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
+                    {equipementPacks.map(pack => (
+                      <div key={pack.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: `1px solid ${pack.couleur}40`, borderRadius: '8px', padding: '6px 10px' }}>
+                        <span style={{ fontSize: '14px' }}>{pack.icone}</span>
+                        <span style={{ color: pack.couleur, fontSize: '12px', fontWeight: 600 }}>{pack.nom}</span>
+                        <span style={{ color: colors.text.faint, fontSize: '11px' }}>({pack.champs_ids.length})</span>
+                        {canEditSection('inventaire') && (
+                          <button onClick={() => ouvrirEditionPack(pack)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', padding: '0 2px' }}>✏️</button>
+                        )}
+                      </div>
+                    ))}
+                    {canEditSection('inventaire') && (
+                      <button onClick={ouvrirNouveauPack} style={{ background: colors.background.raised, border: `1px dashed ${colors.border.default}`, color: colors.text.faint, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>+ Nouveau pack</button>
+                    )}
+                  </div>
+                )}
+
+                {/* Filtre par catégorie d'équipe */}
+                {categoriesDisponibles.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
+                    <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Catégorie :</span>
+                    {['tous', ...categoriesDisponibles].map(cat => (
+                      <button key={cat} onClick={() => setFiltreCategorieEquipement(cat)}
+                        style={{ padding: '5px 12px', borderRadius: '6px', border: `1px solid ${filtreCategorieEquipement === cat ? colors.accent.green : colors.border.default}`, background: filtreCategorieEquipement === cat ? colors.accent.green + alpha.subtle : colors.background.raised, color: filtreCategorieEquipement === cat ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: filtreCategorieEquipement === cat ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {cat === 'tous' ? 'Toutes' : cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {equipementChamps.length === 0 ? (
                   <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun champ de taille configuré. {canEditSection('inventaire') && 'Ajoutez-en un pour commencer (ex : Survêtement, Short, Chaussures...).'}</p>
                 ) : (
@@ -4799,7 +4873,7 @@ Règles :
                         </tr>
                       </thead>
                       <tbody>
-                        {personnes.map(p => {
+                        {personnesFiltrees.map(p => {
                           const commande = equipementCommandes.find(c => c.destinataire_id === p.id)
                           return (
                           <tr key={p.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
@@ -4962,6 +5036,67 @@ Règles :
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModaleChampOuverte(false)} style={st.btnSecondary}>Annuler</button>
               <button onClick={ajouterChampEquipement} style={st.btnSolid}>Ajouter</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale création/édition d'un pack équipement configurable */}
+      {modalPack && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{packEnEdition ? 'Modifier le pack' : 'Créer un pack'}</p>
+              <button onClick={() => setModalPack(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+              <input placeholder="Icône" value={packForm.icone} onChange={e => setPackForm(p => ({ ...p, icone: e.target.value }))}
+                style={{ ...st.input, width: '64px', textAlign: 'center', fontSize: '18px' }} />
+              <input placeholder="Nom du pack" value={packForm.nom} onChange={e => setPackForm(p => ({ ...p, nom: e.target.value }))} style={{ ...st.input, flex: 1 }} />
+              <input type="color" value={packForm.couleur} onChange={e => setPackForm(p => ({ ...p, couleur: e.target.value }))} style={{ width: '44px', height: '40px', padding: '2px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', cursor: 'pointer' }} />
+            </div>
+
+            <label style={st.label}>Pour qui</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              {[
+                { val: 'joueur', label: '⚽ Joueurs' },
+                { val: 'educateur', label: '📋 Éducateurs' },
+                { val: 'dirigeant', label: '🏛️ Dirigeants' },
+                { val: 'les deux', label: '👥 Mixte' },
+              ].map(opt => (
+                <button key={opt.val} type="button" onClick={() => setPackForm(p => ({ ...p, cible: opt.val }))}
+                  style={{ padding: '7px 12px', borderRadius: '8px', border: `1px solid ${packForm.cible === opt.val ? colors.accent.green : colors.border.default}`, background: packForm.cible === opt.val ? colors.accent.green + alpha.subtle : colors.background.raised, color: packForm.cible === opt.val ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <label style={st.label}>Champs inclus ({packForm.champs_ids.length} sélectionné(s))</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px', marginTop: '8px' }}>
+              {equipementChamps.length === 0 ? (
+                <p style={{ fontSize: '12px', color: colors.text.disabled, fontStyle: 'italic' }}>Crée d'abord des champs de taille avant de les regrouper en pack.</p>
+              ) : equipementChamps.map(champ => {
+                const selectionne = packForm.champs_ids.includes(champ.id)
+                return (
+                  <div key={champ.id} onClick={() => setPackForm(p => ({ ...p, champs_ids: selectionne ? p.champs_ids.filter(id => id !== champ.id) : [...p.champs_ids, champ.id] }))}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', borderRadius: '8px', border: `1px solid ${selectionne ? colors.accent.green + '60' : colors.border.default}`, background: selectionne ? colors.accent.green + alpha.subtle : colors.background.raised, cursor: 'pointer' }}>
+                    <span style={{ color: selectionne ? colors.accent.green : colors.text.dim, fontSize: '13px' }}>
+                      {champ.nom} <span style={{ color: colors.text.faint, fontSize: '11px' }}>({champ.cible === 'les deux' ? 'tous' : champ.cible === 'joueur' ? 'joueurs' : 'éducateurs'})</span>
+                    </span>
+                    <span style={{ color: selectionne ? colors.accent.green : colors.text.faint, fontSize: '15px' }}>{selectionne ? '✓' : '+'}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {packEnEdition && <button onClick={() => supprimerPack(packEnEdition.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Supprimer</button>}
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setModalPack(false)} style={st.btnSecondary}>Annuler</button>
+              <button onClick={sauvegarderPack} disabled={!packForm.nom.trim() || packForm.champs_ids.length === 0} style={{ ...st.btnSolid, opacity: (!packForm.nom.trim() || packForm.champs_ids.length === 0) ? 0.5 : 1 }}>
+                {packEnEdition ? 'Enregistrer' : 'Créer le pack'}
+              </button>
             </div>
           </div>
         </div>
