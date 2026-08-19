@@ -139,6 +139,18 @@ const construireArbreOrganigramme = (membres) => {
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
 // classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
+// Préremplissage par défaut du champ Options à la création d'un champ de
+// taille (modifiable ensuite) — pas une liste imposée : chaque champ garde
+// ses propres options telles qu'enregistrées (ex: pointures pour
+// "Chaussures"), affichées telles quelles partout où elles sont lues
+// (profil joueur, dashboard club) sans dupliquer cette liste ailleurs.
+const TAILLES_DISPONIBLES = [
+  '4 ans', '5 ans', '6 ans', '7 ans', '8 ans', '9 ans', '10 ans',
+  '11 ans', '12 ans', '13 ans', '14 ans', '15 ans', '16 ans',
+  '128', '140', '152', '164', '176',
+  'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
+]
+
 // Suggestions à cocher dans la modale pack (pas de création automatique :
 // rien n'est inséré en base tant que le club ne coche pas explicitement).
 const CHAMPS_SUGGERES = [
@@ -864,7 +876,6 @@ export default function DashboardClub() {
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
-  const [roleOrganigrammeLibre, setRoleOrganigrammeLibre] = useState('')
   const [savingOrganigramme, setSavingOrganigramme] = useState(false)
 
   // Organigramme V2 : import Excel + scan IA + arbre hiérarchique
@@ -955,7 +966,7 @@ export default function DashboardClub() {
   const [equipementTailles, setEquipementTailles] = useState([])
   const [equipementCommandes, setEquipementCommandes] = useState([])
   const [modaleChampOuverte, setModaleChampOuverte] = useState(false)
-  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: '', cible: 'les deux' })
+  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: TAILLES_DISPONIBLES.join(', '), cible: 'les deux' })
   const [modalePreparation, setModalePreparation] = useState(null) // { userId, nom, items: [{champ_id, champ_nom, valeur}], jours, heure_debut, heure_fin }
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
@@ -977,7 +988,7 @@ export default function DashboardClub() {
   const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
   const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
   const [nouveauChampNom, setNouveauChampNom] = useState('')
-  const [nouveauChampOptions, setNouveauChampOptions] = useState('')
+  const [nouveauChampOptions, setNouveauChampOptions] = useState(TAILLES_DISPONIBLES.join(', '))
   const [creationChampLoading, setCreationChampLoading] = useState(false)
   const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
@@ -1232,22 +1243,19 @@ export default function DashboardClub() {
     setPackEnEdition(null)
     setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
     setNouveauChampNom('')
-    setNouveauChampOptions('')
+    setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     setModalPack(true)
   }
   const ouvrirEditionPack = (pack) => {
     setPackEnEdition(pack)
     setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
     setNouveauChampNom('')
-    setNouveauChampOptions('')
+    setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     setModalPack(true)
   }
   // Coche une suggestion (CHAMPS_SUGGERES) : rien n'est créé tant que le club
   // ne coche pas explicitement. Si un champ de même nom existe déjà pour ce
   // club, on ne le recrée pas — on bascule juste son inclusion dans le pack.
-  // Options par défaut (XS→XXL) pour que le champ soit utilisable directement
-  // sans étape de saisie supplémentaire — c'est le point même d'une suggestion
-  // "à cocher" ; la création manuelle, elle, reste sans défaut imposé.
   const toggleChampSuggere = async (suggestion) => {
     const existant = equipementChamps.find(c => c.nom.trim().toLowerCase() === suggestion.nom.toLowerCase())
     if (existant) {
@@ -1258,7 +1266,7 @@ export default function DashboardClub() {
       club_id: clubId,
       nom: suggestion.nom,
       cible: suggestion.cible,
-      options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+      options: TAILLES_DISPONIBLES,
       ordre: equipementChamps.length,
       actif: true,
     }).select().single()
@@ -1293,7 +1301,7 @@ export default function DashboardClub() {
       setPackForm(p => ({ ...p, champs_ids: [...p.champs_ids, newChamp.id] }))
       setEquipementChamps(prev => [...prev, newChamp])
       setNouveauChampNom('')
-      setNouveauChampOptions('')
+      setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     }
     setCreationChampLoading(false)
   }
@@ -2173,18 +2181,15 @@ export default function DashboardClub() {
   const ouvrirModalOrganigramme = (membre) => {
     setMembreOrganigrammeEdite(membre)
     if (membre) {
-      const roleConnu = ROLES_ORGANIGRAMME.includes(membre.role)
-      setFormOrganigramme({ prenom: membre.prenom || '', nom: membre.nom || '', role: roleConnu ? membre.role : 'Autre', telephone: membre.telephone || '', email: membre.email || '', ordre: membre.ordre || 0, departement: membre.departement || 'Autre', superieur: membre.superieur || '' })
-      setRoleOrganigrammeLibre(roleConnu ? '' : (membre.role || ''))
+      setFormOrganigramme({ prenom: membre.prenom || '', nom: membre.nom || '', role: membre.role || '', telephone: membre.telephone || '', email: membre.email || '', ordre: membre.ordre || 0, departement: membre.departement || 'Autre', superieur: membre.superieur || '' })
     } else {
       setFormOrganigramme({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
-      setRoleOrganigrammeLibre('')
     }
     setModalOrganigramme(true)
   }
 
   const sauvegarderMembreOrganigramme = async () => {
-    const role = formOrganigramme.role === 'Autre' ? (roleOrganigrammeLibre.trim() || 'Autre') : formOrganigramme.role
+    const role = formOrganigramme.role.trim()
     if (!role || !formOrganigramme.prenom.trim()) return
     const payload = { ...formOrganigramme, role, club_id: clubId, ordre: Number(formOrganigramme.ordre) || 0 }
     // Optimistic : la modale se ferme tout de suite sans attendre la réponse
@@ -4752,20 +4757,36 @@ Règles :
 
               <div style={{ marginBottom: '12px' }}>
                 <label style={st.label}>Rôle</label>
-                <select style={st.input} value={formOrganigramme.role} onChange={e => setFormOrganigramme(f => ({ ...f, role: e.target.value }))}>
-                  <option value="">— Choisir —</option>
-                  {ROLES_ORGANIGRAMME.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-                {formOrganigramme.role === 'Autre' && (
-                  <input style={{ ...st.input, marginTop: '8px' }} placeholder="Préciser le rôle" value={roleOrganigrammeLibre} onChange={e => setRoleOrganigrammeLibre(e.target.value)} />
-                )}
+                <input
+                  type="text"
+                  style={st.input}
+                  placeholder="Ex: Président, Directeur sportif, Entraîneur U17..."
+                  list="roles-organigramme-suggestions"
+                  value={formOrganigramme.role}
+                  onChange={e => setFormOrganigramme(f => ({ ...f, role: e.target.value }))}
+                />
+                <datalist id="roles-organigramme-suggestions">
+                  {ROLES_ORGANIGRAMME.map(r => <option key={r} value={r} />)}
+                </datalist>
               </div>
 
               <div style={{ marginBottom: '12px' }}>
                 <label style={st.label}>Département</label>
-                <select style={st.input} value={formOrganigramme.departement} onChange={e => setFormOrganigramme(f => ({ ...f, departement: e.target.value }))}>
-                  {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <input
+                  type="text"
+                  style={st.input}
+                  placeholder="Ex: Sportif, Administration, Finance..."
+                  list="departements-organigramme-suggestions"
+                  value={formOrganigramme.departement}
+                  onChange={e => setFormOrganigramme(f => ({ ...f, departement: e.target.value }))}
+                />
+                {/* Les départements de DEPT_COLORS ont chacun une couleur dédiée dans
+                    l'arbre (cf. getDeptColor) — un nom hors de cette liste retombe sur
+                    la couleur "Autre" (gris), sans planter (déjà géré par le fallback
+                    de getDeptColor). */}
+                <datalist id="departements-organigramme-suggestions">
+                  {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d} />)}
+                </datalist>
               </div>
 
               <div style={{ marginBottom: '12px' }}>
