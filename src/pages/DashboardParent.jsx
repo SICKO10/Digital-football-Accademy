@@ -19,6 +19,17 @@ export default function DashboardParent() {
   const [profilParent, setProfilParent] = useState(null)
   const [formParent, setFormParent] = useState({ prenom: '', nom: '', telephone: '', email: '', profession: '' })
   const [savingProfil, setSavingProfil] = useState(false)
+  const [onglet, setOnglet] = useState('profil')
+
+  const [reels, setReels] = useState([])
+  const [matchsAVenir, setMatchsAVenir] = useState([])
+  const [matchsPasses, setMatchsPasses] = useState([])
+  const [prepResume, setPrepResume] = useState(null) // { dernierTest, seancesTotal, seancesFaites }
+  const [planningAVenir, setPlanningAVenir] = useState([])
+  const [dispoMap, setDispoMap] = useState({})
+  const [notesCoachDetail, setNotesCoachDetail] = useState(null)
+  const [analyses, setAnalyses] = useState([])
+  const [visibleRecruteurs, setVisibleRecruteurs] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -33,12 +44,12 @@ export default function DashboardParent() {
 
       const [{ data: pp }, { data: joueurProfil }, { data: affiliation }] = await Promise.all([
         supabase.from('profil_parent').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('profiles').select('prenom, nom, poste, club, region, ville, avatar_url, categorie, niveau_equipe').eq('id', accesData.joueur_id).maybeSingle(),
+        supabase.from('profiles').select('prenom, nom, poste, club, region, ville, avatar_url, categorie, niveau_equipe, plan, abonnement_actif').eq('id', accesData.joueur_id).maybeSingle(),
         // presences_entrainement/stats_match référencent equipe_joueurs.id, pas
         // le compte du joueur — même chemin que partout ailleurs dans l'app
         // (chargerStatsJoueur, DashboardJoueur.jsx) : passer par l'affiliation
-        // acceptée pour retrouver equipe_joueur_id.
-        supabase.from('affiliations').select('equipe_joueur_id').eq('joueur_id', accesData.joueur_id).eq('statut', 'accepte').maybeSingle(),
+        // acceptée pour retrouver equipe_joueur_id ET educateur_id.
+        supabase.from('affiliations').select('equipe_joueur_id, educateur_id').eq('joueur_id', accesData.joueur_id).eq('statut', 'accepte').maybeSingle(),
       ])
 
       setProfilParent(pp)
@@ -47,11 +58,18 @@ export default function DashboardParent() {
         prenom: pp?.prenom || '', nom: pp?.nom || '', telephone: pp?.telephone || '',
         email: pp?.email || user.email || '', profession: pp?.profession || '',
       })
+      // "Visible aux recruteurs" reflète exactement le critère utilisé par
+      // DashboardRecruteur.jsx pour lister les joueurs (plan='joueur_pro' +
+      // abonnement_actif) — pas de flag dédié. Aucun suivi de "qui a consulté
+      // le profil" n'existe dans l'app (ni pour le joueur, ni ailleurs), donc
+      // pas de liste de recruteurs affichée ici.
+      setVisibleRecruteurs(joueurProfil?.plan === 'joueur_pro' && !!joueurProfil?.abonnement_actif)
 
       if (affiliation?.equipe_joueur_id) {
-        const [{ data: statsMatch }, { data: notations }] = await Promise.all([
+        const [{ data: statsMatch }, { data: notations }, { data: notesJoueur }] = await Promise.all([
           supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge').eq('joueur_id', affiliation.equipe_joueur_id),
           supabase.from('notations_match').select('note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)').eq('joueur_id', affiliation.equipe_joueur_id).eq('est_note_equipe', false).order('created_at', { ascending: false }).limit(5),
+          supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', affiliation.equipe_joueur_id).eq('visible_joueur', true).maybeSingle(),
         ])
         if (statsMatch?.length) {
           setStatsJoueur({
@@ -63,6 +81,53 @@ export default function DashboardParent() {
           })
         }
         setNotesRecues(notations || [])
+        setNotesCoachDetail(notesJoueur || null)
+      }
+
+      // ── Jogabonito : clips publiés par le joueur ──
+      const { data: reelsData } = await supabase.from('reels').select('id, video_url, titre, description, created_at').eq('joueur_id', accesData.joueur_id).order('created_at', { ascending: false }).limit(10)
+      setReels(reelsData || [])
+
+      // ── Analyses vidéo reçues ──
+      const { data: analysesData } = await supabase.from('demandes').select('id, titre, statut, poste, created_at, loom_url, rapport_pdf_url').eq('joueur_id', accesData.joueur_id).eq('statut', 'analyse').order('created_at', { ascending: false }).limit(10)
+      setAnalyses(analysesData || [])
+
+      if (affiliation?.educateur_id) {
+        const aujourdHui = new Date().toISOString().split('T')[0]
+        const dans60jours = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+        // ── Compétition : matchs à venir + passés ──
+        const [{ data: aVenir }, { data: passes }] = await Promise.all([
+          supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile').eq('educateur_id', affiliation.educateur_id).gte('date', aujourdHui).order('date', { ascending: true }).limit(10),
+          supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile, score_nous, score_eux').eq('educateur_id', affiliation.educateur_id).lt('date', aujourdHui).order('date', { ascending: false }).limit(10),
+        ])
+        setMatchsAVenir(aVenir || [])
+        setMatchsPasses(passes || [])
+
+        // ── Planning : entraînements à venir + ma dispo déclarée ──
+        const { data: entrainements } = await supabase.from('entrainements').select('id, date, description, heure, lieu').eq('educateur_id', affiliation.educateur_id).gte('date', aujourdHui).lte('date', dans60jours).order('date', { ascending: true }).limit(10)
+        setPlanningAVenir(entrainements || [])
+        const entrainementIds = (entrainements || []).map(e => e.id)
+        if (entrainementIds.length > 0) {
+          const { data: dispos } = await supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', accesData.joueur_id).in('seance_id', entrainementIds)
+          setDispoMap(Object.fromEntries((dispos || []).map(d => [d.seance_id, d.statut])))
+        }
+
+        // ── Préparation physique : résumé du programme actif ──
+        const { data: programme } = await supabase.from('programmes_prep').select('*').eq('educateur_id', affiliation.educateur_id).eq('statut', 'actif').order('created_at', { ascending: false }).limit(1).maybeSingle()
+        if (programme) {
+          const [{ data: seances }, { data: soumissions }, { data: tests }] = await Promise.all([
+            supabase.from('seances_prep').select('id').eq('programme_id', programme.id),
+            supabase.from('soumissions_prep').select('seance_id').eq('joueur_id', accesData.joueur_id),
+            supabase.from('tests_physiques').select('*').eq('joueur_id', accesData.joueur_id).order('date_test', { ascending: false }).limit(1),
+          ])
+          setPrepResume({
+            nomProgramme: programme.nom || null,
+            seancesTotal: (seances || []).length,
+            seancesFaites: new Set((soumissions || []).map(s => s.seance_id)).size,
+            dernierTest: tests?.[0] || null,
+          })
+        }
       }
 
       setLoading(false)
@@ -135,9 +200,7 @@ export default function DashboardParent() {
       </nav>
 
       {!profilIncomplet && (
-        <div style={{ maxWidth: '720px', margin: '0 auto', padding: '2rem' }}>
-          <p style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Profil de mon enfant · Lecture seule</p>
-
+        <div style={{ maxWidth: '880px', margin: '0 auto', padding: '2rem' }}>
           {/* ── En-tête joueur ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
             {joueur?.avatar_url
@@ -153,48 +216,235 @@ export default function DashboardParent() {
             </div>
           </div>
 
-          {/* ── Stats ── */}
-          {statsJoueur && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-              {[
-                { val: statsJoueur.matchsJoues, label: 'Matchs joués' },
-                { val: statsJoueur.buts, label: 'Buts' },
-                { val: statsJoueur.passes, label: 'Passes D.' },
-                { val: statsJoueur.minutes, label: 'Minutes' },
-                { val: statsJoueur.cleanSheets, label: 'Clean sheets' },
-              ].map(s => (
-                <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: colors.accent.green }}>{s.val}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '8px', padding: '8px 14px', marginBottom: '16px', color: '#444', fontSize: '11px', textAlign: 'center' }}>
+            👁️ Vue en lecture seule — Profil de {joueur?.prenom} {joueur?.nom}
+          </div>
 
-          {/* ── Dernières évaluations coach ── */}
-          {notesRecues.length > 0 && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 16px' }}>Dernières évaluations coach</h3>
-              {notesRecues.map((n, i) => {
-                const m = n.matchs_equipe
-                const note = Number(n.note)
-                const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
-                return (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0', borderBottom: i < notesRecues.length - 1 ? `1px solid ${colors.border.faint}` : 'none' }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>{m?.domicile ? 'vs' : '@'} {m?.adversaire || 'Match'}</p>
-                      <p style={{ margin: '2px 0 0', color: colors.text.ghost, fontSize: '12px' }}>{m?.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : ''}</p>
-                      {n.commentaire && <p style={{ margin: '6px 0 0', color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic' }}>"{n.commentaire}"</p>}
+          {/* ── Onglets ── */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            {[
+              { id: 'profil', label: '👤 Profil' },
+              { id: 'videos', label: '🎬 Jogabonito' },
+              { id: 'competition', label: '🏆 Compétition' },
+              { id: 'physique', label: '💪 Prépa physique' },
+              { id: 'planning', label: '📅 Planning' },
+              { id: 'notes', label: '📝 Notes coach' },
+              { id: 'analyses', label: '🎯 Analyses' },
+              { id: 'recruteurs', label: '🔍 Recruteurs' },
+            ].map(s => (
+              <button key={s.id} onClick={() => setOnglet(s.id)}
+                style={{ background: onglet === s.id ? colors.accent.green : colors.background.surface, color: onglet === s.id ? colors.black : colors.text.dim, border: `1px solid ${onglet === s.id ? colors.accent.green : colors.border.default}`, borderRadius: '20px', padding: '7px 14px', fontSize: '12px', fontWeight: onglet === s.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {onglet === 'profil' && (
+            <>
+              {statsJoueur && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                  {[
+                    { val: statsJoueur.matchsJoues, label: 'Matchs joués' },
+                    { val: statsJoueur.buts, label: 'Buts' },
+                    { val: statsJoueur.passes, label: 'Passes D.' },
+                    { val: statsJoueur.minutes, label: 'Minutes' },
+                    { val: statsJoueur.cleanSheets, label: 'Clean sheets' },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: colors.accent.green }}>{s.val}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.label}</p>
                     </div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: c, marginLeft: '16px', flexShrink: 0 }}>{n.note}/10</div>
+                  ))}
+                </div>
+              )}
+
+              {notesRecues.length > 0 && (
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 16px' }}>Dernières évaluations coach</h3>
+                  {notesRecues.map((n, i) => {
+                    const m = n.matchs_equipe
+                    const note = Number(n.note)
+                    const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
+                    return (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0', borderBottom: i < notesRecues.length - 1 ? `1px solid ${colors.border.faint}` : 'none' }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>{m?.domicile ? 'vs' : '@'} {m?.adversaire || 'Match'}</p>
+                          <p style={{ margin: '2px 0 0', color: colors.text.ghost, fontSize: '12px' }}>{m?.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : ''}</p>
+                          {n.commentaire && <p style={{ margin: '6px 0 0', color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic' }}>"{n.commentaire}"</p>}
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: c, marginLeft: '16px', flexShrink: 0 }}>{n.note}/10</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {!statsJoueur && notesRecues.length === 0 && (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Pas encore de statistiques disponibles pour l'instant.</p>
+              )}
+            </>
+          )}
+
+          {onglet === 'videos' && (
+            reels.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucun clip publié pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+                {reels.map(r => (
+                  <div key={r.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', overflow: 'hidden' }}>
+                    <video src={r.video_url} controls style={{ width: '100%', display: 'block', maxHeight: '320px', background: '#000' }} />
+                    <div style={{ padding: '10px 12px' }}>
+                      {r.titre && <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{r.titre}</p>}
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(r.created_at).toLocaleDateString('fr-FR')}</p>
+                    </div>
                   </div>
-                )
-              })}
+                ))}
+              </div>
+            )
+          )}
+
+          {onglet === 'competition' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Matchs à venir</h3>
+                {matchsAVenir.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun match à venir programmé.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {matchsAVenir.map(m => (
+                      <div key={m.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'} {m.competition ? `· ${m.competition}` : ''}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}{m.lieu ? ` · ${m.lieu}` : ''}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Résultats récents</h3>
+                {matchsPasses.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun résultat enregistré.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {matchsPasses.map(m => (
+                      <div key={m.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</p>
+                        </div>
+                        {(m.score_nous != null && m.score_eux != null) && (
+                          <div style={{ fontSize: '16px', fontWeight: 800 }}>{m.score_nous} — {m.score_eux}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {!statsJoueur && notesRecues.length === 0 && (
-            <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Pas encore de statistiques disponibles pour l'instant.</p>
+          {onglet === 'physique' && (
+            prepResume ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>{prepResume.nomProgramme || 'Programme en cours'}</h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>{prepResume.seancesFaites} / {prepResume.seancesTotal} séances réalisées</p>
+                </div>
+                {prepResume.dernierTest && (
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Dernier test physique</h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>{new Date(prepResume.dernierTest.date_test).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <pre style={{ margin: '10px 0 0', fontSize: '12px', color: colors.text.secondary, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                      {Object.entries(prepResume.dernierTest).filter(([k]) => !['id', 'joueur_id', 'date_test', 'created_at'].includes(k) && prepResume.dernierTest[k] != null).map(([k, v]) => `${k} : ${v}`).join('\n')}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucun programme de préparation physique actif pour l'instant.</p>
+            )
+          )}
+
+          {onglet === 'planning' && (
+            planningAVenir.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucun entraînement programmé pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {planningAVenir.map(e => {
+                  const dispo = dispoMap[e.id]
+                  const dispoLabel = dispo === 'present' ? '✓ Présent' : dispo === 'absent' ? '✕ Absent' : dispo === 'incertain' ? '? Incertain' : null
+                  const dispoColor = dispo === 'present' ? colors.accent.green : dispo === 'absent' ? colors.accent.red : colors.text.faint
+                  return (
+                    <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{e.description || 'Entraînement'}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{new Date(e.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}{e.heure ? ` · ${e.heure.slice(0, 5)}` : ''}{e.lieu ? ` · ${e.lieu}` : ''}</p>
+                      </div>
+                      {dispoLabel && <span style={{ fontSize: '12px', fontWeight: 700, color: dispoColor }}>{dispoLabel}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          )}
+
+          {onglet === 'notes' && (
+            notesCoachDetail ? (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px', marginBottom: notesCoachDetail.commentaire ? '16px' : 0 }}>
+                  {[
+                    { val: notesCoachDetail.technique, label: 'Technique' },
+                    { val: notesCoachDetail.physique, label: 'Physique' },
+                    { val: notesCoachDetail.mental, label: 'Mental' },
+                    { val: notesCoachDetail.tactique, label: 'Tactique' },
+                  ].filter(c => c.val != null).map(c => (
+                    <div key={c.label} style={{ textAlign: 'center' }}>
+                      <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: colors.accent.green }}>{c.val}/10</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{c.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {notesCoachDetail.commentaire && (
+                  <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, fontStyle: 'italic', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '14px' }}>"{notesCoachDetail.commentaire}"</p>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucune note du coach partagée pour l'instant.</p>
+            )
+          )}
+
+          {onglet === 'analyses' && (
+            analyses.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucune analyse vidéo pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {analyses.map(a => (
+                  <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px 16px' }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.titre || 'Analyse vidéo'}{a.poste ? ` · ${a.poste}` : ''}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                      {a.loom_url && <a href={a.loom_url} target="_blank" rel="noreferrer" style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600 }}>🎬 Voir la vidéo</a>}
+                      {a.rapport_pdf_url && <a href={a.rapport_pdf_url} target="_blank" rel="noreferrer" style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600 }}>📄 Voir le rapport</a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {onglet === 'recruteurs' && (
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: visibleRecruteurs ? colors.accent.green : colors.text.faint }}>
+                {visibleRecruteurs ? '✓ Profil visible par les recruteurs' : '○ Profil non visible par les recruteurs'}
+              </p>
+              <p style={{ margin: '8px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                {visibleRecruteurs
+                  ? "Le profil apparaît dans les recherches du Scout Center."
+                  : "Un abonnement Pro actif est nécessaire pour apparaître dans les recherches du Scout Center."}
+              </p>
+            </div>
           )}
         </div>
       )}
