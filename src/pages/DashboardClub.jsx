@@ -139,6 +139,29 @@ const construireArbreOrganigramme = (membres) => {
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
 // classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
+// Packs de champs de taille équipement — ajout en un clic plutôt qu'un par
+// un. 'educateur' ici vise le staff du club au sens large (pas seulement les
+// entraîneurs) : la cible 'educateur' d'un champ est déjà lue par
+// DashboardEducateur.jsx pour tout le staff affilié via club_educateurs, pas
+// spécifiquement un rôle "dirigeant" séparé — un futur pack dirigeant
+// réutiliserait la même cible 'educateur' plutôt qu'une 3e valeur d'enum.
+const PACKS_EQUIPEMENT = [
+  { id: 'joueur', label: '⚽ Pack Joueur', cible: 'joueur', champs: [
+    { nom: 'Maillot', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+    { nom: 'Short', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+    { nom: 'Chaussettes', options: ['XS', 'S', 'M', 'L', 'XL'] },
+    { nom: 'Chaussures', options: ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'] },
+    { nom: 'Survêtement veste', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+    { nom: 'Survêtement pantalon', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+  ] },
+  { id: 'educateur', label: '📋 Pack Éducateur', cible: 'educateur', champs: [
+    { nom: 'Veste staff', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] },
+    { nom: 'Pantalon staff', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+    { nom: 'Polo', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+    { nom: 'Chaussures', options: ['38', '39', '40', '41', '42', '43', '44', '45', '46', '47'] },
+  ] },
+]
+
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
   { id: 'terrains', label: 'Planning terrains' },
@@ -1166,6 +1189,20 @@ export default function DashboardClub() {
     await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, cible: nouveauChamp.cible, ordre: equipementChamps.length })
     setNouveauChamp({ nom: '', options: 'XS, S, M, L, XL, XXL', cible: 'les deux' })
     setModaleChampOuverte(false)
+    chargerInventaire(clubId)
+  }
+
+  // Ajout en un clic d'un jeu de champs standard (évite de recréer un par un
+  // Maillot/Short/Chaussures... pour chaque public). Ignore les noms déjà
+  // configurés (insensible à la casse) pour rester sans risque si le
+  // président re-clique après avoir déjà ajouté le pack, ou après avoir
+  // supprimé/modifié certains champs entre-temps.
+  const ajouterPackEquipement = async (pack) => {
+    const nomsExistants = new Set(equipementChamps.map(c => c.nom.trim().toLowerCase()))
+    const aCreer = pack.champs.filter(c => !nomsExistants.has(c.nom.toLowerCase()))
+    if (aCreer.length === 0) return
+    const rows = aCreer.map((c, i) => ({ club_id: clubId, nom: c.nom, options: c.options, cible: pack.cible, ordre: equipementChamps.length + i }))
+    await supabase.from('equipement_champs').insert(rows)
     chargerInventaire(clubId)
   }
 
@@ -4666,7 +4703,16 @@ Règles :
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
                   <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Tailles déclarées par joueur/staff — {equipementChamps.length} champ(s) configuré(s).</p>
-                  {canEditSection('inventaire') && <button onClick={() => setModaleChampOuverte(true)} style={st.btnSecondary}>+ Champ de taille</button>}
+                  {canEditSection('inventaire') && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {PACKS_EQUIPEMENT.map(pack => (
+                        <button key={pack.id} onClick={() => ajouterPackEquipement(pack)} style={st.btnSecondary} title={pack.champs.map(c => c.nom).join(', ')}>
+                          + {pack.label}
+                        </button>
+                      ))}
+                      <button onClick={() => setModaleChampOuverte(true)} style={st.btnSecondary}>+ Champ de taille</button>
+                    </div>
+                  )}
                 </div>
 
                 {equipementChamps.length === 0 ? (
