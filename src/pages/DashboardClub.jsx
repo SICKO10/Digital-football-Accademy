@@ -874,7 +874,7 @@ export default function DashboardClub() {
   const [codeClub, setCodeClub] = useState('')
 
   // Profil club
-  const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '' })
+  const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '', stades: [] })
   const [savingProfilClub, setSavingProfilClub] = useState(false)
   const [avatarClubUploading, setAvatarClubUploading] = useState(false)
   const [avisRecus, setAvisRecus] = useState([])
@@ -1095,7 +1095,7 @@ export default function DashboardClub() {
     setClub(clubProfile)
     setMonRole(role)
     setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
-    setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '' })
+    setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '', stades: clubProfile.stades || [] })
     setThemeEdit({
       couleur_principale: clubProfile.couleur_principale || colors.accent.green,
       couleur_secondaire: clubProfile.couleur_secondaire || colors.accent.cyan,
@@ -2442,12 +2442,23 @@ Règles :
       region: profilClubEdit.region,
       ville: profilClubEdit.ville,
       description: profilClubEdit.description,
+      stades: profilClubEdit.stades,
     }).eq('id', clubId)
     setSavingProfilClub(false)
     if (error) {
       alert('Erreur : ' + error.message)
       setClub(avant)
     }
+  }
+
+  const ajouterStade = () => {
+    setProfilClubEdit(p => ({ ...p, stades: [...p.stades, { id: crypto.randomUUID(), nom: '', adresse: '' }] }))
+  }
+  const modifierStade = (id, champ, valeur) => {
+    setProfilClubEdit(p => ({ ...p, stades: p.stades.map(s => s.id === id ? { ...s, [champ]: valeur } : s) }))
+  }
+  const supprimerStade = (id) => {
+    setProfilClubEdit(p => ({ ...p, stades: p.stades.filter(s => s.id !== id) }))
   }
 
   const handleAvatarClubUpload = async (e) => {
@@ -3364,6 +3375,26 @@ Règles :
                       placeholder={t('club_desc_placeholder', lang)}
                       disabled={!canEditSection('profil')}
                     />
+                  </div>
+                  <div>
+                    <label style={st.label}>🏟️ Stades</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {profilClubEdit.stades.map(s => (
+                        <div key={s.id} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <input style={{ ...st.input, flex: '1 1 160px' }} value={s.nom} onChange={e => modifierStade(s.id, 'nom', e.target.value)} placeholder="Nom du stade" disabled={!canEditSection('profil')} />
+                          <input style={{ ...st.input, flex: '2 1 240px' }} value={s.adresse} onChange={e => modifierStade(s.id, 'adresse', e.target.value)} placeholder="Adresse" disabled={!canEditSection('profil')} />
+                          {canEditSection('profil') && (
+                            <button type="button" onClick={() => supprimerStade(s.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer', padding: '0 6px' }}>✕</button>
+                          )}
+                        </div>
+                      ))}
+                      {profilClubEdit.stades.length === 0 && (
+                        <p style={{ margin: 0, fontSize: '12px', color: colors.text.disabled, fontStyle: 'italic' }}>Aucun stade renseigné.</p>
+                      )}
+                      {canEditSection('profil') && (
+                        <button type="button" onClick={ajouterStade} style={{ ...st.btnSecondary, alignSelf: 'flex-start' }}>+ Ajouter un stade</button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 {canEditSection('profil') && (
