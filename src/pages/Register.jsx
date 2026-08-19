@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
+import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
 import { colors } from '../tokens'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
@@ -19,6 +19,15 @@ const SPLIT_MEDIA_QUERY = `
 export default function Register() {
   const navigate = useNavigate()
   const { lang } = useLang()
+  const [searchParams] = useSearchParams()
+
+  // Club normalement sans self-service (vente humaine, cf. Offres.jsx) — sauf
+  // si on arrive via un lien d'inscription généré pour un palier précis
+  // (DashboardCoach.jsx EmailBlockClub, /register?profil=club&palier=c0&cycle=...) :
+  // dans ce cas le compte est créé normalement, puis redirigé vers le lien de
+  // paiement Stripe du bon palier — ça évite de dépendre d'un email envoyé
+  // après coup par le webhook pour créer le compte.
+  const palierClub = STRIPE_LINKS_CLUB[searchParams.get('palier')] || null
 
   const PROFILS = [
     {
@@ -46,14 +55,17 @@ export default function Register() {
     },
     {
       id: 'club', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
-      color: colors.accent.purpleLight, badge: t('regchoix_sur_devis', lang), contact: true,
+      color: colors.accent.purpleLight,
+      ...(palierClub
+        ? { badge: palierClub.mensuelPrix, stripeMensuel: palierClub.mensuel, stripeAnnuel: palierClub.annuel }
+        : { badge: t('regchoix_sur_devis', lang), contact: true }),
       features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
     },
   ]
 
   // Présélection depuis un lien externe (ex: page Offres) : /register?profil=joueur_pro&cycle=annuel
-  // Club exclu : plus de compte à créer pour ce profil, cf. onClick des cartes plus bas.
-  const [searchParams] = useSearchParams()
+  // Club exclu par défaut (pas de compte à créer, cf. onClick des cartes plus
+  // bas) — sauf avec ?palier=..., cf. palierClub ci-dessus.
   const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil') && !pr.contact) || null
 
   const [etape, setEtape] = useState(profilPresélectionné ? 2 : 1) // 1 = choix profil | 2 = formulaire

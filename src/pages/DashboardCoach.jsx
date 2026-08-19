@@ -24,18 +24,28 @@ function EmailBlockClub({ demande, onLienEnvoye }) {
   const palier = STRIPE_LINKS_CLUB[demande.nb_licencies]
   const lien = palier?.[cycle]
   const prix = cycle === 'mensuel' ? palier?.mensuelPrix : palier?.annuelPrix
+  // Lien d'inscription (crée le compte club en premier) plutôt que le lien
+  // Stripe brut : le compte existe donc déjà quand le paiement arrive, le
+  // webhook l'identifie directement par client_reference_id (cf.
+  // trouverProfilId dans stripe-webhook) au lieu de devoir créer une
+  // invitation après coup — ce deuxième mécanisme dépend de l'envoi d'un
+  // email par le webhook, moins fiable que la création de compte immédiate
+  // ici, dans le navigateur.
+  const lienInscription = demande.nb_licencies
+    ? `https://digital-football-accademy.vercel.app/register?profil=club&palier=${demande.nb_licencies}&cycle=${cycle}`
+    : null
 
-  const objet = "Digital Football — Votre lien d'abonnement club"
-  const corps = (palier && lien)
+  const objet = "Digital Football — Votre lien d'inscription club"
+  const corps = (palier && lienInscription)
     ? `Bonjour ${demande.prenom},
 
-Suite à votre demande d'abonnement pour ${demande.nom_club}, voici votre lien de paiement sécurisé :
+Suite à votre demande d'abonnement pour ${demande.nom_club}, voici votre lien d'inscription :
 
-👉 ${lien}
+👉 ${lienInscription}
 
-Palier sélectionné : ${palier.label} — ${prix}
+Créez votre compte, vous serez ensuite redirigé automatiquement vers le paiement sécurisé du palier sélectionné : ${palier.label} — ${prix}
 
-Une fois le paiement effectué, vous recevrez automatiquement un email pour créer votre compte et accéder à votre espace club Digital Football.
+Une fois le paiement effectué, vous accéderez directement à votre espace club Digital Football.
 
 Nous proposons également un accompagnement personnalisé pour vous aider à configurer votre dashboard selon les besoins spécifiques de votre club : import de l'effectif, paramétrage des équipes, formation à l'outil.
 
@@ -57,13 +67,24 @@ L'équipe Digital Football`
     await navigator.clipboard.writeText(`OBJET : ${objet}\n\n${corps}`)
     setCopie('email')
     setTimeout(() => setCopie(null), 3000)
-    if (lien) await marquerEnvoye()
+    if (lienInscription) await marquerEnvoye()
   }
 
-  const copierLienSeul = async () => {
+  const copierLienInscription = async () => {
+    if (!lienInscription) return
+    await navigator.clipboard.writeText(lienInscription)
+    setCopie('inscription')
+    setTimeout(() => setCopie(null), 2000)
+    await marquerEnvoye()
+  }
+
+  // Lien Stripe direct, sans passer par l'inscription — utile seulement si le
+  // club a déjà un compte (cas rare ici : à ce stade la demande n'en a pas
+  // encore, cf. commentaire sur lienInscription).
+  const copierLienDirect = async () => {
     if (!lien) return
     await navigator.clipboard.writeText(lien)
-    setCopie('lien')
+    setCopie('direct')
     setTimeout(() => setCopie(null), 2000)
     await marquerEnvoye()
   }
@@ -107,14 +128,20 @@ L'équipe Digital Football`
               style={{ background: colors.accent.green, border: 'none', color: colors.black, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               {copie === 'email' ? '✓ Copié !' : "📋 Copier tout l'email"}
             </button>
-            {lien && (
-              <button onClick={copierLienSeul}
+            {lienInscription && (
+              <button onClick={copierLienInscription}
                 style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                {copie === 'lien' ? '✓ Copié !' : '🔗 Copier le lien seul'}
+                {copie === 'inscription' ? '✓ Copié !' : "🔗 Copier le lien d'inscription"}
+              </button>
+            )}
+            {lien && (
+              <button onClick={copierLienDirect}
+                style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {copie === 'direct' ? '✓ Copié !' : '💳 Lien Stripe direct (déjà inscrit)'}
               </button>
             )}
             <a href={`mailto:${demande.email}?subject=${encodeURIComponent(objet)}&body=${encodeURIComponent(corps)}`}
-              onClick={() => { if (lien) marquerEnvoye() }}
+              onClick={() => { if (lienInscription) marquerEnvoye() }}
               style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', fontFamily: 'Inter, sans-serif' }}>
               📨 Ouvrir dans Mail
             </a>
