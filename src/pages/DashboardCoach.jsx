@@ -19,7 +19,7 @@ import { colors, alpha } from '../tokens'
 function EmailBlockClub({ demande, onLienEnvoye }) {
   const [copie, setCopie] = useState(null) // 'email' | 'lien' | null
   const [ouvert, setOuvert] = useState(false)
-  const [cycle, setCycle] = useState('mensuel')
+  const [cycle, setCycle] = useState(demande.cycle === 'annuel' ? 'annuel' : 'mensuel')
 
   const palier = STRIPE_LINKS_CLUB[demande.nb_licencies]
   const lien = palier?.[cycle]
@@ -1321,7 +1321,7 @@ function DashboardCoach() {
                           <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
                           {d.nom_club && (
                             <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.dim }}>
-                              🏟️ {d.nom_club}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}
+                              🏟️ {d.nom_club}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
                             </p>
                           )}
                           <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.disabled }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>

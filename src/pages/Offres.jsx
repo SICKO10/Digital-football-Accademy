@@ -111,6 +111,7 @@ function FormulaireClub() {
   const [erreur, setErreur] = useState('')
   const [typeEnvoye, setTypeEnvoye] = useState(null)
   const [nbLicencies, setNbLicencies] = useState('')
+  const [cycle, setCycle] = useState('mensuel')
   const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', message: '' })
 
   const champ = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -126,16 +127,18 @@ function FormulaireClub() {
     }
     setEnvoi(true)
     setErreur('')
-    const palierLabel = STRIPE_LINKS_CLUB[nbLicencies]?.label
+    const palier = STRIPE_LINKS_CLUB[nbLicencies]
+    const prixDemande = cycle === 'annuel' ? palier?.annuelPrix : palier?.mensuelPrix
     const { error } = await supabase.from('demandes_club').insert({
       prenom: form.prenom.trim(),
       nom: form.nom.trim(),
       email: form.email.trim().toLowerCase(),
       nom_club: form.nomClub.trim(),
       nb_licencies: type === 'abonnement' ? nbLicencies : null,
+      cycle: type === 'abonnement' ? cycle : null,
       type,
       statut: 'nouveau',
-      message: form.message.trim() || (type === 'abonnement' ? `Demande abonnement — ${palierLabel}` : 'Question via messagerie'),
+      message: form.message.trim() || (type === 'abonnement' ? `Demande abonnement — ${palier?.label} (${cycle}) — ${prixDemande}` : 'Question via messagerie'),
     })
     setEnvoi(false)
     if (error) { setErreur("Une erreur est survenue, réessaie ou écris-nous directement à contact@digital-football.fr."); return }
@@ -160,11 +163,19 @@ function FormulaireClub() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {['mensuel', 'annuel'].map(c => (
+          <button key={c} type="button" onClick={() => setCycle(c)}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${cycle === c ? colors.accent.green : '#2a2a2a'}`, background: cycle === c ? colors.accent.green + alpha.subtle : colors.background.base, color: cycle === c ? colors.accent.green : colors.text.faint, fontWeight: cycle === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+            {c === 'mensuel' ? 'Mensuel' : 'Annuel — 2 mois offerts 🎁'}
+          </button>
+        ))}
+      </div>
       <label style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nombre de licenciés</label>
       <select value={nbLicencies} onChange={e => setNbLicencies(e.target.value)} style={{ ...inputStyle, color: nbLicencies ? colors.text.primary : colors.text.faint, cursor: 'pointer' }}>
         <option value="">Sélectionnez votre tranche</option>
         {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
-          <option key={key} value={key}>{p.label} — {p.mensuelPrix}</option>
+          <option key={key} value={key}>{p.label} — {cycle === 'annuel' ? p.annuelPrix : p.mensuelPrix}</option>
         ))}
       </select>
       <div style={{ display: 'flex', gap: '10px' }}>
