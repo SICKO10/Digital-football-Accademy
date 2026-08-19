@@ -687,7 +687,19 @@ function DashboardJoueur() {
       body: { email, role: 'parent', joueur_id: userId },
     })
     setInvitantParent(false)
-    if (error || data?.error) { alert('Erreur : ' + (data?.error || error.message)); return }
+    if (error || data?.error) {
+      // supabase.functions.invoke() ne remonte pas le corps JSON de la réponse
+      // dans error.message sur un non-2xx (juste "Edge Function returned a
+      // non-2xx status code") — le vrai message (envoyer-invitation renvoie
+      // bien { error: '...' } avec un texte explicite) est dans
+      // error.context, la Response brute, à relire manuellement.
+      let message = data?.error || error?.message
+      if (error?.context?.json) {
+        try { const body = await error.context.json(); if (body?.error) message = body.error } catch { /* corps non-JSON, on garde error.message */ }
+      }
+      alert('Erreur : ' + message)
+      return
+    }
     setEmailParentInput('')
     await chargerParentsInvites(userId)
   }
@@ -699,13 +711,27 @@ function DashboardJoueur() {
 
   // Convocation active : jointure via convocation_joueurs (le joueur ne voit,
   // par RLS, que ses lignes) → convocations (RLS déjà limitée à publiee=true
-  // et expire_at > now(), donc pas besoin de refiltrer côté client).
+  // et expire_at > now(), donc pas besoin de refiltrer côté client) → match.
+  // 3 requêtes manuelles plutôt qu'un embed PostgREST imbriqué
+  // convocations(*, matchs_equipe(...)) : aucune contrainte FK réelle entre
+  // convocations.match_id et matchs_equipe côté base (juste une convention
+  // applicative), donc PostgREST ne sait pas résoudre cet embed
+  // (PGRST200 "Could not find a relationship").
   const chargerConvocationActive = async (uid) => {
-    const { data } = await supabase
-      .from('convocation_joueurs')
-      .select('convocations(*, matchs_equipe(adversaire, date, heure, lieu, domicile, competition))')
-      .eq('joueur_id', uid)
-    const convocations = (data || []).map(row => row.convocations).filter(Boolean)
+    const { data: cj } = await supabase.from('convocation_joueurs').select('convocation_id').eq('joueur_id', uid)
+    const convocationIds = [...new Set((cj || []).map(r => r.convocation_id).filter(Boolean))]
+    if (convocationIds.length === 0) { setConvocationActive(null); return }
+
+    const { data: convs } = await supabase.from('convocations').select('*').in('id', convocationIds)
+    const matchIds = [...new Set((convs || []).map(c => c.match_id).filter(Boolean))]
+    const { data: matchs } = matchIds.length > 0
+      ? await supabase.from('matchs_equipe').select('id, adversaire, date, heure, lieu, domicile, competition').in('id', matchIds)
+      : { data: [] }
+    const matchsParId = Object.fromEntries((matchs || []).map(m => [m.id, m]))
+
+    const convocations = (convs || [])
+      .map(c => ({ ...c, matchs_equipe: matchsParId[c.match_id] }))
+      .filter(c => c.matchs_equipe)
     convocations.sort((a, b) => (a.matchs_equipe?.date || '').localeCompare(b.matchs_equipe?.date || ''))
     setConvocationActive(convocations[0] || null)
   }
