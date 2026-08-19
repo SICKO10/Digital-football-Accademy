@@ -59,6 +59,9 @@ serve(async (req) => {
       // Rien à afficher ici : l'invitation vient du webhook Stripe après
       // paiement, pas d'un éducateur ni d'un joueur (educateur_id/joueur_id
       // sont null pour ce rôle).
+    } else if (inv.role === 'educateur') {
+      const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', inv.club_id).maybeSingle()
+      club = clubProfile?.club || null
     } else {
       const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
         supabase.from('profiles').select('prenom, nom').eq('id', inv.educateur_id).maybeSingle(),
@@ -108,8 +111,11 @@ serve(async (req) => {
 
       const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
       if (!profilExistant) {
+        // 'educateur' pour ce rôle (la contrainte CHECK sur profiles.plan
+        // n'accepte 'fan' que pour les comptes joueur), 'fan' par défaut sinon.
         const { error: errProfilInsert } = await supabase.from('profiles').insert({
-          id: userId, email: inv.email, prenom: inv.prenom || '', nom: inv.nom || '', plan: 'fan',
+          id: userId, email: inv.email, prenom: inv.prenom || '', nom: inv.nom || '',
+          plan: inv.role === 'educateur' ? 'educateur' : 'fan',
         })
         if (errProfilInsert) throw errProfilInsert
       }
@@ -142,6 +148,13 @@ serve(async (req) => {
           joueur_id: inv.joueur_id, parent_id: userId, email_invite: inv.email, statut: 'accepte',
         }, { onConflict: 'joueur_id,email_invite' })
         if (errParent) throw errParent
+      }
+
+      if (inv.role === 'educateur') {
+        const { error: errEducateur } = await supabase.from('club_educateurs').upsert({
+          club_id: inv.club_id, educateur_id: userId, statut: 'accepte', methode: 'invite',
+        }, { onConflict: 'club_id,educateur_id' })
+        if (errEducateur) throw errEducateur
       }
 
       if (inv.role === 'club') {

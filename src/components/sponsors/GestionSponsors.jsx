@@ -384,7 +384,7 @@ function ModalPaiement({ sponsor, onClose, onSave, saving }) {
   )
 }
 
-function ModalNiveau({ niveau, onClose, onSave, saving, accentColor = '#4ade80' }) {
+function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, saving, accentColor = '#4ade80' }) {
   const [nom, setNom] = useState(niveau?.nom || '')
   const [montantAnnuel, setMontantAnnuel] = useState(niveau?.montant_annuel != null ? String(niveau.montant_annuel) : '')
   const [couleur, setCouleur] = useState(niveau?.couleur || COULEURS_NIVEAU[0].val)
@@ -437,11 +437,17 @@ function ModalNiveau({ niveau, onClose, onSave, saving, accentColor = '#4ade80' 
               ))}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input style={st.input} placeholder="Ex: Logo sur maillot" value={nouvelleContrepartie}
+              <input style={st.input} placeholder="Ex: Logo sur maillot" value={nouvelleContrepartie} list="suggestions-contreparties"
                 onChange={e => setNouvelleContrepartie(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); ajouterContrepartie() } }} />
               <button onClick={ajouterContrepartie} style={st.btnSecondary}>+ Ajouter</button>
             </div>
+            {/* Suggestions tirées des contreparties déjà saisies sur les autres niveaux
+                de ce club — s'enrichit naturellement avec le temps, sans table dédiée :
+                la liste vient directement de niveaux_partenariat.contreparties. */}
+            <datalist id="suggestions-contreparties">
+              {suggestionsContreparties.filter(c => !contreparties.includes(c)).map(c => <option key={c} value={c} />)}
+            </datalist>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -737,6 +743,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       {modalNiveau && !readOnly && (
         <ModalNiveau
           niveau={modalNiveau === 'new' ? null : modalNiveau}
+          suggestionsContreparties={[...new Set(niveaux.flatMap(n => n.contreparties || []))]}
           onClose={() => setModalNiveau(null)}
           onSave={sauvegarderNiveau}
           saving={saving}

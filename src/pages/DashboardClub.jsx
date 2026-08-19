@@ -895,6 +895,13 @@ export default function DashboardClub() {
   const [resultatsEducateurs, setResultatsEducateurs] = useState([])
   const [invitingId, setInvitingId] = useState(null)
   const [codeClub, setCodeClub] = useState('')
+  // Ajout manuel d'un éducateur sans compte existant — invitation par email
+  // (cf. envoyer-invitation, role='educateur'), même mécanisme que
+  // l'invitation staff mais scopé club_id/club_educateurs au lieu de staff_club.
+  const [ajoutEducateurForm, setAjoutEducateurForm] = useState({ prenom: '', nom: '', email: '' })
+  const [invitingEducateur, setInvitingEducateur] = useState(false)
+  const [inviteEducateurMessage, setInviteEducateurMessage] = useState(null) // { type: 'ok' | 'erreur', texte }
+  const [invitationsEducateurEnvoyees, setInvitationsEducateurEnvoyees] = useState([])
 
   // Profil club
   const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '', stades: [] })
@@ -1138,7 +1145,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId)])
     setLoading(false)
   }
 
@@ -2405,6 +2412,34 @@ Règles :
     setInvitingId(null)
   }
 
+  // Éducateur sans compte existant — invitation par email (envoyer-invitation,
+  // role='educateur'), même mécanisme que l'invitation staff. Se termine par un
+  // rechargement de la liste des invitations en attente, pas club_educateurs :
+  // la ligne club_educateurs n'est créée qu'à l'acceptation (accepter-invitation),
+  // faute d'educateur_id réel avant que la personne n'ait un compte.
+  const ajouterEducateurManuel = async () => {
+    if (!ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) return
+    setInvitingEducateur(true)
+    setInviteEducateurMessage(null)
+    const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+      body: { email: ajoutEducateurForm.email.trim(), role: 'educateur', club_id: clubId, prenom: ajoutEducateurForm.prenom.trim(), nom: ajoutEducateurForm.nom.trim() },
+    })
+    setInvitingEducateur(false)
+    if (error || data?.error) {
+      setInviteEducateurMessage({ type: 'erreur', texte: error?.message || data?.error })
+      return
+    }
+    setInviteEducateurMessage({ type: 'ok', texte: data?.linked ? 'Compte existant lié directement.' : `Invitation envoyée à ${ajoutEducateurForm.email}` })
+    setAjoutEducateurForm({ prenom: '', nom: '', email: '' })
+    if (data?.linked) await chargerEducateurs(clubId)
+    else await chargerInvitationsEducateurEnvoyees(clubId)
+  }
+
+  const chargerInvitationsEducateurEnvoyees = async (uid) => {
+    const { data } = await supabase.from('invitations').select('*').eq('club_id', uid).eq('role', 'educateur').eq('statut', 'en_attente').order('created_at', { ascending: false })
+    setInvitationsEducateurEnvoyees(data || [])
+  }
+
   const retirerEducateur = async (id) => {
     if (!confirm('Retirer cet éducateur du club ?')) return
     await supabase.from('club_educateurs').delete().eq('id', id)
@@ -3063,6 +3098,37 @@ Règles :
                       </div>
                     )
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* Ajout manuel + invitation email — pour un éducateur sans compte existant */}
+            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>✉️ Ajouter un éducateur manuellement</p>
+              <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.dim }}>S'il n'a pas encore de compte, il reçoit une invitation par email pour en créer un.</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                <input style={{ ...st.input, flex: '1 1 140px' }} placeholder="Prénom" value={ajoutEducateurForm.prenom} onChange={e => setAjoutEducateurForm(f => ({ ...f, prenom: e.target.value }))} />
+                <input style={{ ...st.input, flex: '1 1 140px' }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
+                <input style={{ ...st.input, flex: '2 1 220px' }} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()} style={{ ...st.btnSolid, opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
+                {invitingEducateur ? '...' : '✉️ Envoyer l\'invitation'}
+              </button>
+              {inviteEducateurMessage && (
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.green : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
+              )}
+              {invitationsEducateurEnvoyees.length > 0 && (
+                <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invitations envoyées, en attente ({invitationsEducateurEnvoyees.length})</p>
+                  {invitationsEducateurEnvoyees.map(inv => (
+                    <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{inv.prenom} {inv.nom}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{inv.email}</p>
+                      </div>
+                      <span style={{ fontSize: '11px', color: colors.accent.amber, fontWeight: 600 }}>⏳ En attente</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

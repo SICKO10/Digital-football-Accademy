@@ -21,7 +21,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Non authentifié' }), { status: 401, headers: corsHeaders })
     }
 
-    const { email, role, educateur_id, equipe_joueur_id, permissions, prenom, nom, joueur_id } = await req.json()
+    const { email, role, educateur_id, equipe_joueur_id, permissions, prenom, nom, joueur_id, club_id } = await req.json()
 
     if (!email || !role) {
       return new Response(
@@ -29,15 +29,20 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    if (!['joueur', 'dirigeant', 'parent'].includes(role)) {
+    if (!['joueur', 'dirigeant', 'parent', 'educateur'].includes(role)) {
       return new Response(JSON.stringify({ error: 'role invalide' }), { status: 400, headers: corsHeaders })
     }
     // joueur/dirigeant : invités par un éducateur (ou un dirigeant délégué), scopés
     // educateur_id. parent : invité par le joueur lui-même pour son propre profil,
-    // scopé joueur_id — deux mondes différents, pas de educateur_id pour ce rôle.
+    // scopé joueur_id. educateur : invité par le club lui-même (ou un membre du
+    // staff), scopé club_id — trois mondes différents.
     if (role === 'parent') {
       if (!joueur_id) {
         return new Response(JSON.stringify({ error: 'Champ manquant : joueur_id requis' }), { status: 400, headers: corsHeaders })
+      }
+    } else if (role === 'educateur') {
+      if (!club_id) {
+        return new Response(JSON.stringify({ error: 'Champ manquant : club_id requis' }), { status: 400, headers: corsHeaders })
       }
     } else if (!educateur_id) {
       return new Response(JSON.stringify({ error: 'Champ manquant : educateur_id requis' }), { status: 400, headers: corsHeaders })
@@ -52,9 +57,17 @@ serve(async (req) => {
     // dirigeant avec édition sur "effectif" le peut aussi (même règle que l'ancien
     // inviter-joueur) — les dirigeants n'invitent en revanche jamais d'autres
     // dirigeants. Pour un parent, seul le joueur concerné peut inviter pour lui-même.
+    // Pour un educateur, le club lui-même ou un membre de son staff (même règle que
+    // inviter-staff, pas de vérification fine par section pour rester simple).
     let autorise = false
     if (role === 'parent') {
       autorise = caller.id === joueur_id
+    } else if (role === 'educateur') {
+      autorise = caller.id === club_id
+      if (!autorise) {
+        const { data: staffRow } = await supabase.from('staff_club').select('id').eq('club_id', club_id).eq('user_id', caller.id).maybeSingle()
+        autorise = !!staffRow
+      }
     } else {
       autorise = caller.id === educateur_id
       if (!autorise && role === 'joueur') {
@@ -120,6 +133,12 @@ serve(async (req) => {
         }, { onConflict: 'joueur_id,email_invite' })
       }
 
+      if (role === 'educateur') {
+        await supabase.from('club_educateurs').upsert({
+          club_id, educateur_id: existingUser.id, statut: 'accepte', methode: 'invite',
+        }, { onConflict: 'club_id,educateur_id' })
+      }
+
       return new Response(
         JSON.stringify({ success: true, linked: true, message: 'Compte existant lié directement' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -131,8 +150,9 @@ serve(async (req) => {
       .from('invitations')
       .insert({
         email, role,
-        educateur_id: role === 'parent' ? null : educateur_id,
+        educateur_id: (role === 'parent' || role === 'educateur') ? null : educateur_id,
         joueur_id: role === 'parent' ? joueur_id : null,
+        club_id: role === 'educateur' ? club_id : null,
         equipe_joueur_id: equipe_joueur_id || null,
         permissions: permissions || null,
         prenom: prenom || null,
@@ -166,6 +186,9 @@ serve(async (req) => {
     if (role === 'parent') {
       const { data: joueurProfile } = await supabase.from('profiles').select('prenom, nom').eq('id', joueur_id).maybeSingle()
       nomInviteur = joueurProfile ? `${joueurProfile.prenom} ${joueurProfile.nom}` : 'Un joueur'
+    } else if (role === 'educateur') {
+      const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', club_id).maybeSingle()
+      club = clubProfile?.club || 'le club'
     } else {
       const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
         supabase.from('profiles').select('prenom, nom').eq('id', educateur_id).maybeSingle(),
@@ -181,13 +204,17 @@ serve(async (req) => {
       ? `Tu es invité à rejoindre ${club}${categorie} sur Digital Football`
       : role === 'dirigeant'
         ? `Tu es invité à rejoindre le staff de ${club}${categorie} sur Digital Football`
-        : `${nomInviteur} t'invite à suivre son profil sur Digital Football`
+        : role === 'educateur'
+          ? `${club} t'invite à devenir éducateur sur Digital Football`
+          : `${nomInviteur} t'invite à suivre son profil sur Digital Football`
 
-    const titreEmail = role === 'joueur' ? '⚽ Rejoins ton équipe !' : role === 'dirigeant' ? '👔 Rejoins le staff !' : '👨‍👩‍👦 Suis le profil de ton enfant !'
+    const titreEmail = role === 'joueur' ? '⚽ Rejoins ton équipe !' : role === 'dirigeant' ? '👔 Rejoins le staff !' : role === 'educateur' ? '🎓 Rejoins le club en tant qu\'éducateur !' : '👨‍👩‍👦 Suis le profil de ton enfant !'
     const texteEmail = role === 'parent'
       ? `${nomInviteur} t'invite à accéder à son profil (lecture seule) sur Digital Football.`
-      : `${nomInviteur} t'invite à rejoindre <strong style="color:#fff;">${club}${categorie}</strong> ${role === 'joueur' ? 'en tant que joueur' : 'en tant que dirigeant'} sur Digital Football.`
-    const boutonEmail = role === 'joueur' ? "Rejoindre l'équipe" : role === 'dirigeant' ? 'Rejoindre le staff' : 'Accéder au profil'
+      : role === 'educateur'
+        ? `<strong style="color:#fff;">${club}</strong> t'invite à rejoindre le club en tant qu'éducateur sur Digital Football.`
+        : `${nomInviteur} t'invite à rejoindre <strong style="color:#fff;">${club}${categorie}</strong> ${role === 'joueur' ? 'en tant que joueur' : 'en tant que dirigeant'} sur Digital Football.`
+    const boutonEmail = role === 'joueur' ? "Rejoindre l'équipe" : role === 'dirigeant' ? 'Rejoindre le staff' : role === 'educateur' ? 'Rejoindre le club' : 'Accéder au profil'
 
     const corpsEmail = `
 <!DOCTYPE html>

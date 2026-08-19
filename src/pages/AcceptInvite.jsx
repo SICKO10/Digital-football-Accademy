@@ -72,7 +72,7 @@ function AcceptInvite() {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
       if (signInErr) throw signInErr
 
-      navigate(data.role === 'dirigeant' ? '/dashboard-dirigeant' : data.role === 'parent' ? '/dashboard-parent' : data.role === 'club' ? '/club' : '/dashboard-joueur')
+      navigate(data.role === 'dirigeant' ? '/dashboard-dirigeant' : data.role === 'parent' ? '/dashboard-parent' : data.role === 'club' ? '/club' : data.role === 'educateur' ? '/educateur' : '/dashboard-joueur')
     } catch (err) {
       console.error('[AcceptInvite/B]', err)
       setErreur(err?.message || t('invite_erreur_inconnue', lang))
@@ -250,19 +250,21 @@ function AcceptInvite() {
     return conteneur(
       <>
         <h1 style={{ fontSize: '22px', fontWeight: '700', textAlign: 'center', marginBottom: '8px' }}>
-          {previewB?.role === 'joueur' ? t('invite_rejoins_equipe_titre', lang) : previewB?.role === 'parent' ? t('invite_rejoins_famille_titre', lang) : previewB?.role === 'club' ? t('invite_club_titre', lang) : t('invite_rejoins_staff_titre', lang)}
+          {previewB?.role === 'joueur' ? t('invite_rejoins_equipe_titre', lang) : previewB?.role === 'parent' ? t('invite_rejoins_famille_titre', lang) : previewB?.role === 'club' ? t('invite_club_titre', lang) : previewB?.role === 'educateur' ? '🎓 Rejoins le club !' : t('invite_rejoins_staff_titre', lang)}
         </h1>
         <p style={{ color: colors.text.secondary, fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
           {previewB?.role === 'club'
             ? t('invite_template_club', lang)
-            : previewB?.nomEdu && previewB.role === 'parent'
-              ? t('invite_template_parent', lang).replace('{nom}', previewB.nomEdu)
-              : previewB?.nomEdu
-                ? t('invite_template', lang)
-                    .replace('{nom}', previewB.nomEdu)
-                    .replace('{club}', previewB.club || t('invite_le_club', lang))
-                    .replace('{cat}', previewB.categorie ? ` (${previewB.categorie})` : '')
-                : t('invite_cree_mdp_activer', lang)}
+            : previewB?.role === 'educateur'
+              ? `${previewB.club || 'Un club'} t'invite à le rejoindre en tant qu'éducateur sur Digital Football.`
+              : previewB?.nomEdu && previewB.role === 'parent'
+                ? t('invite_template_parent', lang).replace('{nom}', previewB.nomEdu)
+                : previewB?.nomEdu
+                  ? t('invite_template', lang)
+                      .replace('{nom}', previewB.nomEdu)
+                      .replace('{club}', previewB.club || t('invite_le_club', lang))
+                      .replace('{cat}', previewB.categorie ? ` (${previewB.categorie})` : '')
+                  : t('invite_cree_mdp_activer', lang)}
         </p>
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ fontSize: '13px', color: colors.text.secondary, display: 'block', marginBottom: '6px' }}>{t('aff_email', lang)}</label>
