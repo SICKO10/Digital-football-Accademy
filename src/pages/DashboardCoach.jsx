@@ -9,6 +9,120 @@ import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { colors, alpha } from '../tokens'
 
+// Email pré-rédigé avec le lien de paiement du bon palier, à copier ou ouvrir
+// directement dans l'app Mail — évite à l'admin de retaper le message à
+// chaque demande. Palier/prix viennent de STRIPE_LINKS_CLUB (source unique),
+// pas d'une liste dupliquée ici. Lien brut, sans client_reference_id
+// (contrairement à copierLienClub de la section "Clubs en attente") : à ce
+// stade la demande n'a pas encore de compte — le webhook Stripe identifie le
+// paiement par montant + email et crée le compte via invitation.
+function EmailBlockClub({ demande, onLienEnvoye }) {
+  const [copie, setCopie] = useState(null) // 'email' | 'lien' | null
+  const [ouvert, setOuvert] = useState(false)
+  const [cycle, setCycle] = useState('mensuel')
+
+  const palier = STRIPE_LINKS_CLUB[demande.nb_licencies]
+  const lien = palier?.[cycle]
+  const prix = cycle === 'mensuel' ? palier?.mensuelPrix : palier?.annuelPrix
+
+  const objet = "Digital Football — Votre lien d'abonnement club"
+  const corps = (palier && lien)
+    ? `Bonjour ${demande.prenom},
+
+Suite à votre demande d'abonnement pour ${demande.nom_club}, voici votre lien de paiement sécurisé :
+
+👉 ${lien}
+
+Palier sélectionné : ${palier.label} — ${prix}
+
+Une fois le paiement effectué, vous recevrez automatiquement un email pour créer votre compte et accéder à votre espace club Digital Football.
+
+N'hésitez pas à nous contacter si vous avez la moindre question.
+
+L'équipe Digital Football`
+    : `Bonjour ${demande.prenom},
+
+Suite à votre demande pour ${demande.nom_club}, nous vous recontactons sous 24-48h.
+
+L'équipe Digital Football`
+
+  const marquerEnvoye = async () => {
+    await supabase.from('demandes_club').update({ lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() }).eq('id', demande.id)
+    onLienEnvoye?.()
+  }
+
+  const copierEmail = async () => {
+    await navigator.clipboard.writeText(`OBJET : ${objet}\n\n${corps}`)
+    setCopie('email')
+    setTimeout(() => setCopie(null), 3000)
+    if (lien) await marquerEnvoye()
+  }
+
+  const copierLienSeul = async () => {
+    if (!lien) return
+    await navigator.clipboard.writeText(lien)
+    setCopie('lien')
+    setTimeout(() => setCopie(null), 2000)
+    await marquerEnvoye()
+  }
+
+  return (
+    <div style={{ marginTop: '12px' }}>
+      <button onClick={() => setOuvert(p => !p)}
+        style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        ✉️ {ouvert ? "Masquer l'email" : "Voir l'email à envoyer"}
+      </button>
+
+      {ouvert && (
+        <div style={{ marginTop: '10px', background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '16px' }}>
+          {palier && (
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+              <button onClick={() => setCycle('mensuel')}
+                style={{ background: cycle === 'mensuel' ? colors.accent.green : 'transparent', color: cycle === 'mensuel' ? colors.black : colors.text.dim, border: cycle === 'mensuel' ? 'none' : '1px solid #2a2a2a', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Mensuel
+              </button>
+              <button onClick={() => setCycle('annuel')}
+                style={{ background: cycle === 'annuel' ? colors.accent.green : 'transparent', color: cycle === 'annuel' ? colors.black : colors.text.dim, border: cycle === 'annuel' ? 'none' : '1px solid #2a2a2a', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Annuel
+              </button>
+            </div>
+          )}
+
+          <div style={{ marginBottom: '10px' }}>
+            <span style={{ color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700 }}>Objet</span>
+            <div style={{ color: colors.text.dim, fontSize: '13px', marginTop: '4px', fontFamily: 'monospace' }}>{objet}</div>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <span style={{ color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700 }}>Corps du mail</span>
+            <pre style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '6px', whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: '1.6', background: 'transparent', border: 'none', padding: 0 }}>
+              {corps}
+            </pre>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={copierEmail}
+              style={{ background: colors.accent.green, border: 'none', color: colors.black, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              {copie === 'email' ? '✓ Copié !' : "📋 Copier tout l'email"}
+            </button>
+            {lien && (
+              <button onClick={copierLienSeul}
+                style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {copie === 'lien' ? '✓ Copié !' : '🔗 Copier le lien seul'}
+              </button>
+            )}
+            <a href={`mailto:${demande.email}?subject=${encodeURIComponent(objet)}&body=${encodeURIComponent(corps)}`}
+              onClick={() => { if (lien) marquerEnvoye() }}
+              style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', fontFamily: 'Inter, sans-serif' }}>
+              📨 Ouvrir dans Mail
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DashboardCoach() {
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('analyses')
@@ -28,7 +142,6 @@ function DashboardCoach() {
   // Demandes de contact club envoyées depuis /offres (accès restreint, cf. COACH_ADMIN_EMAILS)
   const [demandesClub, setDemandesClub] = useState([])
   const [traitantDemande, setTraitantDemande] = useState(null)
-  const [lienCopieDemande, setLienCopieDemande] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -140,24 +253,6 @@ function DashboardCoach() {
       alert('Erreur : ' + error.message)
       if (avant) setDemandesClub(prev => [avant, ...prev])
     }
-  }
-
-  // Copie le lien Stripe du palier demandé — pas de client_reference_id ici,
-  // contrairement à copierLienClub (clubs déjà inscrits, cf. section
-  // clubs_admin) : à ce stade la demande n'a pas encore de compte, donc pas
-  // d'id de profil à y accrocher. Le webhook Stripe identifie le paiement par
-  // montant + email (cf. supabase/functions/stripe-webhook), et crée le
-  // compte via invitation s'il n'existe pas encore.
-  const copierLienDemandeClub = async (demande, cycle) => {
-    const lien = STRIPE_LINKS_CLUB[demande.nb_licencies]?.[cycle]
-    if (!lien) { alert('Palier inconnu pour cette demande.'); return }
-    await navigator.clipboard.writeText(lien)
-    setLienCopieDemande(`${demande.id}-${cycle}`)
-    setTimeout(() => setLienCopieDemande(null), 2000)
-    await supabase.from('demandes_club')
-      .update({ lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() })
-      .eq('id', demande.id)
-    setDemandesClub(prev => prev.map(d => d.id === demande.id ? { ...d, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : d))
   }
 
   const getClubsEnAttente = async () => {
@@ -1206,18 +1301,6 @@ function DashboardCoach() {
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          {d.type === 'abonnement' && d.nb_licencies && (
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button onClick={() => copierLienDemandeClub(d, 'mensuel')}
-                                style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                {lienCopieDemande === `${d.id}-mensuel` ? '✓ Copié' : '📋 Lien mensuel'}
-                              </button>
-                              <button onClick={() => copierLienDemandeClub(d, 'annuel')}
-                                style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '7px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                {lienCopieDemande === `${d.id}-annuel` ? '✓ Copié' : '📋 Lien annuel'}
-                              </button>
-                            </div>
-                          )}
                           {d.statut === 'nouveau' ? (
                             <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
                               style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -1230,6 +1313,9 @@ function DashboardCoach() {
                       </div>
                       {d.message && (
                         <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, lineHeight: 1.6, borderTop: '1px solid #1f1f1f', paddingTop: '10px' }}>{d.message}</p>
+                      )}
+                      {d.type === 'abonnement' && d.nb_licencies && d.statut !== 'traite' && (
+                        <EmailBlockClub demande={d} onLienEnvoye={() => setDemandesClub(prev => prev.map(x => x.id === d.id ? { ...x, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : x))} />
                       )}
                     </div>
                   ))}
