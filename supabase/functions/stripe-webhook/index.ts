@@ -8,10 +8,9 @@ const MONTANT_ANALYSE_UNITE = 6000 // 60€ à l'unité
 
 // Éducateur/recruteur partagent ces mêmes montants (10€/100€) — seul le plan
 // appliqué diffère. Le club a ses propres paliers (voir lib/stripeLinks.js
-// STRIPE_LINKS_CLUB), dont certains montants collisionnent avec ceux
-// ci-dessus (ex: palier 101–200 joueurs = 100€/mois = 10000 centimes =
-// MONTANT_ANNUEL) — d'où la résolution par plan existant ci-dessous plutôt
-// que par montant seul pour les comptes déjà marqués plan='club'.
+// STRIPE_LINKS_CLUB), dont un seul collisionne avec ceux ci-dessus (palier
+// 101–200 joueurs = 100€/mois = 10000 centimes = MONTANT_ANNUEL) — voir
+// resoudreCycleEtPlan ci-dessous pour la résolution.
 const MONTANTS_CLUB_MENSUEL = [5000, 10000, 13000, 16000, 19000, 25000]
 const MONTANTS_CLUB_ANNUEL = [50000, 100000, 130000, 160000, 190000, 250000]
 
@@ -70,17 +69,24 @@ async function crediterAnalyses(profileId: string, delta: number) {
   if (error) console.error('[stripe-webhook] erreur increment_analyses', error)
 }
 
-// Détermine le cycle (mensuel/annuel) à partir du montant, en tenant compte
-// du plan déjà en base pour désambiguïser les montants qui collisionnent
-// entre joueur/educateur/recruteur et certains paliers club.
-function resoudreCycle(montant: number, planActuel: string | undefined | null): 'mensuel' | 'annuel' | null {
-  if (planActuel === 'club') {
-    if (MONTANTS_CLUB_MENSUEL.includes(montant)) return 'mensuel'
-    if (MONTANTS_CLUB_ANNUEL.includes(montant)) return 'annuel'
-    return null
+// Détermine (cycle, estClub) à partir du montant. Les paliers club sont
+// reconnus par leur montant SEUL, indépendamment du plan déjà en base : un
+// compte peut payer un abonnement club avant même d'avoir plan='club' (ex.
+// compte créé en 'educateur' puis converti club via le lien envoyé
+// manuellement par le support, cf. lib/stripeLinks.js STRIPE_LINKS_CLUB
+// "pas de libre-service") — sans ça, le paiement est capté par Stripe mais
+// jamais reconnu ("montant non reconnu"), et le compte n'est jamais activé.
+// Seul 10000 centimes (100€) est ambigu : à la fois "joueur/educateur/
+// recruteur annuel" ET "club c100 mensuel" — on retombe sur le plan déjà en
+// base uniquement pour ce cas précis.
+function resoudreCycleEtPlan(montant: number, planActuel: string | undefined | null): { cycle: 'mensuel' | 'annuel', estClub: boolean } | null {
+  if (MONTANTS_CLUB_MENSUEL.includes(montant) && montant !== MONTANT_ANNUEL) return { cycle: 'mensuel', estClub: true }
+  if (MONTANTS_CLUB_ANNUEL.includes(montant)) return { cycle: 'annuel', estClub: true }
+  if (montant === MONTANT_ANNUEL) {
+    if (planActuel === 'club') return { cycle: 'mensuel', estClub: true }
+    return { cycle: 'annuel', estClub: false }
   }
-  if (montant === MONTANT_MENSUEL) return 'mensuel'
-  if (montant === MONTANT_ANNUEL) return 'annuel'
+  if (montant === MONTANT_MENSUEL) return { cycle: 'mensuel', estClub: false }
   return null
 }
 
@@ -131,8 +137,9 @@ Deno.serve(async (req) => {
           const { data: profilActuel, error: profilErr } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).maybeSingle()
           if (profilErr) console.error('[stripe-webhook] erreur lecture profil', profilErr)
 
-          const cycle = resoudreCycle(montant, profilActuel?.plan)
-          if (!cycle) { console.error('[stripe-webhook] checkout.session.completed: montant non reconnu', { montant, plan: profilActuel?.plan }); break }
+          const resolu = resoudreCycleEtPlan(montant, profilActuel?.plan)
+          if (!resolu) { console.error('[stripe-webhook] checkout.session.completed: montant non reconnu', { montant, plan: profilActuel?.plan }); break }
+          const { cycle, estClub } = resolu
 
           // profiles.plan est contraint par une CHECK constraint côté base à :
           // 'joueur_starter' | 'joueur_pro' | 'educateur' | 'scout' | 'club' | 'dirigeant'
@@ -140,10 +147,12 @@ Deno.serve(async (req) => {
           // TOUS rejetés). Le joueur n'a donc qu'un palier gratuit/payant, pas de
           // distinction mensuel/mannuel au niveau du plan — 'joueur_pro' dans les deux
           // cas, la différence vit uniquement dans abonnement_cycle.
-          // Educateur/scout/club : le plan ne change pas de valeur selon le cycle, seul
+          // Club : le montant fait foi, on force plan='club' même si le compte a été
+          // créé sous un autre plan (educateur converti en club, cf. resoudreCycleEtPlan).
+          // Educateur/scout : le plan ne change pas de valeur selon le cycle, seul
           // l'abonnement (actif/cycle) est mis à jour — pas de palier de fonctionnalités.
-          const planSansPalier = ['educateur', 'scout', 'club'].includes(profilActuel?.plan ?? '')
-          const nouveauPlan = planSansPalier ? profilActuel!.plan : 'joueur_pro'
+          const planSansPalier = ['educateur', 'scout'].includes(profilActuel?.plan ?? '')
+          const nouveauPlan = estClub ? 'club' : planSansPalier ? profilActuel!.plan : 'joueur_pro'
 
           const { error: updateErr } = await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
@@ -174,8 +183,9 @@ Deno.serve(async (req) => {
         const { data: profil, error: profilErr } = await supabaseAdmin.from('profiles').select('plan, abonnement_mois_payes').eq('id', profileId).maybeSingle()
         if (profilErr) console.error('[stripe-webhook] erreur lecture profil (invoice.paid)', profilErr)
 
-        const cycle = resoudreCycle(montant, profil?.plan)
-        if (!cycle) { console.error('[stripe-webhook] invoice.paid: montant non reconnu', { montant, plan: profil?.plan }); break }
+        const resoluInvoice = resoudreCycleEtPlan(montant, profil?.plan)
+        if (!resoluInvoice) { console.error('[stripe-webhook] invoice.paid: montant non reconnu', { montant, plan: profil?.plan }); break }
+        const { cycle } = resoluInvoice
 
         if (cycle === 'annuel') {
           await crediterAnalyses(profileId, 2)
