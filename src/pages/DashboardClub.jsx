@@ -1167,7 +1167,7 @@ export default function DashboardClub() {
     const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
     const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: masque }, { data: stock }, { data: distribution }, { data: packs }, { data: attributions }] = await Promise.all([
-      educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
+      educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id, club_categorie_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('club_id', uid),
       supabase.from('equipement_commandes').select('*').eq('club_id', uid),
@@ -4868,8 +4868,21 @@ Règles :
         })()}
 
         {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
+          // equipe_joueurs.categorie est un champ texte libre, pas toujours fiable
+          // (mêmes causes que le fix "Effectif U17 A vide" de chargerClassements) —
+          // la source de vérité est club_categorie_id, avec le même repli par
+          // correspondance de nom (équipe 'A' par défaut, ou candidat unique) que
+          // chargerClassements, pour ne pas dépendre d'avoir déjà ouvert l'onglet
+          // Classements pour que la catégorie résolue soit correcte ici aussi.
+          const resoudreCategorie = (j) => {
+            if (j.club_categorie_id) return categories.find(c => c.id === j.club_categorie_id)?.nom || null
+            if (!j.categorie) return null
+            const candidats = categories.filter(c => c.educateur_id === j.educateur_id && c.nom.toLowerCase() === j.categorie.trim().toLowerCase())
+            const cat = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
+            return cat?.nom || null
+          }
           const personnes = [
-            ...joueursInventaire.map(j => ({ id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: j.categorie || j.poste || '', type: 'joueur', categorie: j.categorie || null })),
+            ...joueursInventaire.map(j => { const cat = resoudreCategorie(j); return { id: j.id, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: cat || j.poste || '', type: 'joueur', categorie: cat } }),
             ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur', categorie: null })),
           ]
           // Catégories réellement configurées par le club (club_categories), pas
