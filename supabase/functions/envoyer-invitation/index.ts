@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Permissions par défaut pour un accès parent — même forme que
+// dirigeant_acces.permissions, mais jamais choisies par le joueur (pas de
+// formulaire) : toujours 'lecture' partout. Permet à un club/éducateur de
+// restreindre une section plus tard sans reconstruire le système d'accès.
+const PARENT_PERMISSIONS_DEFAUT = {
+  profil: 'lecture', videos: 'lecture', competition: 'lecture', physique: 'lecture',
+  planning: 'lecture', notes: 'lecture', analyses: 'lecture', recruteurs: 'lecture',
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -130,6 +139,7 @@ serve(async (req) => {
       if (role === 'parent') {
         await supabase.from('parents_acces').upsert({
           joueur_id, parent_id: existingUser.id, email_invite: email, statut: 'accepte',
+          permissions: PARENT_PERMISSIONS_DEFAUT,
         }, { onConflict: 'joueur_id,email_invite' })
       }
 
@@ -177,6 +187,7 @@ serve(async (req) => {
     if (role === 'parent') {
       await supabase.from('parents_acces').upsert({
         joueur_id, email_invite: email, statut: 'en_attente',
+        permissions: PARENT_PERMISSIONS_DEFAUT,
       }, { onConflict: 'joueur_id,email_invite' })
     }
 

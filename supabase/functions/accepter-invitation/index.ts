@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Même constante que dans envoyer-invitation — dupliquée plutôt que
+// partagée via un module commun (chaque edge function est déployée
+// indépendamment, cf. convention déjà en place dans ce projet).
+const PARENT_PERMISSIONS_DEFAUT = {
+  profil: 'lecture', videos: 'lecture', competition: 'lecture', physique: 'lecture',
+  planning: 'lecture', notes: 'lecture', analyses: 'lecture', recruteurs: 'lecture',
+}
+
 // Toutes les opérations passent par le service role : la table `invitations` n'a
 // volontairement aucune policy de lecture publique (un token = un accès direct au
 // compte concerné, elle ne doit jamais être listable via la clé anon), et les
@@ -146,6 +154,7 @@ serve(async (req) => {
         // DashboardParent.jsx, cf. profil_complet = false.
         const { error: errParent } = await supabase.from('parents_acces').upsert({
           joueur_id: inv.joueur_id, parent_id: userId, email_invite: inv.email, statut: 'accepte',
+          permissions: PARENT_PERMISSIONS_DEFAUT,
         }, { onConflict: 'joueur_id,email_invite' })
         if (errParent) throw errParent
       }

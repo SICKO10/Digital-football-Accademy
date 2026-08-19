@@ -37,7 +37,7 @@ export default function DashboardParent() {
       if (!user) { navigate('/login'); return }
 
       const { data: accesData } = await supabase
-        .from('parents_acces').select('joueur_id')
+        .from('parents_acces').select('joueur_id, permissions')
         .eq('parent_id', user.id).eq('statut', 'accepte').maybeSingle()
       if (!accesData) { navigate('/'); return }
       setAcces(accesData)
@@ -163,6 +163,13 @@ export default function DashboardParent() {
   const formValide = champsRequis.every(c => formParent[c]?.trim())
   const inputStyle = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }
 
+  // Permissions par section (parents_acces.permissions) — même mécanisme que
+  // canViewSection pour les dirigeants, mais jamais configuré par le joueur :
+  // toujours 'lecture' par défaut (cf. PARENT_PERMISSIONS_DEFAUT côté edge
+  // functions). acces.permissions absent (ligne créée avant cette migration)
+  // → tout reste visible, pas de régression pour les accès existants.
+  const canViewSection = (id) => !acces?.permissions || acces.permissions[id] !== 'aucun'
+
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
       {/* ── Modale profil obligatoire ── */}
@@ -231,7 +238,7 @@ export default function DashboardParent() {
               { id: 'notes', label: '📝 Notes coach' },
               { id: 'analyses', label: '🎯 Analyses' },
               { id: 'recruteurs', label: '🔍 Recruteurs' },
-            ].map(s => (
+            ].filter(s => canViewSection(s.id)).map(s => (
               <button key={s.id} onClick={() => setOnglet(s.id)}
                 style={{ background: onglet === s.id ? colors.accent.green : colors.background.surface, color: onglet === s.id ? colors.black : colors.text.dim, border: `1px solid ${onglet === s.id ? colors.accent.green : colors.border.default}`, borderRadius: '20px', padding: '7px 14px', fontSize: '12px', fontWeight: onglet === s.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {s.label}
@@ -239,7 +246,7 @@ export default function DashboardParent() {
             ))}
           </div>
 
-          {onglet === 'profil' && (
+          {onglet === 'profil' && canViewSection('profil') && (
             <>
               {statsJoueur && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px', marginBottom: '20px' }}>
@@ -285,7 +292,7 @@ export default function DashboardParent() {
             </>
           )}
 
-          {onglet === 'videos' && (
+          {onglet === 'videos' && canViewSection('videos') && (
             reels.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucun clip publié pour l'instant.</p>
             ) : (
@@ -303,7 +310,7 @@ export default function DashboardParent() {
             )
           )}
 
-          {onglet === 'competition' && (
+          {onglet === 'competition' && canViewSection('competition') && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Matchs à venir</h3>
@@ -345,7 +352,7 @@ export default function DashboardParent() {
             </div>
           )}
 
-          {onglet === 'physique' && (
+          {onglet === 'physique' && canViewSection('physique') && (
             prepResume ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
@@ -367,7 +374,7 @@ export default function DashboardParent() {
             )
           )}
 
-          {onglet === 'planning' && (
+          {onglet === 'planning' && canViewSection('planning') && (
             planningAVenir.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucun entraînement programmé pour l'instant.</p>
             ) : (
@@ -390,7 +397,7 @@ export default function DashboardParent() {
             )
           )}
 
-          {onglet === 'notes' && (
+          {onglet === 'notes' && canViewSection('notes') && (
             notesCoachDetail ? (
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px', marginBottom: notesCoachDetail.commentaire ? '16px' : 0 }}>
@@ -415,7 +422,7 @@ export default function DashboardParent() {
             )
           )}
 
-          {onglet === 'analyses' && (
+          {onglet === 'analyses' && canViewSection('analyses') && (
             analyses.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '2rem' }}>Aucune analyse vidéo pour l'instant.</p>
             ) : (
@@ -434,7 +441,7 @@ export default function DashboardParent() {
             )
           )}
 
-          {onglet === 'recruteurs' && (
+          {onglet === 'recruteurs' && canViewSection('recruteurs') && (
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px', textAlign: 'center' }}>
               <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: visibleRecruteurs ? colors.accent.green : colors.text.faint }}>
                 {visibleRecruteurs ? '✓ Profil visible par les recruteurs' : '○ Profil non visible par les recruteurs'}
