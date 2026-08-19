@@ -145,7 +145,7 @@ function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
   )
 }
 
-function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
+function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly }) {
   const [editProfil, setEditProfil] = useState(false)
   const [profilForm, setProfilForm] = useState({
     prenom: profil?.prenom || '', nom: profil?.nom || '',
@@ -157,6 +157,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr' }) {
   const [saved, setSaved] = useState(false)
 
   const sauvegarder = async () => {
+    if (readOnly) return
     // Optimistic : profil local mis à jour et confirmation affichée tout de
     // suite, sans attendre la réponse Supabase. Erreur → on revient à
     // l'ancien profil (aucune vérification d'erreur n'existait avant).
@@ -347,7 +348,16 @@ function CerclePresence({ presents, convoque, absents, blesses, malade, total, s
   )
 }
 
-function DashboardJoueur() {
+// joueurIdOverride/readOnly : rendu pour un parent qui consulte le profil de
+// son enfant (cf. DashboardParent.jsx), même principe que educateurIdOverride
+// sur DashboardEducateur.jsx pour un dirigeant délégué. userId (state, utilisé
+// ~80 fois dans tout le fichier pour les lectures) est résolu une seule fois
+// dans getProfil() vers joueurIdOverride quand présent — tout le reste du
+// fichier n'a rien à changer pour afficher les bonnes données. En écriture,
+// deux filets : un bloqueur de clics au niveau conteneur (capture phase, seule
+// la navigation par onglet passe) + un guard explicite au début de chaque
+// fonction qui écrit en base, pour ne pas dépendre uniquement de la RLS.
+function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const navigate = useNavigate()
   const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
@@ -625,11 +635,12 @@ function DashboardJoueur() {
   const getProfil = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
-    setUserId(user.id)
-    await chargerNotifications(user.id)
-    await chargerNotifPrefs(user.id)
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
-    const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
+    const targetId = joueurIdOverride || user.id
+    setUserId(targetId)
+    await chargerNotifications(targetId)
+    await chargerNotifPrefs(targetId)
+    const { data } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
+    const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
     // interdit cette valeur (cf. lib/coachAdmin.js) — les comptes coach analyseur
     // sont identifiés par email. Avec le filtre par plan, cette liste était donc
@@ -647,22 +658,22 @@ function DashboardJoueur() {
     setPointsForts(data?.points_forts ? data.points_forts.split(', ').filter(Boolean) : [])
     setAAmeliorer(data?.a_ameliorer ? data.a_ameliorer.split(', ').filter(Boolean) : [])
     setStyleDeJeu(data?.style_de_jeu || '')
-    const { data: parcoursData } = await supabase.from('parcours').select('*').eq('joueur_id', user.id).order('saison', { ascending: false })
+    const { data: parcoursData } = await supabase.from('parcours').select('*').eq('joueur_id', targetId).order('saison', { ascending: false })
     setParcours(parcoursData || [])
-    const { data: certifData } = await supabase.from('certifications').select('*').eq('joueur_id', user.id).order('created_at', { ascending: false })
+    const { data: certifData } = await supabase.from('certifications').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     setCertifications(certifData || [])
     setDemandes(demandesData || [])
     setCoaches(coachData || [])
     if (coachData && coachData.length > 0) setCoachSelectionne(coachData[0])
-    const { data: reelRows, error: reelErr } = await supabase.from('reels').select('id, video_url').eq('joueur_id', user.id).order('created_at', { ascending: false }).limit(1)
+    const { data: reelRows, error: reelErr } = await supabase.from('reels').select('id, video_url').eq('joueur_id', targetId).order('created_at', { ascending: false }).limit(1)
     console.log('[DashboardJoueur] reelRows:', reelRows, 'error:', reelErr)
     setReelJogabonito(reelRows?.[0] || null)
-    await chargerConversations(user.id)
-    const mesAff = await chargerAffiliations(user.id)
-    await verifierCloturesSaison(user.id, mesAff || [])
-    await chargerInventaireJoueur(user.id, mesAff || [])
-    await chargerConvocationActive(user.id)
-    await chargerParentsInvites(user.id)
+    await chargerConversations(targetId)
+    const mesAff = await chargerAffiliations(targetId)
+    await verifierCloturesSaison(targetId, mesAff || [])
+    await chargerInventaireJoueur(targetId, mesAff || [])
+    await chargerConvocationActive(targetId)
+    await chargerParentsInvites(targetId)
     setLoading(false)
   }
 
@@ -677,6 +688,7 @@ function DashboardJoueur() {
   // projet, aurait fait cohabiter deux flows d'invitation et deux templates
   // d'email différents pour le même besoin.
   const inviterParent = async () => {
+    if (readOnly) return
     const email = emailParentInput.trim()
     if (!email) return
     if (parentsInvites.length >= 2) { alert('Maximum 2 parents autorisés.'); return }
@@ -705,6 +717,7 @@ function DashboardJoueur() {
   }
 
   const supprimerInvitationParent = async (emailInvite) => {
+    if (readOnly) return
     await supabase.from('parents_acces').delete().eq('joueur_id', userId).eq('email_invite', emailInvite)
     setParentsInvites(prev => prev.filter(p => p.email_invite !== emailInvite))
   }
@@ -747,11 +760,13 @@ function DashboardJoueur() {
   }
 
   const marquerNotifLue = async (notifId) => {
+    if (readOnly) return
     await supabase.from('notifications').update({ lu: true }).eq('id', notifId)
     setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, lu: true } : n))
   }
 
   const marquerToutLu = async (uid) => {
+    if (readOnly) return
     await supabase.from('notifications').update({ lu: true }).eq('user_id', uid).eq('lu', false)
     setNotifications(prev => prev.map(n => ({ ...n, lu: true })))
   }
@@ -761,6 +776,7 @@ function DashboardJoueur() {
   // elle-même dans la clochette la marquait lue ; ouvrir l'onglet Analyses
   // directement depuis la sidebar ne le faisait pas, donc le badge restait affiché.
   const marquerAnalysesLues = async (uid) => {
+    if (readOnly) return
     // Pas de garde sur l'état local `notifications` avant d'écrire : si l'onglet
     // Analyses est ouvert directement (ex. lien profond) avant la fin du chargement
     // initial des notifications, une garde ici raterait la mise à jour en base.
@@ -769,6 +785,7 @@ function DashboardJoueur() {
   }
 
   const sauvegarderNotifPrefs = async (newPrefs) => {
+    if (readOnly) return
     // Optimistic : préférences locales mises à jour tout de suite, sans
     // attendre la réponse Supabase. Erreur → on revient aux anciennes
     // préférences (aucune vérification d'erreur n'existait avant).
@@ -837,6 +854,7 @@ function DashboardJoueur() {
   }
 
   const sauvegarderMaTaille = async (champId, valeur) => {
+    if (readOnly) return
     await supabase.from('equipement_tailles').upsert(
       { user_id: userId, club_id: clubIdInventaire, champ_id: champId, valeur, updated_at: new Date().toISOString() },
       { onConflict: 'user_id, champ_id' }
@@ -851,6 +869,7 @@ function DashboardJoueur() {
   }
 
   const marquerEquipementRecupere = async () => {
+    if (readOnly) return
     if (!equipementPret) return
     await supabase.from('equipement_commandes').update({ statut: 'recupere' }).eq('id', equipementPret.id)
     setEquipementPret(null)
@@ -932,6 +951,7 @@ function DashboardJoueur() {
   }
 
   const repondreDisponibilite = async (eventId, eventType, statut) => {
+    if (readOnly) return
     if (!eventId || !userId) return
     // Déjà optimiste (dispoMap/widgets mis à jour avant l'écriture) — il
     // manquait juste la gestion d'erreur pour revenir en arrière si l'upsert
@@ -1113,6 +1133,7 @@ function DashboardJoueur() {
   }
 
   const rejoindreEquipe = async () => {
+    if (readOnly) return
     if (!codeEquipe.trim()) return
     setSendingCode(true)
     setCodeError(null)
@@ -1140,6 +1161,7 @@ function DashboardJoueur() {
   }
 
   const soumettreNoteEdu = async () => {
+    if (readOnly) return
     if (!eduNote) return
     const allKeys = CRITERES_EDU_KEYS.flatMap(c => c.criteres.map(cr => cr.key))
     const allFilled = allKeys.every(k => noteCriteres[k])
@@ -1207,6 +1229,7 @@ function DashboardJoueur() {
   }
 
   const envoyerMessage = async () => {
+    if (readOnly) return
     if (!newMessage.trim() || !messageActif || !userId) return
     await supabase.from('messages').insert({ sender_id: userId, receiver_id: messageActif.otherId, content: newMessage.trim(), created_at: new Date().toISOString() })
     await notifierJoueur({ type: 'message', userId: messageActif.otherId, titre: 'Nouveau message', contenu: { auteur: profil?.prenom, texte: newMessage.trim() }, lien: '/dashboard' })
@@ -1215,6 +1238,7 @@ function DashboardJoueur() {
   }
 
   const envoyerMessageCoach = async () => {
+    if (readOnly) return
     if (!messageCoach.trim() || !coachSelectionne || !userId) return
     setSendingCoach(true)
     await supabase.from('messages').insert({ sender_id: userId, receiver_id: coachSelectionne.id, content: messageCoach.trim(), created_at: new Date().toISOString() })
@@ -1260,6 +1284,7 @@ function DashboardJoueur() {
   }
 
   const soumettreDemandesCertification = async () => {
+    if (readOnly) return
     if (!nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5 || !userId) return
     setSubmittingCertif(true)
     const { error } = await supabase.from('certifications').insert({
@@ -1281,6 +1306,7 @@ function DashboardJoueur() {
   }
 
   const handleFifaCardSave = async (blob) => {
+    if (readOnly) return
     if (!userId) return
     try {
       const file = new File([blob], 'carte-fifa.png', { type: 'image/png' })
@@ -1309,6 +1335,7 @@ function DashboardJoueur() {
   }
 
   const handleAvatarUpload = async (e) => {
+    if (readOnly) return
     const file = e.target.files?.[0]
     if (!file || !userId) return
     setAvatarUploading(true)
@@ -1339,6 +1366,7 @@ function DashboardJoueur() {
   }
 
   const handleSaveStats = async () => {
+    if (readOnly) return
     const { data: { user } } = await supabase.auth.getUser()
     // Optimistic : confirmation affichée tout de suite (une fois l'utilisateur
     // résolu, nécessaire pour l'écriture) sans attendre la réponse Supabase.
@@ -1410,6 +1438,7 @@ function DashboardJoueur() {
   }
 
   const ajouterClub = async () => {
+    if (readOnly) return
     if (!nouveauClub.club.trim() || !userId) return
     setSavingParcours(true)
     if (editingParcoursId) {
@@ -1441,6 +1470,7 @@ function DashboardJoueur() {
   }
 
   const supprimerClub = async (id) => {
+    if (readOnly) return
     if (!window.confirm('Supprimer cette entrée du parcours ?')) return
     const { error } = await supabase.from('parcours').delete().eq('id', id)
     if (error) { alert('Erreur suppression : ' + error.message); return }
@@ -1449,6 +1479,7 @@ function DashboardJoueur() {
   }
 
   const handleDeleteVideo = async () => {
+    if (readOnly) return
     if (!window.confirm('Supprimer ta vidéo ? Elle sera retirée du feed et de Jogabonito.')) return
     setDeletingVideo(true)
     const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
@@ -1460,6 +1491,7 @@ function DashboardJoueur() {
   }
 
   const handleDeleteReel = async () => {
+    if (readOnly) return
     if (!window.confirm('Supprimer ta vidéo Jogabonito ? Elle ne sera plus visible dans le feed.')) return
     setDeletingReel(true)
     const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', userId)
@@ -2415,7 +2447,7 @@ function DashboardJoueur() {
               )}
             </div>
           )}
-          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} />}
+          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} readOnly={readOnly} />}
           {onglet === 'equipement' && (
             <div>
               <h2 style={{ color: colors.text.primary, fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>Mon équipement</h2>
