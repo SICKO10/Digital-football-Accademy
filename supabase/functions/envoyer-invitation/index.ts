@@ -62,6 +62,80 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // Contexte affiché dans l'email (qui invite, quel club) — calculé une seule fois,
+    // réutilisé à la fois par le lien "compte existant" (ci-dessous) et par l'email
+    // d'invitation classique (nouveau compte, plus bas).
+    let nomInviteur = 'Ton éducateur'
+    let club = 'le club'
+    let categorie = ''
+    if (role === 'parent') {
+      const { data: joueurProfile } = await supabase.from('profiles').select('prenom, nom').eq('id', joueur_id).maybeSingle()
+      nomInviteur = joueurProfile ? `${joueurProfile.prenom} ${joueurProfile.nom}` : 'Un joueur'
+    } else if (role === 'educateur') {
+      const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', club_id).maybeSingle()
+      club = clubProfile?.club || 'le club'
+    } else {
+      const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
+        supabase.from('profiles').select('prenom, nom').eq('id', educateur_id).maybeSingle(),
+        supabase.from('profil_educateur').select('club, categorie').eq('user_id', educateur_id).maybeSingle(),
+      ])
+      nomInviteur = eduProfile ? `${eduProfile.prenom} ${eduProfile.nom}` : 'Ton éducateur'
+      club = profilEdu?.club || 'le club'
+      categorie = profilEdu?.categorie ? ` (${profilEdu.categorie})` : ''
+    }
+
+    // Enveloppe HTML commune aux deux emails (compte existant lié directement /
+    // nouvelle invitation) — seuls titre, texte, lien et libellé du bouton changent.
+    const envoyerEmail = async (sujet: string, titre: string, texte: string, lien: string, bouton: string, footer = "Si tu n'attendais pas cet email, ignore-le.") => {
+      const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:Inter,sans-serif;color:#fff;">
+  <div style="max-width:480px;margin:40px auto;padding:32px;background:#111;border-radius:16px;border:1px solid #1a1a1a;">
+    <h1 style="margin:0 0 4px;font-size:20px;">
+      <span style="color:#fff;">Digital</span><span style="color:#4ade80;">Football</span>
+    </h1>
+    <p style="color:#555;font-size:12px;margin:0 0 28px;">La plateforme de coaching vidéo football</p>
+
+    <h2 style="font-size:18px;font-weight:800;margin:0 0 12px;">
+      ${titre}
+    </h2>
+
+    <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 24px;">
+      ${texte}
+    </p>
+
+    <a href="${lien}"
+       style="display:inline-block;background:#4ade80;color:#000;font-weight:800;font-size:15px;
+              padding:14px 28px;border-radius:10px;text-decoration:none;">
+      ${bouton}
+    </a>
+
+    <p style="color:#333;font-size:11px;margin:24px 0 0;line-height:1.5;">
+      ${footer}
+    </p>
+  </div>
+</body>
+</html>`
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Digital Football <noreply@digitalfootball.academy>',
+          to: [email],
+          subject: sujet,
+          html,
+        }),
+      })
+      if (!resendRes.ok) {
+        const resendErr = await resendRes.text()
+        throw new Error(`Resend error: ${resendErr}`)
+      }
+    }
+
     // Seul l'éducateur propriétaire peut inviter joueur/dirigeant. Pour un joueur, un
     // dirigeant avec édition sur "effectif" le peut aussi (même règle que l'ancien
     // inviter-joueur) — les dirigeants n'invitent en revanche jamais d'autres
@@ -149,6 +223,34 @@ serve(async (req) => {
         }, { onConflict: 'club_id,educateur_id' })
       }
 
+      // Compte déjà existant → accès accordé immédiatement en base, mais SANS email
+      // jusqu'ici : la personne n'avait donc aucun moyen de savoir qu'elle venait de
+      // recevoir un accès (bug confirmé — un parent lié directement via ce chemin n'a
+      // jamais reçu de notification). Email différent de l'invitation classique : pas
+      // de mot de passe à créer, on renvoie directement vers le dashboard concerné.
+      const lienDashboard = `https://digitalfootball.academy${
+        role === 'joueur' ? '/dashboard-joueur' : role === 'dirigeant' ? '/dashboard-dirigeant' : role === 'parent' ? '/dashboard-parent' : '/educateur'
+      }`
+      const titreExistant = role === 'joueur' ? '⚽ Tu as rejoint une équipe !' : role === 'dirigeant' ? '👔 Tu as rejoint un staff !' : role === 'educateur' ? "🎓 Tu as rejoint un club !" : '👨‍👩‍👦 Tu as maintenant accès au profil de ton enfant !'
+      const texteExistant = role === 'parent'
+        ? `${nomInviteur} t'a donné accès à son profil (lecture seule) sur Digital Football. Ton compte existant (${email}) est déjà relié — connecte-toi pour y accéder.`
+        : role === 'educateur'
+          ? `<strong style="color:#fff;">${club}</strong> t'a ajouté comme éducateur sur Digital Football. Ton compte existant (${email}) est déjà relié — connecte-toi pour y accéder.`
+          : `${nomInviteur} t'a ajouté ${role === 'joueur' ? 'à' : 'au staff de'} <strong style="color:#fff;">${club}${categorie}</strong> sur Digital Football. Ton compte existant (${email}) est déjà relié — connecte-toi pour y accéder.`
+      const sujetExistant = role === 'parent'
+        ? `${nomInviteur} t'a donné accès à son profil sur Digital Football`
+        : role === 'educateur'
+          ? `${club} t'a ajouté comme éducateur sur Digital Football`
+          : `Tu as rejoint ${club}${categorie} sur Digital Football`
+
+      try {
+        await envoyerEmail(sujetExistant, titreExistant, texteExistant, lienDashboard, 'Se connecter')
+      } catch (mailErr) {
+        // L'accès est déjà accordé en base à ce stade — un échec d'envoi d'email ne
+        // doit pas transformer ça en erreur 500 côté joueur/éducateur qui invite.
+        console.error('[envoyer-invitation] email compte existant non envoyé:', mailErr.message)
+      }
+
       return new Response(
         JSON.stringify({ success: true, linked: true, message: 'Compte existant lié directement' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -191,24 +293,6 @@ serve(async (req) => {
       }, { onConflict: 'joueur_id,email_invite' })
     }
 
-    let nomInviteur = 'Ton éducateur'
-    let club = 'le club'
-    let categorie = ''
-    if (role === 'parent') {
-      const { data: joueurProfile } = await supabase.from('profiles').select('prenom, nom').eq('id', joueur_id).maybeSingle()
-      nomInviteur = joueurProfile ? `${joueurProfile.prenom} ${joueurProfile.nom}` : 'Un joueur'
-    } else if (role === 'educateur') {
-      const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', club_id).maybeSingle()
-      club = clubProfile?.club || 'le club'
-    } else {
-      const [{ data: eduProfile }, { data: profilEdu }] = await Promise.all([
-        supabase.from('profiles').select('prenom, nom').eq('id', educateur_id).maybeSingle(),
-        supabase.from('profil_educateur').select('club, categorie').eq('user_id', educateur_id).maybeSingle(),
-      ])
-      nomInviteur = eduProfile ? `${eduProfile.prenom} ${eduProfile.nom}` : 'Ton éducateur'
-      club = profilEdu?.club || 'le club'
-      categorie = profilEdu?.categorie ? ` (${profilEdu.categorie})` : ''
-    }
     const lienAccept = `https://digital-football-accademy.vercel.app/accept-invite?code=${invitation.token}`
 
     const sujetEmail = role === 'joueur'
@@ -227,56 +311,7 @@ serve(async (req) => {
         : `${nomInviteur} t'invite à rejoindre <strong style="color:#fff;">${club}${categorie}</strong> ${role === 'joueur' ? 'en tant que joueur' : 'en tant que dirigeant'} sur Digital Football.`
     const boutonEmail = role === 'joueur' ? "Rejoindre l'équipe" : role === 'dirigeant' ? 'Rejoindre le staff' : role === 'educateur' ? 'Rejoindre le club' : 'Accéder au profil'
 
-    const corpsEmail = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:Inter,sans-serif;color:#fff;">
-  <div style="max-width:480px;margin:40px auto;padding:32px;background:#111;border-radius:16px;border:1px solid #1a1a1a;">
-    <h1 style="margin:0 0 4px;font-size:20px;">
-      <span style="color:#fff;">Digital</span><span style="color:#4ade80;">Football</span>
-    </h1>
-    <p style="color:#555;font-size:12px;margin:0 0 28px;">La plateforme de coaching vidéo football</p>
-
-    <h2 style="font-size:18px;font-weight:800;margin:0 0 12px;">
-      ${titreEmail}
-    </h2>
-
-    <p style="color:#ccc;font-size:14px;line-height:1.6;margin:0 0 24px;">
-      ${texteEmail}
-    </p>
-
-    <a href="${lienAccept}"
-       style="display:inline-block;background:#4ade80;color:#000;font-weight:800;font-size:15px;
-              padding:14px 28px;border-radius:10px;text-decoration:none;">
-      ${boutonEmail}
-    </a>
-
-    <p style="color:#333;font-size:11px;margin:24px 0 0;line-height:1.5;">
-      Ce lien est valable 7 jours.<br>
-      Si tu n'attendais pas cette invitation, ignore cet email.
-    </p>
-  </div>
-</body>
-</html>`
-
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Digital Football <noreply@digitalfootball.academy>',
-        to: [email],
-        subject: sujetEmail,
-        html: corpsEmail,
-      }),
-    })
-
-    if (!resendRes.ok) {
-      const resendErr = await resendRes.text()
-      throw new Error(`Resend error: ${resendErr}`)
-    }
+    await envoyerEmail(sujetEmail, titreEmail, texteEmail, lienAccept, boutonEmail, "Ce lien est valable 7 jours.<br>Si tu n'attendais pas cette invitation, ignore cet email.")
 
     return new Response(
       JSON.stringify({ success: true, linked: false, message: 'Invitation envoyée' }),
