@@ -2450,14 +2450,18 @@ function DashboardJoueur() {
                       return (
                         <div key={c.id}>
                           <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {c.options.map(o => (
-                              <button key={o} onClick={() => sauvegarderMaTaille(c.id, o)}
-                                style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                                {o}
-                              </button>
-                            ))}
-                          </div>
+                          {c.taille_unique ? (
+                            <p style={{ margin: 0, fontSize: 13, color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              {c.options.map(o => (
+                                <button key={o} onClick={() => sauvegarderMaTaille(c.id, o)}
+                                  style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                                  {o}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )
                     })}

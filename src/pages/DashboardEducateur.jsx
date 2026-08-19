@@ -1490,6 +1490,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [champsEquipementEduc, setChampsEquipementEduc] = useState([])
   const [mesTaillesEduc, setMesTaillesEduc] = useState([])
   const [equipementPretEduc, setEquipementPretEduc] = useState(null) // ligne equipement_commandes si statut='pret'
+  const [packAttribueEduc, setPackAttribueEduc] = useState(null) // equipement_packs attribué à cet éducateur
   useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
@@ -3795,15 +3796,24 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     setMonMateriel(prev => prev.map(d => (d.lot_id || d.id) === cle ? { ...d, statut: 'remise_demandee' } : d))
   }
 
-  // Tailles équipement (equipement_champs/tailles) côté éducateur — mêmes
-  // tables que DashboardJoueur.jsx, filtrées sur cible 'educateur'/'les deux'.
+  // Tailles équipement côté éducateur — mêmes tables que DashboardJoueur.jsx,
+  // scopées au pack attribué (equipement_attributions → champs_ids), pas à
+  // tous les champs cible 'educateur' du club (qui peuvent appartenir à
+  // d'autres packs sans rapport).
   const chargerMesTaillesEquipementEduc = async () => {
-    const [{ data: champs }, { data: tailles }, { data: commande }] = await Promise.all([
-      supabase.from('equipement_champs').select('*').eq('club_id', clubAffiliation.club_id).eq('actif', true).in('cible', ['educateur', 'les deux']).order('ordre'),
+    const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
+      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubAffiliation.club_id).eq('user_id', userId).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', userId),
       supabase.from('equipement_commandes').select('*').eq('destinataire_id', userId).eq('statut', 'pret').maybeSingle(),
     ])
-    setChampsEquipementEduc(champs || [])
+    const pack = attribution?.pack || null
+    setPackAttribueEduc(pack)
+    if (pack?.champs_ids?.length) {
+      const { data: champs } = await supabase.from('equipement_champs').select('*').in('id', pack.champs_ids).eq('actif', true).order('ordre')
+      setChampsEquipementEduc(champs || [])
+    } else {
+      setChampsEquipementEduc([])
+    }
     setMesTaillesEduc(tailles || [])
     setEquipementPretEduc(commande || null)
   }
@@ -5872,7 +5882,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
               {champsEquipementEduc.length > 0 && (
                 <div style={{ ...st.card, marginBottom: '20px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>📏 Mes tailles</p>
+                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>Mon équipement — {packAttribueEduc?.icone} {packAttribueEduc?.nom}</p>
                   <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {champsEquipementEduc.map(c => {
@@ -5880,14 +5890,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       return (
                         <div key={c.id}>
                           <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {c.options.map(o => (
-                              <button key={o} onClick={() => sauvegarderMaTailleEduc(c.id, o)}
-                                style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                {o}
-                              </button>
-                            ))}
-                          </div>
+                          {c.taille_unique ? (
+                            <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              {c.options.map(o => (
+                                <button key={o} onClick={() => sauvegarderMaTailleEduc(c.id, o)}
+                                  style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                  {o}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )
                     })}

@@ -966,7 +966,7 @@ export default function DashboardClub() {
   const [equipementTailles, setEquipementTailles] = useState([])
   const [equipementCommandes, setEquipementCommandes] = useState([])
   const [modaleChampOuverte, setModaleChampOuverte] = useState(false)
-  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: TAILLES_DISPONIBLES.join(', '), cible: 'les deux' })
+  const [nouveauChamp, setNouveauChamp] = useState({ nom: '', options: TAILLES_DISPONIBLES.join(', '), cible: 'les deux', taille_unique: false })
   const [modalePreparation, setModalePreparation] = useState(null) // { userId, nom, items: [{champ_id, champ_nom, valeur}], jours, heure_debut, heure_fin }
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
@@ -990,6 +990,7 @@ export default function DashboardClub() {
   const [nouveauChampNom, setNouveauChampNom] = useState('')
   const [nouveauChampOptions, setNouveauChampOptions] = useState(TAILLES_DISPONIBLES.join(', '))
   const [creationChampLoading, setCreationChampLoading] = useState(false)
+  const [nouveauChampTailleUnique, setNouveauChampTailleUnique] = useState(false)
   const [filtreCategorieEquipement, setFiltreCategorieEquipement] = useState('tous')
 
   // Événements & Projets (onglet Administratif)
@@ -1229,10 +1230,10 @@ export default function DashboardClub() {
   const ajouterChampEquipement = async () => {
     const nom = nouveauChamp.nom.trim()
     if (!nom) return
-    const options = nouveauChamp.options.split(',').map(o => o.trim()).filter(Boolean)
-    if (options.length === 0) return
-    await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, cible: nouveauChamp.cible, ordre: equipementChamps.length })
-    setNouveauChamp({ nom: '', options: '', cible: 'les deux' })
+    const options = nouveauChamp.taille_unique ? [] : nouveauChamp.options.split(',').map(o => o.trim()).filter(Boolean)
+    if (!nouveauChamp.taille_unique && options.length === 0) return
+    await supabase.from('equipement_champs').insert({ club_id: clubId, nom, options, cible: nouveauChamp.cible, taille_unique: nouveauChamp.taille_unique, ordre: equipementChamps.length })
+    setNouveauChamp({ nom: '', options: TAILLES_DISPONIBLES.join(', '), cible: 'les deux', taille_unique: false })
     setModaleChampOuverte(false)
     chargerInventaire(clubId)
   }
@@ -1244,6 +1245,7 @@ export default function DashboardClub() {
     setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
     setNouveauChampNom('')
     setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
+    setNouveauChampTailleUnique(false)
     setModalPack(true)
   }
   const ouvrirEditionPack = (pack) => {
@@ -1251,6 +1253,7 @@ export default function DashboardClub() {
     setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
     setNouveauChampNom('')
     setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
+    setNouveauChampTailleUnique(false)
     setModalPack(true)
   }
   // Coche une suggestion (CHAMPS_SUGGERES) : rien n'est créé tant que le club
@@ -1282,8 +1285,8 @@ export default function DashboardClub() {
   // tailles par défaut imposées : chaque club définit ses propres champs et
   // ses propres options, rien de préréglé côté plateforme.
   const ajouterNouveauChamp = async () => {
-    const options = nouveauChampOptions.split(',').map(o => o.trim()).filter(Boolean)
-    if (!nouveauChampNom.trim() || options.length === 0) return
+    const options = nouveauChampTailleUnique ? [] : nouveauChampOptions.split(',').map(o => o.trim()).filter(Boolean)
+    if (!nouveauChampNom.trim() || (!nouveauChampTailleUnique && options.length === 0)) return
     setCreationChampLoading(true)
     // equipement_champs.cible n'accepte que joueur/educateur/les deux — la
     // cible d'un pack peut être plus large (ex: 'dirigeant', une simple
@@ -1294,6 +1297,7 @@ export default function DashboardClub() {
       nom: nouveauChampNom.trim(),
       cible: cibleChamp,
       options,
+      taille_unique: nouveauChampTailleUnique,
       ordre: equipementChamps.length,
       actif: true,
     }).select().single()
@@ -1302,6 +1306,7 @@ export default function DashboardClub() {
       setEquipementChamps(prev => [...prev, newChamp])
       setNouveauChampNom('')
       setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
+      setNouveauChampTailleUnique(false)
     }
     setCreationChampLoading(false)
   }
@@ -1364,7 +1369,7 @@ export default function DashboardClub() {
     const items = champsPertinents.map(c => ({
       champ_id: c.id,
       champ_nom: c.nom,
-      valeur: equipementTailles.find(t => t.user_id === personne.id && t.champ_id === c.id)?.valeur || '',
+      valeur: c.taille_unique ? 'Taille unique' : (equipementTailles.find(t => t.user_id === personne.id && t.champ_id === c.id)?.valeur || ''),
     }))
     const existante = equipementCommandes.find(c => c.destinataire_id === personne.id)
     setModalePreparation({
@@ -5086,6 +5091,13 @@ Règles :
                             {parGroupe[groupe].map(p => {
                               const commande = equipementCommandes.find(c => c.destinataire_id === p.id)
                               const packAttribue = equipementAttributions.find(a => a.user_id === p.id)?.pack_id || ''
+                              const pack = equipementPacks.find(pk => pk.id === packAttribue)
+                              const champsDuPack = pack ? equipementChamps.filter(c => pack.champs_ids.includes(c.id)) : []
+                              const taillesDuPack = champsDuPack.map(c => ({
+                                champ: c,
+                                valeur: c.taille_unique ? 'Taille unique' : (equipementTailles.find(t => t.user_id === p.id && t.champ_id === c.id)?.valeur || ''),
+                              }))
+                              const packComplet = champsDuPack.length > 0 && taillesDuPack.every(t => t.valeur)
                               return (
                               <tr key={p.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
                                 <td style={{ padding: '8px' }}>
@@ -5096,16 +5108,27 @@ Règles :
                                   {canEditSection('inventaire') ? (
                                     <select value={packAttribue} onChange={e => attribuerPack(p.id, e.target.value)} style={{ ...st.input, width: 'auto', padding: '4px 8px' }}>
                                       <option value="">— Aucun pack —</option>
-                                      {packsPourPersonne(p).map(pack => <option key={pack.id} value={pack.id}>{pack.icone} {pack.nom}</option>)}
+                                      {packsPourPersonne(p).map(pk => <option key={pk.id} value={pk.id}>{pk.icone} {pk.nom}</option>)}
                                     </select>
-                                  ) : (equipementPacks.find(pack => pack.id === packAttribue)?.nom || '—')}
+                                  ) : (pack?.nom || '—')}
+                                  {taillesDuPack.some(t => t.valeur) && (
+                                    <div style={{ marginTop: '4px', fontSize: '11px', color: colors.text.faint }}>
+                                      {taillesDuPack.filter(t => t.valeur).map(t => (
+                                        <span key={t.champ.id} style={{ marginRight: '8px' }}>{t.champ.nom} : <strong style={{ color: colors.accent.green }}>{t.valeur}</strong></span>
+                                      ))}
+                                    </div>
+                                  )}
                                 </td>
                                 {canEditSection('inventaire') && (
                                   <td style={{ padding: '8px' }}>
                                     {commande ? (
                                       <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'Récupéré'}</span>
+                                    ) : !pack ? (
+                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
+                                    ) : !packComplet ? (
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.amber }}>En attente</span>
                                     ) : (
-                                      <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Préparer</button>
+                                      <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Prêt à préparer</button>
                                     )}
                                   </td>
                                 )}
@@ -5309,8 +5332,16 @@ Règles :
                 </button>
               ))}
             </div>
-            <label style={st.label}>Options (séparées par des virgules)</label>
-            <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} placeholder="Ex : XS, S, M, L, XL, XXL" style={{ ...st.input, marginBottom: '16px' }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
+              <input type="checkbox" checked={nouveauChamp.taille_unique} onChange={e => setNouveauChamp(f => ({ ...f, taille_unique: e.target.checked }))} />
+              Taille unique (pas de tailles à choisir, ex : un sac)
+            </label>
+            {!nouveauChamp.taille_unique && (
+              <>
+                <label style={st.label}>Options (séparées par des virgules)</label>
+                <input value={nouveauChamp.options} onChange={e => setNouveauChamp(f => ({ ...f, options: e.target.value }))} placeholder="Ex : XS, S, M, L, XL, XXL" style={{ ...st.input, marginBottom: '16px' }} />
+              </>
+            )}
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModaleChampOuverte(false)} style={st.btnSecondary}>Annuler</button>
               <button onClick={ajouterChampEquipement} style={st.btnSolid}>Ajouter</button>
@@ -5439,16 +5470,27 @@ Règles :
             <div style={{ borderTop: `1px solid ${colors.border.default}`, paddingTop: '14px', marginBottom: '20px' }}>
               <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase' }}>Créer un nouveau champ</p>
               <input placeholder="Nom du champ (ex : Kway, Sac, Parka...)" value={nouveauChampNom} onChange={e => setNouveauChampNom(e.target.value)} style={{ ...st.input, marginBottom: '8px' }} />
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input placeholder="Options (ex : XS, S, M, L, XL)" value={nouveauChampOptions}
-                  onChange={e => setNouveauChampOptions(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && ajouterNouveauChamp()}
-                  style={{ ...st.input, flex: 1 }} />
-                <button onClick={ajouterNouveauChamp} disabled={!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading} style={{ ...st.btnSolid, opacity: (!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
+                <input type="checkbox" checked={nouveauChampTailleUnique} onChange={e => setNouveauChampTailleUnique(e.target.checked)} />
+                Taille unique (pas de tailles à choisir)
+              </label>
+              {!nouveauChampTailleUnique && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input placeholder="Options (ex : XS, S, M, L, XL)" value={nouveauChampOptions}
+                    onChange={e => setNouveauChampOptions(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && ajouterNouveauChamp()}
+                    style={{ ...st.input, flex: 1 }} />
+                  <button onClick={ajouterNouveauChamp} disabled={!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading} style={{ ...st.btnSolid, opacity: (!nouveauChampNom.trim() || !nouveauChampOptions.trim() || creationChampLoading) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                    {creationChampLoading ? '...' : 'Ajouter'}
+                  </button>
+                </div>
+              )}
+              {nouveauChampTailleUnique && (
+                <button onClick={ajouterNouveauChamp} disabled={!nouveauChampNom.trim() || creationChampLoading} style={{ ...st.btnSolid, opacity: (!nouveauChampNom.trim() || creationChampLoading) ? 0.5 : 1 }}>
                   {creationChampLoading ? '...' : 'Ajouter'}
                 </button>
-              </div>
-              <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Le champ sera créé avec ces options et ajouté automatiquement à ce pack.</p>
+              )}
+              <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Le champ sera créé et ajouté automatiquement à ce pack.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
