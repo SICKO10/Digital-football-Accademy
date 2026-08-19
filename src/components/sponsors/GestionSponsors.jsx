@@ -15,15 +15,15 @@ const SAISONS = ['2026-2027', '2025-2026', '2024-2025', '2023-2024']
 
 const ROLES_SPONSOR = [
   { val: '', label: '— Non défini —' },
-  { val: 'maillot', label: '👕 Maillot' },
-  { val: 'equipementier', label: '⚽ Équipementier' },
-  { val: 'partenaire_officiel', label: '🤝 Partenaire officiel' },
-  { val: 'fournisseur', label: '📦 Fournisseur' },
-  { val: 'media', label: '📺 Média' },
-  { val: 'naming', label: '🏟️ Naming' },
-  { val: 'autre', label: '➕ Autre' },
+  { val: 'maillot', label: 'Maillot' },
+  { val: 'equipementier', label: 'Équipementier' },
+  { val: 'partenaire_officiel', label: 'Partenaire officiel' },
+  { val: 'fournisseur', label: 'Fournisseur' },
+  { val: 'media', label: 'Média' },
+  { val: 'naming', label: 'Naming' },
+  { val: 'autre', label: 'Autre' },
 ]
-const ROLE_LABEL = (role) => ROLES_SPONSOR.find(r => r.val === role)?.label || '➕ Autre'
+const ROLE_LABEL = (role) => ROLES_SPONSOR.find(r => r.val === role)?.label || 'Autre'
 
 const CONTACT_ROLES = [
   { val: '', label: '— Sélectionner —' },
@@ -600,7 +600,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   if (tableMissing) {
     return (
       <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '16px 20px', color: '#f59e0b', fontSize: '13px' }}>
-        ⚠️ Les tables <code>sponsors</code> et <code>niveaux_partenariat</code> n'existent pas encore en base — exécute la migration SQL dans Supabase avant d'utiliser cette rubrique.
+        Les tables <code>sponsors</code> et <code>niveaux_partenariat</code> n'existent pas encore en base — exécute la migration SQL dans Supabase avant d'utiliser cette rubrique.
       </div>
     )
   }
@@ -635,9 +635,9 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1.25rem' }}>
         <div style={st.tabs}>
           {[
-            { id: 'dashboard', label: '📊 Tableau de bord' },
-            { id: 'sponsors', label: '🤝 Sponsors' },
-            { id: 'niveaux', label: '⭐ Niveaux' },
+            { id: 'dashboard', label: 'Tableau de bord' },
+            { id: 'sponsors', label: 'Sponsors' },
+            { id: 'niveaux', label: 'Niveaux' },
           ].map(t => (
             <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
           ))}
@@ -663,8 +663,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                 {alerts.map((a, i) => (
                   <p key={i} style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
                     {a.type === 'expiration'
-                      ? `⚠️ Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`
-                      : `🔴 Paiement en retard — ${a.sponsor.entreprise}`}
+                      ? `Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`
+                      : `Paiement en retard — ${a.sponsor.entreprise}`}
                   </p>
                 ))}
               </div>
@@ -728,7 +728,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             </div>
           ) : sponsorsAffiches.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
-              Aucun sponsor impayé — tout est à jour 🎉
+              Aucun sponsor impayé — tout est à jour
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
