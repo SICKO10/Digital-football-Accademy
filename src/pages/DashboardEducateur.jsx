@@ -1523,8 +1523,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioLoading, setBiblioLoading] = useState(false)
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '' }
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '' }
   const [modalProcede, setModalProcede] = useState(false)
+  const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
   const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
   const [savingProcede, setSavingProcede] = useState(false)
@@ -7482,6 +7483,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         {p.description && (
                           <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
                         )}
+                        {p.schema_png && (
+                          <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #222', background: '#0a0a0a' }} />
+                        )}
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
                           {p.nb_joueurs && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
@@ -7552,10 +7556,47 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               ))}
 
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>🎨 Schéma tactique</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => setShowTactipadBiblio(true)}
+                    style={{ background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {procedeForm.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
+                  </button>
+                  {procedeForm.schema_png && (
+                    <>
+                      <img src={procedeForm.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
+                      <button type="button" onClick={() => setProcedeForm(f => ({ ...f, schema_png: '' }))}
+                        style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>✕</button>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <button onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()}
                 style={{ width: '100%', background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
                 {savingProcede ? t('biblio_enregistrement_cours', lang) : procedeEnEdition ? t('biblio_mettre_a_jour', lang) : t('biblio_enregistrer', lang)}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal schéma tactique d'un procédé de bibliothèque (réutilise Tactipad, cf. tactipadModal pour le même mécanisme côté fiche de séance) ── */}
+        {showTactipadBiblio && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+            <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedeForm.nom || ''}</p>
+                <button onClick={() => setShowTactipadBiblio(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+              <Tactipad
+                userId={userId}
+                mode="modal"
+                vueParDefaut="demi"
+                onValider={png => { setProcedeForm(f => ({ ...f, schema_png: png })); setShowTactipadBiblio(false) }}
+                onFermer={() => setShowTactipadBiblio(false)}
+                lang={lang}
+              />
             </div>
           </div>
         )}
