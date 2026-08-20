@@ -2462,6 +2462,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
                     {equipementPret.jours || 'Passe le récupérer auprès du club'}
                     {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
+                    {equipementPret.heure_debut_2 && equipementPret.heure_fin_2 ? ` puis entre ${equipementPret.heure_debut_2} et ${equipementPret.heure_fin_2}` : ''}
                   </p>
                   <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
                 </div>
@@ -3676,6 +3677,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
                   {equipementPret.jours || 'Passe le récupérer auprès du club'}
                   {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
+                  {equipementPret.heure_debut_2 && equipementPret.heure_fin_2 ? ` puis entre ${equipementPret.heure_debut_2} et ${equipementPret.heure_fin_2}` : ''}
                 </p>
                 <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
               </div>

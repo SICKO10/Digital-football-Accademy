@@ -5941,6 +5941,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p style={{ margin: '0 0 12px', fontSize: '13px', color: colors.text.faint }}>
                     {equipementPretEduc.jours || 'Passe le récupérer auprès du club'}
                     {equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}
+                    {equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}
                   </p>
                   <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
                 </div>

@@ -1381,6 +1381,16 @@ export default function DashboardClub() {
     })
   }
 
+  // Compose un texte lisible pour un ou deux créneaux horaires (horaires
+  // coupés, ex : 8h-12h le matin et 14h-17h l'après-midi) — réutilisé pour le
+  // message de notification par défaut, éditable ensuite.
+  const formatCreneaux = (hd, hf, hd2, hf2) => {
+    const creneaux = []
+    if (hd && hf) creneaux.push(`de ${hd} à ${hf}`)
+    if (hd2 && hf2) creneaux.push(`de ${hd2} à ${hf2}`)
+    return creneaux.join(' et ')
+  }
+
   const ouvrirPreparation = (personne) => {
     // Scopé aux champs du pack attribué à cette personne — sinon (pas encore
     // de pack attribué) on retombe sur tous les champs du club, comme avant.
@@ -1396,21 +1406,26 @@ export default function DashboardClub() {
     const jours = existante?.jours || ''
     const heure_debut = existante?.heure_debut || ''
     const heure_fin = existante?.heure_fin || ''
+    const heure_debut_2 = existante?.heure_debut_2 || ''
+    const heure_fin_2 = existante?.heure_fin_2 || ''
     setModalePreparation({
       userId: personne.id,
       nom: personne.nom,
       type: personne.type,
       items,
-      jours, heure_debut, heure_fin,
+      jours, heure_debut, heure_fin, heure_debut_2, heure_fin_2,
+      creneauCoupe: !!(heure_debut_2 || heure_fin_2),
       // Composé à partir de jours/heures par défaut, mais librement modifiable
       // avant l'envoi — pas figé dans marquerEquipementPret.
-      message: [jours, heure_debut && heure_fin ? `entre ${heure_debut} et ${heure_fin}` : null].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.',
+      message: [jours, formatCreneaux(heure_debut, heure_fin, heure_debut_2, heure_fin_2)].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.',
     })
   }
 
   const marquerEquipementPret = async () => {
     if (!modalePreparation) return
-    const { userId, nom, type, items, jours, heure_debut, heure_fin, message } = modalePreparation
+    const { userId, nom, type, items, jours, heure_debut, heure_fin, message, creneauCoupe } = modalePreparation
+    const heure_debut_2 = creneauCoupe ? modalePreparation.heure_debut_2 : null
+    const heure_fin_2 = creneauCoupe ? modalePreparation.heure_fin_2 : null
     await supabase.from('equipement_commandes').upsert({
       club_id: clubId,
       responsable_id: clubId,
@@ -1418,7 +1433,7 @@ export default function DashboardClub() {
       destinataire_nom: nom,
       items,
       statut: 'pret',
-      jours, heure_debut, heure_fin,
+      jours, heure_debut, heure_fin, heure_debut_2, heure_fin_2,
     }, { onConflict: 'club_id, destinataire_id' })
     await supabase.from('notifications').insert({
       user_id: userId,
@@ -5603,7 +5618,7 @@ Règles :
             </div>
             <label style={st.label}>Jours de récupération</label>
             <input value={modalePreparation.jours} onChange={e => setModalePreparation(m => ({ ...m, jours: e.target.value }))} placeholder="Ex : Lundi et mercredi" style={{ ...st.input, marginBottom: '12px' }} />
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
                 <label style={st.label}>Heure début</label>
                 <input type="time" value={modalePreparation.heure_debut} onChange={e => setModalePreparation(m => ({ ...m, heure_debut: e.target.value }))} style={st.input} />
@@ -5613,7 +5628,30 @@ Règles :
                 <input type="time" value={modalePreparation.heure_fin} onChange={e => setModalePreparation(m => ({ ...m, heure_fin: e.target.value }))} style={st.input} />
               </div>
             </div>
-            <label style={st.label}>Message envoyé (modifiable)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
+              <input type="checkbox" checked={modalePreparation.creneauCoupe} onChange={e => setModalePreparation(m => ({ ...m, creneauCoupe: e.target.checked }))} />
+              Horaires coupés (ex : 8h-12h et 14h-17h)
+            </label>
+            {modalePreparation.creneauCoupe && (
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={st.label}>Heure début (2)</label>
+                  <input type="time" value={modalePreparation.heure_debut_2} onChange={e => setModalePreparation(m => ({ ...m, heure_debut_2: e.target.value }))} style={st.input} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={st.label}>Heure fin (2)</label>
+                  <input type="time" value={modalePreparation.heure_fin_2} onChange={e => setModalePreparation(m => ({ ...m, heure_fin_2: e.target.value }))} style={st.input} />
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ ...st.label, marginBottom: 0 }}>Message envoyé (modifiable)</label>
+              <button type="button"
+                onClick={() => setModalePreparation(m => ({ ...m, message: [m.jours, formatCreneaux(m.heure_debut, m.heure_fin, m.creneauCoupe ? m.heure_debut_2 : '', m.creneauCoupe ? m.heure_fin_2 : '')].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.' }))}
+                style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '11px', cursor: 'pointer', padding: 0 }}>
+                Régénérer depuis jours/horaires
+              </button>
+            </div>
             <textarea value={modalePreparation.message} onChange={e => setModalePreparation(m => ({ ...m, message: e.target.value }))} rows={3}
               style={{ ...st.input, resize: 'vertical', marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
