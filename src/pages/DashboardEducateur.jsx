@@ -174,6 +174,7 @@ const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fil
 const IcoXCircle     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
 const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+const IcoLogOut      = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
 const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
@@ -1165,6 +1166,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [activeSection, setActiveSection] = useState('accueil')
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  // Tablette : sidebar toujours visible (contrairement au téléphone, replié en
+  // tiroir) mais réduite aux icônes seules — les 220px fixes de la sidebar
+  // desktop mordaient trop sur la largeur réellement dispo pour le contenu
+  // (ex: le canvas Tactipad, mesuré via ResizeObserver sur son conteneur).
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
@@ -1316,7 +1322,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   useEffect(() => { init() }, [])
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
+    const onResize = () => {
+      setIsMobile(window.innerWidth < 768)
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024)
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -3878,40 +3887,48 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
       {/* SIDEBAR */}
       <aside style={{
-        width: '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        width: isTablet ? '64px' : '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
         ...(isMobile ? {
           position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
           position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
         }),
       }}>
-        <div style={{ padding: '24px 20px 16px' }}>
-          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-            Digital<span style={{ color: colors.accent.green }}>Football</span>
-          </div>
-          <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
-          {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
+        <div style={{ padding: isTablet ? '20px 8px 12px' : '24px 20px 16px', textAlign: isTablet ? 'center' : 'left' }}>
+          {isTablet ? (
+            <div style={{ fontSize: '16px', fontWeight: 800 }}>D<span style={{ color: colors.accent.green }}>F</span></div>
+          ) : (
+            <>
+              <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                Digital<span style={{ color: colors.accent.green }}>Football</span>
+              </div>
+              <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
+              {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
+            </>
+          )}
         </div>
 
-        <div style={{ padding: '0 10px' }}>
-          <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ flexShrink: 0 }}><IcoHome /></span><span style={{ flex: 1 }}>Accueil</span>
+        <div style={{ padding: isTablet ? '0 8px' : '0 10px' }}>
+          <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            <span style={{ flexShrink: 0 }}><IcoHome /></span>{!isTablet && <span style={{ flex: 1 }}>Accueil</span>}
           </button>
         </div>
 
-        <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
+        <nav style={{ flex: 1, padding: isTablet ? '8px' : '8px 10px', overflowY: 'auto' }}>
           {sidebarSectionsVisibles.map(section => (
             <div key={section.titre}>
-              <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
-                {section.titre}
-              </div>
+              {!isTablet && (
+                <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+                  {section.titre}
+                </div>
+              )}
               {section.items.map(item => (
-                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', marginTop: isTablet ? '4px' : 0, borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                  {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
+                  {item.locked && !isTablet && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                   {activeSection === item.key && (
                     <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.blue, borderRadius: '0 3px 3px 0' }} />
                   )}
@@ -3921,39 +3938,41 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           ))}
         </nav>
 
-        <div style={{ borderTop: '1px solid #1a1a1a', padding: '8px 10px' }}>
-          <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ flexShrink: 0 }}><IcoUser /></span><span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>
+        <div style={{ borderTop: '1px solid #1a1a1a', padding: isTablet ? '8px' : '8px 10px' }}>
+          <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+            <span style={{ flexShrink: 0 }}><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
           </button>
-          {staffClub && (
+          {staffClub && !isTablet && (
             <button onClick={() => navigate('/club')}
               style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: '1px solid #60a5fa', borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
               🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
             </button>
           )}
 
-          {/* ── Sélecteur de langue ── */}
-          <div style={{ padding: '8px 2px', borderTop: '1px solid #141414', marginTop: '4px', marginBottom: '4px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              {LANGS.map(l => (
-                <button key={l.code} onClick={() => setLang(l.code)}
-                  title={l.label}
-                  style={{
-                    padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                    background: lang === l.code ? colors.accent.blue + alpha.soft : 'transparent',
-                    outline: lang === l.code ? '1px solid #60a5fa40' : 'none',
-                    fontSize: '14px', lineHeight: 1,
-                  }}>
-                  {l.flag}
-                </button>
-              ))}
+          {/* ── Sélecteur de langue — masqué en tablette réduite, pas la place pour la grille de drapeaux ── */}
+          {!isTablet && (
+            <div style={{ padding: '8px 2px', borderTop: '1px solid #141414', marginTop: '4px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {LANGS.map(l => (
+                  <button key={l.code} onClick={() => setLang(l.code)}
+                    title={l.label}
+                    style={{
+                      padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                      background: lang === l.code ? colors.accent.blue + alpha.soft : 'transparent',
+                      outline: lang === l.code ? '1px solid #60a5fa40' : 'none',
+                      fontSize: '14px', lineHeight: 1,
+                    }}>
+                    {l.flag}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <button onClick={() => { signOutSafe(); navigate('/') }}
-            style={{ width: '100%', marginTop: '4px', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
-            {t('btn_deconnexion', lang)}
+          <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
+            style={{ width: '100%', marginTop: '4px', display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
+            {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
           </button>
         </div>
       </aside>

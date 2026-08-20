@@ -1092,10 +1092,16 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       setVue(schema.terrain.vue || 'complet')
       setFond(schema.terrain.fond || 'vert')
     }
-    const seqs = schema.sequences && schema.sequences.length ? schema.sequences : [schema.elements || []]
+    // Remet à l'échelle du canvas actuel (tablette/téléphone souvent plus étroit
+    // que le desktop où le schéma a été enregistré) — même correctif que
+    // TactipadViewer/TactipadPublic, qui l'appliquaient déjà en lecture seule
+    // mais pas ici en édition : réouvrir un schéma desktop sur tablette plaçait
+    // les joueurs à leurs anciennes coordonnées pixel, désormais hors échelle.
+    const seqsRaw = schema.sequences && schema.sequences.length ? schema.sequences : [schema.elements || []]
+    const seqs = seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width))
     setSequences(seqs)
     setEtapeActive(0)
-    setElements(seqs[0] || schema.elements || [])
+    setElements(seqs[0] || [])
     setHistory([]); setFuture([]); setSelectedId(null)
     if (schema.equipesCouleurs) setEquipesCouleurs(schema.equipesCouleurs)
     setNomSchema(s.nom || '')
