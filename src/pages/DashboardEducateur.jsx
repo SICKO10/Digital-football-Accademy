@@ -638,7 +638,7 @@ const STATUT_CONFIG_ACCUEIL = {
   convoque: { label: 'Convoqué', Icon: IcoStar },
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
@@ -735,15 +735,30 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   const dimanche = new Date(lundi); dimanche.setDate(lundi.getDate() + 6)
   const lundiStr = lundi.toISOString().split('T')[0]
   const dimancheStr = dimanche.toISOString().split('T')[0]
-  const seancesSemaine = entrainements.filter(e => e.date >= lundiStr && e.date <= dimancheStr && e.date <= aujourdHui && (e.presences_entrainement || []).length > 0)
+  // Même logique que le détail par séance de l'onglet Entraînements
+  // (getStatutJoueur, plus bas dans ce fichier) : la saisie manuelle
+  // (presences_entrainement) prime, sinon on retombe sur la réponse
+  // auto au sondage de dispo (dispoJoueurs) — sans ce fallback, une séance
+  // pas encore "validée" par l'éducateur mais déjà répondue par les joueurs
+  // ressortait comme si elle n'avait aucune donnée, ce qui faussait le taux
+  // (ex: 25% sur 1 séance au lieu de ~90% sur plusieurs, cf. bug rapporté).
+  const getStatutJoueurSemaine = (e, j) => {
+    const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id)
+    const nonSaisi = !p || (!p.statut && !p.present)
+    if (!nonSaisi) return p.statut || (p.present ? 'present' : 'absent')
+    return j.joueur_id ? (dispoJoueurs[e.id]?.[j.joueur_id] || null) : null
+  }
+  const seancesSemaine = entrainements.filter(e => e.date >= lundiStr && e.date <= dimancheStr && e.date <= aujourdHui && joueurs.some(j => getStatutJoueurSemaine(e, j) !== null))
   let tauxPresenceSemaine = null
   if (seancesSemaine.length > 0) {
-    const getStatut = (p) => p.statut || (p.present ? 'present' : 'absent')
     let totalSaisies = 0, totalPresents = 0
     seancesSemaine.forEach(e => {
-      const saisies = e.presences_entrainement || []
-      totalSaisies += saisies.length
-      totalPresents += saisies.filter(p => { const s = getStatut(p); return s === 'present' || s === 'convoque' }).length
+      joueurs.forEach(j => {
+        const s = getStatutJoueurSemaine(e, j)
+        if (s === null) return
+        totalSaisies++
+        if (s === 'present' || s === 'convoque') totalPresents++
+      })
     })
     tauxPresenceSemaine = totalSaisies > 0 ? Math.round((totalPresents / totalSaisies) * 100) : null
   }
@@ -3972,6 +3987,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             entrainements={entrainements}
             matchs={matchs}
             disposRecentes={disposRecentes}
+            dispoJoueurs={dispoJoueurs}
             rapportsRecents={rapportsRecents}
             setActiveSection={setActiveSection}
             setSousOngletEnt={setSousOngletEnt}
