@@ -1361,7 +1361,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
+    const [, , , , , , clubAffiliationData] = await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
+    // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
+    // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
+    if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
     setLoading(false)
   }
 
@@ -1385,6 +1388,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       .maybeSingle()
     if (error) console.error('❌ chargerClubAffiliation error:', error.code, error.message)
     setClubAffiliation(data || null)
+    return data || null
   }
 
   const chargerMesSeances = async (uid) => {
@@ -3836,11 +3840,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   // scopées au pack attribué (equipement_attributions → champs_ids), pas à
   // tous les champs cible 'educateur' du club (qui peuvent appartenir à
   // d'autres packs sans rapport).
-  const chargerMesTaillesEquipementEduc = async () => {
+  // clubId explicite pour l'appel depuis init() (juste après chargerClubAffiliation,
+  // avant que son setClubAffiliation n'ait pu re-render — la closure de ce init()
+  // en cours resterait sinon sur clubAffiliation=null). L'appel depuis l'onglet
+  // "materiel" (useEffect plus bas) continue de s'appuyer sur l'état à jour.
+  const chargerMesTaillesEquipementEduc = async (clubIdParam, userIdParam) => {
+    const clubId = clubIdParam || clubAffiliation?.club_id
+    const uid = userIdParam || userId
+    if (!clubId || !uid) return
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
-      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubAffiliation.club_id).eq('user_id', userId).maybeSingle(),
-      supabase.from('equipement_tailles').select('*').eq('user_id', userId),
-      supabase.from('equipement_commandes').select('*').eq('destinataire_id', userId).eq('statut', 'pret').maybeSingle(),
+      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubId).eq('user_id', uid).maybeSingle(),
+      supabase.from('equipement_tailles').select('*').eq('user_id', uid),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
     ])
     const pack = attribution?.pack || null
     setPackAttribueEduc(pack)
@@ -3870,7 +3881,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
   const marquerEquipementRecupereEduc = async () => {
     if (!equipementPretEduc) return
-    await supabase.from('equipement_commandes').update({ statut: 'recupere' }).eq('id', equipementPretEduc.id)
+    const maintenant = new Date().toISOString()
+    await supabase.from('equipement_commandes').update({ statut: 'recupere', recupere_le: maintenant }).eq('id', equipementPretEduc.id)
+    // Historique séparé (insert-only) : equipement_commandes est upserted par
+    // personne, une prochaine préparation écraserait recupere_le sans laisser
+    // de trace de cette remise — cf. supabase_equipement_historique_recuperation.sql.
+    await supabase.from('equipement_recuperations').insert({
+      club_id: clubAffiliation.club_id, destinataire_id: userId,
+      destinataire_nom: `${profil?.prenom || ''} ${profil?.nom || ''}`.trim(),
+      valide_le: maintenant,
+    })
     setEquipementPretEduc(null)
   }
 
@@ -4030,22 +4050,33 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {/* ===== ACCUEIL ===== */}
         {activeSection === 'accueil' && (
-          <AccueilEducateur
-            clubId={clubAffiliation?.club_id}
-            userId={userId}
-            joueurs={joueurs}
-            entrainements={entrainements}
-            matchs={matchs}
-            disposRecentes={disposRecentes}
-            dispoJoueurs={dispoJoueurs}
-            rapportsRecents={rapportsRecents}
-            setActiveSection={setActiveSection}
-            setSousOngletEnt={setSousOngletEnt}
-            setStatsSubTab={setStatsSubTab}
-            lang={lang}
-            isMobile={isMobile}
-            mesSeancesOuvertes={mesSeancesOuvertes}
-          />
+          <>
+            {equipementPretEduc && (
+              <div style={{ ...st.card, marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
+                <button onClick={() => setActiveSection('materiel')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, border: 'none', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>Ton équipement est prêt</p>
+                </button>
+              </div>
+            )}
+            <AccueilEducateur
+              clubId={clubAffiliation?.club_id}
+              userId={userId}
+              joueurs={joueurs}
+              entrainements={entrainements}
+              matchs={matchs}
+              disposRecentes={disposRecentes}
+              dispoJoueurs={dispoJoueurs}
+              rapportsRecents={rapportsRecents}
+              setActiveSection={setActiveSection}
+              setSousOngletEnt={setSousOngletEnt}
+              setStatsSubTab={setStatsSubTab}
+              lang={lang}
+              isMobile={isMobile}
+              mesSeancesOuvertes={mesSeancesOuvertes}
+            />
+          </>
         )}
 
         {/* ===== MON ÉQUIPE ===== */}

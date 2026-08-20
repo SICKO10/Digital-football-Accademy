@@ -871,7 +871,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const marquerEquipementRecupere = async () => {
     if (readOnly) return
     if (!equipementPret) return
-    await supabase.from('equipement_commandes').update({ statut: 'recupere' }).eq('id', equipementPret.id)
+    const maintenant = new Date().toISOString()
+    await supabase.from('equipement_commandes').update({ statut: 'recupere', recupere_le: maintenant }).eq('id', equipementPret.id)
+    // Historique séparé (insert-only) : equipement_commandes est upserted par
+    // personne, une prochaine préparation écraserait recupere_le sans laisser
+    // de trace de cette remise — cf. supabase_equipement_historique_recuperation.sql.
+    await supabase.from('equipement_recuperations').insert({
+      club_id: clubIdInventaire, destinataire_id: userId,
+      destinataire_nom: `${profil?.prenom || ''} ${profil?.nom || ''}`.trim(),
+      valide_le: maintenant,
+    })
     setEquipementPret(null)
   }
 
@@ -1812,6 +1821,37 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             <div style={{ maxWidth: '640px' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>{t('aff_bonjour', lang)} {profil?.prenom} 👋</h1>
               <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
+
+              {/* ── Alertes — raccourcis vers ce qui vient de changer (convocation,
+                  équipement prêt, dernier commentaire coach) plutôt que de devoir
+                  les trouver en cherchant plus bas sur la page. ── */}
+              {(convocationActive || equipementPret || mesNotes[0]?.commentaire) && (
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
+                  {convocationActive && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px' }}>Convoqué {convocationActive.matchs_equipe?.domicile ? 'vs' : '@'} {convocationActive.matchs_equipe?.adversaire}</p>
+                    </div>
+                  )}
+                  {equipementPret && (
+                    <button onClick={() => setOnglet('profil')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, border: 'none', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>Ton équipement est prêt</p>
+                    </button>
+                  )}
+                  {mesNotes[0]?.commentaire && (
+                    <div style={{ padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>Commentaire du coach — vs {mesNotes[0].matchs_equipe?.adversaire}</p>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, paddingLeft: '18px' }}>{mesNotes[0].commentaire}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
