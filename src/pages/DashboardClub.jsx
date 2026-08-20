@@ -139,34 +139,46 @@ const construireArbreOrganigramme = (membres) => {
 // est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
 // permettre de déléguer le planning des terrains indépendamment du reste (équipes,
 // classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
-// Préremplissage par défaut du champ Options à la création d'un champ de
-// taille (modifiable ensuite) — pas une liste imposée : chaque champ garde
-// ses propres options telles qu'enregistrées (ex: pointures pour
-// "Chaussures"), affichées telles quelles partout où elles sont lues
-// (profil joueur, dashboard club) sans dupliquer cette liste ailleurs.
-const TAILLES_DISPONIBLES = [
-  '4 ans', '5 ans', '6 ans', '7 ans', '8 ans', '9 ans', '10 ans',
-  '11 ans', '12 ans', '13 ans', '14 ans', '15 ans', '16 ans',
-  '128', '140', '152', '164', '176',
-  'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
-]
+// Trois listes de tailles séparées (plutôt qu'une seule liste fourre-tout
+// enfant+adulte+pointures) : un vêtement enfant et un vêtement adulte n'ont
+// pas les mêmes options, et une pointure (chaussures/chaussettes) n'a rien à
+// voir avec une taille de vêtement. Volontairement courtes — un club choisit
+// rarement plus de 6-7 tailles par article, cf. réduction demandée.
+const TAILLES_ENFANT = ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans']
+const TAILLES_ADULTE = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+const POINTURES = ['33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46']
+// Préremplissage par défaut du champ Options à la création manuelle d'un
+// champ de taille (modifiable ensuite) — pas une liste imposée : chaque
+// champ garde ses propres options telles qu'enregistrées.
+const TAILLES_DISPONIBLES = [...TAILLES_ENFANT, ...TAILLES_ADULTE]
 
 // Suggestions à cocher dans la modale pack (pas de création automatique :
 // rien n'est inséré en base tant que le club ne coche pas explicitement).
+// type détermine les options attribuées automatiquement (cf. optionsPourSuggestion) :
+// - 'unique'   : pas de taille à choisir (ex: un sac)
+// - 'pointure' : POINTURES, indépendant de la catégorie d'âge du pack
+// - 'adulte'   : TAILLES_ADULTE toujours (le staff n'est jamais "enfant")
+// - 'vetement' : TAILLES_ENFANT ou TAILLES_ADULTE selon packForm.categorie_age
 const CHAMPS_SUGGERES = [
-  { nom: 'Maillot', cible: 'joueur' },
-  { nom: 'Short', cible: 'joueur' },
-  { nom: 'Chaussettes', cible: 'joueur' },
-  { nom: 'Chaussures', cible: 'joueur' },
-  { nom: 'Survêtement veste', cible: 'joueur' },
-  { nom: 'Survêtement pantalon', cible: 'joueur' },
-  { nom: 'Kway', cible: 'joueur' },
-  { nom: 'Sac', cible: 'joueur' },
-  { nom: 'Veste staff', cible: 'educateur' },
-  { nom: 'Pantalon staff', cible: 'educateur' },
-  { nom: 'Polo', cible: 'educateur' },
-  { nom: 'Parka', cible: 'les deux' },
+  { nom: 'Maillot', cible: 'joueur', type: 'vetement' },
+  { nom: 'Short', cible: 'joueur', type: 'vetement' },
+  { nom: 'Chaussettes', cible: 'joueur', type: 'pointure' },
+  { nom: 'Chaussures', cible: 'joueur', type: 'pointure' },
+  { nom: 'Survêtement veste', cible: 'joueur', type: 'vetement' },
+  { nom: 'Survêtement pantalon', cible: 'joueur', type: 'vetement' },
+  { nom: 'Kway', cible: 'joueur', type: 'vetement' },
+  { nom: 'Sac', cible: 'joueur', type: 'unique' },
+  { nom: 'Veste staff', cible: 'educateur', type: 'adulte' },
+  { nom: 'Pantalon staff', cible: 'educateur', type: 'adulte' },
+  { nom: 'Polo', cible: 'educateur', type: 'adulte' },
+  { nom: 'Parka', cible: 'les deux', type: 'adulte' },
 ]
+const optionsPourSuggestion = (suggestion, categorieAge) => {
+  if (suggestion.type === 'unique') return { taille_unique: true, options: [] }
+  if (suggestion.type === 'pointure') return { taille_unique: false, options: POINTURES }
+  if (suggestion.type === 'adulte') return { taille_unique: false, options: TAILLES_ADULTE }
+  return { taille_unique: false, options: categorieAge === 'enfant' ? TAILLES_ENFANT : TAILLES_ADULTE }
+}
 
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
@@ -986,7 +998,7 @@ export default function DashboardClub() {
   const [equipementAttributions, setEquipementAttributions] = useState([]) // [{ id, user_id, pack_id }]
   const [modalPack, setModalPack] = useState(false)
   const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
-  const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+  const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕', categorie_age: 'adulte' })
   const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
   const [nouveauChampNom, setNouveauChampNom] = useState('')
   const [nouveauChampOptions, setNouveauChampOptions] = useState(TAILLES_DISPONIBLES.join(', '))
@@ -1243,7 +1255,7 @@ export default function DashboardClub() {
   // créés, distinct des boutons ci-dessus qui créent les champs eux-mêmes.
   const ouvrirNouveauPack = () => {
     setPackEnEdition(null)
-    setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕' })
+    setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕', categorie_age: 'adulte' })
     setNouveauChampNom('')
     setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     setNouveauChampTailleUnique(false)
@@ -1251,7 +1263,7 @@ export default function DashboardClub() {
   }
   const ouvrirEditionPack = (pack) => {
     setPackEnEdition(pack)
-    setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone })
+    setPackForm({ nom: pack.nom, cible: pack.cible, champs_ids: pack.champs_ids || [], couleur: pack.couleur, icone: pack.icone, categorie_age: pack.categorie_age || 'adulte' })
     setNouveauChampNom('')
     setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     setNouveauChampTailleUnique(false)
@@ -1266,11 +1278,13 @@ export default function DashboardClub() {
       setPackForm(p => ({ ...p, champs_ids: p.champs_ids.includes(existant.id) ? p.champs_ids.filter(id => id !== existant.id) : [...p.champs_ids, existant.id] }))
       return
     }
+    const { taille_unique, options } = optionsPourSuggestion(suggestion, packForm.categorie_age)
     const { data: newChamp, error } = await supabase.from('equipement_champs').insert({
       club_id: clubId,
       nom: suggestion.nom,
       cible: suggestion.cible,
-      options: TAILLES_DISPONIBLES,
+      options,
+      taille_unique,
       ordre: equipementChamps.length,
       actif: true,
     }).select().single()
@@ -1314,9 +1328,9 @@ export default function DashboardClub() {
   const sauvegarderPack = async () => {
     if (!packForm.nom.trim() || packForm.champs_ids.length === 0) return
     if (packEnEdition) {
-      await supabase.from('equipement_packs').update({ nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone }).eq('id', packEnEdition.id)
+      await supabase.from('equipement_packs').update({ nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone, categorie_age: packForm.categorie_age }).eq('id', packEnEdition.id)
     } else {
-      await supabase.from('equipement_packs').insert({ club_id: clubId, nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone })
+      await supabase.from('equipement_packs').insert({ club_id: clubId, nom: packForm.nom.trim(), cible: packForm.cible, champs_ids: packForm.champs_ids, couleur: packForm.couleur, icone: packForm.icone, categorie_age: packForm.categorie_age })
     }
     setModalPack(false)
     chargerInventaire(clubId)
@@ -5061,6 +5075,11 @@ Règles :
                         <span style={{ fontSize: '14px' }}>{pack.icone}</span>
                         <span style={{ color: pack.couleur, fontSize: '12px', fontWeight: 600 }}>{pack.nom}</span>
                         <span style={{ color: colors.text.faint, fontSize: '11px' }}>({pack.champs_ids.length})</span>
+                        {pack.categorie_age && (
+                          <span style={{ color: colors.text.faint, fontSize: '10px', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {pack.categorie_age === 'enfant' ? 'Enfant' : 'Adulte'}
+                          </span>
+                        )}
                         {canEditSection('inventaire') && (
                           <button onClick={() => setPackMenuOuvert(packMenuOuvert === pack.id ? null : pack.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '13px', cursor: 'pointer', padding: '0 2px', fontWeight: 700 }}>⋮</button>
                         )}
@@ -5475,6 +5494,20 @@ Règles :
               ].map(opt => (
                 <button key={opt.val} type="button" onClick={() => setPackForm(p => ({ ...p, cible: opt.val }))}
                   style={{ padding: '7px 12px', borderRadius: '8px', border: `1px solid ${packForm.cible === opt.val ? colors.accent.green : colors.border.default}`, background: packForm.cible === opt.val ? colors.accent.green + alpha.subtle : colors.background.raised, color: packForm.cible === opt.val ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <label style={st.label}>Catégorie</label>
+            <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint }}>Détermine les tailles proposées pour les suggestions vêtements ci-dessous (pointures et taille unique restent inchangées).</p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              {[
+                { val: 'enfant', label: 'Enfant' },
+                { val: 'adulte', label: 'Adulte' },
+              ].map(opt => (
+                <button key={opt.val} type="button" onClick={() => setPackForm(p => ({ ...p, categorie_age: opt.val }))}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${packForm.categorie_age === opt.val ? colors.accent.green : colors.border.default}`, background: packForm.categorie_age === opt.val ? colors.accent.green + alpha.subtle : colors.background.raised, color: packForm.categorie_age === opt.val ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {opt.label}
                 </button>
               ))}

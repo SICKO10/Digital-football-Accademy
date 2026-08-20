@@ -1734,6 +1734,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       { id: 'competition',   label: t('jnav_competition', lang),    icon: <IconTrophy /> },
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
+      { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
 
       { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
       { id: 'feed',          label: t('recrut_feed', lang),         icon: <IconGlobe />,  locked: true },
@@ -2449,8 +2450,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {onglet === 'profil' && (
             <div>
               <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} readOnly={readOnly} />
-
-              <h2 style={{ color: colors.text.primary, fontSize: '18px', fontWeight: 700, margin: '32px 0 20px' }}>Mon équipement</h2>
+            </div>
+          )}
+          {onglet === 'equipement' && (
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>Mon équipement</h1>
 
               {equipementPret && (
                 <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
