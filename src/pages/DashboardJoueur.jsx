@@ -2677,6 +2677,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
     { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
+    { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
     { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
@@ -3661,6 +3662,59 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── ÉQUIPEMENT ── */}
+        {onglet === 'equipement' && (
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon équipement</h1>
+
+            {equipementPret && (
+              <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15 }}>Ton équipement est prêt !</p>
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
+                  {equipementPret.jours || 'Passe le récupérer auprès du club'}
+                  {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
+                </p>
+                <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
+              </div>
+            )}
+
+            {!packAttribue ? (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
+                <p style={{ color: colors.text.faint, fontSize: 14 }}>Aucun pack ne t'a encore été attribué. Ton club te l'assignera prochainement.</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '18px 22px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>{packAttribue.icone}</span>
+                  <div>
+                    <p style={{ margin: 0, color: colors.accent.green, fontWeight: 700, fontSize: 15 }}>{packAttribue.nom}</p>
+                    <p style={{ margin: 0, color: colors.text.faint, fontSize: 12 }}>{champsEquipement.length} article{champsEquipement.length > 1 ? 's' : ''} à renseigner</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {champsEquipement.map(c => {
+                    const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
+                    return (
+                      <div key={c.id}>
+                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
+                        {c.taille_unique ? (
+                          <p style={{ margin: 0, fontSize: 13, color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
+                        ) : (
+                          <select value={valeur} onChange={e => sauvegarderMaTaille(c.id, e.target.value)}
+                            style={{ width: '100%', maxWidth: '240px', background: colors.background.raised, border: `1px solid ${valeur ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: valeur ? colors.accent.green : colors.text.dim, fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
+                            <option value="">Choisir une taille</option>
+                            {c.options.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
