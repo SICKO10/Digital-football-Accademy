@@ -748,7 +748,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
     if (!nonSaisi) return p.statut || (p.present ? 'present' : 'absent')
     return j.joueur_id ? (dispoJoueurs[e.id]?.[j.joueur_id] || null) : null
   }
-  const seancesSemaine = entrainements.filter(e => e.date >= lundiStr && e.date <= dimancheStr && e.date <= aujourdHui && joueurs.some(j => getStatutJoueurSemaine(e, j) !== null))
+  // Strictement avant aujourd'hui, pas "jusqu'à aujourd'hui inclus" : le
+  // sondage d'une séance du jour même peut encore recevoir des réponses,
+  // l'inclure donnerait un chiffre provisoire plutôt que factuel sur des
+  // jours réellement passés.
+  const seancesSemaine = entrainements.filter(e => e.date >= lundiStr && e.date <= dimancheStr && e.date < aujourdHui && joueurs.some(j => getStatutJoueurSemaine(e, j) !== null))
   let tauxPresenceSemaine = null
   if (seancesSemaine.length > 0) {
     let totalSaisies = 0, totalPresents = 0
