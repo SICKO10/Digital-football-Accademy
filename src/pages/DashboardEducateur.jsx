@@ -5959,14 +5959,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           {c.taille_unique ? (
                             <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
                           ) : (
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              {c.options.map(o => (
-                                <button key={o} onClick={() => sauvegarderMaTailleEduc(c.id, o)}
-                                  style={{ background: valeur === o ? colors.accent.green : colors.background.raised, color: valeur === o ? colors.black : colors.text.dim, border: `1px solid ${valeur === o ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                  {o}
-                                </button>
-                              ))}
-                            </div>
+                            <select value={valeur} onChange={e => sauvegarderMaTailleEduc(c.id, e.target.value)}
+                              style={{ width: '100%', maxWidth: '240px', background: colors.background.raised, border: `1px solid ${valeur ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: valeur ? colors.accent.green : colors.text.dim, fontSize: '13px', fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
+                              <option value="">Choisir une taille</option>
+                              {c.options.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
                           )}
                         </div>
                       )
