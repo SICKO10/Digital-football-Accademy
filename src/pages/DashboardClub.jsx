@@ -1393,19 +1393,24 @@ export default function DashboardClub() {
       valeur: c.taille_unique ? 'Taille unique' : (equipementTailles.find(t => t.user_id === personne.id && t.champ_id === c.id)?.valeur || ''),
     }))
     const existante = equipementCommandes.find(c => c.destinataire_id === personne.id)
+    const jours = existante?.jours || ''
+    const heure_debut = existante?.heure_debut || ''
+    const heure_fin = existante?.heure_fin || ''
     setModalePreparation({
       userId: personne.id,
       nom: personne.nom,
+      type: personne.type,
       items,
-      jours: existante?.jours || '',
-      heure_debut: existante?.heure_debut || '',
-      heure_fin: existante?.heure_fin || '',
+      jours, heure_debut, heure_fin,
+      // Composé à partir de jours/heures par défaut, mais librement modifiable
+      // avant l'envoi — pas figé dans marquerEquipementPret.
+      message: [jours, heure_debut && heure_fin ? `entre ${heure_debut} et ${heure_fin}` : null].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.',
     })
   }
 
   const marquerEquipementPret = async () => {
     if (!modalePreparation) return
-    const { userId, nom, items, jours, heure_debut, heure_fin } = modalePreparation
+    const { userId, nom, type, items, jours, heure_debut, heure_fin, message } = modalePreparation
     await supabase.from('equipement_commandes').upsert({
       club_id: clubId,
       responsable_id: clubId,
@@ -1418,9 +1423,9 @@ export default function DashboardClub() {
     await supabase.from('notifications').insert({
       user_id: userId,
       type: 'equipement_pret',
-      titre: '👕 Ton équipement est prêt !',
-      contenu: [jours, heure_debut && heure_fin ? `entre ${heure_debut} et ${heure_fin}` : null].filter(Boolean).join(' — ') || 'Passe le récupérer auprès du club.',
-      lien: '/dashboard-joueur',
+      titre: 'Ton équipement est prêt !',
+      contenu: message?.trim() || 'Passe le récupérer auprès du club.',
+      lien: type === 'educateur' ? '/educateur' : '/dashboard-joueur',
       lu: false,
     })
     setModalePreparation(null)
@@ -5608,6 +5613,9 @@ Règles :
                 <input type="time" value={modalePreparation.heure_fin} onChange={e => setModalePreparation(m => ({ ...m, heure_fin: e.target.value }))} style={st.input} />
               </div>
             </div>
+            <label style={st.label}>Message envoyé (modifiable)</label>
+            <textarea value={modalePreparation.message} onChange={e => setModalePreparation(m => ({ ...m, message: e.target.value }))} rows={3}
+              style={{ ...st.input, resize: 'vertical', marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModalePreparation(null)} style={st.btnSecondary}>Annuler</button>
               <button onClick={marquerEquipementPret} style={st.btnSolid}>✅ Marquer prêt & notifier</button>
