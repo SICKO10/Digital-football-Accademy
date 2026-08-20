@@ -1076,7 +1076,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
                   <div>📍 <strong>{dep.lieu_destination || '—'}</strong></div>
                   <div>👥 <strong>{dep.equipe || '—'}</strong></div>
                   <div>🎯 <strong>{{ match: 'Match', tournoi: 'Tournoi', stage: 'Stage', autre: 'Autre' }[dep.nature] || 'Match'}</strong></div>
-                  <div>🚌 <strong>{dep.vehicule || '—'}</strong></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBus /> <strong>{dep.vehicule || '—'}</strong></div>
                   <div>📅 <strong>{new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}</strong></div>
                   <div>🕐 <strong>{dep.heure_depart || '—'}</strong></div>
                 </div>
@@ -1087,7 +1087,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
               ) : (
                 fichesBus.map((f, idx) => (
                   <div key={f.immat} style={{ background: colors.background.surface, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid #1a1a1a' }}>
-                    <div style={{ fontWeight: 700, color: colors.accent.green, marginBottom: '10px', fontSize: '13px' }}>🚌 {f.immat}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: colors.accent.green, marginBottom: '10px', fontSize: '13px' }}><IcoBus /> {f.immat}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       <label style={{ fontSize: '11px', color: colors.text.muted }}>Km avant
                         <input type="number" placeholder="ex: 45230" value={f.km_avant} onChange={e => modifierFicheBus(idx, 'km_avant', e.target.value)} style={inputSt} />
