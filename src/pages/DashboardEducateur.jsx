@@ -175,6 +175,9 @@ const IcoXCircle     = () => <svg width="14" height="14" viewBox="0 0 24 24" fil
 const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoLogOut      = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+const IcoChevronLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+const IcoChevronRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+const IcoX            = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
 const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
@@ -1172,6 +1175,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // (ex: le canvas Tactipad, mesuré via ResizeObserver sur son conteneur).
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Repli manuel supplémentaire pour la tablette : la sidebar réduite aux
+  // icônes (64px) prend déjà moins de place que le desktop, mais un bouton
+  // permet de la masquer complètement pour gagner encore plus de largeur
+  // (utile pour Tactipad, cf. ResizeObserver sur son conteneur).
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
@@ -3886,28 +3894,46 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       )}
 
       {/* SIDEBAR */}
+      {isTablet && (
+        <button onClick={() => setSidebarCollapsed(v => !v)} title={sidebarCollapsed ? 'Afficher le menu' : 'Réduire le menu'}
+          style={{
+            position: 'fixed', top: '50%', left: sidebarCollapsed ? 0 : '64px', transform: 'translateY(-50%)', zIndex: 51,
+            width: '18px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: colors.background.raised, border: '1px solid #1a1a1a', borderLeft: sidebarCollapsed ? '1px solid #1a1a1a' : 'none',
+            borderRadius: sidebarCollapsed ? '0 8px 8px 0' : '0 8px 8px 0', color: colors.text.muted, cursor: 'pointer', transition: 'left 0.2s ease',
+          }}>
+          {sidebarCollapsed ? <IcoChevronRight /> : <IcoChevronLeft />}
+        </button>
+      )}
       <aside style={{
-        width: isTablet ? '64px' : '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0,
+        width: isTablet ? (sidebarCollapsed ? '0px' : '64px') : '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowX: 'hidden',
         ...(isMobile ? {
           position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
-          position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto',
+          position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto', transition: isTablet ? 'width 0.2s ease' : 'none',
         }),
       }}>
-        <div style={{ padding: isTablet ? '20px 8px 12px' : '24px 20px 16px', textAlign: isTablet ? 'center' : 'left' }}>
+        <div style={{ padding: isMobile ? '16px 16px 12px' : isTablet ? '20px 8px 12px' : '24px 20px 16px', textAlign: isTablet ? 'center' : 'left', display: 'flex', alignItems: isMobile ? 'center' : undefined, justifyContent: isMobile ? 'space-between' : undefined }}>
           {isTablet ? (
-            <div style={{ fontSize: '16px', fontWeight: 800 }}>D<span style={{ color: colors.accent.green }}>F</span></div>
+            <div style={{ fontSize: '16px', fontWeight: 800, whiteSpace: 'nowrap' }}>D<span style={{ color: colors.accent.green }}>F</span></div>
           ) : (
-            <>
+            <div>
               <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
                 Digital<span style={{ color: colors.accent.green }}>Football</span>
               </div>
               <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
               {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
-            </>
+            </div>
+          )}
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(false)} title="Réduire le menu"
+              style={{ background: 'transparent', border: 'none', color: colors.text.muted, cursor: 'pointer', padding: '6px', display: 'flex' }}>
+              <IcoX />
+            </button>
           )}
         </div>
 
+        {!(isTablet && sidebarCollapsed) && <>
         <div style={{ padding: isTablet ? '0 8px' : '0 10px' }}>
           <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
@@ -3975,6 +4001,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
           </button>
         </div>
+        </>}
       </aside>
 
       <div style={{ flex: 1, minWidth: 0, maxWidth: educateurIdOverride ? 'none' : (activeSection === 'accueil' ? '1600px' : '1400px'), margin: '0 auto', padding: isMobile ? '16px 14px' : '1.25rem 2rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '1.25rem' }}>
