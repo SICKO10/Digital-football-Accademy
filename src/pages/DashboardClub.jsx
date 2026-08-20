@@ -996,6 +996,8 @@ export default function DashboardClub() {
   // (distinct des boutons "Pack Joueur/Éducateur" qui, eux, créent les champs).
   const [equipementPacks, setEquipementPacks] = useState([])
   const [equipementAttributions, setEquipementAttributions] = useState([]) // [{ id, user_id, pack_id }]
+  const [equipementRecuperations, setEquipementRecuperations] = useState([]) // historique des validations "J'ai récupéré"
+  const [historiqueEquipementOuvert, setHistoriqueEquipementOuvert] = useState(false)
   const [modalPack, setModalPack] = useState(false)
   const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
   const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕', categorie_age: 'adulte' })
@@ -1213,7 +1215,7 @@ export default function DashboardClub() {
   const chargerInventaire = async (uid) => {
     const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
-    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: masque }, { data: stock }, { data: distribution }, { data: packs }, { data: attributions }] = await Promise.all([
+    const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: masque }, { data: stock }, { data: distribution }, { data: packs }, { data: attributions }, { data: recuperations }] = await Promise.all([
       educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id, club_categorie_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
       supabase.from('equipement_tailles').select('*').eq('club_id', uid),
@@ -1224,12 +1226,14 @@ export default function DashboardClub() {
       supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
       supabase.from('equipement_packs').select('*').eq('club_id', uid).eq('actif', true).order('created_at'),
       supabase.from('equipement_attributions').select('*').eq('club_id', uid),
+      supabase.from('equipement_recuperations').select('*').eq('club_id', uid).order('valide_le', { ascending: false }),
     ])
     setJoueursInventaire(joueurs || [])
     setEquipementChamps(champs || [])
     setEquipementTailles(tailles || [])
     setEquipementCommandes(commandes || [])
     setEquipementAttributions(attributions || [])
+    setEquipementRecuperations(recuperations || [])
     // Articles globaux masqués par ce club (materiel_catalogue_masque) — retirés
     // ici une bonne fois pour toutes plutôt que filtrés à chaque endroit qui lit
     // materielCatalogue (stock, recherche de distribution, modale catalogue...).
@@ -5066,11 +5070,12 @@ Règles :
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
                   <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Attribution de packs par joueur/staff — {equipementChamps.length} champ(s) configuré(s).</p>
-                  {canEditSection('inventaire') && (
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button onClick={() => setHistoriqueEquipementOuvert(true)} style={st.btnSecondary}>Historique ({equipementRecuperations.length})</button>
+                    {canEditSection('inventaire') && (
                       <button onClick={() => setModaleChampOuverte(true)} style={st.btnSecondary}>+ Champ de taille</button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Champs configurés — la table détaillée par champ a été remplacée
@@ -5208,7 +5213,14 @@ Règles :
                                     {!p.compteLie ? (
                                       <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
                                     ) : commande ? (
-                                      <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'Récupéré'}</span>
+                                      <div>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'FAIT'}</span>
+                                        {commande.statut === 'recupere' && commande.recupere_le && (
+                                          <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>
+                                            {new Date(commande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(commande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                          </p>
+                                        )}
+                                      </div>
                                     ) : !pack ? (
                                       <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
                                     ) : !packComplet ? (
@@ -5601,6 +5613,32 @@ Règles :
                 {packEnEdition ? 'Enregistrer' : 'Créer le pack'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale historique des récupérations équipement */}
+      {historiqueEquipementOuvert && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>Historique des récupérations</p>
+              <button onClick={() => setHistoriqueEquipementOuvert(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            {equipementRecuperations.length === 0 ? (
+              <p style={{ fontSize: '13px', color: colors.text.disabled, fontStyle: 'italic' }}>Aucune remise validée pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {equipementRecuperations.map(r => (
+                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', borderRadius: '8px', background: colors.background.raised }}>
+                    <span style={{ fontSize: '13px', color: colors.text.dim }}>{r.destinataire_nom || 'Sans nom'}</span>
+                    <span style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 600 }}>
+                      {new Date(r.valide_le).toLocaleDateString('fr-FR')} à {new Date(r.valide_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
