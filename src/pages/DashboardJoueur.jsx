@@ -1740,7 +1740,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       { id: 'recruteurs',    label: t('jnav_recruteurs', lang),     icon: <IconMessage />, locked: true },
 
       { id: 'profil',        label: t('jnav_profil', lang),         icon: <IconUser />, section: t('section_compte', lang) },
-      { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
     ]
 
     return (
@@ -2447,10 +2446,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               )}
             </div>
           )}
-          {onglet === 'profil' && <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} readOnly={readOnly} />}
-          {onglet === 'equipement' && (
+          {onglet === 'profil' && (
             <div>
-              <h2 style={{ color: colors.text.primary, fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>Mon équipement</h2>
+              <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} readOnly={readOnly} />
+
+              <h2 style={{ color: colors.text.primary, fontSize: '18px', fontWeight: 700, margin: '32px 0 20px' }}>Mon équipement</h2>
 
               {equipementPret && (
                 <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
