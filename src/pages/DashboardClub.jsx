@@ -5041,9 +5041,19 @@ Règles :
           // pas encore créé/relié son compte) ne peut pas recevoir de pack tant
           // qu'il n'a pas de ligne profiles — identifiant de secours pour l'
           // affichage (clé React) uniquement, jamais utilisé pour écrire en base.
+          // Le "Staff" de l'Équipement doit couvrir tout le monde qui encadre le
+          // club — pas seulement staff_club (rôles/permissions internes,
+          // ajoutés un par un dans l'onglet "Staff") mais aussi club_educateurs
+          // (les éducateurs réellement affiliés via le code club, onglet
+          // Sportif → Éducateurs) : deux systèmes distincts, un éducateur peut
+          // très bien être dans l'un sans être dans l'autre. Dédoublonné sur
+          // l'id — certains sont dans les deux.
+          const idsStaffClub = new Set(staffMembers.map(m => m.user_id))
+          const educateursSansStaffClub = educateursAffilies.filter(e => e.statut === 'accepte' && !idsStaffClub.has(e.educateur_id))
           const personnes = [
             ...joueursInventaire.map(j => { const cat = resoudreCategorie(j); return { id: j.joueur_id || `sans-compte-${j.id}`, nom: `${j.prenom} ${j.nom}`.trim(), sousLabel: cat || j.poste || '', type: 'joueur', categorie: cat, compteLie: !!j.joueur_id } }),
             ...staffMembers.map(m => ({ id: m.user_id, nom: `${m.membre?.prenom || ''} ${m.membre?.nom || ''}`.trim(), sousLabel: ROLE_STAFF_LABEL(m.role), type: 'educateur', categorie: null, compteLie: true })),
+            ...educateursSansStaffClub.map(e => ({ id: e.educateur_id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim(), sousLabel: 'Éducateur', type: 'educateur', categorie: null, compteLie: true })),
           ]
           // Catégories réellement configurées par le club (club_categories), pas
           // seulement celles qui ont déjà un joueur affecté dans equipe_joueurs —
