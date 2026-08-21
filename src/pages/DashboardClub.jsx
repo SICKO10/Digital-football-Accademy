@@ -919,6 +919,22 @@ export default function DashboardClub() {
   const [newCategorie, setNewCategorie] = useState({ nom: 'U13', equipe: 'A', educateur_id: '' })
   const [savingCategorie, setSavingCategorie] = useState(false)
 
+  // equipe_joueurs.categorie est un champ texte libre, pas toujours fiable
+  // (mêmes causes que le fix "Effectif U17 A vide" de chargerClassements) —
+  // la source de vérité est club_categorie_id, avec le même repli par
+  // correspondance de nom (équipe 'A' par défaut, ou candidat unique) que
+  // chargerClassements. Partagée par l'onglet Équipement ET la section
+  // Joueurs de l'Organigramme — dupliquer cette logique localement à chaque
+  // endroit est exactement ce qui a fait dériver l'Organigramme (categorie
+  // brute affichée telle quelle) de l'Équipement (déjà résolue).
+  const resoudreCategorie = (j) => {
+    if (j.club_categorie_id) return categories.find(c => c.id === j.club_categorie_id)?.nom || null
+    if (!j.categorie) return null
+    const candidats = categories.filter(c => c.educateur_id === j.educateur_id && c.nom.toLowerCase() === j.categorie.trim().toLowerCase())
+    const cat = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
+    return cat?.nom || null
+  }
+
   // Éducateurs affiliés
   const [educateursAffilies, setEducateursAffilies] = useState([])
   const [searchEducateur, setSearchEducateur] = useState('')
@@ -4815,8 +4831,8 @@ Règles :
                 <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun joueur pour l'instant.</p>
               ) : (() => {
                 const parCategorie = joueursInventaire.reduce((acc, j) => {
-                  const cat = j.categorie || 'Sans catégorie'
-                  ;(acc[cat] ||= []).push(j)
+                  const cat = resoudreCategorie(j) || 'Sans catégorie'
+                  ;(acc[cat] ||= []).push({ ...j, categorieResolue: cat })
                   return acc
                 }, {})
                 return Object.entries(parCategorie).sort(([a], [b]) => a.localeCompare(b)).map(([categorie, joueurs]) => {
@@ -4902,7 +4918,7 @@ Règles :
                 <div style={{ marginBottom: '20px', padding: '14px', background: colors.background.raised, borderRadius: '10px' }}>
                   {[
                     { label: 'Poste', val: joueurOrgDetail.poste },
-                    { label: 'Catégorie', val: joueurOrgDetail.categorie },
+                    { label: 'Catégorie', val: joueurOrgDetail.categorieResolue || joueurOrgDetail.categorie },
                     { label: 'N° maillot', val: joueurOrgDetail.numero_maillot },
                   ].filter(i => i.val).map(({ label, val }) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.default}` }}>
@@ -5142,19 +5158,6 @@ Règles :
         })()}
 
         {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
-          // equipe_joueurs.categorie est un champ texte libre, pas toujours fiable
-          // (mêmes causes que le fix "Effectif U17 A vide" de chargerClassements) —
-          // la source de vérité est club_categorie_id, avec le même repli par
-          // correspondance de nom (équipe 'A' par défaut, ou candidat unique) que
-          // chargerClassements, pour ne pas dépendre d'avoir déjà ouvert l'onglet
-          // Classements pour que la catégorie résolue soit correcte ici aussi.
-          const resoudreCategorie = (j) => {
-            if (j.club_categorie_id) return categories.find(c => c.id === j.club_categorie_id)?.nom || null
-            if (!j.categorie) return null
-            const candidats = categories.filter(c => c.educateur_id === j.educateur_id && c.nom.toLowerCase() === j.categorie.trim().toLowerCase())
-            const cat = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
-            return cat?.nom || null
-          }
           // id doit être le compte plateforme réel (profiles.id = equipe_joueurs.joueur_id),
           // pas equipe_joueurs.id (la ligne d'effectif) — equipement_attributions/
           // equipement_tailles référencent profiles(id) par clé étrangère, jamais
