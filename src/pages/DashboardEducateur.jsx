@@ -1362,11 +1362,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    const [, , , , , , clubAffiliationData] = await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId)])
+    const [, , , , , , clubAffiliationData] = await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId), chargerNotifications(targetId)])
     // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
     // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
     if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
     setLoading(false)
+  }
+
+  const chargerNotifications = async (uid) => {
+    const { data } = await supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(30)
+    setNotifications(data || [])
+  }
+
+  const marquerNotifLue = async (notifId) => {
+    await supabase.from('notifications').update({ lu: true }).eq('id', notifId)
+    setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, lu: true } : n))
   }
 
   const chargerStaffClub = async (uid) => {
@@ -1532,6 +1542,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [mesTaillesEduc, setMesTaillesEduc] = useState([])
   const [equipementPretEduc, setEquipementPretEduc] = useState(null) // ligne equipement_commandes si statut='pret'
   const [packAttribueEduc, setPackAttribueEduc] = useState(null) // equipement_packs attribué à cet éducateur
+  const [notifications, setNotifications] = useState([])
   useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
@@ -3895,8 +3906,24 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     setEquipementPretEduc(null)
   }
 
+  const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
+
   return (
     <>
+    {notifEquipementPret && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '100%', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800 }}>{notifEquipementPret.titre}</p>
+          {notifEquipementPret.contenu && (
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>{notifEquipementPret.contenu}</p>
+          )}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2a2a2a', background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
+            <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.black, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon matériel</button>
+          </div>
+        </div>
+      </div>
+    )}
     {toastMsg && (
       <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toastMsg.type === 'erreur' ? colors.accent.red : colors.accent.green, color: toastMsg.type === 'erreur' ? colors.text.primary : colors.black, padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '360px' }}>
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}

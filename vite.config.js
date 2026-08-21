@@ -4,6 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: '/',
+  // sourcemap temporaire pour diagnostiquer une ReferenceError TDZ en prod
+  // (le nommage minifié n'est pas stable entre deux builds séparés, donc un
+  // rebuild local ne peut pas décoder fiablement la trace d'un bundle déployé
+  // sans son propre sourcemap) — à retirer une fois le bug identifié.
+  build: { sourcemap: true },
   plugins: [
     react(),
     VitePWA({
