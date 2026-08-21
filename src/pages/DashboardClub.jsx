@@ -886,6 +886,13 @@ export default function DashboardClub() {
   const [parentsClub, setParentsClub] = useState([])
   const [parentsSearchQuery, setParentsSearchQuery] = useState('')
   const [parentDetail, setParentDetail] = useState(null)
+  // Section "Joueurs" de l'organigramme — groupe joueursInventaire (déjà chargé
+  // pour l'onglet Équipement, cf. chargerInventaire) par catégorie, pas de
+  // nouvelle requête. Set des catégories repliées (vide par défaut = tout
+  // ouvert), plutôt qu'une liste figée type { U17: true, U18: true } qui ne
+  // correspondrait pas forcément aux vraies catégories de ce club.
+  const [categoriesJoueursFermees, setCategoriesJoueursFermees] = useState(new Set())
+  const [joueurOrgDetail, setJoueurOrgDetail] = useState(null)
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
@@ -4799,6 +4806,56 @@ Règles :
                 )
               })()}
             </div>
+
+            {/* ── Joueurs par catégorie ── */}
+            <div style={{ marginTop: '32px' }}>
+              <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>⚽ Joueurs ({joueursInventaire.length})</h3>
+              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Effectif du club groupé par catégorie — clique sur un joueur pour voir sa fiche et ses parents rattachés.</p>
+              {joueursInventaire.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun joueur pour l'instant.</p>
+              ) : (() => {
+                const parCategorie = joueursInventaire.reduce((acc, j) => {
+                  const cat = j.categorie || 'Sans catégorie'
+                  ;(acc[cat] ||= []).push(j)
+                  return acc
+                }, {})
+                return Object.entries(parCategorie).sort(([a], [b]) => a.localeCompare(b)).map(([categorie, joueurs]) => {
+                  const ouverte = !categoriesJoueursFermees.has(categorie)
+                  return (
+                    <div key={categorie} style={{ marginBottom: '10px' }}>
+                      <div
+                        onClick={() => setCategoriesJoueursFermees(prev => {
+                          const next = new Set(prev)
+                          if (next.has(categorie)) next.delete(categorie); else next.add(categorie)
+                          return next
+                        })}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', cursor: 'pointer' }}>
+                        <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px' }}>
+                          {categorie}
+                        </span>
+                        <span style={{ color: colors.text.faint, fontSize: '12px' }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''}</span>
+                        <span style={{ color: colors.text.disabled, fontSize: '14px' }}>{ouverte ? '▲' : '▼'}</span>
+                      </div>
+                      {ouverte && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                          {joueurs.map(j => (
+                            <div key={j.id}
+                              onClick={() => setJoueurOrgDetail(j)}
+                              style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+                              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>
+                                {j.prenom?.[0]}{j.nom?.[0]}
+                              </div>
+                              <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
+                              <p style={{ color: colors.accent.green, fontSize: '11px', margin: '2px 0 0' }}>{j.poste || '—'}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
           </div>
         )}
 
@@ -4827,6 +4884,56 @@ Règles :
             </div>
           </div>
         )}
+
+        {/* ── Modale détail joueur (organigramme) : fiche + parents rattachés ── */}
+        {joueurOrgDetail && (() => {
+          // parentsClub est déjà chargé pour la section "Parents" ci-dessus
+          // (profil_parent, profil_complet=true) — filtré ici plutôt qu'une
+          // nouvelle requête par joueur_id (= profiles.id du compte joueur lié).
+          const parents = joueurOrgDetail.joueur_id ? parentsClub.filter(p => p.joueur_id === joueurOrgDetail.joueur_id) : []
+          return (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div style={{ ...st.card, width: '100%', maxWidth: '440px', maxHeight: '80vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{joueurOrgDetail.prenom} {joueurOrgDetail.nom}</p>
+                  <button onClick={() => setJoueurOrgDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                </div>
+
+                <div style={{ marginBottom: '20px', padding: '14px', background: colors.background.raised, borderRadius: '10px' }}>
+                  {[
+                    { label: 'Poste', val: joueurOrgDetail.poste },
+                    { label: 'Catégorie', val: joueurOrgDetail.categorie },
+                    { label: 'N° maillot', val: joueurOrgDetail.numero_maillot },
+                  ].filter(i => i.val).map(({ label, val }) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.default}` }}>
+                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+                      <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <h4 style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '10px' }}>
+                    Parents / Tuteurs ({parents.length})
+                  </h4>
+                  {parents.length === 0 ? (
+                    <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent enregistré.</p>
+                  ) : parents.map(parent => (
+                    <div key={parent.id} style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px', marginBottom: '8px' }}>
+                      <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{parent.prenom} {parent.nom}</div>
+                      {parent.profession && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{parent.profession}</div>}
+                      {parent.email && <a href={`mailto:${parent.email}`} style={{ color: colors.accent.blue, fontSize: '12px', textDecoration: 'none', display: 'block', marginTop: '4px' }}>{parent.email}</a>}
+                      {parent.telephone && <div style={{ color: colors.text.faint, fontSize: '12px' }}>{parent.telephone}</div>}
+                      {parent.consentement_rgpd && (
+                        <div style={{ color: colors.accent.green, fontSize: '10px', marginTop: '6px' }}>Consentement RGPD donné</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Modale ajout/modification organigramme ── */}
         {modalOrganigramme && (
