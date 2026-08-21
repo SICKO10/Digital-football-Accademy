@@ -362,7 +362,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           d'entraînement, qui restent une vue éducateur. */}
       <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub} evenements={evenementsClub} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m.educateur_id) }))} evenements={evenementsClub} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}

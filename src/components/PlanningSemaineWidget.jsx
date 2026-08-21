@@ -70,17 +70,26 @@ function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClick
               cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
             }}>
             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {compact ? (data.adversaire || 'Match') : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
+              {compact
+                ? `${data.categorie ? `${data.categorie} · ` : ''}${data.adversaire || 'Match'}`
+                : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
             </div>
             {!compact && (
-              <span style={{
-                display: 'inline-block', marginTop: '2px', fontSize: '9px', fontWeight: 700,
-                padding: '1px 6px', borderRadius: '10px',
-                background: data.domicile ? '#4ade8020' : '#f9731620',
-                color: data.domicile ? '#4ade80' : '#f97316',
-              }}>
-                {data.domicile ? 'Domicile' : 'Extérieur'}
-              </span>
+              <div style={{ display: 'flex', gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
+                {data.categorie && (
+                  <span style={{ display: 'inline-block', fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: '#60a5fa20', color: '#60a5fa' }}>
+                    {data.categorie}
+                  </span>
+                )}
+                <span style={{
+                  display: 'inline-block', fontSize: '9px', fontWeight: 700,
+                  padding: '1px 6px', borderRadius: '10px',
+                  background: data.domicile ? '#4ade8020' : '#f9731620',
+                  color: data.domicile ? '#4ade80' : '#f97316',
+                }}>
+                  {data.domicile ? 'Domicile' : 'Extérieur'}
+                </span>
+              </div>
             )}
           </div>
         )
