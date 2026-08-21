@@ -14,6 +14,22 @@ const lundiDeSemaine = (offset) => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - decalage + offset * 7)
 }
 
+// Même calcul que grilleDuMois dans PlanningSemaineWidget.jsx (semaines
+// complètes lundi→dimanche, avec padding du mois précédent/suivant).
+const grilleDuMois = (offset) => {
+  const now = new Date()
+  const premier = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  const dernier = new Date(premier.getFullYear(), premier.getMonth() + 1, 0)
+  const debut = new Date(premier)
+  debut.setDate(premier.getDate() - ((premier.getDay() + 6) % 7))
+  const fin = new Date(dernier)
+  fin.setDate(dernier.getDate() + (6 - (dernier.getDay() + 6) % 7))
+  const jours = []
+  const cur = new Date(debut)
+  while (cur <= fin) { jours.push(new Date(cur)); cur.setDate(cur.getDate() + 1) }
+  return { jours, moisCourant: premier.getMonth() }
+}
+
 const OPTIONS_SONDAGE = [
   { val: 'present', label: 'Présent', emoji: '✅', color: colors.accent.green },
   { val: 'absent', label: 'Absent', emoji: '❌', color: colors.accent.red },
@@ -30,6 +46,11 @@ const OPTIONS_SONDAGE = [
 // l'éducateur y voit la réponse de toute l'équipe, semaine par semaine,
 // avant de placer ses séances.
 export default function SondageSemaine({ mode, userId, educateurId, accentColor = colors.accent.blue }) {
+  // Vue mois : réservée au mode joueur (lecture/navigation seulement, cliquer un
+  // événement ramène sur la semaine correspondante pour répondre au sondage) —
+  // le mode éducateur garde ses cartes détaillées par événement, trop denses
+  // pour tenir dans une cellule de calendrier mensuel.
+  const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [entrainements, setEntrainements] = useState([])
@@ -41,12 +62,35 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   const [evenementOuvert, setEvenementOuvert] = useState(null) // mode educateur : détail dépliable
   const grilleRef = useRef(null)
 
-  const lundi = lundiDeSemaine(offset)
-  const jours = Array.from({ length: 7 }, (_, i) => new Date(lundi.getFullYear(), lundi.getMonth(), lundi.getDate() + i))
-  const debutStr = dateStr(jours[0]), finStr = dateStr(jours[6])
-  const label = `${jours[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${jours[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  const changerVue = (v) => { setVue(v); setOffset(0) }
+
+  let jours, label, moisCourant = null
+  if (vue === 'mois') {
+    const grille = grilleDuMois(offset)
+    jours = grille.jours
+    moisCourant = grille.moisCourant
+    const nomMois = jours.find(d => d.getMonth() === moisCourant).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    label = nomMois.charAt(0).toUpperCase() + nomMois.slice(1)
+  } else {
+    const lundi = lundiDeSemaine(offset)
+    jours = Array.from({ length: 7 }, (_, i) => new Date(lundi.getFullYear(), lundi.getMonth(), lundi.getDate() + i))
+    label = `${jours[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${jours[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  }
+  const debutStr = dateStr(jours[0]), finStr = dateStr(jours[jours.length - 1])
   const aujourdhuiStr = dateStr(new Date())
   const eduId = mode === 'joueur' ? educateurId : userId
+
+  // Bascule vers la semaine contenant cette date (clic sur un jour/événement en
+  // vue mois) — la vue mois est volontairement une simple prévisualisation,
+  // répondre au sondage se fait toujours en vue semaine.
+  const allerVersSemaineDe = (d) => {
+    const lundiRef = lundiDeSemaine(0)
+    const lundiCible = new Date(d)
+    lundiCible.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+    const diffSemaines = Math.round((lundiCible - lundiRef) / (7 * 24 * 60 * 60 * 1000))
+    setVue('semaine')
+    setOffset(diffSemaines)
+  }
 
   const charger = async () => {
     if (!eduId) return
@@ -127,7 +171,17 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
         <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
         <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
         <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
-        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>Cette semaine</button>}
+        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
+        {mode === 'joueur' && (
+          <div style={{ display: 'flex', background: colors.background.sunken, borderRadius: '8px', padding: '2px', gap: '2px' }}>
+            {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
+              <button key={v} onClick={() => changerVue(v)}
+                style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors.black : colors.text.faint }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -150,6 +204,43 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
             ))}
           </div>
         )}
+      </div>
+    )
+  }
+
+  if (vue === 'mois') {
+    return (
+      <div style={card}>
+        {header}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+          {jours.map(d => {
+            const dStr = dateStr(d)
+            const evs = evenementsDuJour(dStr)
+            const estAujourdhui = dStr === aujourdhuiStr
+            const horsMois = d.getMonth() !== moisCourant
+            return (
+              <div key={dStr} onClick={() => evs.length > 0 && allerVersSemaineDe(d)} style={{
+                minHeight: '52px', background: colors.background.sunken, borderRadius: '10px', padding: '4px',
+                border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
+                opacity: horsMois ? 0.35 : 1, display: 'flex', flexDirection: 'column', gap: '4px',
+                cursor: evs.length > 0 ? 'pointer' : 'default', minWidth: 0,
+              }}>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: estAujourdhui ? accentColor : colors.text.faint, textAlign: 'center' }}>{d.getDate()}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
+                  {evs.map(ev => {
+                    const opt = OPTIONS_SONDAGE.find(o => o.val === mesDispos[ev.id])
+                    return (
+                      <div key={ev.id} title={ev.titre} style={{
+                        width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                        background: opt ? opt.color : 'transparent', border: `1px solid ${opt ? opt.color : colors.text.ghost}`,
+                      }} />
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     )
   }
