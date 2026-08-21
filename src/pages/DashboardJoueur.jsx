@@ -1729,6 +1729,22 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // "fan" classique et cet historique/CTA (plus bas) ne serait jamais atteignable.
   const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
 
+  const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
+  const popupEquipementPret = notifEquipementPret && (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '100%', textAlign: 'center' }}>
+        <p style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800 }}>{notifEquipementPret.titre}</p>
+        {notifEquipementPret.contenu && (
+          <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>{notifEquipementPret.contenu}</p>
+        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2a2a2a', background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
+          <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setOnglet('equipement') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.black, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon équipement</button>
+        </div>
+      </div>
+    </div>
+  )
+
   if (estAffilie) {
     const affiliation = mesAffiliations.find(a => a.statut === 'accepte')
     const edu = affiliation?.profil_educateur
@@ -1755,6 +1771,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     return (
       <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; } .af-nav-btn:hover { background: #141414 !important; color: #ccc !important; }`}</style>
+
+        {popupEquipementPret}
 
         {isMobile && sidebarOpen && (
           <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
@@ -2760,6 +2778,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
       <OnboardingGuide key={onboardingKey} userId={userId} accentColor={colors.accent.green} />
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} />
+
+      {popupEquipementPret}
 
       {/* ── SIDEBAR ── */}
       {isMobile && sidebarOpen && (

@@ -5236,7 +5236,7 @@ Règles :
                                     ) : !packComplet ? (
                                       <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.amber }}>En attente</span>
                                     ) : (
-                                      <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Prêt à préparer</button>
+                                      <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Préparer</button>
                                     )}
                                   </td>
                                 )}
