@@ -3242,6 +3242,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   )
                 })()}
 
+                {/* PLANNING (semaine/mois) — mêmes entraînements/matchs que le
+                    calendrier hebdo du joueur affilié, déjà chargés dès l'arrivée
+                    sur l'onglet dashboard (chargerPlanningSemaine) */}
+                {mesAffiliations.find(a => a.statut === 'accepte') && (
+                  <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                    <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: colors.accent.green }}>{t('planning_semaine_titre', lang)}</p>
+                    <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
+                  </div>
+                )}
+
                 {/* MESSAGES PREVIEW */}
                 {conversations.length > 0 && (
                   <div style={{ background: colors.background.surface, border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
