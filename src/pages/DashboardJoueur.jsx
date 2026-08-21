@@ -453,6 +453,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [champsEquipement, setChampsEquipement] = useState([])
   const [mesTailles, setMesTailles] = useState([])
   const [equipementPret, setEquipementPret] = useState(null) // ligne equipement_commandes si statut='pret'
+  const [equipementCommande, setEquipementCommande] = useState(null) // ligne equipement_commandes quel que soit le statut (affichage "Remis le ...")
   const [packAttribue, setPackAttribue] = useState(null) // equipement_packs attribué à ce joueur (equipement_attributions)
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
@@ -829,14 +830,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // il n'y a pas de club_id direct sur affiliations/equipe_joueurs.
   const chargerInventaireJoueur = async (uid, affiliations) => {
     const a = (affiliations || []).find(af => af.statut === 'accepte')
-    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setPackAttribue(null); return }
+    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return }
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
-    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setPackAttribue(null); return }
+    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return }
     setClubIdInventaire(ce.club_id)
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
-      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).maybeSingle(),
     ])
     // "Mon équipement" n'affiche que les champs du pack qui a été attribué à
     // ce joueur — pas tous les champs du club, qui peuvent appartenir à
@@ -850,7 +851,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       setChampsEquipement([])
     }
     setMesTailles(tailles || [])
-    setEquipementPret(commande || null)
+    setEquipementCommande(commande || null)
+    setEquipementPret(commande?.statut === 'pret' ? commande : null)
   }
 
   const sauvegarderMaTaille = async (champId, valeur) => {
@@ -887,6 +889,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       valide_le: maintenant,
     })
     setEquipementPret(null)
+    setEquipementCommande(prev => prev ? { ...prev, statut: 'recupere', recupere_le: maintenant } : prev)
   }
 
   // Saisons clôturées par le coach (historique_saisons.cloturee) pour
@@ -3745,6 +3748,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   {equipementPret.heure_debut_2 && equipementPret.heure_fin_2 ? ` puis entre ${equipementPret.heure_debut_2} et ${equipementPret.heure_fin_2}` : ''}
                 </p>
                 <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
+              </div>
+            )}
+
+            {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
+              <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             )}
 

@@ -1541,6 +1541,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [champsEquipementEduc, setChampsEquipementEduc] = useState([])
   const [mesTaillesEduc, setMesTaillesEduc] = useState([])
   const [equipementPretEduc, setEquipementPretEduc] = useState(null) // ligne equipement_commandes si statut='pret'
+  const [equipementCommandeEduc, setEquipementCommandeEduc] = useState(null) // ligne equipement_commandes quel que soit le statut (affichage "Remis le ...")
   const [packAttribueEduc, setPackAttribueEduc] = useState(null) // equipement_packs attribué à cet éducateur
   const [notifications, setNotifications] = useState([])
 
@@ -1565,7 +1566,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubId).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
-      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).maybeSingle(),
     ])
     const pack = attribution?.pack || null
     setPackAttribueEduc(pack)
@@ -1576,7 +1577,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setChampsEquipementEduc([])
     }
     setMesTaillesEduc(tailles || [])
-    setEquipementPretEduc(commande || null)
+    setEquipementCommandeEduc(commande || null)
+    setEquipementPretEduc(commande?.statut === 'pret' ? commande : null)
   }
 
   useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
@@ -3916,6 +3918,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       valide_le: maintenant,
     })
     setEquipementPretEduc(null)
+    setEquipementCommandeEduc(prev => prev ? { ...prev, statut: 'recupere', recupere_le: maintenant } : prev)
   }
 
   const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
@@ -6015,6 +6018,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     {equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}
                   </p>
                   <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
+                </div>
+              )}
+
+              {equipementCommandeEduc?.statut === 'recupere' && equipementCommandeEduc?.recupere_le && (
+                <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: colors.accent.green }}>Équipement remis le {new Date(equipementCommandeEduc.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommandeEduc.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               )}
 
