@@ -2879,8 +2879,17 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!importPreview) return
     setImportPreview(prev => ({ ...prev, importing: true, done: 0 }))
     let done = 0
+    // Même repli que l'ajout manuel d'un joueur (cf. plus haut) : sans ça, les
+    // lignes importées restent avec club_categorie_id = null indéfiniment —
+    // le rattrapage auto de l'onglet Classements ne répare que les catégories
+    // texte non vides, jamais celles laissées vides dans le fichier importé.
     for (const row of importPreview.rows) {
-      await supabase.from('equipe_joueurs').insert({ ...row, educateur_id: userId })
+      await supabase.from('equipe_joueurs').insert({
+        ...row,
+        club_categorie_id: monCategorieClub?.id || null,
+        categorie: row.categorie || monCategorieClub?.nom || '',
+        educateur_id: userId,
+      })
       done++
       setImportPreview(prev => ({ ...prev, done }))
     }
