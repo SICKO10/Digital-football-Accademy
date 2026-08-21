@@ -27,7 +27,10 @@ const grilleDuMois = (offset) => {
   return { jours, moisCourant: premier.getMonth() }
 }
 
-function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClickMatch, onClickEvenement }) {
+// Exporté pour réutilisation par SondageSemaine.jsx (vue mois du planning
+// joueur) — même rendu de puces événement que le calendrier éducateur/club,
+// pas une deuxième implémentation qui dériverait de celle-ci avec le temps.
+export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClickMatch, onClickEvenement }) {
   const items = [
     ...ents.map(e => ({ type: 'entrainement', data: e })),
     ...mts.map(m => ({ type: 'match', data: m })),

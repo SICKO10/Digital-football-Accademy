@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { sondageEstClos } from '../lib/sondage'
+import { EvenementsJour } from './PlanningSemaineWidget'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -60,10 +61,9 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   const [roster, setRoster] = useState([])
   const [saving, setSaving] = useState(null) // eventId en cours de sauvegarde
   const [evenementOuvert, setEvenementOuvert] = useState(null) // mode educateur : détail dépliable
-  const [jourSelectionne, setJourSelectionne] = useState(null) // vue mois : date (dStr) cliquée, null = liste du mois entier
   const grilleRef = useRef(null)
 
-  const changerVue = (v) => { setVue(v); setOffset(0); setJourSelectionne(null) }
+  const changerVue = (v) => { setVue(v); setOffset(0) }
 
   let jours, label, moisCourant = null
   if (vue === 'mois') {
@@ -131,10 +131,6 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId])
-
-  // Change de mois/semaine → la sélection de jour (vue mois) ne doit pas
-  // survivre, sinon un jour du mois précédent resterait affiché en filigrane.
-  useEffect(() => { setJourSelectionne(null) }, [offset, vue])
 
   // Sur mobile/tablette, la grille 7 colonnes défile horizontalement (chaque
   // jour garde une largeur lisible plutôt que d'être écrasé) — centre la
@@ -214,66 +210,36 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   }
 
   if (vue === 'mois') {
-    // Vue mois = consultation seule (pas de boutons de sondage, ça reste
-    // l'exclusivité de la vue semaine) : clic sur un jour → liste de ses
-    // événements sous le calendrier. Aucun jour sélectionné → tous les
-    // événements du mois (jours de padding exclus), groupés par date.
-    const evenementsMois = jours
-      .filter(d => d.getMonth() === moisCourant)
-      .flatMap(d => evenementsDuJour(dateStr(d)).map(ev => ({ ...ev, dStr: dateStr(d) })))
-    const evenementsParJour = evenementsMois.reduce((acc, ev) => {
-      ;(acc[ev.dStr] ||= []).push(ev)
-      return acc
-    }, {})
-    const evsJourSelectionne = jourSelectionne ? evenementsDuJour(jourSelectionne) : null
-
+    // Même rendu que le calendrier éducateur/club (PlanningSemaineWidget) :
+    // les événements s'affichent en puces directement dans chaque case, pas
+    // de liste séparée en dessous. EvenementsJour est le composant partagé —
+    // pas de sondage ici (réservé à la vue semaine), donc pas de callbacks
+    // onClickEntrainement/onClickMatch ; le clic sur la case entière ramène
+    // sur la semaine correspondante pour répondre.
     return (
       <div style={card}>
         {header}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', minWidth: 0 }}>
           {jours.map(d => {
             const dStr = dateStr(d)
-            const evs = evenementsDuJour(dStr)
+            const ents = entrainements.filter(e => e.date === dStr)
+            const mts = matchs.filter(m => m.date === dStr)
             const estAujourdhui = dStr === aujourdhuiStr
             const horsMois = d.getMonth() !== moisCourant
-            const selectionne = dStr === jourSelectionne
+            const vide = ents.length === 0 && mts.length === 0
             return (
-              <div key={dStr} onClick={() => evs.length > 0 && setJourSelectionne(j => j === dStr ? null : dStr)} style={{
-                minHeight: '52px', background: selectionne ? `${accentColor}18` : colors.background.sunken, borderRadius: '10px', padding: '4px',
-                border: `1px solid ${selectionne ? accentColor : estAujourdhui ? accentColor : colors.border.faint}`,
-                opacity: horsMois ? 0.35 : 1, display: 'flex', flexDirection: 'column', gap: '4px',
-                cursor: evs.length > 0 ? 'pointer' : 'default', minWidth: 0,
+              <div key={dStr} onClick={() => !vide && allerVersSemaineDe(d)} style={{
+                minHeight: '56px', background: colors.background.sunken, borderRadius: '10px', padding: '5px',
+                border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
+                opacity: horsMois ? 0.35 : 1, display: 'flex', flexDirection: 'column', gap: '3px',
+                cursor: vide ? 'default' : 'pointer', minWidth: 0,
               }}>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: estAujourdhui ? accentColor : colors.text.faint, textAlign: 'center' }}>{d.getDate()}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
-                  {evs.map(ev => (
-                    <div key={ev.id} title={ev.titre} style={{ width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0, background: ev.type === 'match' ? colors.accent.blue : colors.accent.green }} />
-                  ))}
-                </div>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: estAujourdhui ? accentColor : vide ? colors.text.ghost : colors.text.faint }}>{d.getDate()}</p>
+                <EvenementsJour ents={ents} mts={mts} evts={[]} compact />
               </div>
             )
           })}
         </div>
-
-        {jourSelectionne ? (
-          <div>
-            <p style={{ margin: '0 0 8px', color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              {new Date(jourSelectionne + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-            {evsJourSelectionne.map(ev => <LigneEvenementMois key={ev.id} ev={ev} onRepondre={() => allerVersSemaineDe(new Date(jourSelectionne + 'T12:00:00'))} />)}
-          </div>
-        ) : evenementsMois.length === 0 ? (
-          <p style={{ color: colors.text.ghost, fontSize: '13px', textAlign: 'center', margin: 0 }}>Aucun entraînement ni match ce mois-ci</p>
-        ) : (
-          Object.entries(evenementsParJour).map(([dStr, evs]) => (
-            <div key={dStr} style={{ marginBottom: '12px' }}>
-              <p style={{ margin: '0 0 6px', color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-                {new Date(dStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-              </p>
-              {evs.map(ev => <LigneEvenementMois key={ev.id} ev={ev} onRepondre={() => allerVersSemaineDe(new Date(dStr + 'T12:00:00'))} />)}
-            </div>
-          ))
-        )}
       </div>
     )
   }
@@ -304,35 +270,6 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
           )
         })}
       </div>
-    </div>
-  )
-}
-
-// Ligne événement en lecture seule (vue mois) — pas de boutons de sondage,
-// juste un lien pour aller répondre sur la vue semaine correspondante.
-function LigneEvenementMois({ ev, onRepondre }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 0', borderBottom: '1px solid #111' }}>
-      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', minWidth: '55px' }}>
-        {ev.heure ? ev.heure.slice(0, 5) : '—'}
-      </span>
-      {ev.type === 'entrainement' ? (
-        <span style={{ color: colors.text.primary, fontSize: '13px', flex: 1 }}>Entraînement{ev.lieu ? ` · ${ev.lieu}` : ''}</span>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
-          <span style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{ev.adversaire ? `vs ${ev.adversaire}` : 'Match'}</span>
-          <span style={{
-            background: ev.domicile ? '#0a2a0a' : '#1a1a0a',
-            color: ev.domicile ? colors.accent.green : colors.accent.amber,
-            fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px',
-          }}>
-            {ev.domicile ? 'Domicile' : 'Extérieur'}
-          </span>
-        </div>
-      )}
-      <button onClick={onRepondre} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-        Répondre
-      </button>
     </div>
   )
 }
