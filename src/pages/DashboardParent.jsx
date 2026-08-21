@@ -21,9 +21,11 @@ export default function DashboardParent() {
   const [loading, setLoading] = useState(true)
   const [acces, setAcces] = useState(null) // { joueur_id }
   const [joueurNom, setJoueurNom] = useState('')
+  const [joueurClub, setJoueurClub] = useState('')
   const [profilParent, setProfilParent] = useState(null)
   const [formParent, setFormParent] = useState({ prenom: '', nom: '', telephone: '', email: '', profession: '' })
   const [savingProfil, setSavingProfil] = useState(false)
+  const [consentement, setConsentement] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -38,15 +40,17 @@ export default function DashboardParent() {
 
       const [{ data: pp }, { data: joueurProfil }] = await Promise.all([
         supabase.from('profil_parent').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('profiles').select('prenom, nom').eq('id', accesData.joueur_id).maybeSingle(),
+        supabase.from('profiles').select('prenom, nom, club').eq('id', accesData.joueur_id).maybeSingle(),
       ])
 
       setProfilParent(pp)
       setJoueurNom(joueurProfil ? `${joueurProfil.prenom || ''} ${joueurProfil.nom || ''}`.trim() : '')
+      setJoueurClub(joueurProfil?.club || '')
       setFormParent({
         prenom: pp?.prenom || '', nom: pp?.nom || '', telephone: pp?.telephone || '',
         email: pp?.email || user.email || '', profession: pp?.profession || '',
       })
+      setConsentement(!!pp?.consentement_rgpd)
       setLoading(false)
     }
     init()
@@ -54,17 +58,19 @@ export default function DashboardParent() {
 
   const sauvegarderProfilParent = async () => {
     const { prenom, nom, telephone, email, profession } = formParent
-    if (!prenom || !nom || !telephone || !email || !profession) return
+    if (!prenom || !nom || !telephone || !email || !profession || !consentement) return
     setSavingProfil(true)
     const { data: { user } } = await supabase.auth.getUser()
+    const maintenant = new Date().toISOString()
     const { error } = await supabase.from('profil_parent').upsert({
       user_id: user.id, joueur_id: acces.joueur_id,
       prenom, nom, telephone, email, profession,
       profil_complet: true,
+      consentement_rgpd: true, consentement_date: maintenant,
     }, { onConflict: 'user_id' })
     setSavingProfil(false)
     if (error) { alert('Erreur : ' + error.message); return }
-    setProfilParent(p => ({ ...(p || {}), prenom, nom, telephone, email, profession, profil_complet: true }))
+    setProfilParent(p => ({ ...(p || {}), prenom, nom, telephone, email, profession, profil_complet: true, consentement_rgpd: true, consentement_date: maintenant }))
   }
 
   const handleLogout = async () => { await signOutSafe(); navigate('/login') }
@@ -77,7 +83,7 @@ export default function DashboardParent() {
 
   const profilIncomplet = !profilParent?.profil_complet
   const champsRequis = ['prenom', 'nom', 'telephone', 'email', 'profession']
-  const formValide = champsRequis.every(c => formParent[c]?.trim())
+  const formValide = champsRequis.every(c => formParent[c]?.trim()) && consentement
   const inputStyle = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }
 
   if (profilIncomplet) {
@@ -100,6 +106,18 @@ export default function DashboardParent() {
               <input type={type} value={formParent[champ]} onChange={e => setFormParent(prev => ({ ...prev, [champ]: e.target.value }))} style={inputStyle} />
             </div>
           ))}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px', padding: '14px', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px' }}>
+            <input
+              type="checkbox"
+              id="rgpd"
+              checked={consentement}
+              onChange={e => setConsentement(e.target.checked)}
+              style={{ marginTop: '2px', accentColor: colors.accent.green, width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+            />
+            <label htmlFor="rgpd" style={{ color: colors.text.faint, fontSize: '13px', lineHeight: '1.5', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              J'accepte que mes informations personnelles (nom, prénom, téléphone, profession) soient collectées et consultées par le club {joueurClub ? <strong style={{ color: colors.text.secondary }}>{joueurClub}</strong> : 'de votre enfant'} dans le cadre du suivi de mon enfant sur la plateforme Digital Football. Ces données ne seront pas partagées avec des tiers.
+            </label>
+          </div>
           <button onClick={sauvegarderProfilParent} disabled={!formValide || savingProfil}
             style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '14px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: formValide ? 1 : 0.4 }}>
             {savingProfil ? 'Enregistrement...' : '✅ Confirmer mon profil'}
