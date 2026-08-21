@@ -1451,6 +1451,20 @@ export default function DashboardClub() {
     chargerInventaire(clubId)
   }
 
+  const marquerEquipementRecupere = async (commande) => {
+    const maintenant = new Date().toISOString()
+    await supabase.from('equipement_commandes').update({ statut: 'recupere', recupere_le: maintenant }).eq('id', commande.id)
+    // Historique séparé (insert-only) : equipement_commandes est upserted par
+    // personne, une prochaine préparation écraserait recupere_le sans laisser
+    // de trace de cette remise — cf. supabase_equipement_historique_recuperation.sql.
+    await supabase.from('equipement_recuperations').insert({
+      club_id: clubId, destinataire_id: commande.destinataire_id,
+      destinataire_nom: commande.destinataire_nom,
+      valide_le: maintenant,
+    })
+    setEquipementCommandes(prev => prev.map(c => c.id === commande.id ? { ...c, statut: 'recupere', recupere_le: maintenant } : c))
+  }
+
   const mettreAJourStockMateriel = async (catalogueId, quantite) => {
     await supabase.from('materiel_stock').upsert(
       { club_id: clubId, catalogue_id: catalogueId, quantite_totale: quantite, updated_at: new Date().toISOString() },
@@ -5225,6 +5239,9 @@ Règles :
                                     ) : commande ? (
                                       <div>
                                         <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'FAIT'}</span>
+                                        {commande.statut === 'pret' && (
+                                          <button onClick={() => marquerEquipementRecupere(commande)} style={{ ...st.btnSecondary, display: 'block', marginTop: '4px', padding: '3px 8px', fontSize: '11px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Récupérer</button>
+                                        )}
                                         {commande.statut === 'recupere' && commande.recupere_le && (
                                           <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>
                                             {new Date(commande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(commande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
