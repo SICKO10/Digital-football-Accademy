@@ -143,6 +143,17 @@ const EDUCATEUR_FAQ = [
   },
 ]
 
+// Nature d'un but (matchs_equipe.buts_detail[].nature) — saisie manuelle dans
+// la modale "Marquer comme joué", alimente le graphique "Buts par nature"
+// de StatsEquipe.jsx (même liste de valeurs des deux côtés).
+const NATURES_BUT = [
+  { value: 'cpa', label: 'CPA' },
+  { value: 'attaque_placee', label: 'Attaque placée' },
+  { value: 'attaque_rapide', label: 'Attaque rapide' },
+  { value: 'erreur_individuelle', label: 'Erreur individuelle' },
+  { value: 'exploit_personnel', label: 'Exploit personnel' },
+]
+
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IcoChart     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -1261,7 +1272,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingMatchForm, setSavingMatchForm] = useState(false)
   const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
-  const [scannerModalButsDetail, setScannerModalButsDetail] = useState([]) // [{ minute, equipe }] — pour matchs_equipe.buts_detail
+  const [scannerModalButsDetail, setScannerModalButsDetail] = useState([]) // [{ minute, equipe, nature }] — pour matchs_equipe.buts_detail
   const [scannerModalImageBase64, setScannerModalImageBase64] = useState(null)
   const [scannerModalImagePreview, setScannerModalImagePreview] = useState(null)
   const [scannerModalLoading, setScannerModalLoading] = useState(false)
@@ -5879,12 +5890,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               <option value="nous">Nous</option>
                               <option value="eux">Eux</option>
                             </select>
+                            <select value={b.nature || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, nature: e.target.value } : x))}
+                              style={{ ...st.input, width: '160px', padding: '6px 8px', fontSize: '13px' }}>
+                              <option value="">Nature —</option>
+                              {NATURES_BUT.map(n => <option key={n.value} value={n.value}>{n.label}</option>)}
+                            </select>
                             <button onClick={() => setScannerModalButsDetail(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
                           </div>
                         ))}
                       </div>
                     )}
-                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
+                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous', nature: '' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
                   </div>
 
                   <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>

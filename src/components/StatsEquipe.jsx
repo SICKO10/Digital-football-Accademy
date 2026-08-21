@@ -1,6 +1,14 @@
 import { useState, useMemo } from 'react'
 import { colors, alpha } from '../tokens'
 
+const NATURES_BUT = [
+  { value: 'cpa', label: 'CPA' },
+  { value: 'attaque_placee', label: 'Attaque placée' },
+  { value: 'attaque_rapide', label: 'Attaque rapide' },
+  { value: 'erreur_individuelle', label: 'Erreur individuelle' },
+  { value: 'exploit_personnel', label: 'Exploit personnel' },
+]
+
 // Stats d'équipe calculées uniquement à partir de matchs_equipe
 // (score_nous/score_eux/domicile/competition) — aucune nouvelle table.
 // "Buts par quart d'heure" et "premier à marquer" ne sont volontairement
@@ -72,6 +80,22 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
     }
   })
   const maxQuart = Math.max(1, ...quartsGraphique.flatMap(q => [q.marques, q.encaisses]))
+
+  // Buts par nature — même source (matchs_equipe.buts_detail) que le graphique
+  // par quart d'heure, mais sur le champ "nature" (saisi à la main dans la
+  // modale "Marquer comme joué" côté éducateur, cf. DashboardEducateur.jsx).
+  // Caché tant qu'aucun but n'a de nature renseignée, même logique que
+  // butsAvecMinute plus haut.
+  const butsAvecNature = avecResultat.flatMap(m => (m.buts_detail || []).filter(b => b.nature))
+  const natureGraphique = NATURES_BUT.map(n => {
+    const butsNature = butsAvecNature.filter(b => b.nature === n.value)
+    return {
+      label: n.label,
+      marques: butsNature.filter(b => b.equipe === 'nous').length,
+      encaisses: butsNature.filter(b => b.equipe === 'eux').length,
+    }
+  }).filter(n => n.marques > 0 || n.encaisses > 0)
+  const maxNature = Math.max(1, ...natureGraphique.flatMap(n => [n.marques, n.encaisses]))
 
   const forme = avecResultat.slice(0, 5)
   const serie = (() => {
@@ -219,6 +243,27 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
                       <div title={`${q.encaisses} but(s) encaissé(s)`} style={{ width: '14px', height: `${(q.encaisses / maxQuart) * 86}px`, minHeight: q.encaisses > 0 ? '4px' : 0, background: colors.accent.red, borderRadius: '3px 3px 0 0' }} />
                     </div>
                     <p style={{ margin: '6px 0 0', color: colors.text.ghost, fontSize: '10px' }}>{q.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.green, display: 'inline-block' }} /> Marqués</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.red, display: 'inline-block' }} /> Encaissés</span>
+              </div>
+            </div>
+          )}
+
+          {natureGraphique.length > 0 && (
+            <div style={{ ...card, textAlign: 'left', marginTop: '10px' }}>
+              <p style={{ margin: '0 0 14px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>Buts par nature</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '110px' }}>
+                {natureGraphique.map(n => (
+                  <div key={n.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '86px' }}>
+                      <div title={`${n.marques} but(s) marqué(s)`} style={{ width: '14px', height: `${(n.marques / maxNature) * 86}px`, minHeight: n.marques > 0 ? '4px' : 0, background: colors.accent.green, borderRadius: '3px 3px 0 0' }} />
+                      <div title={`${n.encaisses} but(s) encaissé(s)`} style={{ width: '14px', height: `${(n.encaisses / maxNature) * 86}px`, minHeight: n.encaisses > 0 ? '4px' : 0, background: colors.accent.red, borderRadius: '3px 3px 0 0' }} />
+                    </div>
+                    <p style={{ margin: '6px 0 0', color: colors.text.ghost, fontSize: '10px', textAlign: 'center' }}>{n.label}</p>
                   </div>
                 ))}
               </div>
