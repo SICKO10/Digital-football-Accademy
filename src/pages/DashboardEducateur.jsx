@@ -1543,6 +1543,42 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [equipementPretEduc, setEquipementPretEduc] = useState(null) // ligne equipement_commandes si statut='pret'
   const [packAttribueEduc, setPackAttribueEduc] = useState(null) // equipement_packs attribué à cet éducateur
   const [notifications, setNotifications] = useState([])
+
+  // Tailles équipement côté éducateur — mêmes tables que DashboardJoueur.jsx,
+  // scopées au pack attribué (equipement_attributions → champs_ids), pas à
+  // tous les champs cible 'educateur' du club (qui peuvent appartenir à
+  // d'autres packs sans rapport).
+  // clubId explicite pour l'appel depuis init() (juste après chargerClubAffiliation,
+  // avant que son setClubAffiliation n'ait pu re-render — la closure de ce init()
+  // en cours resterait sinon sur clubAffiliation=null). L'appel depuis l'onglet
+  // "materiel" (useEffect plus bas) continue de s'appuyer sur l'état à jour.
+  // Déclarée ici (avant le `if (loading) return` plus bas dans le rendu) et non
+  // plus loin dans le fichier : init() l'appelle depuis un useEffect enregistré
+  // dès le tout premier rendu (loading=true) — si sa définition se trouvait après
+  // le early-return, cette instance de fermeture ne l'aurait jamais initialisée,
+  // provoquant un ReferenceError "Cannot access before initialization" au premier
+  // chargement de la page.
+  const chargerMesTaillesEquipementEduc = async (clubIdParam, userIdParam) => {
+    const clubId = clubIdParam || clubAffiliation?.club_id
+    const uid = userIdParam || userId
+    if (!clubId || !uid) return
+    const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
+      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubId).eq('user_id', uid).maybeSingle(),
+      supabase.from('equipement_tailles').select('*').eq('user_id', uid),
+      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
+    ])
+    const pack = attribution?.pack || null
+    setPackAttribueEduc(pack)
+    if (pack?.champs_ids?.length) {
+      const { data: champs } = await supabase.from('equipement_champs').select('*').in('id', pack.champs_ids).eq('actif', true).order('ordre')
+      setChampsEquipementEduc(champs || [])
+    } else {
+      setChampsEquipementEduc([])
+    }
+    setMesTaillesEduc(tailles || [])
+    setEquipementPretEduc(commande || null)
+  }
+
   useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
@@ -3846,35 +3882,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
     const cle = dist.lot_id || dist.id
     setMonMateriel(prev => prev.map(d => (d.lot_id || d.id) === cle ? { ...d, statut: 'remise_demandee' } : d))
-  }
-
-  // Tailles équipement côté éducateur — mêmes tables que DashboardJoueur.jsx,
-  // scopées au pack attribué (equipement_attributions → champs_ids), pas à
-  // tous les champs cible 'educateur' du club (qui peuvent appartenir à
-  // d'autres packs sans rapport).
-  // clubId explicite pour l'appel depuis init() (juste après chargerClubAffiliation,
-  // avant que son setClubAffiliation n'ait pu re-render — la closure de ce init()
-  // en cours resterait sinon sur clubAffiliation=null). L'appel depuis l'onglet
-  // "materiel" (useEffect plus bas) continue de s'appuyer sur l'état à jour.
-  const chargerMesTaillesEquipementEduc = async (clubIdParam, userIdParam) => {
-    const clubId = clubIdParam || clubAffiliation?.club_id
-    const uid = userIdParam || userId
-    if (!clubId || !uid) return
-    const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
-      supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', clubId).eq('user_id', uid).maybeSingle(),
-      supabase.from('equipement_tailles').select('*').eq('user_id', uid),
-      supabase.from('equipement_commandes').select('*').eq('destinataire_id', uid).eq('statut', 'pret').maybeSingle(),
-    ])
-    const pack = attribution?.pack || null
-    setPackAttribueEduc(pack)
-    if (pack?.champs_ids?.length) {
-      const { data: champs } = await supabase.from('equipement_champs').select('*').in('id', pack.champs_ids).eq('actif', true).order('ordre')
-      setChampsEquipementEduc(champs || [])
-    } else {
-      setChampsEquipementEduc([])
-    }
-    setMesTaillesEduc(tailles || [])
-    setEquipementPretEduc(commande || null)
   }
 
   const sauvegarderMaTailleEduc = async (champId, valeur) => {
