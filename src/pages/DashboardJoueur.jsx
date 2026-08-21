@@ -448,6 +448,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   const [convocationActive, setConvocationActive] = useState(null) // convocation publiée non expirée pour ce joueur, avec le match joint
+  const [repConvoc, setRepConvoc] = useState(null) // 'present' | 'absent' | null — réponse du joueur à convocationActive
   // Inventaire club (Équipement) — tailles déclarées par le joueur + statut de préparation
   const [clubIdInventaire, setClubIdInventaire] = useState(null)
   const [champsEquipement, setChampsEquipement] = useState([])
@@ -747,7 +748,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       .map(c => ({ ...c, matchs_equipe: matchsParId[c.match_id] }))
       .filter(c => c.matchs_equipe)
     convocations.sort((a, b) => (a.matchs_equipe?.date || '').localeCompare(b.matchs_equipe?.date || ''))
-    setConvocationActive(convocations[0] || null)
+    const active = convocations[0] || null
+    setConvocationActive(active)
+    if (active) {
+      const { data: rep } = await supabase.from('convocation_reponses').select('reponse').eq('convocation_id', active.id).eq('joueur_id', uid).maybeSingle()
+      setRepConvoc(rep?.reponse || null)
+    } else {
+      setRepConvoc(null)
+    }
+  }
+
+  const repondreConvocation = async (reponse) => {
+    if (readOnly || !convocationActive) return
+    setRepConvoc(reponse)
+    await supabase.from('convocation_reponses').upsert(
+      { convocation_id: convocationActive.id, joueur_id: userId, reponse, updated_at: new Date().toISOString() },
+      { onConflict: 'convocation_id, joueur_id' }
+    )
   }
 
   const chargerNotifications = async (uid) => {
@@ -2954,7 +2971,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <div style={{ padding: isMobile ? '16px' : '24px 40px' }}>
 
             {/* HERO CARD — pleine largeur */}
-            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #111 0%, #141414 100%)', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a1a0f 0%, #0d0d0d 100%)', border: '1px solid #1a2e1a', borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
               <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
@@ -2966,7 +2983,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
-                  <span style={{ background: isPro ? colors.accent.green : '#3b82f6', color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
+                  <span style={{ background: isPro ? colors.accent.green : '#3b82f6', color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0, boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
                     {profil?.plan}
                   </span>
                   {profil?.numero_licence && (
@@ -3036,6 +3053,17 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       {convocationActive.notes}
                     </p>
                   )}
+
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                    <button onClick={() => repondreConvocation('present')}
+                      style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : '#1a1a1a', color: repConvoc === 'present' ? colors.black : '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      ✅ Présent
+                    </button>
+                    <button onClick={() => repondreConvocation('absent')}
+                      style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : '#1a1a1a', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      ❌ Absent
+                    </button>
+                  </div>
 
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     {convocationActive.type_terrain && (
