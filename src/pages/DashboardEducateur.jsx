@@ -1168,12 +1168,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
   const [activeSection, setActiveSection] = useState('accueil')
   const [loading, setLoading] = useState(true)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  // Tablette : sidebar toujours visible (contrairement au téléphone, replié en
-  // tiroir) mais réduite aux icônes seules — les 220px fixes de la sidebar
-  // desktop mordaient trop sur la largeur réellement dispo pour le contenu
-  // (ex: le canvas Tactipad, mesuré via ResizeObserver sur son conteneur).
-  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024)
+  // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
+  // demande explicite — auparavant un troisième mode dédié (sidebar réduite
+  // aux icônes, 64px, repliable) existait entre 768 et 1024px pour préserver
+  // la largeur du contenu (ex: le canvas Tactipad) ; isTablet reste déclaré
+  // (utilisé par de nombreux styles plus bas) mais toujours à false, pour ne
+  // pas devoir toucher chacun de ces usages individuellement.
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const isTablet = false
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Repli manuel supplémentaire pour la tablette : la sidebar réduite aux
   // icônes (64px) prend déjà moins de place que le desktop, mais un bouton
@@ -1331,8 +1333,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   useEffect(() => { init() }, [])
   useEffect(() => {
     const onResize = () => {
-      setIsMobile(window.innerWidth < 768)
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024)
+      setIsMobile(window.innerWidth < 1024)
     }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
