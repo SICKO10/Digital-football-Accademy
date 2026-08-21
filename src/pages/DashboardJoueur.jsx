@@ -2553,6 +2553,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 </div>
               )}
 
+              {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
+                <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              )}
+
               {!packAttribue ? (
                 <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
                   <p style={{ color: colors.text.faint, fontSize: 14 }}>Aucun pack ne t'a encore été attribué. Ton club te l'assignera prochainement.</p>
