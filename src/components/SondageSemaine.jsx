@@ -153,7 +153,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
           const estAujourdhui = dStr === aujourdhuiStr
           return (
             <div key={dStr} style={{
-              minWidth: '92px', background: colors.background.sunken, borderRadius: '10px', padding: '8px 6px',
+              minWidth: '112px', background: colors.background.sunken, borderRadius: '10px', padding: '10px 8px',
               border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
               display: 'flex', flexDirection: 'column', gap: '6px',
             }}>
@@ -177,7 +177,7 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
   const clos = ev.type === 'entrainement' && sondageEstClos(ev)
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${couleurType}25`, borderRadius: '8px', padding: '6px' }}>
+    <div style={{ background: colors.background.surface, border: `1px solid ${couleurType}25`, borderRadius: '8px', padding: '8px' }}>
       <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: couleurType, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '1px 0 5px', flexWrap: 'wrap' }}>
         {ev.heure && <p style={{ margin: 0, fontSize: '9px', color: colors.text.faint }}>{ev.heure.slice(0, 5)}</p>}
@@ -190,12 +190,12 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
       {clos ? (
         <p style={{ margin: '5px 0 0', fontSize: '9px', color: colors.text.ghost }}>🔒 Clos</p>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', justifyContent: 'center' }}>
           {OPTIONS_SONDAGE.map(opt => {
             const actif = statut === opt.val
             return (
               <button key={opt.val} title={opt.label} disabled={saving} onClick={() => onChoisir(opt.val)}
-                style={{ width: '20px', height: '20px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: '26px', height: '26px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, fontSize: '14px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {opt.emoji}
               </button>
             )
