@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { sondageEstClos } from '../lib/sondage'
@@ -39,6 +39,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   const [roster, setRoster] = useState([])
   const [saving, setSaving] = useState(null) // eventId en cours de sauvegarde
   const [evenementOuvert, setEvenementOuvert] = useState(null) // mode educateur : détail dépliable
+  const grilleRef = useRef(null)
 
   const lundi = lundiDeSemaine(offset)
   const jours = Array.from({ length: 7 }, (_, i) => new Date(lundi.getFullYear(), lundi.getMonth(), lundi.getDate() + i))
@@ -85,6 +86,16 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId])
+
+  // Sur mobile/tablette, la grille 7 colonnes défile horizontalement (chaque
+  // jour garde une largeur lisible plutôt que d'être écrasé) — centre la
+  // semaine courante sur "aujourd'hui" plutôt que de laisser l'utilisateur
+  // atterrir sur lundi et devoir swiper pour trouver le jour qui l'intéresse.
+  useEffect(() => {
+    if (loading || offset !== 0 || !grilleRef.current) return
+    const cible = grilleRef.current.querySelector('[data-aujourdhui="true"]')
+    cible?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [loading, offset])
 
   const repondre = async (ev, statut) => {
     setSaving(ev.id)
@@ -146,16 +157,16 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   return (
     <div style={card}>
       {header}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto' }}>
+      <div ref={grilleRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '4px' }}>
         {jours.map((d, i) => {
           const dStr = dateStr(d)
           const evs = evenementsDuJour(dStr)
           const estAujourdhui = dStr === aujourdhuiStr
           return (
-            <div key={dStr} style={{
+            <div key={dStr} data-aujourdhui={estAujourdhui} style={{
               minWidth: '112px', background: colors.background.sunken, borderRadius: '10px', padding: '10px 8px',
               border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
-              display: 'flex', flexDirection: 'column', gap: '6px',
+              display: 'flex', flexDirection: 'column', gap: '6px', scrollSnapAlign: 'start',
             }}>
               <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : evs.length ? colors.text.faint : colors.text.ghost, textAlign: 'center' }}>
                 {JOURS[i]} {d.getDate()}

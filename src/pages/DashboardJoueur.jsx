@@ -433,7 +433,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [explorerOnglet, setExplorerOnglet] = useState('educateurs') // 'educateurs' | 'clubs' | 'scouts'
   const [explorerRecherche, setExplorerRecherche] = useState('')
   const [explorerRegion, setExplorerRegion] = useState('')
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  // Tablette alignée sur le comportement téléphone (menu en tiroir plutôt que
+  // sidebar fixe) — même décision que DashboardEducateur.jsx.
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
@@ -506,7 +508,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   useEffect(() => { getProfil() }, [])
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
+    const onResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
