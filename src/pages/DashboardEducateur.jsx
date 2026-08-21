@@ -3901,7 +3901,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   const marquerEquipementRecupereEduc = async () => {
     if (!equipementPretEduc) return
     const maintenant = new Date().toISOString()
-    await supabase.from('equipement_commandes').update({ statut: 'recupere', recupere_le: maintenant }).eq('id', equipementPretEduc.id)
+    // .select().single() : une simple .update() sans lecture du résultat ne
+    // remonte aucune erreur si la policy RLS filtre la ligne (0 ligne affectée
+    // sans exception côté Postgrest) — c'est exactement ce qui rendait le clic
+    // silencieusement inopérant tant que la policy destinataire n'existait pas.
+    const { error } = await supabase.from('equipement_commandes').update({ statut: 'recupere', recupere_le: maintenant }).eq('id', equipementPretEduc.id).select().single()
+    if (error) { alert('Erreur : ' + error.message); return }
     // Historique séparé (insert-only) : equipement_commandes est upserted par
     // personne, une prochaine préparation écraserait recupere_le sans laisser
     // de trace de cette remise — cf. supabase_equipement_historique_recuperation.sql.
