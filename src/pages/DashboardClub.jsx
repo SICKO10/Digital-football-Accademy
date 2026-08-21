@@ -893,6 +893,7 @@ export default function DashboardClub() {
   // correspondrait pas forcément aux vraies catégories de ce club.
   const [categoriesJoueursFermees, setCategoriesJoueursFermees] = useState(new Set())
   const [joueurOrgDetail, setJoueurOrgDetail] = useState(null)
+  const [educateurOrgDetail, setEducateurOrgDetail] = useState(null)
   const [modalOrganigramme, setModalOrganigramme] = useState(false)
   const [membreOrganigrammeEdite, setMembreOrganigrammeEdite] = useState(null)
   const [formOrganigramme, setFormOrganigramme] = useState({ prenom: '', nom: '', role: '', telephone: '', email: '', ordre: 0, departement: 'Autre', superieur: '' })
@@ -4776,6 +4777,67 @@ Règles :
                 </div>
               </div>
             )}
+
+            {/* ── Éducateurs ── */}
+            <div style={{ marginTop: '32px' }}>
+              {(() => {
+                const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
+                return (
+                  <>
+                    <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>Éducateurs ({educateursAcceptes.length})</h3>
+                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Éducateurs affiliés au club — clique pour voir leurs coordonnées et la catégorie gérée.</p>
+                    {educateursAcceptes.length === 0 ? (
+                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun éducateur affilié pour l'instant.</p>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                        {educateursAcceptes.map(e => (
+                          <div key={e.id}
+                            onClick={() => setEducateurOrgDetail(e)}
+                            style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a2a3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '8px', overflow: 'hidden' }}>
+                              {e.educateur?.avatar_url
+                                ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
+                            </div>
+                            <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0 }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
+                            <p style={{ color: colors.accent.blue, fontSize: '11px', margin: '2px 0 0' }}>
+                              {categories.find(c => c.educateur_id === e.educateur_id)?.nom || 'Éducateur'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+            </div>
+
+            {/* ── Modale détail éducateur (organigramme) ── */}
+            {educateurOrgDetail && (() => {
+              const cat = categories.find(c => c.educateur_id === educateurOrgDetail.educateur_id)
+              return (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                  <div style={{ ...st.card, width: '100%', maxWidth: '400px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{educateurOrgDetail.educateur?.prenom} {educateurOrgDetail.educateur?.nom}</p>
+                      <button onClick={() => setEducateurOrgDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { label: 'Email', val: educateurOrgDetail.educateur?.email },
+                        { label: 'Catégorie gérée', val: cat ? `${cat.nom} — Équipe ${cat.equipe}` : null },
+                        { label: 'Affilié depuis', val: educateurOrgDetail.created_at ? new Date(educateurOrgDetail.created_at).toLocaleDateString('fr-FR') : null },
+                      ].map(({ label, val }) => val && (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${colors.border.default}` }}>
+                          <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+                          <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Parents ── */}
             <div style={{ marginTop: '32px' }}>
