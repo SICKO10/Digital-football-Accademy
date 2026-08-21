@@ -3137,31 +3137,31 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     Moyenne : <strong style={{ color: moyennePerso >= 7 ? colors.accent.green : moyennePerso >= 5 ? colors.accent.amber : colors.accent.red }}>{moyennePerso}/10</strong>
                   </span>
                 </div>
-                {mesNotes.slice(0, 5).map((n, i) => (
-                  <div key={i} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0',
-                    borderBottom: i < Math.min(mesNotes.length, 5) - 1 ? `1px solid ${colors.border.faint}` : 'none'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>
-                        {n.matchs_equipe?.domicile ? 'vs' : '@'} {n.matchs_equipe?.adversaire || 'Match'}
+                {(() => {
+                  const n = mesNotes[0]
+                  return (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 0' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>
+                          {n.matchs_equipe?.domicile ? 'vs' : '@'} {n.matchs_equipe?.adversaire || 'Match'}
+                        </div>
+                        <div style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '2px' }}>
+                          {n.matchs_equipe?.date ? new Date(n.matchs_equipe.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : ''}
+                          {n.matchs_equipe?.score_nous != null ? ` · ${n.matchs_equipe.score_nous} - ${n.matchs_equipe.score_eux}` : ''}
+                        </div>
+                        {n.commentaire && (
+                          <div style={{ color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>"{n.commentaire}"</div>
+                        )}
                       </div>
-                      <div style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '2px' }}>
-                        {n.matchs_equipe?.date ? new Date(n.matchs_equipe.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : ''}
-                        {n.matchs_equipe?.score_nous != null ? ` · ${n.matchs_equipe.score_nous} - ${n.matchs_equipe.score_eux}` : ''}
+                      <div style={{
+                        fontSize: '22px', fontWeight: 700, marginLeft: '16px', flexShrink: 0,
+                        color: n.note >= 7 ? colors.accent.green : n.note >= 5 ? colors.accent.amber : colors.accent.red
+                      }}>
+                        {n.note}/10
                       </div>
-                      {n.commentaire && (
-                        <div style={{ color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>"{n.commentaire}"</div>
-                      )}
                     </div>
-                    <div style={{
-                      fontSize: '22px', fontWeight: 700, marginLeft: '16px', flexShrink: 0,
-                      color: n.note >= 7 ? colors.accent.green : n.note >= 5 ? colors.accent.amber : colors.accent.red
-                    }}>
-                      {n.note}/10
-                    </div>
-                  </div>
-                ))}
+                  )
+                })()}
               </div>
             )}
 
