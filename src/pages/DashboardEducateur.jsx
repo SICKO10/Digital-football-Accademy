@@ -3026,7 +3026,10 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const matchSnapshot = modalMatchJoue
     const matchId = matchSnapshot.id
     const scoreSnapshot = scoreJoueForm
-    const butsDetailSnapshot = scannerModalButsDetail
+    // Ne garde que les buts dont la minute a été renseignée (saisie manuelle
+    // ou scan IA) — une ligne ajoutée puis laissée vide ne doit pas polluer
+    // buts_detail ni fausser "Buts par quart d'heure" (StatsEquipe.jsx).
+    const butsDetailSnapshot = scannerModalButsDetail.filter(b => typeof b.minute === 'number' && !isNaN(b.minute))
     setSavingMatchJoue(true)
     setModalMatchJoue(null)
     setScoreJoueForm({ score_nous: '', score_eux: '' })
@@ -5859,6 +5862,29 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
                     <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
                     <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
+                  </div>
+
+                  {/* ── Minutes des buts (manuel, ou pré-rempli par le scan IA ci-dessus) ── */}
+                  <div style={{ marginBottom: '18px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Minutes des buts</p>
+                    {scannerModalButsDetail.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+                        {scannerModalButsDetail.map((b, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input type="number" min="0" max="120" placeholder="Min" value={b.minute}
+                              onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, minute: e.target.value === '' ? '' : parseInt(e.target.value) } : x))}
+                              style={{ ...st.input, width: '70px', padding: '6px 8px', fontSize: '13px' }} />
+                            <select value={b.equipe} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, equipe: e.target.value } : x))}
+                              style={{ ...st.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
+                              <option value="nous">Nous</option>
+                              <option value="eux">Eux</option>
+                            </select>
+                            <button onClick={() => setScannerModalButsDetail(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
                   </div>
 
                   <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
