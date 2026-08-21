@@ -274,9 +274,9 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
             <div style={{ ...card, textAlign: 'left', marginTop: '10px' }}>
               <p style={{ margin: '0 0 14px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>Buts par nature</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {natureGraphique.map(n => {
+                {(() => {
                   const max = Math.max(...natureGraphique.flatMap(x => [x.marques, x.encaisses]), 1)
-                  return (
+                  return natureGraphique.map(n => (
                     <div key={n.label}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ fontSize: 12, color: colors.text.secondary }}>{n.label}</span>
@@ -291,8 +291,8 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  ))
+                })()}
               </div>
             </div>
           )}
