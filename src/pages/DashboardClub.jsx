@@ -1621,7 +1621,18 @@ export default function DashboardClub() {
       .select('*, educateur:educateur_id(prenom, nom, email, avatar_url)')
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
-    setEducateursAffilies(data || [])
+    // Le téléphone vit sur profil_educateur (pas profiles, d'où le join
+    // ci-dessus) : deuxième requête + fusion dans .educateur, pour que la
+    // modale détail (educateurOrgDetail.educateur?.telephone) le lise pareil
+    // que email/avatar_url sans changer sa structure.
+    const educateurIds = [...new Set((data || []).map(e => e.educateur_id).filter(Boolean))]
+    const { data: tels } = educateurIds.length
+      ? await supabase.from('profil_educateur').select('user_id, telephone').in('user_id', educateurIds)
+      : { data: [] }
+    const telParId = {}
+    tels?.forEach(t => { telParId[t.user_id] = t.telephone })
+    const enrichi = (data || []).map(e => ({ ...e, educateur: e.educateur ? { ...e.educateur, telephone: telParId[e.educateur_id] || null } : e.educateur }))
+    setEducateursAffilies(enrichi)
   }
 
   // ── Budget ──
@@ -4825,6 +4836,9 @@ Règles :
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {[
                         { label: 'Email', val: educateurOrgDetail.educateur?.email },
+                        { label: 'Téléphone', val: educateurOrgDetail.educateur?.telephone ? (
+                          <a href={`tel:${educateurOrgDetail.educateur.telephone}`} style={{ color: colors.accent.blue, textDecoration: 'none', fontWeight: 600 }}>{educateurOrgDetail.educateur.telephone}</a>
+                        ) : null },
                         { label: 'Catégorie gérée', val: cat ? `${cat.nom} — Équipe ${cat.equipe}` : null },
                         { label: 'Affilié depuis', val: educateurOrgDetail.created_at ? new Date(educateurOrgDetail.created_at).toLocaleDateString('fr-FR') : null },
                       ].map(({ label, val }) => val && (

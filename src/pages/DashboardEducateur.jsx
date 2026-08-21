@@ -8169,6 +8169,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <label style={st.label}>{t('profil_club', lang)}</label>
                       <input style={st.input} value={profilEduEdit.club || ''} onChange={e => setProfilEduEdit(p => ({ ...p, club: e.target.value }))} placeholder="Nom du club" />
                     </div>
+                    <div>
+                      <label style={st.label}>Téléphone</label>
+                      <input style={st.input} type="tel" value={profilEduEdit.telephone || ''} onChange={e => setProfilEduEdit(p => ({ ...p, telephone: e.target.value }))} placeholder="06 00 00 00 00" />
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
                       <div>
                         <label style={st.label}>{t('profil_categorie_entrainee', lang)}</label>
