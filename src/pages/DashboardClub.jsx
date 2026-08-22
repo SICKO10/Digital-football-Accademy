@@ -1036,7 +1036,7 @@ export default function DashboardClub() {
   const [evenementsClub, setEvenementsClub] = useState([])
   const [showEvenementForm, setShowEvenementForm] = useState(false)
   const [editingEvenementId, setEditingEvenementId] = useState(null)
-  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [] })
+  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false })
   // Saisie libre prénom/nom du responsable/participant en cours, par mission —
   // { [missionId]: { prenom, nom } } — remplace la liste de badges
   // tousParticipants (50+ personnes) pour le responsable et les participants
@@ -1686,13 +1686,13 @@ export default function DashboardClub() {
 
   const ouvrirNouvelEvenement = () => {
     setEditingEvenementId(null)
-    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [] })
+    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false })
     setShowEvenementForm(true)
   }
 
   const ouvrirEditionEvenement = (ev) => {
     setEditingEvenementId(ev.id)
-    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [], referents: ev.referents || [] })
+    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [], referents: ev.referents || [], visible_educateurs: ev.visible_educateurs ?? true, visible_joueurs: ev.visible_joueurs ?? false })
     setShowEvenementForm(true)
   }
 
@@ -1789,6 +1789,8 @@ export default function DashboardClub() {
       referents: evenementForm.referents,
       ressources_materielles: evenementForm.ressources_materielles,
       missions: evenementForm.missions,
+      visible_educateurs: evenementForm.visible_educateurs,
+      visible_joueurs: evenementForm.visible_joueurs,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -4307,6 +4309,24 @@ Règles :
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={st.label}>Visibilité</label>
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.text.secondary, fontSize: '13px', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={evenementForm.visible_educateurs}
+                              onChange={e => setEvenementForm(f => ({ ...f, visible_educateurs: e.target.checked }))}
+                              style={{ accentColor: colors.accent.green }} />
+                            Visible éducateurs
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.text.secondary, fontSize: '13px', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={evenementForm.visible_joueurs}
+                              onChange={e => setEvenementForm(f => ({ ...f, visible_joueurs: e.target.checked }))}
+                              style={{ accentColor: colors.accent.green }} />
+                            Visible joueurs
+                          </label>
                         </div>
                       </div>
 

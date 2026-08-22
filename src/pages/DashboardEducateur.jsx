@@ -17,6 +17,7 @@ import NotationMatch from '../components/NotationMatch'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
+import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
 import OnboardingGuide from '../components/OnboardingGuide'
@@ -645,15 +646,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
-const STATUT_CONFIG_ACCUEIL = {
-  present:  { label: 'Présent',  Icon: IcoCheckCircle },
-  absent:   { label: 'Absent',   Icon: IcoXCircle },
-  blesse:   { label: 'Blessé',   Icon: IcoActivity },
-  malade:   { label: 'Malade',   Icon: IcoAlertCircle },
-  convoque: { label: 'Convoqué', Icon: IcoStar },
-}
-
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disposRecentes, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
@@ -785,16 +778,6 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
   const prochainMatch = [...matchs]
     .filter(m => m.date >= aujourdHui && (m.score_nous === '' || m.score_nous === null || m.score_nous === undefined))
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
-
-  const dernieresReponses = disposRecentes.map(d => {
-    const j = joueurs.find(jj => jj.joueur_id === d.joueur_id)
-    const seance = entrainements.find(e => e.id === d.seance_id)
-    return {
-      ...d,
-      joueurNom: j ? `${j.prenom} ${j.nom}` : 'Joueur',
-      seanceLabel: seance?.description || (seance?.date ? new Date(seance.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''),
-    }
-  })
 
   return (
     <div>
@@ -1040,27 +1023,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, disp
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoActivity /> Activité récente</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoPoll /> Dernières réponses aux sondages</p>
-          {dernieresReponses.length === 0 ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune réponse pour l'instant.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {dernieresReponses.map(d => {
-                const cfg = STATUT_CONFIG_ACCUEIL[d.statut]
-                return (
-                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.joueurNom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{d.seanceLabel}</p>
-                    </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: colors.accent.blue, whiteSpace: 'nowrap' }}>
-                      {cfg ? <><cfg.Icon /> {cfg.label}</> : d.statut}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          <AlertesPanel educateurId={userId} clubId={clubId} joueurs={joueurs} matchs={matchs} setActiveSection={setActiveSection} />
         </div>
 
         <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
@@ -1289,7 +1252,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
-  const [disposRecentes, setDisposRecentes] = useState([]) // dernières réponses aux sondages, pour le fil d'activité de l'accueil
   const [rapportsRecents, setRapportsRecents] = useState([]) // derniers rapports d'analyse, pour le fil d'activité de l'accueil
   const [sousOngletEnt, setSousOngletEnt] = useState('liste') // 'liste' | 'prochaine'
   const [savingCloture, setSavingCloture] = useState(false)
@@ -1502,10 +1464,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const map = {}
       dispos?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
       setDispoJoueurs(map)
-      setDisposRecentes([...(dispos || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5))
     } else {
       setDispoJoueurs({})
-      setDisposRecentes([])
     }
   }
 
@@ -4132,7 +4092,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               joueurs={joueurs}
               entrainements={entrainements}
               matchs={matchs}
-              disposRecentes={disposRecentes}
               dispoJoueurs={dispoJoueurs}
               rapportsRecents={rapportsRecents}
               setActiveSection={setActiveSection}
