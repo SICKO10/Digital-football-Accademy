@@ -1170,6 +1170,8 @@ export default function DashboardClub() {
   const [materielDistribution, setMaterielDistribution] = useState([])
   const [distribModale, setDistribModale] = useState(null) // { cle, items: [{ id, nom_materiel, quantite }] } — copie éditable d'un lot, cf. sauvegarderDistribModale
   const [savingDistribModale, setSavingDistribModale] = useState(false)
+  const [modalRendu, setModalRendu] = useState(null) // { cle, items: [{ id, nom_materiel, quantite, catalogue_id, rendu, quantite_rendue }] } — cf. ouvrirModaleRendu/validerRendu
+  const [savingRendu, setSavingRendu] = useState(false)
   const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', saison: '' })
   const [panierMateriel, setPanierMateriel] = useState([]) // [{ catalogue_id, nom, categorie, unite, quantite }]
   const [articleAjoutForm, setArticleAjoutForm] = useState({ catalogue_id: '', quantite: 1 })
@@ -1718,12 +1720,44 @@ export default function DashboardClub() {
     chargerInventaire(clubId)
   }
 
-  // dist représente une ligne du groupe (lot_id) — la mise à jour porte sur
-  // tout le lot s'il y en a un, sinon sur cette seule ligne (anciennes
-  // distributions créées avant l'ajout du panier, sans lot_id).
-  const validerRemiseMateriel = async (dist) => {
-    const query = supabase.from('materiel_distribution').update({ statut: 'remis', date_remise: new Date().toISOString() })
-    await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
+  // Ouvre la modale "Rendu" : une ligne par article du lot, cochée et à la
+  // quantité distribuée par défaut (le club décoche/ajuste ce qui n'a pas
+  // été physiquement rendu — matériel_distribution a déjà une ligne par
+  // article, la granularité existe donc nativement, pas besoin d'une table
+  // articles séparée).
+  const ouvrirModaleRendu = (lot) => setModalRendu({
+    cle: lot.cle,
+    items: lot.items.map(it => ({ id: it.id, nom_materiel: it.nom_materiel, quantite: it.quantite, catalogue_id: it.catalogue_id, rendu: true, quantite_rendue: it.quantite })),
+  })
+
+  // Valide le rendu article par article : marque chaque ligne cochée comme
+  // "remis" avec la quantité réellement rendue, et réintègre cette quantité
+  // dans materiel_stock (le stock club existant, pas un système d'inventaire
+  // saisonnier séparé). Les articles décochés restent "remise_demandee" —
+  // le lot peut donc être rendu en plusieurs fois.
+  const validerRendu = async () => {
+    if (!modalRendu) return
+    setSavingRendu(true)
+    const maintenant = new Date().toISOString()
+    const articlesRendus = modalRendu.items.filter(it => it.rendu)
+    const stockCourant = {}
+    materielStock.forEach(s => { stockCourant[s.catalogue_id] = s.quantite_totale })
+
+    for (const item of articlesRendus) {
+      const qteRendue = Math.min(Math.max(0, Number(item.quantite_rendue) || 0), item.quantite)
+      const { error } = await supabase.from('materiel_distribution')
+        .update({ statut: 'remis', date_remise: maintenant, quantite_rendue: qteRendue })
+        .eq('id', item.id)
+      if (error) { alert('Erreur : ' + error.message); setSavingRendu(false); return }
+
+      if (item.catalogue_id && qteRendue > 0) {
+        stockCourant[item.catalogue_id] = (stockCourant[item.catalogue_id] || 0) + qteRendue
+        await mettreAJourStockMateriel(item.catalogue_id, stockCourant[item.catalogue_id])
+      }
+    }
+
+    setSavingRendu(false)
+    setModalRendu(null)
     chargerInventaire(clubId)
   }
 
@@ -5548,6 +5582,7 @@ Règles :
             remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber },
             remis:            { label: 'Remis',            color: colors.accent.green },
             refuse:           { label: 'Refusé',            color: colors.accent.red },
+            partiel:          { label: 'Partiellement remis', color: colors.accent.amber },
           }
           return (
           <div>
@@ -5868,7 +5903,14 @@ Règles :
                   {lots.length === 0 && <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>}
                   {lots.map(lot => {
                     const d = lot.ref
-                    const stConf = STATUT_DISTRIB[d.statut] || STATUT_DISTRIB.distribue
+                    // Un lot peut contenir un mélange de statuts une fois qu'un rendu
+                    // partiel a été validé (certains articles "remis", d'autres encore
+                    // "remise_demandee") — le badge global reflète ce cas, et le bouton
+                    // "Rendu" reste visible tant qu'il reste au moins un article en attente.
+                    const statutsLot = new Set(lot.items.map(it => it.statut))
+                    const statutAffiche = statutsLot.size > 1 ? 'partiel' : d.statut
+                    const stConf = STATUT_DISTRIB[statutAffiche] || STATUT_DISTRIB.distribue
+                    const enAttenteRendu = lot.items.some(it => it.statut === 'remise_demandee')
                     return (
                       <div key={lot.cle} style={st.card}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
@@ -5878,9 +5920,9 @@ Règles :
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
-                            {canEditSection('inventaire') && d.statut === 'remise_demandee' && (
+                            {canEditSection('inventaire') && enAttenteRendu && (
                               <>
-                                <button onClick={() => validerRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Valider</button>
+                                <button onClick={() => ouvrirModaleRendu(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>📦 Rendu</button>
                                 <button onClick={() => refuserRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
                               </>
                             )}
@@ -5891,7 +5933,12 @@ Règles :
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {lot.items.map(item => (
-                            <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{item.nom_materiel} × {item.quantite}</p>
+                            <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
+                              {item.nom_materiel} × {item.quantite}
+                              {item.quantite_rendue != null && item.quantite_rendue < item.quantite && (
+                                <span style={{ color: colors.accent.red, fontWeight: 700 }}> — {item.quantite - item.quantite_rendue} perdu(s)</span>
+                              )}
+                            </p>
                           ))}
                         </div>
                       </div>
@@ -5943,6 +5990,65 @@ Règles :
               <button onClick={sauvegarderDistribModale} disabled={savingDistribModale}
                 style={{ flex: 2, ...st.btnSolid, padding: '12px', fontSize: '14px', opacity: savingDistribModale ? 0.6 : 1 }}>
                 {savingDistribModale ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale "Rendu" — le club coche ce qui a été physiquement rendu et
+          ajuste les quantités (matériel_distribution a déjà une ligne par
+          article, donc pas de sous-structure "articles" à gérer). Valider met
+          à jour materiel_stock avec la quantité rendue — un article décoché
+          reste "remise_demandee" pour un rendu ultérieur. */}
+      {modalRendu && (
+        <div onClick={() => !savingRendu && setModalRendu(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '16px' }}>📦 Remise du matériel</h3>
+              <button onClick={() => setModalRendu(null)} disabled={savingRendu} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 20px' }}>Coche ce qui a été physiquement rendu et ajuste les quantités si besoin.</p>
+
+            {modalRendu.items.map((item, idx) => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${colors.border.default}40` }}>
+                <input type="checkbox" checked={item.rendu}
+                  onChange={e => setModalRendu(m => ({ ...m, items: m.items.map((it, i) => i === idx ? { ...it, rendu: e.target.checked } : it) }))}
+                  style={{ width: '18px', height: '18px', accentColor: colors.accent.green, flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ flex: 1, color: item.rendu ? colors.text.primary : colors.text.faint, fontSize: '13px', transition: 'color 0.15s' }}>{item.nom_materiel}</span>
+                <span style={{ color: colors.text.disabled, fontSize: '11px', minWidth: '70px', textAlign: 'right' }}>Distribué : {item.quantite}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="number" min="0" max={item.quantite}
+                    value={item.quantite_rendue}
+                    disabled={!item.rendu}
+                    onChange={e => setModalRendu(m => ({ ...m, items: m.items.map((it, i) => i === idx ? { ...it, quantite_rendue: Math.min(Math.max(0, Number(e.target.value) || 0), it.quantite) } : it) }))}
+                    style={{ ...st.input, width: '60px', padding: '5px 8px', fontSize: '13px', textAlign: 'center', opacity: item.rendu ? 1 : 0.4 }}
+                  />
+                  {item.rendu && item.quantite_rendue < item.quantite && (
+                    <span style={{ color: colors.accent.red, fontSize: '10px', fontWeight: 700 }}>-{item.quantite - item.quantite_rendue} perdu</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {modalRendu.items.some(it => it.rendu && it.quantite_rendue < it.quantite) && (
+              <div style={{ background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}33`, borderRadius: '10px', padding: '12px', marginTop: '16px' }}>
+                <p style={{ color: colors.accent.red, fontSize: '12px', fontWeight: 700, margin: '0 0 6px' }}>⚠️ Articles manquants</p>
+                {modalRendu.items.filter(it => it.rendu && it.quantite_rendue < it.quantite).map(it => (
+                  <p key={it.id} style={{ color: colors.accent.red, fontSize: '12px', margin: 0 }}>{it.nom_materiel} : {it.quantite - it.quantite_rendue} manquant(s)</p>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setModalRendu(null)} disabled={savingRendu} style={{ flex: 1, ...st.btnSecondary, padding: '12px', fontSize: '14px' }}>Annuler</button>
+              <button onClick={validerRendu} disabled={savingRendu || !modalRendu.items.some(it => it.rendu)}
+                style={{ flex: 2, ...st.btnSolid, padding: '12px', fontSize: '14px', opacity: (savingRendu || !modalRendu.items.some(it => it.rendu)) ? 0.6 : 1 }}>
+                {savingRendu ? 'Enregistrement...' : '✅ Valider la remise'}
               </button>
             </div>
           </div>
