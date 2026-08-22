@@ -1172,6 +1172,10 @@ export default function DashboardClub() {
   const [savingDistribModale, setSavingDistribModale] = useState(false)
   const [modalRendu, setModalRendu] = useState(null) // { cle, items: [{ id, nom_materiel, quantite, catalogue_id, rendu, quantite_rendue }] } — cf. ouvrirModaleRendu/validerRendu
   const [savingRendu, setSavingRendu] = useState(false)
+  // undefined = pas encore touché par l'utilisateur (la saison la plus
+  // récente s'ouvre par défaut) ; null = tout explicitement replié ; sinon
+  // le nom de la saison ouverte.
+  const [saisonOuverte, setSaisonOuverte] = useState(undefined)
   const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', saison: '' })
   const [panierMateriel, setPanierMateriel] = useState([]) // [{ catalogue_id, nom, categorie, unite, quantite }]
   const [articleAjoutForm, setArticleAjoutForm] = useState({ catalogue_id: '', quantite: 1 })
@@ -5783,6 +5787,25 @@ Règles :
                 if (!lotsParId[cle]) { lotsParId[cle] = { cle, items: [], ref: d }; lots.push(lotsParId[cle]) }
                 lotsParId[cle].items.push(d)
               })
+              // Un lot peut contenir un mélange de statuts une fois qu'un rendu
+              // partiel a été validé (certains articles "remis", d'autres encore
+              // "remise_demandee") — calculé une seule fois ici et réutilisé à la
+              // fois pour les badges de l'en-tête de saison et la carte du lot.
+              lots.forEach(lot => {
+                const statutsLot = new Set(lot.items.map(it => it.statut))
+                lot.statutAffiche = statutsLot.size > 1 ? 'partiel' : lot.ref.statut
+                lot.enAttenteRendu = lot.items.some(it => it.statut === 'remise_demandee')
+              })
+
+              // Groupe les lots par saison — accordéon, la saison la plus récente
+              // ouverte par défaut (cf. saisonOuverte).
+              const lotsParSaison = {}
+              lots.forEach(lot => {
+                const saison = lot.ref.saison || 'Saison inconnue'
+                if (!lotsParSaison[saison]) lotsParSaison[saison] = []
+                lotsParSaison[saison].push(lot)
+              })
+              const saisonsTriees = Object.keys(lotsParSaison).sort((a, b) => b.localeCompare(a))
 
               return (
               <div>
@@ -5899,52 +5922,71 @@ Règles :
                 )}
 
                 <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Matériel distribué ({lots.length})</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {lots.length === 0 && <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>}
-                  {lots.map(lot => {
-                    const d = lot.ref
-                    // Un lot peut contenir un mélange de statuts une fois qu'un rendu
-                    // partiel a été validé (certains articles "remis", d'autres encore
-                    // "remise_demandee") — le badge global reflète ce cas, et le bouton
-                    // "Rendu" reste visible tant qu'il reste au moins un article en attente.
-                    const statutsLot = new Set(lot.items.map(it => it.statut))
-                    const statutAffiche = statutsLot.size > 1 ? 'partiel' : d.statut
-                    const stConf = STATUT_DISTRIB[statutAffiche] || STATUT_DISTRIB.distribue
-                    const enAttenteRendu = lot.items.some(it => it.statut === 'remise_demandee')
-                    return (
-                      <div key={lot.cle} style={st.card}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{d.educateur_nom}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>Saison {d.saison}</p>
+                {lots.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {saisonsTriees.map(saison => {
+                      const lotsSaison = lotsParSaison[saison]
+                      const isOpen = saisonOuverte === undefined ? saison === saisonsTriees[0] : saisonOuverte === saison
+                      const nbRemis = lotsSaison.filter(l => l.statutAffiche === 'remis').length
+                      const nbEnAttente = lotsSaison.filter(l => l.enAttenteRendu).length
+                      return (
+                        <div key={saison} style={{ border: `1px solid ${colors.border.default}`, borderRadius: '12px', overflow: 'hidden' }}>
+                          <div onClick={() => setSaisonOuverte(isOpen ? null : saison)}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: colors.background.raised, cursor: 'pointer', flexWrap: 'wrap', gap: '10px' }}>
+                            <div>
+                              <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>Saison {saison}</p>
+                              <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{lotsSaison.length} distribution{lotsSaison.length > 1 ? 's' : ''}</p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {nbRemis > 0 && <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{nbRemis} remis</span>}
+                              {nbEnAttente > 0 && <span style={{ background: colors.accent.amber + alpha.subtle, color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{nbEnAttente} en attente</span>}
+                              <span style={{ color: colors.text.faint, fontSize: '18px', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
-                            {canEditSection('inventaire') && enAttenteRendu && (
-                              <>
-                                <button onClick={() => ouvrirModaleRendu(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>📦 Rendu</button>
-                                <button onClick={() => refuserRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
-                              </>
-                            )}
-                            {canEditSection('inventaire') && (
-                              <button onClick={() => ouvrirModaleDistrib(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
-                            )}
-                          </div>
+                          {isOpen && (
+                            <div style={{ borderTop: `1px solid ${colors.border.default}`, padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {lotsSaison.map(lot => {
+                                const d = lot.ref
+                                const stConf = STATUT_DISTRIB[lot.statutAffiche] || STATUT_DISTRIB.distribue
+                                return (
+                                  <div key={lot.cle} style={st.card}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+                                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{d.educateur_nom}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
+                                        {canEditSection('inventaire') && lot.enAttenteRendu && (
+                                          <>
+                                            <button onClick={() => ouvrirModaleRendu(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>📦 Rendu</button>
+                                            <button onClick={() => refuserRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
+                                          </>
+                                        )}
+                                        {canEditSection('inventaire') && (
+                                          <button onClick={() => ouvrirModaleDistrib(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      {lot.items.map(item => (
+                                        <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
+                                          {item.nom_materiel} × {item.quantite}
+                                          {item.quantite_rendue != null && item.quantite_rendue < item.quantite && (
+                                            <span style={{ color: colors.accent.red, fontWeight: 700 }}> — {item.quantite - item.quantite_rendue} perdu(s)</span>
+                                          )}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          {lot.items.map(item => (
-                            <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
-                              {item.nom_materiel} × {item.quantite}
-                              {item.quantite_rendue != null && item.quantite_rendue < item.quantite && (
-                                <span style={{ color: colors.accent.red, fontWeight: 700 }}> — {item.quantite - item.quantite_rendue} perdu(s)</span>
-                              )}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
               )
             })()}
