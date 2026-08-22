@@ -254,7 +254,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
           const estAujourdhui = dStr === aujourdhuiStr
           return (
             <div key={dStr} data-aujourdhui={estAujourdhui} style={{
-              minWidth: '112px', background: colors.background.sunken, borderRadius: '10px', padding: '10px 8px',
+              minWidth: '176px', background: colors.background.sunken, borderRadius: '10px', padding: '10px 8px',
               border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
               display: 'flex', flexDirection: 'column', gap: '6px', scrollSnapAlign: 'start',
             }}>
@@ -291,12 +291,12 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
       {clos ? (
         <p style={{ margin: '5px 0 0', fontSize: '9px', color: colors.text.ghost }}>🔒 Clos</p>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
           {OPTIONS_SONDAGE.map(opt => {
             const actif = statut === opt.val
             return (
               <button key={opt.val} title={opt.label} disabled={saving} onClick={() => onChoisir(opt.val)}
-                style={{ width: '26px', height: '26px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, fontSize: '14px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, fontSize: '13px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {opt.emoji}
               </button>
             )
