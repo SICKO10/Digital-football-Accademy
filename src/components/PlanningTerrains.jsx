@@ -759,21 +759,21 @@ Règles :
           </div>
         )}
 
-        {mode === 'educateur' && cBase.educateur_id === userId && !c.estRemplacement && (
+        {((mode === 'educateur' && cBase.educateur_id === userId) || estDirigeant) && !c.estRemplacement && (
           <button onClick={() => libererCreneauDate(cBase, dateStr, !c.libere)} disabled={liberating[cle]}
             style={{ marginTop: '8px', width: '100%', background: c.libere ? '#1a1a1a' : accentColor, color: c.libere ? '#aaa' : '#000', border: c.libere ? '1px solid #2a2a2a' : 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
         )}
 
-        {mode === 'educateur' && c.libere && cBase.educateur_id !== userId && (
+        {c.libere && (estDirigeant || (mode === 'educateur' && cBase.educateur_id !== userId)) && (
           <button onClick={() => reclamerCreneauDate(cBase, dateStr)} disabled={reclamingId === cle}
             style={{ marginTop: '8px', width: '100%', background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {reclamingId === cle ? '...' : 'Prendre ce créneau'}
           </button>
         )}
 
-        {mode === 'educateur' && c.estRemplacement && c.exception?.educateur_id === userId && (
+        {c.estRemplacement && (estDirigeant || (mode === 'educateur' && c.exception?.educateur_id === userId)) && (
           <button onClick={() => annulerReclamationDate(cBase, dateStr)} disabled={reclamingId === cle}
             style={{ marginTop: '8px', width: '100%', background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {reclamingId === cle ? '...' : 'Rendre ce créneau'}
@@ -1054,7 +1054,7 @@ Règles :
                 )}
               </div>
 
-              {matchsSansTerrainTous.length > 0 && (
+              {estDirigeant && matchsSansTerrainTous.length > 0 && (
                 <div style={{ background: '#1a1505', border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
                   <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné (toutes semaines à venir)</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
