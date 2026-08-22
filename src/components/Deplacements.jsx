@@ -422,6 +422,16 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       )
       const vehiculesDispos = vehicules.filter(v => !plaquesDejaPrises.has(v.plaque))
       const resultats = repartirBus(deps, vehiculesDispos)
+      // Un trajet "insuffisant" alors qu'un véhicule de la flotte aurait pu le
+      // couvrir n'est pas un vrai manque de capacité : un autre trajet du même
+      // jour a pris ce bus en premier (même créneau, ou horaires qui se
+      // chevauchent). Distingué du vrai "bus insuffisant" (aucun véhicule/
+      // combinaison ne suffit même isolément) pour que le club sache qu'il
+      // s'agit d'un arbitrage entre deux trajets, pas d'une location à prévoir.
+      const capaciteAtteignable = (nbPersonnes) =>
+        vehiculesDispos.some(v => v.capacite >= nbPersonnes) ||
+        vehiculesDispos.some((v1, i) => vehiculesDispos.some((v2, j) => j > i && v1.capacite + v2.capacite >= nbPersonnes))
+      const assignesCeJour = resultats.filter(x => x.statut !== 'insuffisant')
       resultats.forEach(r => {
         if (r.statut === 'insuffisant') {
           // repartirBus renvoie "insuffisant" à la fois quand aucun bus n'a la
@@ -431,11 +441,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           // importé automatiquement sans heure) ressemble à tort à un vrai
           // besoin de location.
           const label = `${r.lieu_destination || '—'} (${new Date(r.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')})`
-          alertes.push(
-            r.heure_depart
-              ? { dep: r, type: 'bus', msg: `${label} — bus insuffisant, prévoir une location` }
-              : { dep: r, type: 'heure', msg: `${label} — ${diagnostics.get(r.id) || 'heure de départ manquante, impossible d\'assigner un bus automatiquement'}` }
-          )
+          if (!r.heure_depart) {
+            alertes.push({ dep: r, type: 'heure', msg: `${label} — ${diagnostics.get(r.id) || 'heure de départ manquante, impossible d\'assigner un bus automatiquement'}` })
+          } else if (assignesCeJour.length > 0 && capaciteAtteignable(Number(r.nb_personnes) || 0)) {
+            const autres = assignesCeJour.map(a => a.lieu_destination || '—').join(', ')
+            alertes.push({ dep: r, type: 'conflit', msg: `${label} — conflit de créneau avec ${autres} : un bus suffisant existe mais est déjà pris ce jour-là, à arbitrer manuellement` })
+          } else {
+            alertes.push({ dep: r, type: 'bus', msg: `${label} — bus insuffisant, prévoir une location` })
+          }
         } else if (r.vehicule) {
           updates.push({ id: r.id, vehicule: r.vehicule })
         }
@@ -802,16 +815,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       {(() => {
         const sansHeure = alertesLocation.filter(a => a.type === 'heure')
         const busInsuffisant = alertesLocation.filter(a => a.type === 'bus')
-        const bandeau = (liste, { bg, border, color, titre }) => liste.length > 0 && (
+        const conflitsCreneau = alertesLocation.filter(a => a.type === 'conflit')
+        const bandeau = (liste, { bg, border, color, titre, boutonLabel = '✏️ Compléter', boutonClick }) => liste.length > 0 && (
           <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
             <div style={{ fontWeight: 700, color, marginBottom: '8px', fontSize: '13px' }}>{titre(liste.length)}</div>
             {liste.map((alerte, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color, marginTop: '4px' }}>
                 <span>• {alerte.msg}</span>
                 {!readOnly && (
-                  <button onClick={() => ouvrirEditionDeplacement(alerte.dep, alerte.dep.nature === 'match' ? { focusHeureCoupEnvoi: true } : { focusHeureDepart: true })}
+                  <button onClick={() => (boutonClick || (dep => ouvrirEditionDeplacement(dep, dep.nature === 'match' ? { focusHeureCoupEnvoi: true } : { focusHeureDepart: true })))(alerte.dep)}
                     style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${border}`, color, padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    ✏️ Compléter
+                    {boutonLabel}
                   </button>
                 )}
               </div>
@@ -821,6 +835,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         return (
           <>
             {bandeau(sansHeure, { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.3)', color: '#fb923c', titre: n => `⏰ ${n} déplacement${n > 1 ? 's' : ''} sans heure de départ — complète-${n > 1 ? 'les' : 'le'} pour permettre la répartition auto` })}
+            {bandeau(conflitsCreneau, { bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)', color: '#fbbf24', boutonLabel: 'Arbitrer', boutonClick: dep => ouvrirEditionDeplacement(dep), titre: n => `⚖️ ${n} conflit${n > 1 ? 's' : ''} de créneau — plusieurs trajets se disputent le même bus, à toi de choisir` })}
             {bandeau(busInsuffisant, { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', color: '#ef4444', titre: n => `🚐 ${n} déplacement${n > 1 ? 's' : ''} nécessite${n > 1 ? 'nt' : ''} un bus de location` })}
           </>
         )
