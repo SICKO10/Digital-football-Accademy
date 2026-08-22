@@ -72,10 +72,17 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
               borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
               cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
             }}>
-            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {compact
-                ? `${data.categorie ? `${data.categorie} · ` : ''}${data.adversaire || 'Match'}`
-                : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
+              {compact && (
+                <span title={data.domicile ? 'Domicile' : 'Extérieur'} style={{ flexShrink: 0, fontWeight: 800, color: data.domicile ? '#4ade80' : '#f97316' }}>
+                  {data.domicile ? 'D' : 'E'}
+                </span>
+              )}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {compact
+                  ? `${data.categorie ? `${data.categorie} · ` : ''}${data.adversaire || 'Match'}`
+                  : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
+              </span>
             </div>
             {!compact && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
