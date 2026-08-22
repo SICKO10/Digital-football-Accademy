@@ -3291,7 +3291,7 @@ Règles :
             </button>
           )}
           <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
-            {isMobile ? '⏏️' : t('btn_deconnexion', lang)}
+            {t('btn_deconnexion', lang)}
           </button>
         </div>
       </nav>
