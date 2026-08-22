@@ -8,6 +8,7 @@ import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
+import Planning from './Planning'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import { useLang } from '../hooks/useLang'
@@ -3178,6 +3179,7 @@ Règles :
   const sousOnglets = activeCategorie === 'sportif' ? [
     ...(canViewSection('sportif') ? [
       { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
+      { id: 'planning', label: iconLabel(IcoCalendar, 'Planning') },
       { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
       { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
       { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
@@ -3495,6 +3497,11 @@ Règles :
               </div>
             )}
           </>
+        )}
+
+        {/* ── PLANNING (vue générale : matchs, entraînements, événements, projets) ── */}
+        {activeTab === 'planning' && canViewSection('sportif') && (
+          <Planning matchs={matchsClub} evenements={evenementsClub} projets={projetsClub} categories={categories} />
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}
