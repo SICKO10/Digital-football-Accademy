@@ -1096,6 +1096,8 @@ export default function DashboardClub() {
 
   // Éducateurs affiliés
   const [educateursAffilies, setEducateursAffilies] = useState([])
+  const [modalModifEdu, setModalModifEdu] = useState(null) // { educateur_id, prenom, nom, telephone }
+  const [savingModifEdu, setSavingModifEdu] = useState(false)
   const [searchEducateur, setSearchEducateur] = useState('')
   const [resultatsEducateurs, setResultatsEducateurs] = useState([])
   const [invitingId, setInvitingId] = useState(null)
@@ -1834,6 +1836,24 @@ export default function DashboardClub() {
     tels?.forEach(t => { telParId[t.user_id] = t.telephone })
     const enrichi = (data || []).map(e => ({ ...e, educateur: e.educateur ? { ...e.educateur, telephone: telParId[e.educateur_id] || null } : e.educateur }))
     setEducateursAffilies(enrichi)
+  }
+
+  // Via RPC (pas de .update() direct) : profiles n'autorise en écriture que
+  // le titulaire du compte, pas le club — club_modifier_educateur vérifie
+  // elle-même l'affiliation acceptée avant de toucher prenom/nom + telephone.
+  const sauvegarderModifEdu = async () => {
+    if (!modalModifEdu) return
+    setSavingModifEdu(true)
+    const { error } = await supabase.rpc('club_modifier_educateur', {
+      p_educateur_id: modalModifEdu.educateur_id,
+      p_prenom: modalModifEdu.prenom.trim(),
+      p_nom: modalModifEdu.nom.trim(),
+      p_telephone: modalModifEdu.telephone?.trim() || null,
+    })
+    setSavingModifEdu(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setModalModifEdu(null)
+    await chargerEducateurs(clubId)
   }
 
   // ── Budget ──
@@ -3659,11 +3679,44 @@ Règles :
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                      <button onClick={() => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' })} style={{ ...st.btnSecondary, flex: isMobile ? 1 : 'none' }}>Modifier</button>
                       <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
                       <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* ── Modale Modifier éducateur ── */}
+            {modalModifEdu && (
+              <div onClick={() => setModalModifEdu(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '16px' }}>Modifier — {modalModifEdu.prenom} {modalModifEdu.nom}</h3>
+                    <button onClick={() => setModalModifEdu(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <label style={st.label}>Prénom</label>
+                      <input style={st.input} value={modalModifEdu.prenom} onChange={e => setModalModifEdu(p => ({ ...p, prenom: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={st.label}>Nom</label>
+                      <input style={st.input} value={modalModifEdu.nom} onChange={e => setModalModifEdu(p => ({ ...p, nom: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={st.label}>Téléphone</label>
+                      <input style={st.input} type="tel" placeholder="06 00 00 00 00" value={modalModifEdu.telephone} onChange={e => setModalModifEdu(p => ({ ...p, telephone: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    <button onClick={() => setModalModifEdu(null)} style={{ ...st.btnSecondary, flex: 1 }}>Annuler</button>
+                    <button onClick={sauvegarderModifEdu} disabled={savingModifEdu || !modalModifEdu.prenom.trim() || !modalModifEdu.nom.trim()} style={{ ...st.btnSolid, flex: 2 }}>
+                      {savingModifEdu ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
