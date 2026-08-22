@@ -1166,6 +1166,8 @@ export default function DashboardClub() {
   const [materielCatalogue, setMaterielCatalogue] = useState([])
   const [materielStock, setMaterielStock] = useState([])
   const [materielDistribution, setMaterielDistribution] = useState([])
+  const [distribModale, setDistribModale] = useState(null) // { cle, items: [{ id, nom_materiel, quantite }] } — copie éditable d'un lot, cf. sauvegarderDistribModale
+  const [savingDistribModale, setSavingDistribModale] = useState(false)
   const [distributionForm, setDistributionForm] = useState({ educateur_id: '', equipe_nom: '', saison: '' })
   const [panierMateriel, setPanierMateriel] = useState([]) // [{ catalogue_id, nom, categorie, unite, quantite }]
   const [articleAjoutForm, setArticleAjoutForm] = useState({ catalogue_id: '', quantite: 1 })
@@ -1726,6 +1728,40 @@ export default function DashboardClub() {
   const refuserRemiseMateriel = async (dist) => {
     const query = supabase.from('materiel_distribution').update({ statut: 'distribue' })
     await (dist.lot_id ? query.eq('lot_id', dist.lot_id) : query.eq('id', dist.id))
+    chargerInventaire(clubId)
+  }
+
+  // materiel_distribution a une ligne par article (pas de colonne articles en
+  // JSON) — un lot regroupe plusieurs lignes via lot_id (cf. le groupement
+  // dans le rendu ci-dessous). Modifier un lot = mettre à jour la quantité de
+  // chaque ligne restante + supprimer les lignes retirées, jamais un UPDATE
+  // unique sur une colonne "articles" qui n'existe pas.
+  const ouvrirModaleDistrib = (lot) => setDistribModale({ cle: lot.cle, items: lot.items.map(it => ({ id: it.id, nom_materiel: it.nom_materiel, quantite: it.quantite })) })
+
+  const modifierQuantiteDistribModale = (idx, quantite) => {
+    setDistribModale(m => ({ ...m, items: m.items.map((it, i) => i === idx ? { ...it, quantite } : it) }))
+  }
+
+  const supprimerArticleDistribModale = (idx) => {
+    setDistribModale(m => ({ ...m, items: m.items.filter((_, i) => i !== idx) }))
+  }
+
+  const sauvegarderDistribModale = async () => {
+    if (!distribModale) return
+    setSavingDistribModale(true)
+    const idsRestants = distribModale.items.map(it => it.id)
+    const idsOriginaux = (materielDistribution.filter(d => (d.lot_id || d.id) === distribModale.cle)).map(d => d.id)
+    const idsSupprimes = idsOriginaux.filter(id => !idsRestants.includes(id))
+
+    if (idsSupprimes.length > 0) {
+      await supabase.from('materiel_distribution').delete().in('id', idsSupprimes)
+    }
+    await Promise.all(distribModale.items.map(it =>
+      supabase.from('materiel_distribution').update({ quantite: Math.max(1, Number(it.quantite) || 1) }).eq('id', it.id)
+    ))
+
+    setSavingDistribModale(false)
+    setDistribModale(null)
     chargerInventaire(clubId)
   }
 
@@ -5795,6 +5831,9 @@ Règles :
                                 <button onClick={() => refuserRemiseMateriel(d)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
                               </>
                             )}
+                            {canEditSection('inventaire') && (
+                              <button onClick={() => ouvrirModaleDistrib(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
+                            )}
                           </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -5813,6 +5852,49 @@ Règles :
           )
         })()}
       </div>
+
+      {/* Modale modification d'un lot de matériel distribué — une ligne par
+          article (materiel_distribution n'a pas de colonne articles en JSON),
+          la sauvegarde met donc à jour/supprime chaque ligne individuellement. */}
+      {distribModale && (
+        <div onClick={() => !savingDistribModale && setDistribModale(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '16px' }}>Modifier la distribution</h3>
+              <button onClick={() => setDistribModale(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {distribModale.items.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', margin: '0 0 20px' }}>Plus aucun article — enregistrer supprimera cette distribution.</p>
+            ) : distribModale.items.map((item, idx) => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                <span style={{ color: colors.text.secondary, fontSize: '13px', flex: 1 }}>{item.nom_materiel}</span>
+                <input
+                  type="number" min="1"
+                  value={item.quantite}
+                  onChange={e => modifierQuantiteDistribModale(idx, e.target.value)}
+                  style={{ ...st.input, width: '70px', textAlign: 'center' }}
+                />
+                <button onClick={() => supprimerArticleDistribModale(idx)}
+                  style={{ background: 'none', border: 'none', color: colors.accent.red, fontSize: '16px', cursor: 'pointer' }}>✕</button>
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setDistribModale(null)} disabled={savingDistribModale}
+                style={{ flex: 1, ...st.btnSecondary, padding: '12px', fontSize: '14px' }}>
+                Annuler
+              </button>
+              <button onClick={sauvegarderDistribModale} disabled={savingDistribModale}
+                style={{ flex: 2, ...st.btnSolid, padding: '12px', fontSize: '14px', opacity: savingDistribModale ? 0.6 : 1 }}>
+                {savingDistribModale ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale ajout d'un champ de taille équipement */}
       {modaleChampOuverte && (
