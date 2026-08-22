@@ -318,6 +318,177 @@ function DonutChart({ segments, total, label, couleurCentrale = colors.text.prim
   )
 }
 
+// Panneau d'alertes de l'accueil club, remplace "Nouveaux joueurs" (peu
+// actionnable — juste un historique). Adapté au vrai schéma de chaque table
+// plutôt qu'aux noms suggérés (grep fait avant d'écrire les requêtes) :
+// - vehicules a déjà prochain_ct/dernier_ct, pas de table CT séparée.
+// - deplacements.vehicule est un texte de plaque(s) ("PLAQUE1 + PLAQUE2"),
+//   pas de vehicule_id — même logique que capaciteVehicule (Deplacements.jsx).
+// - matchs_equipe a bien terrain_id.
+// - Pas de table materiel_pret : le vrai système est materiel_distribution,
+//   alerté ici sur les demandes de remise en attente (statut='remise_demandee').
+// - sponsors existe déjà avec un tout autre schéma (montant_contrat, date_fin,
+//   paiements en jsonb) — pas de colonne "echeance", date_fin s'en rapproche
+//   le plus (fin de contrat, pas une échéance de paiement individuelle).
+// - projets_club n'a pas de colonne date : alerté sur le statut (actif tant
+//   que != 'termine'), pas une échéance.
+// Volontairement absent : les créneaux terrain libérés ont déjà
+// TerrainsLiberesWidget juste au-dessus dans AccueilClub — les répéter ici
+// ferait cohabiter deux implémentations du même signal.
+function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActiveTab }) {
+  const [alertes, setAlertes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [popup, setPopup] = useState(null)
+
+  useEffect(() => {
+    const charger = async () => {
+      if (!clubId) { setLoading(false); return }
+      const aujourdhui = new Date()
+      const aujourdhuiStr = aujourdhui.toISOString().slice(0, 10)
+      const dans14j = new Date(aujourdhui); dans14j.setDate(aujourdhui.getDate() + 14)
+      const dans30j = new Date(aujourdhui); dans30j.setDate(aujourdhui.getDate() + 30)
+      const dans60j = new Date(aujourdhui); dans60j.setDate(aujourdhui.getDate() + 60)
+      const educateurIds = educateursAcceptes.map(e => e.educateur_id)
+
+      const [
+        { data: vehicules }, { data: deplacements }, { data: matchsSansTerrain },
+        { data: projets }, { data: evenements }, { data: materielEnAttente }, { data: sponsorsData },
+      ] = await Promise.all([
+        supabase.from('vehicules').select('id, plaque, prochain_ct').eq('club_id', clubId).not('prochain_ct', 'is', null).lte('prochain_ct', dans30j.toISOString().slice(0, 10)),
+        supabase.from('deplacements').select('id, lieu_destination, date_depart').eq('club_id', clubId).is('vehicule', null).gte('date_depart', aujourdhuiStr).lte('date_depart', dans14j.toISOString().slice(0, 10)).order('date_depart'),
+        educateurIds.length
+          ? supabase.from('matchs_equipe').select('id, adversaire, date').in('educateur_id', educateurIds).eq('domicile', true).is('terrain_id', null).gte('date', aujourdhuiStr).order('date').limit(3)
+          : Promise.resolve({ data: [] }),
+        supabase.from('projets_club').select('id, titre, nom, objectif').eq('club_id', clubId).neq('statut', 'termine'),
+        supabase.from('evenements_club').select('id, titre, description, date, heure, lieu').eq('club_id', clubId).eq('type', 'evenement').gte('date', aujourdhuiStr).order('date').limit(3),
+        supabase.from('materiel_distribution').select('id, nom_materiel, equipe_nom').eq('club_id', clubId).eq('statut', 'remise_demandee'),
+        supabase.from('sponsors').select('id, entreprise, date_fin').eq('club_id', clubId).not('date_fin', 'is', null).gte('date_fin', aujourdhuiStr).lte('date_fin', dans60j.toISOString().slice(0, 10)).order('date_fin'),
+      ])
+
+      const toutes = []
+
+      vehicules?.forEach(v => {
+        const jours = Math.ceil((new Date(v.prochain_ct) - aujourdhui) / (1000 * 60 * 60 * 24))
+        const urgent = jours <= 7
+        toutes.push({
+          id: `ct_${v.id}`, couleur: urgent ? colors.accent.red : colors.accent.amber,
+          titre: `Contrôle technique ${v.plaque} — ${jours <= 0 ? 'expiré' : `dans ${jours} jour${jours > 1 ? 's' : ''}`}`,
+          sousTitre: `Prochain CT : ${new Date(v.prochain_ct).toLocaleDateString('fr-FR')}`,
+          onClick: () => { setActiveCategorie('administratif'); setActiveTab('deplacements') },
+        })
+      })
+
+      deplacements?.forEach(d => {
+        toutes.push({
+          id: `deplacement_${d.id}`, couleur: colors.accent.orange,
+          titre: `Transport à assigner — ${d.lieu_destination || 'déplacement'}`,
+          sousTitre: `Départ le ${new Date(`${d.date_depart}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}`,
+          onClick: () => { setActiveCategorie('administratif'); setActiveTab('deplacements') },
+        })
+      })
+
+      matchsSansTerrain?.forEach(m => {
+        toutes.push({
+          id: `terrain_${m.id}`, couleur: colors.accent.blue,
+          titre: `Terrain à planifier — vs ${m.adversaire || 'adversaire'}`,
+          sousTitre: `Match à domicile le ${new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}`,
+          onClick: () => { setActiveCategorie('administratif'); setActiveTab('terrains') },
+        })
+      })
+
+      materielEnAttente?.forEach(m => {
+        toutes.push({
+          id: `materiel_${m.id}`, couleur: colors.accent.amber,
+          titre: `Remise demandée — ${m.nom_materiel}`,
+          sousTitre: m.equipe_nom || 'Matériel',
+          onClick: () => { setActiveCategorie('administratif'); setActiveTab('inventaire') },
+        })
+      })
+
+      sponsorsData?.forEach(s => {
+        const jours = Math.ceil((new Date(s.date_fin) - aujourdhui) / (1000 * 60 * 60 * 24))
+        toutes.push({
+          id: `sponsor_${s.id}`, couleur: jours <= 14 ? colors.accent.red : colors.accent.green,
+          titre: `Fin de contrat sponsor — ${s.entreprise}`,
+          sousTitre: `Dans ${jours} jour${jours > 1 ? 's' : ''}`,
+          onClick: () => { setActiveCategorie('administratif'); setActiveTab('sponsors') },
+        })
+      })
+
+      projets?.forEach(p => {
+        const titre = p.nom || p.titre || 'Projet'
+        toutes.push({
+          id: `projet_${p.id}`, couleur: colors.accent.purpleLight,
+          titre: `Projet en cours — ${titre}`,
+          sousTitre: 'Voir le détail',
+          onClick: () => setPopup({ titre, description: p.objectif }),
+        })
+      })
+
+      evenements?.forEach(e => {
+        toutes.push({
+          id: `evenement_${e.id}`, couleur: colors.accent.purpleLight,
+          titre: e.titre,
+          sousTitre: new Date(`${e.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+          onClick: () => setPopup({ titre: e.titre, description: e.description, date: e.date, heure: e.heure, lieu: e.lieu }),
+        })
+      })
+
+      setAlertes(toutes)
+      setLoading(false)
+    }
+    charger()
+  }, [clubId, educateursAcceptes])
+
+  if (loading) return null
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <p style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Alertes & infos</p>
+        {alertes.length > 0 && (
+          <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
+        )}
+      </div>
+
+      {alertes.length === 0 ? (
+        <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune alerte pour le moment.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {alertes.map(a => (
+            <div key={a.id} onClick={a.onClick}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: colors.background.raised, border: `1px solid ${a.couleur}30`, borderLeft: `3px solid ${a.couleur}`, borderRadius: '10px', cursor: 'pointer' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titre}</p>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{a.sousTitre}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {popup && (
+        <div onClick={() => setPopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{popup.titre}</p>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            {popup.date && (
+              <p style={{ color: colors.accent.purpleLight, fontSize: '13px', margin: '0 0 12px' }}>
+                {new Date(`${popup.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {popup.heure ? ` · ${popup.heure.slice(0, 5)}` : ''}
+                {popup.lieu ? ` · ${popup.lieu}` : ''}
+              </p>
+            )}
+            <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{popup.description || 'Aucune description.'}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green }) {
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -340,8 +511,6 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
     .filter(m => m.date > aujourdHui)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5)
-
-  const joueursRecents = joueursClub.slice(0, 5)
 
   const ACTIONS = [
     { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
@@ -463,19 +632,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
         </div>
 
         <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUserPlus /> {t('club_nouveaux_joueurs', lang)}</p>
-          {joueursRecents.length === 0 ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_joueur_recent', lang)}</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {joueursRecents.map(j => (
-                <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}{j.poste ? ` — ${j.poste}` : ''}</p>
-                  <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap', flexShrink: 0 }}>{j.created_at ? new Date(j.created_at).toLocaleDateString(localeOf(lang)) : ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} />
         </div>
       </div>
     </div>
