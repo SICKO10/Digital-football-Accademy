@@ -24,7 +24,7 @@ const TYPES_TERRAIN = [
 // se partager un même terrain au même horaire : foot à 11 (U13+) sur un
 // demi-terrain chacune (2 zones max), foot à 5/futsal/U6-U11 jusqu'à 5 zones.
 // 'plein' (défaut) = le créneau occupe tout le terrain, comme avant.
-const ZONES = [
+export const ZONES = [
   { val: 'plein', label: 'Terrain plein' },
   { val: 'demi-A', label: 'Demi-terrain A' },
   { val: 'demi-B', label: 'Demi-terrain B' },
@@ -37,8 +37,11 @@ const ZONES = [
 // 'plein' reprend la couleur de marque du club (accentColor, déjà utilisée
 // partout ailleurs) ; les sous-zones ont chacune une couleur fixe distincte
 // pour rester lisibles quand plusieurs sont empilées sur la même case.
-const ZONE_COLORS_FIXES = { 'demi-A': '#60a5fa', 'demi-B': '#818cf8', 'zone-1': '#fbbf24', 'zone-2': '#f97316', 'zone-3': '#f43f5e', 'zone-4': '#c084fc', 'zone-5': '#22d3ee' }
-const couleurZone = (zone, accentColor) => ZONE_COLORS_FIXES[zone] || accentColor
+// Exportées pour que les widgets d'alertes (TerrainsLiberesWidget) affichent
+// la même couleur de zone que le planning terrain, plutôt qu'une palette
+// dupliquée qui aurait divergé avec le temps.
+export const ZONE_COLORS_FIXES = { 'demi-A': '#60a5fa', 'demi-B': '#818cf8', 'zone-1': '#fbbf24', 'zone-2': '#f97316', 'zone-3': '#f43f5e', 'zone-4': '#c084fc', 'zone-5': '#22d3ee' }
+export const couleurZone = (zone, accentColor) => ZONE_COLORS_FIXES[zone] || accentColor
 
 // Zones disponibles selon le type réel du terrain (cf. règle club : foot à 11
 // = 1 demi-terrain par équipe, foot à 8/5 contre 5 = jusqu'à 5 groupes). Un
@@ -146,7 +149,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   const [reclamingId, setReclamingId] = useState(null)
   const [semaineOffset, setSemaineOffset] = useState(0) // 0 = semaine courante, -1 = précédente, +1 = suivante
   const [exceptions, setExceptions] = useState([]) // planning_terrains_exceptions de la semaine affichée
-  const [matchsSemaine, setMatchsSemaine] = useState([]) // matchs_equipe de toutes les catégories du club, semaine affichée — informatif (pas de terrain_id en base, donc pas assignable à un créneau précis)
+  const [matchsSemaine, setMatchsSemaine] = useState([]) // matchs_equipe de toutes les catégories du club, semaine affichée — utilisé pour la grille (badges/conflits) de la semaine visible uniquement
+  const [matchsSansTerrainTous, setMatchsSansTerrainTous] = useState([]) // TOUS les matchs à domicile sans terrain_id, sans limite à la semaine affichée : l'alerte "Terrain à planifier" du dashboard club peut pointer vers un match d'une semaine future, qui doit rester assignable même si le planning affiche "cette semaine" par défaut à l'arrivée
 
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
@@ -204,7 +208,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
   // Un match à l'extérieur ne se joue pas sur un terrain du club, donc n'a
   // rien à faire dans ce planning (domicile=false exclu à la source).
   // Rattachés à un terrain via terrain_id quand renseigné ; sinon affichés à
-  // part dans "Matchs sans terrain assigné" (cf. matchsSansTerrainSemaine).
+  // part dans "Matchs sans terrain assigné" (cf. matchsSansTerrainTous).
   const chargerMatchsSemaine = async (offset) => {
     const ids = educateurs.map(e => e.educateur_id)
     if (ids.length === 0) { setMatchsSemaine([]); return }
@@ -212,6 +216,19 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id')
       .in('educateur_id', ids).eq('domicile', true).gte('date', dates[0].dateStr).lte('date', dates[6].dateStr)
     setMatchsSemaine(data || [])
+  }
+
+  // Tous les matchs à domicile sans terrain, sans borne de semaine — affiché à
+  // part de la grille pour rester atteignable même quand le match visé (ex:
+  // par l'alerte "Terrain à planifier" du dashboard club) n'est pas dans la
+  // semaine affichée par défaut à l'ouverture (semaineOffset revient à 0).
+  const chargerMatchsSansTerrain = async () => {
+    const ids = educateurs.map(e => e.educateur_id)
+    if (ids.length === 0) { setMatchsSansTerrainTous([]); return }
+    const aujourdhui = getDatesSemaine(0)[0].dateStr
+    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id')
+      .in('educateur_id', ids).eq('domicile', true).is('terrain_id', null).gte('date', aujourdhui).order('date')
+    setMatchsSansTerrainTous(data || [])
   }
 
   useEffect(() => {
@@ -244,6 +261,12 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     chargerMatchsSemaine(semaineOffset)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clubId, semaineOffset, educateurs])
+
+  useEffect(() => {
+    if (!clubId) return
+    chargerMatchsSansTerrain()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, educateurs])
 
   // ── Configuration terrains (dirigeant) ──────────────────────────────────────
   const ajouterTerrain = async () => {
@@ -563,14 +586,10 @@ Règles :
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
 
   // Seulement les matchs affectés au terrain actif — un match sans terrain
-  // n'apparaît plus ici (cf. matchsSansTerrainSemaine, liste à part).
+  // n'apparaît plus ici (cf. matchsSansTerrainTous, liste à part).
   const matchsDuJour = (dateStr) => matchsSemaine
     .filter(m => m.date === dateStr && m.terrain_id === terrainActif)
     .sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
-
-  const matchsSansTerrainSemaine = matchsSemaine
-    .filter(m => !m.terrain_id)
-    .sort((a, b) => a.date === b.date ? (a.heure || '').localeCompare(b.heure || '') : a.date.localeCompare(b.date))
 
   // Fusionne un créneau du gabarit avec son exception (s'il y en a une) pour
   // UNE date précise — vue "effective" utilisée uniquement pour l'affichage
@@ -614,6 +633,38 @@ Règles :
 
   const [assigningMatchId, setAssigningMatchId] = useState(null)
 
+  // Conflits d'un match à sa propre date, en interrogeant la base plutôt que
+  // les états `exceptions`/`matchsSemaine` (bornés à la semaine affichée) :
+  // matchsSansTerrainTous peut contenir un match d'une semaine future, pour
+  // laquelle ces états ne contiennent pas les bonnes données.
+  const conflitsMatchLive = async (match, terrainId) => {
+    if (!match.heure) return []
+    const terrain = terrains.find(t => t.id === terrainId)
+    const ignorerZone = terrain?.type === 'foot_11'
+    const jour = jourDepuisDate(match.date)
+    const horaireMatch = { heure_debut: match.heure, heure_fin: heureFinMatch(match.heure) }
+
+    const [{ data: creneauxJour }, { data: exceptionsJour }, { data: autresMatchs }] = await Promise.all([
+      supabase.from('planning_terrains').select('id, heure_debut, heure_fin, zone, equipe').eq('terrain_id', terrainId).eq('jour', jour),
+      supabase.from('planning_terrains_exceptions').select('creneau_id, type, equipe_remplacante').eq('club_id', clubId).eq('date_exception', match.date),
+      supabase.from('matchs_equipe').select('id, heure, adversaire').eq('terrain_id', terrainId).eq('date', match.date).neq('id', match.id),
+    ])
+
+    const conflitsCreneaux = (creneauxJour || [])
+      .map(c => {
+        const exception = (exceptionsJour || []).find(e => e.creneau_id === c.id)
+        if (!exception) return { ...c, libere: false }
+        if (exception.type === 'liberation') return { ...c, libere: true }
+        return { ...c, libere: false, equipe: exception.equipe_remplacante || c.equipe }
+      })
+      .filter(c => !c.libere && (ignorerZone || (c.zone || 'plein') === 'plein') && seChevauchent(horaireMatch, c))
+
+    const conflitsAutresMatchs = (autresMatchs || [])
+      .filter(m => m.heure && seChevauchent(horaireMatch, { heure_debut: m.heure, heure_fin: heureFinMatch(m.heure) }))
+
+    return [...conflitsCreneaux, ...conflitsAutresMatchs]
+  }
+
   // Passe par la RPC affecter_terrain_match plutôt qu'un .update() direct :
   // matchs_equipe n'autorise en écriture que l'éducateur propriétaire du match
   // (cf. policy "educateur_matchs"), pas le club — la RPC (security definer)
@@ -626,16 +677,17 @@ Règles :
       setMatchsSemaine(prev => prev.map(m => m.id === match.id ? { ...m, terrain_id: null } : m))
       return
     }
-    const conflits = conflitsMatch(match, terrainId)
+    setAssigningMatchId(match.id)
+    const conflits = await conflitsMatchLive(match, terrainId)
     if (conflits.length > 0) {
       const noms = conflits.map(c => c.equipe || c.adversaire || 'créneau').join(', ')
-      if (!window.confirm(`⚠️ Ce terrain est déjà occupé à cet horaire par : ${noms}.\n\nAffecter quand même ?`)) return
+      if (!window.confirm(`⚠️ Ce terrain est déjà occupé à cet horaire par : ${noms}.\n\nAffecter quand même ?`)) { setAssigningMatchId(null); return }
     }
-    setAssigningMatchId(match.id)
     const { error } = await supabase.rpc('affecter_terrain_match', { p_match_id: match.id, p_terrain_id: terrainId })
     setAssigningMatchId(null)
     if (error) { alert('Erreur : ' + error.message); return }
     setMatchsSemaine(prev => prev.map(m => m.id === match.id ? { ...m, terrain_id: terrainId } : m))
+    setMatchsSansTerrainTous(prev => prev.filter(m => m.id !== match.id))
   }
 
   // conflit = un autre créneau du même terrain/jour, sur la MÊME zone, à un
@@ -1002,11 +1054,11 @@ Règles :
                 )}
               </div>
 
-              {matchsSansTerrainSemaine.length > 0 && (
+              {matchsSansTerrainTous.length > 0 && (
                 <div style={{ background: '#1a1505', border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné cette semaine</p>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné (toutes semaines à venir)</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {matchsSansTerrainSemaine.map(m => {
+                    {matchsSansTerrainTous.map(m => {
                       const cat = categories.find(c => c.educateur_id === m.educateur_id)
                       const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
                       const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
