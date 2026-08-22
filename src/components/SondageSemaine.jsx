@@ -163,7 +163,13 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 
   const evenementsSemaine = jours.flatMap(d => evenementsDuJour(dateStr(d)))
 
-  const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px' }
+  // minWidth: 0 indispensable : sans lui, si un ancêtre est en display:flex,
+  // cette carte (élément flex) respecte la largeur min-content de la grille
+  // 7 colonnes en dessous (chaque jour a un minWidth fixe) au lieu de la
+  // laisser défiler sur elle-même (overflowX:auto plus bas) — et pousse toute
+  // la page plus large que l'écran sur mobile. Même piège déjà documenté
+  // dans PlanningSemaineWidget.jsx pour sa grille du mois.
+  const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px', minWidth: 0 }
 
   const header = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>

@@ -54,6 +54,18 @@ input[type="date"] {
   color-scheme: dark;
 }
 
+/* iOS Safari zoome automatiquement le viewport quand on focus un input dont
+   le font-size est < 16px (ex: le formulaire de connexion, 14px) — ce zoom
+   persiste ensuite dans toute l'app puisque c'est une SPA (pas de
+   rechargement de page entre le login et le dashboard), d'où l'app qui
+   apparaît zoomée "dès la connexion" tant qu'on ne dézoome pas à la main.
+   16px est le seuil minimum connu pour éviter ce comportement. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 @media (max-width: 768px) {
   .criteres-grid {
     grid-template-columns: 1fr 1fr;
