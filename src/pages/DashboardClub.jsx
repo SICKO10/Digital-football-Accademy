@@ -3679,8 +3679,8 @@ Règles :
                       <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                      <button onClick={() => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' })} style={{ ...st.btnSecondary, flex: isMobile ? 1 : 'none' }}>Modifier</button>
                       <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
+                      <button onClick={() => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' })} style={{ ...st.btnSecondary, flex: isMobile ? 1 : 'none' }}>Modifier</button>
                       <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
                     </div>
                   </div>
