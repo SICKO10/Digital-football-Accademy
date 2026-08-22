@@ -76,6 +76,10 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const [showAddVehicule, setShowAddVehicule] = useState(false)
   const [newVehicule, setNewVehicule] = useState({ plaque: '', capacite: '' })
   const [savingVehicule, setSavingVehicule] = useState(false)
+  const [vehiculeDetail, setVehiculeDetail] = useState(null) // véhicule dont la modale détail/CT est ouverte
+  const [editCT, setEditCT] = useState(false)
+  const [ctForm, setCtForm] = useState({ dernier: '', prochain: '' })
+  const [savingCT, setSavingCT] = useState(false)
 
   const charger = async () => {
     setLoading(true)
@@ -131,6 +135,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
   const supprimerVehicule = async (id) => {
     if (!confirm('Retirer ce véhicule du parc ?')) return
     await supabase.from('vehicules').delete().eq('id', id)
+    await chargerVehicules()
+  }
+
+  const sauvegarderCT = async (vehiculeId) => {
+    setSavingCT(true)
+    const payload = { dernier_ct: ctForm.dernier || null, prochain_ct: ctForm.prochain || null }
+    const { data, error } = await supabase.from('vehicules').update(payload).eq('id', vehiculeId).select().single()
+    setSavingCT(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setVehiculeDetail(data)
+    setEditCT(false)
     await chargerVehicules()
   }
 
@@ -657,10 +672,12 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           <span style={{ color: '#4b5563', fontSize: '13px' }}>Aucun véhicule enregistré</span>
         ) : (
           vehicules.map(v => (
-            <span key={v.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px' }}>
+            <span key={v.id}
+              onClick={() => setVehiculeDetail(v)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
               🚐 {v.plaque} · {v.capacite} places
               {!readOnly && (
-                <button onClick={() => supprimerVehicule(v.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
+                <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
               )}
             </span>
           ))
@@ -684,6 +701,82 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           </button>
         ))}
       </div>
+
+      {/* ── Modale détail véhicule (marque/modèle + contrôle technique) ── */}
+      {vehiculeDetail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={() => { setVehiculeDetail(null); setEditCT(false) }}>
+          <div style={{ ...st.card, width: '100%', maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>{vehiculeDetail.plaque}</h3>
+              <button onClick={() => { setVehiculeDetail(null); setEditCT(false) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {[
+              { label: 'Marque / Modèle', val: [vehiculeDetail.marque, vehiculeDetail.modele].filter(Boolean).join(' ') || '—' },
+              { label: 'Capacité', val: `${vehiculeDetail.capacite} places` },
+            ].map(({ label, val }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
+                <span style={{ color: '#555', fontSize: '13px' }}>{label}</span>
+                <span style={{ color: '#ccc', fontSize: '13px', fontWeight: 600 }}>{val}</span>
+              </div>
+            ))}
+
+            <div style={{ marginTop: '16px', background: '#0a0a0a', borderRadius: '10px', padding: '14px' }}>
+              <div style={{ color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px' }}>
+                Contrôle technique
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #1a1a1a' }}>
+                <span style={{ color: '#555', fontSize: '13px' }}>Dernier CT</span>
+                {editCT ? (
+                  <input type="date" value={ctForm.dernier} onChange={e => setCtForm(p => ({ ...p, dernier: e.target.value }))} style={{ ...st.input, width: 'auto', padding: '4px 8px', fontSize: '12px' }} />
+                ) : (
+                  <span style={{ color: '#aaa', fontSize: '13px', fontWeight: 600 }}>
+                    {vehiculeDetail.dernier_ct ? new Date(vehiculeDetail.dernier_ct).toLocaleDateString('fr-FR') : '—'}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+                <span style={{ color: '#555', fontSize: '13px' }}>Prochain CT</span>
+                {editCT ? (
+                  <input type="date" value={ctForm.prochain} onChange={e => setCtForm(p => ({ ...p, prochain: e.target.value }))} style={{ ...st.input, width: 'auto', padding: '4px 8px', fontSize: '12px' }} />
+                ) : (
+                  <span style={{
+                    color: vehiculeDetail.prochain_ct && new Date(vehiculeDetail.prochain_ct) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? '#ef4444' : '#4ade80',
+                    fontSize: '13px', fontWeight: 700,
+                  }}>
+                    {vehiculeDetail.prochain_ct ? new Date(vehiculeDetail.prochain_ct).toLocaleDateString('fr-FR') : '—'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!readOnly && (
+              <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+                {!editCT ? (
+                  <button onClick={() => { setEditCT(true); setCtForm({ dernier: vehiculeDetail.dernier_ct || '', prochain: vehiculeDetail.prochain_ct || '' }) }}
+                    style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Modifier les dates CT
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => setEditCT(false)} disabled={savingCT}
+                      style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Annuler
+                    </button>
+                    <button onClick={() => sauvegarderCT(vehiculeDetail.id)} disabled={savingCT}
+                      style={{ flex: 2, background: accentColor, border: 'none', color: '#000', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {savingCT ? 'Sauvegarde...' : 'Sauvegarder'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {!readOnly && (
