@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import { ZONES, couleurZone } from './PlanningTerrains'
 
 // Date du jour au format local YYYY-MM-DD — jamais toISOString() (convertit en
 // UTC, ce qui décale la date d'un jour en France, cf. le même bug déjà corrigé
@@ -9,7 +10,30 @@ const aujourdhuiStr = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80', titre = 'Terrains disponibles ce jour' }) {
+// 7 jours glissants (aujourd'hui inclus) au format local YYYY-MM-DD — même
+// logique que aujourdhuiStr, jamais toISOString().
+const dansSeptJoursStr = () => {
+  const d = new Date()
+  d.setDate(d.getDate() + 6)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const labelZone = (zone) => ZONES.find(z => z.val === zone)?.label
+
+// Badge de zone — mêmes couleurs (ZONE_COLORS_FIXES) que le planning terrain,
+// pour qu'un créneau libéré en zone 3 se reconnaisse d'un coup d'œil ici comme
+// là-bas. 'plein' n'a pas de couleur dédiée dans le planning, donc pas de badge ici.
+const BadgeZone = ({ zone, accentColor }) => {
+  if (!zone || zone === 'plein') return null
+  const c = couleurZone(zone, accentColor)
+  return (
+    <span style={{ color: c, background: c + '18', border: `1px solid ${c}40`, borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+      {labelZone(zone)}
+    </span>
+  )
+}
+
+export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80', titre = 'Terrains disponibles cette semaine' }) {
   const [creneaux, setCreneaux] = useState([])
   const [recuperes, setRecuperes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,20 +44,25 @@ export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80',
   // cf. liberer_creneau_date dans PlanningTerrains.jsx) : interroger cette
   // colonne ne renvoyait donc plus jamais rien.
   // type='remplacement' = créneau libéré puis repris par un autre éducateur
-  // (reclamer_creneau_date) — affiché à part, en confirmation positive,
-  // toujours pour aujourd'hui uniquement (même portée que les libérations).
+  // (reclamer_creneau_date) — affiché à part, en confirmation positive.
+  // Fenêtre de 7 jours glissants (pas seulement aujourd'hui) : une libération
+  // pour un jour à venir (ex: la semaine prochaine) ne remontait jamais tant
+  // que ce jour n'était pas encore arrivé.
   const charger = async () => {
     const { data } = await supabase
       .from('planning_terrains_exceptions')
-      .select('id, type, date_exception, libere_par, equipe_remplacante, creneau:creneau_id(heure_debut, heure_fin, terrain:terrain_id(nom))')
+      .select('id, type, date_exception, libere_par, equipe_remplacante, creneau:creneau_id(heure_debut, heure_fin, zone, terrain:terrain_id(nom))')
       .eq('club_id', clubId)
       .in('type', ['liberation', 'remplacement'])
-      .eq('date_exception', aujourdhuiStr())
+      .gte('date_exception', aujourdhuiStr())
+      .lte('date_exception', dansSeptJoursStr())
     const liberes = (data || []).filter(c => c.type === 'liberation')
     const pris = (data || []).filter(c => c.type === 'remplacement')
-    const parHeure = (a, b) => (a.creneau?.heure_debut || '').localeCompare(b.creneau?.heure_debut || '')
-    setCreneaux(liberes.slice().sort(parHeure))
-    setRecuperes(pris.slice().sort(parHeure))
+    const parDateHeure = (a, b) => a.date_exception === b.date_exception
+      ? (a.creneau?.heure_debut || '').localeCompare(b.creneau?.heure_debut || '')
+      : a.date_exception.localeCompare(b.date_exception)
+    setCreneaux(liberes.slice().sort(parDateHeure))
+    setRecuperes(pris.slice().sort(parDateHeure))
     setLoading(false)
   }
 
@@ -66,6 +95,7 @@ export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80',
                     {new Date(`${c.date_exception}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}
                   </span>
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
+                  {' '}<BadgeZone zone={c.creneau?.zone} accentColor={accentColor} />
                 </span>
                 <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>libéré par {c.libere_par || '—'}</span>
               </div>

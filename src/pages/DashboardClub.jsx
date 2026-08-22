@@ -524,7 +524,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> {t('club_accueil', lang)}</h1>
       <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
 
-      <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles ce jour" />
+      <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles cette semaine" />
 
       {/* Planning club : matchs de toutes les équipes affiliées + événements club
           (tournois, soirées, réunions...) — volontairement pas les séances
