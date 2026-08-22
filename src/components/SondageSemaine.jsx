@@ -172,13 +172,17 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px', minWidth: 0 }
 
   const header = (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-      <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
-        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
-        <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
+    <div style={{ marginBottom: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
         {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
+          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
+        </div>
         {mode === 'joueur' && (
           <div style={{ display: 'flex', background: colors.background.sunken, borderRadius: '8px', padding: '2px', gap: '2px' }}>
             {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
