@@ -795,7 +795,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
         />
       </div>
 
-      {clubId && <TerrainsLiberesWidget clubId={clubId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
+      {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
       <DeplacementsAssignesWidget userId={userId} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
 
       {/* Widgets résumé */}

@@ -33,10 +33,11 @@ const BadgeZone = ({ zone, accentColor }) => {
   )
 }
 
-export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80', titre = 'Terrains disponibles cette semaine' }) {
+export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#4ade80', titre = 'Terrains disponibles cette semaine' }) {
   const [creneaux, setCreneaux] = useState([])
   const [recuperes, setRecuperes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [reclamingId, setReclamingId] = useState(null)
 
   // Les libérations passent par planning_terrains_exceptions (date précise),
   // pas par l'ancienne colonne planning_terrains.libere (recurrente par jour
@@ -51,7 +52,7 @@ export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80',
   const charger = async () => {
     const { data } = await supabase
       .from('planning_terrains_exceptions')
-      .select('id, type, date_exception, libere_par, equipe_remplacante, creneau:creneau_id(heure_debut, heure_fin, zone, terrain:terrain_id(nom))')
+      .select('id, creneau_id, type, date_exception, educateur_id, libere_par, equipe_remplacante, creneau:creneau_id(heure_debut, heure_fin, zone, terrain:terrain_id(nom))')
       .eq('club_id', clubId)
       .in('type', ['liberation', 'remplacement'])
       .gte('date_exception', aujourdhuiStr())
@@ -64,6 +65,21 @@ export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80',
     setCreneaux(liberes.slice().sort(parDateHeure))
     setRecuperes(pris.slice().sort(parDateHeure))
     setLoading(false)
+  }
+
+  // Réutilise la RPC reclamer_creneau_date existante (cf. PlanningTerrains.jsx)
+  // plutôt qu'un UPDATE direct : planning_terrains_exceptions n'autorise
+  // l'écriture directe qu'aux dirigeants, la RPC (security definer) vérifie
+  // elle-même l'affiliation au club avant de faire passer l'exception en
+  // 'remplacement'. userId n'est passé que par l'usage éducateur du widget
+  // (dashboard club = lecture seule, pas de bouton).
+  const prendreCreneau = async (c) => {
+    if (!window.confirm(`Prendre le créneau ${c.creneau?.terrain?.nom || 'terrain'} — ${c.creneau?.heure_debut?.slice(0, 5)}–${c.creneau?.heure_fin?.slice(0, 5)} le ${new Date(`${c.date_exception}T00:00:00`).toLocaleDateString('fr-FR')} ?`)) return
+    setReclamingId(c.id)
+    const { error } = await supabase.rpc('reclamer_creneau_date', { p_creneau_id: c.creneau_id, p_date: c.date_exception })
+    setReclamingId(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    charger()
   }
 
   useEffect(() => {
@@ -89,15 +105,24 @@ export default function TerrainsLiberesWidget({ clubId, accentColor = '#4ade80',
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>🏟️ {titre}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {creneaux.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px', flexWrap: 'wrap' }}>
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', fontSize: '12px', flexWrap: 'wrap' }}>
                 <span>
                   <span style={{ color: accentColor, fontWeight: 600, marginRight: '8px' }}>
                     {new Date(`${c.date_exception}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}
                   </span>
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
                   {' '}<BadgeZone zone={c.creneau?.zone} accentColor={accentColor} />
+                  <br />
+                  <span style={{ color: '#555', fontSize: '11px' }}>libéré par {c.libere_par || '—'}</span>
                 </span>
-                <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>libéré par {c.libere_par || '—'}</span>
+                {userId && c.educateur_id === userId ? (
+                  <span style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Libéré par moi</span>
+                ) : userId ? (
+                  <button onClick={() => prendreCreneau(c)} disabled={reclamingId === c.id}
+                    style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>
+                    {reclamingId === c.id ? '...' : 'Prendre ce créneau'}
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
