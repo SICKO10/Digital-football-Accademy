@@ -253,7 +253,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   return (
     <div style={card}>
       {header}
-      <div ref={grilleRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '4px' }}>
+      <div ref={grilleRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '4px', minWidth: 0 }}>
         {jours.map((d, i) => {
           const dStr = dateStr(d)
           const evs = evenementsDuJour(dStr)
