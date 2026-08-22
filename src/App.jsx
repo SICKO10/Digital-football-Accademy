@@ -27,6 +27,7 @@ import AcceptInvite from './pages/AcceptInvite'
 import CGU from './pages/CGU'
 import ClubPublic from './pages/ClubPublic'
 import TactipadPublic from './pages/TactipadPublic'
+import InstallAppBanner from './components/InstallAppBanner'
 
 function SmartDashboard() {
   const [dest, setDest] = useState(null)
@@ -92,6 +93,7 @@ function App() {
         <Route path="/clubs/:id" element={<ClubPublic />} />
         <Route path="/tactipad/:slug" element={<TactipadPublic />} />
       </Routes>
+      <InstallAppBanner />
     </Router>
   )
 }
