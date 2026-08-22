@@ -3027,17 +3027,17 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {convocationActive && (() => {
               const m = convocationActive.matchs_equipe
               return (
-                <div style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #111 100%)', border: '2px solid #4ade80', borderRadius: '16px', padding: '20px', marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #111 100%)', border: '2px solid #4ade80', borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '20px' : '28px', marginBottom: isMobile ? '16px' : '20px', position: 'relative', overflow: 'hidden' }}>
                   {m?.competition && (
-                    <div style={{ position: 'absolute', top: 12, right: 12, background: colors.accent.green, color: colors.black, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                    <div style={{ position: 'absolute', top: isMobile ? 12 : 20, right: isMobile ? 12 : 20, background: colors.accent.green, color: colors.black, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
                       {m.competition}
                     </div>
                   )}
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>📋 Tu es convoqué !</div>
-                  <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+                  <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: '#fff', marginBottom: 4 }}>📋 Tu es convoqué !</div>
+                  <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? 20 : 26, marginBottom: 8 }}>
                     {m?.domicile ? 'vs' : '@'} {m?.adversaire}
                   </div>
-                  <div style={{ color: colors.text.faint, fontSize: 13, marginBottom: 16 }}>
+                  <div style={{ color: colors.text.faint, fontSize: isMobile ? 13 : 15, marginBottom: 16 }}>
                     {m?.date && new Date(`${m.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     {m?.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
                     {m?.lieu ? ` · ${m.lieu}` : ''}
@@ -3047,28 +3047,28 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ color: colors.text.disabled, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Programme</div>
                       {convocationActive.timeline.map((step, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '6px 0', borderBottom: i < convocationActive.timeline.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
-                          <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: 13, minWidth: 50 }}>{step.heure}</span>
-                          <span style={{ fontSize: 14 }}>{step.icone || '📌'}</span>
-                          <span style={{ color: '#ccc', fontSize: 13 }}>{step.label}</span>
+                        <div key={i} style={{ display: 'flex', gap: isMobile ? 12 : 16, alignItems: 'center', padding: isMobile ? '6px 0' : '8px 0', borderBottom: i < convocationActive.timeline.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
+                          <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? 13 : 15, minWidth: 50 }}>{step.heure}</span>
+                          <span style={{ fontSize: isMobile ? 14 : 18 }}>{step.icone || '📌'}</span>
+                          <span style={{ color: '#ccc', fontSize: isMobile ? 13 : 15 }}>{step.label}</span>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {convocationActive.notes && (
-                    <p style={{ color: '#ccc', fontSize: 13, fontStyle: 'italic', background: '#0a0a0a', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                    <p style={{ color: '#ccc', fontSize: isMobile ? 13 : 14, fontStyle: 'italic', background: '#0a0a0a', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
                       {convocationActive.notes}
                     </p>
                   )}
 
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', gap: isMobile ? 10 : 12, marginBottom: 16 }}>
                     <button onClick={() => repondreConvocation('present')}
-                      style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : '#1a1a1a', color: repConvoc === 'present' ? colors.black : '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : '#1a1a1a', color: repConvoc === 'present' ? colors.black : '#fff', border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       ✅ Présent
                     </button>
                     <button onClick={() => repondreConvocation('absent')}
-                      style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : '#1a1a1a', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : '#1a1a1a', color: '#fff', border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       ❌ Absent
                     </button>
                   </div>
