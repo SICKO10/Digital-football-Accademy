@@ -533,6 +533,17 @@ Règles :
     await chargerExceptions(semaineOffset)
   }
 
+  // Rend un créneau réclamé (type 'remplacement' → redevient 'liberation',
+  // à nouveau disponible pour un autre éducateur ou le titulaire d'origine).
+  const annulerReclamationDate = async (creneau, dateStr) => {
+    const cle = `${creneau.id}_${dateStr}`
+    setReclamingId(cle)
+    const { error } = await supabase.rpc('annuler_reclamation_date', { p_creneau_id: creneau.id, p_date: dateStr })
+    setReclamingId(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    await chargerExceptions(semaineOffset)
+  }
+
   // Dirigeant uniquement : annule une exception (le créneau de base reprend
   // pour cette date) — accès direct autorisé par RLS (policy dirigeant), pas
   // besoin d'une fonction dédiée comme pour les éducateurs.
@@ -707,6 +718,13 @@ Règles :
           <button onClick={() => reclamerCreneauDate(cBase, dateStr)} disabled={reclamingId === cle}
             style={{ marginTop: '8px', width: '100%', background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {reclamingId === cle ? '...' : 'Prendre ce créneau'}
+          </button>
+        )}
+
+        {mode === 'educateur' && c.estRemplacement && c.exception?.educateur_id === userId && (
+          <button onClick={() => annulerReclamationDate(cBase, dateStr)} disabled={reclamingId === cle}
+            style={{ marginTop: '8px', width: '100%', background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {reclamingId === cle ? '...' : 'Rendre ce créneau'}
           </button>
         )}
       </div>
