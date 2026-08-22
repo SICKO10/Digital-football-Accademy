@@ -6085,7 +6085,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           </div>
                         </div>
                         {d.statut === 'distribue' && (
-                          <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
+                          <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Remis</button>
                         )}
                       </div>
                     </div>
