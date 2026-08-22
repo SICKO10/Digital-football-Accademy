@@ -2979,7 +2979,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <div style={{ padding: isMobile ? '16px' : '24px 40px' }}>
 
             {/* HERO CARD — pleine largeur */}
-            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a1a0f 0%, #0d0d0d 100%)', border: '1px solid #1a2e1a', borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a1a0f 0%, #0d0d0d 100%)', border: '1px solid #1a2e1a', borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'center', textAlign: isMobile ? 'center' : 'left', gap: isMobile ? '14px' : '24px', flexWrap: 'wrap' }}>
               <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
@@ -2988,8 +2988,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
               </div>
-              <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
                   <span style={{ background: isPro ? colors.accent.green : '#3b82f6', color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0, boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
                     {profil?.plan}
@@ -3003,7 +3003,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
                 </p>
-                <div style={{ display: 'flex', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', justifyContent: isMobile ? 'center' : 'flex-start', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
                   {[
                     { val: profil?.analyses_restantes ?? '—', label: t('jd_analyses_stat', lang) },
                     { val: demandes.length, label: t('jd_demandes_stat', lang) },
