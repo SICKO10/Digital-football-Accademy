@@ -1454,7 +1454,13 @@ export default function DashboardClub() {
     const { userId, nom, type, items, jours, heure_debut, heure_fin, message, creneauCoupe } = modalePreparation
     const heure_debut_2 = creneauCoupe ? modalePreparation.heure_debut_2 : null
     const heure_fin_2 = creneauCoupe ? modalePreparation.heure_fin_2 : null
-    await supabase.from('equipement_commandes').upsert({
+    // .select().single() : un simple .upsert() sans lecture du résultat ne
+    // remonte aucune erreur si la policy RLS (inventaire_ecriture_commandes,
+    // a_permission_inventaire) filtre la ligne — le popup se fermait et
+    // l'inventaire se rechargeait comme si tout s'était bien passé, sans que
+    // rien n'ait réellement été enregistré (même défaut déjà corrigé sur
+    // marquerEquipementAttribue juste au-dessus).
+    const { error } = await supabase.from('equipement_commandes').upsert({
       club_id: clubId,
       responsable_id: clubId,
       destinataire_id: userId,
@@ -1462,7 +1468,8 @@ export default function DashboardClub() {
       items,
       statut: 'pret',
       jours, heure_debut, heure_fin, heure_debut_2, heure_fin_2,
-    }, { onConflict: 'club_id, destinataire_id' })
+    }, { onConflict: 'club_id, destinataire_id' }).select().single()
+    if (error) { alert('Erreur : ' + error.message); return }
     await supabase.from('notifications').insert({
       user_id: userId,
       type: 'equipement_pret',
