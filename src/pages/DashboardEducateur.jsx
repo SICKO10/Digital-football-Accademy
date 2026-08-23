@@ -1282,6 +1282,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [parcoursEdu, setParcoursEdu] = useState([])
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
+  const [avatarUploadingEdu, setAvatarUploadingEdu] = useState(false)
   const [showAddParcours, setShowAddParcours] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
@@ -1646,9 +1647,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [derniereGenerationIA, setDerniereGenerationIA] = useState(null)
 
   const chargerProfilEdu = async (uid) => {
+    // avatar_url vit sur profiles (identité de base, partagée avec tous les
+    // rôles), pas sur profil_educateur (profil étendu spécifique éducateur)
+    // — déjà lu par DashboardClub.jsx/ClubPublic.jsx pour l'affichage public,
+    // simplement jamais éditable côté éducateur jusqu'ici.
+    const { data: profilBase } = await supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle()
     const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
-    if (pe) { setProfilEdu(pe); setProfilEduEdit({ ...pe }); setLienGroupe(pe.lien_groupe || '') }
-    else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '' }) }
+    if (pe) { setProfilEdu({ ...pe, avatar_url: profilBase?.avatar_url }); setProfilEduEdit({ ...pe, avatar_url: profilBase?.avatar_url }); setLienGroupe(pe.lien_groupe || '') }
+    else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '', avatar_url: profilBase?.avatar_url }) }
     const { data: pa } = await supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre')
     setParcoursEdu(pa || [])
     const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
@@ -2559,8 +2565,11 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     // réponse Supabase. Erreur → on revient à l'ancien profil (aucune
     // vérification d'erreur n'existait avant, on en ajoute a minima).
     const avant = profilEdu
-    const payload = { ...profilEduEdit, user_id: userId, updated_at: new Date().toISOString() }
-    setProfilEdu(payload)
+    // avatar_url vit sur profiles, pas profil_educateur (cf. chargerProfilEdu) —
+    // exclu du payload sinon l'upsert échoue avec "column does not exist".
+    const { avatar_url, ...champsProfilEducateur } = profilEduEdit
+    const payload = { ...champsProfilEducateur, user_id: userId, updated_at: new Date().toISOString() }
+    setProfilEdu({ ...payload, avatar_url })
     setSavingProfil(true)
     const { data, error } = await supabase.from('profil_educateur').upsert(payload, { onConflict: 'user_id' }).select().single()
     setSavingProfil(false)
@@ -2569,7 +2578,42 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       alert('Erreur lors de la sauvegarde : ' + error.message)
       return
     }
-    if (data) { setProfilEdu(data); setProfilEduEdit({ ...data }) }
+    if (data) { setProfilEdu({ ...data, avatar_url }); setProfilEduEdit({ ...data, avatar_url }) }
+  }
+
+  // Même flux que l'avatar joueur/club (signature Cloudinary via
+  // /api/upload-video, générique malgré son nom) — écrit sur profiles.avatar_url,
+  // déjà lu par DashboardClub.jsx (organigramme) et ClubPublic.jsx pour
+  // l'affichage public, jamais éditable côté éducateur jusqu'ici.
+  const handleAvatarUploadEdu = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    setAvatarUploadingEdu(true)
+    try {
+      const sigRes = await fetch('/api/upload-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (uploadData.secure_url) {
+        await supabase.from('profiles').update({ avatar_url: uploadData.secure_url }).eq('id', userId)
+        setProfilEdu(p => ({ ...p, avatar_url: uploadData.secure_url }))
+        setProfilEduEdit(p => ({ ...p, avatar_url: uploadData.secure_url }))
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err)
+    }
+    setAvatarUploadingEdu(false)
   }
 
   const uploadDiplome = async (file) => {
@@ -2582,7 +2626,8 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
       const updated = { ...profilEduEdit, diplome_url: publicUrl, diplome_verifie: false }
       setProfilEduEdit(updated)
-      await supabase.from('profil_educateur').upsert({ ...updated, user_id: userId }, { onConflict: 'user_id' })
+      const { avatar_url, ...champsProfilEducateur } = updated
+      await supabase.from('profil_educateur').upsert({ ...champsProfilEducateur, user_id: userId }, { onConflict: 'user_id' })
       await chargerProfilEdu(userId)
     }
     setUploadingDiplome(false)
@@ -8112,6 +8157,24 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               {/* Infos principales */}
               <div className="profil-col-left" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="profil-informations" style={st.card}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '18px' }}>
+                    <div style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0 }}>
+                      {profilEduEdit.avatar_url ? (
+                        <img src={profilEduEdit.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${colors.accent.blue}40` }} />
+                      ) : (
+                        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: colors.accent.blue + '15', border: `2px solid ${colors.accent.blue}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: colors.accent.blue }}>
+                          {(profilEduEdit.prenom?.[0] || '?')}{(profilEduEdit.nom?.[0] || '')}
+                        </div>
+                      )}
+                      <label style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', background: colors.accent.blue, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploadingEdu ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUploadEdu} disabled={avatarUploadingEdu} />
+                      </label>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>
+                      {avatarUploadingEdu ? 'Envoi en cours...' : "Photo visible par le club et sur ta page publique."}
+                    </p>
+                  </div>
                   <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 {t('profil_informations', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
