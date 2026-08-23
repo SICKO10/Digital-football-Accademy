@@ -885,7 +885,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
               <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
               <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? colors.accent.green + alpha.soft : colors.accent.orange + alpha.soft, color: prochainMatch.domicile ? colors.accent.green : colors.accent.orange, border: `1px solid ${prochainMatch.domicile ? colors.accent.green + alpha.medium : colors.accent.orange + alpha.medium}` }}>
-                {prochainMatch.domicile ? <IcoHome /> : <IcoBus />} {prochainMatch.domicile ? 'Domicile' : 'Déplacement'}
+                {prochainMatch.domicile && <IcoHome />} {prochainMatch.domicile ? 'Domicile' : 'Déplacement'}
               </span>
             </>
           ) : (
