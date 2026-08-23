@@ -3,12 +3,12 @@ import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
 
 const TYPES_SEANCE = [
-  { value: 'course', label: '🏃 Footing / Course', icon: '🏃' },
-  { value: 'renforcement', label: '💪 Renforcement', icon: '💪' },
-  { value: 'fractionne', label: '⚡ Fractionné', icon: '⚡' },
-  { value: 'circuit', label: '🔄 Circuit training', icon: '🔄' },
-  { value: 'gainage', label: '🧘 Gainage / Mobilité', icon: '🧘' },
-  { value: 'repos', label: '❌ Repos / Étirements', icon: '❌' },
+  { value: 'course', label: 'Footing / Course' },
+  { value: 'renforcement', label: 'Renforcement' },
+  { value: 'fractionne', label: 'Fractionné' },
+  { value: 'circuit', label: 'Circuit training' },
+  { value: 'gainage', label: 'Gainage / Mobilité' },
+  { value: 'repos', label: 'Repos / Étirements' },
 ]
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -181,9 +181,9 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
       </div>
       <div style={{ display: 'flex', gap: 6, background: st.card2, borderRadius: 10, padding: 4 }}>
         {[
-          { key: 'suivi', label: '📋 Suivi', fn: onSuivi },
-          { key: 'stats', label: '📊 Stats', fn: onStats },
-          { key: 'classement', label: '🏆 Classement', fn: onClassement },
+          { key: 'suivi', label: 'Suivi', fn: onSuivi },
+          { key: 'stats', label: 'Stats', fn: onStats },
+          { key: 'classement', label: 'Classement', fn: onClassement },
         ].map(tab => (
           <button key={tab.key} onClick={tab.fn}
             style={{ flex: 1, padding: '9px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
@@ -446,7 +446,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
 
     setScanResultat(null)
     setProgrammes(prev => [prog, ...prev])
-    alert('✅ Programme créé avec succès !')
+    alert('Programme créé avec succès !')
   }
 
   const getClassement = () => {
@@ -472,7 +472,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
 
   if (error === 'tables_missing') return (
     <div style={{ background: '#1a1a00', border: '1px solid #444', borderRadius: 12, padding: 24, margin: 16 }}>
-      <div style={{ color: st.yellow, fontWeight: 700, marginBottom: 8 }}>⚠️ {t('phys_migration_requise', lang)}</div>
+      <div style={{ color: st.yellow, fontWeight: 700, marginBottom: 8 }}>{t('phys_migration_requise', lang)}</div>
       <div style={{ color: st.muted, fontSize: 14 }}>{t('phys_lance_migration', lang)}</div>
     </div>
   )
@@ -482,11 +482,11 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h2 style={{ color: st.text, margin: 0 }}>🏋️ {t('phys_titre', lang)}</h2>
+          <h2 style={{ color: st.text, margin: 0 }}>{t('phys_titre', lang)}</h2>
           <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>{t('phys_programmes_joueurs', lang)}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>🏃 Tests physiques</button>
+          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Tests physiques</button>
           {!readOnly && (
             <>
               <label style={{
@@ -494,7 +494,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                📷 {t('phys_scanner_programme', lang)}
+                {t('phys_scanner_programme', lang)}
                 <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
                   onChange={handleScanProgramme} disabled={scanLoading} />
               </label>
@@ -505,12 +505,11 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
       </div>
       {readOnly && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-          👁 {t('equipe_mode_lecture', lang)}
+          {t('equipe_mode_lecture', lang)}
         </div>
       )}
       {programmes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🏋️</div>
           <div style={{ color: st.text, marginBottom: 8 }}>{t('phys_aucun_programme', lang)}</div>
           <div style={{ fontSize: 14 }}>{t('phys_creer_premier', lang)}</div>
         </div>
@@ -524,7 +523,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 <div>
                   <div style={{ color: st.text, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{p.titre}</div>
                   {p.description && <div style={{ color: st.muted, fontSize: 13, marginBottom: 8 }}>{p.description}</div>}
-                  <div style={{ color: st.muted, fontSize: 12 }}>📅 {new Date(p.date_debut).toLocaleDateString('fr-FR')} → {new Date(p.date_fin).toLocaleDateString('fr-FR')} · {p.nb_semaines} semaine{p.nb_semaines > 1 ? 's' : ''}</div>
+                  <div style={{ color: st.muted, fontSize: 12 }}>{new Date(p.date_debut).toLocaleDateString('fr-FR')} → {new Date(p.date_fin).toLocaleDateString('fr-FR')} · {p.nb_semaines} semaine{p.nb_semaines > 1 ? 's' : ''}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
@@ -533,7 +532,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                   {!readOnly && (
                     <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
                       style={{ padding: '6px 12px', background: '#2a0a0a', border: '1px solid #5a1a1a', borderRadius: 6, color: st.red, cursor: 'pointer', fontSize: 12 }}>
-                      🗑 Supprimer
+                      Supprimer
                     </button>
                   )}
                 </div>
@@ -557,7 +556,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
             width: 600, maxWidth: '95vw', maxHeight: '80vh', overflowY: 'auto', border: `1px solid ${st.border}`,
           }}>
             <h2 style={{ color: st.green, marginBottom: 8 }}>
-              ✅ Programme détecté : {scanResultat.titre}
+              Programme détecté : {scanResultat.titre}
             </h2>
             <p style={{ color: st.muted, marginBottom: 24 }}>
               {scanResultat.nb_semaines} semaine(s) • Vérifiez avant de confirmer
@@ -592,7 +591,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                   flex: 1, padding: 14, background: st.green, border: 'none',
                   borderRadius: 10, color: '#000', fontWeight: 800, cursor: 'pointer',
                 }}>
-                ✅ Confirmer et remplir la grille
+                Confirmer et remplir la grille
               </button>
               <button
                 onClick={() => setScanResultat(null)}
@@ -613,7 +612,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999,
         }}>
           <div style={{ color: st.green, fontSize: 18, fontWeight: 700 }}>
-            🔍 Analyse du programme en cours...
+            Analyse du programme en cours...
           </div>
         </div>
       )}
@@ -624,7 +623,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
   if (vue === 'tests') return (
     <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ color: st.text, margin: 0 }}>🏃 Tests physiques</h2>
+        <h2 style={{ color: st.text, margin: 0 }}>Tests physiques</h2>
         <button onClick={() => setVue('programmes')} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer', fontSize: 13 }}>← Retour</button>
       </div>
 
@@ -656,7 +655,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                     placeholder={`Objectif : ${o.gt ? '≥' : '≤'} ${o.placeholder}`}
                     style={{ width: '100%', background: st.card2, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
                   {atteint != null && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: atteint ? st.green : st.red }}>{atteint ? '✅ Objectif atteint' : '❌ Objectif non atteint'}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: atteint ? st.green : st.red }}>{atteint ? 'Objectif atteint' : 'Objectif non atteint'}</span>
                   )}
                 </div>
               )
@@ -667,7 +666,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
             style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', marginBottom: 16 }} />
           <button onClick={enregistrerTest} disabled={savingTest || !testForm.joueur_id || !testForm.date_test}
             style={{ padding: '10px 24px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer', opacity: (savingTest || !testForm.joueur_id || !testForm.date_test) ? 0.5 : 1 }}>
-            {savingTest ? 'Enregistrement...' : '💾 Enregistrer'}
+            {savingTest ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       )}
@@ -698,7 +697,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                       <td key={cle} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
                         {valeur != null ? (
                           <span style={{ color: atteint ? st.green : st.red, fontWeight: 600 }}>
-                            {atteint ? '✅' : '❌'} {valeur}{objectifsTests[cle].unit}
+                            {atteint ? '✓' : '✗'} {valeur}{objectifsTests[cle].unit}
                           </span>
                         ) : <span style={{ color: st.muted }}>—</span>}
                       </td>
@@ -709,11 +708,11 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button onClick={() => ouvrirEditionTest(test)}
                         style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.muted, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', marginRight: 6 }}>
-                        ✏️
+
                       </button>
                       <button onClick={() => supprimerTest(test)}
                         style={{ background: 'transparent', border: '1px solid #ef444430', color: st.red, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
-                        🗑
+
                       </button>
                     </td>
                   )}
@@ -758,7 +757,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
               </button>
               <button onClick={sauvegarderTestEdit} disabled={savingEditTest}
                 style={{ background: st.green, color: '#000', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingEditTest ? 0.6 : 1 }}>
-                ✓ Sauvegarder
+                Sauvegarder
               </button>
             </div>
           </div>
@@ -776,9 +775,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           <button onClick={() => setVue('programmes')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← {t('phys_retour', lang)}</button>
           <h2 style={{ color: st.text, margin: 0, fontSize: isMobile ? 16 : 18, flex: isMobile ? 'none' : 1 }}>{selectedProgramme.titre}</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📋 {t('phys_suivi', lang)}</button>
-            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>📊 {t('nav_stats', lang)}</button>
-            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>🏆 {t('phys_classement', lang)}</button>
+            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_suivi', lang)}</button>
+            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('nav_stats', lang)}</button>
+            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_classement', lang)}</button>
           </div>
         </div>
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
@@ -789,7 +788,6 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 {JOURS.map((jourLabel, ji) => {
                   const jour = ji + 1
                   const seance = seances.find(s => s.semaine === sem && s.jour === jour)
-                  const typeInfo = TYPES_SEANCE.find(t => t.value === seance?.type_seance) || TYPES_SEANCE[0]
                   const isRepos = seance?.type_seance === 'repos'
                   return (
                     <div key={jour}>
@@ -800,7 +798,6 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                         onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
                         {seance ? (
                           <>
-                            <div style={{ fontSize: 20 }}>{typeInfo.icon}</div>
                             <div style={{ color: st.text, fontSize: 10, textAlign: 'center', lineHeight: 1.3 }}>{seance.titre}</div>
                             {seance.duree_cible && <div style={{ color: st.muted, fontSize: 10 }}>{seance.duree_cible}min</div>}
                           </>
@@ -827,7 +824,6 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
         <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
         {joueurs.length === 0 || seancesActives.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
             <div style={{ color: st.text, marginBottom: 8 }}>{joueurs.length === 0 ? t('phys_aucun_joueur_affilie', lang) : t('phys_aucune_seance_prog', lang)}</div>
           </div>
         ) : (
@@ -855,8 +851,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                           {fait ? (
                             <button onClick={() => setModalSoumission({ soumission: sub, joueurNom: `${j.prenom} ${j.nom}` })}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, margin: '0 auto' }}>
-                              <span style={{ color: st.green, fontSize: 16 }}>✅</span>
-                              {sub?.proof_url && <span style={{ color: st.green, fontSize: 10 }}>📎</span>}
+                              <span style={{ color: st.green, fontSize: 16 }}>✓</span>
+                              {sub?.proof_url && <span style={{ color: st.green, fontSize: 10 }}>●</span>}
                             </button>
                           ) : <span style={{ color: st.border, fontSize: 16 }}>—</span>}
                         </td>
@@ -894,14 +890,14 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                   <span style={{ color: st.text, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>{ouvert ? '▼' : '▶'}</span> {j.prenom} {j.nom}
                   </span>
-                  <span style={{ color: st.muted, fontSize: 13 }}>✅ {soumJ.length} séances</span>
+                  <span style={{ color: st.muted, fontSize: 13 }}>{soumJ.length} séances</span>
                 </button>
                 {ouvert && (
                   <div>
                     <div style={{ display: 'flex', gap: 20, color: st.muted, fontSize: 13, flexWrap: 'wrap', padding: '0 16px 12px' }}>
-                      <span>🏃 {distTotal.toFixed(1)} km</span>
-                      <span>⏱ {dureeTotal} min</span>
-                      <span>📈 {allureMoy} min/km</span>
+                      <span>{distTotal.toFixed(1)} km</span>
+                      <span>{dureeTotal} min</span>
+                      <span>{allureMoy} min/km</span>
                     </div>
                     {soumJ.length === 0 ? (
                       <div style={{ padding: '8px 16px 16px', color: st.border, fontSize: 13 }}>{t('phys_aucune_seance_soumise', lang)}</div>
@@ -916,7 +912,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                             <a href={s.proof_url || '#'} target={s.proof_url ? '_blank' : '_self'} rel="noreferrer"
                               onClick={!s.proof_url ? e => e.preventDefault() : undefined}
                               style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : '#333'}`, borderRadius: 6, color: s.proof_url ? st.green : '#444', fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
-                              📎 {s.proof_url ? 'Voir' : 'Aucun'}
+                              {s.proof_url ? 'Voir' : 'Aucun'}
                             </a>
                           </div>
                         </div>
@@ -947,14 +943,14 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           </div>
           {classement.map((j, idx) => (
             <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? '#0a1a0a' : 'transparent' }}>
-              <div style={{ color: idx === 0 ? st.green : st.muted, fontWeight: 700 }}>{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}</div>
+              <div style={{ color: idx === 0 ? st.green : st.muted, fontWeight: 700 }}>{idx + 1}</div>
               <div style={{ color: st.text, fontWeight: idx < 3 ? 700 : 400 }}>{j.full_name || `${j.prenom || ''} ${j.nom || ''}`}</div>
               <div style={{ textAlign: 'center', color: st.green, fontWeight: 800 }}>{j.points} pts</div>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ color: j.taux >= 80 ? st.green : j.taux >= 50 ? st.yellow : st.red, fontWeight: 700 }}>{j.taux}%</span>
                 <div style={{ color: st.muted, fontSize: 10 }}>{j.validees}/{j.total}</div>
               </div>
-              <div style={{ textAlign: 'center', color: j.nbBonus > 0 ? st.yellow : st.border }}>{j.nbBonus > 0 ? `⭐ x${j.nbBonus}` : '—'}</div>
+              <div style={{ textAlign: 'center', color: j.nbBonus > 0 ? st.yellow : st.border }}>{j.nbBonus > 0 ? `x${j.nbBonus}` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.cmj ? st.text : st.border }}>{j.cmj ? `${j.cmj}cm` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s10 ? st.text : st.border }}>{j.s10 ? `${j.s10}s` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s30 ? st.text : st.border }}>{j.s30 ? `${j.s30}s` : '—'}</div>

@@ -176,6 +176,7 @@ const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+const IcoEdit      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -5397,18 +5398,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {activeSection === 'matchs' && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: permissions?.competition === 'lecture' ? '0.5rem' : '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🏟️ {t('comp_competition', lang)}</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('comp_competition', lang)}</h1>
             </div>
 
             {permissions?.competition === 'lecture' && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                👁 {t('equipe_mode_lecture', lang)}
+                {t('equipe_mode_lecture', lang)}
               </div>
             )}
 
             {/* Sous-onglets */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['resultats',`⚽ ${t('comp_resultats', lang)}`],['calendrier',`🗓️ ${t('comp_calendrier', lang)}`],['classement',`🏆 ${t('comp_classement', lang)}`]].map(([k, label]) => (
+              {[['resultats',`${t('comp_resultats', lang)}`],['calendrier',`${t('comp_calendrier', lang)}`],['classement',`${t('comp_classement', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -5417,11 +5418,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {competitionSubTab === 'resultats' && (
               <div style={{ maxWidth: '640px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>⚽ {t('comp_resultats', lang)}</h2>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{t('comp_resultats', lang)}</h2>
                   {canEdit('competition') && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {canEdit('stats') && (
-                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #60a5fa40', color: colors.accent.blue }}>📸 {t('seance_scanner', lang)}</button>
+                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #60a5fa40', color: colors.accent.blue }}>{t('seance_scanner', lang)}</button>
                       )}
                       <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ {t('comp_bouton_match', lang)}</button>
                     </div>
@@ -5482,7 +5483,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               {m.heure ? ` · ${m.heure}` : ''}
                               {m.competition ? ` · ${m.competition}` : ''}
                               {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
-                              {m.lieu ? ` · 📍 ${m.lieu}` : ''}
+                              {m.lieu ? ` · ${m.lieu}` : ''}
                             </p>
                           </div>
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
@@ -5502,7 +5503,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
                               title="Supprimer ce résultat"
                             >
-                              🗑
+
                             </button>
                           )}
                         </div>
@@ -5532,10 +5533,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: e.target.value === '1' } } }))}
                                       style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_jaune') ? 1 : 0.25 }}
-                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))}>🟨</span>
-                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_rouge') ? 1 : 0.25 }}
-                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } }))}>🟥</span>
+                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
+                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))} />
+                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
+                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } }))} />
                                   </div>
                                 )
                               })}
@@ -5547,8 +5548,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 background: m.notations_match?.length > 0 ? colors.accent.green + alpha.subtle : colors.background.raised,
                                 border: `1px solid ${m.notations_match?.length > 0 ? colors.accent.green : colors.border.strong}`,
                                 color: m.notations_match?.length > 0 ? colors.accent.green : colors.text.secondary,
-                              }}>{m.notations_match?.length > 0 ? '✓ Noté' : '📝 Noter'}</button>
-                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, padding: '7px 16px', fontSize: '12px' }}>💾 {t('btn_sauvegarder', lang)}</button>
+                              }}>{m.notations_match?.length > 0 ? 'Noté' : 'Noter'}</button>
+                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, padding: '7px 16px', fontSize: '12px' }}>{t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
                         )}
@@ -5584,7 +5585,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                 {/* Upload zone */}
                 <div style={st.card}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>📸 {t('comp_scanner_calendrier', lang)}</p>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{t('comp_scanner_calendrier', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_uploade_photos', lang)}</p>
 
                   <label style={{ display: 'block', border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
@@ -5601,7 +5602,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         })
                         e.target.value = ''
                       }} />
-                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>📁 {t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: colors.border.strong }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
+                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>{t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: colors.border.strong }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
                   </label>
 
                   {/* Thumbnails */}
@@ -5611,22 +5612,22 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         <div key={i} style={{ position: 'relative' }}>
                           <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
                           <button onClick={() => setCalendarImages(prev => prev.filter((_, idx) => idx !== i))}
-                            style={{ position: 'absolute', top: '-6px', right: '-6px', background: colors.accent.red, border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: colors.text.primary, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                            style={{ position: 'absolute', top: '-6px', right: '-6px', background: colors.accent.red, border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: colors.text.primary, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoX /></button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {calendarError && <p style={{ color: colors.accent.red, fontSize: '12px', margin: '0 0 10px' }}>⚠️ {calendarError}</p>}
+                  {calendarError && <p style={{ color: colors.accent.red, fontSize: '12px', margin: '0 0 10px' }}>{calendarError}</p>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={scannerCalendrier} disabled={calendarLoading || !calendarImages.length}
                       style={{ ...st.btnSolid, opacity: calendarImages.length ? 1 : 0.4 }}>
-                      {calendarLoading ? `⏳ ${libelleStatutGroq(calendarStatus)}` : `🤖 ${t('comp_extraire_matchs', lang)}${calendarImages.length ? ` (${calendarImages.length} photo${calendarImages.length > 1 ? 's' : ''})` : ''}`}
+                      {calendarLoading ? `${libelleStatutGroq(calendarStatus)}` : `${t('comp_extraire_matchs', lang)}${calendarImages.length ? ` (${calendarImages.length} photo${calendarImages.length > 1 ? 's' : ''})` : ''}`}
                     </button>
                     {calendarMatchs.length > 0 && (
                       <button onClick={() => { setCalendarMatchs([]); localStorage.removeItem('calendarMatchs') }}
-                        style={st.btn(colors.accent.red)}>🗑️ {t('comp_reinitialiser', lang)}</button>
+                        style={st.btn(colors.accent.red)}>{t('comp_reinitialiser', lang)}</button>
                     )}
                   </div>
                 </div>
@@ -5635,10 +5636,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {calendarMatchs.length > 0 && (
                   <div style={st.card}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🗓️ {t('comp_calendrier', lang)} — {calendarMatchs.length} match{calendarMatchs.length > 1 ? 's' : ''}</p>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('comp_calendrier', lang)} — {calendarMatchs.length} match{calendarMatchs.length > 1 ? 's' : ''}</p>
                       {calendarMatchs.some(m => m.date) && (
                         <button onClick={publierCalendrierVersMatchs} disabled={publishingCalendrier} style={st.btnSolid}>
-                          {publishingCalendrier ? '⏳ Publication...' : `📤 ${t('comp_publier_calendrier', lang)} (${calendarMatchs.filter(m => m.date).length})`}
+                          {publishingCalendrier ? 'Publication...' : `${t('comp_publier_calendrier', lang)} (${calendarMatchs.filter(m => m.date).length})`}
                         </button>
                       )}
                     </div>
@@ -5667,7 +5668,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               {m.competition && <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>{m.competition}</p>}
                             </div>
                             <button onClick={() => { const updated = calendarMatchs.filter((_, idx) => idx !== i); setCalendarMatchs(updated); localStorage.setItem('calendarMatchs', JSON.stringify(updated)) }}
-                              style={{ background: 'none', border: 'none', color: colors.border.strong, fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>✕</button>
+                              style={{ background: 'none', border: 'none', color: colors.border.strong, fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}><IcoX /></button>
                           </div>
                         )
                       })}
@@ -5684,7 +5685,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {/* ── Matchs à venir (sans score) — publiés dans matchs_equipe ── */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>⚽ {t('comp_matchs_a_venir', lang)}</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>{t('comp_matchs_a_venir', lang)}</p>
                     {canEdit('competition') && (
                       <button onClick={ouvrirModalCreerMatch} style={st.btnSolid}>+ {t('comp_ajouter_match', lang)}</button>
                     )}
@@ -5710,10 +5711,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} title="Sondage dispo" style={st.iconBtnDiscret(colors.accent.purple)}>📋</button>
-                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) }} title="Convocation" style={st.iconBtnDiscret(colors.accent.green)}>📢</button>
+                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} title="Sondage dispo" style={st.iconBtnDiscret(colors.accent.purple)}><IcoClipboard /></button>
+                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) }} title="Convocation" style={st.iconBtnDiscret(colors.accent.green)}><IcoSend /></button>
                                   {canEdit('competition') && (
-                                    <button onClick={() => ouvrirModalModifierMatch(m)} title={t('comp_modifier_match', lang)} style={st.iconBtnDiscret(colors.accent.blue)}>✏️</button>
+                                    <button onClick={() => ouvrirModalModifierMatch(m)} title={t('comp_modifier_match', lang)} style={st.iconBtnDiscret(colors.accent.blue)}><IcoEdit /></button>
                                   )}
                                   {canEdit('competition') && (
                                     <button
@@ -5729,22 +5730,22 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                       title="Supprimer ce match"
                                       style={st.iconBtnDiscret(colors.accent.red)}
                                     >
-                                      🗑️
+
                                     </button>
                                   )}
                                   {canEdit('stats') && (
-                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>✅ {t('comp_marquer_joue', lang)}</button>
+                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('comp_marquer_joue', lang)}</button>
                                   )}
                                 </div>
                               </div>
                               {aDesReponses && (
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px' }}>
-                                  <span style={{ color: colors.accent.green }}>✅ {dispoStats.present}</span>
-                                  <span style={{ color: colors.accent.red }}>❌ {dispoStats.absent}</span>
-                                  <span style={{ color: colors.accent.orange }}>🤕 {dispoStats.blesse}</span>
-                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>🤒 {dispoStats.malade}</span>}
-                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>🏆 {dispoStats.convoque}</span>}
-                                  <span style={{ color: '#6b7280' }}>⏳ {dispoStats.sans_reponse} en attente</span>
+                                  <span style={{ color: colors.accent.green }}>{dispoStats.present}</span>
+                                  <span style={{ color: colors.accent.red }}>{dispoStats.absent}</span>
+                                  <span style={{ color: colors.accent.orange }}>{dispoStats.blesse}</span>
+                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>{dispoStats.malade}</span>}
+                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>{dispoStats.convoque}</span>}
+                                  <span style={{ color: '#6b7280' }}>{dispoStats.sans_reponse} en attente</span>
                                 </div>
                               )}
                             </div>
@@ -5770,7 +5771,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     dashboard ; avant ce fix, stocké seulement en localStorage donc perdu
                     d'un navigateur/appareil à l'autre, et jamais visible des joueurs). */}
                 <div style={st.card}>
-                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>🔗 {t('comp_classement_officiel', lang)}</p>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>{t('comp_classement_officiel', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_colle_lien_classement', lang)}</p>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
@@ -5798,13 +5799,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         }
                       }}
                       style={{ ...st.btnSolid, opacity: savingLigueUrl ? 0.6 : 1 }}>
-                      💾 {savingLigueUrl ? '...' : t('btn_sauvegarder', lang)}
+                      {savingLigueUrl ? '...' : t('btn_sauvegarder', lang)}
                     </button>
                   </div>
                   {profilEdu?.ligue_url && (
                     <a href={profilEdu.ligue_url} target="_blank" rel="noopener noreferrer"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                      🏆 {t('comp_voir_classement', lang)} ↗
+                      {t('comp_voir_classement', lang)} ↗
                     </a>
                   )}
                 </div>
@@ -5827,8 +5828,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
                   <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
                     </div>
                     <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>
                       {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -5846,7 +5847,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               {j.poste && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{j.poste}</p>}
                             </div>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
-                              {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
+                              {cfg ? cfg.label : t('ent_en_attente', lang)}
                             </span>
                           </div>
                         )
@@ -5857,8 +5858,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     </div>
 
                     <div style={{ ...st.card, background: colors.background.sunken }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>🎽 Générer les convocations</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ✅ ou déjà convoqués 🏆. Décoche/coche pour ajuster, puis copie la liste.</p>
+                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Générer les convocations</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ou déjà convoqués. Décoche/coche pour ajuster, puis copie la liste.</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px', maxHeight: '200px', overflowY: 'auto' }}>
                         {reponses.map(j => {
                           const coche = convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')
@@ -5871,14 +5872,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         })}
                       </div>
                       <button onClick={copierConvocations} style={st.btnSolid} disabled={nomsCoches.length === 0}>
-                        📋 Copier la liste ({nomsCoches.length})
+                        Copier la liste ({nomsCoches.length})
                       </button>
                     </div>
 
                     {/* ── Convocation officielle — publiée, visible en widget sur le
                         dashboard de chaque joueur convoqué jusqu'à expiration ── */}
                     <div ref={convocationSectionRef} style={{ ...st.card, background: colors.background.sunken, marginTop: '16px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>📢 Convocation officielle</p>
+                      <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Convocation officielle</p>
                       <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>
                         {convocationExistante ? `Publiée — disparaît du dashboard des joueurs le dimanche à 20h.` : `Reprend le groupe coché ci-dessus. Publier l'affiche comme un widget sur le dashboard de chaque joueur convoqué.`}
                       </p>
@@ -5909,10 +5910,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, label: e.target.value } : s) }))}
                               style={{ ...st.input, flex: 1 }} />
                             <button onClick={() => setConvocationForm(f => ({ ...f, timeline: f.timeline.filter((_, idx) => idx !== i) }))}
-                              style={{ background: 'none', border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                              style={{ background: 'none', border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}><IcoX /></button>
                           </div>
                         ))}
-                        <button onClick={() => setConvocationForm(f => ({ ...f, timeline: [...f.timeline, { heure: '', label: '', icone: '📌' }] }))}
+                        <button onClick={() => setConvocationForm(f => ({ ...f, timeline: [...f.timeline, { heure: '', label: '', icone: '' }] }))}
                           style={{ background: 'none', border: '1px dashed #333', color: colors.text.faint, padding: '6px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                           + Ajouter une étape
                         </button>
@@ -5923,7 +5924,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         value={convocationForm.notes} onChange={e => setConvocationForm(f => ({ ...f, notes: e.target.value }))} />
 
                       <button onClick={() => publierConvocation(m)} disabled={publiantConvocation} style={{ ...st.btnSolid, background: colors.accent.green, width: '100%', opacity: publiantConvocation ? 0.6 : 1 }}>
-                        {publiantConvocation ? '...' : convocationExistante ? '📤 Mettre à jour la convocation' : '📤 Publier la convocation'}
+                        {publiantConvocation ? '...' : convocationExistante ? 'Mettre à jour la convocation' : 'Publier la convocation'}
                       </button>
                     </div>
                   </div>
@@ -5936,8 +5937,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
                 <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✅ {t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
-                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
+                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
                   </div>
 
                   {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
@@ -5945,10 +5946,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       {scannerModalImagePreview
                         ? <img src={scannerModalImagePreview} alt="Feuille" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
-                        : <span style={{ fontSize: '26px' }}>📄</span>
+                        : <span style={{ color: colors.text.faint }}><IcoFileText /></span>
                       }
                       <div style={{ flex: 1, minWidth: '180px' }}>
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>📸 {t('scan_feuille_titre', lang)}</p>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{t('scan_feuille_titre', lang)}</p>
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
                       </div>
                       <input id="scanner-modal-input" type="file" accept="image/*" style={{ display: 'none' }}
@@ -5957,12 +5958,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           const { base64, preview } = await redimensionnerImagePourScan(file)
                           setScannerModalImageBase64(base64); setScannerModalImagePreview(preview)
                         }} />
-                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn(colors.accent.blue)}>📁 {t('seance_scanner', lang)}</button>
+                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn(colors.accent.blue)}>{t('seance_scanner', lang)}</button>
                       <button onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...st.btnSolid, opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
-                        {scannerModalLoading ? `🔍 ${libelleStatutGroq(scannerModalStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
+                        {scannerModalLoading ? `${libelleStatutGroq(scannerModalStatus)}` : `${t('seance_analyser_ia', lang)}`}
                       </button>
                     </div>
-                    {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>⚠️ {scannerModalError}</p>}
+                    {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>{scannerModalError}</p>}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
@@ -5991,7 +5992,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               <option value="">Nature —</option>
                               {NATURES_BUT.map(n => <option key={n.value} value={n.value}>{n.label}</option>)}
                             </select>
-                            <button onClick={() => setScannerModalButsDetail(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                            <button onClick={() => setScannerModalButsDetail(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}><IcoX /></button>
                           </div>
                         ))}
                       </div>
@@ -6020,10 +6021,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: e.target.value === '1' } } }))}
                             style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                          <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_jaune') ? 1 : 0.25 }}
-                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))}>🟨</span>
-                          <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', fontSize: '18px', opacity: val('carton_rouge') ? 1 : 0.25 }}
-                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_rouge: !val('carton_rouge') } } }))}>🟥</span>
+                          <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))} />
+                          <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_rouge: !val('carton_rouge') } } }))} />
                         </div>
                       )
                     })}
@@ -6031,7 +6032,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p style={{ fontSize: '13px', color: colors.text.faint, margin: '10px 0 0' }}>Min · Buts · PD · CS</p>
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
-                    <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
+                    <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}</button>
                     <button onClick={fermerModalMatchJoue} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
@@ -6044,9 +6045,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
-                      {modalMatchForm.id ? `✏️ ${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
+                      {modalMatchForm.id ? `${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
                     </p>
-                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={modalMatchForm.adversaire} onChange={e => setModalMatchForm(f => ({ ...f, adversaire: e.target.value }))} /></div>
@@ -6080,7 +6081,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderMatchForm} disabled={savingMatchForm || !modalMatchForm.adversaire || !modalMatchForm.date} style={st.btnSolid}>
-                      {savingMatchForm ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}
+                      {savingMatchForm ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}
                     </button>
                     <button onClick={() => setModalMatchForm(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
@@ -6096,10 +6097,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <Deplacements clubId={clubAffiliation.club_id} accentColor={colors.accent.blue} />
           ) : (
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🚌 {t('nav_deplacements', lang)}</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
               <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
                 {clubAffiliation?.statut === 'en_attente'
-                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
+                  ? `Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.'}
               </p>
             </div>
@@ -6112,10 +6113,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor={colors.accent.blue} />
           ) : (
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ {t('nav_terrains', lang)}</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_terrains', lang)}</h1>
               <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
                 {clubAffiliation?.statut === 'en_attente'
-                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
+                  ? `Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.'}
               </p>
             </div>
@@ -6141,7 +6142,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           })
           return (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📦 Mon matériel</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Mon matériel</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
             {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
               <p style={{ color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
@@ -6149,13 +6150,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <>
               {equipementPretEduc && (
                 <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>👕 Ton équipement est prêt !</p>
+                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>Ton équipement est prêt !</p>
                   <p style={{ margin: '0 0 12px', fontSize: '13px', color: colors.text.faint }}>
                     {equipementPretEduc.jours || 'Passe le récupérer auprès du club'}
                     {equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}
                     {equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}
                   </p>
-                  <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>✅ J'ai récupéré</button>
+                  <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
                 </div>
               )}
 
@@ -6794,11 +6795,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== ÉVALUATIONS ===== */}
         {activeSection === 'notes' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📝 {t('eval_titre_joueurs', lang)}</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('eval_titre_joueurs', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>{t('eval_note_chaque', lang)}</p>
             {permissions?.notes === 'lecture' && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                👁 {t('equipe_mode_lecture', lang)}
+                {t('equipe_mode_lecture', lang)}
               </div>
             )}
             {joueurs.length === 0 ? (
@@ -6820,16 +6821,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
                         </div>
-                        {noteGlobale && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>⭐ {noteGlobale}</span>}
+                        {noteGlobale && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>{noteGlobale}</span>}
                       </div>
                       <div className="criteres-grid" style={{ marginBottom: '12px' }}>
-                        {[['technique', `🎯 ${t('eval_technique', lang)}`], ['physique', `💪 ${t('eval_physique', lang)}`], ['mental', `🧠 ${t('eval_mental', lang)}`], ['tactique', `♟️ ${t('eval_tactique', lang)}`]].map(([key, label]) => (
+                        {[['technique', `${t('eval_technique', lang)}`], ['physique', `${t('eval_physique', lang)}`], ['mental', `${t('eval_mental', lang)}`], ['tactique', `${t('eval_tactique', lang)}`]].map(([key, label]) => (
                           <div key={key} className="critere-bloc">
                             <label className="critere-label" style={st.label}>{label}</label>
                             <div className="etoiles" style={{ display: 'flex', gap: '4px' }}>
                               {[1,2,3,4,5].map(n => (
                                 <span key={n} onClick={() => canEdit('notes') && setLocalNote(j.id, { [key]: n })}
-                                  style={{ cursor: canEdit('notes') ? 'pointer' : 'default', fontSize: '20px', opacity: ln[key] >= n ? 1 : 0.2 }}>⭐</span>
+                                  style={{ cursor: canEdit('notes') ? 'pointer' : 'default', fontSize: '20px', color: colors.accent.amber, opacity: ln[key] >= n ? 1 : 0.2 }}>★</span>
                               ))}
                             </div>
                           </div>
@@ -6843,7 +6844,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         </div>
                         <div>
                           <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? colors.accent.green : colors.text.secondary }}>
-                            {ln.visible_joueur ? `👁️ ${t('eval_visible', lang)}` : `🔒 ${t('eval_prive_non_visible', lang)}`}
+                            {ln.visible_joueur ? `${t('eval_visible', lang)}` : `${t('eval_prive_non_visible', lang)}`}
                           </p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                             {ln.visible_joueur ? t('eval_joueur_verra', lang) : t('eval_seul_vous', lang)}
@@ -6851,7 +6852,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         </div>
                       </div>
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={st.label}>{ln.visible_joueur ? `💬 ${t('eval_commentaire_visible', lang)}` : `💬 ${t('eval_commentaire_prive', lang)}`}</label>
+                        <label style={st.label}>{ln.visible_joueur ? `${t('eval_commentaire_visible', lang)}` : `${t('eval_commentaire_prive', lang)}`}</label>
                         <textarea value={ln.commentaire} onChange={e => setLocalNote(j.id, { commentaire: e.target.value })}
                           placeholder={t('eval_placeholder_commentaire', lang)}
                           disabled={!canEdit('notes')}
@@ -6859,7 +6860,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       </div>
                       {canEdit('notes') && (
                         <button onClick={() => sauvegarderNote(j.id, ln)} disabled={savingNote} style={st.btnSolid}>
-                          {savingNote ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}
+                          {savingNote ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}
                         </button>
                       )}
                     </div>
@@ -6960,10 +6961,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           return (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>🔍 {t('nav_recrutement', lang)}</h1>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('nav_recrutement', lang)}</h1>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>📋 {t('recrut_feed', lang)}</button>
-                  <a href="/jogabonito" target="_blank" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>🎬 Jogabonito →</a>
+                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{t('recrut_feed', lang)}</button>
+                  <a href="/jogabonito" target="_blank" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Jogabonito →</a>
                 </div>
               </div>
               {/* Filtres */}
@@ -7005,7 +7006,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <p style={{ color: colors.accent.blue, textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
               ) : filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: colors.text.disabled }}>
-                  <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</p>
                   <p>{t('recrut_aucun_trouve', lang)}</p>
                 </div>
               ) : (
@@ -8108,7 +8108,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'dirigeants' && (
           <div style={{ maxWidth: 1100 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>👔 {t('dir_titre', lang)}</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{t('dir_titre', lang)}</h2>
             <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 24 }}>
               {t('dir_invite_desc', lang)}
             </p>
@@ -8130,12 +8130,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {[
-                  { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
-                  { key: 'stats', label: `📊 ${t('nav_stats', lang)}` },
-                  { key: 'competition', label: `🏆 ${t('comp_competition', lang)}` },
-                  { key: 'entrainements', label: `🏃 ${t('nav_entrainements', lang)}` },
-                  { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
-                  { key: 'notes', label: '📝 Notes' },
+                  { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
+                  { key: 'stats', label: `${t('nav_stats', lang)}` },
+                  { key: 'competition', label: `${t('comp_competition', lang)}` },
+                  { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
+                  { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
+                  { key: 'notes', label: 'Notes' },
                 ].map(({ key, label }) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
                     <span style={{ fontSize: 13, color: '#ccc' }}>{label}</span>
@@ -8147,7 +8147,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
                             color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red) : colors.text.disabled,
                           }}>
-                          {val === 'aucun' ? `✕ ${t('dir_aucun', lang)}` : val === 'lecture' ? `👁 ${t('dir_lecture', lang)}` : `✏️ ${t('dir_edition', lang)}`}
+                          {val === 'aucun' ? `${t('dir_aucun', lang)}` : val === 'lecture' ? `${t('dir_lecture', lang)}` : `${t('dir_edition', lang)}`}
                         </button>
                       ))}
                     </div>
@@ -8157,7 +8157,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
               <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
                 style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
-                {invitingDirigeant ? 'Envoi...' : `📧 ${t('dir_envoyer_invitation', lang)}`}
+                {invitingDirigeant ? 'Envoi...' : `${t('dir_envoyer_invitation', lang)}`}
               </button>
             </div>
 
@@ -8174,19 +8174,19 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     </p>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.green + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.green : '#f59e0b' }}>
-                    {d.statut === 'accepte' ? `✅ ${t('dir_actif', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
+                    {d.statut === 'accepte' ? `${t('dir_actif', lang)}` : `${t('etat_en_attente', lang)}`}
                   </span>
                 </div>
 
                 {/* Modifier permissions inline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[
-                    { key: 'effectif', label: `👥 ${t('equipe_effectif', lang)}` },
-                    { key: 'stats', label: `📊 ${t('nav_stats', lang)}` },
-                    { key: 'competition', label: `🏆 ${t('comp_competition', lang)}` },
-                    { key: 'entrainements', label: `🏃 ${t('nav_entrainements', lang)}` },
-                    { key: 'prep_physique', label: `🏋️ ${t('nav_prep_physique', lang)}` },
-                    { key: 'notes', label: '📝 Notes' },
+                    { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
+                    { key: 'stats', label: `${t('nav_stats', lang)}` },
+                    { key: 'competition', label: `${t('comp_competition', lang)}` },
+                    { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
+                    { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
+                    { key: 'notes', label: 'Notes' },
                   ].map(({ key, label }) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: colors.background.sunken, borderRadius: 6 }}>
                       <span style={{ fontSize: 11, color: colors.text.muted }}>{label}</span>
@@ -8203,7 +8203,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red)
                                 : colors.border.strong,
                             }}>
-                            {val === 'aucun' ? '✕' : val === 'lecture' ? '👁' : '✏️'}
+                            {val === 'aucun' ? t('dir_aucun', lang) : val === 'lecture' ? t('dir_lecture', lang) : t('dir_edition', lang)}
                           </button>
                         ))}
                       </div>
@@ -8215,11 +8215,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a1a1a' }}>
                     <button onClick={() => renvoyerInvitationDirigeant(d)}
                       style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      🔁 {t('dir_renvoyer', lang)}
+                      {t('dir_renvoyer', lang)}
                     </button>
                     <button onClick={() => supprimerDirigeant(d.id)}
                       style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      ✕ {t('btn_supprimer', lang)}
+                      {t('btn_supprimer', lang)}
                     </button>
                   </div>
                 )}

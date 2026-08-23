@@ -309,9 +309,9 @@ Instructions:
   if (!supported) {
     return (
       <div>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 {t('analyse_titre', lang)}</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('analyse_titre', lang)}</h1>
         <div style={{ ...st.card, maxWidth: '500px', textAlign: 'center', marginTop: '1.5rem' }}>
-          <p style={{ color: '#ef4444', margin: '0 0 8px' }}>⚠️ La dictée vocale n'est pas supportée sur ce navigateur.</p>
+          <p style={{ color: '#ef4444', margin: '0 0 8px' }}>La dictée vocale n'est pas supportée sur ce navigateur.</p>
           <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
         </div>
       </div>
@@ -320,14 +320,14 @@ Instructions:
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>📊 {t('analyse_titre', lang)}</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('analyse_titre', lang)}</h1>
       <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
         {t('av_sous_titre', lang)}
       </p>
 
       {tableMissing && (
         <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#f59e0b', fontSize: '13px' }}>
-          ⚠️ La table <code>rapports_analyse</code> n'existe pas encore en base — la sauvegarde des rapports est indisponible tant qu'elle n'est pas créée.
+          La table <code>rapports_analyse</code> n'existe pas encore en base — la sauvegarde des rapports est indisponible tant qu'elle n'est pas créée.
         </div>
       )}
 
@@ -367,22 +367,20 @@ Instructions:
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               {!isRecording ? (
                 <button onClick={startRecording}
-                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#22c55e', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #22c55e40' }}>
-                  <span style={{ fontSize: '30px' }}>🎙️</span>
-                  <span style={{ fontSize: '11px', marginTop: '4px' }}>{t('analyse_demarrer', lang)}</span>
+                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#22c55e', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #22c55e40' }}>
+                  <span style={{ fontSize: '11px' }}>{t('analyse_demarrer', lang)}</span>
                 </button>
               ) : (
                 <button onClick={stopRecording}
-                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #ef444440' }}>
-                  <span style={{ fontSize: '30px' }}>⏹️</span>
-                  <span style={{ fontSize: '11px', marginTop: '4px' }}>{t('analyse_arreter', lang)}</span>
+                  style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 14px #ef444440' }}>
+                  <span style={{ fontSize: '11px' }}>{t('analyse_arreter', lang)}</span>
                 </button>
               )}
             </div>
 
             {isRecording && (
               <p style={{ textAlign: 'center', color: '#4ade80', fontSize: '13px', marginTop: '12px' }}>
-                🔴 Enregistrement en cours… parle dans ton micro
+                Enregistrement en cours… parle dans ton micro
               </p>
             )}
 
@@ -395,12 +393,12 @@ Instructions:
               </div>
             )}
 
-            {erreurIA && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {erreurIA}</p>}
+            {erreurIA && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>{erreurIA}</p>}
 
             {transcript.trim() && !isRecording && (
               <button onClick={handleGenerateRapport} disabled={loading}
                 style={{ ...st.btnSolid('#60a5fa', '#fff'), width: '100%', marginTop: '16px', opacity: loading ? 0.6 : 1 }}>
-                {loading ? `⏳ ${libelleStatutGroq(loadingStatus)}` : `✨ ${t('analyse_generer', lang)}`}
+                {loading ? `${libelleStatutGroq(loadingStatus)}` : `${t('analyse_generer', lang)}`}
               </button>
             )}
           </div>
@@ -408,7 +406,7 @@ Instructions:
 
         {step === 'rapport' && rapport && (
           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
-            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>📋 Rapport généré</p>
+            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>Rapport généré</p>
 
             {rapport.note != null && (
               <div style={{ background: '#4ade8015', border: '1px solid #4ade8040', borderRadius: '10px', padding: '12px', textAlign: 'center', marginBottom: '16px' }}>
@@ -457,9 +455,9 @@ Instructions:
             )}
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button onClick={() => genererPDF(playerInfo, rapport, lang)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>📄 {t('analyse_exporter_pdf', lang)}</button>
+              <button onClick={() => genererPDF(playerInfo, rapport, lang)} style={{ ...st.btnSolid('#22c55e'), flex: 1 }}>{t('analyse_exporter_pdf', lang)}</button>
               <button onClick={sauvegarderRapport} disabled={savingRapport || tableMissing} style={{ ...st.btn('#60a5fa'), opacity: tableMissing ? 0.4 : 1 }}>
-                {savingRapport ? 'Sauvegarde...' : '💾 Sauvegarder'}
+                {savingRapport ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
             </div>
             <button onClick={reset} style={{ ...st.btn('#666'), width: '100%', marginTop: '10px' }}>Nouvelle analyse</button>
@@ -468,7 +466,7 @@ Instructions:
       </div>
 
       <div>
-        <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📚 {t('analyse_mes_rapports', lang)} {rapports.length > 0 ? `(${rapports.length})` : ''}</p>
+        <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>{t('analyse_mes_rapports', lang)} {rapports.length > 0 ? `(${rapports.length})` : ''}</p>
         {loadingRapports ? (
           <p style={{ color: '#444', fontSize: '13px' }}>{t('btn_chargement', lang)}</p>
         ) : rapports.length === 0 ? (
@@ -480,11 +478,11 @@ Instructions:
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{r.prenom_joueur || 'Sans nom'} {r.poste ? `— ${r.poste}` : ''}</p>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
-                    {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · 🎙️ Vocale
+                    {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · Vocale
                   </p>
                 </div>
                 <button onClick={() => genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {}, lang)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  ⬇️ Re-télécharger PDF
+                  Re-télécharger PDF
                 </button>
               </div>
             ))}
