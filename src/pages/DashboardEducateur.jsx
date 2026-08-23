@@ -29,6 +29,7 @@ import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
+import { notifierJoueur } from '../lib/notifications'
 import { colors, alpha } from '../tokens'
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
@@ -169,6 +170,8 @@ const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoExternal  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
+const IcoCompass   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+const IcoSend      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1283,6 +1286,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingProfil, setSavingProfil] = useState(false)
   const [uploadingDiplome, setUploadingDiplome] = useState(false)
   const [avatarUploadingEdu, setAvatarUploadingEdu] = useState(false)
+
+  // ── Explorer (réseau éducateurs/clubs + messagerie) ──
+  const [explorerOnglet, setExplorerOnglet] = useState('educateurs') // 'educateurs' | 'clubs' | 'messages'
+  const [explorerRecherche, setExplorerRecherche] = useState('')
+  const [explorerRegion, setExplorerRegion] = useState('')
+  const [educateursExplorer, setEducateursExplorer] = useState([])
+  const [clubsExplorer, setClubsExplorer] = useState([])
+  const [recrutementsParClubExplorer, setRecrutementsParClubExplorer] = useState({})
+  const [explorerLoading, setExplorerLoading] = useState(false)
+  const [explorerMessages, setExplorerMessages] = useState([])
+  const [chatOuvert, setChatOuvert] = useState(null) // profil { id, prenom, nom, avatar_url } de la conversation ouverte
+  const [nouveauMessageExplorer, setNouveauMessageExplorer] = useState('')
+  const [envoyingMessageExplorer, setEnvoyingMessageExplorer] = useState(false)
   const [showAddParcours, setShowAddParcours] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
@@ -1324,6 +1340,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return () => clearInterval(id)
   }, [])
   useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
+  useEffect(() => {
+    if (activeSection !== 'explorer') return
+    if (educateursExplorer.length === 0 && clubsExplorer.length === 0) chargerExplorer()
+    chargerMessagesExplorer()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -3868,6 +3890,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     { titre: t('section_reseau', lang), items: [
       { key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> },
       { key: 'dirigeants', label: t('nav_dirigeants', lang), icon: <IcoBuilding /> },
+      { key: 'explorer', label: 'Explorer', icon: <IcoCompass /> },
     ] },
   ]
 
@@ -3896,6 +3919,66 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'joueur_pro').eq('abonnement_actif', true)
     setRecrutJoueurs(data || [])
     setRecrutLoaded(true)
+  }
+
+  // Annuaire éducateurs/clubs — même source que l'onglet "Explorer" du
+  // dashboard joueur (profiles.plan), club_recrutements pour les postes
+  // ouverts affichés sur les cartes club (utile pour "postuler").
+  const chargerExplorer = async () => {
+    setExplorerLoading(true)
+    const [{ data: edu }, { data: clu }, { data: recrut }] = await Promise.all([
+      supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId),
+      supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club'),
+      supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true),
+    ])
+    setEducateursExplorer(edu || [])
+    setClubsExplorer(clu || [])
+    const parClub = {}
+    ;(recrut || []).forEach(r => { (parClub[r.club_id] ||= []).push(r) })
+    setRecrutementsParClubExplorer(parClub)
+    setExplorerLoading(false)
+  }
+
+  // messages est une table générique sender_id/receiver_id (déjà utilisée
+  // côté joueur pour parler à un coach/recruteur) — aucune restriction RLS
+  // par rôle, donc réutilisable telle quelle entre deux éducateurs ou avec
+  // un club, sans nouvelle table ni policy.
+  const chargerMessagesExplorer = async () => {
+    const { data } = await supabase
+      .from('messages')
+      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, avatar_url), receiver:profiles!messages_receiver_id_fkey(prenom, nom, avatar_url)')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: true })
+    setExplorerMessages(data || [])
+  }
+
+  const conversationsExplorer = () => {
+    const map = {}
+    explorerMessages.forEach(msg => {
+      const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id
+      const other = msg.sender_id === userId ? msg.receiver : msg.sender
+      if (!map[otherId]) map[otherId] = { id: otherId, ...other, msgs: [] }
+      map[otherId].msgs.push(msg)
+    })
+    return Object.values(map).sort((a, b) => (b.msgs.at(-1)?.created_at || '').localeCompare(a.msgs.at(-1)?.created_at || ''))
+  }
+
+  const ouvrirChatExplorer = (personne) => { setChatOuvert(personne); setNouveauMessageExplorer('') }
+
+  const envoyerMessageExplorer = async () => {
+    if (!nouveauMessageExplorer.trim() || !chatOuvert) return
+    setEnvoyingMessageExplorer(true)
+    await supabase.from('messages').insert({ sender_id: userId, receiver_id: chatOuvert.id, content: nouveauMessageExplorer.trim(), created_at: new Date().toISOString() })
+    await notifierJoueur({
+      type: 'message',
+      userId: chatOuvert.id,
+      titre: 'Nouveau message',
+      contenu: { auteur: `${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim() || 'Un éducateur', texte: nouveauMessageExplorer.trim() },
+      lien: '/dashboard',
+    })
+    setNouveauMessageExplorer('')
+    await chargerMessagesExplorer()
+    setEnvoyingMessageExplorer(false)
   }
 
   // Matériel confié par le club (materiel_distribution.educateur_id = cet éducateur) —
@@ -8145,6 +8228,161 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
           </div>
         )}
+
+        {activeSection === 'explorer' && (() => {
+          const conversations = conversationsExplorer()
+          const q = explorerRecherche.trim().toLowerCase()
+          const regionQ = explorerRegion.trim().toLowerCase()
+          const listeActive = explorerOnglet === 'clubs' ? clubsExplorer : educateursExplorer
+          const listeFiltree = explorerOnglet === 'messages' ? [] : listeActive.filter(p => {
+            if (regionQ && !(p.region || '').toLowerCase().includes(regionQ)) return false
+            if (!q) return true
+            return `${p.prenom || ''} ${p.nom || ''} ${p.club || ''}`.toLowerCase().includes(q)
+          })
+
+          return (
+            <div style={{ maxWidth: 1100 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoCompass /> Explorer</h2>
+              <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 20 }}>
+                Trouve d'autres éducateurs et des clubs pour organiser un amical, te renseigner sur un tournoi ou postuler — et échange directement par message.
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'educateurs', label: `Éducateurs (${educateursExplorer.length})` },
+                  { id: 'clubs', label: `Clubs (${clubsExplorer.length})` },
+                  { id: 'messages', label: `Messages (${conversations.length})` },
+                ].map(o => (
+                  <button key={o.id} onClick={() => setExplorerOnglet(o.id)}
+                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${explorerOnglet === o.id ? colors.accent.blue : colors.border.default}`, background: explorerOnglet === o.id ? colors.accent.blue + alpha.subtle : 'transparent', color: explorerOnglet === o.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: explorerOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+
+              {explorerOnglet !== 'messages' && (
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <input value={explorerRecherche} onChange={e => setExplorerRecherche(e.target.value)}
+                    placeholder="Rechercher un nom, un club..."
+                    style={{ ...st.input, flex: 1, minWidth: '200px' }} />
+                  <input value={explorerRegion} onChange={e => setExplorerRegion(e.target.value)}
+                    placeholder="Toute région"
+                    style={{ ...st.input, width: '180px' }} />
+                </div>
+              )}
+
+              {explorerOnglet === 'messages' ? (
+                conversations.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune conversation pour l'instant — écris à un éducateur ou un club depuis les onglets ci-dessus.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {conversations.map(c => {
+                      const dernier = c.msgs.at(-1)
+                      return (
+                        <div key={c.id} onClick={() => ouvrirChatExplorer(c)}
+                          style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                          <Avatar person={c} size={40} border={`2px solid ${colors.accent.blue}40`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{c.prenom} {c.nom}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {dernier?.sender_id === userId ? 'Toi : ' : ''}{dernier?.content}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              ) : explorerLoading ? (
+                <p style={{ color: colors.text.disabled, textAlign: 'center' }}>Chargement...</p>
+              ) : listeFiltree.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun résultat.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                  {listeFiltree.map(p => {
+                    const recrutements = explorerOnglet === 'clubs' ? (recrutementsParClubExplorer[p.id] || []) : []
+                    const nomAffiche = explorerOnglet === 'clubs' ? (p.club || `${p.prenom || ''} ${p.nom || ''}`.trim()) : `${p.prenom || ''} ${p.nom || ''}`.trim()
+                    return (
+                      <div key={p.id} onClick={() => ouvrirChatExplorer(p)} style={{ ...st.card, cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                          <Avatar person={{ ...p, nom: nomAffiche }} size={48} border={`2px solid ${colors.accent.blue}30`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
+                              {explorerOnglet === 'clubs' && p.verified && <span title="Profil vérifié" style={{ fontSize: '12px' }}>✅</span>}
+                            </div>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                              {explorerOnglet === 'educateurs' ? [p.niveau_equipe, p.region].filter(Boolean).join(' · ') : p.region}
+                            </p>
+                          </div>
+                        </div>
+                        {(p.description || p.bio) && (
+                          <p style={{ margin: '0 0 8px', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
+                        )}
+                        {recrutements.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                            {recrutements.map((r, i) => (
+                              <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
+                                Recrute · {r.categorie} · {r.poste}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                          <button onClick={e => { e.stopPropagation(); navigate(`/clubs/${p.id}`) }}
+                            style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+                            Voir le profil public
+                          </button>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600 }}><IcoSend /> Message</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {chatOuvert && (
+                <div onClick={() => setChatOuvert(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Avatar person={chatOuvert} size={36} border={`2px solid ${colors.accent.blue}40`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{chatOuvert.club || `${chatOuvert.prenom || ''} ${chatOuvert.nom || ''}`.trim()}</p>
+                      </div>
+                      <button onClick={() => setChatOuvert(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    </div>
+
+                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                      {explorerMessages.filter(m => m.sender_id === chatOuvert.id || m.receiver_id === chatOuvert.id).length === 0 ? (
+                        <p style={{ color: colors.text.disabled, fontSize: '12px', fontStyle: 'italic', textAlign: 'center' }}>Aucun message pour l'instant — dis bonjour !</p>
+                      ) : (
+                        explorerMessages.filter(m => m.sender_id === chatOuvert.id || m.receiver_id === chatOuvert.id).map(m => (
+                          <div key={m.id} style={{ alignSelf: m.sender_id === userId ? 'flex-end' : 'flex-start', maxWidth: '78%' }}>
+                            <div style={{
+                              background: m.sender_id === userId ? colors.accent.blue : colors.background.raised,
+                              color: m.sender_id === userId ? colors.black : colors.text.primary,
+                              borderRadius: '12px', padding: '8px 12px', fontSize: '13px', lineHeight: 1.4,
+                            }}>{m.content}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <input value={nouveauMessageExplorer} onChange={e => setNouveauMessageExplorer(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && envoyerMessageExplorer()}
+                        placeholder="Écrire un message..." style={{ ...st.input, flex: 1 }} />
+                      <button onClick={envoyerMessageExplorer} disabled={envoyingMessageExplorer || !nouveauMessageExplorer.trim()}
+                        style={{ ...st.btnSolid, opacity: (envoyingMessageExplorer || !nouveauMessageExplorer.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <IcoSend />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {activeSection === 'profil' && profilEduEdit && (
           <>
