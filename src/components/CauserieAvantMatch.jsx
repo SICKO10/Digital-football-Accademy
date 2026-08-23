@@ -117,6 +117,12 @@ function FicheCauseriePrint({ children }) {
 // clavier ← → (+ Échap pour quitter), grand texte lisible de loin.
 function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
+  // Juste après l'intro (2e slide) si une composition a été renseignée —
+  // absente si rien n'a encore été assigné, comme les autres slides
+  // conditionnelles de cette présentation.
+  if ((f.titulaires || []).some(Boolean)) {
+    slides.push({ titre: 'COMPOSITION', accent: '#4ade80', type: 'composition' })
+  }
   const ajouterListe = (titre, accent, icone, valeurs) => {
     const items = (valeurs || []).filter(Boolean)
     if (items.length) slides.push({ titre, accent, icone, type: 'liste', items })
@@ -195,6 +201,12 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
                 <span style={{ color: slide.accent }}>›</span>{it}
               </p>
             ))}
+          </div>
+        )}
+
+        {slide.type === 'composition' && (
+          <div style={{ width: '100%', maxWidth: '440px' }}>
+            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} />
           </div>
         )}
 
