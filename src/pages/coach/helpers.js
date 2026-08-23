@@ -1,0 +1,23 @@
+import { colors } from '../../tokens'
+
+// Petits helpers partagés entre plusieurs sections du dashboard coach
+// (repris tels quels de l'ancien DashboardCoach.jsx monolithique).
+export const getStatutColor = (statut) => {
+  if (statut === 'en_attente') return '#f59e0b'
+  if (statut === 'validé') return colors.accent.green
+  if (statut === 'rejeté') return '#f87171'
+  if (statut === 'analyse') return colors.accent.green
+  return colors.text.dim
+}
+
+export const getStatutLabel = (statut) => {
+  if (statut === 'en_attente') return 'En attente'
+  if (statut === 'analyse') return 'Analyse envoyée'
+  if (statut === 'validé') return '✅ Validé'
+  if (statut === 'rejeté') return '❌ Rejeté'
+  return statut
+}
+
+export const getVideoUrl = (demande) => demande.video_url || demande.lien_video || demande.clip_url || null
+export const isVeo = (url) => url && url.includes('veo.co')
+export const isYoutube = (url) => url && (url.includes('youtube.com') || url.includes('youtu.be'))
