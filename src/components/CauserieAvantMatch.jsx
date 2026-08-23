@@ -205,7 +205,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         )}
 
         {slide.type === 'composition' && (
-          <div style={{ width: '100%', maxWidth: '440px' }}>
+          <div style={{ width: '100%', maxWidth: '760px' }}>
             <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} />
           </div>
         )}

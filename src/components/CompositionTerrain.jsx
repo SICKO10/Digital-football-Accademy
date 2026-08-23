@@ -51,10 +51,14 @@ export default function CompositionTerrain({
     curseur += l.n
     return { n: l.n, debut }
   })
-  const lignesAffichees = [...lignesIndexees].reverse() // attaque en haut, gardien en bas — purement visuel
+  // Terrain à l'horizontale : gardien à gauche, attaque à droite, dans
+  // l'ordre naturel du tableau (pas d'inversion visuelle nécessaire ici,
+  // contrairement à l'ancien rendu vertical où l'attaque devait remonter en
+  // haut).
+  const lignesAffichees = lignesIndexees
 
   return (
-    <div style={{ width: '100%', maxWidth: '480px', margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto' }}>
       {modeEdit && (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
           {Object.keys(FORMATIONS).map(f => (
@@ -75,29 +79,29 @@ export default function CompositionTerrain({
       )}
 
       <div style={{
-        position: 'relative', width: '100%', aspectRatio: '0.65',
+        position: 'relative', width: '100%', aspectRatio: '1.55',
         borderRadius: '20px', overflow: 'hidden',
-        background: 'repeating-linear-gradient(180deg, #1a5c1a 0px, #1a5c1a 40px, #1e6b1e 40px, #1e6b1e 80px)',
+        background: 'repeating-linear-gradient(90deg, #1a5c1a 0px, #1a5c1a 40px, #1e6b1e 40px, #1e6b1e 80px)',
         boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
       }}>
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 100 154" preserveAspectRatio="none">
-          <rect x="4" y="4" width="92" height="146" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
-          <line x1="4" y1="77" x2="96" y2="77" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
-          <circle cx="50" cy="77" r="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
-          <circle cx="50" cy="77" r="1" fill="rgba(255,255,255,0.5)" />
-          <rect x="24" y="4" width="52" height="22" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
-          <rect x="36" y="4" width="28" height="10" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
-          <circle cx="50" cy="18" r="0.8" fill="rgba(255,255,255,0.4)" />
-          <rect x="24" y="128" width="52" height="22" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
-          <rect x="36" y="140" width="28" height="10" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
-          <circle cx="50" cy="136" r="0.8" fill="rgba(255,255,255,0.4)" />
-          <rect x="40" y="1.5" width="20" height="3" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" />
-          <rect x="40" y="149.5" width="20" height="3" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" />
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 154 100" preserveAspectRatio="none">
+          <rect x="4" y="4" width="146" height="92" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
+          <line x1="77" y1="4" x2="77" y2="96" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
+          <circle cx="77" cy="50" r="13" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
+          <circle cx="77" cy="50" r="1" fill="rgba(255,255,255,0.5)" />
+          <rect x="4" y="24" width="22" height="52" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
+          <rect x="4" y="36" width="10" height="28" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
+          <circle cx="18" cy="50" r="0.8" fill="rgba(255,255,255,0.4)" />
+          <rect x="128" y="24" width="22" height="52" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
+          <rect x="140" y="36" width="10" height="28" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
+          <circle cx="136" cy="50" r="0.8" fill="rgba(255,255,255,0.4)" />
+          <rect x="1.5" y="40" width="3" height="20" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" />
+          <rect x="149.5" y="40" width="3" height="20" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" />
         </svg>
 
-        <div style={{ position: 'absolute', inset: '3%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '5% 2%' }}>
+        <div style={{ position: 'absolute', inset: '3%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '2% 5%' }}>
           {lignesAffichees.map((ligne, li) => (
-            <div key={li} style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center' }}>
+            <div key={li} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', alignItems: 'center' }}>
               {Array.from({ length: ligne.n }).map((_, i) => {
                 const slotIndex = ligne.debut + i
                 const joueur = titulaires[slotIndex] || null
