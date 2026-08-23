@@ -15,15 +15,17 @@ export const FORMATIONS = {
 
 const MAX_REMPLACANTS = 7
 
-// Tailles en clamp() plutôt que sur window.innerWidth : réagit vraiment au
-// redimensionnement (un read direct de window.innerWidth dans le rendu ne se
-// met à jour qu'au prochain re-render déclenché par autre chose) et suit la
-// largeur réelle du terrain (limité à 480px, cf. plus bas) sans avoir à faire
-// remonter isMobile/isTablet depuis les 3 écrans différents qui utilisent ce
-// composant.
-const TAILLE_TITULAIRE = 'clamp(54px, 9vw, 80px)'
-const TAILLE_REMPLACANT = 'clamp(42px, 6vw, 56px)'
-const TAILLE_LISTE = 'clamp(34px, 5vw, 40px)'
+// Tailles en clamp(), mais en cqw (container query units) et non en vw : vw
+// suit la largeur du VIEWPORT, pas celle du terrain — sur tablette le
+// viewport est large alors que la carte qui contient le terrain est bien
+// plus étroite (sidebar/marges du dashboard), donc les cercles calculés en
+// vw débordaient largement d'une ligne à 5 joueurs (3-5-2, 5-3-2). cqw
+// mesure la largeur du conteneur qui porte containerType:'inline-size'
+// (l'enveloppe juste en dessous, cf. plus bas) — les cercles suivent enfin
+// la taille réellement disponible, plus jamais celle du viewport.
+const TAILLE_TITULAIRE = 'clamp(32px, 7.5cqw, 56px)'
+const TAILLE_REMPLACANT = 'clamp(28px, 5cqw, 42px)'
+const TAILLE_LISTE = 'clamp(34px, 5vw, 40px)' // modale de sélection : overlay indépendant, hors du conteneur cqw du terrain
 
 const AvatarJoueur = ({ joueur, fontSize = '17px' }) =>
   joueur?.avatar_url ? (
@@ -58,7 +60,7 @@ export default function CompositionTerrain({
   const lignesAffichees = lignesIndexees
 
   return (
-    <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: '760px', margin: '0 auto', containerType: 'inline-size' }}>
       {modeEdit && (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
           {Object.keys(FORMATIONS).map(f => (
@@ -106,7 +108,7 @@ export default function CompositionTerrain({
                 const slotIndex = ligne.debut + i
                 const joueur = titulaires[slotIndex] || null
                 return (
-                  <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(5px, 1vw, 8px)', minWidth: '60px' }}>
+                  <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px, 0.6cqw, 4px)', minWidth: '44px' }}>
                     <div
                       onClick={() => modeEdit && onAssignerTitulaire(slotIndex)}
                       style={{
@@ -117,14 +119,14 @@ export default function CompositionTerrain({
                         cursor: modeEdit ? 'pointer' : 'default',
                         boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
                       }}>
-                      <AvatarJoueur joueur={joueur} fontSize="clamp(16px, 2.6vw, 24px)" />
+                      <AvatarJoueur joueur={joueur} fontSize="clamp(11px, 1.8cqw, 18px)" />
                       {joueur?.numero != null && (
                         <div style={{
                           position: 'absolute', top: '-4px', right: '-4px',
                           background: '#4ade80', color: '#000', borderRadius: '50%',
-                          width: 'clamp(20px, 3vw, 26px)', height: 'clamp(20px, 3vw, 26px)',
+                          width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(10px, 1.6vw, 13px)', fontWeight: 900,
+                          fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900,
                           border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
                         }}>
                           {joueur.numero}
@@ -132,15 +134,15 @@ export default function CompositionTerrain({
                       )}
                       {modeEdit && joueur && (
                         <button onClick={e => { e.stopPropagation(); onRetirerTitulaire(slotIndex) }}
-                          style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '10px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                          style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '9px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
                           ✕
                         </button>
                       )}
                     </div>
                     <div style={{
-                      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(9px, 1.6vw, 12px)', fontWeight: 800,
-                      padding: '4px 10px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.8px',
-                      whiteSpace: 'nowrap', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis',
+                      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(7px, 1.1cqw, 10px)', fontWeight: 800,
+                      padding: '3px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.6px',
+                      whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                       {joueur ? joueur.nom?.toUpperCase() : '—'}
                     </div>
@@ -160,9 +162,9 @@ export default function CompositionTerrain({
           {remplacants.map((j, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
               <div style={{ width: TAILLE_REMPLACANT, height: TAILLE_REMPLACANT, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AvatarJoueur joueur={j} fontSize="clamp(13px, 2vw, 17px)" />
+                <AvatarJoueur joueur={j} fontSize="clamp(10px, 1.5cqw, 15px)" />
                 {j.numero != null && (
-                  <div style={{ position: 'absolute', top: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: 'clamp(16px, 2.4vw, 20px)', height: 'clamp(16px, 2.4vw, 20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(8px, 1.3vw, 10px)', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
+                  <div style={{ position: 'absolute', top: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: 'clamp(13px, 2cqw, 17px)', height: 'clamp(13px, 2cqw, 17px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(7px, 1cqw, 9px)', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
                 )}
                 {modeEdit && (
                   <button onClick={() => onRetirerRemplacant(i)}
