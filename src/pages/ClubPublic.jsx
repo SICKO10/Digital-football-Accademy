@@ -5,6 +5,7 @@ import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import { colors, alpha } from '../tokens'
 import { BadgeNote } from '../components/Notation'
+import { notifierJoueur } from '../lib/notifications'
 
 // ── Composant étoiles ─────────────────────────────────────────────────────────
 function Etoiles({ note, onChange, size = 28, readonly = false }) {
@@ -60,6 +61,17 @@ export default function ClubPublic() {
   const [commentaireVal, setCommentaireVal] = useState('')
   const [noteSending, setNoteSending] = useState(false)
   const [noteDone, setNoteDone] = useState(false)
+
+  // Contacter — messages est une table générique sender_id/receiver_id
+  // (déjà utilisée pour joueur↔coach et dans l'Explorer éducateur), sans
+  // restriction RLS par rôle : réutilisable telle quelle ici, pour n'importe
+  // quel visiteur connecté, sans dépendre du dashboard (joueur/éducateur/
+  // club) dans lequel il se trouve par ailleurs.
+  const [chatOuvert, setChatOuvert] = useState(false)
+  const [messagesChat, setMessagesChat] = useState([])
+  const [loadingChat, setLoadingChat] = useState(false)
+  const [nouveauMessageChat, setNouveauMessageChat] = useState('')
+  const [envoyingMessageChat, setEnvoyingMessageChat] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -149,6 +161,33 @@ export default function ClubPublic() {
     setNoteDone(true)
   }
 
+  const ouvrirChat = async () => {
+    setChatOuvert(true)
+    setLoadingChat(true)
+    const { data } = await supabase.from('messages').select('*')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${userId})`)
+      .order('created_at', { ascending: true })
+    setMessagesChat(data || [])
+    setLoadingChat(false)
+  }
+
+  const envoyerMessageChat = async () => {
+    if (!nouveauMessageChat.trim()) return
+    setEnvoyingMessageChat(true)
+    await supabase.from('messages').insert({ sender_id: userId, receiver_id: id, content: nouveauMessageChat.trim(), created_at: new Date().toISOString() })
+    await notifierJoueur({
+      type: 'message',
+      userId: id,
+      titre: 'Nouveau message',
+      contenu: { texte: nouveauMessageChat.trim() },
+      lien: '/dashboard',
+    })
+    const contenuEnvoye = nouveauMessageChat.trim()
+    setNouveauMessageChat('')
+    setMessagesChat(prev => [...prev, { id: `local-${Date.now()}`, sender_id: userId, receiver_id: id, content: contenuEnvoye, created_at: new Date().toISOString() }])
+    setEnvoyingMessageChat(false)
+  }
+
   const estClub = educateur?.plan === 'club'
 
   const postuler = async (recrutementId) => {
@@ -177,8 +216,6 @@ export default function ClubPublic() {
 
   const st = {
     page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
-    navbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', borderBottom: '1px solid #141414', background: colors.background.base, position: 'sticky', top: 0, zIndex: 100 },
-    content: { maxWidth: '760px', margin: '0 auto', padding: '2rem 1.5rem' },
     tab: (active) => ({ padding: '8px 18px', background: active ? colors.accent.green : 'transparent', color: active ? colors.black : colors.text.faint, border: `1px solid ${active ? colors.accent.green : colors.border.default}`, borderRadius: '20px', fontSize: '13px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
     card: { background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', marginBottom: '12px' },
     sectionTitle: { fontSize: '11px', fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 12px' },
@@ -189,51 +226,70 @@ export default function ClubPublic() {
 
   return (
     <div style={st.page}>
-      <nav style={st.navbar}>
-        <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '1px' }}>⬡ DIGITAL FOOTBALL</span>
-        <button onClick={() => navigate(-1)} style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('clubpub_retour', lang)}</button>
-      </nav>
+      <button onClick={() => navigate(-1)}
+        style={{ position: 'fixed', top: 16, left: 16, zIndex: 200, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid #333', color: '#fff', padding: '8px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+        {t('clubpub_retour', lang)}
+      </button>
 
-      <div style={st.content}>
-        {/* ── Header club ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-          {educateur.avatar_url
-            ? <img src={educateur.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade8040' }} />
-            : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#0d1a0d', border: '2px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', fontWeight: 800, color: colors.accent.green }}>
-                {(educateur.club || educateur.prenom || '?')[0].toUpperCase()}
-              </div>
-          }
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{educateur.club || `${educateur.prenom} ${educateur.nom}`}</h1>
-              {educateur.verified && <span title="Profil vérifié" style={{ color: colors.accent.green, fontSize: '14px' }}>✅</span>}
-              <BadgeNote cibleId={id} />
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>
-              {[educateur.niveau_equipe, educateur.region].filter(Boolean).join(' · ')}
-            </p>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>
-              {t('clubpub_educateur_label', lang)} <span style={{ color: colors.text.secondary }}>{educateur.prenom} {educateur.nom}</span>
-            </p>
-            {educateur.disponibilite && (
-              <span style={{
-                display: 'inline-block', marginTop: '8px',
-                background: educateur.disponibilite === 'disponible' ? colors.accent.green + alpha.subtle : 'transparent',
-                color: educateur.disponibilite === 'disponible' ? colors.accent.green : colors.text.faint,
-                border: `1px solid ${educateur.disponibilite === 'disponible' ? '#4ade8040' : colors.border.default}`,
-                padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
-              }}>
-                {educateur.disponibilite === 'disponible' ? '🟢 Disponible' : educateur.disponibilite === 'open_double' ? '🟡 Open à double mission' : '⚫ En poste'}
-              </span>
-            )}
+      {/* Cover banner */}
+      <div style={{ height: 180, background: 'linear-gradient(135deg, #061a0e 0%, #0d2010 40%, #030d07 100%)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 80% at 30% 50%, #4ade8012 0%, transparent 70%)' }} />
+        {educateur.avatar_url && <img src={educateur.avatar_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.08 }} />}
+      </div>
+
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -44, marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          {/* Avatar — plus grand, chevauchant le banner */}
+          <div style={{ position: 'relative' }}>
+            {educateur.avatar_url
+              ? <img src={educateur.avatar_url} style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '3px solid #0a0a0a', boxShadow: '0 0 0 2px #4ade8040' }} />
+              : <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#0d1a0d', border: '3px solid #0a0a0a', boxShadow: '0 0 0 2px #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: colors.accent.green }}>
+                  {(educateur.club || educateur.prenom || '?')[0].toUpperCase()}
+                </div>
+            }
           </div>
-          {estValide && (
-            <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
-              {t('clubpub_participation_validee', lang)}
+          {userId !== id && (
+            <button onClick={ouvrirChat}
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Contacter
+            </button>
+          )}
+        </div>
+        {/* Infos identité */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>{educateur.club || `${educateur.prenom} ${educateur.nom}`}</h1>
+            {educateur.verified && <span style={{ color: colors.accent.green }}>✅</span>}
+            <BadgeNote cibleId={id} />
+          </div>
+          <p style={{ margin: '2px 0', fontSize: 13, color: colors.text.faint }}>{[educateur.niveau_equipe, educateur.region].filter(Boolean).join(' · ')}</p>
+          <p style={{ margin: '2px 0', fontSize: 12, color: colors.text.faint }}>{t('clubpub_educateur_label', lang)} <span style={{ color: colors.text.secondary }}>{educateur.prenom} {educateur.nom}</span></p>
+          {educateur.disponibilite && (
+            <span style={{ display: 'inline-block', marginTop: 8, background: educateur.disponibilite === 'disponible' ? colors.accent.green + alpha.subtle : 'transparent', color: educateur.disponibilite === 'disponible' ? colors.accent.green : colors.text.faint, border: `1px solid ${educateur.disponibilite === 'disponible' ? '#4ade8040' : colors.border.default}`, padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              {educateur.disponibilite === 'disponible' ? '🟢 Disponible' : educateur.disponibilite === 'open_double' ? '🟡 Open à double mission' : '⚫ En poste'}
             </span>
           )}
         </div>
+        {/* Barre de stats rapides */}
+        <div style={{ display: 'flex', gap: 24, marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
+          {(estClub ? [
+            { val: categoriesClub.length, label: 'Équipes' },
+            { val: recrutements.length, label: 'Recrutements' },
+            { val: tousAvis.length, label: 'Avis' },
+          ] : [
+            { val: joueurs.length, label: 'Joueurs' },
+            { val: matchs.length, label: 'Matchs' },
+            { val: tousAvis.length, label: 'Avis' },
+          ]).map(s => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: 20, color: colors.accent.green }}>{s.val}</p>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: colors.text.faint }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 1.5rem 3rem' }}>
         {/* ── Onglets ── */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           {(estClub ? [
@@ -662,6 +718,46 @@ export default function ClubPublic() {
           </div>
         )}
       </div>
+
+      {chatOuvert && (
+        <div onClick={() => setChatOuvert(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{educateur.club || `${educateur.prenom} ${educateur.nom}`}</p>
+              <button onClick={() => setChatOuvert(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+              {loadingChat ? (
+                <p style={{ color: colors.text.disabled, fontSize: '12px', textAlign: 'center' }}>Chargement...</p>
+              ) : messagesChat.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '12px', fontStyle: 'italic', textAlign: 'center' }}>Aucun message pour l'instant — dis bonjour !</p>
+              ) : (
+                messagesChat.map(m => (
+                  <div key={m.id} style={{ alignSelf: m.sender_id === userId ? 'flex-end' : 'flex-start', maxWidth: '78%' }}>
+                    <div style={{
+                      background: m.sender_id === userId ? colors.accent.green : colors.background.raised,
+                      color: m.sender_id === userId ? colors.black : colors.text.primary,
+                      borderRadius: '12px', padding: '8px 12px', fontSize: '13px', lineHeight: 1.4,
+                    }}>{m.content}</div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <input value={nouveauMessageChat} onChange={e => setNouveauMessageChat(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && envoyerMessageChat()}
+                placeholder="Écrire un message..."
+                style={{ flex: 1, background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+              <button onClick={envoyerMessageChat} disabled={envoyingMessageChat || !nouveauMessageChat.trim()}
+                style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (envoyingMessageChat || !nouveauMessageChat.trim()) ? 0.5 : 1 }}>
+                Envoyer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
