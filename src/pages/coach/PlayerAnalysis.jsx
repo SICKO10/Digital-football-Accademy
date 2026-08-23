@@ -2,17 +2,33 @@ import { useMemo, useState } from 'react'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
+import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel, getVideoUrl, isVeo, isYoutube } from './helpers'
 
 export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrls, rapportPdfFiles, setRapportPdfFiles, sending, envoyerAnalyse, prendreEnCharge, setNotationCible }) {
   const { c, rgba } = useCoachTheme()
   const [joueursOuverts, setJoueursOuverts] = useState({})
+  const [filtreStatut, setFiltreStatut] = useState('toutes') // attente | completees | toutes
+  const [recherche, setRecherche] = useState('')
   const toggleJoueur = (id) => setJoueursOuverts(prev => ({ ...prev, [id]: !prev[id] }))
 
   const enAttente = demandes.filter(d => d.statut === 'en_attente')
 
+  const demandesFiltrees = useMemo(() => {
+    const q = recherche.trim().toLowerCase()
+    return demandes.filter(d => {
+      if (filtreStatut === 'attente' && d.statut !== 'en_attente') return false
+      if (filtreStatut === 'completees' && d.statut !== 'analyse') return false
+      if (q) {
+        const nom = `${d.profiles?.prenom || ''} ${d.profiles?.nom || ''}`.toLowerCase()
+        if (!nom.includes(q)) return false
+      }
+      return true
+    })
+  }, [demandes, filtreStatut, recherche])
+
   const joueursAvecDemandes = useMemo(() => {
-    const demandesParJoueur = demandes.reduce((acc, d) => {
+    const demandesParJoueur = demandesFiltrees.reduce((acc, d) => {
       const id = d.profiles?.id || 'inconnu'
       if (!acc[id]) acc[id] = { profil: d.profiles, demandes: [] }
       acc[id].demandes.push(d)
@@ -23,7 +39,7 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
       const bEnAttente = b.demandes.filter(d => d.statut === 'en_attente').length
       return bEnAttente - aEnAttente
     })
-  }, [demandes])
+  }, [demandesFiltrees])
 
   if (demandes.length === 0) {
     return (
@@ -38,6 +54,17 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
 
   return (
     <>
+      <FilterBar
+        toggles={[
+          { key: 'attente', label: 'En attente', active: filtreStatut === 'attente', onClick: () => setFiltreStatut('attente') },
+          { key: 'completees', label: 'Complétées', active: filtreStatut === 'completees', onClick: () => setFiltreStatut('completees') },
+          { key: 'toutes', label: 'Toutes', active: filtreStatut === 'toutes', onClick: () => setFiltreStatut('toutes') },
+        ]}
+        search={recherche}
+        onSearchChange={setRecherche}
+        searchPlaceholder="Rechercher un joueur..."
+      />
+
       {enAttente.length > 0 && (
         <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '20px' }}>⏳</span>
@@ -45,6 +72,10 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
             {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} en attente d'analyse
           </p>
         </div>
+      )}
+
+      {joueursAvecDemandes.length === 0 && (
+        <Card><p style={{ color: c.textMuted, textAlign: 'center', margin: 0, padding: '1rem 0' }}>Aucune demande ne correspond à ces filtres</p></Card>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

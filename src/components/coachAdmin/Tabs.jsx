@@ -16,6 +16,7 @@ export default function Tabs({ tabs, active, onChange }) {
               color: isActive ? c.text : c.textMuted,
               boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
               fontFamily: 'Inter, sans-serif',
+              transition: 'background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease',
             }}>
             {t.label}
           </button>

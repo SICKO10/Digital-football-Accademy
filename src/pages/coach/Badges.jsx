@@ -1,10 +1,27 @@
+import { useMemo, useState } from 'react'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel } from './helpers'
 
 export default function Badges({ certifs, certifLoading, commentaires, setCommentaires, validating, validerCertification, rejeterCertification }) {
   const { c, rgba } = useCoachTheme()
+  const [filtreStatut, setFiltreStatut] = useState('toutes') // attente | traitees | toutes
+  const [recherche, setRecherche] = useState('')
   const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
+
+  const certifsFiltres = useMemo(() => {
+    const q = recherche.trim().toLowerCase()
+    return certifs.filter(cf => {
+      if (filtreStatut === 'attente' && cf.statut !== 'en_attente') return false
+      if (filtreStatut === 'traitees' && cf.statut === 'en_attente') return false
+      if (q) {
+        const nom = `${cf.profiles?.prenom || ''} ${cf.profiles?.nom || ''}`.toLowerCase()
+        if (!nom.includes(q)) return false
+      }
+      return true
+    })
+  }, [certifs, filtreStatut, recherche])
 
   if (certifLoading) return <p style={{ color: c.textMuted, textAlign: 'center', padding: '2rem' }}>Chargement...</p>
 
@@ -21,6 +38,17 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
 
   return (
     <>
+      <FilterBar
+        toggles={[
+          { key: 'attente', label: 'En attente', active: filtreStatut === 'attente', onClick: () => setFiltreStatut('attente') },
+          { key: 'traitees', label: 'Traitées', active: filtreStatut === 'traitees', onClick: () => setFiltreStatut('traitees') },
+          { key: 'toutes', label: 'Toutes', active: filtreStatut === 'toutes', onClick: () => setFiltreStatut('toutes') },
+        ]}
+        search={recherche}
+        onSearchChange={setRecherche}
+        searchPlaceholder="Rechercher un éducateur..."
+      />
+
       {certifsEnAttente.length > 0 && (
         <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '20px' }}>⭐</span>
@@ -30,8 +58,12 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
         </div>
       )}
 
+      {certifsFiltres.length === 0 && (
+        <Card><p style={{ color: c.textMuted, textAlign: 'center', margin: 0, padding: '1rem 0' }}>Aucune certification ne correspond à ces filtres</p></Card>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {certifs.map(certif => {
+        {certifsFiltres.map(certif => {
           const isProcessing = validating[certif.id]
           const isPending = certif.statut === 'en_attente'
           const statutColor = getStatutColor(c, certif.statut)

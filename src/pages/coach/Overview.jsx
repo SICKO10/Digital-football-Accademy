@@ -1,18 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
+import { TYPE_FAMILIES } from './constants'
 import StatCard from '../../components/coachAdmin/StatCard'
 import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
-
-// Regroupement des valeurs canoniques de profiles.plan (cf. src/pages/Register.jsx)
-// en 4 familles lisibles pour un admin, sans inventer de sous-catégories.
-const FAMILLES = [
-  { label: 'Joueurs', plans: ['joueur_starter', 'joueur_pro'] },
-  { label: 'Éducateurs', plans: ['educateur'] },
-  { label: 'Clubs', plans: ['club'] },
-  { label: 'Recruteurs', plans: ['scout'] },
-]
 
 // 6 derniers mois, format court ("janv.", "févr.") pour l'axe du graphique.
 function derniersMois(n) {
@@ -26,7 +18,7 @@ function derniersMois(n) {
   return mois
 }
 
-export default function Overview({ isAdminClubs, goTo, pending }) {
+export default function Overview({ isAdminClubs, goTo, goToUsers, pending }) {
   const { c, fonts } = useCoachTheme()
   const [profils, setProfils] = useState(null)
 
@@ -38,10 +30,7 @@ export default function Overview({ isAdminClubs, goTo, pending }) {
     })
   }, [isAdminClubs])
 
-  const comptesParPlan = useMemo(() => {
-    if (!profils) return null
-    return profils.reduce((acc, p) => { acc[p.plan] = (acc[p.plan] || 0) + 1; return acc }, {})
-  }, [profils])
+  const debutMois = useMemo(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d }, [])
 
   // Inscriptions par mois — donnée réelle (profiles.created_at), contrairement
   // au CA qui n'a pas d'historique persisté (cf. page Revenus).
@@ -70,9 +59,21 @@ export default function Overview({ isAdminClubs, goTo, pending }) {
     <>
       {isAdminClubs && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-          {FAMILLES.map(f => {
-            const total = comptesParPlan ? f.plans.reduce((sum, p) => sum + (comptesParPlan[p] || 0), 0) : '…'
-            return <StatCard key={f.label} label={f.label} value={total} accent={c.accent} onClick={() => goTo('users')} />
+          {TYPE_FAMILIES.map(f => {
+            const membres = profils ? profils.filter(p => f.plans.includes(p.plan)) : null
+            const total = membres ? membres.length : '…'
+            const nouveauxCeMois = membres ? membres.filter(p => p.created_at && new Date(p.created_at) >= debutMois).length : 0
+            return (
+              <StatCard
+                key={f.key}
+                label={f.label}
+                value={total}
+                accent={c[f.colorKey]}
+                sub={membres ? (nouveauxCeMois > 0 ? `↑ +${nouveauxCeMois} ce mois` : 'Aucune inscription ce mois') : undefined}
+                subColor={membres && nouveauxCeMois > 0 ? c.success : undefined}
+                onClick={() => goToUsers(f.key)}
+              />
+            )
           })}
         </div>
       )}
@@ -98,7 +99,7 @@ export default function Overview({ isAdminClubs, goTo, pending }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {lignesAttente.map(l => (
               <div key={l.id} onClick={() => goTo(l.id)}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: c.surface2, borderRadius: '7px', cursor: 'pointer' }}>
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: c.surface2, borderRadius: '7px', cursor: 'pointer', transition: 'background 0.15s ease' }}>
                 <span style={{ fontSize: '13px', color: c.text }}>{l.icon} {l.label}</span>
                 {l.count > 0 ? (
                   <Pill variant="pending">{l.count} en attente</Pill>
@@ -123,7 +124,7 @@ function SignupsChart({ data, color, textColor, fontFamily }) {
         {data.map(d => (
           <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
             <span style={{ fontFamily, fontSize: '10px', color: textColor, marginBottom: '3px' }}>{d.count || ''}</span>
-            <div style={{ width: `${Math.max(w - 6, 10)}%`, minWidth: '10px', height: `${Math.max((d.count / max) * 100, 3)}%`, background: color, borderRadius: '3px 3px 0 0' }} />
+            <div style={{ width: `${Math.max(w - 6, 10)}%`, minWidth: '10px', height: `${Math.max((d.count / max) * 100, 3)}%`, background: color, borderRadius: '3px 3px 0 0', transition: 'height 0.2s ease' }} />
           </div>
         ))}
       </div>

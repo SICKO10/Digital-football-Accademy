@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
+import { TYPE_LABEL } from './constants'
 import StatCard from '../../components/coachAdmin/StatCard'
 import Tabs from '../../components/coachAdmin/Tabs'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
 import Card from '../../components/coachAdmin/Card'
-
-const TYPE_LABEL = {
-  joueur_starter: 'Joueur Starter', joueur_pro: 'Joueur Pro', educateur: 'Éducateur',
-  club: 'Club', scout: 'Recruteur', dirigeant: 'Dirigeant',
-}
 
 export default function Subscriptions() {
   const { c } = useCoachTheme()

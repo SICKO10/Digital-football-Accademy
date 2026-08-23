@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
+import { TYPE_FAMILIES, TYPE_LABEL } from './constants'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
 import Pill from '../../components/coachAdmin/Pill'
 import Card from '../../components/coachAdmin/Card'
+import StatCard from '../../components/coachAdmin/StatCard'
 
-const TYPE_LABEL = {
-  joueur_starter: 'Joueur Starter',
-  joueur_pro: 'Joueur Pro',
-  educateur: 'Éducateur',
-  club: 'Club',
-  scout: 'Recruteur',
-  dirigeant: 'Dirigeant',
-}
-
-export default function Users() {
+export default function Users({ initialType = 'tous' }) {
   const { c, fonts } = useCoachTheme()
   const [profils, setProfils] = useState(null)
   const [statutFiltre, setStatutFiltre] = useState('tous') // tous | actif | inactif
-  const [typeFiltre, setTypeFiltre] = useState('tous')
+  const [typeFiltre, setTypeFiltre] = useState(initialType) // 'tous' | clé de TYPE_FAMILIES
   const [recherche, setRecherche] = useState('')
 
   useEffect(() => {
@@ -34,11 +27,12 @@ export default function Users() {
 
   const filtres = useMemo(() => {
     if (!profils) return []
+    const famille = TYPE_FAMILIES.find(f => f.key === typeFiltre)
     const q = recherche.trim().toLowerCase()
     return profils.filter(p => {
       if (statutFiltre === 'actif' && !p.abonnement_actif) return false
       if (statutFiltre === 'inactif' && p.abonnement_actif) return false
-      if (typeFiltre !== 'tous' && p.plan !== typeFiltre) return false
+      if (famille && !famille.plans.includes(p.plan)) return false
       if (q) {
         const nomComplet = `${p.prenom || ''} ${p.nom || ''} ${p.email || ''}`.toLowerCase()
         if (!nomComplet.includes(q)) return false
@@ -59,6 +53,21 @@ export default function Users() {
 
   return (
     <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+        {TYPE_FAMILIES.map(f => {
+          const membres = profils.filter(p => f.plans.includes(p.plan))
+          const actifs = membres.filter(p => p.abonnement_actif).length
+          return (
+            <div key={f.key} onClick={() => setTypeFiltre(f.key)} style={{ cursor: 'pointer' }}>
+              <StatCard label={f.label} value={membres.length} accent={c[f.colorKey]} active={typeFiltre === f.key} />
+              <div style={{ marginTop: '6px', textAlign: 'center' }}>
+                <Pill variant="active">{actifs} actifs</Pill>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
       <Card style={{ marginBottom: '14px' }}>
         <FilterBar
           toggles={[
@@ -73,7 +82,7 @@ export default function Users() {
         <select value={typeFiltre} onChange={e => setTypeFiltre(e.target.value)}
           style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text, borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontFamily: fonts.body }}>
           <option value="tous">Tous types</option>
-          {Object.entries(TYPE_LABEL).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+          {TYPE_FAMILIES.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
         </select>
       </Card>
 

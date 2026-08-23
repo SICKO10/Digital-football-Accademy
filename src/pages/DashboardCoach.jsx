@@ -11,6 +11,7 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
+import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
 import Subscriptions from './coach/Subscriptions'
@@ -28,6 +29,7 @@ function DashboardCoachInner() {
   const navigate = useNavigate()
   const { c, fonts, mode, toggle, rgba } = useCoachTheme()
   const [activeSection, setActiveSection] = useState('overview')
+  const [usersInitialType, setUsersInitialType] = useState('tous')
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [loomUrls, setLoomUrls] = useState({})
@@ -69,6 +71,15 @@ function DashboardCoachInner() {
   const [reponseDrafts, setReponseDrafts] = useState({})
   const [savingTicket, setSavingTicket] = useState(null)
   const [ticketsError, setTicketsError] = useState(null)
+
+  // Toasts de confirmation discrets après une action réussie (remplace les
+  // alert() bloquants pour les succès — les erreurs restent en alert()).
+  const [toasts, setToasts] = useState([])
+  const pushToast = (message, variant = 'success') => {
+    const id = Date.now() + Math.random()
+    setToasts(prev => [...prev, { id, message, variant }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 2000)
+  }
 
   useEffect(() => {
     const handle = () => setIsMobile(window.innerWidth < 768)
@@ -117,6 +128,8 @@ function DashboardCoachInner() {
     if (error) {
       alert('Erreur : ' + error.message)
       if (avant) setTickets(prev => prev.map(t => t.id === id ? avant : t))
+    } else {
+      pushToast('✓ Ticket marqué comme résolu')
     }
   }
 
@@ -129,6 +142,7 @@ function DashboardCoachInner() {
     if (error) { alert('Erreur : ' + error.message); return }
     setTickets(prev => prev.map(t => t.id === id ? { ...t, reponse, coach_id: coachId, statut: 'resolu' } : t))
     setReponseDrafts(prev => ({ ...prev, [id]: '' }))
+    pushToast('✉️ Réponse envoyée')
   }
 
   const getDemandesClub = async () => {
@@ -151,6 +165,8 @@ function DashboardCoachInner() {
     if (error) {
       alert('Erreur : ' + error.message)
       if (avant) setDemandesClub(prev => [avant, ...prev])
+    } else {
+      pushToast('✓ Demande marquée comme traitée')
     }
   }
 
@@ -175,6 +191,8 @@ function DashboardCoachInner() {
     if (error) {
       alert('Erreur : ' + error.message)
       if (avant) setClubsEnAttente(prev => [avant, ...prev])
+    } else {
+      pushToast('✓ Club activé')
     }
   }
 
@@ -213,10 +231,12 @@ function DashboardCoachInner() {
   }
 
   const chargerSeancesTransferees = async () => {
+    // Fetch aussi les séances déjà analysées (statut='analyse') pour permettre
+    // le filtre "Complétées" côté page — pas seulement les séances en attente.
     const { data } = await supabase
       .from('seances_uploadees')
       .select('*, educateur:educateur_id(prenom, nom), club:club_id(club, prenom, nom), evaluation:evaluations_seance(*), coach:pris_en_charge_par(prenom, nom)')
-      .eq('statut', 'transfere_coach')
+      .in('statut', ['transfere_coach', 'analyse'])
       .order('created_at', { ascending: false })
     setSeancesTransferees(data || [])
   }
@@ -264,6 +284,8 @@ function DashboardCoachInner() {
     ])
     if (error) {
       alert("Erreur lors de l'enregistrement de l'évaluation : " + error.message + '\n\nMerci de recommencer l\'évaluation.')
+    } else {
+      pushToast('📋 Évaluation enregistrée')
     }
     await chargerSeancesTransferees()
   }
@@ -298,6 +320,8 @@ function DashboardCoachInner() {
     if (error) {
       alert('Erreur : ' + error.message)
       setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
+    } else {
+      pushToast('⭐ Badge validé')
     }
   }
 
@@ -324,6 +348,8 @@ function DashboardCoachInner() {
     if (error) {
       alert('Erreur : ' + error.message)
       setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
+    } else {
+      pushToast('❌ Certification rejetée')
     }
   }
 
@@ -366,7 +392,7 @@ function DashboardCoachInner() {
     setSending(prev => ({ ...prev, [demandeId]: false }))
     setLoomUrls(prev => ({ ...prev, [demandeId]: '' }))
     setRapportPdfFiles(prev => ({ ...prev, [demandeId]: null }))
-    alert(`✅ Analyse envoyée à ${joueurPrenom} !`)
+    pushToast(`✅ Analyse envoyée à ${joueurPrenom} !`)
 
     await Promise.all([
       coachId && joueurId
@@ -394,8 +420,18 @@ function DashboardCoachInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Rafraîchissement périodique des tickets support quand la page est
+  // ouverte — pas de WebSocket, juste un polling léger toutes les 5s pour
+  // voir arriver les nouveaux tickets sans recharger la page.
+  useEffect(() => {
+    if (activeSection !== 'support') return
+    const id = setInterval(() => { getTickets() }, 5000)
+    return () => clearInterval(id)
+  }, [activeSection])
+
   const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
   const enAttente = demandes.filter(d => d.statut === 'en_attente')
+  const seancesEnAttente = seancesTransferees.filter(s => s.statut === 'transfere_coach')
 
   if (loading && certifLoading) return (
     <div style={{ minHeight: '100vh', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -415,7 +451,7 @@ function DashboardCoachInner() {
     ] : []),
     { id: 'analyses', label: 'Analyse Joueur', icon: '📋', badge: enAttente.length },
     { id: 'certifications', label: 'Badges', icon: '⭐', badge: certifsEnAttente.length },
-    { id: 'seances_club', label: 'Séances Club', icon: '🎥', badge: seancesTransferees.length },
+    { id: 'seances_club', label: 'Séances Club', icon: '🎥', badge: seancesEnAttente.length },
     ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', icon: '📨', badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
     { id: 'support', label: 'Support', icon: '💬', badge: tickets.filter(t => t.statut === 'ouvert').length },
     ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', icon: '💠', badge: clubsEnAttente.length }] : []),
@@ -459,7 +495,7 @@ function DashboardCoachInner() {
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={toggle}
-            style={{ background: c.surface2, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', color: c.textMuted, fontSize: 12, fontWeight: 500, fontFamily: fonts.body }}>
+            style={{ background: c.surface2, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', color: c.textMuted, fontSize: 12, fontWeight: 500, fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
             {mode === 'dark' ? '◐ Clair' : '◑ Sombre'}
           </button>
           {isAdminClubs && (
@@ -468,7 +504,7 @@ function DashboardCoachInner() {
             </span>
           )}
           <button onClick={() => { signOutSafe(); navigate('/') }}
-            style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: fonts.body }}>
+            style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
             Déconnexion
           </button>
         </div>
@@ -530,7 +566,7 @@ function DashboardCoachInner() {
                   border: 'none', borderLeft: `2px solid ${actif ? SIDEBAR.accent : 'transparent'}`,
                   color: actif ? '#fff' : SIDEBAR.text, cursor: 'pointer',
                   fontFamily: fonts.body, fontSize: 13, fontWeight: 500,
-                  textAlign: 'left', transition: 'color 0.12s, background 0.12s',
+                  textAlign: 'left', transition: 'color 0.15s ease, background 0.15s ease',
                 }}>
                 <span style={{ fontSize: 15, opacity: actif ? 1 : 0.65 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
@@ -561,17 +597,18 @@ function DashboardCoachInner() {
             <Overview
               isAdminClubs={isAdminClubs}
               goTo={setActiveSection}
+              goToUsers={(familyKey) => { setUsersInitialType(familyKey); setActiveSection('users') }}
               pending={{
                 analyses: enAttente.length,
                 certifications: certifsEnAttente.length,
-                seancesClub: seancesTransferees.length,
+                seancesClub: seancesEnAttente.length,
                 demandesClub: demandesClub.filter(d => d.statut === 'nouveau').length,
                 support: tickets.filter(t => t.statut === 'ouvert').length,
               }}
             />
           )}
 
-          {activeSection === 'users' && isAdminClubs && <Users />}
+          {activeSection === 'users' && isAdminClubs && <Users initialType={usersInitialType} />}
           {activeSection === 'subscriptions' && isAdminClubs && <Subscriptions />}
           {activeSection === 'revenue' && isAdminClubs && <Revenue />}
           {activeSection === 'referrals' && isAdminClubs && <Referrals />}
@@ -729,6 +766,8 @@ function DashboardCoachInner() {
           evaluateurType="coach"
         />
       )}
+
+      <ToastStack toasts={toasts} />
     </div>
   )
 }
