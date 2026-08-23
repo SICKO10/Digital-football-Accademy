@@ -1005,6 +1005,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
           titulaires={f.titulaires || []}
           remplacants={f.remplacants || []}
           modeEdit={true}
+          titre={f.adversaire ? `${equipeNom || 'Nous'} · vs ${f.adversaire}` : undefined}
           onChangerFormation={changerFormationCompo}
           onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
           onRetirerTitulaire={retirerTitulaireCompo}

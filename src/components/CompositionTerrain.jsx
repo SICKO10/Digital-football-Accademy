@@ -15,17 +15,27 @@ export const FORMATIONS = {
 
 const MAX_REMPLACANTS = 7
 
-const AvatarJoueur = ({ joueur, taille = 58 }) =>
+// Tailles en clamp() plutôt que sur window.innerWidth : réagit vraiment au
+// redimensionnement (un read direct de window.innerWidth dans le rendu ne se
+// met à jour qu'au prochain re-render déclenché par autre chose) et suit la
+// largeur réelle du terrain (limité à 480px, cf. plus bas) sans avoir à faire
+// remonter isMobile/isTablet depuis les 3 écrans différents qui utilisent ce
+// composant.
+const TAILLE_TITULAIRE = 'clamp(54px, 9vw, 80px)'
+const TAILLE_REMPLACANT = 'clamp(42px, 6vw, 56px)'
+const TAILLE_LISTE = 'clamp(34px, 5vw, 40px)'
+
+const AvatarJoueur = ({ joueur, fontSize = '17px' }) =>
   joueur?.avatar_url ? (
     <img src={joueur.avatar_url} style={{ width: '100%', height: '130%', objectFit: 'cover', objectPosition: 'top' }} alt="" />
   ) : joueur ? (
-    <span style={{ color: '#fff', fontWeight: 900, fontSize: `${Math.round(taille * 0.29)}px` }}>{joueur.prenom?.[0]}{joueur.nom?.[0]}</span>
+    <span style={{ color: '#fff', fontWeight: 900, fontSize }}>{joueur.prenom?.[0]}{joueur.nom?.[0]}</span>
   ) : (
-    <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: `${Math.round(taille * 0.38)}px` }}>+</span>
+    <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: `calc(${fontSize} * 1.3)` }}>+</span>
   )
 
 export default function CompositionTerrain({
-  formation, titulaires = [], remplacants = [], modeEdit,
+  formation, titulaires = [], remplacants = [], modeEdit, titre,
   onChangerFormation, onAssignerTitulaire, onRetirerTitulaire,
   onAjouterRemplacant, onRetirerRemplacant,
 }) {
@@ -58,10 +68,16 @@ export default function CompositionTerrain({
         </div>
       )}
 
+      {titre && (
+        <div style={{ textAlign: 'center', marginBottom: '12px', color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.7 }}>
+          {titre}
+        </div>
+      )}
+
       <div style={{
         position: 'relative', width: '100%', aspectRatio: '0.65',
         borderRadius: '20px', overflow: 'hidden',
-        background: 'linear-gradient(180deg, #0f3d0f 0%, #155215 12%, #0f3d0f 25%, #155215 37%, #0f3d0f 50%, #155215 62%, #0f3d0f 75%, #155215 87%, #0f3d0f 100%)',
+        background: 'repeating-linear-gradient(180deg, #1a5c1a 0px, #1a5c1a 40px, #1e6b1e 40px, #1e6b1e 80px)',
         boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
       }}>
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 100 154" preserveAspectRatio="none">
@@ -86,34 +102,41 @@ export default function CompositionTerrain({
                 const slotIndex = ligne.debut + i
                 const joueur = titulaires[slotIndex] || null
                 return (
-                  <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', minWidth: '60px' }}>
+                  <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(5px, 1vw, 8px)', minWidth: '60px' }}>
                     <div
                       onClick={() => modeEdit && onAssignerTitulaire(slotIndex)}
                       style={{
-                        width: '58px', height: '58px', borderRadius: '50%', position: 'relative',
+                        width: TAILLE_TITULAIRE, height: TAILLE_TITULAIRE, borderRadius: '50%', position: 'relative',
                         border: `3px solid ${joueur ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}`,
-                        background: 'rgba(0,0,0,0.5)', overflow: 'hidden',
+                        background: 'rgba(0,0,0,0.55)', overflow: 'hidden',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: modeEdit ? 'pointer' : 'default',
                         boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
                       }}>
-                      <AvatarJoueur joueur={joueur} />
+                      <AvatarJoueur joueur={joueur} fontSize="clamp(16px, 2.6vw, 24px)" />
                       {joueur?.numero != null && (
-                        <div style={{ position: 'absolute', bottom: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 900, border: '2px solid #0a0a0a' }}>
+                        <div style={{
+                          position: 'absolute', top: '-4px', right: '-4px',
+                          background: '#4ade80', color: '#000', borderRadius: '50%',
+                          width: 'clamp(20px, 3vw, 26px)', height: 'clamp(20px, 3vw, 26px)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 'clamp(10px, 1.6vw, 13px)', fontWeight: 900,
+                          border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                        }}>
                           {joueur.numero}
                         </div>
                       )}
                       {modeEdit && joueur && (
                         <button onClick={e => { e.stopPropagation(); onRetirerTitulaire(slotIndex) }}
-                          style={{ position: 'absolute', top: '-4px', left: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '10px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                          style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '10px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
                           ✕
                         </button>
                       )}
                     </div>
                     <div style={{
-                      background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: '9px', fontWeight: 800,
-                      padding: '3px 7px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.4px',
-                      whiteSpace: 'nowrap', maxWidth: '72px', overflow: 'hidden', textOverflow: 'ellipsis',
+                      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(9px, 1.6vw, 12px)', fontWeight: 800,
+                      padding: '4px 10px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.8px',
+                      whiteSpace: 'nowrap', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                       {joueur ? joueur.nom?.toUpperCase() : '—'}
                     </div>
@@ -132,10 +155,10 @@ export default function CompositionTerrain({
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {remplacants.map((j, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AvatarJoueur joueur={j} taille={48} />
+              <div style={{ width: TAILLE_REMPLACANT, height: TAILLE_REMPLACANT, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AvatarJoueur joueur={j} fontSize="clamp(13px, 2vw, 17px)" />
                 {j.numero != null && (
-                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
+                  <div style={{ position: 'absolute', top: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: 'clamp(16px, 2.4vw, 20px)', height: 'clamp(16px, 2.4vw, 20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(8px, 1.3vw, 10px)', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
                 )}
                 {modeEdit && (
                   <button onClick={() => onRetirerRemplacant(i)}
@@ -187,8 +210,8 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
                   background: choisi?.joueur_id === j.joueur_id ? '#0d1a0d' : '#111',
                   border: `1px solid ${choisi?.joueur_id === j.joueur_id ? '#4ade80' : '#1a1a1a'}`,
                 }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden', background: '#2a2a2a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <AvatarJoueur joueur={j} taille={38} />
+                <div style={{ width: TAILLE_LISTE, height: TAILLE_LISTE, borderRadius: '50%', overflow: 'hidden', background: '#2a2a2a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <AvatarJoueur joueur={j} fontSize="clamp(11px, 1.8vw, 14px)" />
                 </div>
                 <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px', flex: 1 }}>{j.prenom} {j.nom}</span>
                 {indisponible && <span style={{ color: '#555', fontSize: '11px' }}>déjà placé</span>}
