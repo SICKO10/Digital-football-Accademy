@@ -1,18 +1,19 @@
-import { colors, alpha } from '../../tokens'
+import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import { getStatutColor, getStatutLabel } from './helpers'
 
 export default function Badges({ certifs, certifLoading, commentaires, setCommentaires, validating, validerCertification, rejeterCertification }) {
-  const certifsEnAttente = certifs.filter(c => c.statut === 'en_attente')
+  const { c, rgba } = useCoachTheme()
+  const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
 
-  if (certifLoading) return <p style={{ color: colors.text.dim, textAlign: 'center', padding: '2rem' }}>Chargement...</p>
+  if (certifLoading) return <p style={{ color: c.textMuted, textAlign: 'center', padding: '2rem' }}>Chargement...</p>
 
   if (certifs.length === 0) {
     return (
       <Card>
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
           <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</p>
-          <p style={{ color: colors.text.dim }}>Aucune demande de certification pour le moment</p>
+          <p style={{ color: c.textMuted }}>Aucune demande de certification pour le moment</p>
         </div>
       </Card>
     )
@@ -21,9 +22,9 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
   return (
     <>
       {certifsEnAttente.length > 0 && (
-        <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b30', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '20px' }}>⭐</span>
-          <p style={{ margin: 0, fontSize: '14px', color: '#f59e0b', fontWeight: 600 }}>
+          <p style={{ margin: 0, fontSize: '14px', color: c.warn, fontWeight: 600 }}>
             {certifsEnAttente.length} certification{certifsEnAttente.length > 1 ? 's' : ''} en attente de validation
           </p>
         </div>
@@ -33,22 +34,23 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
         {certifs.map(certif => {
           const isProcessing = validating[certif.id]
           const isPending = certif.statut === 'en_attente'
+          const statutColor = getStatutColor(c, certif.statut)
           return (
             <div key={certif.id} style={{
-              background: colors.background.surface,
-              border: `1px solid ${isPending ? '#f59e0b30' : certif.statut === 'validé' ? colors.accent.green + alpha.light : '#f8717130'}`,
-              borderRadius: '12px', padding: '1.5rem'
+              background: c.surface,
+              border: `1px solid ${isPending ? rgba(c.warn, 0.3) : certif.statut === 'validé' ? rgba(c.success, 0.3) : rgba(c.danger, 0.3)}`,
+              borderRadius: '10px', padding: '1.5rem'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px', color: c.text }}>
                     {certif.profiles?.prenom} {certif.profiles?.nom}
                   </h3>
-                  <p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{certif.profiles?.email}</p>
+                  <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>{certif.profiles?.email}</p>
                 </div>
                 <span style={{
-                  background: getStatutColor(certif.statut) + '20',
-                  color: getStatutColor(certif.statut),
+                  background: rgba(statutColor, 0.15),
+                  color: statutColor,
                   fontSize: '12px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap'
                 }}>
                   {getStatutLabel(certif.statut)}
@@ -56,22 +58,22 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Niveau</p>
-                  <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: colors.accent.amber }}>{certif.niveau}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: '0 0 4px' }}>Niveau</p>
+                  <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: c.warn }}>{certif.niveau}</p>
                 </div>
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Saison</p>
-                  <p style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>{certif.saison}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: '0 0 4px' }}>Saison</p>
+                  <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, color: c.text }}>{certif.saison}</p>
                 </div>
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Soumis le</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>{new Date(certif.created_at).toLocaleDateString('fr-FR')}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: '0 0 4px' }}>Soumis le</p>
+                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0, color: c.text }}>{new Date(certif.created_at).toLocaleDateString('fr-FR')}</p>
                 </div>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 8px' }}>
+                <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 8px' }}>
                   📄 Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
                 </p>
                 {certif.documents?.length > 0 ? (
@@ -82,8 +84,8 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                         <a key={i} href={url} target="_blank" rel="noreferrer"
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            background: colors.background.raised, border: '1px solid #333', borderRadius: '8px',
-                            padding: '8px 12px', color: colors.accent.green, fontSize: '13px',
+                            background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px',
+                            padding: '8px 12px', color: c.success, fontSize: '13px',
                             textDecoration: 'none', fontWeight: '500'
                           }}>
                           {isPdf ? '📄' : '🖼️'} Feuille {i + 1}
@@ -92,20 +94,20 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                     })}
                   </div>
                 ) : (
-                  <p style={{ fontSize: '13px', color: colors.text.faint, margin: 0 }}>⚠️ Aucun document joint</p>
+                  <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>⚠️ Aucun document joint</p>
                 )}
               </div>
 
               {certif.commentaire_admin && !isPending && (
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 4px' }}>Commentaire admin</p>
-                  <p style={{ fontSize: '13px', color: colors.text.secondary, margin: 0 }}>{certif.commentaire_admin}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: '0 0 4px' }}>Commentaire admin</p>
+                  <p style={{ fontSize: '13px', color: c.text, margin: 0 }}>{certif.commentaire_admin}</p>
                 </div>
               )}
 
               {isPending && (
-                <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '1rem' }}>
-                  <p style={{ fontSize: '12px', color: colors.text.dim, margin: '0 0 10px' }}>
+                <div style={{ background: c.surface2, borderRadius: '10px', padding: '1rem' }}>
+                  <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 10px' }}>
                     💬 Commentaire (obligatoire en cas de rejet)
                   </p>
                   <textarea
@@ -114,9 +116,9 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                     onChange={e => setCommentaires(prev => ({ ...prev, [certif.id]: e.target.value }))}
                     rows={2}
                     style={{
-                      width: '100%', background: colors.background.surface, border: '1px solid #333', borderRadius: '8px',
-                      padding: '10px 14px', color: 'white', fontSize: '13px', outline: 'none',
-                      resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'sans-serif'
+                      width: '100%', background: c.surface, border: `1px solid ${c.border}`, borderRadius: '8px',
+                      padding: '10px 14px', color: c.text, fontSize: '13px', outline: 'none',
+                      resize: 'vertical', boxSizing: 'border-box', marginBottom: '10px', fontFamily: 'inherit'
                     }}
                   />
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -124,8 +126,8 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                       onClick={() => validerCertification(certif)}
                       disabled={!!isProcessing}
                       style={{
-                        flex: 1, background: isProcessing === 'validating' ? colors.border.strong : colors.accent.green,
-                        color: isProcessing === 'validating' ? colors.text.dim : colors.background.base,
+                        flex: 1, background: isProcessing === 'validating' ? c.border : c.success,
+                        color: isProcessing === 'validating' ? c.textMuted : '#fff',
                         border: 'none', padding: '10px 0', borderRadius: '8px',
                         fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                       }}>
@@ -135,9 +137,9 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                       onClick={() => rejeterCertification(certif)}
                       disabled={!!isProcessing}
                       style={{
-                        flex: 1, background: isProcessing === 'rejecting' ? colors.border.strong : '#f8717120',
-                        color: isProcessing === 'rejecting' ? colors.text.dim : '#f87171',
-                        border: '1px solid #f8717140', padding: '10px 0', borderRadius: '8px',
+                        flex: 1, background: isProcessing === 'rejecting' ? c.border : rgba(c.danger, 0.12),
+                        color: isProcessing === 'rejecting' ? c.textMuted : c.danger,
+                        border: `1px solid ${rgba(c.danger, 0.4)}`, padding: '10px 0', borderRadius: '8px',
                         fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                       }}>
                       {isProcessing === 'rejecting' ? 'Rejet...' : '❌ Rejeter'}
@@ -147,8 +149,8 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
               )}
 
               {certif.statut === 'validé' && certif.validated_at && (
-                <div style={{ background: '#4ade8010', border: '1px solid #4ade8030', borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '13px', color: colors.accent.green, margin: 0, fontWeight: 600 }}>
+                <div style={{ background: rgba(c.success, 0.08), border: `1px solid ${rgba(c.success, 0.3)}`, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '13px', color: c.success, margin: 0, fontWeight: 600 }}>
                     ⭐ Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
                   </p>
                 </div>

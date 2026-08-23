@@ -1,24 +1,24 @@
-import { colors, alpha } from '../../tokens'
+import { useCoachTheme } from '../../pages/coach/useCoachTheme'
 
-const VARIANTS = {
-  active: colors.accent.green,
-  success: colors.accent.green,
-  inactive: colors.text.disabled,
-  pending: colors.accent.orange,
-  danger: colors.accent.red,
-  info: colors.accent.blue,
-  warn: colors.accent.amber,
-}
-
-// Badge de statut générique — remplace les <span> stylées à la main
-// dupliquées dans chaque section de DashboardCoach.jsx.
-export default function Pill({ variant = 'info', children }) {
-  const color = VARIANTS[variant] || VARIANTS.info
+export default function Pill({ variant = 'blue', children }) {
+  const { c, rgba } = useCoachTheme()
+  const VARIANTS = {
+    active: c.success,
+    success: c.success,
+    inactive: c.textMuted,
+    pending: c.warn,
+    danger: c.danger,
+    blue: c.accent,
+    info: c.accent,
+  }
+  const color = VARIANTS[variant] || VARIANTS.blue
   return (
     <span style={{
-      display: 'inline-block', background: color + alpha.subtle, border: `1px solid ${color}40`,
-      color, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: '4px',
+      background: rgba(color, variant === 'inactive' ? 0.15 : 0.12), color,
+      fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap',
     }}>
+      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'currentColor' }} />
       {children}
     </span>
   )

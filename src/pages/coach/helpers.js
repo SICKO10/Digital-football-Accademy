@@ -1,13 +1,12 @@
-import { colors } from '../../tokens'
-
-// Petits helpers partagés entre plusieurs sections du dashboard coach
-// (repris tels quels de l'ancien DashboardCoach.jsx monolithique).
-export const getStatutColor = (statut) => {
-  if (statut === 'en_attente') return '#f59e0b'
-  if (statut === 'validé') return colors.accent.green
-  if (statut === 'rejeté') return '#f87171'
-  if (statut === 'analyse') return colors.accent.green
-  return colors.text.dim
+// Petits helpers partagés entre plusieurs sections du dashboard coach.
+// Prennent `c` (palette du thème courant, cf. useCoachTheme) en paramètre
+// pour rester cohérents que l'utilisateur soit en clair ou en sombre.
+export const getStatutColor = (c, statut) => {
+  if (statut === 'en_attente') return c.warn
+  if (statut === 'validé') return c.success
+  if (statut === 'rejeté') return c.danger
+  if (statut === 'analyse') return c.success
+  return c.textMuted
 }
 
 export const getStatutLabel = (statut) => {

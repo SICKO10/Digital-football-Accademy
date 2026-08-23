@@ -7,8 +7,10 @@ import { notifierJoueur } from '../lib/notifications'
 import AnalyseurIA from '../components/AnalyseurIA'
 import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
-import { colors, alpha } from '../tokens'
 
+import { CoachThemeProvider } from './coach/ThemeContext'
+import { useCoachTheme } from './coach/useCoachTheme'
+import { SIDEBAR } from './coach/theme'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
 import Subscriptions from './coach/Subscriptions'
@@ -22,8 +24,9 @@ import Support from './coach/Support'
 import StripeLinks from './coach/StripeLinks'
 import ClubsAgents from './coach/ClubsAgents'
 
-function DashboardCoach() {
+function DashboardCoachInner() {
   const navigate = useNavigate()
+  const { c, fonts, mode, toggle, rgba } = useCoachTheme()
   const [activeSection, setActiveSection] = useState('overview')
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -164,8 +167,8 @@ function DashboardCoach() {
   const activerClub = async (clubId) => {
     // Optimistic : le club sort de la liste "en attente" tout de suite, sans
     // attendre la réponse Supabase ni un rechargement complet.
-    const avant = clubsEnAttente.find(c => c.id === clubId)
-    setClubsEnAttente(prev => prev.filter(c => c.id !== clubId))
+    const avant = clubsEnAttente.find(cl => cl.id === clubId)
+    setClubsEnAttente(prev => prev.filter(cl => cl.id !== clubId))
     setActivatingClub(clubId)
     const { error } = await supabase.from('profiles').update({ abonnement_actif: true }).eq('id', clubId)
     setActivatingClub(null)
@@ -276,7 +279,7 @@ function DashboardCoach() {
 
   const validerCertification = async (certif) => {
     const avant = certif.statut
-    setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'validé' } : c))
+    setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: 'validé' } : cf))
     setValidating(prev => ({ ...prev, [certif.id]: 'validating' }))
     const [{ error }] = await Promise.all([
       supabase.from('certifications')
@@ -294,7 +297,7 @@ function DashboardCoach() {
     setValidating(prev => ({ ...prev, [certif.id]: null }))
     if (error) {
       alert('Erreur : ' + error.message)
-      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: avant } : c))
+      setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
     }
   }
 
@@ -302,7 +305,7 @@ function DashboardCoach() {
     const motif = commentaires[certif.id]?.trim()
     if (!motif) { alert('Indique un motif de rejet avant de rejeter.'); return }
     const avant = certif.statut
-    setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: 'rejeté', commentaire_admin: motif } : c))
+    setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: 'rejeté', commentaire_admin: motif } : cf))
     setValidating(prev => ({ ...prev, [certif.id]: 'rejecting' }))
     const [{ error }] = await Promise.all([
       supabase.from('certifications')
@@ -320,7 +323,7 @@ function DashboardCoach() {
     setValidating(prev => ({ ...prev, [certif.id]: null }))
     if (error) {
       alert('Erreur : ' + error.message)
-      setCertifs(prev => prev.map(c => c.id === certif.id ? { ...c, statut: avant } : c))
+      setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
     }
   }
 
@@ -391,12 +394,12 @@ function DashboardCoach() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const certifsEnAttente = certifs.filter(c => c.statut === 'en_attente')
+  const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
   const enAttente = demandes.filter(d => d.statut === 'en_attente')
 
   if (loading && certifLoading) return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: colors.accent.green, fontFamily: 'sans-serif' }}>Chargement...</p>
+    <div style={{ minHeight: '100vh', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: c.accent, fontFamily: fonts.body }}>Chargement...</p>
     </div>
   )
 
@@ -437,26 +440,38 @@ function DashboardCoach() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: c.bg, color: c.text, fontFamily: fonts.body, fontSize: 14 }}>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
 
-      {/* ── Header fin ─────────────────────────────────────────────────── */}
-      <div style={{ height: 52, background: colors.background.surface, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
+      {/* ── Topbar ─────────────────────────────────────────────────────── */}
+      <div style={{ height: 54, background: c.surface, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
+            style={{ background: 'none', border: 'none', color: c.text, fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
             ☰
           </button>
         )}
-        <span style={{ fontWeight: 900, fontSize: 15, color: colors.text.primary, letterSpacing: -0.5 }}>
-          Digital<span style={{ color: colors.accent.green }}>Football</span>
+        <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 17, color: c.text, letterSpacing: '0.03em' }}>
+          Digital<span style={{ color: c.accent }}>Football</span>
         </span>
-        <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: '1px solid #4ade8040' }}>
+        <span style={{ background: rgba(c.accent, 0.12), color: c.accent, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: `1px solid ${c.accent}` }}>
           COACH
         </span>
-        <button onClick={() => { signOutSafe(); navigate('/') }}
-          style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          Déconnexion
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={toggle}
+            style={{ background: c.surface2, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', color: c.textMuted, fontSize: 12, fontWeight: 500, fontFamily: fonts.body }}>
+            {mode === 'dark' ? '◐ Clair' : '◑ Sombre'}
+          </button>
+          {isAdminClubs && (
+            <span style={{ background: rgba(c.accent, 0.12), border: `1px solid ${c.accent}`, color: c.accent, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.07em' }}>
+              ADMIN
+            </span>
+          )}
+          <button onClick={() => { signOutSafe(); navigate('/') }}
+            style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: fonts.body }}>
+            Déconnexion
+          </button>
+        </div>
       </div>
 
       {/* ── Corps : sidebar + contenu ──────────────────────────────────── */}
@@ -467,39 +482,39 @@ function DashboardCoach() {
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
         )}
 
-        {/* ── SIDEBAR (toujours sombre, comme tout le reste de l'app) ────── */}
+        {/* ── SIDEBAR (toujours sombre, quel que soit le thème) ──────────── */}
         <div style={{
-          width: 220, background: colors.background.surface, borderRight: '1px solid #1a1a1a',
+          width: 224, background: SIDEBAR.bg, borderRight: '1px solid rgba(255,255,255,0.05)',
           display: 'flex', flexDirection: 'column', flexShrink: 0,
           ...(isMobile ? {
-            position: 'fixed', top: 52, left: sidebarOpen ? 0 : -240,
-            height: 'calc(100% - 52px)', zIndex: 50,
+            position: 'fixed', top: 54, left: sidebarOpen ? 0 : -244,
+            height: 'calc(100% - 54px)', zIndex: 50,
             transition: 'left 0.25s ease', overflowY: 'auto',
           } : {
-            overflowY: 'auto', height: 'calc(100vh - 52px)',
-            position: 'sticky', top: 52,
+            overflowY: 'auto', height: 'calc(100vh - 54px)',
+            position: 'sticky', top: 54,
           })
         }}>
 
-          <div style={{ padding: '20px 16px 0' }}>
-            <p style={{ fontSize: 10, color: colors.text.disabled, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>
+          <div style={{ padding: '18px 16px 0' }}>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 12px' }}>
               VUE D'ENSEMBLE
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {[
-                { label: 'Total demandes', val: demandes.length, color: colors.text.primary },
-                { label: 'En attente', val: enAttente.length, color: '#f59e0b' },
-                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? '#f59e0b' : colors.accent.green },
+                { label: 'Total demandes', val: demandes.length, color: '#fff' },
+                { label: 'En attente', val: enAttente.length, color: c.warn },
+                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? c.warn : c.success },
               ].map(s => (
-                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: colors.background.sunken, borderRadius: 8 }}>
-                  <span style={{ fontSize: 12, color: colors.text.faint }}>{s.label}</span>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.val}</span>
+                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+                  <span style={{ fontSize: 12, color: SIDEBAR.text }}>{s.label}</span>
+                  <span style={{ fontFamily: fonts.mono, fontSize: 15, fontWeight: 500, color: s.color }}>{s.val}</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ height: 1, background: colors.background.raised, margin: '0 0 16px' }} />
-            <p style={{ fontSize: 10, color: colors.text.disabled, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 0 14px' }} />
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 5px' }}>
               NAVIGATION
             </p>
           </div>
@@ -510,17 +525,17 @@ function DashboardCoach() {
               <button key={item.id}
                 onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
                 style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '11px 16px', background: actif ? colors.accent.green + alpha.subtle : 'transparent',
-                  border: 'none', borderLeft: `3px solid ${actif ? colors.accent.green : 'transparent'}`,
-                  color: actif ? colors.accent.green : colors.text.dim, cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: actif ? 700 : 400,
-                  textAlign: 'left', transition: 'all 0.15s',
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                  padding: '8px 18px', background: actif ? SIDEBAR.active : 'transparent',
+                  border: 'none', borderLeft: `2px solid ${actif ? SIDEBAR.accent : 'transparent'}`,
+                  color: actif ? '#fff' : SIDEBAR.text, cursor: 'pointer',
+                  fontFamily: fonts.body, fontSize: 13, fontWeight: 500,
+                  textAlign: 'left', transition: 'color 0.12s, background 0.12s',
                 }}>
-                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                <span style={{ fontSize: 15, opacity: actif ? 1 : 0.65 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.badge > 0 && (
-                  <span style={{ background: '#f59e0b', color: colors.black, fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10 }}>
+                  <span style={{ background: c.danger, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, minWidth: 18, textAlign: 'center' }}>
                     {item.badge}
                   </span>
                 )}
@@ -528,19 +543,16 @@ function DashboardCoach() {
             )
           })}
 
-          <div style={{ marginTop: 'auto', padding: 16 }}>
-            <div style={{ background: colors.background.sunken, borderRadius: 10, padding: '10px 12px' }}>
-              <p style={{ margin: 0, fontSize: 11, color: colors.accent.green, fontWeight: 700 }}>🎙️ Analyseur IA</p>
-              <p style={{ margin: '3px 0 0', fontSize: 10, color: colors.text.disabled, lineHeight: 1.4 }}>Transcription + rapport PDF gratuit</p>
-            </div>
+          <div style={{ marginTop: 'auto', padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Admin · Digital Football</span>
           </div>
         </div>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 14px' : '32px 40px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px' : '24px 26px' }}>
 
-          <div style={{ marginBottom: 28 }}>
-            <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 26, fontWeight: 900 }}>
+          <div style={{ marginBottom: 20 }}>
+            <h1 style={{ margin: 0, fontFamily: fonts.display, fontSize: isMobile ? 18 : 20, fontWeight: 600, letterSpacing: '0.03em', color: c.text }}>
               {TITRES_SECTION[activeSection]}
             </h1>
           </div>
@@ -644,56 +656,56 @@ function DashboardCoach() {
       {/* MODAL PROFIL RECRUTEUR */}
       {recruteurModal && (
         <div onClick={() => setRecruteurModal(null)} style={{ position: 'fixed', inset: 0, background: '#000000bb', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: '1px solid #333', borderRadius: '16px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: '16px', padding: '2rem', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
               {recruteurModal.avatar_url ? (
                 <img src={recruteurModal.avatar_url} alt="" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#1a2e3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 800, fontSize: '20px' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: rgba(c.accent, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.accent, fontWeight: 800, fontSize: '20px' }}>
                   {`${(recruteurModal.prenom || '?')[0]}${(recruteurModal.nom || '?')[0]}`}
                 </div>
               )}
               <div>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.accent.blue, fontWeight: 600 }}>{recruteurModal.type_recruteur || 'Recruteur'}</p>
+                <h2 style={{ margin: 0, fontFamily: fonts.display, fontSize: '20px', fontWeight: 700, color: c.text }}>{recruteurModal.prenom} {recruteurModal.nom}</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: c.accent, fontWeight: 600 }}>{recruteurModal.type_recruteur || 'Recruteur'}</p>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1rem' }}>
               {recruteurModal.club && (
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Club / Structure</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.club}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Club / Structure</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0', color: c.text }}>{recruteurModal.club}</p>
                 </div>
               )}
               {recruteurModal.region && (
-                <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '0.75rem' }}>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Région</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0' }}>{recruteurModal.region}</p>
+                <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                  <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Région</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 0', color: c.text }}>{recruteurModal.region}</p>
                 </div>
               )}
             </div>
 
             {recruteurModal.description && (
-              <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 6px' }}>À propos</p>
-                <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.description}</p>
+              <div style={{ background: c.surface2, borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '11px', color: c.textMuted, margin: '0 0 6px' }}>À propos</p>
+                <p style={{ fontSize: '14px', color: c.text, margin: 0, lineHeight: 1.5 }}>{recruteurModal.description}</p>
               </div>
             )}
 
             {recruteurModal.recherche_profil && (
-              <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa30', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: colors.accent.blue, margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
-                <p style={{ fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{recruteurModal.recherche_profil}</p>
+              <div style={{ background: rgba(c.accent, 0.08), border: `1px solid ${rgba(c.accent, 0.3)}`, borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '11px', color: c.accent, margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
+                <p style={{ fontSize: '14px', color: c.text, margin: 0, lineHeight: 1.5 }}>{recruteurModal.recherche_profil}</p>
               </div>
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '1rem' }}>
-              <p style={{ fontSize: '13px', color: colors.text.faint, margin: 0 }}>📧 {recruteurModal.email}</p>
+              <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>📧 {recruteurModal.email}</p>
             </div>
 
             <button onClick={() => setRecruteurModal(null)}
-              style={{ width: '100%', marginTop: '1.5rem', background: colors.background.raised, color: colors.text.secondary, border: '1px solid #333', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+              style={{ width: '100%', marginTop: '1.5rem', background: c.surface2, color: c.textMuted, border: `1px solid ${c.border}`, padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
               Fermer
             </button>
           </div>
@@ -718,6 +730,14 @@ function DashboardCoach() {
         />
       )}
     </div>
+  )
+}
+
+function DashboardCoach() {
+  return (
+    <CoachThemeProvider>
+      <DashboardCoachInner />
+    </CoachThemeProvider>
   )
 }
 
