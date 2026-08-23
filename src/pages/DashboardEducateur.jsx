@@ -7965,7 +7965,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'causerie' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} />
+            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ {t('nav_causerie', lang)}</h1>

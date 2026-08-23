@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
 import TacticalBoard from './TacticalBoard'
 import TactipadViewer from './TactipadViewer'
+import CompositionTerrain, { ModalSelectionJoueur } from './CompositionTerrain'
 
 const METEO_OPTIONS = [
   { val: 'soleil', icon: '☀️', label: 'Soleil' },
@@ -244,7 +245,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   )
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
+export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs = [] }) {
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
   const [ficheCourante, setFicheCourante] = useState(null)
@@ -252,6 +253,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
   const [presentationOuverte, setPresentationOuverte] = useState(false)
   const [menuOuvert, setMenuOuvert] = useState(null) // id de la fiche dont le menu "…" est ouvert, vue liste
   const [tactipadsDispo, setTactipadsDispo] = useState([]) // schémas Tactipad de l'éducateur, pour le sélecteur "Mouvement tactique"
+  const [avatarsParJoueurId, setAvatarsParJoueurId] = useState({}) // profiles.avatar_url — equipe_joueurs n'a pas cette colonne
+  const [compoModal, setCompoModal] = useState(null) // { type: 'titulaire', slotIndex } | { type: 'remplacant' }
+  const [savingCompo, setSavingCompo] = useState(false)
 
   const [form, setForm] = useState(formVide)
   const [saving, setSaving] = useState(false)
@@ -276,6 +280,20 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
   }
 
   useEffect(() => { if (userId) { charger(); chargerTactipads() } }, [userId])
+
+  // equipe_joueurs n'a pas de colonne avatar — snapshot resolu ici puis
+  // stocké tel quel dans titulaires/remplacants au moment de la sélection
+  // (comme educateur_nom ailleurs dans l'app), pas rejoint en live à chaque
+  // affichage.
+  useEffect(() => {
+    const ids = [...new Set(joueurs.map(j => j.joueur_id).filter(Boolean))]
+    if (ids.length === 0) { setAvatarsParJoueurId({}); return }
+    supabase.from('profiles').select('id, avatar_url').in('id', ids).then(({ data }) => {
+      const map = {}
+      ;(data || []).forEach(p => { map[p.id] = p.avatar_url })
+      setAvatarsParJoueurId(map)
+    })
+  }, [joueurs])
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -402,6 +420,56 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
     const { error } = await supabase.from('causeries').insert({ ...rest, educateur_id: userId, club_id: clubId })
     if (error) { alert('Erreur lors de la duplication : ' + error.message); return }
     await charger()
+  }
+
+  // ─── Composition (terrain, titulaires/remplaçants/formation) ───────────
+  // Sauvegardé à chaque changement (pas de bouton "Enregistrer" dédié) —
+  // met à jour ficheCourante ET la liste fiches en local pour rester
+  // cohérent si l'éducateur retourne à la vue liste puis rouvre la fiche.
+  const patchComposition = async (champs) => {
+    if (!ficheCourante?.id) return
+    setFicheCourante(f => ({ ...f, ...champs }))
+    setFiches(fs => fs.map(f => f.id === ficheCourante.id ? { ...f, ...champs } : f))
+    setSavingCompo(true)
+    await supabase.from('causeries').update(champs).eq('id', ficheCourante.id)
+    setSavingCompo(false)
+  }
+
+  const changerFormationCompo = (formation) => patchComposition({ formation })
+
+  const toggleCompositionPubliee = () => patchComposition({ composition_publiee: !ficheCourante?.composition_publiee })
+
+  // exclureId : le joueur actuellement dans le slot en cours d'édition ne
+  // doit pas apparaître "indisponible" — sinon impossible de le resélectionner
+  // pour juste changer son numéro.
+  const dejaUtilisesCompo = (exclureId) => {
+    const t = (ficheCourante?.titulaires || []).filter(Boolean).map(j => j.joueur_id)
+    const r = (ficheCourante?.remplacants || []).map(j => j.joueur_id)
+    return new Set([...t, ...r].filter(id => id !== exclureId))
+  }
+
+  const confirmerSelectionCompo = (joueur) => {
+    if (!compoModal) return
+    const avecAvatar = { ...joueur, avatar_url: joueur.avatar_url || avatarsParJoueurId[joueur.joueur_id] || null }
+    if (compoModal.type === 'titulaire') {
+      const titulaires = [...(ficheCourante.titulaires || [])]
+      titulaires[compoModal.slotIndex] = avecAvatar
+      patchComposition({ titulaires })
+    } else {
+      const remplacants = [...(ficheCourante.remplacants || []), avecAvatar]
+      patchComposition({ remplacants })
+    }
+    setCompoModal(null)
+  }
+
+  const retirerTitulaireCompo = (slotIndex) => {
+    const titulaires = [...(ficheCourante.titulaires || [])]
+    titulaires[slotIndex] = null
+    patchComposition({ titulaires })
+  }
+
+  const retirerRemplacantCompo = (idx) => {
+    patchComposition({ remplacants: (ficheCourante.remplacants || []).filter((_, i) => i !== idx) })
   }
 
   // ─── Styles ────────────────────────────────────────────────────────────
@@ -903,6 +971,45 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId }) {
 
       {/* Aperçu à l'écran */}
       {contenuFiche}
+
+      {/* Composition — terrain visuel, propre à cette fiche. Visible par les
+          joueurs du groupe (lecture seule) une fois publiée, via
+          mes_compositions_publiees() côté DashboardJoueur.jsx. */}
+      <div style={{ ...card, marginTop: '20px', padding: '28px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#fff' }}>Composition</p>
+          <button onClick={toggleCompositionPubliee} disabled={savingCompo} style={{
+            background: f.composition_publiee ? '#4ade8022' : '#1a1a1a',
+            border: `1px solid ${f.composition_publiee ? '#4ade80' : '#2a2a2a'}`,
+            color: f.composition_publiee ? '#4ade80' : '#888',
+            borderRadius: '20px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>
+            {f.composition_publiee ? 'Visible par les joueurs' : 'Masquée aux joueurs'}
+          </button>
+        </div>
+
+        <CompositionTerrain
+          formation={f.formation || '4-4-2'}
+          titulaires={f.titulaires || []}
+          remplacants={f.remplacants || []}
+          modeEdit={true}
+          onChangerFormation={changerFormationCompo}
+          onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
+          onRetirerTitulaire={retirerTitulaireCompo}
+          onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}
+          onRetirerRemplacant={retirerRemplacantCompo}
+        />
+      </div>
+
+      {compoModal && (
+        <ModalSelectionJoueur
+          joueursDispo={joueurs.filter(j => j.joueur_id)}
+          dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? f.titulaires?.[compoModal.slotIndex]?.joueur_id : undefined)}
+          onConfirmer={confirmerSelectionCompo}
+          onRetirer={compoModal.type === 'titulaire' && f.titulaires?.[compoModal.slotIndex] ? () => { retirerTitulaireCompo(compoModal.slotIndex); setCompoModal(null) } : null}
+          onFermer={() => setCompoModal(null)}
+        />
+      )}
 
       {/* Copie hors-écran, portée sur document.body, seule visible à l'impression */}
       <FicheCauseriePrint>{contenuFiche}</FicheCauseriePrint>

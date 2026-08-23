@@ -18,6 +18,7 @@ import { t, localeOf } from '../lib/translations'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
+import CompositionTerrain from '../components/CompositionTerrain'
 import FloatingHelper from '../components/FloatingHelper'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
@@ -451,6 +452,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   const [convocationActive, setConvocationActive] = useState(null) // convocation publiée non expirée pour ce joueur, avec le match joint
   const [repConvoc, setRepConvoc] = useState(null) // 'present' | 'absent' | null — réponse du joueur à convocationActive
+  const [compositionActive, setCompositionActive] = useState(null) // composition (causerie) publiée la plus pertinente, cf. chargerCompositionActive
   // Inventaire club (Équipement) — tailles déclarées par le joueur + statut de préparation
   const [clubIdInventaire, setClubIdInventaire] = useState(null)
   const [champsEquipement, setChampsEquipement] = useState([])
@@ -677,6 +679,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     await verifierCloturesSaison(targetId, mesAff || [])
     await chargerInventaireJoueur(targetId, mesAff || [])
     await chargerConvocationActive(targetId)
+    await chargerCompositionActive()
     await chargerParentsInvites(targetId)
     setLoading(false)
   }
@@ -758,6 +761,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     } else {
       setRepConvoc(null)
     }
+  }
+
+  // mes_compositions_publiees() est SECURITY DEFINER et filtre sur auth.uid()
+  // en interne (pas de paramètre uid) — comme convocations, ne renvoie donc
+  // rien quand ce dashboard est consulté en readOnly par un tiers (coach,
+  // parent) via joueurIdOverride, faute de policy dédiée à ce cas déjà
+  // existante côté convocations non plus.
+  const chargerCompositionActive = async () => {
+    const { data, error } = await supabase.rpc('mes_compositions_publiees')
+    if (error || !data?.length) { setCompositionActive(null); return }
+    const aujourdhui = new Date().toISOString().slice(0, 10)
+    const aVenir = data.filter(c => c.date_match >= aujourdhui).sort((a, b) => a.date_match.localeCompare(b.date_match))
+    const passees = data.filter(c => c.date_match < aujourdhui).sort((a, b) => b.date_match.localeCompare(a.date_match))
+    setCompositionActive(aVenir[0] || passees[0] || null)
   }
 
   const repondreConvocation = async (reponse) => {
@@ -3084,6 +3101,26 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 </div>
               )
             })()}
+
+            {/* COMPOSITION — terrain visuel de la composition, publiée par
+                l'éducateur depuis sa fiche de causerie avant-match (lecture
+                seule ici). Indépendante de la convocation ci-dessus : deux
+                fonctionnalités distinctes côté éducateur, cf. CauserieAvantMatch.jsx. */}
+            {compositionActive && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '16px' : '24px', marginBottom: isMobile ? '16px' : '20px' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: isMobile ? '16px' : '18px', color: '#fff' }}>Composition</p>
+                <p style={{ margin: '0 0 16px', color: colors.text.faint, fontSize: 13 }}>
+                  vs {compositionActive.adversaire}
+                  {compositionActive.date_match && ` · ${new Date(`${compositionActive.date_match}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`}
+                </p>
+                <CompositionTerrain
+                  formation={compositionActive.formation || '4-4-2'}
+                  titulaires={compositionActive.titulaires || []}
+                  remplacants={compositionActive.remplacants || []}
+                  modeEdit={false}
+                />
+              </div>
+            )}
 
             {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
                 section : mêmes événements, boutons de présence en plus) au lieu de deux
