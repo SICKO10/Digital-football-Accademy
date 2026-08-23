@@ -36,10 +36,16 @@ const AvatarJoueur = ({ joueur, fontSize = '17px' }) =>
     <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: `calc(${fontSize} * 1.3)` }}>+</span>
   )
 
+const nomAffiche = (joueur, affichageNom) => {
+  if (!joueur) return '—'
+  const val = affichageNom === 'prenom' ? joueur.prenom : joueur.nom
+  return (val || joueur.nom || joueur.prenom || '')?.toUpperCase()
+}
+
 export default function CompositionTerrain({
-  formation, titulaires = [], remplacants = [], modeEdit, titre,
+  formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
   onChangerFormation, onAssignerTitulaire, onRetirerTitulaire,
-  onAjouterRemplacant, onRetirerRemplacant,
+  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom,
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
 
@@ -70,6 +76,19 @@ export default function CompositionTerrain({
               color: formation === f ? '#000' : 'rgba(255,255,255,0.4)',
               fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
             }}>{f}</button>
+          ))}
+        </div>
+      )}
+
+      {modeEdit && (
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px' }}>
+          {[{ val: 'prenom', label: 'Prénom' }, { val: 'nom', label: 'Nom' }].map(o => (
+            <button key={o.val} onClick={() => onChangerAffichageNom(o.val)} style={{
+              padding: '5px 14px', borderRadius: '20px', border: 'none',
+              background: affichageNom === o.val ? '#4ade80' : 'rgba(255,255,255,0.08)',
+              color: affichageNom === o.val ? '#000' : 'rgba(255,255,255,0.4)',
+              fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
+            }}>{o.label}</button>
           ))}
         </div>
       )}
@@ -144,7 +163,7 @@ export default function CompositionTerrain({
                       padding: '3px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.6px',
                       whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
-                      {joueur ? joueur.nom?.toUpperCase() : '—'}
+                      {nomAffiche(joueur, affichageNom)}
                     </div>
                   </div>
                 )
@@ -173,7 +192,7 @@ export default function CompositionTerrain({
                   </button>
                 )}
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche(j, affichageNom)}</span>
             </div>
           ))}
           {modeEdit && remplacants.length < MAX_REMPLACANTS && (

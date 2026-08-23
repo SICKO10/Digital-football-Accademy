@@ -206,7 +206,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
 
         {slide.type === 'composition' && (
           <div style={{ width: '100%', maxWidth: '760px' }}>
-            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} />
+            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} />
           </div>
         )}
 
@@ -448,6 +448,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
   }
 
   const changerFormationCompo = (formation) => patchComposition({ formation })
+
+  const changerAffichageNomCompo = (composition_affichage_nom) => patchComposition({ composition_affichage_nom })
 
   const toggleCompositionPubliee = () => patchComposition({ composition_publiee: !ficheCourante?.composition_publiee })
 
@@ -1006,6 +1008,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
           remplacants={f.remplacants || []}
           modeEdit={true}
           titre={f.adversaire ? `${equipeNom || 'Nous'} · vs ${f.adversaire}` : undefined}
+          affichageNom={f.composition_affichage_nom || 'nom'}
+          onChangerAffichageNom={changerAffichageNomCompo}
           onChangerFormation={changerFormationCompo}
           onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
           onRetirerTitulaire={retirerTitulaireCompo}

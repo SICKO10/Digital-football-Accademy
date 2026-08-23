@@ -3118,6 +3118,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   titulaires={compositionActive.titulaires || []}
                   remplacants={compositionActive.remplacants || []}
                   modeEdit={false}
+                  affichageNom={compositionActive.composition_affichage_nom || 'nom'}
                 />
               </div>
             )}
