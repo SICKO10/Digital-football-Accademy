@@ -184,7 +184,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         <button onClick={onFermer} style={{ background: 'none', border: '1px solid #333', color: '#9ca3af', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitter [Échap]</button>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 60px', textAlign: 'center', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <p style={{ margin: '0 0 32px', color: slide.accent, fontSize: '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
 
         {slide.type === 'intro' && (
