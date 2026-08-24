@@ -287,7 +287,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
   }
 
   const chargerTactipads = async () => {
-    const { data } = await supabase.from('tactipads').select('id, nom, schema').eq('educateur_id', userId).order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('tactipads').select('id, nom, schema').eq('educateur_id', userId).order('created_at', { ascending: false })
+    if (error) console.error('chargerTactipads (Causerie) error:', error)
     setTactipadsDispo(data || [])
   }
 
