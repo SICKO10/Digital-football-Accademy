@@ -1683,7 +1683,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setParcoursEdu(pa || [])
     const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
     setNotesEdu(ne || [])
-    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    // joueur (via equipe_joueur_id) ne résout que si la demande a déjà été
+    // liée à une fiche du roster — c'est justement ce que l'éducateur choisit
+    // au moment d'accepter (setAffiliationEnCours), donc toujours null pour
+    // une demande "en attente" : joueur_profil (via joueur_id, le vrai
+    // compte du demandeur) est la seule source fiable à ce stade.
+    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
   }
 
@@ -8636,12 +8641,15 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {affiliations.filter(a => a.statut === 'en_attente').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f59e0b08', border: '1px solid #f59e0b20', borderRadius: '10px' }}>
-                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#f59e0b20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color: '#f59e0b', flexShrink: 0 }}>
-                            {a.joueur?.prenom?.[0] || '?'}{a.joueur?.nom?.[0] || ''}
+                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#f59e0b20', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color: '#f59e0b', flexShrink: 0 }}>
+                            {a.joueur_profil?.avatar_url
+                              ? <img src={a.joueur_profil.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <>{a.joueur_profil?.prenom?.[0] || '?'}{a.joueur_profil?.nom?.[0] || ''}</>
+                            }
                           </div>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{a.joueur ? t('profil_lie_effectif', lang) : `ID: ${a.joueur_id?.slice(0, 8)}…`}</p>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{a.joueur_profil ? `${a.joueur_profil.prenom || ''} ${a.joueur_profil.nom || ''}`.trim() : t('profil_compte_joueur', lang)}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.joueur_profil?.email || `ID: ${a.joueur_id?.slice(0, 8)}…`}</p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
