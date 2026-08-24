@@ -3,7 +3,7 @@ import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
 import FilterBar from '../../components/coachAdmin/FilterBar'
-import { getStatutColor, getStatutLabel, getVideoUrl, isVeo, isYoutube } from './helpers'
+import { getStatutColor, getStatutLabel, getVideoUrl, isVeo, isYoutube, parseDescription } from './helpers'
 import { IcoPlay, IcoClock, IcoLock, IcoUser, IcoAlert, IcoFile, IcoCheck } from './NavIcons'
 
 export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrls, rapportPdfFiles, setRapportPdfFiles, sending, envoyerAnalyse, prendreEnCharge, setNotationCible }) {
@@ -109,14 +109,18 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                   {demandesJoueur.map(demande => {
                     const videoUrl = getVideoUrl(demande)
                     const isSending = sending[demande.id]
+                    const parsed = parseDescription(demande.description)
                     return (
                       <div key={demande.id} style={{ background: c.surface2, border: `1px solid ${demande.statut === 'en_attente' ? rgba(c.warn, 0.2) : c.border}`, borderRadius: '10px', padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                           <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: c.text }}>{demande.titre}</h3>
                           <span style={{ background: rgba(getStatutColor(c, demande.statut), 0.15), color: getStatutColor(c, demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                             {getStatutLabel(demande.statut)}
                           </span>
                         </div>
+                        <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 1rem', textTransform: 'capitalize' }}>
+                          {profil?.plan} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}
+                        </p>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                           {demande.pris_en_charge_par ? (
@@ -137,22 +141,22 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
                           <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem' }}>
                             <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Poste</p>
-                            <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text }}>{demande.poste}</p>
+                            <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text }}>{parsed.posteJoue || demande.poste || '—'}</p>
                           </div>
                           <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Plan</p>
-                            <p style={{ fontSize: '13px', fontWeight: '600', color: c.success, textTransform: 'capitalize', margin: '4px 0 0' }}>{profil?.plan}</p>
+                            <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>N° Maillot</p>
+                            <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text }}>{parsed.maillot || '—'}</p>
                           </div>
                           <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem' }}>
-                            <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Date</p>
-                            <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text }}>{new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
+                            <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Temps de jeu</p>
+                            <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text }}>{parsed.tempsJeu || '—'}</p>
                           </div>
                         </div>
 
-                        {demande.description && (
+                        {parsed.notes && (
                           <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
                             <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Ce que le joueur veut analyser</p>
-                            <p style={{ fontSize: '13px', color: c.text, margin: '4px 0 0' }}>{demande.description}</p>
+                            <p style={{ fontSize: '13px', color: c.text, fontStyle: 'italic', margin: '4px 0 0' }}>{parsed.notes}</p>
                           </div>
                         )}
 
