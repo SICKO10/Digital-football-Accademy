@@ -4,6 +4,7 @@ import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel, getVideoUrl, isVeo, isYoutube } from './helpers'
+import { IcoPlay, IcoClock, IcoLock, IcoUser, IcoAlert, IcoFile, IcoCheck } from './NavIcons'
 
 export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrls, rapportPdfFiles, setRapportPdfFiles, sending, envoyerAnalyse, prendreEnCharge, setNotationCible }) {
   const { c, rgba } = useCoachTheme()
@@ -45,7 +46,7 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
     return (
       <Card>
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📭</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoPlay size={40} /></div>
           <p style={{ color: c.textMuted }}>Aucune demande pour le moment</p>
         </div>
       </Card>
@@ -67,7 +68,7 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
 
       {enAttente.length > 0 && (
         <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '20px' }}>⏳</span>
+          <span style={{ display: 'flex', color: c.warn }}><IcoClock size={18} /></span>
           <p style={{ margin: 0, fontSize: '14px', color: c.warn, fontWeight: 600 }}>
             {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} en attente d'analyse
           </p>
@@ -97,8 +98,8 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: c.textMuted }}>{profil?.email}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  {nbAttente > 0 && <Pill variant="pending">⏳ {nbAttente} en attente</Pill>}
-                  {nbAnalysees > 0 && <Pill variant="active">✅ {nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</Pill>}
+                  {nbAttente > 0 && <Pill variant="pending">{nbAttente} en attente</Pill>}
+                  {nbAnalysees > 0 && <Pill variant="active">{nbAnalysees} envoyée{nbAnalysees > 1 ? 's' : ''}</Pill>}
                   <span style={{ color: c.textMuted, fontSize: '18px', marginLeft: '4px' }}>{ouvert ? '▲' : '▼'}</span>
                 </div>
               </div>
@@ -120,15 +121,16 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                           {demande.pris_en_charge_par ? (
                             <>
-                              <span style={{ background: rgba(demande.pris_en_charge_par === coachId ? c.success : c.warn, 0.12), border: `1px solid ${rgba(demande.pris_en_charge_par === coachId ? c.success : c.warn, 0.4)}`, color: demande.pris_en_charge_par === coachId ? c.success : c.warn, fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
-                                {demande.pris_en_charge_par === coachId ? '✅ Pris en charge par toi' : `🔒 Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: rgba(demande.pris_en_charge_par === coachId ? c.success : c.warn, 0.12), border: `1px solid ${rgba(demande.pris_en_charge_par === coachId ? c.success : c.warn, 0.4)}`, color: demande.pris_en_charge_par === coachId ? c.success : c.warn, fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>
+                                {demande.pris_en_charge_par === coachId ? <IcoCheck size={12} /> : <IcoLock size={12} />}
+                                {demande.pris_en_charge_par === coachId ? 'Pris en charge par toi' : `Pris en charge par ${demande.coach?.prenom || 'un autre coach'}`}
                               </span>
                               {demande.pris_en_charge_par === coachId && (
                                 <button onClick={() => prendreEnCharge('demandes', demande.id, true)} style={{ background: 'none', border: `1px solid ${c.border}`, color: c.textMuted, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Libérer</button>
                               )}
                             </>
                           ) : (
-                            <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>🙋 Je m'en occupe</button>
+                            <button onClick={() => prendreEnCharge('demandes', demande.id, false)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}><IcoUser size={13} /> Je m'en occupe</button>
                           )}
                         </div>
 
@@ -160,22 +162,23 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                             {isVeo(videoUrl) || isYoutube(videoUrl) ? (
                               <a href={videoUrl} target="_blank" rel="noreferrer"
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
-                                🎬 {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
+                                <IcoPlay size={15} /> {isVeo(videoUrl) ? 'Ouvrir sur Veo' : 'Ouvrir sur YouTube'}
                               </a>
                             ) : (
                               <video src={videoUrl.includes('cloudinary.com') ? videoUrl.replace('/upload/', '/upload/q_auto,f_mp4/') : videoUrl} controls style={{ width: '100%', maxHeight: '280px', borderRadius: '8px', background: '#000' }} />
                             )}
                           </div>
                         ) : (
-                          <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
-                            <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>⚠️ Aucune vidéo fournie</p>
+                          <div style={{ background: c.surface, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ display: 'flex', color: c.textMuted }}><IcoAlert size={14} /></span>
+                            <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>Aucune vidéo fournie</p>
                           </div>
                         )}
 
                         {demande.statut === 'en_attente' && (
                           <div style={{ background: c.surface, borderRadius: '10px', padding: '1rem' }}>
                             <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 10px' }}>
-                              📨 Le joueur recevra une notification automatique dans son dashboard dès l'envoi
+                              Le joueur recevra une notification automatique dans son dashboard dès l'envoi
                             </p>
                             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                               <input
@@ -188,18 +191,18 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                                 onClick={() => envoyerAnalyse(demande.id, demande.profiles?.id)}
                                 disabled={isSending || !loomUrls[demande.id]?.trim()}
                                 style={{ background: isSending ? c.border : c.accent, color: isSending ? c.textMuted : '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: isSending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (!loomUrls[demande.id]?.trim() && !isSending) ? 0.5 : 1 }}>
-                                {isSending ? 'Envoi...' : "🚀 Envoyer l'analyse"}
+                                {isSending ? 'Envoi...' : "Envoyer l'analyse"}
                               </button>
                             </div>
                             <div style={{ marginTop: '10px' }}>
-                              <label style={{ fontSize: '11px', color: c.textMuted, fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-                                📄 Joindre un rapport PDF (optionnel)
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: c.textMuted, fontWeight: 700, marginBottom: '6px' }}>
+                                <IcoFile size={13} /> Joindre un rapport PDF (optionnel)
                               </label>
                               <input type="file" accept=".pdf"
                                 onChange={e => setRapportPdfFiles(prev => ({ ...prev, [demande.id]: e.target.files[0] || null }))}
                                 style={{ fontSize: '12px', color: c.textMuted, width: '100%' }} />
                               {rapportPdfFiles[demande.id] && (
-                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: c.success }}>✓ {rapportPdfFiles[demande.id].name}</p>
+                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: c.success }}>{rapportPdfFiles[demande.id].name}</p>
                               )}
                             </div>
                           </div>
@@ -207,21 +210,21 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
 
                         {demande.statut === 'analyse' && demande.loom_url && (
                           <div style={{ background: rgba(c.success, 0.08), border: `1px solid ${rgba(c.success, 0.3)}`, borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                            <p style={{ fontSize: '12px', color: c.success, marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>✅ Analyse envoyée — notification joueur envoyée</p>
+                            <p style={{ fontSize: '12px', color: c.success, marginBottom: '6px', fontWeight: 600, margin: '0 0 6px' }}>Analyse envoyée — notification joueur envoyée</p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                               <a href={demande.loom_url} target="_blank" rel="noreferrer"
                                 style={{ fontSize: '13px', color: c.textMuted, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {isYoutube(demande.loom_url) ? '▶️' : '🎥'} <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
+                                <IcoPlay size={13} /> <span style={{ textDecoration: 'underline' }}>{demande.loom_url}</span>
                               </a>
                               {demande.rapport_pdf_url && (
                                 <a href={demande.rapport_pdf_url} target="_blank" rel="noreferrer"
                                   style={{ fontSize: '13px', color: c.success, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  📄 <span style={{ textDecoration: 'underline' }}>Rapport PDF</span>
+                                  <IcoFile size={13} /> <span style={{ textDecoration: 'underline' }}>Rapport PDF</span>
                                 </a>
                               )}
                               <button onClick={() => setNotationCible({ id: profil?.id, prenom: profil?.prenom, nom: profil?.nom, plan: profil?.plan })}
                                 style={{ background: rgba(c.warn, 0.12), border: `1px solid ${rgba(c.warn, 0.4)}`, color: c.warn, padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                                ⭐ Noter {profil?.prenom || 'le joueur'}
+                                Noter {profil?.prenom || 'le joueur'}
                               </button>
                             </div>
                           </div>

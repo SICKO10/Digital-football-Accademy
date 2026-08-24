@@ -2,6 +2,7 @@ import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
 import { STRIPE_LINKS_CLUB } from '../../lib/stripeLinks'
+import { IcoLink, IcoCopy } from './NavIcons'
 
 // Note : contrairement au brief d'origine, ces clubs n'ont pas encore de
 // Stripe ID / dernier paiement — ce sont des comptes créés manuellement,
@@ -18,7 +19,7 @@ export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierCho
       key: 'actions', label: 'Actions', render: row => (
         <button onClick={e => { e.stopPropagation(); activerClub(row.id) }} disabled={activatingClub === row.id}
           style={{ background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          {activatingClub === row.id ? 'Activation...' : '✓ Activer manuellement'}
+          {activatingClub === row.id ? 'Activation...' : 'Activer manuellement'}
         </button>
       ),
     },
@@ -35,7 +36,7 @@ export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierCho
       {clubsEnAttente.length === 0 ? (
         <Card>
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏟️</p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoLink size={40} /></div>
             <p style={{ color: c.textMuted }}>Aucun club en attente d'activation</p>
           </div>
         </Card>
@@ -56,12 +57,12 @@ export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierCho
                     ))}
                   </select>
                   <button onClick={() => copierLienClub(row.id, palier, 'mensuel')}
-                    style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    📋 Copier lien mensuel
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                    <IcoCopy size={12} /> Copier lien mensuel
                   </button>
                   <button onClick={() => copierLienClub(row.id, palier, 'annuel')}
-                    style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    📋 Copier lien annuel
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                    <IcoCopy size={12} /> Copier lien annuel
                   </button>
                 </div>
               )

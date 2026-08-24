@@ -6,6 +6,7 @@ import Card from '../../components/coachAdmin/Card'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
 import Pill from '../../components/coachAdmin/Pill'
+import { IcoShare, IcoTrophy } from './NavIcons'
 
 const BENEFICE = { 0: '—', 1: '1 an offert', 2: '2 ans offerts', 3: '3 ans offerts + 2 vidéos' }
 const PALIER_SEUIL = { 1: 3, 2: 6, 3: 9 }
@@ -111,7 +112,7 @@ export default function Referrals({ coachId }) {
     { key: 'benefice', label: 'Bénéfice', render: p => BENEFICE[p.palier] },
     {
       key: 'actions', label: 'Actions', render: p => {
-        if (p.palier === 0 || p.paliersAccordes.has(p.palier)) return p.paliersAccordes.has(p.palier) ? <Pill variant="active">✓ Accordé</Pill> : null
+        if (p.palier === 0 || p.paliersAccordes.has(p.palier)) return p.paliersAccordes.has(p.palier) ? <Pill variant="active">Accordé</Pill> : null
         const key = `${p.parrainId}-${p.palier}`
         return (
           <button onClick={e => { e.stopPropagation(); accorder(p.parrainId, p.palier) }} disabled={accordingKey === key}
@@ -130,15 +131,15 @@ export default function Referrals({ coachId }) {
           <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 600, color: c.text }}>Paliers FreePlay</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ padding: '10px 12px', borderRadius: '8px', background: rgba(c.accent, 0.1), border: `1px solid ${rgba(c.accent, 0.3)}` }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.accent }}>🎁 Palier 1 — 3 parrainages annuels</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '12px', fontWeight: 700, color: c.accent }}><IcoShare size={13} /> Palier 1 — 3 parrainages annuels</p>
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: c.textMuted }}>1 an de gratuité offert</p>
             </div>
             <div style={{ padding: '10px 12px', borderRadius: '8px', background: rgba(c.warn, 0.1), border: `1px solid ${rgba(c.warn, 0.3)}` }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.warn }}>⭐ Palier 2 — 6 parrainages annuels</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '12px', fontWeight: 700, color: c.warn }}><IcoShare size={13} /> Palier 2 — 6 parrainages annuels</p>
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: c.textMuted }}>2 ans de gratuité offerts</p>
             </div>
             <div style={{ padding: '10px 12px', borderRadius: '8px', background: rgba(c.success, 0.1), border: `1px solid ${rgba(c.success, 0.3)}` }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.success }}>🏆 Palier 3 — 9 parrainages annuels</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '12px', fontWeight: 700, color: c.success }}><IcoTrophy size={13} /> Palier 3 — 9 parrainages annuels</p>
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: c.textMuted }}>3 ans de gratuité + 2 vidéos d'analyse offertes</p>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import { STRIPE_LINKS_CLUB } from '../../lib/stripeLinks'
+import { IcoMail, IcoCopy, IcoLink, IcoCard, IcoHome, IcoTrophy, IcoUsers, IcoCheck } from './NavIcons'
 
 // Email pré-rédigé avec le lien de paiement du bon palier, à copier ou ouvrir
 // directement dans l'app Mail — évite à l'admin de retaper le message à
@@ -79,7 +80,7 @@ L'équipe Digital Football`
     <div style={{ marginTop: '12px' }}>
       <button onClick={() => setOuvert(p => !p)}
         style={{ background: c.surface2, border: `1px solid ${c.border}`, color: c.success, padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        ✉️ {ouvert ? "Masquer l'email" : "Voir l'email à envoyer"}
+        <IcoMail size={13} /> {ouvert ? "Masquer l'email" : "Voir l'email à envoyer"}
       </button>
 
       {ouvert && (
@@ -111,25 +112,25 @@ L'équipe Digital Football`
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={copierEmail}
-              style={{ background: c.accent, border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-              {copie === 'email' ? '✓ Copié !' : "📋 Copier tout l'email"}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: c.accent, border: 'none', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+              {copie === 'email' ? <><IcoCheck size={13} /> Copié !</> : <><IcoCopy size={13} /> Copier tout l'email</>}
             </button>
             {lienInscription && (
               <button onClick={copierLienInscription}
-                style={{ background: c.surface2, border: `1px solid ${c.border}`, color: c.text, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                {copie === 'inscription' ? '✓ Copié !' : "🔗 Copier le lien d'inscription"}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: c.surface2, border: `1px solid ${c.border}`, color: c.text, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                {copie === 'inscription' ? <><IcoCheck size={13} /> Copié !</> : <><IcoLink size={13} /> Copier le lien d'inscription</>}
               </button>
             )}
             {lien && (
               <button onClick={copierLienDirect}
-                style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                {copie === 'direct' ? '✓ Copié !' : '💳 Lien Stripe direct (déjà inscrit)'}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                {copie === 'direct' ? <><IcoCheck size={13} /> Copié !</> : <><IcoCard size={13} /> Lien Stripe direct (déjà inscrit)</>}
               </button>
             )}
             <a href={`mailto:${demande.email}?subject=${encodeURIComponent(objet)}&body=${encodeURIComponent(corps)}`}
               onClick={() => { if (lienInscription) marquerEnvoye() }}
-              style={{ background: c.surface2, border: `1px solid ${c.border}`, color: c.text, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-              📨 Ouvrir dans Mail
+              style={{ background: c.surface2, border: `1px solid ${c.border}`, color: c.text, padding: '9px 16px', borderRadius: '8px', fontSize: '12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IcoMail size={13} /> Ouvrir dans Mail
             </a>
           </div>
         </div>
@@ -150,7 +151,7 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
       {demandesClub.length === 0 ? (
         <Card>
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📨</p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoHome size={40} /></div>
             <p style={{ color: c.textMuted }}>Aucune demande pour le moment</p>
           </div>
         </Card>
@@ -164,7 +165,7 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: c.text }}>{d.prenom} {d.nom}</p>
                     {d.type ? (
                       <span style={{ fontSize: '10px', fontWeight: 700, color: d.type === 'abonnement' ? c.success : c.accent, background: rgba(d.type === 'abonnement' ? c.success : c.accent, 0.12), border: `1px solid ${rgba(d.type === 'abonnement' ? c.success : c.accent, 0.3)}`, padding: '2px 8px', borderRadius: '20px' }}>
-                        {d.type === 'abonnement' ? '💳 Abonnement' : '💬 Question'}
+                        {d.type === 'abonnement' ? 'Abonnement' : 'Question'}
                       </span>
                     ) : d.role ? (
                       <span style={{ fontSize: '10px', fontWeight: 700, color: c.accent, background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.3)}`, padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
@@ -175,19 +176,20 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                   </div>
                   <p style={{ margin: '3px 0 0', fontSize: '13px', color: c.textMuted }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
                   {d.nom_club && (
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
-                      🏟️ {d.nom_club}{d.ville ? ` · ${d.ville}` : ''}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
+                      <IcoHome size={12} /> {d.nom_club}{d.ville ? ` · ${d.ville}` : ''}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
                     </p>
                   )}
                   {(d.ligue || d.nb_membres) && (
-                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
-                      {d.ligue ? `🏆 ${d.ligue}` : ''}{d.ligue && d.nb_membres ? ' · ' : ''}{d.nb_membres ? `👥 ${d.nb_membres} membres` : ''}
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
+                      {d.ligue && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoTrophy size={12} /> {d.ligue}</span>}
+                      {d.nb_membres && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoUsers size={12} /> {d.nb_membres} membres</span>}
                     </p>
                   )}
                   <p style={{ margin: '3px 0 0', fontSize: '11px', color: c.textMuted }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   {d.lien_paiement_envoye && (
-                    <p style={{ margin: '3px 0 0', fontSize: '11px', color: c.success }}>
-                      ✓ Lien copié le {new Date(d.lien_paiement_envoye_le).toLocaleDateString('fr-FR')}
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '3px 0 0', fontSize: '11px', color: c.success }}>
+                      <IcoCheck size={11} /> Lien copié le {new Date(d.lien_paiement_envoye_le).toLocaleDateString('fr-FR')}
                     </p>
                   )}
                 </div>
@@ -195,10 +197,10 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                   {d.statut === 'nouveau' ? (
                     <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
                       style={{ background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      {traitantDemande === d.id ? 'Mise à jour...' : '✓ Marquer comme traité'}
+                      {traitantDemande === d.id ? 'Mise à jour...' : 'Marquer comme traité'}
                     </button>
                   ) : (
-                    <span style={{ fontSize: '11px', color: c.success, fontWeight: 600 }}>✓ Traité</span>
+                    <span style={{ fontSize: '11px', color: c.success, fontWeight: 600 }}>Traité</span>
                   )}
                 </div>
               </div>

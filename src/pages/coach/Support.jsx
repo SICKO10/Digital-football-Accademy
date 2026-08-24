@@ -3,6 +3,7 @@ import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
+import { IcoMessage } from './NavIcons'
 
 export default function Support({ tickets, ticketsError, savingTicket, marquerTicketResolu, coachId }) {
   const { c, rgba } = useCoachTheme()
@@ -61,7 +62,7 @@ export default function Support({ tickets, ticketsError, savingTicket, marquerTi
   if (ticketsError) {
     return (
       <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.4)}`, borderRadius: '10px', padding: '1rem 1.25rem', color: c.warn, fontSize: '13px' }}>
-        ⚠️ {ticketsError}
+        {ticketsError}
       </div>
     )
   }
@@ -70,7 +71,7 @@ export default function Support({ tickets, ticketsError, savingTicket, marquerTi
     return (
       <Card>
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <p style={{ fontSize: '48px', marginBottom: '1rem' }}>💬</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoMessage size={40} /></div>
           <p style={{ color: c.textMuted }}>Aucun ticket pour le moment</p>
         </div>
       </Card>
@@ -110,7 +111,7 @@ export default function Support({ tickets, ticketsError, savingTicket, marquerTi
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: '16px', color: c.text }}>{selected?.sujet}</p>
-              {selected && <Pill variant={selected.statut === 'ouvert' ? 'pending' : 'active'}>{selected.statut === 'ouvert' ? 'OUVERT' : '✓ RÉSOLU'}</Pill>}
+              {selected && <Pill variant={selected.statut === 'ouvert' ? 'pending' : 'active'}>{selected.statut === 'ouvert' ? 'OUVERT' : 'RÉSOLU'}</Pill>}
             </div>
             <p style={{ margin: '3px 0 0', fontSize: '13px', color: c.textMuted }}>
               {selected?.expediteur ? `${selected.expediteur.prenom || ''} ${selected.expediteur.nom || ''}`.trim() || selected.expediteur.email : 'Utilisateur inconnu'}
@@ -120,7 +121,7 @@ export default function Support({ tickets, ticketsError, savingTicket, marquerTi
           {selected?.statut === 'ouvert' && (
             <button onClick={() => marquerTicketResolu(selected.id)} disabled={savingTicket === selected.id}
               style={{ background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {savingTicket === selected.id ? 'Mise à jour...' : '✓ Marquer comme résolu'}
+              {savingTicket === selected.id ? 'Mise à jour...' : 'Marquer comme résolu'}
             </button>
           )}
         </div>

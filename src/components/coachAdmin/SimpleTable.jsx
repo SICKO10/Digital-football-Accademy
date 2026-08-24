@@ -70,11 +70,11 @@ export default function SimpleTable({ columns, rows, rowKey, renderExpanded, emp
           <span style={{ fontSize: '12px', color: c.textMuted }}>Page {safePage} / {totalPages}</span>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
             style={{ background: c.surface2, border: `1px solid ${c.border}`, color: safePage <= 1 ? c.textMuted : c.text, borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: safePage <= 1 ? 'not-allowed' : 'pointer', opacity: safePage <= 1 ? 0.5 : 1, transition: 'background 0.15s ease' }}>
-            ← Précédent
+            Précédent
           </button>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
             style={{ background: c.surface2, border: `1px solid ${c.border}`, color: safePage >= totalPages ? c.textMuted : c.text, borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: safePage >= totalPages ? 'not-allowed' : 'pointer', opacity: safePage >= totalPages ? 0.5 : 1, transition: 'background 0.15s ease' }}>
-            Suivant →
+            Suivant
           </button>
         </div>
       )}

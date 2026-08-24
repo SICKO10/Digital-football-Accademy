@@ -34,7 +34,7 @@ export default function ParrainageWidget({ userId, accentColor = "#4ade80" }) {
 
   return (
     <div style={{ background: "#141414", border: "1px solid #2a2a2a", borderRadius: "14px", padding: "18px 20px" }}>
-      <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 700, color: "#e4e4e7" }}>🎁 Parraine et gagne</p>
+      <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 700, color: "#e4e4e7" }}>Parraine et gagne</p>
       <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#a1a1aa", lineHeight: 1.5 }}>
         3 parrainages annuels = 1 an offert · 6 = 2 ans offerts · 9 = 3 ans offerts + 2 vidéos d'analyse.
         Seuls les abonnements <strong style={{ color: "#e4e4e7" }}>annuels</strong> comptent.
@@ -50,12 +50,12 @@ export default function ParrainageWidget({ userId, accentColor = "#4ade80" }) {
           onClick={copier}
           style={{ flexShrink: 0, background: accentColor, border: "none", borderRadius: "8px", color: "#0a0a0a", fontSize: "12px", fontWeight: 700, padding: "0 14px", cursor: "pointer" }}
         >
-          {copied ? "✓ Copié" : "Copier"}
+          {copied ? "Copié" : "Copier"}
         </button>
       </div>
       {count !== null && (
         <p style={{ margin: 0, fontSize: "12px", color: accentColor, fontWeight: 600 }}>
-          {count}/9 filleuls annuels{palier > 0 ? ` · Palier ${palier} atteint 🎉` : ""}
+          {count}/9 filleuls annuels{palier > 0 ? ` · Palier ${palier} atteint` : ""}
         </p>
       )}
     </div>

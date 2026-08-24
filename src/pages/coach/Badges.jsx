@@ -3,6 +3,7 @@ import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel } from './helpers'
+import { IcoShield, IcoAlert, IcoFile, IcoImage, IcoMessage, IcoCheck, IcoX } from './NavIcons'
 
 export default function Badges({ certifs, certifLoading, commentaires, setCommentaires, validating, validerCertification, rejeterCertification }) {
   const { c, rgba } = useCoachTheme()
@@ -29,7 +30,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
     return (
       <Card>
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <p style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoShield size={40} /></div>
           <p style={{ color: c.textMuted }}>Aucune demande de certification pour le moment</p>
         </div>
       </Card>
@@ -51,7 +52,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
 
       {certifsEnAttente.length > 0 && (
         <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '20px' }}>⭐</span>
+          <span style={{ display: 'flex', color: c.warn }}><IcoShield size={18} /></span>
           <p style={{ margin: 0, fontSize: '14px', color: c.warn, fontWeight: 600 }}>
             {certifsEnAttente.length} certification{certifsEnAttente.length > 1 ? 's' : ''} en attente de validation
           </p>
@@ -106,7 +107,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
 
               <div style={{ marginBottom: '1rem' }}>
                 <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 8px' }}>
-                  📄 Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
+                  Feuilles de match ({certif.documents?.length || 0} document{certif.documents?.length > 1 ? 's' : ''})
                 </p>
                 {certif.documents?.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -120,13 +121,13 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                             padding: '8px 12px', color: c.success, fontSize: '13px',
                             textDecoration: 'none', fontWeight: '500'
                           }}>
-                          {isPdf ? '📄' : '🖼️'} Feuille {i + 1}
+                          {isPdf ? <IcoFile size={13} /> : <IcoImage size={13} />} Feuille {i + 1}
                         </a>
                       )
                     })}
                   </div>
                 ) : (
-                  <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>⚠️ Aucun document joint</p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: c.textMuted, margin: 0 }}><IcoAlert size={13} /> Aucun document joint</p>
                 )}
               </div>
 
@@ -139,8 +140,8 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
 
               {isPending && (
                 <div style={{ background: c.surface2, borderRadius: '10px', padding: '1rem' }}>
-                  <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 10px' }}>
-                    💬 Commentaire (obligatoire en cas de rejet)
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: c.textMuted, margin: '0 0 10px' }}>
+                    <IcoMessage size={13} /> Commentaire (obligatoire en cas de rejet)
                   </p>
                   <textarea
                     placeholder="Ex : Documents illisibles, mauvais niveau, etc."
@@ -163,7 +164,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                         border: 'none', padding: '10px 0', borderRadius: '8px',
                         fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                       }}>
-                      {isProcessing === 'validating' ? 'Validation...' : '✅ Valider le badge'}
+                      {isProcessing === 'validating' ? 'Validation...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IcoCheck size={14} /> Valider le badge</span>}
                     </button>
                     <button
                       onClick={() => rejeterCertification(certif)}
@@ -174,7 +175,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
                         border: `1px solid ${rgba(c.danger, 0.4)}`, padding: '10px 0', borderRadius: '8px',
                         fontSize: '14px', fontWeight: '700', cursor: isProcessing ? 'not-allowed' : 'pointer'
                       }}>
-                      {isProcessing === 'rejecting' ? 'Rejet...' : '❌ Rejeter'}
+                      {isProcessing === 'rejecting' ? 'Rejet...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IcoX size={14} /> Rejeter</span>}
                     </button>
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
               {certif.statut === 'validé' && certif.validated_at && (
                 <div style={{ background: rgba(c.success, 0.08), border: `1px solid ${rgba(c.success, 0.3)}`, borderRadius: '8px', padding: '0.75rem' }}>
                   <p style={{ fontSize: '13px', color: c.success, margin: 0, fontWeight: 600 }}>
-                    ⭐ Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
+                    Badge validé le {new Date(certif.validated_at).toLocaleDateString('fr-FR')} — notification envoyée au joueur
                   </p>
                 </div>
               )}

@@ -1,5 +1,6 @@
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import { IcoBriefcase, IcoUser } from './NavIcons'
 
 export default function ClubsAgents({ recruteurs, setRecruteurModal }) {
   const { c, rgba } = useCoachTheme()
@@ -8,7 +9,7 @@ export default function ClubsAgents({ recruteurs, setRecruteurModal }) {
     return (
       <Card>
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <p style={{ fontSize: '48px', marginBottom: '1rem' }}>🏢</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoBriefcase size={40} /></div>
           <p style={{ color: c.textMuted }}>Aucun recruteur inscrit pour le moment</p>
         </div>
       </Card>
@@ -35,8 +36,8 @@ export default function ClubsAgents({ recruteurs, setRecruteurModal }) {
               </p>
             </div>
             <button onClick={() => setRecruteurModal(r)}
-              style={{ background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              👤 Voir le profil
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <IcoUser size={14} /> Voir le profil
             </button>
           </div>
         )

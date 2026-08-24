@@ -5,6 +5,7 @@ import { TYPE_FAMILIES } from './constants'
 import StatCard from '../../components/coachAdmin/StatCard'
 import Card from '../../components/coachAdmin/Card'
 import Pill from '../../components/coachAdmin/Pill'
+import { IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage } from './NavIcons'
 
 // 6 derniers mois, format court ("janv.", "févr.") pour l'axe du graphique.
 function derniersMois(n) {
@@ -48,11 +49,11 @@ export default function Overview({ isAdminClubs, goTo, goToUsers, pending }) {
   }, [profils])
 
   const lignesAttente = [
-    { id: 'analyses', label: "Demandes d'analyse joueur", count: pending.analyses, icon: '🎬' },
-    { id: 'certifications', label: 'Certifications à valider', count: pending.certifications, icon: '🏅' },
-    { id: 'seances_club', label: 'Séances club à analyser', count: pending.seancesClub, icon: '📋' },
-    ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demandes club non traitées', count: pending.demandesClub, icon: '🏟️' }] : []),
-    { id: 'support', label: 'Tickets support ouverts', count: pending.support, icon: '💬' },
+    { id: 'analyses', label: "Demandes d'analyse joueur", count: pending.analyses, Icon: IcoPlay },
+    { id: 'certifications', label: 'Certifications à valider', count: pending.certifications, Icon: IcoShield },
+    { id: 'seances_club', label: 'Séances club à analyser', count: pending.seancesClub, Icon: IcoBook },
+    ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demandes club non traitées', count: pending.demandesClub, Icon: IcoHome }] : []),
+    { id: 'support', label: 'Tickets support ouverts', count: pending.support, Icon: IcoMessage },
   ]
 
   return (
@@ -100,7 +101,10 @@ export default function Overview({ isAdminClubs, goTo, goToUsers, pending }) {
             {lignesAttente.map(l => (
               <div key={l.id} onClick={() => goTo(l.id)}
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: c.surface2, borderRadius: '7px', cursor: 'pointer', transition: 'background 0.15s ease' }}>
-                <span style={{ fontSize: '13px', color: c.text }}>{l.icon} {l.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '13px', color: c.text }}>
+                  <span style={{ display: 'flex', color: c.textMuted }}><l.Icon /></span>
+                  {l.label}
+                </span>
                 {l.count > 0 ? (
                   <Pill variant="pending">{l.count} en attente</Pill>
                 ) : (

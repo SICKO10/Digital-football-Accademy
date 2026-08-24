@@ -12,8 +12,8 @@ export const getStatutColor = (c, statut) => {
 export const getStatutLabel = (statut) => {
   if (statut === 'en_attente') return 'En attente'
   if (statut === 'analyse') return 'Analyse envoyée'
-  if (statut === 'validé') return '✅ Validé'
-  if (statut === 'rejeté') return '❌ Rejeté'
+  if (statut === 'validé') return 'Validé'
+  if (statut === 'rejeté') return 'Rejeté'
   return statut
 }
 

@@ -11,6 +11,7 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
+import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail } from './coach/NavIcons'
 import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
@@ -128,7 +129,7 @@ function DashboardCoachInner() {
       alert('Erreur : ' + error.message)
       if (avant) setTickets(prev => prev.map(t => t.id === id ? avant : t))
     } else {
-      pushToast('✓ Ticket marqué comme résolu')
+      pushToast('Ticket marqué comme résolu')
     }
   }
 
@@ -153,7 +154,7 @@ function DashboardCoachInner() {
       alert('Erreur : ' + error.message)
       if (avant) setDemandesClub(prev => [avant, ...prev])
     } else {
-      pushToast('✓ Demande marquée comme traitée')
+      pushToast('Demande marquée comme traitée')
     }
   }
 
@@ -179,7 +180,7 @@ function DashboardCoachInner() {
       alert('Erreur : ' + error.message)
       if (avant) setClubsEnAttente(prev => [avant, ...prev])
     } else {
-      pushToast('✓ Club activé')
+      pushToast('Club activé')
     }
   }
 
@@ -272,7 +273,7 @@ function DashboardCoachInner() {
     if (error) {
       alert("Erreur lors de l'enregistrement de l'évaluation : " + error.message + '\n\nMerci de recommencer l\'évaluation.')
     } else {
-      pushToast('📋 Évaluation enregistrée')
+      pushToast('Évaluation enregistrée')
     }
     await chargerSeancesTransferees()
   }
@@ -308,7 +309,7 @@ function DashboardCoachInner() {
       alert('Erreur : ' + error.message)
       setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
     } else {
-      pushToast('⭐ Badge validé')
+      pushToast('Badge validé')
     }
   }
 
@@ -336,7 +337,7 @@ function DashboardCoachInner() {
       alert('Erreur : ' + error.message)
       setCertifs(prev => prev.map(cf => cf.id === certif.id ? { ...cf, statut: avant } : cf))
     } else {
-      pushToast('❌ Certification rejetée')
+      pushToast('Certification rejetée')
     }
   }
 
@@ -379,7 +380,7 @@ function DashboardCoachInner() {
     setSending(prev => ({ ...prev, [demandeId]: false }))
     setLoomUrls(prev => ({ ...prev, [demandeId]: '' }))
     setRapportPdfFiles(prev => ({ ...prev, [demandeId]: null }))
-    pushToast(`✅ Analyse envoyée à ${joueurPrenom} !`)
+    pushToast(`Analyse envoyée à ${joueurPrenom} !`)
 
     await Promise.all([
       coachId && joueurId
@@ -428,157 +429,140 @@ function DashboardCoachInner() {
 
   const isAdminClubs = COACH_ADMIN_EMAILS.includes(coachEmail)
 
-  const NAV_ITEMS = [
-    { id: 'overview', label: "Vue d'ensemble", icon: '🏠', badge: 0 },
+  // Deux groupes de nav (cf. maquette) : PLATEFORME = vue d'ensemble + pages
+  // admin, ACTIVITÉ = le travail quotidien du coach (accessible à tous).
+  const NAV_PLATEFORME = [
+    { id: 'overview', label: "Vue d'ensemble", Icon: IcoGrid, badge: 0 },
     ...(isAdminClubs ? [
-      { id: 'users', label: 'Utilisateurs', icon: '👥', badge: 0 },
-      { id: 'subscriptions', label: 'Abonnements', icon: '💳', badge: 0 },
-      { id: 'revenue', label: "Chiffre d'affaires", icon: '💶', badge: 0 },
-      { id: 'referrals', label: 'Parrainage FreePlay', icon: '🎁', badge: 0 },
+      { id: 'users', label: 'Utilisateurs', Icon: IcoUsers, badge: 0 },
+      { id: 'subscriptions', label: 'Abonnements', Icon: IcoCard, badge: 0 },
+      { id: 'revenue', label: "Chiffre d'affaires", Icon: IcoDollar, badge: 0 },
+      { id: 'referrals', label: 'Parrainage FreePlay', Icon: IcoShare, badge: 0 },
     ] : []),
-    { id: 'analyses', label: 'Analyse Joueur', icon: '📋', badge: enAttente.length },
-    { id: 'certifications', label: 'Badges', icon: '⭐', badge: certifsEnAttente.length },
-    { id: 'seances_club', label: 'Séances Club', icon: '🎥', badge: seancesEnAttente.length },
-    ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', icon: '📨', badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
-    { id: 'support', label: 'Support', icon: '💬', badge: tickets.filter(t => t.statut === 'ouvert').length },
-    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', icon: '💠', badge: clubsEnAttente.length }] : []),
-    { id: 'recruteurs', label: 'Clubs / Agents', icon: '🏢', badge: 0 },
-    { id: 'analyseur_ia', label: 'Analyseur IA', icon: '🎙️', badge: 0 },
+  ]
+  const NAV_ACTIVITE = [
+    { id: 'analyses', label: 'Analyse Joueur', Icon: IcoPlay, badge: enAttente.length },
+    { id: 'certifications', label: 'Badge Certifié', Icon: IcoShield, badge: certifsEnAttente.length },
+    { id: 'seances_club', label: 'Analyse Séance', Icon: IcoBook, badge: seancesEnAttente.length },
+    ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', Icon: IcoHome, badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
+    { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
+    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', Icon: IcoLink, badge: clubsEnAttente.length }] : []),
+    { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
+    { id: 'analyseur_ia', label: 'Analyseur IA', Icon: IcoMic, badge: 0 },
   ]
 
-  const TITRES_SECTION = {
-    overview: "🏠 Vue d'ensemble",
-    users: '👥 Utilisateurs',
-    subscriptions: '💳 Abonnements',
-    revenue: "💶 Chiffre d'affaires",
-    referrals: '🎁 Parrainage FreePlay',
-    analyses: '📋 Analyse Joueur',
-    certifications: '⭐ Badges',
-    seances_club: '🎥 Séances Club',
-    demandes_club: '📨 Demande Club',
-    support: '💬 Support',
-    clubs_admin: '💠 Lien Stripe Club',
-    recruteurs: '🏢 Clubs / Agents',
-    analyseur_ia: '🎙️ Analyseur IA',
+  const TITRES_SECTION = Object.fromEntries(
+    [...NAV_PLATEFORME, ...NAV_ACTIVITE].map(item => [item.id, item.label])
+  )
+
+  const renderNavItem = (item) => {
+    const actif = activeSection === item.id
+    const { Icon } = item
+    return (
+      <button key={item.id}
+        onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+          padding: '8px 18px', background: actif ? SIDEBAR.active : 'transparent',
+          border: 'none', borderLeft: `2px solid ${actif ? SIDEBAR.accent : 'transparent'}`,
+          color: actif ? '#fff' : SIDEBAR.text, cursor: 'pointer',
+          fontFamily: fonts.body, fontSize: 13, fontWeight: 500,
+          textAlign: 'left', transition: 'color 0.15s ease, background 0.15s ease',
+        }}>
+        <span style={{ display: 'flex', opacity: actif ? 1 : 0.65, flexShrink: 0 }}><Icon /></span>
+        <span style={{ flex: 1 }}>{item.label}</span>
+        {item.badge > 0 && (
+          <span style={{ background: c.danger, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, minWidth: 18, textAlign: 'center' }}>
+            {item.badge}
+          </span>
+        )}
+      </button>
+    )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: c.bg, color: c.text, fontFamily: fonts.body, fontSize: 14 }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: c.bg, color: c.text, fontFamily: fonts.body, fontSize: 14 }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
 
-      {/* ── Topbar ─────────────────────────────────────────────────────── */}
-      <div style={{ height: 54, background: c.surface, borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0, zIndex: 30, position: 'sticky', top: 0 }}>
-        {isMobile && (
-          <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: c.text, fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0' }}>
-            ☰
-          </button>
-        )}
-        <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 17, color: c.text, letterSpacing: '0.03em' }}>
-          Digital<span style={{ color: c.accent }}>Football</span>
-        </span>
-        <span style={{ background: rgba(c.accent, 0.12), color: c.accent, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, border: `1px solid ${c.accent}` }}>
-          COACH
-        </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={toggle}
-            style={{ background: c.surface2, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', color: c.textMuted, fontSize: 12, fontWeight: 500, fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
-            {mode === 'dark' ? '◐ Clair' : '◑ Sombre'}
-          </button>
-          {isAdminClubs && (
-            <span style={{ background: rgba(c.accent, 0.12), border: `1px solid ${c.accent}`, color: c.accent, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.07em' }}>
-              ADMIN
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
+      )}
+
+      {/* ── SIDEBAR (toujours sombre, quel que soit le thème) ──────────── */}
+      <div style={{
+        width: 224, background: SIDEBAR.bg, borderRight: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: '100vh',
+        ...(isMobile ? {
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -244,
+          height: '100%', zIndex: 50,
+          transition: 'left 0.25s ease', overflowY: 'auto',
+        } : {
+          position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+        })
+      }}>
+
+        <div style={{ padding: '22px 18px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 5, background: `linear-gradient(135deg, ${SIDEBAR.accent}, ${c.success})`, flexShrink: 0 }} />
+            <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 20, color: '#fff', letterSpacing: '0.03em' }}>
+              Digital<span style={{ color: SIDEBAR.accent }}>Football</span>
             </span>
-          )}
-          <button onClick={() => { signOutSafe(); navigate('/') }}
-            style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
-            Déconnexion
-          </button>
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>
+            Dashboard Coach
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 18px 5px', margin: 0 }}>
+            Plateforme
+          </p>
+          {NAV_PLATEFORME.map(renderNavItem)}
+
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 18px 5px', margin: 0 }}>
+            Activité
+          </p>
+          {NAV_ACTIVITE.map(renderNavItem)}
+        </div>
+
+        <div style={{ padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Admin · Digital Football</span>
         </div>
       </div>
 
-      {/* ── Corps : sidebar + contenu ──────────────────────────────────── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-        {isMobile && sidebarOpen && (
-          <div onClick={() => setSidebarOpen(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 40 }} />
-        )}
-
-        {/* ── SIDEBAR (toujours sombre, quel que soit le thème) ──────────── */}
-        <div style={{
-          width: 224, background: SIDEBAR.bg, borderRight: '1px solid rgba(255,255,255,0.05)',
-          display: 'flex', flexDirection: 'column', flexShrink: 0,
-          ...(isMobile ? {
-            position: 'fixed', top: 54, left: sidebarOpen ? 0 : -244,
-            height: 'calc(100% - 54px)', zIndex: 50,
-            transition: 'left 0.25s ease', overflowY: 'auto',
-          } : {
-            overflowY: 'auto', height: 'calc(100vh - 54px)',
-            position: 'sticky', top: 54,
-          })
-        }}>
-
-          <div style={{ padding: '18px 16px 0' }}>
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 12px' }}>
-              VUE D'ENSEMBLE
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-              {[
-                { label: 'Total demandes', val: demandes.length, color: '#fff' },
-                { label: 'En attente', val: enAttente.length, color: c.warn },
-                { label: 'Certifs à valider', val: certifsEnAttente.length, color: certifsEnAttente.length > 0 ? c.warn : c.success },
-              ].map(s => (
-                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                  <span style={{ fontSize: 12, color: SIDEBAR.text }}>{s.label}</span>
-                  <span style={{ fontFamily: fonts.mono, fontSize: 15, fontWeight: 500, color: s.color }}>{s.val}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 0 14px' }} />
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 5px' }}>
-              NAVIGATION
-            </p>
-          </div>
-
-          {NAV_ITEMS.map(item => {
-            const actif = activeSection === item.id
-            return (
-              <button key={item.id}
-                onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                  padding: '8px 18px', background: actif ? SIDEBAR.active : 'transparent',
-                  border: 'none', borderLeft: `2px solid ${actif ? SIDEBAR.accent : 'transparent'}`,
-                  color: actif ? '#fff' : SIDEBAR.text, cursor: 'pointer',
-                  fontFamily: fonts.body, fontSize: 13, fontWeight: 500,
-                  textAlign: 'left', transition: 'color 0.15s ease, background 0.15s ease',
-                }}>
-                <span style={{ fontSize: 15, opacity: actif ? 1 : 0.65 }}>{item.icon}</span>
-                <span style={{ flex: 1 }}>{item.label}</span>
-                {item.badge > 0 && (
-                  <span style={{ background: c.danger, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10, minWidth: 18, textAlign: 'center' }}>
-                    {item.badge}
-                  </span>
-                )}
+      {/* ── MAIN ─────────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 }}>
+        <div style={{ background: c.surface, borderBottom: `1px solid ${c.border}`, padding: '0 26px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 30, gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(true)}
+                style={{ background: 'none', border: 'none', color: c.text, fontSize: 20, cursor: 'pointer', padding: '4px 8px 4px 0', flexShrink: 0 }}>
+                ☰
               </button>
-            )
-          })}
-
-          <div style={{ marginTop: 'auto', padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Admin · Digital Football</span>
+            )}
+            <span style={{ fontFamily: fonts.display, fontSize: isMobile ? 15 : 17, fontWeight: 600, color: c.text, letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {TITRES_SECTION[activeSection]}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <button onClick={toggle}
+              style={{ background: c.surface2, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', color: c.textMuted, fontSize: 12, fontWeight: 500, fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
+              {mode === 'dark' ? '◐ Clair' : '◑ Sombre'}
+            </button>
+            {isAdminClubs && (
+              <span style={{ background: rgba(c.accent, 0.12), border: `1px solid ${c.accent}`, color: c.accent, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.07em' }}>
+                ADMIN
+              </span>
+            )}
+            <button onClick={() => { signOutSafe(); navigate('/') }}
+              style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: fonts.body, transition: 'background 0.15s ease, color 0.15s ease' }}>
+              Déconnexion
+            </button>
           </div>
         </div>
 
-        {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────── */}
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px' : '24px 26px' }}>
-
-          <div style={{ marginBottom: 20 }}>
-            <h1 style={{ margin: 0, fontFamily: fonts.display, fontSize: isMobile ? 18 : 20, fontWeight: 600, letterSpacing: '0.03em', color: c.text }}>
-              {TITRES_SECTION[activeSection]}
-            </h1>
-          </div>
 
           {activeSection === 'overview' && (
             <Overview
@@ -717,13 +701,13 @@ function DashboardCoachInner() {
 
             {recruteurModal.recherche_profil && (
               <div style={{ background: rgba(c.accent, 0.08), border: `1px solid ${rgba(c.accent, 0.3)}`, borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: c.accent, margin: '0 0 6px', fontWeight: 600 }}>🔍 Profil recherché</p>
+                <p style={{ fontSize: '11px', color: c.accent, margin: '0 0 6px', fontWeight: 600 }}>Profil recherché</p>
                 <p style={{ fontSize: '14px', color: c.text, margin: 0, lineHeight: 1.5 }}>{recruteurModal.recherche_profil}</p>
               </div>
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '1rem' }}>
-              <p style={{ fontSize: '13px', color: c.textMuted, margin: 0 }}>📧 {recruteurModal.email}</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: c.textMuted, margin: 0 }}><IcoMail size={13} /> {recruteurModal.email}</p>
             </div>
 
             <button onClick={() => setRecruteurModal(null)}
