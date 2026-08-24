@@ -68,7 +68,6 @@ function DashboardCoachInner() {
 
   // Support (tickets envoyés depuis le widget "💬 Support" — cf. FloatingHelper.jsx)
   const [tickets, setTickets] = useState([])
-  const [reponseDrafts, setReponseDrafts] = useState({})
   const [savingTicket, setSavingTicket] = useState(null)
   const [ticketsError, setTicketsError] = useState(null)
 
@@ -131,18 +130,6 @@ function DashboardCoachInner() {
     } else {
       pushToast('✓ Ticket marqué comme résolu')
     }
-  }
-
-  const envoyerReponseTicket = async (id) => {
-    const reponse = (reponseDrafts[id] || '').trim()
-    if (!reponse) return
-    setSavingTicket(id)
-    const { error } = await supabase.from('support_tickets').update({ reponse, coach_id: coachId, statut: 'resolu' }).eq('id', id)
-    setSavingTicket(null)
-    if (error) { alert('Erreur : ' + error.message); return }
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, reponse, coach_id: coachId, statut: 'resolu' } : t))
-    setReponseDrafts(prev => ({ ...prev, [id]: '' }))
-    pushToast('✉️ Réponse envoyée')
   }
 
   const getDemandesClub = async () => {
@@ -661,9 +648,7 @@ function DashboardCoachInner() {
               ticketsError={ticketsError}
               savingTicket={savingTicket}
               marquerTicketResolu={marquerTicketResolu}
-              reponseDrafts={reponseDrafts}
-              setReponseDrafts={setReponseDrafts}
-              envoyerReponseTicket={envoyerReponseTicket}
+              coachId={coachId}
             />
           )}
 

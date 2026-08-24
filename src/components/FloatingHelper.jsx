@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 
 // ─── FAQ RAPIDE ──────────────────────────────────────────────────────────────
@@ -199,13 +199,17 @@ const S = {
     cursor: "pointer",
     transition: "opacity 0.2s",
   }),
-  ticketCard: {
+  ticketCard: (clickable) => ({
     background: "#1a1a1a",
     border: "1px solid #2a2a2a",
     borderRadius: "8px",
     padding: "10px 12px",
     marginBottom: "8px",
-  },
+    cursor: clickable ? "pointer" : "default",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  }),
   ticketMsg: {
     color: "#a1a1aa",
     fontSize: "12px",
@@ -222,25 +226,72 @@ const S = {
     background: statut === "resolu" ? "#4ade8015" : `${color}15`,
     border: `1px solid ${statut === "resolu" ? "#4ade8040" : color + "40"}`,
   }),
-  reponseBox: (color) => ({
-    marginTop: "8px",
-    paddingTop: "8px",
-    borderTop: `1px solid ${color}30`,
+  unreadDot: (color) => ({
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    background: color,
+    flexShrink: 0,
   }),
-  reponseLabel: (color) => ({
-    color,
-    fontSize: "10px",
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-    margin: 0,
-  }),
-  reponseText: {
-    color: "#e4e4e7",
-    fontSize: "12px",
-    lineHeight: "1.5",
-    margin: "4px 0 0",
+  threadHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "10px",
   },
+  backBtn: {
+    background: "transparent",
+    border: "none",
+    color: "#a1a1aa",
+    fontSize: "16px",
+    cursor: "pointer",
+    padding: "2px 4px",
+  },
+  threadMsgs: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    maxHeight: "220px",
+    overflowY: "auto",
+    marginBottom: "10px",
+  },
+  bubble: (mine, color) => ({
+    alignSelf: mine ? "flex-end" : "flex-start",
+    maxWidth: "80%",
+    background: mine ? color : "#1a1a1a",
+    color: mine ? "#0a0a0a" : "#e4e4e7",
+    borderRadius: "10px",
+    padding: "7px 10px",
+    fontSize: "12px",
+    lineHeight: 1.5,
+    wordBreak: "break-word",
+  }),
+  threadInputRow: {
+    display: "flex",
+    gap: "6px",
+  },
+  threadInput: {
+    flex: 1,
+    boxSizing: "border-box",
+    background: "#1a1a1a",
+    border: "1px solid #2a2a2a",
+    borderRadius: "8px",
+    padding: "8px 10px",
+    color: "#e4e4e7",
+    fontSize: "13px",
+    fontFamily: "inherit",
+    resize: "none",
+  },
+  threadSendBtn: (color) => ({
+    background: color,
+    border: "none",
+    borderRadius: "8px",
+    color: "#0a0a0a",
+    fontSize: "12px",
+    fontWeight: "700",
+    padding: "0 12px",
+    cursor: "pointer",
+  }),
 };
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
@@ -259,6 +310,14 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
   const [newSujet, setNewSujet] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Fil de conversation d'un ticket ouvert (support_messages, cf.
+  // supabase_support_messages.sql) — null = on est sur la liste, pas dans un fil.
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [threadMessages, setThreadMessages] = useState([]);
+  const [threadDraft, setThreadDraft] = useState("");
+  const [sendingThreadMsg, setSendingThreadMsg] = useState(false);
+  const threadScrollRef = useRef(null);
 
   const handleReplay = () => {
     // Supprime le flag onboarding pour relancer le guide
@@ -288,9 +347,16 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
   const envoyerTicket = async () => {
     if (!userId || !newSujet.trim() || !newMessage.trim()) return;
     setSending(true);
-    const { error } = await supabase
+    const sujet = newSujet.trim();
+    const message = newMessage.trim();
+    const { data, error } = await supabase
       .from("support_tickets")
-      .insert({ user_id: userId, sujet: newSujet.trim(), message: newMessage.trim() });
+      .insert({ user_id: userId, sujet, message, dernier_message_at: new Date().toISOString() })
+      .select()
+      .single();
+    if (!error && data) {
+      await supabase.from("support_messages").insert({ ticket_id: data.id, sender_id: userId, contenu: message, is_coach: false });
+    }
     setSending(false);
     if (error) {
       alert("Erreur lors de l'envoi : " + error.message);
@@ -299,6 +365,46 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
     setNewSujet("");
     setNewMessage("");
     await chargerTickets();
+  };
+
+  const chargerFilMessages = async (ticketId) => {
+    const { data, error } = await supabase.from("support_messages").select("*").eq("ticket_id", ticketId).order("created_at", { ascending: true });
+    if (error) { console.error("Erreur chargement fil support :", error); return; }
+    setThreadMessages(data || []);
+  };
+
+  const ouvrirFil = async (ticket) => {
+    setSelectedTicket(ticket);
+    await chargerFilMessages(ticket.id);
+    supabase.from("support_tickets").update({ lu_par_user_at: new Date().toISOString() }).eq("id", ticket.id).then(() => {});
+  };
+
+  useEffect(() => {
+    if (!selectedTicket || !open) return;
+    const id = setInterval(() => chargerFilMessages(selectedTicket.id), 5000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTicket?.id, open]);
+
+  useEffect(() => {
+    threadScrollRef.current?.scrollTo({ top: threadScrollRef.current.scrollHeight });
+  }, [threadMessages]);
+
+  const envoyerMessageFil = async () => {
+    const contenu = threadDraft.trim();
+    if (!contenu || !selectedTicket || !userId) return;
+    setSendingThreadMsg(true);
+    const maintenant = new Date().toISOString();
+    const { error } = await supabase.from("support_messages").insert({ ticket_id: selectedTicket.id, sender_id: userId, contenu, is_coach: false });
+    if (!error) {
+      await supabase.from("support_tickets").update({ dernier_message_at: maintenant, lu_par_user_at: maintenant }).eq("id", selectedTicket.id);
+      setThreadDraft("");
+      await chargerFilMessages(selectedTicket.id);
+      await chargerTickets();
+    } else {
+      alert("Erreur : " + error.message);
+    }
+    setSendingThreadMsg(false);
   };
 
   return (
@@ -360,6 +466,46 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
                 ▶ Revoir le guide de démarrage
               </button>
             </>
+          ) : selectedTicket ? (
+            <>
+              <div style={S.threadHeader}>
+                <button style={S.backBtn} onClick={() => setSelectedTicket(null)}>←</button>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ ...S.faqQ, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selectedTicket.sujet}</p>
+                </div>
+                <span style={S.statutBadge(selectedTicket.statut, accentColor)}>
+                  {selectedTicket.statut === "resolu" ? "✓ Résolu" : "⏳ Ouvert"}
+                </span>
+              </div>
+
+              <div style={S.threadMsgs} ref={threadScrollRef}>
+                {threadMessages.length === 0 ? (
+                  <p style={S.ticketMsg}>Aucun message</p>
+                ) : threadMessages.map((m) => (
+                  <div key={m.id} style={S.bubble(!m.is_coach, accentColor)}>
+                    {m.contenu}
+                  </div>
+                ))}
+              </div>
+
+              <div style={S.threadInputRow}>
+                <textarea
+                  style={S.threadInput}
+                  rows={1}
+                  placeholder="Écrire un message..."
+                  value={threadDraft}
+                  onChange={(e) => setThreadDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); envoyerMessageFil(); } }}
+                />
+                <button
+                  style={{ ...S.threadSendBtn(accentColor), opacity: sendingThreadMsg || !threadDraft.trim() ? 0.5 : 1 }}
+                  onClick={envoyerMessageFil}
+                  disabled={sendingThreadMsg || !threadDraft.trim()}
+                >
+                  ➤
+                </button>
+              </div>
+            </>
           ) : (
             <>
               <p style={S.sectionTitle}>Contacter le support</p>
@@ -389,23 +535,22 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
               ) : tickets.length > 0 && (
                 <>
                   <p style={{ ...S.sectionTitle, marginTop: 16 }}>Mes demandes</p>
-                  {tickets.map((t) => (
-                    <div key={t.id} style={S.ticketCard}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                        <p style={S.faqQ}>{t.sujet}</p>
-                        <span style={S.statutBadge(t.statut, accentColor)}>
-                          {t.statut === "resolu" ? "✓ Résolu" : "⏳ Ouvert"}
-                        </span>
-                      </div>
-                      <p style={S.ticketMsg}>{t.message}</p>
-                      {t.reponse && (
-                        <div style={S.reponseBox(accentColor)}>
-                          <p style={S.reponseLabel(accentColor)}>Réponse du support</p>
-                          <p style={S.reponseText}>{t.reponse}</p>
+                  {tickets.map((t) => {
+                    const nonLu = t.dernier_message_at && (!t.lu_par_user_at || new Date(t.dernier_message_at) > new Date(t.lu_par_user_at));
+                    return (
+                      <div key={t.id} style={S.ticketCard(true)} onClick={() => ouvrirFil(t)}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                            <p style={{ ...S.faqQ, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.sujet}</p>
+                            <span style={S.statutBadge(t.statut, accentColor)}>
+                              {t.statut === "resolu" ? "✓ Résolu" : "⏳ Ouvert"}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {nonLu && <span style={S.unreadDot(accentColor)} />}
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </>
