@@ -265,6 +265,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
   const [presentationOuverte, setPresentationOuverte] = useState(false)
   const [menuOuvert, setMenuOuvert] = useState(null) // id de la fiche dont le menu "…" est ouvert, vue liste
   const [tactipadsDispo, setTactipadsDispo] = useState([]) // schémas Tactipad de l'éducateur, pour le sélecteur "Mouvement tactique"
+  const [tactipadsLoaded, setTactipadsLoaded] = useState(false) // évite d'ouvrir la présentation avant la fin du chargement — sinon les slides "Mouvement tactique" liées à f.tactipad_ids sont silencieusement absentes de la première ouverture (tactipadsDispo encore vide)
   const [avatarsParJoueurId, setAvatarsParJoueurId] = useState({}) // profiles.avatar_url — equipe_joueurs n'a pas cette colonne
   const [compoModal, setCompoModal] = useState(null) // { type: 'titulaire', slotIndex } | { type: 'remplacant' }
   const [savingCompo, setSavingCompo] = useState(false)
@@ -290,6 +291,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
     const { data, error } = await supabase.from('tactipads').select('id, nom, schema').eq('educateur_id', userId).order('created_at', { ascending: false })
     if (error) console.error('chargerTactipads (Causerie) error:', error)
     setTactipadsDispo(data || [])
+    setTactipadsLoaded(true)
   }
 
   useEffect(() => { if (userId) { charger(); chargerTactipads() } }, [userId])
@@ -979,7 +981,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
         <button onClick={() => setVue('liste')} style={btnO}>← Fiches</button>
         <button onClick={() => editer(f)} style={btnO}>Modifier</button>
         <button onClick={async () => { await dupliquer(f); setVue('liste') }} style={btnO}>Dupliquer</button>
-        <button onClick={() => setPresentationOuverte(true)} style={{ ...btnO, color: '#a78bfa', borderColor: '#a78bfa44' }}>📺 Présenter la causerie</button>
+        <button onClick={() => setPresentationOuverte(true)} disabled={!tactipadsLoaded} style={{ ...btnO, color: '#a78bfa', borderColor: '#a78bfa44', opacity: tactipadsLoaded ? 1 : 0.5, cursor: tactipadsLoaded ? 'pointer' : 'default' }}>
+          {tactipadsLoaded ? '📺 Présenter la causerie' : 'Chargement…'}
+        </button>
         <button onClick={() => window.print()} style={{ ...btnO, color: '#4ade80', borderColor: '#4ade8044' }}>🖨️ Imprimer</button>
         <button onClick={() => supprimer(f.id)} style={{ ...btnO, color: '#f87171', borderColor: '#f8717133' }}>Supprimer</button>
       </div>
