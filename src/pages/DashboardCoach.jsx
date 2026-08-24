@@ -598,7 +598,7 @@ function DashboardCoachInner() {
           {activeSection === 'users' && isAdminClubs && <Users initialType={usersInitialType} />}
           {activeSection === 'subscriptions' && isAdminClubs && <Subscriptions />}
           {activeSection === 'revenue' && isAdminClubs && <Revenue />}
-          {activeSection === 'referrals' && isAdminClubs && <Referrals />}
+          {activeSection === 'referrals' && isAdminClubs && <Referrals coachId={coachId} />}
 
           {activeSection === 'analyses' && (
             <PlayerAnalysis

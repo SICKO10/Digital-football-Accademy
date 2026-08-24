@@ -16,6 +16,7 @@ import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
+import ParrainageWidget from '../components/ParrainageWidget'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
 import StatsEquipe from '../components/StatsEquipe'
@@ -4006,6 +4007,10 @@ Règles :
           const moyenne = avisRecus.length ? avisRecus.reduce((s, a) => s + (a.note || 0), 0) / avisRecus.length : null
           return (
             <div style={{ maxWidth: '700px' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <ParrainageWidget userId={clubId} accentColor={couleurPrincipale} />
+              </div>
+
               {/* Avatar + infos */}
               <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '1.5rem' }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>

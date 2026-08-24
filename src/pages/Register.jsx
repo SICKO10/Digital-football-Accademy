@@ -29,6 +29,18 @@ export default function Register() {
   // après coup par le webhook pour créer le compte.
   const palierClub = STRIPE_LINKS_CLUB[searchParams.get('palier')] || null
 
+  // Lien de parrainage (?ref=<uuid du parrain>, cf. ParrainageWidget.jsx) —
+  // validé au format UUID ici (pas juste "présent") pour limiter le risque
+  // qu'un paramètre trafiqué/tronqué dans l'URL fasse échouer l'upsert du
+  // profil plus bas. Un id bien formé mais inexistant reste possible (lien
+  // copié puis compte supprimé entretemps) : la FK profiles.parrain_id le
+  // rejettera alors, et cet upsert échouera comme n'importe quelle autre
+  // erreur déjà tolérée ici (juste loggée, le trigger reste le filet de
+  // sécurité pour les champs qu'il couvre).
+  const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const refBrut = searchParams.get('ref')
+  const refParrainId = refBrut && REGEX_UUID.test(refBrut) ? refBrut : null
+
   const PROFILS = [
     {
       id: 'joueur_starter', label: t('regchoix_starter_titre', lang), desc: t('reginsc_starter_desc', lang),
@@ -117,6 +129,7 @@ export default function Register() {
         plan,
         abonnement_actif: !!profilChoisi.gratuit,
         abonnement_debut: profilChoisi.gratuit ? new Date().toISOString() : null,
+        ...(refParrainId ? { parrain_id: refParrainId } : {}),
       })
       if (profilErr) console.error('Erreur création profil (le trigger auto devrait prendre le relais):', profilErr)
     }

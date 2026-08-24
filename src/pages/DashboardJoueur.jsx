@@ -20,6 +20,7 @@ import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import CompositionTerrain from '../components/CompositionTerrain'
 import FloatingHelper from '../components/FloatingHelper'
+import ParrainageWidget from '../components/ParrainageWidget'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 
@@ -3449,6 +3450,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {onglet === 'profil' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jp_titre', lang)}</h1>
+
+            <div style={{ marginBottom: '16px' }}>
+              <ParrainageWidget userId={userId} accentColor={colors.accent.green} />
+            </div>
 
             <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
               <p style={labelStyle}>{t('jp_photo', lang)}</p>

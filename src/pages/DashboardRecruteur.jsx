@@ -10,6 +10,7 @@ import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 import OnboardingGuide from "../components/OnboardingGuide";
 import FloatingHelper from "../components/FloatingHelper";
+import ParrainageWidget from "../components/ParrainageWidget";
 
 const RECRUTEUR_ONBOARDING_STEPS = [
   { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de ton Scout Center en 2 minutes.", targetId: null, position: "center" },
@@ -1340,6 +1341,10 @@ export default function DashboardRecruteur() {
           <div style={{ maxWidth: "680px", margin: "0 auto" }}>
             <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "6px" }}>Mon Profil</h2>
             <p style={{ fontSize: "13px", color: colors.text.faint, marginBottom: "2rem" }}>Ces informations sont visibles par les joueurs Pro qui reçoivent vos messages.</p>
+
+            <div style={{ marginBottom: "16px" }}>
+              <ParrainageWidget userId={recruteurId} accentColor={colors.accent.orange} />
+            </div>
 
             {/* Avatar */}
             <div style={{ background: colors.background.surface, border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "20px" }}>

@@ -22,6 +22,7 @@ import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
+import ParrainageWidget from '../components/ParrainageWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
@@ -8388,6 +8389,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>👤 {t('profil_titre', lang)}</h1>
+            </div>
+
+            <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
+              <ParrainageWidget userId={userId} accentColor={colors.accent.blue} />
             </div>
 
             <div className="profil-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
