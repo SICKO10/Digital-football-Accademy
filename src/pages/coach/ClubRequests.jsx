@@ -176,7 +176,12 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                   <p style={{ margin: '3px 0 0', fontSize: '13px', color: c.textMuted }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
                   {d.nom_club && (
                     <p style={{ margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
-                      🏟️ {d.nom_club}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
+                      🏟️ {d.nom_club}{d.ville ? ` · ${d.ville}` : ''}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
+                    </p>
+                  )}
+                  {(d.ligue || d.nb_membres) && (
+                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
+                      {d.ligue ? `🏆 ${d.ligue}` : ''}{d.ligue && d.nb_membres ? ' · ' : ''}{d.nb_membres ? `👥 ${d.nb_membres} membres` : ''}
                     </p>
                   )}
                   <p style={{ margin: '3px 0 0', fontSize: '11px', color: c.textMuted }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>

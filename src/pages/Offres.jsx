@@ -112,7 +112,7 @@ function FormulaireClub() {
   const [typeEnvoye, setTypeEnvoye] = useState(null)
   const [nbLicencies, setNbLicencies] = useState('')
   const [cycle, setCycle] = useState('mensuel')
-  const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', message: '' })
+  const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', ville: '', ligue: '', nbMembres: '', message: '' })
 
   const champ = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
@@ -134,6 +134,9 @@ function FormulaireClub() {
       nom: form.nom.trim(),
       email: form.email.trim().toLowerCase(),
       nom_club: form.nomClub.trim(),
+      ville: form.ville.trim() || null,
+      ligue: form.ligue.trim() || null,
+      nb_membres: form.nbMembres ? parseInt(form.nbMembres, 10) : null,
       nb_licencies: type === 'abonnement' ? nbLicencies : null,
       cycle: type === 'abonnement' ? cycle : null,
       type,
@@ -184,6 +187,11 @@ function FormulaireClub() {
       </div>
       <input type="email" placeholder="Email de contact *" value={form.email} onChange={champ('email')} style={inputStyle} />
       <input placeholder="Nom du club *" value={form.nomClub} onChange={champ('nomClub')} style={inputStyle} />
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <input placeholder="Ville (optionnel)" value={form.ville} onChange={champ('ville')} style={inputStyle} />
+        <input placeholder="Ligue / championnat (optionnel)" value={form.ligue} onChange={champ('ligue')} style={inputStyle} />
+      </div>
+      <input type="number" min="0" placeholder="Nombre de membres (optionnel)" value={form.nbMembres} onChange={champ('nbMembres')} style={inputStyle} />
       <textarea placeholder="Message (optionnel)" value={form.message} onChange={champ('message')} rows={3}
         style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
       {erreur && <p style={{ color: '#f87171', fontSize: '12px', margin: 0 }}>{erreur}</p>}
