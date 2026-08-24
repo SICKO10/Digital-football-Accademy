@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors } from '../tokens'
+import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
@@ -31,6 +32,17 @@ function Login() {
     }
 
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Comptes coach analyseur reconnus par email (cf. lib/coachAdmin.js) — à
+    // vérifier avant le plan, même priorité que SmartDashboard dans App.jsx.
+    // Sans ce contrôle ici, un compte admin dont le profil a un plan
+    // "normal" (ex: educateur) atterrissait sur /educateur à chaque
+    // connexion au lieu de /coach.
+    if (COACH_ADMIN_EMAILS.includes(user?.email)) {
+      setLoading(false)
+      navigate('/coach')
+      return
+    }
 
     const { data: profil } = await supabase
       .from('profiles')
