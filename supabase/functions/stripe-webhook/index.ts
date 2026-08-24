@@ -69,6 +69,41 @@ async function crediterAnalyses(profileId: string, delta: number) {
   if (error) console.error('[stripe-webhook] erreur increment_analyses', error)
 }
 
+// Regroupe les valeurs de profiles.plan en famille lisible pour la page
+// Revenus (cf. src/pages/coach/constants.js TYPE_FAMILIES côté front, même
+// découpage). 'joueur_starter'/'joueur_pro' → 'joueur', etc.
+function familyFromPlan(plan: string | null | undefined): string | null {
+  if (!plan) return null
+  if (plan === 'joueur_starter' || plan === 'joueur_pro') return 'joueur'
+  if (plan === 'educateur') return 'educateur'
+  if (plan === 'club') return 'club'
+  if (plan === 'scout') return 'recruteur'
+  if (plan === 'dirigeant') return 'dirigeant'
+  return null
+}
+
+// Journalise un paiement pour la page Revenus (table paiements, cf.
+// supabase_paiements.sql). Idempotent via stripe_event_id : Stripe peut
+// renvoyer le même événement plusieurs fois, on ne veut jamais compter un
+// paiement deux fois — upsert avec ignoreDuplicates plutôt qu'un insert qui
+// ferait échouer (et donc logguerait une fausse erreur à) chaque retry.
+async function enregistrerPaiement({ profileId, montant, typeUtilisateur, cycle, stripeEventId }: {
+  profileId: string | null
+  montant: number
+  typeUtilisateur: string | null
+  cycle: 'mensuel' | 'annuel' | 'unite'
+  stripeEventId: string
+}) {
+  const { error } = await supabaseAdmin.from('paiements').upsert({
+    profile_id: profileId,
+    montant,
+    type_utilisateur: typeUtilisateur,
+    cycle,
+    stripe_event_id: stripeEventId,
+  }, { onConflict: 'stripe_event_id', ignoreDuplicates: true })
+  if (error) console.error('[stripe-webhook] erreur enregistrerPaiement', error)
+}
+
 // Paiement club sans compte préalable (nouveau flow : le club paie depuis un
 // lien envoyé après une demande sur /offres, avant même d'avoir un compte —
 // cf. DashboardCoach.jsx copierLienDemandeClub). Crée une invitation par
@@ -182,6 +217,7 @@ Deno.serve(async (req) => {
           const profileId = await trouverProfilId({ clientReferenceId: session.client_reference_id, email })
           if (!profileId) { console.error('[stripe-webhook] checkout.session.completed (analyse unité): profil introuvable', { clientReferenceId: session.client_reference_id, email }); break }
           await crediterAnalyses(profileId, 1)
+          await enregistrerPaiement({ profileId, montant, typeUtilisateur: 'joueur', cycle: 'unite', stripeEventId: event.id })
           break
         }
 
@@ -256,7 +292,19 @@ Deno.serve(async (req) => {
 
         const resoluInvoice = resoudreCycleEtPlan(montant, profil?.plan)
         if (!resoluInvoice) { console.error('[stripe-webhook] invoice.paid: montant non reconnu', { montant, plan: profil?.plan }); break }
-        const { cycle } = resoluInvoice
+        const { cycle, estClub } = resoluInvoice
+
+        // Journalisé ici uniquement (jamais dans la branche subscription de
+        // checkout.session.completed ci-dessus) : invoice.paid couvre déjà le
+        // 1er paiement ET les renouvellements — le journaliser aussi côté
+        // checkout compterait le premier paiement en double.
+        await enregistrerPaiement({
+          profileId,
+          montant,
+          typeUtilisateur: estClub ? 'club' : familyFromPlan(profil?.plan),
+          cycle,
+          stripeEventId: event.id,
+        })
 
         if (cycle === 'annuel') {
           await crediterAnalyses(profileId, 2)
