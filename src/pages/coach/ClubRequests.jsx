@@ -3,7 +3,20 @@ import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
 import { STRIPE_LINKS_CLUB } from '../../lib/stripeLinks'
-import { IcoMail, IcoCopy, IcoLink, IcoCard, IcoHome, IcoTrophy, IcoUsers, IcoCheck } from './NavIcons'
+import { IcoMail, IcoCopy, IcoLink, IcoCard, IcoHome, IcoCheck } from './NavIcons'
+
+// Construit les info-boxes disponibles pour une demande (variable selon le
+// type — abonnement vs question — donc on n'affiche que ce qui existe
+// réellement, jamais de case vide/inventée).
+function infoBoxes(d) {
+  const boxes = []
+  if (d.ville) boxes.push({ label: 'Ville', value: d.ville })
+  if (d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies]) boxes.push({ label: 'Licenciés', value: STRIPE_LINKS_CLUB[d.nb_licencies].label })
+  if (d.cycle) boxes.push({ label: 'Cycle', value: d.cycle })
+  if (d.ligue) boxes.push({ label: 'Ligue', value: d.ligue })
+  if (d.nb_membres) boxes.push({ label: 'Membres', value: d.nb_membres })
+  return boxes
+}
 
 // Email pré-rédigé avec le lien de paiement du bon palier, à copier ou ouvrir
 // directement dans l'app Mail — évite à l'admin de retaper le message à
@@ -156,62 +169,82 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {demandesClub.map(d => (
-            <div key={d.id} style={{ background: c.surface, border: `1px solid ${d.statut === 'nouveau' ? rgba(c.warn, 0.4) : c.border}`, borderRadius: '10px', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: c.text }}>{d.prenom} {d.nom}</p>
-                    {d.type ? (
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: d.type === 'abonnement' ? c.success : c.accent, background: rgba(d.type === 'abonnement' ? c.success : c.accent, 0.12), border: `1px solid ${rgba(d.type === 'abonnement' ? c.success : c.accent, 0.3)}`, padding: '2px 8px', borderRadius: '20px' }}>
-                        {d.type === 'abonnement' ? 'Abonnement' : 'Question'}
-                      </span>
-                    ) : d.role ? (
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: c.accent, background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.3)}`, padding: '2px 8px', borderRadius: '20px' }}>{d.role}</span>
-                    ) : null}
-                    {d.statut === 'nouveau' && (
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: c.warn, background: rgba(c.warn, 0.12), border: `1px solid ${rgba(c.warn, 0.3)}`, padding: '2px 8px', borderRadius: '20px' }}>NOUVEAU</span>
-                    )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '14px' }}>
+          {demandesClub.map(d => {
+            const initiales = `${(d.prenom || '?')[0]}${(d.nom || '?')[0]}`
+            const boxes = infoBoxes(d)
+            return (
+              <div key={d.id} style={{ background: c.surface, border: `1px solid ${d.statut === 'nouveau' ? rgba(c.warn, 0.3) : c.border}`, borderRadius: '10px', padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: rgba(c.success, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.success, fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+                      {initiales}
+                    </div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.prenom} {d.nom}</p>
                   </div>
-                  <p style={{ margin: '3px 0 0', fontSize: '13px', color: c.textMuted }}>{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</p>
+                  <span style={{ background: rgba(d.statut === 'nouveau' ? c.warn : c.success, 0.15), color: d.statut === 'nouveau' ? c.warn : c.success, fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {d.statut === 'nouveau' ? 'Nouveau' : 'Traité'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 1rem' }}>
+                  {d.email}{d.telephone ? ` · ${d.telephone}` : ''} · {new Date(d.created_at).toLocaleDateString('fr-FR')}
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  {d.type ? (
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: d.type === 'abonnement' ? c.success : c.accent, background: rgba(d.type === 'abonnement' ? c.success : c.accent, 0.12), border: `1px solid ${rgba(d.type === 'abonnement' ? c.success : c.accent, 0.3)}`, padding: '3px 10px', borderRadius: '20px' }}>
+                      {d.type === 'abonnement' ? 'Abonnement' : 'Question'}
+                    </span>
+                  ) : d.role ? (
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: c.accent, background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.3)}`, padding: '3px 10px', borderRadius: '20px' }}>{d.role}</span>
+                  ) : null}
                   {d.nom_club && (
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
-                      <IcoHome size={12} /> {d.nom_club}{d.ville ? ` · ${d.ville}` : ''}{d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies] ? ` · ${STRIPE_LINKS_CLUB[d.nb_licencies].label}` : ''}{d.cycle ? ` · ${d.cycle}` : ''}
-                    </p>
-                  )}
-                  {(d.ligue || d.nb_membres) && (
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '3px 0 0', fontSize: '12px', color: c.textMuted }}>
-                      {d.ligue && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoTrophy size={12} /> {d.ligue}</span>}
-                      {d.nb_membres && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoUsers size={12} /> {d.nb_membres} membres</span>}
-                    </p>
-                  )}
-                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: c.textMuted }}>{new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  {d.lien_paiement_envoye && (
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '3px 0 0', fontSize: '11px', color: c.success }}>
-                      <IcoCheck size={11} /> Lien copié le {new Date(d.lien_paiement_envoye_le).toLocaleDateString('fr-FR')}
-                    </p>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: c.textMuted }}>
+                      <IcoHome size={12} /> {d.nom_club}
+                    </span>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
+
+                {boxes.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(boxes.length, 3)}, 1fr)`, gap: '0.75rem', marginBottom: '1rem' }}>
+                    {boxes.map(b => (
+                      <div key={b.label} style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem' }}>
+                        <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>{b.label}</p>
+                        <p style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 0', color: c.text, textTransform: 'capitalize' }}>{b.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {d.message && (
+                  <div style={{ background: c.surface2, borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '11px', color: c.textMuted, margin: 0 }}>Message</p>
+                    <p style={{ fontSize: '13px', color: c.text, fontStyle: 'italic', margin: '4px 0 0' }}>{d.message}</p>
+                  </div>
+                )}
+
+                {d.lien_paiement_envoye && (
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '0 0 1rem', fontSize: '11px', color: c.success }}>
+                    <IcoCheck size={11} /> Lien copié le {new Date(d.lien_paiement_envoye_le).toLocaleDateString('fr-FR')}
+                  </p>
+                )}
+
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {d.statut === 'nouveau' ? (
                     <button onClick={() => marquerDemandeTraitee(d.id)} disabled={traitantDemande === d.id}
-                      style={{ background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      style={{ alignSelf: 'flex-start', background: rgba(c.success, 0.12), border: `1px solid ${rgba(c.success, 0.4)}`, color: c.success, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       {traitantDemande === d.id ? 'Mise à jour...' : 'Marquer comme traité'}
                     </button>
                   ) : (
                     <span style={{ fontSize: '11px', color: c.success, fontWeight: 600 }}>Traité</span>
                   )}
+                  {d.type === 'abonnement' && d.nb_licencies && d.statut !== 'traite' && (
+                    <EmailBlockClub demande={d} onLienEnvoye={() => setDemandesClub(prev => prev.map(x => x.id === d.id ? { ...x, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : x))} />
+                  )}
                 </div>
               </div>
-              {d.message && (
-                <p style={{ margin: 0, fontSize: '13px', color: c.text, lineHeight: 1.6, borderTop: `1px solid ${c.border}`, paddingTop: '10px' }}>{d.message}</p>
-              )}
-              {d.type === 'abonnement' && d.nb_licencies && d.statut !== 'traite' && (
-                <EmailBlockClub demande={d} onLienEnvoye={() => setDemandesClub(prev => prev.map(x => x.id === d.id ? { ...x, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : x))} />
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </>
