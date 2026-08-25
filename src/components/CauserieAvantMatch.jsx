@@ -182,6 +182,18 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   const idx = Math.min(slideIdx, total - 1)
   const slide = slides[idx]
 
+  // Téléphone en paysage : très large mais peu haut (souvent <500px de
+  // hauteur) — le padding et les marges pensés pour un écran de PC/tablette
+  // (large ET haut) laissent alors trop peu de place au contenu, qui se
+  // retrouve coupé/nécessite de scroller pendant la présentation.
+  const [isLandscapeCourt, setIsLandscapeCourt] = useState(() => window.innerHeight < 520 && window.innerWidth > window.innerHeight)
+  useEffect(() => {
+    const onResize = () => setIsLandscapeCourt(window.innerHeight < 520 && window.innerWidth > window.innerHeight)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => { window.removeEventListener('resize', onResize); window.removeEventListener('orientationchange', onResize) }
+  }, [])
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); setSlideIdx(i => Math.min(i + 1, total - 1)) }
@@ -199,34 +211,39 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
 
   if (!slide) return null
 
-  const navBtn = { background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteFort, borderRadius: '50%', width: '44px', height: '44px', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }
+  const navBtnSize = isLandscapeCourt ? '32px' : '44px'
+  const navBtn = { background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteFort, borderRadius: '50%', width: navBtnSize, height: navBtnSize, fontSize: isLandscapeCourt ? '14px' : '18px', cursor: 'pointer', flexShrink: 0 }
+  // Les schémas (composition/CPA/mouvement) ont un ratio largeur/hauteur fixe
+  // — en paysage court, on les limite par la hauteur dispo plutôt que par une
+  // largeur fixe pensée pour desktop, sinon ils débordent verticalement.
+  const maxWidthSchema = (ratio, defaut) => isLandscapeCourt ? `min(90vw, calc((100vh - 150px) * ${ratio}))` : defaut
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, background: pal.fond, zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 40px', flexShrink: 0 }}>
-        <p style={{ margin: 0, color: pal.texteFaint, fontSize: '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px', flexShrink: 0 }}>
+        <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
+        <div style={{ display: 'flex', gap: isLandscapeCourt ? '6px' : '10px' }}>
+          <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {theme === 'sombre' ? 'Claire' : 'Sombre'}
           </button>
-          <button onClick={onFermer} style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitter [Échap]</button>
+          <button onClick={onFermer} style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ {isLandscapeCourt ? '' : 'Quitter [Échap]'}</button>
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <p style={{ margin: '0 0 32px', color: slide.accent, fontSize: '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isLandscapeCourt ? '6px 24px' : '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <p style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 32px', color: slide.accent, fontSize: isLandscapeCourt ? '13px' : '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
 
         {slide.type === 'intro' && (
           <>
-            <h1 style={{ margin: '0 0 24px', color: pal.texteFort, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
-            {f.objectifs ? <p style={{ color: pal.texteDoux, fontSize: 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.6, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: pal.texteGhost }}>—</p>}
+            <h1 style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 24px', color: pal.texteFort, fontSize: isLandscapeCourt ? 'clamp(20px, 4.5vh, 40px)' : 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
+            {f.objectifs ? <p style={{ color: pal.texteDoux, fontSize: isLandscapeCourt ? 'clamp(13px, 2.6vh, 22px)' : 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.5, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: pal.texteGhost }}>—</p>}
           </>
         )}
 
         {slide.type === 'liste' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isLandscapeCourt ? '10px' : '22px', alignItems: 'flex-start' }}>
             {slide.items.map((it, i) => (
-              <p key={i} style={{ margin: 0, color: pal.texteFort, fontSize: 'clamp(20px, 3vw, 34px)', fontWeight: 600, lineHeight: 1.4, display: 'flex', gap: '16px', textAlign: 'left' }}>
+              <p key={i} style={{ margin: 0, color: pal.texteFort, fontSize: isLandscapeCourt ? 'clamp(14px, 3.2vh, 26px)' : 'clamp(20px, 3vw, 34px)', fontWeight: 600, lineHeight: 1.3, display: 'flex', gap: '16px', textAlign: 'left' }}>
                 <span style={{ color: slide.accent }}>›</span>{it}
               </p>
             ))}
@@ -234,44 +251,44 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         )}
 
         {slide.type === 'composition' && (
-          <div style={{ width: '100%', maxWidth: '760px' }}>
+          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.55, '760px') }}>
             <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} />
           </div>
         )}
 
         {slide.type === 'board' && (
-          <div style={{ width: '100%', maxWidth: '780px' }}>
+          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.53, '780px') }}>
             <TacticalBoard data={slide.board} onChange={() => {}} readOnly />
           </div>
         )}
 
         {slide.type === 'mouvement' && (
-          <div style={{ width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'center' }}>
-            <TactipadViewer schema={slide.schema} width={Math.min(window.innerWidth - 120, 900)} />
+          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.6, '900px'), display: 'flex', justifyContent: 'center' }}>
+            <TactipadViewer schema={slide.schema} width={isLandscapeCourt ? Math.min(window.innerWidth - 48, (window.innerHeight - 150) * 1.6) : Math.min(window.innerWidth - 120, 900)} />
           </div>
         )}
 
         {slide.type === 'adversaire' && (
-          <div style={{ display: 'flex', gap: '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: isLandscapeCourt ? '28px' : '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
               { nom: equipeNom || 'Nous', rang: f.notre_classement, pts: f.notre_points, color: '#4ade80' },
               { nom: f.adversaire, rang: f.adversaire_classement, pts: f.adversaire_points, color: slide.accent },
             ].map((e, i) => (
               <div key={i}>
-                <p style={{ margin: 0, color: e.color, fontWeight: 900, fontSize: 'clamp(48px, 8vw, 96px)', lineHeight: 1 }}>{e.rang ? `${e.rang}e` : '—'}</p>
-                <p style={{ margin: '8px 0 0', color: pal.texteFaint, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.nom}</p>
-                {e.pts != null && <p style={{ margin: '4px 0 0', color: pal.texteFort, fontSize: '18px' }}>{e.pts} pts</p>}
+                <p style={{ margin: 0, color: e.color, fontWeight: 900, fontSize: isLandscapeCourt ? 'clamp(24px, 7vh, 60px)' : 'clamp(48px, 8vw, 96px)', lineHeight: 1 }}>{e.rang ? `${e.rang}e` : '—'}</p>
+                <p style={{ margin: '8px 0 0', color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.nom}</p>
+                {e.pts != null && <p style={{ margin: '4px 0 0', color: pal.texteFort, fontSize: isLandscapeCourt ? '13px' : '18px' }}>{e.pts} pts</p>}
               </div>
             ))}
           </div>
         )}
 
         {slide.type === 'message' && (
-          <p style={{ margin: 0, color: pal.texteFort, fontSize: 'clamp(24px, 3.5vw, 40px)', fontWeight: 700, fontStyle: 'italic', lineHeight: 1.5, maxWidth: '1000px' }}>« {f.message_coach} »</p>
+          <p style={{ margin: 0, color: pal.texteFort, fontSize: isLandscapeCourt ? 'clamp(16px, 4vh, 30px)' : 'clamp(24px, 3.5vw, 40px)', fontWeight: 700, fontStyle: 'italic', lineHeight: 1.4, maxWidth: '1000px' }}>« {f.message_coach} »</p>
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px 40px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isLandscapeCourt ? '10px' : '16px', padding: isLandscapeCourt ? '8px 20px' : '24px 40px', flexShrink: 0 }}>
         <button onClick={() => setSlideIdx(i => Math.max(i - 1, 0))} disabled={idx === 0} style={{ ...navBtn, opacity: idx === 0 ? 0.3 : 1 }}>‹</button>
         <div style={{ display: 'flex', gap: '6px' }}>
           {slides.map((s, i) => (
