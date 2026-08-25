@@ -160,6 +160,18 @@ serve(async (req) => {
       }
 
       if (inv.role === 'educateur') {
+        // educateurs_inclus est réglé manuellement par le support (aucun
+        // palier "nombre d'équipes" figé pour l'instant) — null = pas de
+        // limite. Vérifié ici (pas seulement côté client DashboardClub.jsx)
+        // car ce chemin passe par l'acceptation d'une invitation par email,
+        // sans jamais repasser par le bouton "Accepter" du club.
+        const { data: clubProfilLimite } = await supabase.from('profiles').select('educateurs_inclus').eq('id', inv.club_id).maybeSingle()
+        if (clubProfilLimite?.educateurs_inclus != null) {
+          const { count } = await supabase.from('club_educateurs').select('id', { count: 'exact', head: true }).eq('club_id', inv.club_id).eq('statut', 'accepte')
+          if ((count || 0) >= clubProfilLimite.educateurs_inclus) {
+            throw new Error(`Limite atteinte : ce club a déjà ${clubProfilLimite.educateurs_inclus} éducateur(s) inclus dans son abonnement. Contacte le club.`)
+          }
+        }
         const { error: errEducateur } = await supabase.from('club_educateurs').upsert({
           club_id: inv.club_id, educateur_id: userId, statut: 'accepte', methode: 'invite',
         }, { onConflict: 'club_id,educateur_id' })

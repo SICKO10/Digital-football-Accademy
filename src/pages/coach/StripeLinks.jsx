@@ -8,7 +8,7 @@ import { IcoLink, IcoCopy } from './NavIcons'
 // Stripe ID / dernier paiement — ce sont des comptes créés manuellement,
 // en attente d'activation (paiement pas encore effectué). On n'affiche donc
 // que les données réelles : contact, palier à choisir, lien à copier.
-export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierChoisi, activatingClub, activerClub, copierLienClub }) {
+export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierChoisi, activatingClub, activerClub, copierLienClub, educateursInclusInput, setEducateursInclusInput, enregistrerEducateursInclus, savingEducateursInclus }) {
   const { c, rgba } = useCoachTheme()
 
   const columns = [
@@ -48,22 +48,36 @@ export default function StripeLinks({ clubsEnAttente, palierChoisi, setPalierCho
             rowKey="id"
             renderExpanded={row => {
               const palier = palierChoisi[row.id] || 'c0'
+              const educateursInclusValeur = educateursInclusInput[row.id] ?? (row.educateurs_inclus ?? '')
               return (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
-                  <select value={palier} onChange={e => setPalierChoisi(prev => ({ ...prev, [row.id]: e.target.value }))}
-                    style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text, borderRadius: '8px', padding: '7px 10px', fontSize: '12px' }}>
-                    {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
-                      <option key={key} value={key}>{p.label} — {p.mensuelPrix} / {p.annuelPrix}</option>
-                    ))}
-                  </select>
-                  <button onClick={() => copierLienClub(row.id, palier, 'mensuel')}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    <IcoCopy size={12} /> Copier lien mensuel
-                  </button>
-                  <button onClick={() => copierLienClub(row.id, palier, 'annuel')}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    <IcoCopy size={12} /> Copier lien annuel
-                  </button>
+                <div onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '10px' }}>
+                    <select value={palier} onChange={e => setPalierChoisi(prev => ({ ...prev, [row.id]: e.target.value }))}
+                      style={{ background: c.surface, border: `1px solid ${c.border}`, color: c.text, borderRadius: '8px', padding: '7px 10px', fontSize: '12px' }}>
+                      {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
+                        <option key={key} value={key}>{p.label} — {p.mensuelPrix} / {p.annuelPrix}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => copierLienClub(row.id, palier, 'mensuel')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                      <IcoCopy size={12} /> Copier lien mensuel
+                    </button>
+                    <button onClick={() => copierLienClub(row.id, palier, 'annuel')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                      <IcoCopy size={12} /> Copier lien annuel
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <label style={{ color: c.textMuted, fontSize: '12px' }}>Éducateurs inclus gratuitement :</label>
+                    <input type="number" min="0" placeholder="illimité"
+                      value={educateursInclusValeur}
+                      onChange={e => setEducateursInclusInput(prev => ({ ...prev, [row.id]: e.target.value }))}
+                      style={{ width: '80px', background: c.surface, border: `1px solid ${c.border}`, color: c.text, borderRadius: '8px', padding: '6px 10px', fontSize: '12px' }} />
+                    <button onClick={() => enregistrerEducateursInclus(row.id)} disabled={savingEducateursInclus === row.id}
+                      style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.text, padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                      {savingEducateursInclus === row.id ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                  </div>
                 </div>
               )
             }}

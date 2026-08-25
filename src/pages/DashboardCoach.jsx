@@ -43,6 +43,12 @@ function DashboardCoachInner() {
   const [clubsEnAttente, setClubsEnAttente] = useState([])
   const [palierChoisi, setPalierChoisi] = useState({}) // { [clubId]: 'c0' | 'c100' | ... }
   const [activatingClub, setActivatingClub] = useState(null)
+  // Nombre d'éducateurs inclus gratuitement, réglé manuellement au moment de
+  // l'activation — pas de table de paliers "nombre d'équipes" figée pour
+  // l'instant (cf. supabase_profiles_educateurs_inclus.sql), donc une saisie
+  // libre plutôt qu'un menu déroulant qu'il faudrait déjà retoucher.
+  const [educateursInclusInput, setEducateursInclusInput] = useState({}) // { [clubId]: string }
+  const [savingEducateursInclus, setSavingEducateursInclus] = useState(null)
 
   // Demandes de contact club envoyées depuis /offres (accès restreint, cf. COACH_ADMIN_EMAILS)
   const [demandesClub, setDemandesClub] = useState([])
@@ -161,7 +167,7 @@ function DashboardCoachInner() {
   const getClubsEnAttente = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, prenom, nom, email, club, created_at')
+      .select('id, prenom, nom, email, club, created_at, educateurs_inclus')
       .eq('plan', 'club')
       .eq('abonnement_actif', false)
       .order('created_at', { ascending: false })
@@ -182,6 +188,16 @@ function DashboardCoachInner() {
     } else {
       pushToast('Club activé')
     }
+  }
+
+  const enregistrerEducateursInclus = async (clubId) => {
+    const brut = educateursInclusInput[clubId]
+    const valeur = brut === '' || brut == null ? null : Math.max(0, parseInt(brut, 10) || 0)
+    setSavingEducateursInclus(clubId)
+    const { error } = await supabase.from('profiles').update({ educateurs_inclus: valeur }).eq('id', clubId)
+    setSavingEducateursInclus(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    pushToast(valeur == null ? 'Limite retirée (illimité)' : `Limite fixée à ${valeur} éducateur${valeur > 1 ? 's' : ''}`)
   }
 
   const copierLienClub = (clubId, palier, cycle) => {
@@ -644,6 +660,10 @@ function DashboardCoachInner() {
               activatingClub={activatingClub}
               activerClub={activerClub}
               copierLienClub={copierLienClub}
+              educateursInclusInput={educateursInclusInput}
+              setEducateursInclusInput={setEducateursInclusInput}
+              enregistrerEducateursInclus={enregistrerEducateursInclus}
+              savingEducateursInclus={savingEducateursInclus}
             />
           )}
 

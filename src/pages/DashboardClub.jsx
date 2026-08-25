@@ -3000,6 +3000,13 @@ Règles :
   }
 
   const accepterEducateur = async (id) => {
+    // educateurs_inclus est réglé manuellement par le support (aucun palier
+    // "nombre d'équipes" figé pour l'instant) — null = pas de limite, pour
+    // ne pas bloquer rétroactivement les clubs déjà actifs aujourd'hui.
+    if (club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus) {
+      alert(`Limite atteinte : votre abonnement inclut ${club.educateurs_inclus} éducateur${club.educateurs_inclus > 1 ? 's' : ''} gratuit${club.educateurs_inclus > 1 ? 's' : ''}. Contactez le support pour en ajouter.`)
+      return
+    }
     const affiliation = educateursAffilies.find(e => e.id === id)
     await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
     await chargerEducateurs(clubId)
@@ -3715,7 +3722,14 @@ Règles :
             )}
 
             {/* Affiliés */}
-            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: couleurPrincipale }}>✅ {t('club_educateurs_affilies_titre', lang)} ({educateursAcceptes.length})</p>
+            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: couleurPrincipale }}>
+              ✅ {t('club_educateurs_affilies_titre', lang)} ({educateursAcceptes.length}{club?.educateurs_inclus != null ? ` / ${club.educateurs_inclus}` : ''})
+            </p>
+            {club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus && (
+              <p style={{ margin: '-4px 0 10px', fontSize: '12px', color: colors.accent.amber }}>
+                Limite d'éducateurs gratuits atteinte — <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Ajouter des éducateurs — ' + (club?.club || ''))}`} style={{ color: colors.accent.amber }}>contacter le support</a> pour en ajouter.
+              </p>
+            )}
             {educateursAcceptes.length === 0 ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
             ) : (
