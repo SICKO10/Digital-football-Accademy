@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
 import { colors, alpha } from '../tokens'
+import { supabase } from '../supabase'
 
 const etapesEducateur = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil éducateur en 2 minutes' },
@@ -94,6 +95,21 @@ function Home() {
   const [heroCta1Hover, setHeroCta1Hover] = useState(false)
   const [heroCta2Hover, setHeroCta2Hover] = useState(false)
   const [tabActif, setTabActif] = useState('joueur')
+  const [checkingSession, setCheckingSession] = useState(true)
+
+  // Home est le start_url de la PWA — sans ce check, un utilisateur déjà
+  // connecté (session persistée par défaut dans localStorage par le client
+  // Supabase) revoyait la page marketing à chaque réouverture de l'app au
+  // lieu d'atterrir directement sur son espace. /dashboard réutilise la
+  // logique de routage déjà centralisée dans SmartDashboard (App.jsx).
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { navigate('/dashboard', { replace: true }); return }
+      setCheckingSession(false)
+    })
+  }, [navigate])
+
+  if (checkingSession) return null
 
   // Données du tab "joueur" : dépend de t()/lang, donc construit ici plutôt
   // qu'en constante de module comme etapesEducateur/etapesRecruteur/etapesClub

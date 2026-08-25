@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
@@ -15,6 +15,15 @@ function Login() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+
+  // Même logique que Home.jsx : si une session persistée existe déjà (accès
+  // direct à /login via un lien ou un ancien signet), on saute le formulaire
+  // au lieu de redemander un mot de passe pour rien.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate('/dashboard', { replace: true })
+    })
+  }, [navigate])
 
   const handleLogin = async () => {
     setLoading(true)
