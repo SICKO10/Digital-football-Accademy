@@ -5521,6 +5521,15 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
                           {canEdit('competition') && (
                             <button
+                              onClick={ev => { ev.stopPropagation(); ouvrirModalMatchJoue(m) }}
+                              style={{ background: 'transparent', border: `1px solid ${colors.border?.default || '#2a2a2a'}`, color: colors.accent.blue, cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}
+                              title="Modifier le résultat"
+                            >
+                              Modifier
+                            </button>
+                          )}
+                          {canEdit('competition') && (
+                            <button
                               onClick={async ev => {
                                 ev.stopPropagation()
                                 if (!confirm('Supprimer ce résultat ?')) return
@@ -5969,7 +5978,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
                 <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{matchJoue(modalMatchJoue) ? 'Modifier le résultat' : t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
                     <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
                   </div>
 
