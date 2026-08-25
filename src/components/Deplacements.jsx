@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { repartirBus, effectifParDefautMatch } from '../lib/repartitionBus'
 import { estimerDeplacement, calculerTrajet, diagnostiquerEchecTrajet } from '../lib/mapbox'
+import { makeUseSt } from '../lib/theme'
 
 const NATURES = [
   { val: 'match', label: 'Match' },
@@ -19,11 +20,17 @@ const formVide = () => ({
   heure_coup_envoi: '', // transitoire, sert uniquement au calcul auto ci-dessous — jamais persisté
 })
 
-const st = {
+const stSombre = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
 }
+const stClaire = {
+  input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+  label: { fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 const grouperParMois = (deplacements) => {
   const groupes = {}
@@ -51,6 +58,7 @@ const grouperParSemaine = (deplacements) => {
 }
 
 export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
+  const st = useSt()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)

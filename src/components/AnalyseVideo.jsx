@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { makeUseSt } from '../lib/theme'
 
 const playerInfoVide = () => ({
   prenom: '',
@@ -14,13 +15,21 @@ const playerInfoVide = () => ({
   periodeMatch: 'complet',
 })
 
-const st = {
+const stSombre = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
   btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
   btnSolid: (color = '#4ade80', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
 }
+const stClaire = {
+  input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '10px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+  label: { fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
+  btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  btnSolid: (color = '#4ade80', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 // ── Génération du PDF ──────────────────────────────────────────────────────
 // Prend playerInfo + rapport en paramètres (état courant ou contenu jsonb d'un
@@ -93,6 +102,7 @@ async function genererPDF(playerInfo, rapport, lang = 'fr') {
 }
 
 export default function AnalyseVideo({ userId, lang = 'fr' }) {
+  const st = useSt()
   const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
   const [transcript, setTranscript] = useState('')
   const [interimText, setInterimText] = useState('')

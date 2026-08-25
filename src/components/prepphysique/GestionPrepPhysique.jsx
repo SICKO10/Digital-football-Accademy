@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
+import { makeUseSt } from '../../lib/theme'
 
 const TYPES_SEANCE = [
   { value: 'course', label: 'Footing / Course' },
@@ -13,11 +14,17 @@ const TYPES_SEANCE = [
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-const st = {
+const stSombre = {
   bg: '#0a0a0a', card: '#111', card2: '#1a1a1a', border: '#222',
   green: '#4ade80', text: '#fff', muted: '#888',
   red: '#ef4444', yellow: '#eab308',
 }
+const stClaire = {
+  bg: '#f8fafc', card: '#ffffff', card2: '#f1f5f9', border: '#cbd5e1',
+  green: '#4ade80', text: '#0f172a', muted: '#64748b',
+  red: '#ef4444', yellow: '#eab308',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 const getSaison = () => {
   const now = new Date()
@@ -26,6 +33,7 @@ const getSaison = () => {
 }
 
 function ModalCreerProgramme({ onClose, onSave, educateurId }) {
+  const st = useSt()
   const [form, setForm] = useState({ titre: '', description: '', date_debut: '', date_fin: '', nb_semaines: 2 })
   const [loading, setLoading] = useState(false)
 
@@ -88,6 +96,7 @@ function ModalCreerProgramme({ onClose, onSave, educateurId }) {
 }
 
 function ModalSeance({ seance, programmeId, semaine, jour, onClose, onSave }) {
+  const st = useSt()
   const [form, setForm] = useState(seance || { type_seance: 'course', titre: '', description: '', duree_cible: '', distance_cible: '', semaine, jour })
   const [loading, setLoading] = useState(false)
 
@@ -144,6 +153,7 @@ function ModalSeance({ seance, programmeId, semaine, jour, onClose, onSave }) {
 }
 
 function ModalSoumission({ soumission, joueurNom, onClose }) {
+  const st = useSt()
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
       <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 520, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -173,6 +183,7 @@ function ModalSoumission({ soumission, joueurNom, onClose }) {
 }
 
 function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassement }) {
+  const st = useSt()
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -198,6 +209,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
 }
 
 export default function GestionPrepPhysique({ educateurId, clubId, readOnly = false, isMobile = false, lang = 'fr' }) {
+  const st = useSt()
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
   const [selectedProgramme, setSelectedProgramme] = useState(null)

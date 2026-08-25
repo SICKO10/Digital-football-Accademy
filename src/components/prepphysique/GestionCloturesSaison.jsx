@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
+import { makeUseSt } from '../../lib/theme'
 
-const st = {
+const stSombre = {
   card: '#111', card2: '#1a1a1a', border: '#222',
   green: '#4ade80', text: '#fff', muted: '#888',
   red: '#ef4444', yellow: '#eab308', blue: '#60a5fa',
 }
+const stClaire = {
+  card: '#ffffff', card2: '#f1f5f9', border: '#cbd5e1',
+  green: '#4ade80', text: '#0f172a', muted: '#64748b',
+  red: '#ef4444', yellow: '#eab308', blue: '#60a5fa',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 const getSaison = () => {
   const now = new Date()
@@ -20,6 +27,7 @@ const isApresClotureAuto = () => {
 }
 
 function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSaved, lang = 'fr' }) {
+  const st = useSt()
   const [form, setForm] = useState({
     matchs_joues: joueur.matchs_officiel || 0,
     buts: joueur.buts_total || 0,
@@ -144,6 +152,7 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
 }
 
 export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
+  const st = useSt()
   const [joueurs, setJoueurs] = useState([])
   const [historiques, setHistoriques] = useState([])
   const [presences, setPresences] = useState({}) // { joueur_id: { realisees, total } }

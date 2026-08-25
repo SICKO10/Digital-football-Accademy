@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
+import { makeUseSt } from '../../lib/theme'
 
 const TYPES_SEANCE = [
   { value: 'course', icon: '🏃' }, { value: 'renforcement', icon: '💪' },
@@ -7,12 +8,18 @@ const TYPES_SEANCE = [
   { value: 'gainage', icon: '🧘' }, { value: 'repos', icon: '❌' },
 ]
 
-const st = {
+const stSombre = {
   bg: '#0a0a0a', card: '#111', card2: '#1a1a1a', border: '#222',
   green: '#4ade80', text: '#fff', muted: '#888', red: '#ef4444', yellow: '#eab308',
 }
+const stClaire = {
+  bg: '#f8fafc', card: '#ffffff', card2: '#f1f5f9', border: '#cbd5e1',
+  green: '#4ade80', text: '#0f172a', muted: '#64748b', red: '#ef4444', yellow: '#eab308',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSaved }) {
+  const st = useSt()
   const [mode, setMode] = useState('manuel')
   const [form, setForm] = useState({
     duree_reelle: soumissionExistante?.duree_reelle || '',
@@ -251,6 +258,7 @@ const METRIQUES_TESTS = [
 ]
 
 function CarteTest({ test, precedent }) {
+  const st = useSt()
   return (
     <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 12 }}>
       <h3 style={{ color: st.text, margin: '0 0 16px', fontSize: 15 }}>🏆 Tests du {new Date(test.date_test).toLocaleDateString('fr-FR')}</h3>
@@ -285,6 +293,7 @@ function CarteTest({ test, precedent }) {
 }
 
 export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
+  const st = useSt()
   const [programme, setProgramme] = useState(null)
   const [seances, setSeances] = useState([])
   const [soumissions, setSoumissions] = useState([])
