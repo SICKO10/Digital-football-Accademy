@@ -24,11 +24,15 @@ const stSombre = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
+  bg: '#0a0a0a', bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
+  text: '#fff', textFaint: '#555', textDim: '#9ca3af', textGhost: '#444',
 }
 const stClaire = {
   input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
+  bg: '#f8fafc', bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
+  text: '#0f172a', textFaint: '#64748b', textDim: '#334155', textGhost: '#94a3b8',
 }
 const useSt = makeUseSt(stSombre, stClaire)
 
@@ -674,7 +678,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Déplacements</h1>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#555' }}>Organisation des transports pour matchs, tournois et stages</p>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: st.textFaint }}>Organisation des transports pour matchs, tournois et stages</p>
         </div>
         {!readOnly && (
           <button onClick={() => { if (showForm) { setShowForm(false) } else { setForm(formVide()); setDeplacementEnEdition(null); setShowForm(true) } }}
@@ -686,17 +690,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
 
       {/* ── Parc de véhicules — fusionné depuis l'ancien onglet "Répartition mini-bus" ── */}
       <div style={{ ...st.card, marginBottom: '1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <span style={{ color: '#9ca3af', fontSize: '13px', fontWeight: 700, marginRight: '4px', flexShrink: 0 }}>Parc :</span>
+        <span style={{ color: st.textDim, fontSize: '13px', fontWeight: 700, marginRight: '4px', flexShrink: 0 }}>Parc :</span>
         {vehicules.length === 0 ? (
           <span style={{ color: '#4b5563', fontSize: '13px' }}>Aucun véhicule enregistré</span>
         ) : (
           vehicules.map(v => (
             <span key={v.id}
               onClick={() => setVehiculeDetail(v)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: st.bgRaised, border: `1px solid ${st.border}`, borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
               {v.plaque} · {v.capacite} places
               {!readOnly && (
-                <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
+                <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
               )}
             </span>
           ))
@@ -709,7 +713,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               {savingVehicule ? 'Ajout...' : 'Ajouter'}
             </button>
-            <button onClick={() => setShowAddVehicule(false)} style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={() => setShowAddVehicule(false)} style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Annuler
             </button>
           </div>
@@ -727,38 +731,38 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
           onClick={() => { setVehiculeDetail(null); setEditCT(false) }}>
           <div style={{ ...st.card, width: '100%', maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>{vehiculeDetail.plaque}</h3>
-              <button onClick={() => { setVehiculeDetail(null); setEditCT(false) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <h3 style={{ color: st.text, margin: 0, fontSize: '18px' }}>{vehiculeDetail.plaque}</h3>
+              <button onClick={() => { setVehiculeDetail(null); setEditCT(false) }} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             {[
               { label: 'Marque / Modèle', val: [vehiculeDetail.marque, vehiculeDetail.modele].filter(Boolean).join(' ') || '—' },
               { label: 'Capacité', val: `${vehiculeDetail.capacite} places` },
             ].map(({ label, val }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
-                <span style={{ color: '#555', fontSize: '13px' }}>{label}</span>
-                <span style={{ color: '#ccc', fontSize: '13px', fontWeight: 600 }}>{val}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${st.bgRaised}` }}>
+                <span style={{ color: st.textFaint, fontSize: '13px' }}>{label}</span>
+                <span style={{ color: st.textDim, fontSize: '13px', fontWeight: 600 }}>{val}</span>
               </div>
             ))}
 
-            <div style={{ marginTop: '16px', background: '#0a0a0a', borderRadius: '10px', padding: '14px' }}>
-              <div style={{ color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px' }}>
+            <div style={{ marginTop: '16px', background: st.bg, borderRadius: '10px', padding: '14px' }}>
+              <div style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px' }}>
                 Contrôle technique
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #1a1a1a' }}>
-                <span style={{ color: '#555', fontSize: '13px' }}>Dernier CT</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${st.bgRaised}` }}>
+                <span style={{ color: st.textFaint, fontSize: '13px' }}>Dernier CT</span>
                 {editCT ? (
                   <input type="date" value={ctForm.dernier} onChange={e => setCtForm(p => ({ ...p, dernier: e.target.value }))} style={{ ...st.input, width: 'auto', padding: '4px 8px', fontSize: '12px' }} />
                 ) : (
-                  <span style={{ color: '#aaa', fontSize: '13px', fontWeight: 600 }}>
+                  <span style={{ color: st.textDim, fontSize: '13px', fontWeight: 600 }}>
                     {vehiculeDetail.dernier_ct ? new Date(vehiculeDetail.dernier_ct).toLocaleDateString('fr-FR') : '—'}
                   </span>
                 )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-                <span style={{ color: '#555', fontSize: '13px' }}>Prochain CT</span>
+                <span style={{ color: st.textFaint, fontSize: '13px' }}>Prochain CT</span>
                 {editCT ? (
                   <input type="date" value={ctForm.prochain} onChange={e => setCtForm(p => ({ ...p, prochain: e.target.value }))} style={{ ...st.input, width: 'auto', padding: '4px 8px', fontSize: '12px' }} />
                 ) : (
@@ -776,13 +780,13 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
                 {!editCT ? (
                   <button onClick={() => { setEditCT(true); setCtForm({ dernier: vehiculeDetail.dernier_ct || '', prochain: vehiculeDetail.prochain_ct || '' }) }}
-                    style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textDim, padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     Modifier les dates CT
                   </button>
                 ) : (
                   <>
                     <button onClick={() => setEditCT(false)} disabled={savingCT}
-                      style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textFaint, padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       Annuler
                     </button>
                     <button onClick={() => sauvegarderCT(vehiculeDetail.id)} disabled={savingCT}
@@ -801,7 +805,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         {!readOnly && (
           <button onClick={recupererMatchsExterieur} disabled={recuperationMatchsEnCours || loading}
             title="Crée un déplacement pour chaque match Extérieur qui n'en a pas encore (ex: matchs ajoutés avant que la création automatique existe)"
-            style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: recuperationMatchsEnCours ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: recuperationMatchsEnCours ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {recuperationMatchsEnCours ? 'Recherche...' : 'Récupérer les matchs Extérieur'}
           </button>
         )}
@@ -893,9 +897,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                 onChange={e => setForm(f => ({ ...f, ville_destination: e.target.value, distance_km: null, duree_trajet_min: null }))}
                 onBlur={estimerTrajetEtHoraires}
                 placeholder="Ex: Nice, Marseille, Lyon..." />
-              {estimationEnCours && <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>Estimation du trajet...</p>}
+              {estimationEnCours && <p style={{ fontSize: '11px', color: st.textFaint, margin: '6px 0 0' }}>Estimation du trajet...</p>}
               {!estimationEnCours && form.distance_km != null && (
-                <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: '#9ca3af' }}>
+                <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: st.textDim }}>
                   <strong style={{ color: 'white' }}>{form.distance_km} km</strong>
                   {form.duree_trajet_min != null && <> · {Math.floor(form.duree_trajet_min / 60)}h{String(form.duree_trajet_min % 60).padStart(2, '0')} de trajet (aller simple, depuis {clubVille})</>}
                 </p>
@@ -907,7 +911,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                 <input id="input-heure-coup-envoi" style={st.input} type="time" value={form.heure_coup_envoi}
                   onChange={e => setForm(f => ({ ...f, heure_coup_envoi: e.target.value }))}
                   onBlur={estimerTrajetEtHoraires} />
-                <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0' }}>
+                <p style={{ fontSize: '11px', color: st.textFaint, margin: '6px 0 0' }}>
                   Avec la ville de destination ci-dessus, calcule automatiquement l'heure de départ (1h30 + trajet avant) et de retour estimée (2h30 + trajet après).
                 </p>
               </div>
@@ -941,7 +945,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               {saving ? 'Enregistrement...' : deplacementEnEdition ? 'Enregistrer les modifications' : 'Créer le déplacement'}
             </button>
             <button onClick={() => { setShowForm(false); setForm(formVide()); setDeplacementEnEdition(null) }}
-              style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textFaint, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Annuler
             </button>
           </div>
@@ -950,11 +954,11 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
 
       {(
         loading ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+          <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement...</p>
         ) : (() => {
           const parMois = grouperParMois(deplacements)
           const cles = Object.keys(parMois)
-          if (cles.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucun déplacement enregistré.</p>
+          if (cles.length === 0) return <p style={{ color: st.textGhost, fontSize: '13px' }}>Aucun déplacement enregistré.</p>
           return cles.map(cle => {
             const deps = parMois[cle]
             const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -966,7 +970,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
               <div key={cle} style={{ marginBottom: '2rem' }}>
                 <div style={{
                   fontSize: '13px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em',
-                  padding: '6px 0 12px', borderBottom: '1px solid #1a1a1a', marginBottom: '14px',
+                  padding: '6px 0 12px', borderBottom: `1px solid ${st.bgRaised}`, marginBottom: '14px',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
                 }}>
                   <span>{label} · {deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
@@ -985,11 +989,11 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '10px 14px', background: ouvert ? '#161616' : '#0d0d0d',
-                          border: '1px solid #1a1a1a', borderRadius: '8px', color: '#ccc', cursor: 'pointer',
+                          border: `1px solid ${st.bgRaised}`, borderRadius: '8px', color: st.textDim, cursor: 'pointer',
                           fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
                         }}>
                         <span>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</span>
-                        <span style={{ color: '#666' }}>{ouvert ? '▲' : '▼'}</span>
+                        <span style={{ color: st.textFaint }}>{ouvert ? '▲' : '▼'}</span>
                       </button>
                       {ouvert && (
                         <div style={{ paddingTop: '10px' }}>
@@ -1000,14 +1004,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                   const editRetour = retourEdits[d.id] || { km_apres: d.km_apres ?? '', gasoil_apres: d.gasoil_apres ?? '' }
                   const retourComplet = d.km_apres != null && d.gasoil_apres
                   return (
-                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : '1px solid #1a1a1a' }}>
+                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : `1px solid ${st.bgRaised}` }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                             {d.lieu_destination}
-                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#666', fontWeight: 600 }}>· {d.equipe}</span>}
+                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: st.textFaint, fontWeight: 600 }}>· {d.equipe}</span>}
                           </p>
-                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>
+                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>
                             {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                             {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
                             {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
@@ -1018,7 +1022,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                         <span style={{
                           fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
                           background: !d.vehicule ? '#6b728020' : insuffisant ? '#f59e0b15' : accentColor + '15',
-                          color: !d.vehicule ? '#9ca3af' : insuffisant ? '#f59e0b' : accentColor,
+                          color: !d.vehicule ? st.textDim : insuffisant ? '#f59e0b' : accentColor,
                         }}>
                           {!d.vehicule
                             ? 'Aucun véhicule assigné'
@@ -1030,14 +1034,14 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                         </span>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${st.bgRaised}` }}>
                         <div>
                           <p style={st.label}>Km avant</p>
-                          <p style={{ margin: 0, fontSize: '13px', color: d.km_avant != null ? '#fff' : '#444' }}>{d.km_avant != null ? `${d.km_avant} km` : '—'}</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: d.km_avant != null ? st.text : st.textGhost }}>{d.km_avant != null ? `${d.km_avant} km` : '—'}</p>
                         </div>
                         <div>
                           <p style={st.label}>Gasoil avant</p>
-                          <p style={{ margin: 0, fontSize: '13px', color: d.gasoil_avant ? '#fff' : '#444' }}>{d.gasoil_avant || '—'}</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: d.gasoil_avant ? st.text : st.textGhost }}>{d.gasoil_avant || '—'}</p>
                         </div>
                         <div>
                           <p style={st.label}>Km après (retour)</p>
@@ -1056,15 +1060,15 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                       {!readOnly && (
                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                           <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-                            style={{ background: retourComplet ? '#1a1a1a' : accentColor + '15', border: `1px solid ${retourComplet ? '#2a2a2a' : accentColor + '40'}`, color: retourComplet ? '#666' : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
                           </button>
                           <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
-                            style={{ background: 'transparent', border: '1px solid #333', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
                           </button>
                           <button onClick={() => ouvrirEditionDeplacement(d)}
-                            style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #374151', color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             Modifier
                           </button>
                           <button onClick={() => supprimerDeplacement(d)}
@@ -1075,9 +1079,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                       )}
 
                       {assignationBusOuverte === d.id && (
-                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
                           {vehicules.length === 0 ? (
-                            <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
+                            <p style={{ color: st.textGhost, fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               {vehicules.map(v => {
@@ -1090,17 +1094,17 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                                   <label key={v.plaque} style={{
                                     display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
                                     cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
-                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : '#1a1a1a',
-                                    border: coche ? `1px solid ${accentColor}50` : '1px solid #2a2a2a',
+                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : st.bgRaised,
+                                    border: coche ? `1px solid ${accentColor}50` : `1px solid ${st.border}`,
                                     opacity: dejaUtilise && !coche ? 0.4 : 1,
                                   }}>
                                     <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
                                       onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
                                       style={{ accentColor, width: '15px', height: '15px' }} />
-                                    <span style={{ fontSize: '12px', color: coche ? accentColor : '#d1d5db', fontWeight: coche ? 600 : 400 }}>
+                                    <span style={{ fontSize: '12px', color: coche ? accentColor : st.textDim, fontWeight: coche ? 600 : 400 }}>
                                       {v.plaque} ({v.capacite} pl.)
                                     </span>
-                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: '#6b7280', marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
+                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: st.textFaint, marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
                                   </label>
                                 )
                               })}
