@@ -498,11 +498,11 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>{t('phys_programmes_joueurs', lang)}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Tests physiques</button>
+          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Tests physiques</button>
           {!readOnly && (
             <>
               <label style={{
-                padding: '10px 20px', background: '#1a1a1a', border: `1px solid ${st.green}`,
+                padding: '10px 20px', background: st.card2, border: `1px solid ${st.green}`,
                 borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
               }}>
@@ -564,7 +564,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
           <div style={{
-            background: '#111', borderRadius: 16, padding: 32,
+            background: st.card, borderRadius: 16, padding: 32,
             width: 600, maxWidth: '95vw', maxHeight: '80vh', overflowY: 'auto', border: `1px solid ${st.border}`,
           }}>
             <h2 style={{ color: st.green, marginBottom: 8 }}>
@@ -582,13 +582,13 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                 {sem.jours.map(j => (
                   <div key={j.jour} style={{
                     display: 'flex', gap: 12, padding: '8px 12px',
-                    background: j.repos ? '#0a0a0a' : st.card2,
+                    background: j.repos ? st.bg : st.card2,
                     borderRadius: 8, marginBottom: 4,
                   }}>
                     <span style={{ color: st.muted, width: 80, textTransform: 'capitalize' }}>
                       {j.jour}
                     </span>
-                    <span style={{ color: j.repos ? '#444' : st.text }}>
+                    <span style={{ color: j.repos ? st.muted : st.text }}>
                       {j.repos ? '— Repos' : j.exercice}
                     </span>
                   </div>
@@ -805,7 +805,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                     <div key={jour}>
                       <div style={{ color: st.muted, fontSize: isMobile ? 11 : 13, textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>{jourLabel}</div>
                       <div onClick={() => !readOnly && setModalSeance({ semaine: sem, jour, seance })}
-                        style={{ background: seance ? (isRepos ? '#1a1a1a' : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? '#333' : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
+                        style={{ background: seance ? (isRepos ? st.card2 : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? st.border : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
                         onMouseEnter={e => { if (!readOnly) e.currentTarget.style.borderColor = st.green }}
                         onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
                         {seance ? (
@@ -917,13 +917,13 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
                       const seance = seances.find(se => se.id === s.seance_id)
                       return (
                         <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderTop: `1px solid ${st.border}`, flexWrap: 'wrap', gap: 8 }}>
-                          <span style={{ color: '#ccc', fontSize: 13 }}>{seance?.titre || 'Séance'}</span>
+                          <span style={{ color: st.muted, fontSize: 13 }}>{seance?.titre || 'Séance'}</span>
                           <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13 }}>
                             <span style={{ color: st.muted }}>{s.distance_reelle ? `${s.distance_reelle} km` : '—'}</span>
                             <span style={{ color: st.muted }}>{s.duree_reelle ? `${s.duree_reelle} min` : '—'}</span>
                             <a href={s.proof_url || '#'} target={s.proof_url ? '_blank' : '_self'} rel="noreferrer"
                               onClick={!s.proof_url ? e => e.preventDefault() : undefined}
-                              style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : '#333'}`, borderRadius: 6, color: s.proof_url ? st.green : '#444', fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
+                              style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : st.border}`, borderRadius: 6, color: s.proof_url ? st.green : st.muted, fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
                               {s.proof_url ? 'Voir' : 'Aucun'}
                             </a>
                           </div>

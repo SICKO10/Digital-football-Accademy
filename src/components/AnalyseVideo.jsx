@@ -21,6 +21,8 @@ const stSombre = {
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
   btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
   btnSolid: (color = '#4ade80', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  border: '#2a2a2a', borderStrong: '#444', text: '#fff', textFaint: '#555', textDim: '#9ca3af',
+  bg: '#0a0a0a', bgRaised: '#1a1a1a',
 }
 const stClaire = {
   input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '10px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
@@ -28,6 +30,8 @@ const stClaire = {
   card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
   btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
   btnSolid: (color = '#4ade80', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  border: '#cbd5e1', borderStrong: '#94a3b8', text: '#0f172a', textFaint: '#64748b', textDim: '#334155',
+  bg: '#f8fafc', bgRaised: '#f1f5f9',
 }
 const useSt = makeUseSt(stSombre, stClaire)
 
@@ -322,7 +326,7 @@ Instructions:
         <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('analyse_titre', lang)}</h1>
         <div style={{ ...st.card, maxWidth: '500px', textAlign: 'center', marginTop: '1.5rem' }}>
           <p style={{ color: '#ef4444', margin: '0 0 8px' }}>La dictée vocale n'est pas supportée sur ce navigateur.</p>
-          <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
+          <p style={{ color: st.textFaint, fontSize: '13px', margin: 0 }}>Utilise Chrome (desktop ou Android), Edge, ou Safari sur iOS.</p>
         </div>
       </div>
     )
@@ -331,7 +335,7 @@ Instructions:
   return (
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('analyse_titre', lang)}</h1>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
+      <p style={{ color: st.textFaint, fontSize: '13px', marginBottom: '1.5rem' }}>
         {t('av_sous_titre', lang)}
       </p>
 
@@ -363,7 +367,7 @@ Instructions:
           <div style={{ display: 'flex', gap: '8px' }}>
             {[['complet', t('analyse_match_complet', lang)], ['premiere', t('analyse_premiere_mi', lang)], ['deuxieme', t('analyse_deuxieme_mi', lang)]].map(([val, label]) => (
               <button key={val} onClick={() => setPlayerInfo(p => ({ ...p, periodeMatch: val }))}
-                style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#4ade80' : '#2a2a2a'}`, background: playerInfo.periodeMatch === val ? '#4ade8015' : '#1a1a1a', color: playerInfo.periodeMatch === val ? '#4ade80' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#4ade80' : st.border}`, background: playerInfo.periodeMatch === val ? '#4ade8015' : st.bgRaised, color: playerInfo.periodeMatch === val ? '#4ade80' : st.textFaint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {label}
               </button>
             ))}
@@ -371,7 +375,7 @@ Instructions:
         </div>
 
         {(step === 'input' || step === 'transcript') && (
-          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: `1px solid ${st.bgRaised}` }}>
             <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>{t('analyse_enregistrer', lang)}</p>
 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -395,10 +399,10 @@ Instructions:
             )}
 
             {(transcript || interimText) && (
-              <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginTop: '16px' }}>
-                <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px' }}>Transcription :</p>
-                <p style={{ color: '#ccc', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
-                  {transcript}<span style={{ color: '#666', fontStyle: 'italic' }}>{interimText}</span>
+              <div style={{ background: st.bg, border: `1px solid ${st.bgRaised}`, borderRadius: '10px', padding: '12px', marginTop: '16px' }}>
+                <p style={{ fontSize: '11px', color: st.textFaint, margin: '0 0 8px' }}>Transcription :</p>
+                <p style={{ color: st.textDim, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+                  {transcript}<span style={{ color: st.textFaint, fontStyle: 'italic' }}>{interimText}</span>
                 </p>
               </div>
             )}
@@ -415,20 +419,20 @@ Instructions:
         )}
 
         {step === 'rapport' && rapport && (
-          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #1a1a1a' }}>
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: `1px solid ${st.bgRaised}` }}>
             <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 16px' }}>Rapport généré</p>
 
             {rapport.note != null && (
               <div style={{ background: '#4ade8015', border: '1px solid #4ade8040', borderRadius: '10px', padding: '12px', textAlign: 'center', marginBottom: '16px' }}>
                 <p style={{ color: '#4ade80', fontSize: '24px', fontWeight: 800, margin: 0 }}>{rapport.note} / 10</p>
-                <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0' }}>Note globale</p>
+                <p style={{ color: st.textFaint, fontSize: '11px', margin: '2px 0 0' }}>Note globale</p>
               </div>
             )}
 
             {rapport.synthese && (
               <div style={{ marginBottom: '16px' }}>
                 <p style={st.label}>Synthèse</p>
-                <p style={{ color: '#ccc', fontSize: '13px', margin: 0 }}>{rapport.synthese}</p>
+                <p style={{ color: st.textDim, fontSize: '13px', margin: 0 }}>{rapport.synthese}</p>
               </div>
             )}
 
@@ -437,9 +441,9 @@ Instructions:
                 <p style={st.label}>Séquences analysées</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {rapport.sequences.map((s, i) => (
-                    <div key={i} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 10px' }}>
+                    <div key={i} style={{ background: st.bgRaised, borderRadius: '8px', padding: '8px 10px' }}>
                       <span style={{ color: '#4ade80', fontSize: '12px', fontFamily: 'monospace' }}>[{s.minute}]</span>
-                      <span style={{ color: '#ccc', fontSize: '13px', marginLeft: '8px' }}>{s.description}</span>
+                      <span style={{ color: st.textDim, fontSize: '13px', marginLeft: '8px' }}>{s.description}</span>
                     </div>
                   ))}
                 </div>
@@ -470,7 +474,7 @@ Instructions:
                 {savingRapport ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
             </div>
-            <button onClick={reset} style={{ ...st.btn('#666'), width: '100%', marginTop: '10px' }}>Nouvelle analyse</button>
+            <button onClick={reset} style={{ ...st.btn(st.textFaint), width: '100%', marginTop: '10px' }}>Nouvelle analyse</button>
           </div>
         )}
       </div>
@@ -478,16 +482,16 @@ Instructions:
       <div>
         <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>{t('analyse_mes_rapports', lang)} {rapports.length > 0 ? `(${rapports.length})` : ''}</p>
         {loadingRapports ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>{t('btn_chargement', lang)}</p>
+          <p style={{ color: st.borderStrong, fontSize: '13px' }}>{t('btn_chargement', lang)}</p>
         ) : rapports.length === 0 ? (
-          <p style={{ color: '#444', fontSize: '13px' }}>{t('analyse_aucun_rapport', lang)}.</p>
+          <p style={{ color: st.borderStrong, fontSize: '13px' }}>{t('analyse_aucun_rapport', lang)}.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {rapports.map(r => (
-              <div key={r.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div key={r.id} style={{ ...st.card, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{r.prenom_joueur || 'Sans nom'} {r.poste ? `— ${r.poste}` : ''}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>
                     {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · Vocale
                   </p>
                 </div>
