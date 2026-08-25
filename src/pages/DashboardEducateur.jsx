@@ -159,6 +159,14 @@ const NATURES_BUT = [
   { value: 'exploit_personnel', label: 'Exploit personnel' },
 ]
 
+// Côté du but (matchs_equipe.buts_detail[].cote) — même principe que
+// NATURES_BUT ci-dessus, alimente "Buts par côté" de StatsEquipe.jsx.
+const COTES_BUT = [
+  { value: 'gauche', label: 'Gauche' },
+  { value: 'centre', label: 'Centre' },
+  { value: 'droite', label: 'Droite' },
+]
+
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IcoChart     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -469,7 +477,7 @@ function DonutVND({ v, n, d, size = 72 }) {
 }
 
 const TerrainFoot = () => (
-  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
     <rect width="300" height="200" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
@@ -502,7 +510,7 @@ const TerrainFoot = () => (
 )
 
 const DemiTerrain = () => (
-  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '130px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="199" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale (bord droit, pointillé) */}
     <line x1="299" y1="0" x2="299" y2="200" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
@@ -523,7 +531,7 @@ const DemiTerrain = () => (
 )
 
 const DemiTerrainFutsal = () => (
-  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '130px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '130px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale pointillée */}
     <line x1="299" y1="0" x2="299" y2="180" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
@@ -544,7 +552,7 @@ const DemiTerrainFutsal = () => (
 )
 
 const TerrainFutsal = () => (
-  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '110px', border: '1px solid #333', display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '110px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
     <line x1="150" y1="0" x2="150" y2="180" stroke={colors.border.strong} strokeWidth="1.5"/>
@@ -629,7 +637,7 @@ function FicheContenu({ fiche, categorieLabel }) {
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
-                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: '1px solid #333', display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
               </div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                 <label>Consignes</label>
@@ -821,7 +829,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           const totalM = matchsJoues.length
           const pct = (n) => totalM ? Math.round(n / totalM * 100) : 0
           return (
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: '1rem' }}>
                 <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
                 <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
@@ -849,7 +857,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           )
         })()}
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
           {prochainesEntrainements.length === 0 ? (
             <p style={{ fontSize: '14px', color: colors.text.disabled, margin: 0 }}>Aucune séance planifiée</p>
@@ -885,13 +893,13 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           )}
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoChart /> Présence cette semaine</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: colors.accent.blue }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
           <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> Prochain match</p>
           {prochainMatch ? (
             <>
@@ -939,7 +947,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
         const podiumPrecedent = podiumDuMois(moisPrecedentKey)
 
         return (
-          <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
+          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>🏅 Classement séances</p>
               <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
@@ -956,7 +964,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {podiumActuel.slice(0, 3).map((item, idx) => (
-                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.base, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.base, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
                     <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? colors.accent.amber : idx === 1 ? '#9ca3af' : '#cd7f32', color: colors.background.base, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {idx + 1}
                     </span>
@@ -994,14 +1002,14 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           return (
             <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
               style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : colors.accent.green}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
-              <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
+              <div style={{ fontSize: '10px', color: colors.text.dim, marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
               <div style={{ fontSize: '13px', color: 'white', fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 📋 {prochainEnt.description || 'Entraînement'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
                 <span style={{ color: colors.accent.green }}>✅ {presents}</span>
                 <span style={{ color: colors.accent.red }}>❌ {absents}</span>
-                <span style={{ color: '#6b7280' }}>⏳ {enAttente}</span>
+                <span style={{ color: colors.text.dim }}>⏳ {enAttente}</span>
                 <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? '#374151' : 'rgba(74,222,128,0.15)', color: clos ? '#6b7280' : colors.accent.green }}>
                   {clos ? '🔒 Fermé' : '🟢 Ouvert'}
                 </span>
@@ -1010,7 +1018,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           )
         })() : (
           <button onClick={() => setActiveSection('equipe')}
-            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
             onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><IcoPlus /></span>
@@ -1023,7 +1031,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           { Icon: IcoLayout, label: 'Tacticboard', section: 'tactipad' },
         ].map(a => (
           <button key={a.section} onClick={() => setActiveSection(a.section)}
-            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
             onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><a.Icon /></span>
@@ -1035,11 +1043,11 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
       {/* Fil d'activité récente */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoActivity /> Activité récente</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <AlertesPanel educateurId={userId} clubId={clubId} joueurs={joueurs} matchs={matchs} setActiveSection={setActiveSection} />
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
           {!prochainEnt ? (
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
@@ -1055,7 +1063,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
           )}
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoFileText /> Derniers rapports générés</p>
           {rapportsRecents.length === 0 ? (
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
@@ -1074,15 +1082,15 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
 
       {deplacementFicheOuverte && (() => {
         const dep = deplacementFicheOuverte
-        const inputSt = { width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
+        const inputSt = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
         return (
           <div onClick={() => setDeplacementFicheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
               <p style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '16px' }}>📋 Fiche déplacement — {dep.lieu_destination}</p>
 
-              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
                 <p style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 700 }}>Données automatiques</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '12px', color: '#ccc' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '12px', color: colors.text.secondary }}>
                   <div>📍 <strong>{dep.lieu_destination || '—'}</strong></div>
                   <div>👥 <strong>{dep.equipe || '—'}</strong></div>
                   <div>🎯 <strong>{{ match: 'Match', tournoi: 'Tournoi', stage: 'Stage', autre: 'Autre' }[dep.nature] || 'Match'}</strong></div>
@@ -1096,7 +1104,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
                 <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
               ) : (
                 fichesBus.map((f, idx) => (
-                  <div key={f.immat} style={{ background: colors.background.surface, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid #1a1a1a' }}>
+                  <div key={f.immat} style={{ background: colors.background.surface, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: `1px solid ${colors.border.subtle}` }}>
                     <div style={{ fontWeight: 700, color: colors.accent.green, marginBottom: '10px', fontSize: '13px' }}>{f.immat}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       <label style={{ fontSize: '11px', color: colors.text.muted }}>Km avant
@@ -1132,7 +1140,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
                   {savingFiche ? 'Enregistrement...' : '💾 Enregistrer la fiche'}
                 </button>
                 <button onClick={() => setDeplacementFicheOuverte(null)}
-                  style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.muted, borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.muted, borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   Annuler
                 </button>
               </div>
@@ -2776,7 +2784,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
   // pour ne pas être remonté à chaque render (voir fix appliqué à NavBarVues dans
   // GestionPrepPhysique.jsx).
   const blocInvitationJoueur = (j) => (
-    <div style={{ marginTop: 10, borderTop: '1px solid #1a1a1a', paddingTop: 8 }}
+    <div style={{ marginTop: 10, borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 8 }}
          onClick={e => e.stopPropagation()}>
       {j.joueur_id ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2786,7 +2794,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
           </span>
           {canEdit('effectif') && (
             <button onClick={() => reinitialiserAccesJoueur(j)}
-              style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
               title="Envoyer un email de réinitialisation de mot de passe">
               🔑
             </button>
@@ -2826,7 +2834,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
             placeholder="Email du joueur..."
             type="email"
             style={{
-              flex: 1, background: colors.background.base, border: '1px solid #2a2a2a',
+              flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`,
               borderRadius: 6, color: colors.text.primary, padding: '5px 9px', fontSize: 11,
               outline: 'none'
             }}
@@ -3877,9 +3885,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
 
   const st = {
-    input: { width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
     label: { fontSize: '11px', color: colors.text.faint, marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
-    card: { background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
+    card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' },
     btn: (color = colors.accent.blue) => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
     btnSolid: { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
     // Bouton icône discret — pour les actions secondaires groupées sur une
@@ -4068,13 +4076,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     <>
     {notifEquipementPret && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '100%', textAlign: 'center' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '100%', textAlign: 'center' }}>
           <p style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800 }}>{notifEquipementPret.titre}</p>
           {notifEquipementPret.contenu && (
             <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>{notifEquipementPret.contenu}</p>
           )}
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2a2a2a', background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
+            <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
             <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.black, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon matériel</button>
           </div>
         </div>
@@ -4103,14 +4111,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           style={{
             position: 'fixed', top: '50%', left: sidebarCollapsed ? 0 : '64px', transform: 'translateY(-50%)', zIndex: 51,
             width: '18px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: colors.background.raised, border: '1px solid #1a1a1a', borderLeft: sidebarCollapsed ? '1px solid #1a1a1a' : 'none',
+            background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderLeft: sidebarCollapsed ? `1px solid ${colors.border.subtle}` : 'none',
             borderRadius: sidebarCollapsed ? '0 8px 8px 0' : '0 8px 8px 0', color: colors.text.muted, cursor: 'pointer', transition: 'left 0.2s ease',
           }}>
           {sidebarCollapsed ? <IcoChevronRight /> : <IcoChevronLeft />}
         </button>
       )}
       <aside style={{
-        width: isTablet ? (sidebarCollapsed ? '0px' : '64px') : '220px', background: colors.background.sunken, borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowX: 'hidden',
+        width: isTablet ? (sidebarCollapsed ? '0px' : '64px') : '220px', background: colors.background.sunken, borderRight: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', flexShrink: 0, overflowX: 'hidden',
         ...(isMobile ? {
           position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
@@ -4168,7 +4176,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           ))}
         </nav>
 
-        <div style={{ borderTop: '1px solid #1a1a1a', padding: isTablet ? '8px' : '8px 10px' }}>
+        <div style={{ borderTop: `1px solid ${colors.border.subtle}`, padding: isTablet ? '8px' : '8px 10px' }}>
           <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span style={{ flexShrink: 0 }}><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
@@ -4182,7 +4190,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
           {/* ── Sélecteur de langue — masqué en tablette réduite, pas la place pour la grille de drapeaux ── */}
           {!isTablet && (
-            <div style={{ padding: '8px 2px', borderTop: '1px solid #141414', marginTop: '4px', marginBottom: '4px' }}>
+            <div style={{ padding: '8px 2px', borderTop: `1px solid ${colors.border.subtle}`, marginTop: '4px', marginBottom: '4px' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {LANGS.map(l => (
                   <button key={l.code} onClick={() => setLang(l.code)}
@@ -4202,10 +4210,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
           <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
             <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
-              style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
+              style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
               {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
             </button>
-            <ThemeToggleButton style={{ border: '1px solid #222' }} />
+            <ThemeToggleButton style={{ border: `1px solid ${colors.border.faint}` }} />
           </div>
         </div>
         </>}
@@ -4276,7 +4284,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 s'auto-rattacher. */}
             {clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && !monCategorieClub && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
+                <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
                   <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '17px' }}>Quelle catégorie et équipe gères-tu ?</p>
                   <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint }}>
                     Nécessaire une seule fois : tes prochains joueurs ajoutés seront ensuite rattachés automatiquement, sans avoir à le refaire à chaque fois.
@@ -4379,7 +4387,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
             {profilEdu?.lien_groupe ? (
-              <div style={{ background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
                 <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: colors.accent.blue, fontWeight: 700, fontSize: 13 }}>
@@ -4391,14 +4399,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </button>
               </div>
             ) : (
-              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700 }}>💬 {t('equipe_groupe', lang)}</p>
                 <p style={{ margin: '0 0 12px', fontSize: 12, color: colors.text.faint }}>{t('equipe_colle_lien_groupe', lang)}</p>
                 <input
                   placeholder="https://chat.whatsapp.com/..."
                   value={lienGroupe}
                   onChange={e => setLienGroupe(e.target.value)}
-                  style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
                 />
                 <button onClick={async () => {
                   await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
@@ -4421,11 +4429,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1) : null
               const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
               return (
-                <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
-                  <div style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
+                  <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
 
                     {/* Header */}
-                    <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: '1px solid #1a1a1a', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: `1px solid ${colors.border.subtle}`, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: posColor + '25', border: `2px solid ${posColor}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: posColor, fontWeight: 800, fontSize: '20px', flexShrink: 0 }}>
                         {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
                       </div>
@@ -4443,7 +4451,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       {blocInvitationJoueur(j)}
 
                       {/* Présence - Donut multi + stats */}
-                      <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
                         <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏃 {t('equipe_presence_entrainements', lang)}</p>
                         {tx ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
@@ -4469,7 +4477,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                       {/* Évaluations - Radial skills */}
                       {(ln.technique || ln.physique || ln.mental || ln.tactique) ? (
-                        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
                           <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('equipe_evaluation_educateur', lang)}</p>
                           <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '12px' }}>
                             <RadialSkill value={ln.technique} color={colors.accent.green} label={t('eval_technique', lang)} size={90} />
@@ -4502,7 +4510,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: colors.accent.green },
                         ]
                         return (
-                          <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+                          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
                             <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ {t('equipe_stats_matchs', lang)}</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                               {[
@@ -4527,7 +4535,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               {rangStats.filter(r => r.rang).map(r => (
                                 <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: colors.background.base, borderRadius: '8px' }}>
                                   <span style={{ fontSize: '14px', width: '22px' }}>{r.emoji}</span>
-                                  <span style={{ fontSize: '12px', color: '#777', flex: 1 }}>{r.label}</span>
+                                  <span style={{ fontSize: '12px', color: colors.text.faint, flex: 1 }}>{r.label}</span>
                                   <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>{r.val}</span>
                                   <span style={{ fontSize: '12px', fontWeight: 800, color: r.rang.startsWith('1er') ? colors.accent.amber : r.rang.startsWith('2') ? '#9ca3af' : r.rang.startsWith('3') ? '#d97706' : colors.text.faint, background: colors.background.surface, padding: '2px 8px', borderRadius: '10px' }}>{r.rang}</span>
                                 </div>
@@ -4589,7 +4597,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {/* ── Modal édition joueur ── */}
             {joueurEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
                     <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -4649,7 +4657,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <div style={{ overflow: 'auto', marginBottom: '1rem', maxHeight: '260px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                      <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
                         {[t('equipe_prenom', lang), t('equipe_nom', lang), t('equipe_poste', lang), t('equipe_categorie', lang), t('equipe_col_maillot', lang), t('equipe_col_naissance', lang), t('equipe_col_licence', lang)].map(h => (
                           <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
@@ -4657,7 +4665,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     </thead>
                     <tbody>
                       {importPreview.rows.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #1a1a1a', background: i < importPreview.done ? colors.accent.green + alpha.faint : 'transparent' }}>
+                        <tr key={i} style={{ borderBottom: `1px solid ${colors.border.subtle}`, background: i < importPreview.done ? colors.accent.green + alpha.faint : 'transparent' }}>
                           <td style={{ padding: '7px 10px', fontWeight: 600, color: i < importPreview.done ? colors.accent.green : colors.text.primary }}>{r.prenom}</td>
                           <td style={{ padding: '7px 10px', color: i < importPreview.done ? colors.accent.green : colors.text.primary }}>{r.nom}</td>
                           <td style={{ padding: '7px 10px', color: colors.text.secondary }}>{r.poste || '—'}</td>
@@ -4725,7 +4733,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ ...st.card, overflow: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                    <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                       {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('equipe_col_age', lang), t('equipe_col_licence', lang), ''].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
@@ -4758,7 +4766,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   <button
                                     onClick={e => { e.stopPropagation(); setJoueurProfil(j) }}
                                     title="Inviter ce joueur"
-                                    style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: 4,
+                                    style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: 4,
                                              color: colors.text.muted, fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
                                   >
                                     +
@@ -4767,7 +4775,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 <button onClick={() => setJoueurProfil(j)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 {t('equipe_profil', lang)}</button>
                                 {canEdit('effectif') && (
                                   <>
-                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: '1px solid #2a2a2a', color: colors.text.secondary, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
                                     <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px' }}>✕</button>
                                   </>
                                 )}
@@ -4848,7 +4856,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
 
             {/* Sous-onglets */}
-            <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+            <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`🌟 ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
@@ -4912,7 +4920,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     )}
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                        <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                           {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang), 'Note'].map(h => (
                             <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
@@ -4929,12 +4937,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             <Fragment key={j.id}>
                               {nouvelleLigne && ligne !== -1 && (
                                 <tr>
-                                  <td colSpan={11} style={{ padding: i === 0 ? '2px 12px 6px' : '16px 12px 6px', color: colors.text.disabled, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: '1px solid #1a1a1a' }}>
+                                  <td colSpan={11} style={{ padding: i === 0 ? '2px 12px 6px' : '16px 12px 6px', color: colors.text.disabled, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: `1px solid ${colors.border.subtle}` }}>
                                     {LIGNES_POSTE[ligne].label}
                                   </td>
                                 </tr>
                               )}
-                              <tr style={{ borderBottom: '1px solid #141414' }}>
+                              <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
                               <td style={{ padding: '10px 12px', color: s.matchs > 0 ? colors.text.primary : colors.border.strong }}>{s.matchs}</td>
@@ -5003,7 +5011,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       {/* Sélecteur de critère */}
                       <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', marginBottom: '1.5rem' }}>
                         {TRIS.map(t => (
-                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${statsTri === t.key ? t.color + '60' : '#222'}`, color: statsTri === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
+                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${statsTri === t.key ? t.color + '60' : colors.border.faint}`, color: statsTri === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
                         ))}
                       </div>
                       {/* Podium top 3 */}
@@ -5040,7 +5048,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             <col className="col-stat" />
                           </colgroup>
                           <thead>
-                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                            <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                               <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
                               <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_col_joueur', lang)}</th>
                               <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_poste', lang)}</th>
@@ -5051,7 +5059,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             {sorted.map((j, i) => {
                               const val = triActif.get(j)
                               return (
-                                <tr key={j.id} style={{ borderBottom: '1px solid #141414', background: i === 0 ? triActif.color + '08' : 'transparent' }}>
+                                <tr key={j.id} style={{ borderBottom: `1px solid ${colors.border.subtle}`, background: i === 0 ? triActif.color + '08' : 'transparent' }}>
                                   <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled, fontSize: i === 0 ? '15px' : '13px' }}>{i + 1}</td>
                                   <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                                   <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
@@ -5216,7 +5224,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                         {tx && (
                                           <button
                                             onClick={() => setJoueurMoisDetail(joueurMoisDetail === j.id ? null : j.id)}
-                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.secondary, fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                                           >
                                             📅 {joueurMoisDetail === j.id ? '▲' : '▼'}
                                           </button>
@@ -5227,13 +5235,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                         const moisData = presenceParMois(j.id)
                                         if (!moisData.length) return null
                                         return (
-                                          <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Présence par mois</p>
                                             {moisData.map(m => {
                                               const color = m.taux >= 80 ? colors.accent.green : m.taux >= 50 ? '#f59e0b' : colors.accent.red
                                               return (
                                                 <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                  <span style={{ fontSize: '11px', color: '#777', minWidth: '110px', textTransform: 'capitalize' }}>{m.label}</span>
+                                                  <span style={{ fontSize: '11px', color: colors.text.faint, minWidth: '110px', textTransform: 'capitalize' }}>{m.label}</span>
                                                   <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                     <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.4s' }} />
                                                   </div>
@@ -5365,7 +5373,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         {/* Liste complète */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {podiumActuel.map((item, idx) => (
-                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : '1px solid #1a1a1a' }}>
+                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
                               <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
                               <div style={{ flex: 1 }}>
                                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
@@ -5407,7 +5415,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           if (!podium.length) return null
                           const winner = podium[0]
                           return (
-                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
                               <span style={{ fontSize: '20px' }}>🥇</span>
                               <div style={{ flex: 1 }}>
                                 <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{winner.joueur.prenom} {winner.joueur.nom}</p>
@@ -5440,7 +5448,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
 
             {/* Sous-onglets */}
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #1a1a1a', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['resultats',`${t('comp_resultats', lang)}`],['calendrier',`${t('comp_calendrier', lang)}`],['classement',`${t('comp_classement', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
@@ -5541,7 +5549,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                 if (matchActif?.id === m.id) setMatchActif(null)
                                 supprimerDeplacementLieAuMatch(m)
                               }}
-                              style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
+                              style={{ background: 'transparent', border: 'none', color: colors.text.dim, cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
                               title="Supprimer ce résultat"
                             >
 
@@ -5551,7 +5559,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
-                          <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
+                          <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                               {joueurs.map(j => {
@@ -5629,7 +5637,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{t('comp_scanner_calendrier', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_uploade_photos', lang)}</p>
 
-                  <label style={{ display: 'block', border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
+                  <label style={{ display: 'block', border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
                     <input type="file" accept="image/*" multiple style={{ display: 'none' }}
                       onChange={e => {
                         const files = Array.from(e.target.files)
@@ -5651,7 +5659,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
                       {calendarImages.map((img, i) => (
                         <div key={i} style={{ position: 'relative' }}>
-                          <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
+                          <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: `1px solid ${colors.border.default}` }} />
                           <button onClick={() => setCalendarImages(prev => prev.filter((_, idx) => idx !== i))}
                             style={{ position: 'absolute', top: '-6px', right: '-6px', background: colors.accent.red, border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: colors.text.primary, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoX /></button>
                         </div>
@@ -5718,7 +5726,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 )}
 
                 {calendarMatchs.length === 0 && !calendarLoading && (
-                  <div style={{ ...st.card, textAlign: 'center', padding: '2rem', border: '1px dashed #1a1a1a' }}>
+                  <div style={{ ...st.card, textAlign: 'center', padding: '2rem', border: `1px dashed ${colors.border.subtle}` }}>
                     <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('comp_aucun_calendrier', lang)}</p>
                   </div>
                 )}
@@ -5786,7 +5794,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   <span style={{ color: colors.accent.orange }}>{dispoStats.blesse}</span>
                                   {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>{dispoStats.malade}</span>}
                                   {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>{dispoStats.convoque}</span>}
-                                  <span style={{ color: '#6b7280' }}>{dispoStats.sans_reponse} en attente</span>
+                                  <span style={{ color: colors.text.dim }}>{dispoStats.sans_reponse} en attente</span>
                                 </div>
                               )}
                             </div>
@@ -5866,8 +5874,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 } catch { /* clipboard indisponible (contexte non sécurisé, permission refusée...) */ }
               }
               return (
-                <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                  <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
                       <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
@@ -5887,7 +5895,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
                               {j.poste && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{j.poste}</p>}
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || colors.border.faint}`, padding: '3px 10px', borderRadius: '20px' }}>
                               {cfg ? cfg.label : t('ent_en_attente', lang)}
                             </span>
                           </div>
@@ -5951,11 +5959,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, label: e.target.value } : s) }))}
                               style={{ ...st.input, flex: 1 }} />
                             <button onClick={() => setConvocationForm(f => ({ ...f, timeline: f.timeline.filter((_, idx) => idx !== i) }))}
-                              style={{ background: 'none', border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}><IcoX /></button>
+                              style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}><IcoX /></button>
                           </div>
                         ))}
                         <button onClick={() => setConvocationForm(f => ({ ...f, timeline: [...f.timeline, { heure: '', label: '', icone: '' }] }))}
-                          style={{ background: 'none', border: '1px dashed #333', color: colors.text.faint, padding: '6px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                          style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, padding: '6px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                           + Ajouter une étape
                         </button>
                       </div>
@@ -5975,18 +5983,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Modale "Marquer comme joué" ── */}
             {modalMatchJoue && (
-              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{matchJoue(modalMatchJoue) ? 'Modifier le résultat' : t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
                     <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
                   </div>
 
                   {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
-                  <div style={{ border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '18px', background: '#050505' }}>
+                  <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '14px', marginBottom: '18px', background: colors.background.base }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       {scannerModalImagePreview
-                        ? <img src={scannerModalImagePreview} alt="Feuille" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
+                        ? <img src={scannerModalImagePreview} alt="Feuille" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: `1px solid ${colors.border.default}` }} />
                         : <span style={{ color: colors.text.faint }}><IcoFileText /></span>
                       }
                       <div style={{ flex: 1, minWidth: '180px' }}>
@@ -6033,12 +6041,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               <option value="">Nature —</option>
                               {NATURES_BUT.map(n => <option key={n.value} value={n.value}>{n.label}</option>)}
                             </select>
+                            <select value={b.cote || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, cote: e.target.value } : x))}
+                              style={{ ...st.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
+                              <option value="">Côté —</option>
+                              {COTES_BUT.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                            </select>
                             <button onClick={() => setScannerModalButsDetail(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}><IcoX /></button>
                           </div>
                         ))}
                       </div>
                     )}
-                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous', nature: '' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
+                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous', nature: '', cote: '' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
                   </div>
 
                   <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
@@ -6082,8 +6095,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Modale "Ajouter / Modifier un match" ── */}
             {modalMatchForm && (
-              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
                       {modalMatchForm.id ? `${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
@@ -6407,7 +6420,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       { key: 'convoque', label: t('ent_stat_convoques', lang), emoji: '🏆', color: colors.accent.blue },
                       { key: 'sans_reponse', label: t('ent_stat_sans_reponse', lang), emoji: '⏳', color: colors.text.faint },
                     ].map(s => (
-                      <div key={s.key} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                      <div key={s.key} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
                         <p style={{ fontSize: '22px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{stats[s.key] || 0}</p>
                         <p style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>{s.label}</p>
                       </div>
@@ -6438,7 +6451,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               <p style={{ fontWeight: 600, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
                               <p style={{ fontSize: '10px', color: colors.text.faint }}>{j.poste}</p>
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || '#222'}`, padding: '3px 10px', borderRadius: '20px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || colors.border.faint}`, padding: '3px 10px', borderRadius: '20px' }}>
                               {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
                             </span>
                           </div>
@@ -6531,7 +6544,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   )}
 
                   {showImportFiche && (
-                    <div style={{ marginTop: '10px', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    <div style={{ marginTop: '10px', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                       {mesSeancesOuvertes.length === 0 ? (
                         <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
                       ) : mesSeancesOuvertes.map(s => (
@@ -6605,7 +6618,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {generatingPlan && (
                   <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
                     <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.accent.blue }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
-                    <div style={{ background: '#222', borderRadius: '4px', height: '6px' }}>
+                    <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px' }}>
                       <div style={{ background: colors.accent.blue, borderRadius: '4px', height: '6px', width: `${planProgress.total > 0 ? (planProgress.done / planProgress.total) * 100 : 0}%`, transition: 'width 0.2s' }} />
                     </div>
                   </div>
@@ -6629,7 +6642,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <div key={moisKey} style={{ marginBottom: '8px' }}>
                     <div
                       onClick={() => setMoisOuverts(prev => { const next = new Set(prev); next.has(moisKey) ? next.delete(moisKey) : next.add(moisKey); return next })}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '16px' }}>📅</span>
                         <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
@@ -6640,7 +6653,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <span style={{ color: colors.accent.green, fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: moisOuvert ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                     </div>
                     {moisOuvert && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid #1a1a1a', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: `1px solid ${colors.border.subtle}`, borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
                         {[...items].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
                 const getStatutJoueur = (j) => {
@@ -6716,17 +6729,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         )}
                         {canEdit('entrainements') && (
                           <button onClick={ev => { ev.stopPropagation(); setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' }) }}
-                            style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
+                            style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
                         )}
                         {canEdit('entrainements') && (
-                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.disabled, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
+                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.disabled, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
                         )}
                         <span style={{ color: colors.text.disabled, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
                       </div>
                     </div>
 
                     {ouvert && (
-                      <div style={{ marginTop: '14px', borderTop: '1px solid #1a1a1a', paddingTop: '14px' }}>
+                      <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
                         {joueurs.length === 0 ? (
                           <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('ent_ajoute_joueurs', lang)}</p>
                         ) : (
@@ -6812,7 +6825,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {/* ── Modale "Modifier la séance" ── */}
             {entrainementEnEdition && (
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ {t('ent_modifier_seance', lang)}</p>
                     <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -6939,7 +6952,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             const j = recrutSelectedJoueur
             return (
               <div>
-                <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
+                <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
                 <div style={{ maxWidth: '680px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
                     <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: colors.accent.green + alpha.soft, border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
@@ -6955,7 +6968,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
                     {[{ label: 'Matchs officiels', val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('comp_passes_dec', lang), val: j.passes_decisives || 0 }, { label: t('comp_clean_sheet', lang), val: j.cleansheets || 0 }, { label: t('comp_minutes', lang), val: j.minutes_jouees || 0 }, { label: 'Club', val: j.club || '—' }].map(s => (
-                      <div key={s.label} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                      <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
                         <div style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
                       </div>
@@ -6971,7 +6984,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>}
                   {recrutParcours.length > 0 && <div>
                     <p style={{ margin: '0 0 10px', fontSize: '11px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_parcours', lang)}</p>
-                    <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {recrutParcours.map(p => <div key={p.id} style={{ fontSize: '13px' }}><span style={{ fontWeight: 700 }}>{p.club}</span> <span style={{ color: colors.text.faint }}>· {[p.saison, p.niveau_championnat, p.poste].filter(Boolean).join(' · ')}</span></div>)}
                     </div>
                   </div>}
@@ -6986,7 +6999,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             style={{ width: '100%', aspectRatio: '16/9', borderRadius: '10px', border: 'none', background: colors.black }} />
                         ) : estVeo ? (
                           <a href={j.clip_url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.surface, border: '1px solid #2a2a2a', color: colors.accent.blue, padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}>
                             {t('recrut_voir_sur_veo', lang)} <IcoExternal />
                           </a>
                         ) : (
@@ -7004,19 +7017,19 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('nav_recrutement', lang)}</h1>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{t('recrut_feed', lang)}</button>
+                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: `1px solid ${colors.border.default}`, color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{t('recrut_feed', lang)}</button>
                   <a href="/jogabonito" target="_blank" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Jogabonito →</a>
                 </div>
               </div>
               {/* Filtres */}
-              <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_recherche', lang)}</p>
-                  <input value={recrutSearch} onChange={e => setRecrutSearch(e.target.value)} placeholder="Nom, club, région..." style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  <input value={recrutSearch} onChange={e => setRecrutSearch(e.target.value)} placeholder="Nom, club, région..." style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                 </div>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_poste', lang)}</p>
-                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {postes.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
@@ -7030,13 +7043,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 )}
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_categorie', lang)}</p>
-                  <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {categories.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('profil_region', lang)}</p>
-                  <select value={recrutRegion} onChange={e => setRecrutRegion(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
+                  <select value={recrutRegion} onChange={e => setRecrutRegion(e.target.value)} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
                     {regions.map(r => <option key={r}>{r}</option>)}
                   </select>
                 </div>
@@ -7053,7 +7066,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                   {filtered.map(j => (
                     <div key={j.id} onClick={async () => { setRecrutSelectedJoueur(j); const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }); setRecrutParcours(data || []) }}
-                      style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'border-color 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
                       onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
@@ -7068,7 +7081,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.categorie}</span>}
                         {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px', borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px' }}>
                         {[{ label: t('recrut_matchs', lang), val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('recrut_passes', lang), val: j.passes_decisives || 0 }].map(s => (
                           <div key={s.label} style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: '17px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
@@ -7121,9 +7134,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
 
             {modalGenerationIA && (
-              <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+              <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 onClick={() => !generatingIA && setModalGenerationIA(false)}>
-                <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
                   onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🤖 Générer une séance avec l'IA</p>
@@ -7178,7 +7191,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
 
             {modeSeance === 'club' && (
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               {clubAffiliation?.statut === 'accepte' ? (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -7190,7 +7203,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
 
                   {showUploadSeance && (
-                    <div style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                         <div>
                           <label style={st.label}>{t('profil_saison', lang)}</label>
@@ -7236,7 +7249,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {mesSeances.map(s => {
                         return (
-                        <div key={s.id} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <div key={s.id} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || t('seance_fallback', lang)} — {s.saison}</p>
                             <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
@@ -7257,7 +7270,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   {t('etat_oui', lang)}
                                 </button>
                                 <button onClick={() => setConfirmSuppr(null)}
-                                  style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                                   {t('etat_non', lang)}
                                 </button>
                               </div>
@@ -7281,14 +7294,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
 
             {modeSeance === 'scanner' && (
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px' }}>📷 {t('seance_scanner_titre', lang)}</p>
               <p style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '16px' }}>
                 {t('seance_prends_photo', lang)}
               </p>
               <div
                 onClick={() => document.getElementById('scan-fiche-input').click()}
-                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
+                style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
               >
                 {scanImagePreview
                   ? <img src={scanImagePreview} alt="Fiche scannée" style={{ maxHeight: '360px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
@@ -7337,25 +7350,25 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
 
             {modeSeance === 'enregistrer' && (
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 {t('seance_enregistrer_une', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input
                   placeholder={t('seance_placeholder_theme', lang)}
                   value={uploadSeanceOuverteForm.theme}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, theme: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <input
                   type="date"
                   value={uploadSeanceOuverteForm.date_seance}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, date_seance: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <select
                   value={uploadSeanceOuverteForm.categorie_tactique}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_tactique: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
@@ -7370,7 +7383,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   placeholder={t('seance_placeholder_video', lang)}
                   value={uploadSeanceOuverteForm.video_url}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 />
                 <div>
                   <p style={{ fontSize: '12px', color: colors.text.dim, marginBottom: '6px' }}>{t('seance_ou_upload', lang)}</p>
@@ -7385,7 +7398,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       setUploadSeanceOuverteForm(prev => ({ ...prev, fichier_url: url }))
                       setUploadingSeanceOuverte(false)
                     }}
-                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', width: '100%' }}
+                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', width: '100%' }}
                   />
                   {uploadSeanceOuverteForm.fichier_url && (
                     <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '6px' }}>✅ {t('seance_fichier_pret', lang)}</p>
@@ -7396,7 +7409,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   value={uploadSeanceOuverteForm.commentaire_perso}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, commentaire_perso: e.target.value }))}
                   rows={3}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
                 />
                 <button
                   onClick={uploaderMaSeance}
@@ -7410,7 +7423,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
 
             {modeSeance === 'rediger' && (
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ {t('seance_rediger_titre', lang)}</p>
               {ficheExtraite && (
                 <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: colors.accent.green, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
@@ -7423,7 +7436,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   placeholder={t('seance_theme_intitule', lang)}
                   value={fiche.theme}
                   onChange={e => setFiche(f => ({ ...f, theme: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <div>
                   <label style={{ fontSize: '12px', color: colors.text.secondary, marginBottom: '4px', display: 'block' }}>
@@ -7433,13 +7446,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     type="date"
                     value={fiche.date}
                     onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
-                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <select
                   value={fiche.categorie_tactique}
                   onChange={e => setFiche(f => ({ ...f, categorie_tactique: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
@@ -7454,14 +7467,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <button
                     type="button"
                     onClick={() => setSport('football')}
-                    style={{ flex: 1, background: sport === 'football' ? colors.accent.blue : colors.background.base, color: sport === 'football' ? colors.black : colors.text.dim, border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, background: sport === 'football' ? colors.accent.blue : colors.background.base, color: sport === 'football' ? colors.black : colors.text.dim, border: `1px solid ${colors.border.faint}`, padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
                   >
                     ⚽ Football
                   </button>
                   <button
                     type="button"
                     onClick={() => setSport('futsal')}
-                    style={{ flex: 1, background: sport === 'futsal' ? colors.accent.blue : colors.background.base, color: sport === 'futsal' ? colors.black : colors.text.dim, border: '1px solid #222', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, background: sport === 'futsal' ? colors.accent.blue : colors.background.base, color: sport === 'futsal' ? colors.black : colors.text.dim, border: `1px solid ${colors.border.faint}`, padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
                   >
                     🏟️ Futsal
                   </button>
@@ -7470,13 +7483,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   placeholder={t('seance_nb_joueurs', lang)}
                   value={fiche.nb_joueurs}
                   onChange={e => setFiche(f => ({ ...f, nb_joueurs: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
                 <input
                   placeholder={t('seance_duree_totale', lang)}
                   value={fiche.duree_totale}
                   onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
-                  style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 />
 
                 {/* ── Mode diplôme (BMF/BEF/DEF) — objectif_general existe déjà comme champ
@@ -7484,7 +7497,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     l'encart officiel ci-dessous plutôt que dupliqué, pour ne pas avoir deux
                     champs "objectif" à la fois. */}
                 <div>
-                  <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>🎓 Mode diplôme (optionnel)</p>
+                  <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>🎓 Mode diplôme (optionnel)</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {[null, 'BMF', 'BEF', 'DEF'].map(m => (
                       <button
@@ -7495,7 +7508,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           padding: '7px 16px', borderRadius: '8px', border: '1px solid',
                           borderColor: fiche.mode_diplome === m ? colors.accent.green : colors.border.default,
                           background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.12)' : colors.background.base,
-                          color: fiche.mode_diplome === m ? colors.accent.green : '#9ca3af',
+                          color: fiche.mode_diplome === m ? colors.accent.green : colors.text.faint,
                           fontSize: '13px', fontWeight: fiche.mode_diplome === m ? 700 : 400, cursor: 'pointer',
                         }}>
                         {m === null ? 'Libre' : m}
@@ -7508,8 +7521,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
 
                 {fiche.mode_diplome ? (() => {
-                  const inputStyle = { background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
-                  const labelStyle = { color: '#9ca3af', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', marginTop: '10px' }
+                  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
+                  const labelStyle = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', marginTop: '10px' }
                   return (
                     <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
                       <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
@@ -7562,13 +7575,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     value={fiche.objectif_general}
                     onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
                     rows={2}
-                    style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                   />
                 )}
               </div>
 
               {fiche.procedes.map((p, i) => (
-                <div key={i} style={{ background: colors.background.base, border: '1px solid #222', borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
+                <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: colors.accent.green }}>{t('seance_procede', lang)} {p.numero}</p>
                     {fiche.procedes.length > 1 && (
@@ -7584,20 +7597,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       placeholder={t('seance_titre_procede', lang)}
                       value={p.titre}
                       onChange={e => updateProcede(i, 'titre', e.target.value)}
-                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                     />
                     <div className="procede-duree-joueurs" style={{ display: 'flex', gap: '10px' }}>
                       <input
                         placeholder={t('seance_duree_min', lang)}
                         value={p.duree}
                         onChange={e => updateProcede(i, 'duree', e.target.value)}
-                        style={{ flex: 1, background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        style={{ flex: 1, background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                       <input
                         placeholder={t('seance_nb_joueurs', lang)}
                         value={p.nb_joueurs}
                         onChange={e => updateProcede(i, 'nb_joueurs', e.target.value)}
-                        style={{ flex: 1, background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        style={{ flex: 1, background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
 
@@ -7624,7 +7637,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         💾 {t('biblio_sauvegarder_procede', lang)}
                       </button>
                       {p.schema_png && (
-                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
+                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
                       )}
                     </div>
                     <textarea
@@ -7632,28 +7645,28 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       value={p.but}
                       onChange={e => updateProcede(i, 'but', e.target.value)}
                       rows={2}
-                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_organisation', lang)}
                       value={p.organisation}
                       onChange={e => updateProcede(i, 'organisation', e.target.value)}
                       rows={2}
-                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_consignes', lang)}
                       value={p.consignes}
                       onChange={e => updateProcede(i, 'consignes', e.target.value)}
                       rows={2}
-                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                     <textarea
                       placeholder={t('seance_variables', lang)}
                       value={p.variables}
                       onChange={e => updateProcede(i, 'variables', e.target.value)}
                       rows={2}
-                      style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
@@ -7698,7 +7711,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 )}
                 <button
                   onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); setDerniereGenerationIA(null); window.print() }}
-                  style={{ background: 'transparent', color: colors.text.muted, border: '1px solid #333', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                  style={{ background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
                 >
                   📄 {t('seance_fiche_vierge', lang)}
                 </button>
@@ -7749,7 +7762,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           {items.map(s => {
                             const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
                             return (
-                              <div key={s.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                              <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                                 <div>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                                     {s.theme || t('seance_sans_theme', lang)}
@@ -7785,7 +7798,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                       </span>
                                     </>
                                   ) : (
-                                    <span style={{ background: '#ffffff08', color: colors.text.muted, border: '1px solid #333', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                                    <span style={{ background: '#ffffff08', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
                                       📁 {t('seance_archivee', lang)}
                                     </span>
                                   )}
@@ -7803,7 +7816,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                         {t('etat_oui', lang)}
                                       </button>
                                       <button onClick={() => setConfirmSuppr(null)}
-                                        style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                        style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                                         {t('etat_non', lang)}
                                       </button>
                                     </div>
@@ -7863,7 +7876,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
 
             <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
-              style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
+              style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
 
             {biblioLoading ? (
               <p style={{ textAlign: 'center', color: colors.text.disabled, padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
@@ -7893,7 +7906,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   {filtres.map(p => {
                     const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
                     return (
-                      <div key={p.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {cfg.emoji} {cfg.label}
@@ -7913,7 +7926,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
                         )}
                         {p.schema_png && (
-                          <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #222', background: '#0a0a0a' }} />
+                          <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: `1px solid ${colors.border.faint}`, background: colors.background.base }} />
                         )}
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
@@ -7922,7 +7935,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         {p.tags && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                              <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: '1px solid #222', padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
+                              <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
                             ))}
                           </div>
                         )}
@@ -7937,9 +7950,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {/* ── Modal Créer / Éditer un procédé ── */}
         {modalProcede && (
-          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
             onClick={() => setModalProcede(false)}>
-            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ fontSize: '17px', fontWeight: 800 }}>{procedeEnEdition ? t('biblio_modifier_procede_titre', lang) : t('biblio_nouveau_procede_titre', lang)}</h2>
@@ -7977,10 +7990,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
                   {field.multiline ? (
                     <textarea value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
                   ) : (
                     <input type={field.type || 'text'} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                   )}
                 </div>
               ))}
@@ -7989,12 +8002,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>🎨 Schéma tactique</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => setShowTactipadBiblio(true)}
-                    style={{ background: colors.background.surfaceAlt, border: '1px solid #2a2a2a', color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {procedeForm.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                   </button>
                   {procedeForm.schema_png && (
                     <>
-                      <img src={procedeForm.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: '1px solid #222' }} />
+                      <img src={procedeForm.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
                       <button type="button" onClick={() => setProcedeForm(f => ({ ...f, schema_png: '' }))}
                         style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>✕</button>
                     </>
@@ -8013,7 +8026,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ── Modal schéma tactique d'un procédé de bibliothèque (réutilise Tactipad, cf. tactipadModal pour le même mécanisme côté fiche de séance) ── */}
         {showTactipadBiblio && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
+            <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedeForm.nom || ''}</p>
                 <button onClick={() => setShowTactipadBiblio(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -8032,9 +8045,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {/* ── Modal import rapide depuis la bibliothèque (dans un bloc procédé de la fiche) ── */}
         {modalBiblioImport !== null && (
-          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
             onClick={() => setModalBiblioImport(null)}>
-            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📚 {t('biblio_importer_titre', lang)}</h3>
@@ -8058,7 +8071,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 {biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).length === 0 ? (
                   <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('biblio_aucun_dans_categorie', lang)}</p>
                 ) : biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: '1px solid #1f1f1f', borderRadius: '10px' }}>
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
                       <p style={{ fontSize: '11px', color: colors.text.faint }}>{p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
@@ -8076,9 +8089,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {/* ── Modal import d'une fiche archivée sur un entraînement déjà créé ── */}
         {modalImportFicheEntrainement !== null && (
-          <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
             onClick={() => setModalImportFicheEntrainement(null)}>
-            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📥 {t('ent_importer_fiche', lang)}</h3>
@@ -8089,7 +8102,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
                 ) : mesSeancesOuvertes.map(s => (
                   <div key={s.id} onClick={() => importerFicheDansEntrainementExistant(s)}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: colors.background.surfaceAlt, border: '1px solid #1f1f1f', borderRadius: '10px', cursor: 'pointer' }}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
                     onMouseLeave={e => e.currentTarget.style.background = colors.background.surfaceAlt}>
                     <div style={{ minWidth: 0 }}>
@@ -8121,10 +8134,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 {t('nav_tacticboard', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
             {isMobile ? (
-              <div style={{ background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
+              <div style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🖥️</div>
                 <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px', color: colors.text.primary }}>{t('tactic_dispo_ordinateur', lang)}</p>
-                <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>{t('tactic_optimise_grands_ecrans', lang)}</p>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('tactic_optimise_grands_ecrans', lang)}</p>
               </div>
             ) : (
               <Tactipad userId={userId} lang={lang} />
@@ -8157,14 +8170,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {/* Formulaire invitation — largeur propre, plus étroite que le
                 conteneur : un input email + des lignes de permissions restent
                 lisibles, pas besoin de s'étirer sur toute la page. */}
-            <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
               <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
               <input
                 value={newDirigeantEmail}
                 onChange={e => setNewDirigeantEmail(e.target.value)}
                 placeholder={t('dir_email_placeholder', lang)}
                 type="email"
-                style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
               />
 
               {/* Grille permissions */}
@@ -8179,7 +8192,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   { key: 'notes', label: 'Notes' },
                 ].map(({ key, label }) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, color: '#ccc' }}>{label}</span>
+                    <span style={{ fontSize: 13, color: colors.text.secondary }}>{label}</span>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {['aucun', 'lecture', 'edition'].map(val => (
                         <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
@@ -8206,7 +8219,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 pour remplir l'espace gagné sur la largeur du conteneur. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
             {dirigeants.map(d => (
-              <div key={d.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 14, padding: '16px 18px' }}>
+              <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
@@ -8253,13 +8266,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
 
                 {d.statut === 'en_attente' && (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a1a1a' }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
                     <button onClick={() => renvoyerInvitationDirigeant(d)}
-                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {t('dir_renvoyer', lang)}
                     </button>
                     <button onClick={() => supprimerDirigeant(d.id)}
-                      style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {t('btn_supprimer', lang)}
                     </button>
                   </div>
@@ -8522,7 +8535,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     </div>
                     <div>
                       <label style={st.label}>{t('profil_preuve_diplome', lang)}</label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, border: '1px dashed #2a2a2a', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, border: `1px dashed ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
                         <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => uploadDiplome(e.target.files[0])} />
                         <span style={{ fontSize: '13px', color: colors.text.faint }}>{uploadingDiplome ? '⏳ Upload...' : profilEdu?.diplome_url ? `✅ ${t('profil_preuve_uploadee', lang)}` : `📎 ${t('profil_uploader_preuve', lang)}`}</span>
                       </label>
@@ -8547,7 +8560,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
 
                   {showAddParcours && (
-                    <div style={{ background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '14px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={st.label}>{t('profil_type', lang)}</label>
@@ -8590,7 +8603,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {parcoursEdu.map(p => (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
                         <span style={{ fontSize: '18px' }}>{p.type === 'coach' ? '🎙️' : '⚽'}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.club}</p>
@@ -8625,7 +8638,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         </span>
                       )}
                       {profilEdu.niveau_championnat && (
-                        <span style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.muted, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
+                        <span style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.muted, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
                           🏆 {profilEdu.niveau_championnat}
                         </span>
                       )}
@@ -8638,7 +8651,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('edu_offre_titre', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
                     <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
                   </div>
                 </div>
@@ -8661,7 +8674,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           {profilEdu.code_equipe.toUpperCase()}
                         </span>
                         <button onClick={() => navigator.clipboard.writeText(profilEdu.code_equipe.toUpperCase())}
-                          style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
                           📋
                         </button>
                       </div>
@@ -8849,7 +8862,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px' }}>💬 {t('profil_commentaires', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {notesEdu.filter(n => n.commentaire).map(n => (
-                          <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: '1px solid #1a1a1a' }}>
+                          <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
                             <span style={{ fontSize: '18px', flexShrink: 0 }}>{n.auteur_type === 'club' ? '🏟️' : '⚽'}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -8877,7 +8890,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     {/* ===== MODALE SCANNER FEUILLE DE MATCH ===== */}
     {showScanner && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '900px', padding: '24px' }}>
+        <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', width: '100%', maxWidth: '900px', padding: '24px' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
@@ -8899,7 +8912,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   const { base64, preview } = await redimensionnerImagePourScan(file)
                   setScannerImageBase64(base64); setScannerImagePreview(preview)
                 }}
-                style={{ border: '2px dashed #2a2a2a', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', background: '#050505' }}>
+                style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}>
                 {scannerImagePreview
                   ? <img src={scannerImagePreview} alt="Feuille" style={{ maxHeight: '400px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                   : <div>
@@ -8932,7 +8945,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '300px 1fr', gap: '20px', alignItems: 'flex-start' }}>
                 <div>
-                  <img src={scannerImagePreview} alt="Feuille" style={{ width: '100%', borderRadius: '8px', objectFit: 'contain', maxHeight: '300px', background: '#050505' }} />
+                  <img src={scannerImagePreview} alt="Feuille" style={{ width: '100%', borderRadius: '8px', objectFit: 'contain', maxHeight: '300px', background: colors.background.base }} />
                   <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
                     <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
@@ -8977,16 +8990,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           </span>
                           <input type="number" min="0" max="120" value={s.minutes ?? ''} placeholder="—"
                             onChange={e => setS('minutes', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" min="0" value={s.buts ?? ''} placeholder="—"
                             onChange={e => setS('buts', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" min="0" value={s.passes_dec ?? ''} placeholder="—"
                             onChange={e => setS('passes_dec', parseInt(e.target.value) || 0)}
                             style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
                           <input type="number" min="0" max="1" value={s.clean_sheet ? 1 : ''} placeholder="—"
                             onChange={e => setS('clean_sheet', e.target.value === '1')}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : '#080808' }} />
+                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <span onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_jaune ? 1 : 0.2 }}>🟨</span>
                           <span onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_rouge ? 1 : 0.2 }}>🟥</span>
                         </div>
@@ -8997,7 +9010,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: '1px solid #1a1a1a', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '16px' }}>
                 <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} style={{ ...st.btnSolid, flex: 1 }}>
                   {scannerSaving ? 'Enregistrement...' : `💾 ${t('scan_enregistrer_match', lang)}`}
                 </button>
@@ -9011,7 +9024,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     {/* ===== MODAL LIAISON JOUEUR AFFILIÉ ===== */}
     {affiliationEnCours && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
           <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ {t('liaison_accepter_demande', lang)}</p>
           <p style={{ margin: '0 0 20px', fontSize: '12px', color: colors.text.dim }}>
             {t('liaison_lier_joueur', lang)} <strong style={{ color: colors.text.secondary }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> {t('liaison_a_joueur_effectif', lang)}
@@ -9021,7 +9034,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           <select
             value={joueurLieId}
             onChange={e => setJoueurLieId(e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #222', background: colors.background.surface, color: colors.text.primary, fontSize: '13px', marginBottom: '20px' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: `1px solid ${colors.border.faint}`, background: colors.background.surface, color: colors.text.primary, fontSize: '13px', marginBottom: '20px' }}
           >
             <option value="">{t('liaison_selectionner_joueur', lang)}</option>
             {joueurs.map(j => (
@@ -9039,7 +9052,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </button>
             <button
               onClick={() => { setAffiliationEnCours(null); setJoueurLieId('') }}
-              style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #333', background: 'transparent', color: colors.text.dim, fontSize: '13px', cursor: 'pointer' }}
+              style={{ padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.strong}`, background: 'transparent', color: colors.text.dim, fontSize: '13px', cursor: 'pointer' }}
             >
               {t('btn_annuler', lang)}
             </button>
@@ -9077,17 +9090,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   {savingFicheApercu ? 'Enregistrement...' : `✓ ${t('btn_sauvegarder', lang)}`}
                 </button>
                 <button onClick={annulerEditionApercu}
-                  style={{ background: colors.background.raised, border: '1px solid #444', color: colors.text.secondary, borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {t('btn_annuler', lang)}
                 </button>
               </>
             ) : (
               <>
                 <button onClick={ouvrirEditionApercu}
-                  style={{ background: colors.background.surface, border: '1px solid #333', color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ✏️ {t('btn_modifier', lang)}
                 </button>
-                <button onClick={() => setFicheApercu(null)} style={{ background: colors.background.raised, border: '1px solid #444', color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => setFicheApercu(null)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ✕ {t('btn_fermer', lang)}
                 </button>
               </>
@@ -9190,7 +9203,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
     {tactipadModal !== null && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-        <div style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
+        <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {fiche.procedes[tactipadModal]?.numero}</p>
             <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>

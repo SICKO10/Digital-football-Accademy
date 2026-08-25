@@ -239,7 +239,7 @@ function StatCard({ label, valeur, couleur }) {
   const colors = useColors()
   const color = STAT_CARD_COLORS[couleur] || colors.text.primary
   return (
-    <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
       <p style={{ margin: '0 0 4px', fontSize: '10px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
       <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color }}>{valeur}</p>
     </div>
@@ -454,7 +454,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Alertes & infos</p>
         {alertes.length > 0 && (
-          <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
+          <span style={{ background: colors.accent.red, color: colors.text.primary, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
         )}
       </div>
 
@@ -544,25 +544,25 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '2rem' }}>
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{totalLicencies}</p>
           <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBallon /> {t('club_equipes_actives', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEquipes}</p>
           <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> {t('club_tab_educateurs', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEducateurs}</p>
           <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoHorloge /> {t('club_demandes_affiliation', lang)}</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? couleurPrincipale : colors.text.primary }}>{nbEnAttente}</p>
           <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
@@ -574,7 +574,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
         {ACTIONS.map(a => (
           <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
-            style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = couleurPrincipale + '40'}
             onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
             <span style={{ fontSize: '26px' }}>{a.emoji}</span>
@@ -586,7 +586,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
       {/* Fil d'activité récente */}
       <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_activite_recente', lang)}</p>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
           {derniersResultats.length === 0 ? (
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_resultat_accueil', lang)}</p>
@@ -615,7 +615,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           )}
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> {t('club_prochains_matchs', lang)}</p>
           {prochainsMatchs.length === 0 ? (
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_match_venir', lang)}</p>
@@ -639,7 +639,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           )}
         </div>
 
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
           <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} />
         </div>
       </div>
@@ -657,14 +657,14 @@ const PRESETS_SECONDAIRE = [colors.accent.cyan, colors.accent.green, '#818cf8', 
 
 function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
   const colors = useColors()
-  const label = { color: '#9ca3af', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
-  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  const label = { color: colors.text.faint, fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
+  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.faint, padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
 
   return (
-    <div style={{ background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
+    <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
         <h3 style={{ margin: 0, color: colors.text.primary, fontSize: '15px', fontWeight: 700 }}>Personnalisation du dashboard</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
@@ -683,7 +683,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </div>
           </div>
           <button onClick={() => sauvegarderTheme({ couleur_principale: themeEdit.couleur_principale })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ marginTop: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.faint, padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Appliquer
           </button>
         </div>
@@ -703,7 +703,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </div>
           </div>
           <button onClick={() => sauvegarderTheme({ couleur_secondaire: themeEdit.couleur_secondaire })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '6px', color: '#9ca3af', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ marginTop: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.faint, padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Appliquer
           </button>
         </div>
@@ -722,7 +722,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </label>
             {club?.image_fond_url && (
               <button onClick={() => sauvegarderTheme({ image_fond_url: null })}
-                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'none', border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Supprimer
               </button>
             )}
@@ -743,7 +743,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             </label>
             {club?.image_hero_url && (
               <button onClick={() => sauvegarderTheme({ image_hero_url: null })}
-                style={{ background: 'none', border: '1px solid #333', borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'none', border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 Supprimer
               </button>
             )}
@@ -756,7 +756,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <input type="text" placeholder="Ex: Ensemble, on va plus loin" value={themeEdit.slogan}
               onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
-              style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+              style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
             <button onClick={() => sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })} disabled={savingTheme}
               style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.black, fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Sauvegarder
@@ -838,12 +838,12 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
 
   const cellBtn = (active, label, color) => ({
     padding: '3px 9px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-    background: active ? `${color}20` : colors.background.raised, color: active ? color : '#3a3a3a',
+    background: active ? `${color}20` : colors.background.raised, color: active ? color : colors.text.disabled,
   })
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🔐 Permissions par rôle</p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -864,7 +864,7 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
             </thead>
             <tbody>
               {rolesConfigurables.map(role => (
-                <tr key={role.val} style={{ borderTop: '1px solid #1a1a1a' }}>
+                <tr key={role.val} style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
                   <td style={{ padding: '10px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>{role.label}</td>
                   {PERMISSION_SECTIONS.map(section => {
                     const cell = matrice[role.val][section.id]
@@ -920,7 +920,7 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
             style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Enregistrement...' : '✓ Enregistrer'}
           </button>
-          <button onClick={onClose} style={{ background: colors.background.raised, border: '1px solid #2a2a2a', color: colors.text.muted, borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={onClose} style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.muted, borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             Annuler
           </button>
         </div>
@@ -970,18 +970,18 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
 
           <p style={{ margin: '0 0 2px', color: colors.text.primary, fontWeight: 700, fontSize: '14px', paddingRight: '16px' }}>{node.prenom} {node.nom}</p>
           <p style={{ margin: '0 0 4px', color: deptColors.text, fontSize: '12px', fontWeight: 500 }}>{node.role}</p>
-          <p style={{ margin: 0, color: '#4b5563', fontSize: '11px' }}>{node.departement}</p>
+          <p style={{ margin: 0, color: colors.text.dim, fontSize: '11px' }}>{node.departement}</p>
 
           {(node.email || node.telephone) && (
-            <div style={{ marginTop: '6px', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
-              {node.email && <p style={{ margin: 0, color: '#6b7280', fontSize: '10px' }}>✉ {node.email}</p>}
-              {node.telephone && <p style={{ margin: 0, color: '#6b7280', fontSize: '10px' }}>📞 {node.telephone}</p>}
+            <div style={{ marginTop: '6px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '6px' }}>
+              {node.email && <p style={{ margin: 0, color: colors.text.dim, fontSize: '10px' }}>✉ {node.email}</p>}
+              {node.telephone && <p style={{ margin: 0, color: colors.text.dim, fontSize: '10px' }}>📞 {node.telephone}</p>}
             </div>
           )}
 
           {canEdit && (
-            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
-              <button onClick={() => onEdit(node)} style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid #374151', color: '#9ca3af', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>✏️ Modifier</button>
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '6px' }}>
+              <button onClick={() => onEdit(node)} style={{ flex: 1, padding: '4px', background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>✏️ Modifier</button>
               <button onClick={() => onDelete(node.id)} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #ef444440', color: colors.accent.red, borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>🗑️</button>
             </div>
           )}
@@ -994,7 +994,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
                 background: deptColors.border, borderRadius: '50%', width: '20px', height: '20px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '11px', color: colors.black, fontWeight: 700, zIndex: 1,
-                boxShadow: '0 0 0 3px #0a0a0a', cursor: 'pointer',
+                boxShadow: `0 0 0 3px ${colors.background.base}`, cursor: 'pointer',
               }}
             >
               {isExpanded ? '−' : `+${node.children.length}`}
@@ -1004,7 +1004,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
       </div>
 
       {hasChildren && isExpanded && (
-        <div style={{ marginLeft: depth === 0 ? '0' : '36px', paddingLeft: '20px', borderLeft: '1px solid #1a1a1a', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ marginLeft: depth === 0 ? '0' : '36px', paddingLeft: '20px', borderLeft: `1px solid ${colors.border.subtle}`, marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {node.children.map((child, i) => (
             <OrgNode
               key={child.id || `${child.nom}-${child.prenom}-${i}`}
@@ -1289,15 +1289,15 @@ export default function DashboardClub() {
 
   const st = {
     page: { background: colors.background.base, minHeight: '100vh', color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
-    navbar: { background: colors.background.surface, borderBottom: '1px solid #222', padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
+    navbar: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.faint}`, padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
     logo: { color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
-    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? couleurPrincipale : 'transparent', color: active ? colors.black : colors.text.secondary, fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
-    card: { background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
+    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : `1px solid ${colors.border.strong}`, background: active ? couleurPrincipale : 'transparent', color: active ? colors.black : colors.text.secondary, fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
+    card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: couleurPrincipale, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
-    btnSecondary: { background: 'transparent', border: '1px solid #333', color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-    input: { background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
+    btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
     label: { fontSize: '11px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
   }
 
@@ -3376,7 +3376,7 @@ Règles :
                     </div>
               }
               {!club?.image_hero_url && (
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '13px' }}>
+                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: `2px solid ${colors.background.base}`, fontSize: '13px' }}>
                   {avatarClubUploading ? '…' : '✎'}
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
                 </label>
@@ -3387,13 +3387,13 @@ Règles :
                 <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: colors.text.primary }}>{club?.club || t('club_mon_club', lang)}</h1>
                 {monRole === 'president' && (
                   <button onClick={() => setShowThemeEditor(v => !v)}
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: '#ccc', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: colors.text.secondary, padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {showThemeEditor ? 'Fermer' : 'Personnaliser'}
                   </button>
                 )}
               </div>
               {club?.slogan && <p style={{ margin: '4px 0 0', color: couleurPrincipale, fontSize: '13px', fontStyle: 'italic', fontWeight: 500 }}>« {club.slogan} »</p>}
-              <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+              <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
             </div>
           </div>
         </div>
@@ -3444,7 +3444,7 @@ Règles :
           <>
             {/* Mobile : bouton hamburger + fil d'ariane (catégorie › sous-onglet actifs) */}
             <button onClick={() => setSidebarOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: colors.background.surface, border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: colors.text.primary, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: colors.text.primary, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
               <span style={{ fontSize: '13px', fontWeight: 700, flex: 1, textAlign: 'left' }}>
                 {categoriesVisibles.find(c => c.id === activeCategorie)?.label}
@@ -3460,7 +3460,7 @@ Règles :
             )}
             <div style={{
               position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-85%', width: '85%', maxWidth: '320px', height: '100%',
-              background: colors.background.sunken, borderRight: '1px solid #1a1a1a', zIndex: 100, transition: 'left 0.25s ease',
+              background: colors.background.sunken, borderRight: `1px solid ${colors.border.subtle}`, zIndex: 100, transition: 'left 0.25s ease',
               overflowY: 'auto', padding: '1.25rem 1rem', paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -3489,7 +3489,7 @@ Règles :
               </div>
 
               {activeCategorie !== 'accueil' && sousOnglets.length > 0 && (
-                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {sousOnglets.map(tab => (
                     <button key={tab.id}
                       onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
@@ -3807,7 +3807,7 @@ Règles :
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center',
                           gap: '10px', padding: '10px 16px', background: colors.background.raised,
-                          border: '1px solid #2a2a2a', borderRadius: '10px',
+                          border: `1px solid ${colors.border.default}`, borderRadius: '10px',
                           color: couleurPrincipale, fontWeight: 700, fontSize: '14px',
                           cursor: 'pointer', textAlign: 'left',
                         }}>
@@ -3981,7 +3981,7 @@ Règles :
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                     {TRIS.map(t => (
                       <button key={t.key} onClick={() => setTriClassement(t.key)}
-                        style={{ background: triClassement === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${triClassement === t.key ? t.color + '60' : '#222'}`, color: triClassement === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ background: triClassement === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${triClassement === t.key ? t.color + '60' : colors.border.faint}`, color: triClassement === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                         {t.label}
                       </button>
                     ))}
@@ -3990,7 +3990,7 @@ Règles :
                   <div style={{ ...st.card, overflow: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                        <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                           <th style={{ padding: '8px 12px', textAlign: 'center', color: colors.text.disabled, fontSize: '11px', width: '40px' }}>#</th>
                           <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_col_joueur', lang)}</th>
                           <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_poste', lang)}</th>
@@ -4001,7 +4001,7 @@ Règles :
                         {sorted.map((j, i) => {
                           const val = j.stats[triClassement]
                           return (
-                            <tr key={j.id} style={{ borderBottom: '1px solid #141414' }}>
+                            <tr key={j.id} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                               <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled }}>{i + 1}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px', color: colors.text.dim }}>{j.poste || '—'}</td>
@@ -4045,7 +4045,7 @@ Règles :
                         {(profilClubEdit.club || club?.club || '?')[0]}
                       </div>
                   }
-                  <label style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: '2px solid #0a0a0a', fontSize: '11px' }}>
+                  <label style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: `2px solid ${colors.background.base}`, fontSize: '11px' }}>
                     {avatarClubUploading ? '…' : '✎'}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
                   </label>
@@ -4209,7 +4209,7 @@ Règles :
               </div>
 
               {budgetFormOuvert && canEditSection('budget') && (
-                <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, marginBottom: 20 }}>
                   <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                     {['depense', 'recette'].map(bt => (
@@ -4223,7 +4223,7 @@ Règles :
                     <div>
                       <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
                       <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
                         <option value="">{t('club_choisir_pts', lang)}</option>
                         {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
                           <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
@@ -4233,21 +4233,21 @@ Règles :
                     <div>
                       <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_montant', lang)}</label>
                       <input type="number" min="0" step="0.01" placeholder="0,00" value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
                       <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_libelle', lang)}</label>
                       <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
                       <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('ent_date', lang)}</label>
                       <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                   </div>
                   <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
-                    style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
+                    style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
                   <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
                     style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
                     {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
@@ -4281,7 +4281,7 @@ Règles :
 
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 20, marginBottom: 20 }}>
                 {/* Donut Recettes */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
                   <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -4302,7 +4302,7 @@ Règles :
                 </div>
 
                 {/* Donut Dépenses */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.red, textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ {t('club_depenses', lang)}</p>
                   <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label={t('club_depense_mot', lang)} lang={lang} />
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -4323,7 +4323,7 @@ Règles :
                 </div>
 
                 {/* Donut Global */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
+                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ {t('club_global', lang)}</p>
                   <DonutChart
                     segments={totalRecettes + totalDepenses > 0 ? [
@@ -4352,7 +4352,7 @@ Règles :
               <p style={{ fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>{t('jcoach_historique', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {entriesFiltrees.length === 0 && (
-                  <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: colors.border.strong, fontSize: 13 }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: colors.border.strong, fontSize: 13 }}>
                     {t('club_aucune_entree_periode', lang)}
                   </div>
                 )}
@@ -4363,7 +4363,7 @@ Règles :
                   const segCat = categoriesArr.find(c => c.cat === e.categorie)
                   const couleur = segCat?.color || colors.text.faint
                   return (
-                    <div key={e.id} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle }}>
                         {meta?.emoji || (e.type === 'recette' ? '↑' : '↓')}
                       </div>
@@ -4488,7 +4488,7 @@ Règles :
                             onKeyDown={e => e.key === 'Enter' && ajouterReferent()}
                             style={{ ...st.input, width: '130px' }} />
                           <button type="button" onClick={ajouterReferent}
-                            style={{ background: colors.background.base, border: '1px solid #333', color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
                             + Ajouter
                           </button>
                         </div>
@@ -4519,7 +4519,7 @@ Règles :
                             onKeyDown={e => e.key === 'Enter' && ajouterParticipant()}
                             style={{ ...st.input, width: '130px' }} />
                           <button type="button" onClick={ajouterParticipant}
-                            style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.purpleLight, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: colors.accent.purpleLight, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
                             + Ajouter
                           </button>
                         </div>
@@ -4559,7 +4559,7 @@ Règles :
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           {evenementForm.missions.map(mission => (
-                            <div key={mission.id} style={{ background: colors.background.raised, border: '1px solid #222', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div key={mission.id} style={{ background: colors.background.raised, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <input placeholder="Titre de la mission (ex: Accueil équipes, Gestion vestiaires…)" value={mission.titre} onChange={e => modifierMission(mission.id, 'titre', e.target.value)} style={{ ...st.input, flex: 1, fontWeight: 700 }} />
                                 <button type="button" onClick={() => supprimerMission(mission.id)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer' }}>✕</button>
@@ -4614,7 +4614,7 @@ Règles :
                                     onKeyDown={e => e.key === 'Enter' && ajouterParticipantMission(mission.id)}
                                     style={{ ...st.input, width: '130px' }} />
                                   <button type="button" onClick={() => ajouterParticipantMission(mission.id)}
-                                    style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                    style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
                                     + Ajouter
                                   </button>
                                 </div>
@@ -4791,7 +4791,7 @@ Règles :
                             onKeyDown={e => e.key === 'Enter' && ajouterReferentProjet()}
                             style={{ ...st.input, width: '130px' }} />
                           <button type="button" onClick={ajouterReferentProjet}
-                            style={{ background: colors.background.base, border: '1px solid #333', color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                            style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
                             + Ajouter
                           </button>
                         </div>
@@ -4811,7 +4811,7 @@ Règles :
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           {projetForm.missions.map(mission => (
-                            <div key={mission.id} style={{ background: colors.background.raised, border: '1px solid #222', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div key={mission.id} style={{ background: colors.background.raised, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <input placeholder="Titre de la mission (ex: Devis entreprises, Suivi chantier…)" value={mission.titre} onChange={e => modifierMissionProjet(mission.id, 'titre', e.target.value)} style={{ ...st.input, flex: 1, fontWeight: 700 }} />
                                 <button type="button" onClick={() => supprimerMissionProjet(mission.id)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer' }}>✕</button>
@@ -4866,7 +4866,7 @@ Règles :
                                     onKeyDown={e => e.key === 'Enter' && ajouterParticipantMissionProjet(mission.id)}
                                     style={{ ...st.input, width: '130px' }} />
                                   <button type="button" onClick={() => ajouterParticipantMissionProjet(mission.id)}
-                                    style={{ background: colors.background.base, border: '1px solid #333', color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                                    style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
                                     + Ajouter
                                   </button>
                                 </div>
@@ -4969,7 +4969,7 @@ Règles :
 
                                   {canEditSection('evenements') && (
                                     <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
-                                      style={{ width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '6px', color: '#ccc', padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
+                                      style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.secondary, padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
                                       {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
                                     </select>
                                   )}
@@ -4983,7 +4983,7 @@ Règles :
                                         <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? colors.accent.green : colors.text.faint }}>
                                           {tc.fait ? '☑' : '☐'}
                                         </span>
-                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : '#ccc', textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
+                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : colors.text.secondary, textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
                                         {canEditSection('evenements') && (
                                           <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '11px' }}>✕</button>
                                         )}
@@ -4994,7 +4994,7 @@ Règles :
                                     <div style={{ display: 'flex', gap: '6px' }}>
                                       <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
                                         onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
-                                        placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                        placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                                     </div>
                                   )}
                                 </div>
@@ -5018,7 +5018,7 @@ Règles :
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '18px', fontWeight: 700 }}>🏛️ Organigramme</h2>
-                <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''}</p>
+                <p style={{ margin: '4px 0 0', color: colors.text.dim, fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''}</p>
               </div>
               {canEditSection('organigramme') && (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -5041,7 +5041,7 @@ Règles :
                         const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
                         setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
                       }}
-                      style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
                     >
                       {orgExpandedNodes.size > 0 ? '↑ Tout réduire' : '↓ Tout développer'}
                     </button>
@@ -5053,7 +5053,7 @@ Règles :
             {orgImportMode === 'excel' && (
               <div style={{ background: colors.background.surface, border: '1px solid #fbbf24', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
                 <h3 style={{ margin: '0 0 12px', color: colors.accent.amber, fontSize: '15px' }}>📊 Import depuis Excel / CSV</h3>
-                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
                   Utilise le template avec les colonnes : <strong style={{ color: colors.text.primary }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -5064,16 +5064,16 @@ Règles :
                     📂 Choisir un fichier
                     <input type="file" accept=".xlsx,.xls,.csv" onChange={importerOrganigrammeExcel} style={{ display: 'none' }} />
                   </label>
-                  {orgImportLoading && <span style={{ color: '#9ca3af', fontSize: '13px' }}>⏳ Import en cours…</span>}
+                  {orgImportLoading && <span style={{ color: colors.text.faint, fontSize: '13px' }}>⏳ Import en cours…</span>}
                 </div>
-                <p style={{ color: '#4b5563', fontSize: '12px', margin: '10px 0 0' }}>⚠️ L'import remplacera l'organigramme actuel.</p>
+                <p style={{ color: colors.text.dim, fontSize: '12px', margin: '10px 0 0' }}>⚠️ L'import remplacera l'organigramme actuel.</p>
               </div>
             )}
 
             {orgImportMode === 'scan' && (
               <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
                 <h3 style={{ margin: '0 0 12px', color: couleurPrincipale, fontSize: '15px' }}>📷 Scanner un organigramme</h3>
-                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 14px' }}>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
                   Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -5100,7 +5100,7 @@ Règles :
                 placeholder="🔍 Rechercher un membre, un rôle, un département…"
                 value={orgSearchQuery}
                 onChange={e => setOrgSearchQuery(e.target.value)}
-                style={{ width: '100%', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
               />
             )}
 
@@ -5118,9 +5118,9 @@ Règles :
             )}
 
             {organigramme.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#4b5563' }}>
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.text.dim }}>
                 <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🏛️</p>
-                <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: '#6b7280' }}>Aucun membre dans l'organigramme</p>
+                <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: colors.text.dim }}>Aucun membre dans l'organigramme</p>
                 <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
               </div>
             ) : (
@@ -5144,7 +5144,7 @@ Règles :
                 return (
                   <>
                     <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>Éducateurs ({educateursAcceptes.length})</h3>
-                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Éducateurs affiliés au club — clique pour voir leurs coordonnées et la catégorie gérée.</p>
+                    <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 16px' }}>Éducateurs affiliés au club — clique pour voir leurs coordonnées et la catégorie gérée.</p>
                     {educateursAcceptes.length === 0 ? (
                       <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun éducateur affilié pour l'instant.</p>
                     ) : (
@@ -5152,7 +5152,7 @@ Règles :
                         {educateursAcceptes.map(e => (
                           <div key={e.id}
                             onClick={() => setEducateurOrgDetail(e)}
-                            style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+                            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
                             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a2a3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '8px', overflow: 'hidden' }}>
                               {e.educateur?.avatar_url
                                 ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -5204,14 +5204,14 @@ Règles :
             {/* ── Parents ── */}
             <div style={{ marginTop: '32px' }}>
               <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>👨‍👩‍👦 Parents ({parentsClub.length})</h3>
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Coordonnées des parents ayant complété leur profil, tous joueurs du club confondus.</p>
+              <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 16px' }}>Coordonnées des parents ayant complété leur profil, tous joueurs du club confondus.</p>
               {parentsClub.length > 0 && (
                 <input
                   type="text"
                   placeholder="🔍 Rechercher un parent, un joueur, une catégorie, une profession…"
                   value={parentsSearchQuery}
                   onChange={e => setParentsSearchQuery(e.target.value)}
-                  style={{ width: '100%', background: colors.background.sunken, border: '1px solid #1a1a1a', borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box', outline: 'none' }}
+                  style={{ width: '100%', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box', outline: 'none' }}
                 />
               )}
               {(() => {
@@ -5228,13 +5228,13 @@ Règles :
                 return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                   {parentsFiltres.map(p => (
-                    <div key={p.id} style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '16px' }}>
+                    <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
                       <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
                         {p.prenom?.[0]}{p.nom?.[0]}
                       </div>
                       <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
                       {p.profession && <p style={{ color: colors.text.faint, fontSize: '11px', margin: '2px 0 0' }}>{p.profession}</p>}
-                      <p style={{ color: colors.text.faint, fontSize: '11px', margin: '6px 0 0', borderTop: '1px solid #1a1a1a', paddingTop: '6px' }}>
+                      <p style={{ color: colors.text.faint, fontSize: '11px', margin: '6px 0 0', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '6px' }}>
                         Parent de {p.joueur?.prenom} {p.joueur?.nom} · {p.joueur?.categorie || p.joueur?.niveau_equipe || '—'}
                       </p>
                       <button onClick={() => setParentDetail(p)} style={{ width: '100%', marginTop: '10px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '7px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -5250,7 +5250,7 @@ Règles :
             {/* ── Joueurs par catégorie ── */}
             <div style={{ marginTop: '32px' }}>
               <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>⚽ Joueurs ({joueursInventaire.length})</h3>
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>Effectif du club groupé par catégorie — clique sur un joueur pour voir sa fiche et ses parents rattachés.</p>
+              <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 16px' }}>Effectif du club groupé par catégorie — clique sur un joueur pour voir sa fiche et ses parents rattachés.</p>
               {joueursInventaire.length === 0 ? (
                 <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun joueur pour l'instant.</p>
               ) : (() => {
@@ -5281,7 +5281,7 @@ Règles :
                           {joueurs.map(j => (
                             <div key={j.id}
                               onClick={() => setJoueurOrgDetail(j)}
-                              style={{ background: colors.background.surface, border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+                              style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
                               <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>
                                 {j.prenom?.[0]}{j.nom?.[0]}
                               </div>
@@ -5378,7 +5378,7 @@ Règles :
         {/* ── Modale ajout/modification organigramme ── */}
         {modalOrganigramme && (
           <div style={{ position: 'fixed', inset: 0, background: '#000000cc', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-            <div style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{membreOrganigrammeEdite ? '✏️ Modifier le membre' : '+ Ajouter un membre'}</p>
                 <button onClick={() => setModalOrganigramme(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -6432,7 +6432,7 @@ Règles :
       {/* Modal notation éducateur */}
       {eduNoteModal && (
         <div onClick={() => setEduNoteModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>⭐ {t('club_evaluer', lang)} {eduNoteModal.educateur?.prenom} {eduNoteModal.educateur?.nom}</p>
@@ -6442,7 +6442,7 @@ Règles :
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <label style={{ fontSize: '12px', color: colors.text.faint }}>{t('club_saison_evaluee', lang)}</label>
-              <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px' }}>
+              <select value={eduNoteSaison} onChange={e => setEduNoteSaison(e.target.value)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px' }}>
                 {['2025-2026', '2024-2025', '2023-2024'].map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -6470,7 +6470,7 @@ Règles :
 
             <textarea value={eduNoteCommentaire} onChange={e => setEduNoteCommentaire(e.target.value)}
               placeholder={t('club_commentaire_optionnel_placeholder', lang)}
-              style={{ width: '100%', background: colors.background.surface, border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
+              style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
 
             <button onClick={soumettreNotationEducateur} disabled={savingEduNote || CRITERES_EDU.flatMap(c => c.criteres).some(c => !eduNoteCriteres[c.key])}
               style={{ width: '100%', background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
@@ -6496,7 +6496,7 @@ Règles :
         const cat = categories.find(c => c.id === effectifModal)
         return (
           <div onClick={() => { setEffectifModal(null); setJoueurDetail(null) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '900px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>👥 {t('club_effectif', lang)} — {cat?.nom} {cat?.equipe}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -6527,7 +6527,7 @@ Règles :
                   <div style={{ ...st.card, overflow: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                        <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                           {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('comp_buts', lang), t('recrut_passes', lang), t('recrut_matchs', lang), t('stats_col_presence', lang), t('club_note_court', lang)].map((h, hi) => (
                             <th key={h} style={{ padding: '10px 12px', textAlign: hi === 1 || hi === 2 ? 'left' : 'center', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
@@ -6537,7 +6537,7 @@ Règles :
                         {joueursTries.map(j => {
                           const groupe = GROUPES_POSTE.find(g => g.match(j.poste)) || GROUPES_POSTE[GROUPES_POSTE.length - 1]
                           return (
-                            <tr key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ borderBottom: '1px solid #141414', cursor: 'pointer' }}>
+                            <tr key={j.id} onClick={() => setJoueurDetail(j.id)} style={{ borderBottom: `1px solid ${colors.border.subtle}`, cursor: 'pointer' }}>
                               <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.text.faint, fontWeight: 700 }}>{j.numero_maillot || '—'}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px' }}><span style={{ color: groupe.color, fontSize: '12px' }}>{j.poste || '—'}</span></td>
@@ -6653,7 +6653,7 @@ Règles :
 
         return (
           <div onClick={() => setJoueurDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 2100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
                   <p style={{ margin: '0 0 2px', fontWeight: 800, fontSize: '16px' }}>{j.prenom} {j.nom}</p>
