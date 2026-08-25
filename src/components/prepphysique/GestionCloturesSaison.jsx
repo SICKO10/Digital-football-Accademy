@@ -54,7 +54,7 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
       notes: form.notes || null,
       cloturee: true,
       date_cloture: new Date().toISOString(),
-    }, { onConflict: 'joueur_id,saison' })
+    }, { onConflict: 'joueur_id,educateur_id,saison' })
     setLoading(false)
     if (!error) onSaved()
   }
