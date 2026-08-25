@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
 import { colors, alpha } from '../tokens'
-import { useColors, useTheme } from '../lib/theme'
+import { useColors } from '../lib/theme'
+import { ThemeToggleButton } from '../lib/ThemeProvider'
 import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
@@ -366,7 +367,6 @@ function CerclePresence({ presents, convoque, absents, blesses, malade, total, s
 function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const navigate = useNavigate()
   const colors = useColors()
-  const { theme, toggleTheme } = useTheme()
   const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
   const [notifications, setNotifications] = useState([])
@@ -1874,9 +1874,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               ))}
             </div>
           </div>
-          <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
-            <button onClick={toggleTheme} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', marginBottom: '2px' }}>{theme === 'sombre' ? 'Thème clair' : 'Thème sombre'}</button>
-            <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
+          <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414', display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <button onClick={handleLogout} style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
+            <ThemeToggleButton />
           </div>
         </aside>
 

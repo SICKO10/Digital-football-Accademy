@@ -19,7 +19,8 @@ import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
-import { useColors, useTheme } from '../lib/theme'
+import { useColors } from '../lib/theme'
+import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 
 const CLUB_FAQ = [
@@ -1021,7 +1022,6 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
 export default function DashboardClub() {
   const navigate = useNavigate()
   const colors = useColors()
-  const { theme, toggleTheme } = useTheme()
   const { lang, setLang } = useLang()
   const [club, setClub] = useState(null)
   const [clubId, setClubId] = useState(null)
@@ -3339,9 +3339,7 @@ Règles :
               {isMobile ? '⚽' : `⚽ ${t('club_vue_joueur', lang)}`}
             </button>
           )}
-          <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={toggleTheme}>
-            {isMobile ? (theme === 'sombre' ? 'Claire' : 'Sombre') : (theme === 'sombre' ? 'Thème clair' : 'Thème sombre')}
-          </button>
+          <ThemeToggleButton />
           <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
             {t('btn_deconnexion', lang)}
           </button>

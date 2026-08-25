@@ -32,7 +32,8 @@ import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 import { notifierJoueur } from '../lib/notifications'
 import { colors, alpha } from '../tokens'
-import { useColors, useTheme } from '../lib/theme'
+import { useColors } from '../lib/theme'
+import { ThemeToggleButton } from '../lib/ThemeProvider'
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
@@ -1149,7 +1150,6 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
 export default function DashboardEducateur({ educateurIdOverride, permissions } = {}) {
   const navigate = useNavigate()
   const colors = useColors()
-  const { theme, toggleTheme } = useTheme()
   const { lang, setLang } = useLang()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
@@ -3769,9 +3769,23 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     afficherToast(`${payload.length} présence${payload.length > 1 ? 's' : ''} importée${payload.length > 1 ? 's' : ''} depuis le sondage`)
   }
 
-  const togglePointSeance = async (entrainementId, joueurId, current) => {
+  // presences_entrainement.statut/present ont des valeurs par défaut en base
+  // ('absent'/false) — si on ne les inclut pas dans l'upsert, elles ne sont
+  // appliquées QUE quand la ligne n'existe pas encore (omises = valeur par
+  // défaut à l'INSERT), ce qui changeait silencieusement le statut affiché
+  // d'un joueur jamais saisi. On repasse explicitement les valeurs actuelles
+  // (ou null si aucune ligne n'existe) pour que l'étoile ne touche jamais au
+  // statut, qu'une présence ait déjà été saisie ou non.
+  const togglePointSeance = async (entrainementId, joueurId, presenceActuelle) => {
     await supabase.from('presences_entrainement').upsert(
-      { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, point_seance: !current },
+      {
+        entrainement_id: entrainementId,
+        joueur_id: joueurId,
+        educateur_id: userId,
+        statut: presenceActuelle?.statut ?? null,
+        present: presenceActuelle?.present ?? null,
+        point_seance: !presenceActuelle?.point_seance,
+      },
       { onConflict: 'entrainement_id,joueur_id' }
     )
     await chargerEntrainements(userId)
@@ -4186,15 +4200,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
           )}
 
-          <button onClick={toggleTheme} title={isTablet ? (theme === 'sombre' ? 'Thème clair' : 'Thème sombre') : undefined}
-            style={{ width: '100%', marginTop: '4px', display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: isTablet ? 'center' : 'left' }}>
-            {theme === 'sombre' ? 'Thème clair' : 'Thème sombre'}
-          </button>
-
-          <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
-            style={{ width: '100%', marginTop: '4px', display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
-            {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
-          </button>
+          <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+            <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
+              style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
+              {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
+            </button>
+            <ThemeToggleButton style={{ border: '1px solid #222' }} />
+          </div>
         </div>
         </>}
       </aside>
@@ -6757,7 +6769,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     {(canEdit('entrainements') || hasPoint) && (
                                       <span
                                         title={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
-                                        onClick={ev => { ev.stopPropagation(); canEdit('entrainements') && togglePointSeance(e.id, j.id, hasPoint) }}
+                                        onClick={ev => { ev.stopPropagation(); canEdit('entrainements') && togglePointSeance(e.id, j.id, p) }}
                                         style={{ fontSize: '14px', cursor: canEdit('entrainements') ? 'pointer' : 'default', opacity: hasPoint ? 1 : 0.2, flexShrink: 0, transition: 'opacity 0.15s' }}>
                                         ⭐
                                       </span>
