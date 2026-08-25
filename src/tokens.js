@@ -70,6 +70,43 @@ export const colors = {
   white: '#fff',
 }
 
+// Palette claire — même structure que `colors` (thème sombre, historique et
+// toujours la valeur par défaut partout où le thème n'est pas branché), pour
+// la bascule claire/sombre des dashboards (cf. src/lib/theme.jsx). Les
+// couleurs d'accent restent identiques dans les deux thèmes : ce sont des
+// couleurs de marque/statut, pas des neutres liés au fond de page.
+export const colorsClaire = {
+  background: {
+    base: '#f8fafc',
+    sunken: '#f1f5f9',
+    surface: '#ffffff',
+    surfaceAlt: '#f8fafc',
+    raised: '#f1f5f9',
+    overlay: 'rgba(15,23,42,0.5)',
+  },
+  border: {
+    subtle: '#e2e8f0',
+    default: '#cbd5e1',
+    strong: '#94a3b8',
+    faint: '#eef2f6',
+  },
+  text: {
+    primary: '#0f172a',
+    secondary: '#334155',
+    muted: '#64748b',
+    dim: '#475569',
+    faint: '#64748b',
+    disabled: '#94a3b8',
+    ghost: '#cbd5e1',
+  },
+  accent: colors.accent,
+  icon: {
+    muted: '#cbd5e1',
+  },
+  black: '#000',
+  white: '#fff',
+}
+
 // Convention observée partout dans le code : un hex de `colors.accent.*` suivi
 // d'un suffixe alpha à 2 chiffres pour un fond/bordure teinté(e), au lieu de
 // rgba(). Ex: colors.accent.green + alpha.subtle → '#4ade8015'.

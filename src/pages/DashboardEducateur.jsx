@@ -32,6 +32,7 @@ import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 import { notifierJoueur } from '../lib/notifications'
 import { colors, alpha } from '../tokens'
+import { useColors, useTheme } from '../lib/theme'
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
@@ -349,14 +350,15 @@ function parseRows(raw) {
 
 // ── Bar chart horizontal SVG ──────────────────────────────────────────────────
 function BarChart({ data, color = colors.accent.green, unit = '', max: forceMax }) {
+  const colors2 = useColors()
   if (!data.length) return null
   const max = forceMax ?? Math.max(...data.map(d => d.value), 1)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
       {data.map((d, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '110px', fontSize: '12px', color: colors.text.secondary, textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
-          <div style={{ flex: 1, background: colors.background.raised, borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ width: '110px', fontSize: '12px', color: colors2.text.secondary, textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
+          <div style={{ flex: 1, background: colors2.background.raised, borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${max > 0 ? (d.value / max) * 100 : 0}%`, background: color + '99', borderRadius: '4px', transition: 'width 0.4s ease', minWidth: d.value > 0 ? '4px' : '0' }} />
           </div>
           <div style={{ width: '40px', fontSize: '12px', fontWeight: 700, color, textAlign: 'right', flexShrink: 0 }}>{d.value}{unit}</div>
@@ -368,6 +370,7 @@ function BarChart({ data, color = colors.accent.green, unit = '', max: forceMax 
 
 // ── Radial progress skill (anneau rempli pour une compétence /5) ─────────────
 function RadialSkill({ value, max = 5, color, label, size = 80 }) {
+  const colors = useColors()
   const r = size * 0.36, cx = size / 2, cy = size / 2
   const circ = 2 * Math.PI * r
   const fill = (value / max) * circ
@@ -390,6 +393,7 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
 
 // ── Mini donut présence (anneau simple) ──────────────────────────────────────
 function DonutPresence({ taux }) {
+  const colors = useColors()
   const r = 16, circ = 2 * Math.PI * r
   const dash = (taux / 100) * circ
   const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
@@ -406,6 +410,7 @@ function DonutPresence({ taux }) {
 
 // ── Camembert multi-segment (présence / absence / blessure / maladie / convoc) ─
 function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
+  const colors = useColors()
   const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
   const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
   const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
@@ -438,6 +443,7 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
 // Donut victoires/nuls/défaites — même technique que DonutMulti (conic-gradient)
 // mais 3 segments fixes, pour le widget Effectif de l'Accueil.
 function DonutVND({ v, n, d, size = 72 }) {
+  const colors = useColors()
   const total = (v || 0) + (n || 0) + (d || 0)
   if (!total) return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -652,6 +658,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
 }
 
 function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+  const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
@@ -1141,6 +1148,8 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
 // voir canEdit()/canView() et sidebarSections plus bas pour le gating par section.
 export default function DashboardEducateur({ educateurIdOverride, permissions } = {}) {
   const navigate = useNavigate()
+  const colors = useColors()
+  const { theme, toggleTheme } = useTheme()
   const { lang, setLang } = useLang()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
@@ -4176,6 +4185,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               </div>
             </div>
           )}
+
+          <button onClick={toggleTheme} title={isTablet ? (theme === 'sombre' ? 'Thème clair' : 'Thème sombre') : undefined}
+            style={{ width: '100%', marginTop: '4px', display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: isTablet ? 'center' : 'left' }}>
+            {theme === 'sombre' ? 'Thème clair' : 'Thème sombre'}
+          </button>
 
           <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
             style={{ width: '100%', marginTop: '4px', display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: '1px solid #222', padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>

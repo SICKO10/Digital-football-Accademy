@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import DashboardEducateur from './DashboardEducateur'
-import { colors, alpha } from '../tokens'
+import { useColors } from '../lib/theme'
 
 // Petit wrapper : charge l'accès délégué du dirigeant connecté, puis rend le dashboard
 // éducateur habituel ciblé sur l'éducateur délégant, avec les permissions en prop pour
 // le gating (voir canEdit/canView + sidebarSectionsVisibles dans DashboardEducateur.jsx).
 export default function DashboardDirigeant() {
   const navigate = useNavigate()
+  const colors = useColors()
   const [acces, setAcces] = useState(null)
   const [loading, setLoading] = useState(true)
 

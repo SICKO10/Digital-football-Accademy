@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { colors, alpha } from '../tokens'
+import { alpha } from '../tokens'
+import { useColors } from '../lib/theme'
 
 const NATURES_BUT = [
   { value: 'cpa', label: 'CPA' },
@@ -30,6 +31,7 @@ const NATURES_BUT = [
 // passe : c'est l'éducateur qui note ses propres matchs, cette donnée n'existe pas
 // côté DashboardJoueur.jsx/DashboardClub.jsx qui réutilisent aussi ce composant.
 export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquipe = null }) {
+  const colors = useColors()
   const [filtreCompetition, setFiltreCompetition] = useState('all')
   const [filtreLieu, setFiltreLieu] = useState('all')
 

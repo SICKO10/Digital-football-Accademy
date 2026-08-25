@@ -28,6 +28,7 @@ import CGU from './pages/CGU'
 import ClubPublic from './pages/ClubPublic'
 import TactipadPublic from './pages/TactipadPublic'
 import InstallAppBanner from './components/InstallAppBanner'
+import { ThemeProvider } from './lib/ThemeProvider'
 
 function SmartDashboard() {
   const [dest, setDest] = useState(null)
@@ -64,6 +65,7 @@ function SmartDashboard() {
 
 function App() {
   return (
+    <ThemeProvider>
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -95,6 +97,7 @@ function App() {
       </Routes>
       <InstallAppBanner />
     </Router>
+    </ThemeProvider>
   )
 }
 

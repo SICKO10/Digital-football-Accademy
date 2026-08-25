@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { colors, alpha } from '../tokens'
+import { useColors } from '../lib/theme'
 
 const CRITERES = [
   { key: 'technique', label: 'Technique' },
@@ -12,6 +13,7 @@ const CRITERES = [
 const couleurNote = (n) => n >= 8 ? colors.accent.green : n >= 5 ? colors.accent.amber : colors.accent.red
 
 function Etoiles({ note, onChange, readOnly = false }) {
+  const colors = useColors()
   const [hover, setHover] = useState(null)
   const affichage = hover ?? note
 
@@ -49,6 +51,7 @@ function Etoiles({ note, onChange, readOnly = false }) {
 // stats (stats_match, presences_entrainement) identifient déjà les joueurs par
 // leur ligne d'effectif, car un joueur peut ne pas encore avoir de compte lié.
 export default function NotationMatch({ match, joueurs, educateurId, onClose }) {
+  const colors = useColors()
   const [notes, setNotes] = useState({})       // { joueur_id: { note, commentaire, criteres } }
   const [noteEquipe, setNoteEquipe] = useState({ id: null, note: null, commentaire: '' })
   const [onglet, setOnglet] = useState('joueurs')  // 'joueurs' | 'equipe'

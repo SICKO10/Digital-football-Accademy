@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { colors } from '../tokens'
+import { useColors } from '../lib/theme'
 
 // Icônes locales (pas d'emoji, cf. mémoire "no emojis in new UI") — même style
 // que les Ico* déjà présents dans DashboardEducateur.jsx, dupliquées ici plutôt
@@ -28,6 +28,7 @@ const IcoBell         = () => <svg width="16" height="16" viewBox="0 0 24 24" fi
 // dupliquer cette requête ici aurait fait cohabiter deux implémentations du
 // même signal, à faire diverger avec le temps.
 export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs = [], setActiveSection }) {
+  const colors = useColors()
   const [commandesPretes, setCommandesPretes] = useState([])
   const [deplacementsRisque, setDeplacementsRisque] = useState([])
   const [evenements, setEvenements] = useState([])

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
 import { colors, alpha } from '../tokens'
+import { useColors, useTheme } from '../lib/theme'
 import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
@@ -134,6 +135,7 @@ const IconTrophy = () => (
 )
 
 function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
+  const colors = useColors()
   return (
     <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconLock /></div>
@@ -148,6 +150,7 @@ function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
 }
 
 function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly }) {
+  const colors = useColors()
   const [editProfil, setEditProfil] = useState(false)
   const [profilForm, setProfilForm] = useState({
     prenom: profil?.prenom || '', nom: profil?.nom || '',
@@ -299,6 +302,7 @@ const saisonDeDate = (dateStr) => {
 // — même technique et mêmes couleurs que DonutMulti côté éducateur
 // (DashboardEducateur.jsx), pour rester cohérent entre les deux dashboards.
 function DonutPresenceMulti({ presents, convoque, absents, blesses, malade, size = 96 }) {
+  const colors = useColors()
   const total = (presents || 0) + (convoque || 0) + (absents || 0) + (blesses || 0) + (malade || 0)
   const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
   const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
@@ -361,6 +365,8 @@ function CerclePresence({ presents, convoque, absents, blesses, malade, total, s
 // fonction qui écrit en base, pour ne pas dépendre uniquement de la RLS.
 function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const navigate = useNavigate()
+  const colors = useColors()
+  const { theme, toggleTheme } = useTheme()
   const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
   const [notifications, setNotifications] = useState([])
@@ -1869,6 +1875,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           </div>
           <div style={{ padding: '12px 10px 20px', borderTop: '1px solid #141414' }}>
+            <button onClick={toggleTheme} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', marginBottom: '2px' }}>{theme === 'sombre' ? 'Thème clair' : 'Thème sombre'}</button>
             <button onClick={handleLogout} style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
           </div>
         </aside>

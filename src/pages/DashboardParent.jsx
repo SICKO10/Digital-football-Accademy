@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
-import { colors } from '../tokens'
+import { useColors } from '../lib/theme'
 import DashboardJoueur from './DashboardJoueur'
 
 // Dashboard parent : le vrai DashboardJoueur.jsx, rendu pour le joueur qui a
@@ -18,6 +18,7 @@ import DashboardJoueur from './DashboardJoueur'
 // l'écriture, le parent n'étant jamais authentifié en tant que son enfant.
 export default function DashboardParent() {
   const navigate = useNavigate()
+  const colors = useColors()
   const [loading, setLoading] = useState(true)
   const [acces, setAcces] = useState(null) // { joueur_id }
   const [joueurNom, setJoueurNom] = useState('')
@@ -130,7 +131,7 @@ export default function DashboardParent() {
 
   return (
     <div>
-      <div style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a', padding: '8px 14px', color: '#666', fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>

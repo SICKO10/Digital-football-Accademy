@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
+import { useColors } from '../lib/theme'
 import { sondageEstClos } from '../lib/sondage'
 import { EvenementsJour } from './PlanningSemaineWidget'
 
@@ -47,6 +48,7 @@ const OPTIONS_SONDAGE = [
 // l'éducateur y voit la réponse de toute l'équipe, semaine par semaine,
 // avant de placer ses séances.
 export default function SondageSemaine({ mode, userId, educateurId, accentColor = colors.accent.blue }) {
+  const colors2 = useColors()
   // Vue mois : réservée au mode joueur (lecture/navigation seulement, cliquer un
   // événement ramène sur la semaine correspondante pour répondre au sondage) —
   // le mode éducateur garde ses cartes détaillées par événement, trop denses
@@ -169,25 +171,25 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   // laisser défiler sur elle-même (overflowX:auto plus bas) — et pousse toute
   // la page plus large que l'écran sur mobile. Même piège déjà documenté
   // dans PlanningSemaineWidget.jsx pour sa grille du mois.
-  const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px', minWidth: 0 }
+  const card = { background: colors2.background.surface, border: `1px solid ${colors2.border.default}`, borderRadius: '16px', padding: '20px', marginBottom: '20px', minWidth: 0 }
 
   const header = (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
-        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
+        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors2.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
+        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors2.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
-          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors2.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
+          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
         </div>
         {mode === 'joueur' && (
-          <div style={{ display: 'flex', background: colors.background.sunken, borderRadius: '8px', padding: '2px', gap: '2px' }}>
+          <div style={{ display: 'flex', background: colors2.background.sunken, borderRadius: '8px', padding: '2px', gap: '2px' }}>
             {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
               <button key={v} onClick={() => changerVue(v)}
-                style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors.black : colors.text.faint }}>
+                style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors2.black : colors2.text.faint }}>
                 {lbl}
               </button>
             ))}
@@ -205,7 +207,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
         {header}
         {evenementsSemaine.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '24px' }}>
-            <p style={{ color: colors.text.ghost, fontSize: '13px', margin: 0 }}>Aucun entraînement ni match planifié cette semaine</p>
+            <p style={{ color: colors2.text.ghost, fontSize: '13px', margin: 0 }}>Aucun entraînement ni match planifié cette semaine</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -239,12 +241,12 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
             const vide = ents.length === 0 && mts.length === 0
             return (
               <div key={dStr} onClick={() => !vide && allerVersSemaineDe(d)} style={{
-                minHeight: '56px', background: colors.background.sunken, borderRadius: '10px', padding: '5px',
-                border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
+                minHeight: '56px', background: colors2.background.sunken, borderRadius: '10px', padding: '5px',
+                border: `1px solid ${estAujourdhui ? accentColor : colors2.border.faint}`,
                 opacity: horsMois ? 0.35 : 1, display: 'flex', flexDirection: 'column', gap: '3px',
                 cursor: vide ? 'default' : 'pointer', minWidth: 0,
               }}>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: estAujourdhui ? accentColor : vide ? colors.text.ghost : colors.text.faint }}>{d.getDate()}</p>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: estAujourdhui ? accentColor : vide ? colors2.text.ghost : colors2.text.faint }}>{d.getDate()}</p>
                 <EvenementsJour ents={ents} mts={mts} evts={[]} compact />
               </div>
             )
@@ -264,15 +266,15 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
           const estAujourdhui = dStr === aujourdhuiStr
           return (
             <div key={dStr} data-aujourdhui={estAujourdhui} style={{
-              minWidth: '176px', background: colors.background.sunken, borderRadius: '10px', padding: '10px 8px',
-              border: `1px solid ${estAujourdhui ? accentColor : colors.border.faint}`,
+              minWidth: '176px', background: colors2.background.sunken, borderRadius: '10px', padding: '10px 8px',
+              border: `1px solid ${estAujourdhui ? accentColor : colors2.border.faint}`,
               display: 'flex', flexDirection: 'column', gap: '6px', scrollSnapAlign: 'start',
             }}>
-              <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : evs.length ? colors.text.faint : colors.text.ghost, textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : evs.length ? colors2.text.faint : colors2.text.ghost, textAlign: 'center' }}>
                 {JOURS[i]} {d.getDate()}
               </p>
               {evs.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '11px', color: colors.text.ghost, textAlign: 'center' }}>—</p>
+                <p style={{ margin: 0, fontSize: '11px', color: colors2.text.ghost, textAlign: 'center' }}>—</p>
               ) : evs.map(ev => (
                 <EvenementJoueur key={ev.id} ev={ev} statut={mesDispos[ev.id]} onChoisir={s => repondre(ev, s)} saving={saving === ev.id} />
               ))}
@@ -285,6 +287,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
 }
 
 function EvenementJoueur({ ev, statut, onChoisir, saving }) {
+  const colors = useColors()
   const clos = ev.type === 'entrainement' && sondageEstClos(ev)
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   return (
@@ -324,6 +327,7 @@ const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', emoji: '⏳'
 // groupés par statut (y compris "sans réponse", qui n'est pas un statut
 // stocké mais l'absence de ligne dans `disponibilites` pour ce joueur).
 function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor }) {
+  const colors = useColors()
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   const compte = (val) => Object.values(reponses).filter(s => s === val).length
   const repondu = Object.keys(reponses).length

@@ -1,4 +1,5 @@
 import { colors } from '../tokens'
+import { useColors } from '../lib/theme'
 
 // Bouton CTA au format st.btnSolid() (cf. DashboardJoueur.jsx) — dupliqué ici
 // en dur plutôt qu'importé, car `st` y est défini au niveau module et n'est
@@ -22,6 +23,7 @@ const ctaStyle = {
 // taille reste celle passée par l'appelant, ce composant ne peut pas forcer la
 // taille d'un SVG qu'il ne contrôle pas.
 export default function EmptyState({ icon, title, subtitle, cta, dashed = false, compact = false, children }) {
+  const colors = useColors()
   return (
     <div style={{
       background: compact ? 'transparent' : colors.background.surface,

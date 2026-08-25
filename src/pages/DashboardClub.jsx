@@ -19,6 +19,7 @@ import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
+import { useColors, useTheme } from '../lib/theme'
 import StatsEquipe from '../components/StatsEquipe'
 
 const CLUB_FAQ = [
@@ -234,6 +235,7 @@ const MOIS_LABEL = (dateStr) => {
 
 const STAT_CARD_COLORS = { green: colors.accent.green, orange: '#f59e0b', red: colors.accent.red }
 function StatCard({ label, valeur, couleur }) {
+  const colors = useColors()
   const color = STAT_CARD_COLORS[couleur] || colors.text.primary
   return (
     <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
@@ -274,6 +276,7 @@ const COULEURS_BUDGET = [
 ]
 
 function DonutChart({ segments, total, label, couleurCentrale = colors.text.primary, lang = 'fr' }) {
+  const colors2 = useColors()
   const R = 70
   const STROKE = 18
   const C = 2 * Math.PI * R
@@ -281,9 +284,9 @@ function DonutChart({ segments, total, label, couleurCentrale = colors.text.prim
   if (total === 0) return (
     <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width="180" height="180" viewBox="0 0 180 180">
-        <circle cx="90" cy="90" r={R} fill="none" stroke={colors.background.raised} strokeWidth={STROKE} />
-        <text x="90" y="86" textAnchor="middle" fill={colors.text.faint} fontSize="11" fontFamily="Inter, sans-serif">Aucune</text>
-        <text x="90" y="102" textAnchor="middle" fill={colors.text.faint} fontSize="11" fontFamily="Inter, sans-serif">entrée</text>
+        <circle cx="90" cy="90" r={R} fill="none" stroke={colors2.background.raised} strokeWidth={STROKE} />
+        <text x="90" y="86" textAnchor="middle" fill={colors2.text.faint} fontSize="11" fontFamily="Inter, sans-serif">Aucune</text>
+        <text x="90" y="102" textAnchor="middle" fill={colors2.text.faint} fontSize="11" fontFamily="Inter, sans-serif">entrée</text>
       </svg>
     </div>
   )
@@ -297,7 +300,7 @@ function DonutChart({ segments, total, label, couleurCentrale = colors.text.prim
   return (
     <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
       <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="90" cy="90" r={R} fill="none" stroke={colors.background.raised} strokeWidth={STROKE} />
+        <circle cx="90" cy="90" r={R} fill="none" stroke={colors2.background.raised} strokeWidth={STROKE} />
         {segmentsAvecOffset.map((seg, i) => {
           const dash = (seg.pct / 100) * C
           return (
@@ -314,7 +317,7 @@ function DonutChart({ segments, total, label, couleurCentrale = colors.text.prim
         <span style={{ fontSize: 18, fontWeight: 900, color: couleurCentrale, fontFamily: 'Inter, sans-serif' }}>
           {total.toLocaleString(localeOf(lang), { maximumFractionDigits: 0 })} €
         </span>
-        <span style={{ fontSize: 10, color: colors.text.faint, fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
+        <span style={{ fontSize: 10, color: colors2.text.faint, fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
       </div>
     </div>
   )
@@ -338,6 +341,7 @@ function DonutChart({ segments, total, label, couleurCentrale = colors.text.prim
 // TerrainsLiberesWidget juste au-dessus dans AccueilClub — les répéter ici
 // ferait cohabiter deux implémentations du même signal.
 function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActiveTab }) {
+  const colors = useColors()
   const [alertes, setAlertes] = useState([])
   const [loading, setLoading] = useState(true)
   const [popup, setPopup] = useState(null)
@@ -492,6 +496,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
 }
 
 function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green }) {
+  const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -650,6 +655,7 @@ const PRESETS_PRINCIPALE = [colors.accent.green, colors.accent.orange, colors.ac
 const PRESETS_SECONDAIRE = [colors.accent.cyan, colors.accent.green, '#818cf8', colors.accent.orange, '#ec4899', '#34d399', colors.accent.amber, '#94a3b8']
 
 function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
+  const colors = useColors()
   const label = { color: '#9ca3af', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: '1px solid #333', borderRadius: '8px', color: '#9ca3af', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
 
@@ -766,6 +772,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
 // qui a tout et n'apparaît pas ici). Édite une copie locale, ne touche la base
 // qu'au clic sur "Enregistrer" via onSave (upsert complet de la matrice).
 function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSave, onClose, couleurPrincipale = colors.accent.green }) {
+  const colors = useColors()
   const rolesConfigurables = ROLES_STAFF.filter(r => r.val !== 'president')
   // Sous-liste pour l'accès par catégorie : 'entraineur'/'educateur' en sont
   // exclus (cf. ROLES_HORS_ACCES_CATEGORIES, leur périmètre vient de
@@ -927,6 +934,7 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
 // rendu du parent changerait d'identité et forcerait React à démonter/remonter tout
 // le sous-arbre à chaque frappe dans la barre de recherche.
 function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdit, onEdit, onDelete }) {
+  const colors = useColors()
   const hasChildren = node.children && node.children.length > 0
   const nodeKey = `${node.nom} ${node.prenom}`.trim()
   const isExpanded = expandedNodes.has(nodeKey)
@@ -1012,6 +1020,8 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
 
 export default function DashboardClub() {
   const navigate = useNavigate()
+  const colors = useColors()
+  const { theme, toggleTheme } = useTheme()
   const { lang, setLang } = useLang()
   const [club, setClub] = useState(null)
   const [clubId, setClubId] = useState(null)
@@ -3329,6 +3339,9 @@ Règles :
               {isMobile ? '⚽' : `⚽ ${t('club_vue_joueur', lang)}`}
             </button>
           )}
+          <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={toggleTheme}>
+            {isMobile ? (theme === 'sombre' ? 'Claire' : 'Sombre') : (theme === 'sombre' ? 'Thème clair' : 'Thème sombre')}
+          </button>
           <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
             {t('btn_deconnexion', lang)}
           </button>
