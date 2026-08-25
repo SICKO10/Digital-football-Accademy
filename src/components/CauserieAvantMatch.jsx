@@ -115,7 +115,31 @@ function FicheCauseriePrint({ children }) {
 // fenêtre du navigateur, rien à gérer côté app au-delà du plein écran natif
 // via requestFullscreen). Une slide par section non vide, navigation
 // clavier ← → (+ Échap pour quitter), grand texte lisible de loin.
+// Palettes de la présentation plein écran — sombre (défaut, historique) et
+// claire. slide.accent (couleur par type de slide, vert/bleu/rouge...) reste
+// identique dans les deux cas, seuls le fond et les textes neutres changent.
+const PALETTES_PRESENTATION = {
+  sombre: {
+    fond: '#050505', bordure: '#333',
+    texteFort: '#fff', texteDoux: '#d1d5db', texteFaint: '#9ca3af', texteGhost: '#374151',
+    dotInactif: '#333',
+  },
+  claire: {
+    fond: '#f8fafc', bordure: '#cbd5e1',
+    texteFort: '#0f172a', texteDoux: '#334155', texteFaint: '#64748b', texteGhost: '#cbd5e1',
+    dotInactif: '#cbd5e1',
+  },
+}
+
 function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem('causerie_presentation_theme') || 'sombre')
+  const pal = PALETTES_PRESENTATION[theme]
+  const changerTheme = () => {
+    const suivant = theme === 'sombre' ? 'claire' : 'sombre'
+    setTheme(suivant)
+    localStorage.setItem('causerie_presentation_theme', suivant)
+  }
+
   const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
   // Juste après l'intro (2e slide) si une composition a été renseignée —
   // absente si rien n'a encore été assigné, comme les autres slides
@@ -175,13 +199,18 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
 
   if (!slide) return null
 
-  const navBtn = { background: 'none', border: '1px solid #333', color: '#fff', borderRadius: '50%', width: '44px', height: '44px', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }
+  const navBtn = { background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteFort, borderRadius: '50%', width: '44px', height: '44px', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, background: '#050505', zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ position: 'fixed', inset: 0, background: pal.fond, zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 40px', flexShrink: 0 }}>
-        <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
-        <button onClick={onFermer} style={{ background: 'none', border: '1px solid #333', color: '#9ca3af', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitter [Échap]</button>
+        <p style={{ margin: 0, color: pal.texteFaint, fontSize: '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {theme === 'sombre' ? 'Claire' : 'Sombre'}
+          </button>
+          <button onClick={onFermer} style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ Quitter [Échap]</button>
+        </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -189,15 +218,15 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
 
         {slide.type === 'intro' && (
           <>
-            <h1 style={{ margin: '0 0 24px', color: '#fff', fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
-            {f.objectifs ? <p style={{ color: '#d1d5db', fontSize: 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.6, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: '#374151' }}>—</p>}
+            <h1 style={{ margin: '0 0 24px', color: pal.texteFort, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
+            {f.objectifs ? <p style={{ color: pal.texteDoux, fontSize: 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.6, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: pal.texteGhost }}>—</p>}
           </>
         )}
 
         {slide.type === 'liste' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', alignItems: 'flex-start' }}>
             {slide.items.map((it, i) => (
-              <p key={i} style={{ margin: 0, color: '#fff', fontSize: 'clamp(20px, 3vw, 34px)', fontWeight: 600, lineHeight: 1.4, display: 'flex', gap: '16px', textAlign: 'left' }}>
+              <p key={i} style={{ margin: 0, color: pal.texteFort, fontSize: 'clamp(20px, 3vw, 34px)', fontWeight: 600, lineHeight: 1.4, display: 'flex', gap: '16px', textAlign: 'left' }}>
                 <span style={{ color: slide.accent }}>›</span>{it}
               </p>
             ))}
@@ -230,15 +259,15 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
             ].map((e, i) => (
               <div key={i}>
                 <p style={{ margin: 0, color: e.color, fontWeight: 900, fontSize: 'clamp(48px, 8vw, 96px)', lineHeight: 1 }}>{e.rang ? `${e.rang}e` : '—'}</p>
-                <p style={{ margin: '8px 0 0', color: '#9ca3af', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.nom}</p>
-                {e.pts != null && <p style={{ margin: '4px 0 0', color: '#fff', fontSize: '18px' }}>{e.pts} pts</p>}
+                <p style={{ margin: '8px 0 0', color: pal.texteFaint, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.nom}</p>
+                {e.pts != null && <p style={{ margin: '4px 0 0', color: pal.texteFort, fontSize: '18px' }}>{e.pts} pts</p>}
               </div>
             ))}
           </div>
         )}
 
         {slide.type === 'message' && (
-          <p style={{ margin: 0, color: '#fff', fontSize: 'clamp(24px, 3.5vw, 40px)', fontWeight: 700, fontStyle: 'italic', lineHeight: 1.5, maxWidth: '1000px' }}>« {f.message_coach} »</p>
+          <p style={{ margin: 0, color: pal.texteFort, fontSize: 'clamp(24px, 3.5vw, 40px)', fontWeight: 700, fontStyle: 'italic', lineHeight: 1.5, maxWidth: '1000px' }}>« {f.message_coach} »</p>
         )}
       </div>
 
@@ -247,7 +276,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {slides.map((s, i) => (
             <button key={i} onClick={() => setSlideIdx(i)} title={s.titre}
-              style={{ width: i === idx ? '24px' : '8px', height: '8px', borderRadius: '4px', background: i === idx ? s.accent : '#333', border: 'none', cursor: 'pointer', transition: 'width 0.2s' }} />
+              style={{ width: i === idx ? '24px' : '8px', height: '8px', borderRadius: '4px', background: i === idx ? s.accent : pal.dotInactif, border: 'none', cursor: 'pointer', transition: 'width 0.2s' }} />
           ))}
         </div>
         <button onClick={() => setSlideIdx(i => Math.min(i + 1, total - 1))} disabled={idx === total - 1} style={{ ...navBtn, opacity: idx === total - 1 ? 0.3 : 1 }}>›</button>
