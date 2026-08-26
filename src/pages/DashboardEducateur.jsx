@@ -1234,6 +1234,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerError, setScannerError] = useState(null)
   const [scannerWarning, setScannerWarning] = useState(null) // avertissement si peu de joueurs détectés vs effectif
   const [matchActif, setMatchActif] = useState(null)
+  const [menuResultatOuvert, setMenuResultatOuvert] = useState(null) // id du résultat dont le menu "⋯" (modifier/supprimer) est ouvert
   const [statsMatch, setStatsMatch] = useState({})
   const [matchANoter, setMatchANoter] = useState(null)
   const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
@@ -5548,32 +5549,37 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           </div>
                           {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
                           {canEdit('competition') && (
-                            <button
-                              onClick={ev => { ev.stopPropagation(); ouvrirModalMatchJoue(m) }}
-                              style={{ background: 'transparent', border: `1px solid ${colors.border?.default || '#2a2a2a'}`, color: colors.accent.blue, cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}
-                              title="Modifier le résultat"
-                            >
-                              Modifier
-                            </button>
-                          )}
-                          {canEdit('competition') && (
-                            <button
-                              onClick={async ev => {
-                                ev.stopPropagation()
-                                if (!confirm('Supprimer ce résultat ?')) return
-                                const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
-                                if (errStats) { alert('Erreur : ' + errStats.message); return }
-                                const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
-                                if (error) { alert('Erreur : ' + error.message); return }
-                                setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
-                                if (matchActif?.id === m.id) setMatchActif(null)
-                                supprimerDeplacementLieAuMatch(m)
-                              }}
-                              style={{ background: 'transparent', border: 'none', color: colors.text.dim, cursor: 'pointer', padding: '6px', borderRadius: '6px', fontSize: '16px', flexShrink: 0 }}
-                              title="Supprimer ce résultat"
-                            >
-
-                            </button>
+                            <div style={{ position: 'relative', flexShrink: 0 }} onClick={ev => ev.stopPropagation()}>
+                              <button
+                                onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
+                                style={{ background: 'none', border: `1px solid ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '16px', width: '32px', height: '32px', cursor: 'pointer', lineHeight: 1 }}
+                              >⋯</button>
+                              {menuResultatOuvert === m.id && (
+                                <>
+                                  <div onClick={() => setMenuResultatOuvert(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                                  <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                    <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
+                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      Modifier
+                                    </button>
+                                    <button onClick={async () => {
+                                        setMenuResultatOuvert(null)
+                                        if (!confirm('Supprimer ce résultat ?')) return
+                                        const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                        if (errStats) { alert('Erreur : ' + errStats.message); return }
+                                        const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                        if (error) { alert('Erreur : ' + error.message); return }
+                                        setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                        if (matchActif?.id === m.id) setMatchActif(null)
+                                        supprimerDeplacementLieAuMatch(m)
+                                      }}
+                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#f87171', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
+                                      Supprimer
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
 
