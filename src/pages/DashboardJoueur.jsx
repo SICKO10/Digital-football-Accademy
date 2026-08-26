@@ -2683,10 +2683,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           </nav>
           <div style={{ paddingTop: '12px', borderTop: `1px solid ${colors.border.subtle}` }}>
             <p style={{ fontSize: '11px', color: colors.text.disabled, padding: '0 8px', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profil?.prenom}</p>
-            <button onClick={handleLogout}
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-              Déconnexion
-            </button>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button onClick={handleLogout}
+                style={{ flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+                Déconnexion
+              </button>
+              <ThemeToggleButton />
+            </div>
           </div>
         </aside>
 
@@ -2960,9 +2963,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <p style={{ margin: '1px 0 0', fontSize: '10px', color: colors.accent.green, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>{profil?.plan}</p>
             </div>
           </div>
-          <button onClick={handleLogout} style={{ width: '100%', background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.disabled, padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Déconnexion
-          </button>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button onClick={handleLogout} style={{ flex: 1, minWidth: 0, background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.disabled, padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Déconnexion
+            </button>
+            <ThemeToggleButton />
+          </div>
         </div>
       </aside>
 
