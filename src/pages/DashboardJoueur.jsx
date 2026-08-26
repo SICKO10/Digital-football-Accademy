@@ -738,8 +738,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   // Convocation active : jointure via convocation_joueurs (le joueur ne voit,
-  // par RLS, que ses lignes) → convocations (RLS déjà limitée à publiee=true
-  // et expire_at > now(), donc pas besoin de refiltrer côté client) → match.
+  // par RLS, que ses lignes) → convocations (RLS limitée à publiee=true et
+  // expire_at > now(), un nettoyage tardif — dimanche suivant le match, cf.
+  // calculerExpirationConvocation dans DashboardEducateur.jsx — qui sert
+  // surtout à purger la lecture sans tâche planifiée). Le widget joueur doit
+  // disparaître plus tôt que ça : dès que la date+heure du match elle-même
+  // est passée, pas seulement à l'expiration RLS de fin de semaine — d'où le
+  // filtre estPasse ci-dessous, en plus (pas à la place) du filtre RLS.
   // 3 requêtes manuelles plutôt qu'un embed PostgREST imbriqué
   // convocations(*, matchs_equipe(...)) : aucune contrainte FK réelle entre
   // convocations.match_id et matchs_equipe côté base (juste une convention
@@ -757,9 +762,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       : { data: [] }
     const matchsParId = Object.fromEntries((matchs || []).map(m => [m.id, m]))
 
+    // Sans heure connue, on garde le match visible jusqu'à la fin de sa
+    // journée plutôt que de risquer de masquer une convocation pour un match
+    // pas encore joué.
+    const estPasse = (m) => new Date(`${m.date}T${m.heure || '23:59'}:00`) < new Date()
+
     const convocations = (convs || [])
       .map(c => ({ ...c, matchs_equipe: matchsParId[c.match_id] }))
-      .filter(c => c.matchs_equipe)
+      .filter(c => c.matchs_equipe && !estPasse(c.matchs_equipe))
     convocations.sort((a, b) => (a.matchs_equipe?.date || '').localeCompare(b.matchs_equipe?.date || ''))
     const active = convocations[0] || null
     setConvocationActive(active)
