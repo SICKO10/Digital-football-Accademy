@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
+import { makeUseSt } from '../../lib/theme'
 
-const st = {
+const stSombre = {
   card: { background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '1.25rem' },
   totalCard: { background: '#161616', border: '1px solid #333', borderRadius: '12px', padding: '1.25rem' },
   groupWrap: { border: '1px solid #1e1e1e', borderRadius: '14px', padding: '4px', display: 'flex', flexDirection: 'column', gap: '4px' },
@@ -9,7 +10,23 @@ const st = {
   value: { fontSize: '13px', fontWeight: 700, color: '#fff', margin: '2px 0 0' },
   chip: { fontSize: '10px', fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '20px', padding: '2px 8px' },
   chipOrpheline: { fontSize: '10px', fontWeight: 700, color: '#666', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '2px 8px' },
+  muted: '#555',
+  dim: '#888',
+  empty: '#444',
 }
+const stClaire = {
+  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
+  totalCard: { background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem' },
+  groupWrap: { border: '1px solid #e2e8f0', borderRadius: '14px', padding: '4px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  label: { fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 },
+  value: { fontSize: '13px', fontWeight: 700, color: '#0f172a', margin: '2px 0 0' },
+  chip: { fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)', borderRadius: '20px', padding: '2px 8px' },
+  chipOrpheline: { fontSize: '10px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '20px', padding: '2px 8px' },
+  muted: '#64748b',
+  dim: '#64748b',
+  empty: '#94a3b8',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 const CHAMPS_SOMMABLES = ['matchs_joues', 'buts', 'passes_decisives', 'minutes_jouees', 'cleansheets', 'victoires', 'nuls', 'defaites', 'seances_realisees', 'seances_total']
 
@@ -24,6 +41,7 @@ const sommerLignes = (rows) => rows.reduce((acc, r) => {
 // les étiquette par équipe et on affiche un total combiné quand il y en a
 // plus d'une.
 function CarteStats({ s, taille = 'normal' }) {
+  const st = useSt()
   const totalMatchs = (s.victoires || 0) + (s.nuls || 0) + (s.defaites || 0)
   const tauxPresence = s.seances_total > 0 ? Math.round((s.seances_realisees / s.seances_total) * 100) : null
   return (
@@ -48,12 +66,13 @@ function CarteStats({ s, taille = 'normal' }) {
           <span style={{ color: '#ef4444' }}>{s.defaites || 0}D</span>
         </div>
       )}
-      {taille === 'normal' && s.notes && <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>"{s.notes}"</p>}
+      {taille === 'normal' && s.notes && <p style={{ margin: '10px 0 0', fontSize: '12px', color: st.dim, fontStyle: 'italic' }}>"{s.notes}"</p>}
     </>
   )
 }
 
 export default function HistoriqueSaisons({ joueurId }) {
+  const st = useSt()
   const [saisons, setSaisons] = useState([])
   const [equipeLabels, setEquipeLabels] = useState({})
   const [loading, setLoading] = useState(true)
@@ -91,8 +110,8 @@ export default function HistoriqueSaisons({ joueurId }) {
       })
   }, [joueurId])
 
-  if (loading) return <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
-  if (saisons.length === 0) return <p style={{ color: '#444', fontSize: '13px' }}>Aucune saison clôturée pour l'instant.</p>
+  if (loading) return <p style={{ color: st.empty, fontSize: '13px' }}>Chargement...</p>
+  if (saisons.length === 0) return <p style={{ color: st.empty, fontSize: '13px' }}>Aucune saison clôturée pour l'instant.</p>
 
   const labelEquipe = (s) => s.educateur_id ? (equipeLabels[s.educateur_id] || 'Équipe') : 'Coach parti'
 
@@ -125,7 +144,7 @@ export default function HistoriqueSaisons({ joueurId }) {
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: ouverte ? '10px' : 0, flexWrap: 'wrap', gap: '8px' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ color: '#555', fontSize: '11px', transform: ouverte ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>▶</span>
+                      <span style={{ color: st.muted, fontSize: '11px', transform: ouverte ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>▶</span>
                       {!multi && <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{s.saison}</p>}
                       <span style={s.educateur_id ? st.chip : st.chipOrpheline}>{labelEquipe(s)}</span>
                     </div>

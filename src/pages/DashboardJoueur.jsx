@@ -143,7 +143,7 @@ function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
       <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
       <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: 'white', border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
+        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
         <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={st.btnSolid()}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
@@ -191,7 +191,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly 
   return (
     <div style={{ maxWidth: '560px' }}>
       {/* Hero */}
-      <div style={{ background: 'linear-gradient(135deg, #0d1f0d, #111)', border: '1px solid #1a2e1a', borderRadius: '20px', padding: '28px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle}, ${colors.background.surface})`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: '20px', padding: '28px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '20px' }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <Avatar person={profil} size={72} />
         </div>
@@ -1612,7 +1612,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   const inputStyle = {
     width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px',
-    padding: '11px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box',
+    padding: '11px 14px', color: colors.text.primary, fontSize: '14px', boxSizing: 'border-box',
     fontFamily: 'Inter, sans-serif', outline: 'none',
   }
   const labelStyle = {
@@ -1631,7 +1631,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // ── BANNI ──
   if (profil?.banni) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ maxWidth: '440px', width: '100%', background: colors.background.surface, border: '1px solid #ef444430', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <div style={{ color: colors.accent.red, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
@@ -1665,14 +1665,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!hasAffiliation) {
       return (
         <div style={{ padding: '24px 20px' }}>
-          <h2 style={{ color: 'white', fontWeight: 800, marginBottom: '12px' }}>🏆 {t('jnav_competition', lang)}</h2>
+          <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '12px' }}>🏆 {t('jnav_competition', lang)}</h2>
           <p style={{ color: colors.text.dim, fontSize: '13px' }}>Rejoins une équipe (onglet "{t('jnav_equipe', lang)}") pour voir ses résultats, son calendrier et son classement.</p>
         </div>
       )
     }
     return (
       <div style={{ padding: '24px 20px' }}>
-        <h2 style={{ color: 'white', fontWeight: 800, marginBottom: '24px' }}>🏆 {t('jnav_competition', lang)}</h2>
+        <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '24px' }}>🏆 {t('jnav_competition', lang)}</h2>
 
         {lienClassementCompetition && (
           <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', marginBottom: '20px', border: `1px solid ${colors.border.subtle}` }}>
@@ -1695,7 +1695,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           return (
             <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', marginBottom: '20px', border: `1px solid ${colors.border.subtle}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>📅 Prochains matchs</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>📅 Prochains matchs</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
                     style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
@@ -1711,7 +1711,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               ) : moisMatchs.map(m => (
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
                   <div>
-                    <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
+                    <div style={{ fontWeight: 600, color: colors.text.primary, fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
                     <div style={{ fontSize: '12px', color: colors.text.dim, marginTop: '2px' }}>
                       {new Date(m.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                       {m.heure ? ` · ${m.heure}` : ''}
@@ -1743,7 +1743,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           return (
             <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', border: `1px solid ${colors.border.subtle}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>⚽ Derniers résultats</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>⚽ Derniers résultats</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
                     style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
@@ -1764,11 +1764,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 return (
                   <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'white', fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
+                      <div style={{ fontWeight: 600, color: colors.text.primary, fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
                       <div style={{ fontSize: '12px', color: colors.text.dim, marginTop: '2px' }}>{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>{r.score_nous} - {r.score_eux}</span>
+                      <span style={{ fontSize: '16px', fontWeight: 800, color: colors.text.primary }}>{r.score_nous} - {r.score_eux}</span>
                       <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? colors.accent.green : nul ? '#facc15' : colors.accent.red }}>
                         {victoire ? 'V' : nul ? 'N' : 'D'}
                       </span>
@@ -1831,7 +1831,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     ]
 
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; } .af-nav-btn:hover { background: ${colors.background.sunken} !important; color: ${colors.text.secondary} !important; }`}</style>
 
         {popupEquipementPret}
@@ -2040,14 +2040,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[{ id: 'prep_physique', label: t('aff_prepa_physique_court', lang), emoji: '🏋️', desc: t('aff_tes_seances_exercices', lang) }, { id: 'stats', label: t('aff_mes_stats', lang), emoji: '📊', desc: t('aff_presences_performance', lang) }].map(item => (
-                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: 'white' }}>
+                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
                     <div style={{ fontSize: '22px', marginBottom: '8px' }}>{item.emoji}</div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.label}</p>
                     <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.desc}</p>
                   </button>
                 ))}
               </div>
-              <div style={{ background: 'linear-gradient(135deg, #4ade8010, #0a0a0a)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+              <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.faint}, ${colors.background.base})`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('aff_passe_niveau_sup', lang)}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{t('aff_analyses_feed_desc', lang)}</p>
@@ -2270,19 +2270,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     return (
                       <div key={a.id} style={{ background: colors.background.raised, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? colors.border.default : colors.border.default}` }}>
                         {isAccepted ? (
-                          <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                             <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
                               {pe?.prenom?.[0]}{pe?.nom?.[0]}
                             </div>
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 'bold', fontSize: '17px' }}>{pe?.prenom} {pe?.nom}</div>
-                              <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
+                              <div style={{ color: colors.accent.green, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
                               <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
+                                <span style={{ background: '#22c55e' + alpha.subtle, border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
                                   ✅ {t('profil_affilie', lang)}
                                 </span>
                                 {pe?.diplome && (
-                                  <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
+                                  <span style={{ fontSize: '12px', color: colors.accent.green }}>🎓 {pe.diplome}</span>
                                 )}
                               </div>
                               {pe?.lien_groupe && (
@@ -2322,7 +2322,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                               </button>
                               <button
                                 onClick={() => { setEduNote(a); setNoteCriteres({}); setNoteCommentaire(''); setNotePublic(true) }}
-                                style={{ background: colors.background.raised, color: 'white', border: `1px solid ${colors.border.strong}`, borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+                                style={{ background: colors.background.raised, color: colors.text.primary, border: `1px solid ${colors.border.strong}`, borderRadius: '10px', padding: '14px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
                                 ⭐ {t('club_evaluer', lang)}
                               </button>
                             </div>
@@ -2652,7 +2652,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       setSidebarOpen(false)
     }
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; } .fan-nav-btn:hover { background: ${colors.background.surface} !important; }`}</style>
 
         {isMobile && sidebarOpen && (
@@ -2694,7 +2694,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         <div style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : '220px' }}>
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)}
-              style={{ background: 'none', border: 'none', color: 'white', fontSize: 24, cursor: 'pointer', padding: '1rem 1.5rem 0' }}>
+              style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: '1rem 1.5rem 0' }}>
               ☰
             </button>
           )}
@@ -2781,14 +2781,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const affilieAccepte = mesAffiliations.some(a => a.statut === 'accepte')
   if (!profil?.abonnement_actif && !affilieAccepte) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
         <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
           <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
             <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.background.base, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
           </div>
           <span onClick={handleLogout} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
@@ -2830,7 +2830,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3015,11 +3015,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <div style={{ padding: isMobile ? '16px' : '24px 40px' }}>
 
             {/* HERO CARD — pleine largeur */}
-            <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a1a0f 0%, #0d0d0d 100%)', border: '1px solid #1a2e1a', borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'center', textAlign: isMobile ? 'center' : 'left', gap: isMobile ? '14px' : '24px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.faint} 0%, ${colors.background.sunken} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'center', textAlign: isMobile ? 'center' : 'left', gap: isMobile ? '14px' : '24px', flexWrap: 'wrap' }}>
               <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: colors.accent.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: '2.5px solid #0a0a0a' }}>
+                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: colors.accent.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: `2.5px solid ${colors.background.surface}` }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
@@ -3063,7 +3063,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {convocationActive && (() => {
               const m = convocationActive.matchs_equipe
               return (
-                <div style={{ background: 'linear-gradient(135deg, #0d1f1a 0%, #111 100%)', border: '2px solid #4ade80', borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '20px' : '28px', marginBottom: isMobile ? '16px' : '20px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: '2px solid #4ade80', borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '20px' : '28px', marginBottom: isMobile ? '16px' : '20px', position: 'relative', overflow: 'hidden' }}>
                   {m?.competition && (
                     <div style={{ position: 'absolute', top: isMobile ? 12 : 20, right: isMobile ? 12 : 20, background: colors.accent.green, color: colors.black, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
                       {m.competition}
@@ -3100,11 +3100,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
                   <div style={{ display: 'flex', gap: isMobile ? 10 : 12, marginBottom: 16 }}>
                     <button onClick={() => repondreConvocation('present')}
-                      style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : '#1a1a1a', color: repConvoc === 'present' ? colors.black : '#fff', border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : colors.background.raised, color: repConvoc === 'present' ? colors.black : colors.text.primary, border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       ✅ Présent
                     </button>
                     <button onClick={() => repondreConvocation('absent')}
-                      style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : '#1a1a1a', color: colors.text.primary, border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : colors.background.raised, color: colors.text.primary, border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       ❌ Absent
                     </button>
                   </div>
@@ -3273,13 +3273,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   if (aff) {
                     const pe = aff.profil_educateur
                     return (
-                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
                           {pe?.prenom?.[0]}{pe?.nom?.[0]}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#86efac' }}>{t('jeq_titre', lang)}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.accent.green }}>{t('jeq_titre', lang)}</p>
                         </div>
                         <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
                       </button>
@@ -3430,7 +3430,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
                 {/* UPSELL PRO */}
                 {!isPro && (
-                  <div style={{ background: 'linear-gradient(135deg, #0d1a0d 0%, #111 100%)', border: '1px solid #4ade8025', borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div>
                       <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
                       <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('jd_upsell_desc', lang)}</p>
@@ -4430,19 +4430,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   return (
                     <div key={a.id} style={{ background: colors.background.raised, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isAccepted ? colors.border.default : colors.border.default}` }}>
                       {isAccepted ? (
-                        <div style={{ background: 'linear-gradient(135deg, #071a0e 0%, #0a2010 40%, #061209 100%)', padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, padding: '20px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#052e16', flexShrink: 0 }}>
                             {pe?.prenom?.[0]}{pe?.nom?.[0]}
                           </div>
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontWeight: 'bold', fontSize: '17px' }}>{pe?.prenom} {pe?.nom}</div>
-                            <div style={{ color: '#86efac', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
+                            <div style={{ color: colors.accent.green, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[pe?.club, pe?.categorie, pe?.niveau_championnat].filter(Boolean).join(' · ')}</div>
                             <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                              <span style={{ background: '#166534', border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
+                              <span style={{ background: '#22c55e' + alpha.subtle, border: '1px solid #22c55e', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', color: '#22c55e' }}>
                                 ✅ {t('profil_affilie', lang)}
                               </span>
                               {pe?.diplome && (
-                                <span style={{ fontSize: '12px', color: '#86efac' }}>🎓 {pe.diplome}</span>
+                                <span style={{ fontSize: '12px', color: colors.accent.green }}>🎓 {pe.diplome}</span>
                               )}
                             </div>
                           </div>

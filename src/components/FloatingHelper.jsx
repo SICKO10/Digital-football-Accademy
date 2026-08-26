@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
+import { useColors } from "../lib/theme";
 
 // ─── FAQ RAPIDE ──────────────────────────────────────────────────────────────
 // FAQ par défaut (dashboard joueur) — passe une prop `faq` personnalisée pour
@@ -30,7 +31,11 @@ const DEFAULT_FAQ = [
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 // Couleurs paramétrées par accentColor (défaut vert) via des fonctions plutôt que
 // des valeurs figées — même approche que l'accentColor d'OnboardingGuide.jsx.
-const S = {
+// Les neutres (fonds/bordures/texte) sont paramétrés par `colors` (useColors())
+// pour suivre le thème clair/sombre de chaque dashboard hôte — buildS() est
+// appelé une fois par rendu dans le composant plutôt qu'un objet figé au
+// niveau module, puisque colors change selon le thème actif.
+const buildS = (colors) => ({
   btn: (open, color) => ({
     position: "fixed",
     bottom: "28px",
@@ -54,8 +59,8 @@ const S = {
     bottom: "96px",
     right: "28px",
     width: "320px",
-    background: "#141414",
-    border: "1px solid #2a2a2a",
+    background: colors.background.raised,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "16px",
     boxShadow: "0 0 40px rgba(0,0,0,0.6)",
     zIndex: 900,
@@ -84,6 +89,8 @@ const S = {
     fontSize: "18px",
     flexShrink: 0,
   }),
+  // Texte fixe (pas colors.text.primary) : posé sur le dégradé accentColor du
+  // header, pas sur une surface neutre — reste blanc quel que soit le thème.
   headerText: {
     color: "#ffffff",
     fontSize: "14px",
@@ -100,7 +107,7 @@ const S = {
     overflowY: "auto",
   },
   sectionTitle: {
-    color: "#71717a",
+    color: colors.text.faint,
     fontSize: "11px",
     fontWeight: "700",
     textTransform: "uppercase",
@@ -108,8 +115,8 @@ const S = {
     marginBottom: "10px",
   },
   faqItem: {
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
+    background: colors.background.surface,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "8px",
     padding: "12px",
     marginBottom: "8px",
@@ -117,18 +124,18 @@ const S = {
     transition: "border-color 0.2s",
   },
   faqQ: {
-    color: "#e4e4e7",
+    color: colors.text.primary,
     fontSize: "13px",
     fontWeight: "600",
     marginBottom: "0",
   },
   faqA: {
-    color: "#a1a1aa",
+    color: colors.text.secondary,
     fontSize: "12px",
     lineHeight: "1.5",
     marginTop: "8px",
     paddingTop: "8px",
-    borderTop: "1px solid #2a2a2a",
+    borderTop: `1px solid ${colors.border.default}`,
   },
   replayBtn: (color) => ({
     display: "block",
@@ -153,9 +160,9 @@ const S = {
     flex: 1,
     padding: "8px",
     background: active ? `${color}1a` : "transparent",
-    border: `1px solid ${active ? color : "#2a2a2a"}`,
+    border: `1px solid ${active ? color : colors.border.default}`,
     borderRadius: "8px",
-    color: active ? color : "#a1a1aa",
+    color: active ? color : colors.text.secondary,
     fontSize: "12px",
     fontWeight: "600",
     cursor: "pointer",
@@ -164,11 +171,11 @@ const S = {
   input: {
     width: "100%",
     boxSizing: "border-box",
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
+    background: colors.background.surface,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "8px",
     padding: "9px 10px",
-    color: "#e4e4e7",
+    color: colors.text.primary,
     fontSize: "13px",
     marginBottom: "8px",
     fontFamily: "inherit",
@@ -176,16 +183,18 @@ const S = {
   textarea: {
     width: "100%",
     boxSizing: "border-box",
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
+    background: colors.background.surface,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "8px",
     padding: "9px 10px",
-    color: "#e4e4e7",
+    color: colors.text.primary,
     fontSize: "13px",
     marginBottom: "8px",
     fontFamily: "inherit",
     resize: "vertical",
   },
+  // color fixe (pas colors.text.primary) : texte posé directement sur le bouton
+  // accentColor, reste sombre quel que soit le thème pour garder le contraste.
   sendBtn: (color) => ({
     display: "block",
     width: "100%",
@@ -200,8 +209,8 @@ const S = {
     transition: "opacity 0.2s",
   }),
   ticketCard: (clickable) => ({
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
+    background: colors.background.surface,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "8px",
     padding: "10px 12px",
     marginBottom: "8px",
@@ -211,7 +220,7 @@ const S = {
     gap: "8px",
   }),
   ticketMsg: {
-    color: "#a1a1aa",
+    color: colors.text.secondary,
     fontSize: "12px",
     lineHeight: "1.5",
     margin: "6px 0 0",
@@ -242,7 +251,7 @@ const S = {
   backBtn: {
     background: "transparent",
     border: "none",
-    color: "#a1a1aa",
+    color: colors.text.secondary,
     fontSize: "16px",
     cursor: "pointer",
     padding: "2px 4px",
@@ -255,11 +264,13 @@ const S = {
     overflowY: "auto",
     marginBottom: "10px",
   },
+  // color "mine" fixe (pas colors.text.primary) : texte posé sur la bulle
+  // accentColor, reste sombre quel que soit le thème.
   bubble: (mine, color) => ({
     alignSelf: mine ? "flex-end" : "flex-start",
     maxWidth: "80%",
-    background: mine ? color : "#1a1a1a",
-    color: mine ? "#0a0a0a" : "#e4e4e7",
+    background: mine ? color : colors.background.surface,
+    color: mine ? "#0a0a0a" : colors.text.primary,
     borderRadius: "10px",
     padding: "7px 10px",
     fontSize: "12px",
@@ -273,11 +284,11 @@ const S = {
   threadInput: {
     flex: 1,
     boxSizing: "border-box",
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
+    background: colors.background.surface,
+    border: `1px solid ${colors.border.default}`,
     borderRadius: "8px",
     padding: "8px 10px",
-    color: "#e4e4e7",
+    color: colors.text.primary,
     fontSize: "13px",
     fontFamily: "inherit",
     resize: "none",
@@ -292,13 +303,15 @@ const S = {
     padding: "0 12px",
     cursor: "pointer",
   }),
-};
+});
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
 // accentColor : couleur du dashboard hôte, passée explicitement par chaque
 // Dashboard*.jsx (Éducateur #60a5fa, Recruteur #f97316, Joueur/Club #4ade80) —
 // même logique que la prop accentColor d'OnboardingGuide.jsx.
 export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80" }) {
+  const colors = useColors();
+  const S = buildS(colors);
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [view, setView] = useState("faq"); // 'faq' | 'support'
@@ -414,8 +427,8 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
         .replay-btn:hover { background: ${accentColor}1a !important; }
         .float-btn:hover { transform: scale(1.1); }
         .helper-scroll::-webkit-scrollbar { width: 4px; }
-        .helper-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
-        .helper-scroll::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+        .helper-scroll::-webkit-scrollbar-track { background: ${colors.background.surface}; }
+        .helper-scroll::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; }
       `}</style>
 
       {/* Panneau d'aide */}
