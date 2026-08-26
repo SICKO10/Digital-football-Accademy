@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
 import { makeUseSt } from '../../lib/theme'
+import Avatar from '../Avatar'
 
 const stSombre = {
   card: '#111', card2: '#1a1a1a', border: '#222',
@@ -182,7 +183,7 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
     const { data: joueursData } = joueurIds.length > 0
       ? await supabase
           .from('profiles')
-          .select('id, prenom, nom, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets')
+          .select('id, prenom, nom, avatar_url, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets')
           .in('id', joueurIds)
       : { data: [] }
 
@@ -343,9 +344,9 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
             <div key={j.id} style={{ background: st.card, border: `1px solid ${cloture ? st.green + '40' : st.border}`, borderRadius: 12, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: cloture ? '#14532d' : st.card2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cloture ? st.green : st.muted, fontWeight: 700, fontSize: 14 }}>
-                    {(j.prenom || '?')[0]}{(j.nom || '?')[0]}
-                  </div>
+                  <Avatar person={j} size={36}
+                    bg={cloture ? '#14532d' : st.card2} border="none"
+                    textColor={cloture ? st.green : st.muted} />
                   <div>
                     <div style={{ color: st.text, fontWeight: 700 }}>{j.prenom} {j.nom}</div>
                     <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>

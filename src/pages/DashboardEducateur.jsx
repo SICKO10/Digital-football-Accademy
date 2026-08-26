@@ -4812,9 +4812,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           return (
                             <div key={j.id} style={{ ...st.card, cursor: 'pointer', borderLeft: `3px solid ${groupe.color}30`, transition: 'border-color 0.2s', borderColor: joueurActif?.id === j.id ? groupe.color + '60' : undefined }} onClick={() => setJoueurActif(joueurActif?.id === j.id ? null : j)}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
-                                  {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
-                                </div>
+                                {j.numero_maillot ? (
+                                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: groupe.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: groupe.color, fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+                                    {j.numero_maillot}
+                                  </div>
+                                ) : (
+                                  <Avatar person={j} size={40} bg={groupe.color + '20'} border="none" textColor={groupe.color} />
+                                )}
                                 <div style={{ flex: 1 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</p>
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
@@ -5026,7 +5030,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             return (
                               <div key={j.id} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <div style={{ fontSize: '22px', marginBottom: '6px' }}>{medals[rank]}</div>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: triActif.color + '20', border: `2px solid ${triActif.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: triActif.color, fontWeight: 800, fontSize: '13px', marginBottom: '6px' }}>{j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}</div>
+                                <Avatar person={j} size={44} bg={triActif.color + '20'} border={`2px solid ${triActif.color}40`} textColor={triActif.color} style={{ marginBottom: '6px' }} />
                                 <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700 }}>{j.prenom}</p>
                                 <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint }}>{j.nom}</p>
                                 <div style={{ background: triActif.color + '20', border: `1px solid ${triActif.color}40`, borderRadius: '8px', width: '70px', height: `${heights[rank]}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
@@ -5354,9 +5358,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               return (
                                 <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontSize: '20px' }}>{medals[i]}</span>
-                                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: `${medalColors[i]}20`, border: `2px solid ${medalColors[i]}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                                    {item.joueur.prenom?.[0]}{item.joueur.nom?.[0]}
-                                  </div>
+                                  <Avatar person={item.joueur} size={70} bg={`${medalColors[i]}20`} border={`2px solid ${medalColors[i]}`} textColor={medalColors[i]} />
                                   <div style={{ textAlign: 'center' }}>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom}</p>
                                     <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.nom}</p>

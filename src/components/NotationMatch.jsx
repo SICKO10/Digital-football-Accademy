@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
+import Avatar from './Avatar'
 
 const CRITERES = [
   { key: 'technique', label: 'Technique' },
@@ -230,13 +231,8 @@ export default function NotationMatch({ match, joueurs, educateurId, onClose }) 
                 {/* Nom + poste */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '50%',
-                      background: colors.accent.green + alpha.subtle, display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: colors.accent.green
-                    }}>
-                      {(joueur.prenom?.[0] || '?').toUpperCase()}
-                    </div>
+                    <Avatar person={joueur} size={36}
+                      bg={colors.accent.green + alpha.subtle} border="none" textColor={colors.accent.green} />
                     <div>
                       <div style={{ color: colors.text.primary, fontWeight: 600 }}>
                         {joueur.prenom} {joueur.nom}
