@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
+import { useColors } from '../lib/theme'
 
 const VUES = ['Jour', 'Semaine', 'Mois', 'Année']
 
@@ -32,6 +33,7 @@ const dateLocaleStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 // club n'existe encore ailleurs) sont chargés par ce composant, une fois,
 // scopés aux éducateurs affiliés (dérivés de `categories`).
 export default function Planning({ matchs = [], evenements = [], projets = [], categories = [] }) {
+  const colors = useColors()
   const [vue, setVue] = useState('Semaine')
   const [dateRef, setDateRef] = useState(new Date())
   const [entrainements, setEntrainements] = useState([])
@@ -135,16 +137,16 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
 
   return (
     <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1100px' }}>
-      <h2 style={{ color: '#fff', fontSize: isMobile ? '18px' : '22px', fontWeight: 800, marginBottom: '4px' }}>Planning</h2>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: isMobile ? '16px' : '24px' }}>Vue générale de toutes les équipes</p>
+      <h2 style={{ color: colors.text.primary, fontSize: isMobile ? '18px' : '22px', fontWeight: 800, marginBottom: '4px' }}>Planning</h2>
+      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: isMobile ? '16px' : '24px' }}>Vue générale de toutes les équipes</p>
 
       <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '20px', flexWrap: 'wrap', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
-        <div style={{ display: 'flex', background: '#111', borderRadius: '10px', padding: '3px', gap: '2px', overflowX: isMobile ? 'auto' : 'visible' }}>
+        <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '10px', padding: '3px', gap: '2px', overflowX: isMobile ? 'auto' : 'visible' }}>
           {VUES.map(v => (
             <button key={v} onClick={() => setVue(v)} style={{
               padding: isMobile ? '7px 12px' : '7px 16px', borderRadius: '8px', border: 'none', flex: isMobile ? 1 : 'none',
               background: vue === v ? '#4ade80' : 'transparent',
-              color: vue === v ? '#000' : '#666',
+              color: vue === v ? '#000' : colors.text.faint,
               fontWeight: vue === v ? 700 : 400,
               fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
             }}>{v}</button>
@@ -152,13 +154,13 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: isMobile ? '8px' : '12px' }}>
-          <button onClick={() => naviguer(-1)} style={{ background: '#111', border: '1px solid #222', color: '#fff', borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>‹</button>
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: isMobile ? '13px' : '14px', minWidth: isMobile ? 0 : '240px', textAlign: 'center', flex: isMobile ? 1 : 'none' }}>{labelPeriode()}</span>
-          <button onClick={() => naviguer(1)} style={{ background: '#111', border: '1px solid #222', color: '#fff', borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>›</button>
-          {!isMobile && <button onClick={() => setDateRef(new Date())} style={{ background: 'none', border: '1px solid #2a2a2a', color: '#555', borderRadius: '8px', padding: '7px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>Aujourd'hui</button>}
+          <button onClick={() => naviguer(-1)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, color: colors.text.primary, borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>‹</button>
+          <span style={{ color: colors.text.primary, fontWeight: 600, fontSize: isMobile ? '13px' : '14px', minWidth: isMobile ? 0 : '240px', textAlign: 'center', flex: isMobile ? 1 : 'none' }}>{labelPeriode()}</span>
+          <button onClick={() => naviguer(1)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, color: colors.text.primary, borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>›</button>
+          {!isMobile && <button onClick={() => setDateRef(new Date())} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '7px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>Aujourd'hui</button>}
         </div>
         {isMobile && (
-          <button onClick={() => setDateRef(new Date())} style={{ background: 'none', border: '1px solid #2a2a2a', color: '#555', borderRadius: '8px', padding: '7px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', alignSelf: 'center' }}>Aujourd'hui</button>
+          <button onClick={() => setDateRef(new Date())} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '7px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', alignSelf: 'center' }}>Aujourd'hui</button>
         )}
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
@@ -166,12 +168,12 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
             <button key={type} onClick={() => setFiltres(p => ({ ...p, [type]: !p[type] }))} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '5px 10px', borderRadius: '20px',
-              border: `1px solid ${filtres[type] ? couleur + '44' : '#222'}`,
+              border: `1px solid ${filtres[type] ? couleur + '44' : colors.border.faint}`,
               background: filtres[type] ? couleur + '18' : 'transparent',
-              color: filtres[type] ? couleur : '#444',
+              color: filtres[type] ? couleur : colors.text.disabled,
               fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: filtres[type] ? couleur : '#333', display: 'inline-block' }} />
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: filtres[type] ? couleur : colors.border.strong, display: 'inline-block' }} />
               {TYPE_LABELS[type]}
             </button>
           ))}
@@ -185,18 +187,18 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
 
       {popup && (
         <div onClick={() => setPopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: `1px solid ${TYPE_COULEURS[popup.type]}44`, borderRadius: '16px', padding: isMobile ? '20px' : '28px', maxWidth: '420px', width: '100%' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${TYPE_COULEURS[popup.type]}44`, borderRadius: '16px', padding: isMobile ? '20px' : '28px', maxWidth: '420px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
               <span style={{ fontSize: '11px', fontWeight: 700, color: TYPE_COULEURS[popup.type], textTransform: 'uppercase', letterSpacing: '1px' }}>{TYPE_LABELS[popup.type]}</span>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
-            <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 8px' }}>{popup.titre}</h3>
-            {popup.sousTitre && <p style={{ color: '#666', fontSize: '13px', margin: '0 0 8px' }}>{popup.sousTitre}</p>}
+            <h3 style={{ color: colors.text.primary, fontSize: '18px', margin: '0 0 8px' }}>{popup.titre}</h3>
+            {popup.sousTitre && <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 8px' }}>{popup.sousTitre}</p>}
             <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 12px' }}>
               {new Date(`${popup.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
               {popup.heure && ` · ${popup.heure}`}
             </p>
-            {popup.description && <p style={{ color: '#aaa', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{popup.description}</p>}
+            {popup.description && <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{popup.description}</p>}
           </div>
         </div>
       )}
@@ -205,25 +207,26 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
 }
 
 function VueJour({ dateRef, evenements, onClic, isMobile }) {
+  const colors = useColors()
   const dateStr = dateLocaleStr(dateRef)
   const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
   return (
     <div style={{ maxWidth: '640px' }}>
       {evts.length === 0
-        ? <p style={{ color: '#444', fontStyle: 'italic' }}>Aucun événement ce jour.</p>
+        ? <p style={{ color: colors.text.disabled, fontStyle: 'italic' }}>Aucun événement ce jour.</p>
         : evts.map(e => (
           <div key={e.id} onClick={() => onClic(e)} style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px',
             padding: isMobile ? '12px 14px' : '14px 18px', marginBottom: '8px',
-            background: '#0a0a0a',
+            background: colors.background.base,
             border: `1px solid ${TYPE_COULEURS[e.type]}22`,
             borderLeft: `4px solid ${TYPE_COULEURS[e.type]}`,
             borderRadius: '10px', cursor: 'pointer',
           }}>
             <div style={{ color: TYPE_COULEURS[e.type], fontWeight: 700, fontSize: '14px', minWidth: '54px' }}>{e.heure || '—'}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{e.titre}</div>
-              {e.sousTitre && <div style={{ color: '#555', fontSize: '12px', marginTop: '2px' }}>{e.sousTitre}</div>}
+              <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>{e.titre}</div>
+              {e.sousTitre && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px' }}>{e.sousTitre}</div>}
             </div>
             <span style={{ fontSize: '10px', fontWeight: 700, color: TYPE_COULEURS[e.type], textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>{TYPE_LABELS[e.type]}</span>
           </div>
@@ -234,6 +237,7 @@ function VueJour({ dateRef, evenements, onClic, isMobile }) {
 }
 
 function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
+  const colors = useColors()
   const lundi = new Date(dateRef)
   lundi.setDate(dateRef.getDate() - ((dateRef.getDay() + 6) % 7))
   const jours = Array.from({ length: 7 }, (_, i) => {
@@ -252,10 +256,10 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
           const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
           const isToday = dateStr === today
           return (
-            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : '#0a0a0a', border: `1px solid ${isToday ? '#4ade8033' : '#1a1a1a'}`, borderRadius: '10px', padding: '10px 12px' }}>
+            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: evts.length ? '8px' : 0 }}>
-                <div style={{ fontSize: '17px', fontWeight: 800, color: isToday ? '#4ade80' : '#fff' }}>{jour.getDate()}</div>
-                <div style={{ fontSize: '11px', color: '#555', textTransform: 'capitalize' }}>{jour.toLocaleDateString('fr-FR', { weekday: 'long' })}</div>
+                <div style={{ fontSize: '17px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary }}>{jour.getDate()}</div>
+                <div style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{jour.toLocaleDateString('fr-FR', { weekday: 'long' })}</div>
               </div>
               {evts.map(e => (
                 <div key={e.id} onClick={() => onClic(e)} style={{
@@ -263,7 +267,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
                   borderLeft: `3px solid ${TYPE_COULEURS[e.type]}`,
                   borderRadius: '4px', padding: '6px 8px', marginBottom: '4px', cursor: 'pointer',
                 }}>
-                  <div style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>
+                  <div style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600 }}>
                     {e.heure && <span style={{ color: TYPE_COULEURS[e.type], marginRight: '6px' }}>{e.heure}</span>}
                     {e.titre}
                   </div>
@@ -283,11 +287,11 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
         const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
         const isToday = dateStr === today
         return (
-          <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : '#0a0a0a', border: `1px solid ${isToday ? '#4ade8033' : '#1a1a1a'}`, borderRadius: '10px', padding: '10px', minHeight: '160px' }}>
-            <div style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px', minHeight: '160px' }}>
+            <div style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', marginBottom: '4px' }}>
               {jour.toLocaleDateString('fr-FR', { weekday: 'short' })}
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: isToday ? '#4ade80' : '#fff', marginBottom: '10px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary, marginBottom: '10px' }}>
               {jour.getDate()}
             </div>
             {evts.map(e => (
@@ -296,7 +300,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
                 borderLeft: `3px solid ${TYPE_COULEURS[e.type]}`,
                 borderRadius: '4px', padding: '4px 6px', marginBottom: '4px', cursor: 'pointer',
               }}>
-                <div style={{ color: '#fff', fontSize: '10px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: colors.text.primary, fontSize: '10px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {e.heure && <span style={{ color: TYPE_COULEURS[e.type], marginRight: '4px' }}>{e.heure}</span>}
                   {e.titre}
                 </div>
@@ -310,6 +314,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
 }
 
 function VueMois({ dateRef, evenements, onClic, isMobile }) {
+  const colors = useColors()
   const annee = dateRef.getFullYear()
   const mois = dateRef.getMonth()
   const decalage = (new Date(annee, mois, 1).getDay() + 6) % 7
@@ -320,7 +325,7 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? '3px' : '4px', marginBottom: '4px' }}>
         {(isMobile ? ['L', 'M', 'M', 'J', 'V', 'S', 'D'] : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']).map((j, i) =>
-          <div key={i} style={{ color: '#444', fontSize: isMobile ? '10px' : '11px', textAlign: 'center', padding: isMobile ? '4px 0' : '6px 0', textTransform: 'uppercase' }}>{j}</div>
+          <div key={i} style={{ color: colors.text.disabled, fontSize: isMobile ? '10px' : '11px', textAlign: 'center', padding: isMobile ? '4px 0' : '6px 0', textTransform: 'uppercase' }}>{j}</div>
         )}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? '3px' : '4px' }}>
@@ -334,8 +339,8 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
           // le premier), même esprit que le calendrier joueur déjà réglé.
           if (isMobile) {
             return (
-              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? '#0d1a0d' : '#0a0a0a', border: `1px solid ${isToday ? '#4ade8044' : '#1a1a1a'}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
-                <div style={{ color: isToday ? '#4ade80' : '#aaa', fontSize: '11px', fontWeight: isToday ? 800 : 400 }}>{jour}</div>
+              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
+                <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: '11px', fontWeight: isToday ? 800 : 400 }}>{jour}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {evts.slice(0, 4).map(e => (
                     <span key={e.id} style={{ width: '5px', height: '5px', borderRadius: '50%', background: TYPE_COULEURS[e.type], display: 'inline-block' }} />
@@ -345,18 +350,18 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
             )
           }
           return (
-            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : '#0a0a0a', border: `1px solid ${isToday ? '#4ade8044' : '#1a1a1a'}`, borderRadius: '8px', padding: '8px', minHeight: '90px' }}>
-              <div style={{ color: isToday ? '#4ade80' : '#aaa', fontSize: '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
+            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: '8px', minHeight: '90px' }}>
+              <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
               {evts.slice(0, 3).map(e => (
                 <div key={e.id} onClick={() => onClic(e)} style={{
                   background: `${TYPE_COULEURS[e.type]}22`,
                   borderLeft: `2px solid ${TYPE_COULEURS[e.type]}`,
                   borderRadius: '3px', padding: '2px 5px', marginBottom: '3px',
-                  fontSize: '10px', color: '#fff', cursor: 'pointer',
+                  fontSize: '10px', color: colors.text.primary, cursor: 'pointer',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{e.titre}</div>
               ))}
-              {evts.length > 3 && <div style={{ color: '#555', fontSize: '9px' }}>+{evts.length - 3} de plus</div>}
+              {evts.length > 3 && <div style={{ color: colors.text.faint, fontSize: '9px' }}>+{evts.length - 3} de plus</div>}
             </div>
           )
         })}
@@ -366,6 +371,7 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
 }
 
 function VueAnnee({ dateRef, evenements, isMobile }) {
+  const colors = useColors()
   const annee = dateRef.getFullYear()
   const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
   return (
@@ -378,14 +384,14 @@ function VueAnnee({ dateRef, evenements, isMobile }) {
         const parType = {}
         evtsMois.forEach(e => { parType[e.type] = (parType[e.type] || 0) + 1 })
         return (
-          <div key={nom} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: isMobile ? '10px' : '14px' }}>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>{nom}</div>
+          <div key={nom} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: isMobile ? '10px' : '14px' }}>
+            <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>{nom}</div>
             {evtsMois.length === 0
-              ? <div style={{ color: '#2a2a2a', fontSize: '12px' }}>—</div>
+              ? <div style={{ color: colors.text.ghost, fontSize: '12px' }}>—</div>
               : Object.entries(parType).map(([type, count]) => (
                 <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: TYPE_COULEURS[type], flexShrink: 0, display: 'inline-block' }} />
-                  <span style={{ color: '#888', fontSize: '11px' }}>{count} {TYPE_LABELS[type].toLowerCase()}{count > 1 ? 's' : ''}</span>
+                  <span style={{ color: colors.text.faint, fontSize: '11px' }}>{count} {TYPE_LABELS[type].toLowerCase()}{count > 1 ? 's' : ''}</span>
                 </div>
               ))
             }

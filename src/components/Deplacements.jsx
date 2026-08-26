@@ -692,7 +692,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
       <div style={{ ...st.card, marginBottom: '1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <span style={{ color: st.textDim, fontSize: '13px', fontWeight: 700, marginRight: '4px', flexShrink: 0 }}>Parc :</span>
         {vehicules.length === 0 ? (
-          <span style={{ color: '#4b5563', fontSize: '13px' }}>Aucun véhicule enregistré</span>
+          <span style={{ color: st.textDim, fontSize: '13px' }}>Aucun véhicule enregistré</span>
         ) : (
           vehicules.map(v => (
             <span key={v.id}
@@ -988,7 +988,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                       <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [semaineKey]: !ouvert }))}
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 14px', background: ouvert ? '#161616' : '#0d0d0d',
+                          padding: '10px 14px', background: ouvert ? st.bgRaised : st.bg,
                           border: `1px solid ${st.bgRaised}`, borderRadius: '8px', color: st.textDim, cursor: 'pointer',
                           fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
                         }}>
@@ -1068,7 +1068,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                             {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
                           </button>
                           <button onClick={() => ouvrirEditionDeplacement(d)}
-                            style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #374151', color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             Modifier
                           </button>
                           <button onClick={() => supprimerDeplacement(d)}
@@ -1079,7 +1079,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
                       )}
 
                       {assignationBusOuverte === d.id && (
-                        <div style={{ marginTop: '12px', padding: '14px', background: '#0f0f0f', borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
+                        <div style={{ marginTop: '12px', padding: '14px', background: st.bg, borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
                           {vehicules.length === 0 ? (
                             <p style={{ color: st.textGhost, fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
                           ) : (

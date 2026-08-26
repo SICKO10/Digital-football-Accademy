@@ -4390,7 +4390,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: 16, marginBottom: 12 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
                 <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a2a4a', border: '1px solid #3b82f6', borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: colors.accent.blue, fontWeight: 700, fontSize: 13 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}`, borderRadius: 10, padding: '10px 14px', textDecoration: 'none', color: colors.accent.blue, fontWeight: 700, fontSize: 13 }}>
                   💬 {t('equipe_ouvrir_groupe', lang)}
                 </a>
                 <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
@@ -6215,7 +6215,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               )}
 
               {equipementCommandeEduc?.statut === 'recupere' && equipementCommandeEduc?.recupere_le && (
-                <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
                   <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: colors.accent.green }}>Équipement remis le {new Date(equipementCommandeEduc.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommandeEduc.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               )}

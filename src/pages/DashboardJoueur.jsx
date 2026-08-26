@@ -2590,7 +2590,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               )}
 
               {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
-                <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+                <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
                   <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               )}
@@ -3849,7 +3849,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             )}
 
             {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
-              <div style={{ background: '#0d1f13', border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+              <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useColors } from '../lib/theme'
 
 const W = 520
 const H = 340
@@ -20,6 +21,7 @@ const maxId = (etapes) => {
 // bouger les jetons d'une position à l'autre (transition CSS sur leur
 // position), plutôt que de simples flèches statiques.
 export default function TacticalBoard({ data, onChange, readOnly = false }) {
+  const colors = useColors()
   const svgRef = useRef(null)
   const d = data && Array.isArray(data.etapes) && data.etapes.length ? data : EMPTY_DATA
   const etapes = d.etapes
@@ -173,10 +175,10 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
 
   useEffect(() => () => clearTimeout(playTimer.current), [])
 
-  const tb = (active, c = '#9ca3af') => ({
-    background: active ? `${c}22` : '#0d0d0d',
-    border: `1px solid ${active ? c : '#1f2937'}`,
-    borderRadius: '7px', color: active ? c : '#6b7280',
+  const tb = (active, c = colors.text.faint) => ({
+    background: active ? `${c}22` : colors.background.raised,
+    border: `1px solid ${active ? c : colors.border.subtle}`,
+    borderRadius: '7px', color: active ? c : colors.text.dim,
     fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
   })
 
@@ -186,30 +188,30 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     <div>
       {showEtapesRow && (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px', alignItems: 'center' }}>
-          <span style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', marginRight: '2px' }}>Étapes</span>
+          <span style={{ color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', marginRight: '2px' }}>Étapes</span>
           {etapes.map((_, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
               <button
                 onClick={() => { setPlayIdx(null); setEtapeIdx(i) }}
                 disabled={playIdx !== null}
                 style={{
-                  background: displayIdx === i ? 'rgba(167,139,250,0.18)' : '#0d0d0d',
-                  border: `1px solid ${displayIdx === i ? '#a78bfa' : '#1f2937'}`,
+                  background: displayIdx === i ? 'rgba(167,139,250,0.18)' : colors.background.raised,
+                  border: `1px solid ${displayIdx === i ? '#a78bfa' : colors.border.subtle}`,
                   borderRadius: !readOnly && etapes.length > 1 ? '6px 0 0 6px' : '6px',
-                  color: displayIdx === i ? '#a78bfa' : '#9ca3af',
+                  color: displayIdx === i ? '#a78bfa' : colors.text.faint,
                   fontSize: '11px', fontWeight: 700, padding: '5px 9px',
                   cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif',
                 }}
               >{i + 1}</button>
               {!readOnly && etapes.length > 1 && (
                 <button onClick={() => supprimerEtape(i)} disabled={playIdx !== null}
-                  style={{ background: '#0d0d0d', border: '1px solid #1f2937', borderLeft: 'none', borderRadius: '0 6px 6px 0', color: '#6b7280', fontSize: '10px', padding: '5px 6px', cursor: playIdx !== null ? 'default' : 'pointer' }}>×</button>
+                  style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderLeft: 'none', borderRadius: '0 6px 6px 0', color: colors.text.dim, fontSize: '10px', padding: '5px 6px', cursor: playIdx !== null ? 'default' : 'pointer' }}>×</button>
               )}
             </div>
           ))}
           {!readOnly && (
             <button onClick={ajouterEtape} disabled={playIdx !== null}
-              style={{ background: 'none', border: '1px dashed #374151', borderRadius: '6px', color: '#a78bfa', fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>+ Étape</button>
+              style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '6px', color: '#a78bfa', fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>+ Étape</button>
           )}
           {etapes.length > 1 && (
             <button onClick={playAnim} style={{ ...tb(playIdx !== null, '#a78bfa'), marginLeft: 'auto' }}>
@@ -228,7 +230,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             <button style={tb(mode === 'add_ball', '#fde68a')} onClick={() => setMode('add_ball')}>⚽ Ballon</button>
             <button style={tb(showGrid)} onClick={() => setShowGrid(v => !v)} title="Quadrillage">⊞</button>
             <select value={zonesH} onChange={e => setZonesH(Number(e.target.value))} title="Zones horizontales"
-              style={{ background: zonesH > 0 ? '#4ade8020' : '#0d0d0d', border: `1px solid ${zonesH > 0 ? '#4ade80' : '#1f2937'}`, color: zonesH > 0 ? '#4ade80' : '#9ca3af', borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: zonesH > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesH > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesH > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               <option value={0}>⬛ Zones H</option>
               <option value={2}>2 zones</option>
               <option value={3}>3 zones</option>
@@ -236,23 +238,23 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
               <option value={5}>5 zones</option>
             </select>
             <select value={zonesV} onChange={e => setZonesV(Number(e.target.value))} title="Colonnes verticales"
-              style={{ background: zonesV > 0 ? '#4ade8020' : '#0d0d0d', border: `1px solid ${zonesV > 0 ? '#4ade80' : '#1f2937'}`, color: zonesV > 0 ? '#4ade80' : '#9ca3af', borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: zonesV > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesV > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesV > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               <option value={0}>⬛ Colonnes V</option>
               <option value={2}>2 colonnes</option>
               <option value={3}>3 colonnes</option>
               <option value={4}>4 colonnes</option>
             </select>
-            <div style={{ width: 1, height: 16, background: '#1f2937', margin: '0 2px' }} />
+            <div style={{ width: 1, height: 16, background: colors.border.subtle, margin: '0 2px' }} />
             <input type="number" min={1} max={15} value={serieN} onChange={e => setSerieN(e.target.value)}
-              style={{ width: '36px', background: '#0d0d0d', border: '1px solid #1f2937', borderRadius: '6px', color: '#fff', fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '36px', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', color: colors.text.primary, fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
             <button style={tb(false, '#4ade80')} onClick={() => ajouterSerie('nous')}>+ Série 🟢</button>
             <button style={tb(false, '#f87171')} onClick={() => ajouterSerie('adverse')}>+ Série 🔴</button>
             {(joueurs.length || ballon) ? (
               <button onClick={() => majEtape({ joueurs: [], ballon: null })}
-                style={{ ...tb(false), marginLeft: 'auto', color: '#6b7280' }}>↺ Vider l'étape</button>
+                style={{ ...tb(false), marginLeft: 'auto', color: colors.text.dim }}>↺ Vider l'étape</button>
             ) : null}
           </div>
-          <p style={{ color: '#374151', fontSize: '10px', margin: '0 0 6px' }}>
+          <p style={{ color: colors.text.ghost, fontSize: '10px', margin: '0 0 6px' }}>
             {mode === 'select' && 'Glisse les joueurs/ballon · Double-clic → renommer · Clic droit → supprimer'}
             {mode === 'add_nous' && 'Clique sur le terrain pour placer un joueur (notre équipe)'}
             {mode === 'add_adv' && 'Clique sur le terrain pour placer un joueur (adversaire)'}
