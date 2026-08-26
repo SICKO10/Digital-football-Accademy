@@ -1472,9 +1472,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     await chargerClubCategories(userId)
   }
 
+  // equipe_joueurs n'a pas de colonne avatar_url — la photo vit sur profiles,
+  // reliée via joueur_id (absent pour un joueur ajouté manuellement, sans
+  // compte lié). Un seul enrichissement ici : tous les consommateurs de
+  // `joueurs` (Mon équipe, Évaluations, podiums stats, clôture de saison...)
+  // héritent d'avatar_url sans requête supplémentaire de leur côté.
   const chargerJoueurs = async (uid) => {
     const { data } = await supabase.from('equipe_joueurs').select('*').eq('educateur_id', uid).order('nom')
-    setJoueurs(data || [])
+    const roster = data || []
+    const joueurIds = [...new Set(roster.map(j => j.joueur_id).filter(Boolean))]
+    if (joueurIds.length === 0) { setJoueurs(roster); return }
+    const { data: profils } = await supabase.from('profiles').select('id, avatar_url').in('id', joueurIds)
+    const avatarParId = {}
+    ;(profils || []).forEach(p => { avatarParId[p.id] = p.avatar_url })
+    setJoueurs(roster.map(j => ({ ...j, avatar_url: j.joueur_id ? avatarParId[j.joueur_id] : null })))
   }
 
   const chargerMatchs = async (uid) => {
@@ -1705,7 +1716,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // au moment d'accepter (setAffiliationEnCours), donc toujours null pour
     // une demande "en attente" : joueur_profil (via joueur_id, le vrai
     // compte du demandeur) est la seule source fiable à ce stade.
-    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom, avatar_url), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    // equipe_joueurs n'a pas de colonne avatar_url (photo disponible seulement
+    // via joueur_profil, la relation profiles) — ne pas la demander sur
+    // l'embed equipe_joueur_id, PostgREST erreurait sur une colonne inexistante.
+    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
   }
 
@@ -8730,7 +8744,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {affiliations.filter(a => a.statut === 'accepte').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '20px' }}>
-                          <Avatar person={a.joueur} size={24} bg={colors.accent.green + alpha.soft} border="none" textColor={colors.accent.green} />
+                          <Avatar person={{ ...a.joueur, avatar_url: a.joueur_profil?.avatar_url }} size={24} bg={colors.accent.green + alpha.soft} border="none" textColor={colors.accent.green} />
                           <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</span>
                           <button onClick={() => gererAffiliation(a.id, 'refuse')}
                             style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
