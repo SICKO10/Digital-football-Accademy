@@ -10,6 +10,58 @@ const NATURES_BUT = [
   { value: 'exploit_personnel', label: 'Exploit personnel' },
 ]
 
+const COTES_BUT = [
+  { value: 'gauche', label: 'Gauche' },
+  { value: 'centre', label: 'Centre' },
+  { value: 'droite', label: 'Droite' },
+]
+
+// Un seul graphique en ligne (quart d'heure) ou en barres (nature/côté),
+// couleur unique — remplace les anciens graphiques marqués+encaissés
+// superposés, moins lisibles à deux séries sur la même échelle.
+function GraphiqueLigne({ data, color, colors }) {
+  const W = 500, H = 70, pad = 20
+  const n = data.length
+  const max = Math.max(...data.map(d => d.valeur), 1)
+  const x = i => pad + (i / (n - 1)) * (W - pad * 2)
+  const y = v => H - 8 - (v / max) * (H - 20)
+  const pts = data.map((d, i) => `${x(i)},${y(d.valeur)}`).join(' ')
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 80, overflow: 'visible' }}>
+      {[0.5, 1].map(t => (
+        <line key={t} x1={pad} x2={W - pad} y1={y(max * t)} y2={y(max * t)} stroke="#1a1a1a" strokeWidth="1" />
+      ))}
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      {data.map((d, i) => (
+        <g key={i}>
+          <circle cx={x(i)} cy={y(d.valeur)} r="4" fill={color} />
+          {d.valeur > 0 && <text x={x(i)} y={y(d.valeur) - 8} textAnchor="middle" fill={color} fontSize="10" fontWeight="700">{d.valeur}</text>}
+          <text x={x(i)} y={H} textAnchor="middle" fill={colors.text.faint} fontSize="9">{d.label}</text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function BarresHorizontales({ data, color, colors }) {
+  const max = Math.max(...data.map(d => d.valeur), 1)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {data.map(d => (
+        <div key={d.label}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 12, color: colors.text.secondary }}>{d.label}</span>
+            <span style={{ fontSize: 11, color: colors.text.faint }}>{d.valeur}</span>
+          </div>
+          <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(d.valeur / max) * 100}%`, background: color, borderRadius: 3, transition: 'width 0.4s ease' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Stats d'équipe calculées uniquement à partir de matchs_equipe
 // (score_nous/score_eux/domicile/competition) — aucune nouvelle table.
 // "Buts par quart d'heure" et "premier à marquer" ne sont volontairement
@@ -96,6 +148,19 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
       encaisses: butsNature.filter(b => b.equipe === 'eux').length,
     }
   }).filter(n => n.marques > 0 || n.encaisses > 0)
+
+  // Buts par côté (gauche/centre/droite) — même source (buts_detail.cote),
+  // saisi à la main dans la même modale que la nature. Caché tant qu'aucun
+  // but n'a de côté renseigné, même logique que les deux graphiques ci-dessus.
+  const butsAvecCote = avecResultat.flatMap(m => (m.buts_detail || []).filter(b => b.cote))
+  const coteGraphique = COTES_BUT.map(c => {
+    const butsCote = butsAvecCote.filter(b => b.cote === c.value)
+    return {
+      label: c.label,
+      marques: butsCote.filter(b => b.equipe === 'nous').length,
+      encaisses: butsCote.filter(b => b.equipe === 'eux').length,
+    }
+  }).filter(c => c.marques > 0 || c.encaisses > 0)
 
   const forme = avecResultat.slice(0, 5)
   const serie = (() => {
@@ -233,68 +298,40 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
           )}
 
           {butsAvecMinute.length > 0 && (
-            <div style={{ ...card, textAlign: 'left', marginTop: '10px' }}>
-              <p style={{ margin: '0 0 14px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>Buts par quart d'heure</p>
-              {(() => {
-                const W = 500, H = 80, pad = 20
-                const n = quartsGraphique.length
-                const max = Math.max(...quartsGraphique.flatMap(q => [q.marques, q.encaisses]), 1)
-                const x = i => pad + (i / (n - 1)) * (W - pad * 2)
-                const y = v => H - 8 - (v / max) * (H - 20)
-                const pts = arr => arr.map((q, i) => `${x(i)},${y(q)}`).join(' ')
-                return (
-                  <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 90, overflow: 'visible' }}>
-                    {/* Lignes de grille légères */}
-                    {[0.25, 0.5, 0.75, 1].map(t => (
-                      <line key={t} x1={pad} x2={W - pad} y1={y(max * t)} y2={y(max * t)} stroke="#1a1a1a" strokeWidth="1" />
-                    ))}
-                    {/* Zone remplie marqués */}
-                    <polyline points={pts(quartsGraphique.map(q => q.marques))} fill="none" stroke={colors.accent.green} strokeWidth="2" strokeLinejoin="round" />
-                    {/* Zone remplie encaissés */}
-                    <polyline points={pts(quartsGraphique.map(q => q.encaisses))} fill="none" stroke={colors.accent.red} strokeWidth="2" strokeLinejoin="round" strokeDasharray="4 2" />
-                    {/* Points + labels marqués */}
-                    {quartsGraphique.map((q, i) => (
-                      <g key={i}>
-                        <circle cx={x(i)} cy={y(q.marques)} r="4" fill={colors.accent.green} />
-                        {q.marques > 0 && <text x={x(i)} y={y(q.marques) - 8} textAnchor="middle" fill={colors.accent.green} fontSize="10" fontWeight="700">{q.marques}</text>}
-                        <circle cx={x(i)} cy={y(q.encaisses)} r="4" fill={colors.accent.red} />
-                        {q.encaisses > 0 && <text x={x(i)} y={y(q.encaisses) - 8} textAnchor="middle" fill={colors.accent.red} fontSize="10" fontWeight="700">{q.encaisses}</text>}
-                        <text x={x(i)} y={H} textAnchor="middle" fill={colors.text.faint} fontSize="9">{q.label}</text>
-                      </g>
-                    ))}
-                  </svg>
-                )
-              })()}
-              <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.green, display: 'inline-block' }} /> Marqués</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}><span style={{ width: '10px', height: '10px', borderRadius: '2px', background: colors.accent.red, display: 'inline-block' }} /> Encaissés</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par quart d'heure</p>
+                <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q.marques }))} color={colors.accent.green} colors={colors} />
+              </div>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par quart d'heure</p>
+                <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q.encaisses }))} color={colors.accent.red} colors={colors} />
               </div>
             </div>
           )}
 
           {natureGraphique.length > 0 && (
-            <div style={{ ...card, textAlign: 'left', marginTop: '10px' }}>
-              <p style={{ margin: '0 0 14px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>Buts par nature</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {(() => {
-                  const max = Math.max(...natureGraphique.flatMap(x => [x.marques, x.encaisses]), 1)
-                  return natureGraphique.map(n => (
-                    <div key={n.label}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: colors.text.secondary }}>{n.label}</span>
-                        <span style={{ fontSize: 11, color: colors.text.faint }}>{n.marques}M · {n.encaisses}E</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${(n.marques / max) * 100}%`, background: colors.accent.green, borderRadius: 3, transition: 'width 0.4s ease' }} />
-                        </div>
-                        <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${(n.encaisses / max) * 100}%`, background: colors.accent.red, borderRadius: 3, transition: 'width 0.4s ease' }} />
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                })()}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par nature</p>
+                <BarresHorizontales data={natureGraphique.filter(n => n.marques > 0).map(n => ({ label: n.label, valeur: n.marques }))} color={colors.accent.green} colors={colors} />
+              </div>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par nature</p>
+                <BarresHorizontales data={natureGraphique.filter(n => n.encaisses > 0).map(n => ({ label: n.label, valeur: n.encaisses }))} color={colors.accent.red} colors={colors} />
+              </div>
+            </div>
+          )}
+
+          {coteGraphique.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par côté</p>
+                <BarresHorizontales data={coteGraphique.filter(c => c.marques > 0).map(c => ({ label: c.label, valeur: c.marques }))} color={colors.accent.green} colors={colors} />
+              </div>
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par côté</p>
+                <BarresHorizontales data={coteGraphique.filter(c => c.encaisses > 0).map(c => ({ label: c.label, valeur: c.encaisses }))} color={colors.accent.red} colors={colors} />
               </div>
             </div>
           )}
