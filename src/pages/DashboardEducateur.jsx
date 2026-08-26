@@ -1705,7 +1705,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // au moment d'accepter (setAffiliationEnCours), donc toujours null pour
     // une demande "en attente" : joueur_profil (via joueur_id, le vrai
     // compte du demandeur) est la seule source fiable à ce stade.
-    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom, avatar_url), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
     setAffiliations(af || [])
   }
 
@@ -4434,9 +4434,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                     {/* Header */}
                     <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: `1px solid ${colors.border.subtle}`, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: posColor + '25', border: `2px solid ${posColor}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: posColor, fontWeight: 800, fontSize: '20px', flexShrink: 0 }}>
-                        {j.numero_maillot || `${j.prenom?.[0] || ''}${j.nom?.[0] || ''}`}
-                      </div>
+                      {j.numero_maillot ? (
+                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: posColor + '25', border: `2px solid ${posColor}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: posColor, fontWeight: 800, fontSize: '20px', flexShrink: 0 }}>
+                          {j.numero_maillot}
+                        </div>
+                      ) : (
+                        <Avatar person={j} size={64} bg={posColor + '25'} border={`2px solid ${posColor}50`} textColor={posColor} style={{ fontSize: '20px' }} />
+                      )}
                       <div style={{ flex: 1 }}>
                         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                         <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${j.categorie}` : ''}</p>
@@ -6870,9 +6874,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   return (
                     <div key={j.id} style={st.card}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '13px' }}>
-                          {j?.prenom?.[0] || ""}{j?.nom?.[0] || ""}
-                        </div>
+                        <Avatar person={j} size={40} bg="#1a2e1a" border="none" textColor={colors.accent.green} />
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
@@ -6957,7 +6959,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
                 <div style={{ maxWidth: '680px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
-                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: colors.accent.green + alpha.soft, border: '2px solid #4ade8040', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+                    <Avatar person={j} size={60} bg={colors.accent.green + alpha.soft} border="2px solid #4ade8040" textColor={colors.accent.green} style={{ fontSize: '22px' }} />
                     <div>
                       <h2 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -7072,7 +7074,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
                       onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>{j.prenom?.[0]}{j.nom?.[0]}</div>
+                        <Avatar person={j} size={44} bg={colors.accent.green + alpha.subtle} border="1px solid #4ade8030" textColor={colors.accent.green} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
@@ -8728,9 +8730,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {affiliations.filter(a => a.statut === 'accepte').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#4ade8010', border: '1px solid #4ade8025', borderRadius: '20px' }}>
-                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: colors.accent.green }}>
-                            {a.joueur?.prenom?.[0] || '?'}{a.joueur?.nom?.[0] || ''}
-                          </div>
+                          <Avatar person={a.joueur} size={24} bg={colors.accent.green + alpha.soft} border="none" textColor={colors.accent.green} />
                           <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</span>
                           <button onClick={() => gererAffiliation(a.id, 'refuse')}
                             style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
