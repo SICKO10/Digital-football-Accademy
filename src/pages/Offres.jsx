@@ -330,33 +330,80 @@ export default function Offres() {
         </div>
       </section>
 
-      {/* ── CLUBS ── */}
+      {/* ── CLUBS — hero ── */}
+      <section style={{ background: 'linear-gradient(160deg, #06100a 0%, #0a1a0f 50%, #030d07 100%)', padding: '4rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 50% at 50% 100%, #4ade8012 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 960, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={st.eyebrow}>CLUBS</div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px', maxWidth: 600 }}>
+            Gérez votre club de A à Z.<br /><span style={{ color: colors.accent.green }}>Une seule plateforme.</span>
+          </h2>
+          <p style={{ color: colors.text.dim, fontSize: 15, maxWidth: 520, lineHeight: 1.7, marginBottom: '2.5rem' }}>
+            Connectez tous les acteurs de votre club — éducateurs, joueurs, dirigeants, parents, scouts — dans un écosystème unique.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, color: colors.text.faint }}>Dashboard joueur <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
+            <div style={{ width: 1, height: 14, background: '#333' }} />
+            <div style={{ fontSize: 13, color: colors.text.faint }}>Accès dirigeant <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CLUBS — fonctionnalités ── */}
       <section style={st.sectionOuter('#0d0d0d')}>
         <div style={st.sectionInner}>
-          <div style={st.eyebrow}>CLUBS</div>
-          <h2 style={st.titre}>Un tarif adapté à la taille de ton club</h2>
-          <p style={st.sousTitre}>Choisissez le palier adapté au nombre de joueurs de votre club — paiement sécurisé, accès immédiat.</p>
+          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center' }}>Tout ce qui est inclus</h3>
+          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Les mêmes outils, quel que soit le palier choisi.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+            {[
+              { categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
+              { categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
+              { categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur — gratuit pour tous', 'Dashboard dirigeant — accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
+              { categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ["Génération de séances d'entraînement par IA"] },
+            ].map(cat => (
+              <div key={cat.categorie} style={{ background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${cat.color}, transparent)` }} />
+                <p style={{ margin: '0 0 1rem', fontWeight: 700, fontSize: 13, color: cat.color }}>{cat.categorie}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {cat.items.map(item => (
+                    <div key={item} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ color: cat.color, flexShrink: 0, marginTop: 1 }}>✓</span>
+                      <span style={{ fontSize: 13, color: colors.text.secondary, lineHeight: 1.5 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <div style={{ overflowX: 'auto', marginBottom: '2rem', border: '1px solid #1f1f1f', borderRadius: '14px' }}>
+      {/* ── CLUBS — tarifs ── */}
+      <section style={st.sectionOuter(colors.background.base)}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center' }}>Un tarif selon la taille de votre club</h3>
+          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club — paiement sécurisé, accès immédiat.</p>
+
+          <div style={{ border: '1px solid #1f1f1f', borderRadius: 16, overflow: 'hidden', marginBottom: '2rem' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: colors.background.surface }}>
-                  <th style={{ textAlign: 'left', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Palier</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Mensuel</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px', color: colors.text.dim, fontWeight: 700 }}>Annuel</th>
+                  <th style={{ textAlign: 'left', padding: '14px 20px', color: colors.text.dim, fontWeight: 700 }}>Palier</th>
+                  <th style={{ textAlign: 'right', padding: '14px 16px', color: colors.text.dim, fontWeight: 700 }}>Mensuel</th>
+                  <th style={{ textAlign: 'right', padding: '14px 20px', color: colors.text.dim, fontWeight: 700 }}>Annuel</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(STRIPE_LINKS_CLUB).map(([key, p], i) => (
                   <tr key={key} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{p.label}</td>
+                    <td style={{ padding: '14px 20px', fontWeight: 600 }}>{p.label}</td>
                     <td style={{ padding: '6px 10px', textAlign: 'right' }}>
                       <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
                         style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
                         {p.mensuelPrix}
                       </button>
                     </td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                    <td style={{ padding: '6px 16px', textAlign: 'right' }}>
                       <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
                         style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
                         {p.annuelPrix}
@@ -368,22 +415,10 @@ export default function Offres() {
             </table>
           </div>
 
-          <div style={st.card(colors.accent.purpleLight, true)}>
-            <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Fonctionnalités incluses — tous paliers</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '9px', marginBottom: '1.75rem' }}>
-              <Feature>Gestion multi-équipes</Feature>
-              <Feature>Tous les outils éducateur</Feature>
-              <Feature>Scout Center recruteurs</Feature>
-              <Feature>Stats équipe automatisées</Feature>
-              <Feature>Analyses joueurs</Feature>
-              <Feature>Gestion budgétaire du club</Feature>
-              <Feature>Gestion des sponsors</Feature>
-              <Feature>Création de rôles (Dirigeant, Directeur sportif, Secrétaire…)</Feature>
-              <Feature>Espace dirigeant dédié</Feature>
-              <Feature>Réseau social Jogabonito</Feature>
-            </div>
-            <blockquote style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: '10px', fontSize: '13px', color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
-              « Invitez vos dirigeants, directeurs sportifs et secrétaires — chacun accède à son espace dédié. »
+          <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.purpleLight}25`, borderRadius: 16, padding: '1.75rem' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Prendre contact</p>
+            <blockquote style={{ margin: '0 0 1.5rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: 10, fontSize: 13, color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
+              « Une question avant de vous lancer, ou besoin d'organiser votre démarrage ? Notre équipe est là. »
             </blockquote>
             <FormulaireClub />
           </div>
