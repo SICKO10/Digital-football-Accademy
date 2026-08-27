@@ -308,6 +308,8 @@ export default function Offres() {
             'Tacticboard',
             'Bibliothèque de séances',
             'Stats équipe automatisées',
+            'Causerie avant-match interactive',
+            'Convocations officielles',
             'Scout Center',
             'Création d\'espace dirigeant (inviter un dirigeant, directeur sportif, secrétaire…)',
           ]} />
@@ -344,6 +346,8 @@ export default function Offres() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ fontSize: 13, color: colors.text.faint }}>Dashboard joueur <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
             <div style={{ width: 1, height: 14, background: '#333' }} />
+            <div style={{ fontSize: 13, color: colors.text.faint }}>Dashboard éducateur <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
+            <div style={{ width: 1, height: 14, background: '#333' }} />
             <div style={{ fontSize: 13, color: colors.text.faint }}>Accès dirigeant <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
           </div>
         </div>
@@ -359,7 +363,7 @@ export default function Offres() {
               { categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
               { categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
               { categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur — gratuit pour tous', 'Dashboard dirigeant — accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
-              { categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ["Génération de séances d'entraînement par IA"] },
+              { categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ["Génération de séances d'entraînement par IA", 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
             ].map(cat => (
               <div key={cat.categorie} style={{ background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${cat.color}, transparent)` }} />
