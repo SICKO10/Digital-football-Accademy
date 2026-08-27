@@ -3687,12 +3687,12 @@ Règles :
                           </a>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {optionsSuperieures.map(([key, quota]) => {
+                            {optionsSuperieures.map(([key]) => {
                               const p = STRIPE_LINKS_CLUB[key]
                               if (!p) return null
                               return (
                                 <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px' }}>
-                                  <span style={{ fontSize: '12px', color: colors.text.secondary }}>{p.label} · jusqu'à {quota} équipes</span>
+                                  <span style={{ fontSize: '12px', color: colors.text.secondary }}>{p.label}</span>
                                   <div style={{ display: 'flex', gap: '6px' }}>
                                     <a href={stripeUrl(p.mensuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
                                       style={{ background: colors.accent.green, color: colors.black, borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>

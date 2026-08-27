@@ -11,7 +11,7 @@ import { IcoMail, IcoCopy, IcoLink, IcoCard, IcoHome, IcoCheck } from './NavIcon
 function infoBoxes(d) {
   const boxes = []
   if (d.ville) boxes.push({ label: 'Ville', value: d.ville })
-  if (d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies]) boxes.push({ label: 'Licenciés', value: STRIPE_LINKS_CLUB[d.nb_licencies].label })
+  if (d.nb_licencies && STRIPE_LINKS_CLUB[d.nb_licencies]) boxes.push({ label: 'Palier', value: STRIPE_LINKS_CLUB[d.nb_licencies].label })
   if (d.cycle) boxes.push({ label: 'Cycle', value: d.cycle })
   if (d.ligue) boxes.push({ label: 'Ligue', value: d.ligue })
   if (d.nb_membres) boxes.push({ label: 'Membres', value: d.nb_membres })
