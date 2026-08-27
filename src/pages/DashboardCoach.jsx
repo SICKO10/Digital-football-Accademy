@@ -180,7 +180,11 @@ function DashboardCoachInner() {
     const avant = clubsEnAttente.find(cl => cl.id === clubId)
     setClubsEnAttente(prev => prev.filter(cl => cl.id !== clubId))
     setActivatingClub(clubId)
-    const { error } = await supabase.from('profiles').update({ abonnement_actif: true }).eq('id', clubId)
+    // Persiste aussi le palier choisi dans le sélecteur (StripeLinks.jsx) —
+    // jusqu'ici jamais enregistré nulle part (uniquement gardé en state React
+    // le temps de générer le lien de paiement), donc quota_equipes ne pouvait
+    // jamais se calculer pour aucun club, même après activation.
+    const { error } = await supabase.from('profiles').update({ abonnement_actif: true, palier: palierChoisi[clubId] || 'c0' }).eq('id', clubId)
     setActivatingClub(null)
     if (error) {
       alert('Erreur : ' + error.message)

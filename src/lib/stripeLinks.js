@@ -36,6 +36,16 @@ export const STRIPE_LINKS_CLUB = {
   c500: { mensuel: 'https://buy.stripe.com/test_8x24gAd2QdND0q6gGM4ko0i', annuel: 'https://buy.stripe.com/test_6oU6oI9QE10R0q6cqw4ko0j', label: '500+ joueurs', mensuelPrix: '250€/mois', annuelPrix: '2500€/an' },
 }
 
+// Quota d'équipes (club_categories) inclus par palier — même clés que
+// STRIPE_LINKS_CLUB, tenu en cohérence côté base par le trigger
+// sync_quota_equipes (supabase_profiles_quota_equipes.sql). Le modèle
+// "nombre d'équipes" n'est pas encore figé commercialement : cette
+// correspondance est une première estimation, à ajuster avec le trigger SQL
+// si les vraies offres changent.
+export const PALIERS_QUOTA_EQUIPES = {
+  c0: 2, c100: 4, c200: 7, c300: 11, c400: 15, c500: 22,
+}
+
 export const CONTACT_EMAIL = 'contact@digital-football.fr'
 
 // client_reference_id permet au webhook Stripe (supabase/functions/stripe-webhook)

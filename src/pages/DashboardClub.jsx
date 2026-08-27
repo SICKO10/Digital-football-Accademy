@@ -2910,6 +2910,10 @@ Règles :
   // ── Gestion catégories ──
   const ajouterCategorie = async () => {
     if (!newCategorie.nom) return
+    if (club?.quota_equipes != null && categories.length >= club.quota_equipes) {
+      alert(`Quota atteint (${club.quota_equipes} équipes max sur votre offre ${STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}). Contactez le support pour changer d'offre.`)
+      return
+    }
     // Optimistic : le formulaire se ferme tout de suite sans attendre la
     // réponse Supabase. Erreur → réouvert avec la saisie intacte (aucune
     // vérification d'erreur n'existait avant, on en ajoute a minima).
@@ -3625,6 +3629,72 @@ Règles :
         {/* ── ÉDUCATEURS ── */}
         {activeTab === 'educateurs' && canViewSection('sportif') && (
           <>
+            {/* Quota d'équipes — club.palier/quota_equipes restent null tant
+                que le support n'a pas activé un palier pour ce club (cf.
+                supabase_profiles_quota_equipes.sql) : pas de widget affiché
+                dans ce cas, pas de blocage rétroactif pour les clubs déjà
+                actifs avant l'introduction de cette limite. */}
+            {club?.quota_equipes != null && (() => {
+              const utilise = categories.length
+              const restant = club.quota_equipes - utilise
+              const parEducateur = {}
+              categories.forEach(c => { if (c.educateur_id) parEducateur[c.educateur_id] = (parEducateur[c.educateur_id] || 0) + 1 })
+              return (
+                <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>Quota d'équipes</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Offre {STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, color: restant <= 1 ? colors.accent.red : colors.accent.green, fontSize: '22px', fontWeight: 900 }}>{utilise} / {club.quota_equipes}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>
+                        {restant > 0 ? `${restant} place${restant > 1 ? 's' : ''} disponible${restant > 1 ? 's' : ''}` : 'Quota atteint'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ background: colors.background.raised, borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '10px',
+                      width: `${Math.min((utilise / club.quota_equipes) * 100, 100)}%`,
+                      background: utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green,
+                      transition: 'width 0.4s ease',
+                    }} />
+                  </div>
+
+                  {restant <= 0 && (
+                    <div style={{ marginTop: '12px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ color: colors.accent.red, fontSize: '12px', fontWeight: 600 }}>Quota atteint — impossible d'ajouter une nouvelle équipe</span>
+                      <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Changer d\'offre — ' + (club?.club || ''))}`}
+                        style={{ background: colors.accent.red, color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
+                        Changer d'offre
+                      </a>
+                    </div>
+                  )}
+                  {restant > 0 && utilise >= club.quota_equipes * 0.8 && (
+                    <div style={{ marginTop: '12px', background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}40`, borderRadius: '8px', padding: '10px 14px' }}>
+                      <span style={{ color: colors.accent.amber, fontSize: '12px', fontWeight: 600 }}>Plus que {restant} place{restant > 1 ? 's' : ''} disponible{restant > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+
+                  {educateursAcceptes.length > 0 && (
+                    <div style={{ marginTop: '16px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
+                      <p style={{ margin: '0 0 10px', color: colors.text.disabled, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Répartition par éducateur</p>
+                      {educateursAcceptes.map(e => (
+                        <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+                          <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</span>
+                          <span style={{ color: colors.text.dim, fontSize: '12px' }}>
+                            {parEducateur[e.educateur_id] || 0} équipe{(parEducateur[e.educateur_id] || 0) > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* Code club */}
             <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}30`, marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
