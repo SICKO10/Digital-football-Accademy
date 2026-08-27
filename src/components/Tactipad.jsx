@@ -3,6 +3,7 @@ import { Stage, Layer, Image as KonvaImage, Circle, Ellipse, Rect, Arrow, Line, 
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
+import { useColors } from '../lib/theme'
 
 const COULEURS = [
   { val: '#4ade80', label: 'Vert' },
@@ -380,6 +381,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
 }
 
 export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer, lang = 'fr' }) {
+  const colors = useColors()
   const [isMobile] = useState(window.innerWidth < 768)
   const isModal = mode === 'modal'
 
@@ -1129,7 +1131,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
   if (isMobile) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: '#666' }}>
+      <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: colors.text.faint }}>
         <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
         <p>Utilisez un écran plus large pour dessiner.</p>
       </div>
@@ -1183,8 +1185,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   ]
 
   const btnStyle = (active) => ({
-    width: '38px', height: '38px', borderRadius: '8px', border: active ? '1px solid #4ade80' : '1px solid #222',
-    background: active ? '#4ade8020' : '#111', color: active ? '#4ade80' : '#aaa', fontSize: '16px',
+    width: '38px', height: '38px', borderRadius: '8px', border: active ? '1px solid #4ade80' : `1px solid ${colors.border.default}`,
+    background: active ? '#4ade8020' : colors.background.surface, color: active ? '#4ade80' : colors.text.secondary, fontSize: '16px',
     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   })
 
@@ -1210,25 +1212,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     <div onClick={() => colorPickerOpen && setColorPickerOpen(null)}>
       {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
           {[['football', t('tac_football', lang)], ['futsal', t('tac_futsal', lang)]].map(([v, label]) => (
-            <button key={v} onClick={() => setSport(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: sport === v ? '#4ade80' : 'transparent', color: sport === v ? '#000' : '#666' }}>{label}</button>
+            <button key={v} onClick={() => setSport(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: sport === v ? '#4ade80' : 'transparent', color: sport === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
           {[['demi', t('tac_demi_terrain', lang)], ['complet', t('tac_terrain_complet', lang)]].map(([v, label]) => (
-            <button key={v} onClick={() => setVue(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: vue === v ? '#4ade80' : 'transparent', color: vue === v ? '#000' : '#666' }}>{label}</button>
+            <button key={v} onClick={() => setVue(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: vue === v ? '#4ade80' : 'transparent', color: vue === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', background: '#111', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
           {[['vert', `🟢 ${t('tac_vert', lang)}`], ['blanc', `⬜ ${t('tac_blanc', lang)}`]].map(([v, label]) => (
-            <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : '#666' }}>{label}</button>
+            <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
         <select
           onChange={e => { appliquerDispositif(e.target.value); e.target.value = '' }}
           defaultValue=""
-          style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
+          style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
         >
           <option value="">📋 {t('tac_dispositif', lang)} ({t(EQUIPES_CONFIG[equipeActive].label, lang)})...</option>
           <optgroup label="4 défenseurs">
@@ -1275,7 +1277,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 <span style={{ fontSize: '10px', opacity: 0.5 }}>▾</span>
               </button>
               {colorPickerOpen === eq && (
-                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
                   {PALETTE_COULEURS_EQUIPE.map(c => (
                     <button key={c} onClick={() => { setEquipesCouleurs(prev => ({ ...prev, [eq]: c })); setColorPickerOpen(null) }}
                       style={{ width: '28px', height: '28px', borderRadius: '6px', background: c, border: couleur === c ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
@@ -1298,20 +1300,20 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
           <button onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
           <button onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
-          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ height: '1px', background: colors.border.default }} />
           {outilsFlêches.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
-          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ height: '1px', background: colors.border.default }} />
           {outilsZones.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
-          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ height: '1px', background: colors.border.default }} />
           {outilsObjets.map(o => (
             <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
           ))}
           <button onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
-          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ height: '1px', background: colors.border.default }} />
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowMaterielPanel(v => !v)}
@@ -1323,11 +1325,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             {showMaterielPanel && (
               <div style={{
                 position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
-                background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '12px',
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '12px',
                 display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '260px',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               }}>
-                <div style={{ gridColumn: '1 / -1', fontSize: '10px', color: '#666', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '2px' }}>
+                <div style={{ gridColumn: '1 / -1', fontSize: '10px', color: colors.text.faint, fontWeight: 700, letterSpacing: '0.5px', marginBottom: '2px' }}>
                   MATÉRIEL — clique puis pose sur le terrain
                 </div>
                 {outilsMateriel.map(o => (
@@ -1337,8 +1339,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                     title={o.title}
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                      background: tool === o.key ? '#4ade8020' : '#1a1a1a', border: tool === o.key ? '1px solid #4ade80' : '1px solid #2a2a2a',
-                      borderRadius: '8px', padding: '8px 4px', cursor: 'pointer', color: '#ccc', height: '52px',
+                      background: tool === o.key ? '#4ade8020' : colors.background.raised, border: tool === o.key ? '1px solid #4ade80' : `1px solid ${colors.border.default}`,
+                      borderRadius: '8px', padding: '8px 4px', cursor: 'pointer', color: colors.text.secondary, height: '52px',
                     }}
                   >
                     {o.apercu}
@@ -1347,7 +1349,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               </div>
             )}
           </div>
-          <div style={{ height: '1px', background: '#222' }} />
+          <div style={{ height: '1px', background: colors.border.default }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {COULEURS.map(c => (
               <button key={c.val} onClick={() => setArrowColor(c.val)} title={c.label}
@@ -1365,7 +1367,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '1000px', overflow: 'hidden' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
-              Clique le point d'arrivée de la flèche… <span style={{ color: '#666' }}>(Échap pour annuler)</span>
+              Clique le point d'arrivée de la flèche… <span style={{ color: colors.text.faint }}>(Échap pour annuler)</span>
             </p>
           )}
           <Stage
@@ -1545,13 +1547,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           </div>
 
           {/* Séquences */}
-          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${colors.border.subtle}` }}>
 
             {/* Ligne 1 : étapes + boutons navigation */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
               {sequences.map((_, i) => (
                 <button key={i} onClick={() => allerEtape(i)} disabled={playing}
-                  style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : '1px solid #222', background: i === etapeActive ? '#4ade8020' : '#111', color: i === etapeActive ? '#4ade80' : '#aaa', fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
+                  style={{ padding: '6px 12px', borderRadius: '8px', border: i === etapeActive ? '1px solid #4ade80' : `1px solid ${colors.border.default}`, background: i === etapeActive ? '#4ade8020' : colors.background.surface, color: i === etapeActive ? '#4ade80' : colors.text.secondary, fontSize: '12px', fontWeight: 600, cursor: playing ? 'default' : 'pointer' }}>
                   {t('tac_etape', lang)} {i + 1}
                 </button>
               ))}
@@ -1590,7 +1592,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}>⏭</button>
 
               {/* Vitesse */}
-              <div style={{ display: 'flex', gap: 3, background: '#0a0a0a', borderRadius: 8, padding: 3 }}>
+              <div style={{ display: 'flex', gap: 3, background: colors.background.sunken, borderRadius: 8, padding: 3 }}>
                 {[0.5, 1, 1.5, 2].map(s => (
                   <button key={s} onClick={() => setAnimSpeed(s)}
                     style={{ ...btnStyle(animSpeed === s), width: 'auto', padding: '0 8px', fontSize: 11, height: 30 }}>
@@ -1601,12 +1603,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
               {/* Durée de l'étape active */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 11, color: '#555' }}>Durée :</span>
+                <span style={{ fontSize: 11, color: colors.text.faint }}>Durée :</span>
                 <input type="number" min={300} max={8000} step={100}
                   value={stepDurations[etapeActive] ?? 2000}
                   onChange={e => setStepDurations(prev => ({ ...prev, [etapeActive]: Math.max(300, parseInt(e.target.value) || 2000) }))}
-                  style={{ width: 68, background: '#111', border: '1px solid #222', borderRadius: 6, padding: '4px 6px', color: '#aaa', fontSize: 11, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                <span style={{ fontSize: 11, color: '#555' }}>ms</span>
+                  style={{ width: 68, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '4px 6px', color: colors.text.secondary, fontSize: 11, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                <span style={{ fontSize: 11, color: colors.text.faint }}>ms</span>
               </div>
 
               {/* Toggle flèches de déplacement */}
@@ -1625,15 +1627,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           {isModal ? (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
               <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>✅ Valider le schéma</button>
-              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
+              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
-                style={{ flex: 1, minWidth: '160px', background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px' }} />
+                style={{ flex: 1, minWidth: '160px', background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 12px', color: colors.text.primary, fontSize: '13px' }} />
               {dossiers.length > 0 && (
                 <select value={dossierSauvegarde} onChange={e => setDossierSauvegarde(e.target.value)}
-                  style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', color: '#aaa', fontSize: '12px', padding: '8px 10px', cursor: 'pointer' }}>
+                  style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', padding: '8px 10px', cursor: 'pointer' }}>
                   <option value="">📁 Sans dossier</option>
                   {dossiers.map(d => <option key={d.id} value={d.id}>🗂 {d.nom}</option>)}
                 </select>
@@ -1642,7 +1644,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 {savingSchema ? '...' : currentSchemaId ? '💾 Mettre à jour' : '💾 Sauvegarder'}
               </button>
               {currentSchemaId && (
-                <button onClick={() => { setCurrentSchemaId(null); setNomSchema(''); setDossierSauvegarde('') }} style={{ background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
+                <button onClick={() => { setCurrentSchemaId(null); setNomSchema(''); setDossierSauvegarde('') }} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
               )}
             </div>
           )}
@@ -1663,7 +1665,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                       value={j.nom || ''}
                       onChange={e => renommerJoueur(j.id, e.target.value)}
                       placeholder={j.gardien ? 'Gardien' : `Joueur ${j.numero}`}
-                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? equipesCouleurs[eq] : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      style={{ flex: 1, background: colors.background.surface, border: `1px solid ${selectedId === j.id ? equipesCouleurs[eq] : colors.border.default}`, borderRadius: 6, padding: '4px 8px', color: colors.text.primary, fontSize: 11, width: '100%', boxSizing: 'border-box' }}
                       onFocus={() => setSelectedId(j.id)}
                     />
                   </div>
@@ -1682,7 +1684,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                       value={j.nom || ''}
                       onChange={e => renommerJoueur(j.id, e.target.value)}
                       placeholder="Joker"
-                      style={{ flex: 1, background: '#111', border: `1px solid ${selectedId === j.id ? '#e5e7eb' : '#222'}`, borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11, width: '100%', boxSizing: 'border-box' }}
+                      style={{ flex: 1, background: colors.background.surface, border: `1px solid ${selectedId === j.id ? '#e5e7eb' : colors.border.default}`, borderRadius: 6, padding: '4px 8px', color: colors.text.primary, fontSize: 11, width: '100%', boxSizing: 'border-box' }}
                       onFocus={() => setSelectedId(j.id)}
                     />
                   </div>
@@ -1690,12 +1692,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
               </div>
             )}
             {/* Raccourcis clavier */}
-            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: 10 }}>
-              <div style={{ color: '#444', fontSize: 10, lineHeight: 1.7 }}>
-                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Suppr</kbd> Effacer</div>
-                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Ctrl+Z</kbd> Annuler</div>
-                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Ctrl+D</kbd> Dupliquer</div>
-                <div><kbd style={{ background: '#1a1a1a', padding: '1px 4px', borderRadius: 3 }}>Échap</kbd> Désélectionner</div>
+            <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 10 }}>
+              <div style={{ color: colors.text.disabled, fontSize: 10, lineHeight: 1.7 }}>
+                <div><kbd style={{ background: colors.background.raised, padding: '1px 4px', borderRadius: 3 }}>Suppr</kbd> Effacer</div>
+                <div><kbd style={{ background: colors.background.raised, padding: '1px 4px', borderRadius: 3 }}>Ctrl+Z</kbd> Annuler</div>
+                <div><kbd style={{ background: colors.background.raised, padding: '1px 4px', borderRadius: 3 }}>Ctrl+D</kbd> Dupliquer</div>
+                <div><kbd style={{ background: colors.background.raised, padding: '1px 4px', borderRadius: 3 }}>Échap</kbd> Désélectionner</div>
               </div>
             </div>
           </div>
@@ -1712,7 +1714,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             {(dossiers.length > 0 || showAddDossier) && (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
                 <button onClick={() => setDossierActif(null)}
-                  style={{ background: dossierActif === null ? '#4ade8020' : '#111', border: `1px solid ${dossierActif === null ? '#4ade80' : '#222'}`, color: dossierActif === null ? '#4ade80' : '#888', borderRadius: '20px', padding: '5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ background: dossierActif === null ? '#4ade8020' : colors.background.surface, border: `1px solid ${dossierActif === null ? '#4ade80' : colors.border.default}`, color: dossierActif === null ? '#4ade80' : colors.text.faint, borderRadius: '20px', padding: '5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
                   Tous ({schemas.length})
                 </button>
                 {dossiers.map(d => {
@@ -1721,11 +1723,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   return (
                     <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                       <button onClick={() => setDossierActif(d.id)}
-                        style={{ background: actif ? `${d.couleur}20` : '#111', border: `1px solid ${actif ? d.couleur : '#222'}`, color: actif ? d.couleur : '#888', borderRadius: '20px 0 0 20px', padding: '5px 4px 5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, color: actif ? d.couleur : colors.text.faint, borderRadius: '20px 0 0 20px', padding: '5px 4px 5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
                         🗂 {d.nom} ({count})
                       </button>
                       <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
-                        style={{ background: actif ? `${d.couleur}20` : '#111', border: `1px solid ${actif ? d.couleur : '#222'}`, borderLeft: 'none', color: '#666', borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>
+                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, borderLeft: 'none', color: colors.text.faint, borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>
                     </div>
                   )
                 })}
@@ -1733,35 +1735,35 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <input autoFocus value={newDossierNom} onChange={e => setNewDossierNom(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && ajouterDossier()}
-                      placeholder="Nom du dossier" style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '5px 10px', fontSize: '11px', width: '130px' }} />
+                      placeholder="Nom du dossier" style={{ background: colors.background.sunken, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '5px 10px', fontSize: '11px', width: '130px' }} />
                     <button onClick={ajouterDossier} style={{ background: '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>OK</button>
-                    <button onClick={() => { setShowAddDossier(false); setNewDossierNom('') }} style={{ background: 'none', border: 'none', color: '#666', fontSize: '11px', cursor: 'pointer' }}>✕</button>
+                    <button onClick={() => { setShowAddDossier(false); setNewDossierNom('') }} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer' }}>✕</button>
                   </div>
                 ) : (
-                  <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: '1px dashed #333', borderRadius: '20px', color: '#666', fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>+ Dossier</button>
+                  <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '20px', color: colors.text.faint, fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>+ Dossier</button>
                 )}
               </div>
             )}
             {dossiers.length === 0 && !showAddDossier && (
-              <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: '1px dashed #333', borderRadius: '20px', color: '#666', fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', marginBottom: '14px' }}>+ Créer un dossier</button>
+              <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '20px', color: colors.text.faint, fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', marginBottom: '14px' }}>+ Créer un dossier</button>
             )}
 
             {loadingSchemas ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Chargement...</p>
             ) : schemasAffiches.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>{schemas.length === 0 ? 'Aucun schéma sauvegardé pour l\'instant.' : 'Aucun schéma dans ce dossier.'}</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{schemas.length === 0 ? 'Aucun schéma sauvegardé pour l\'instant.' : 'Aucun schéma dans ce dossier.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {schemasAffiches.map(s => {
                   const dossier = dossiers.find(d => d.id === s.dossier_id)
                   return (
-                    <div key={s.id} style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                       <div>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {dossier && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dossier.couleur, flexShrink: 0 }} />}
                           {s.nom || 'Sans titre'}
                         </p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
@@ -1783,23 +1785,23 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
           <div onClick={() => setShowPickerJoueur(false)} style={{ position: 'fixed', inset: 0, zIndex: 499 }} />
           <div style={{
             position: 'fixed', top: pickerScreenPos.y, left: pickerScreenPos.x,
-            background: '#111', border: '1px solid #222',
+            background: colors.background.surface, border: `1px solid ${colors.border.default}`,
             borderRadius: '12px', padding: '12px', zIndex: 500,
             minWidth: '220px', maxHeight: '320px', overflowY: 'auto',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           }}>
-            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '8px', fontWeight: '700' }}>
+            <div style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '8px', fontWeight: '700' }}>
               AJOUTER UN JOUEUR — {EQUIPES_CONFIG[equipeActive].emoji} {t(EQUIPES_CONFIG[equipeActive].label, lang)}
             </div>
 
             <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
               <input
                 value={pickerNumero} onChange={e => setPickerNumero(e.target.value)}
-                placeholder="N°" style={{ width: '44px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px', fontSize: '12px', textAlign: 'center' }}
+                placeholder="N°" style={{ width: '44px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.primary, padding: '6px', fontSize: '12px', textAlign: 'center' }}
               />
               <input
                 value={pickerNom} onChange={e => setPickerNom(e.target.value)}
-                placeholder="Nom (optionnel)" style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px 8px', fontSize: '12px' }}
+                placeholder="Nom (optionnel)" style={{ flex: 1, background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.primary, padding: '6px 8px', fontSize: '12px' }}
                 onKeyDown={e => e.key === 'Enter' && ajouterJoueurIndividuel()}
               />
             </div>
@@ -1809,11 +1811,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </button>
 
             {/* Ajout rapide par nombre — pose n joueurs numérotés à la suite en une fois */}
-            <div style={{ borderTop: '1px solid #222', margin: '4px 0 8px' }} />
+            <div style={{ borderTop: `1px solid ${colors.border.default}`, margin: '4px 0 8px' }} />
             <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' }}>
               <input
                 type="number" min="1" value={pickerNbJoueurs} onChange={e => setPickerNbJoueurs(e.target.value)}
-                style={{ width: '44px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '6px', fontSize: '12px', textAlign: 'center' }}
+                style={{ width: '44px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.primary, padding: '6px', fontSize: '12px', textAlign: 'center' }}
               />
               <button onClick={ajouterJoueursMultiples}
                 style={{ flex: 1, padding: '6px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
@@ -1827,22 +1829,22 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
             {joueursEquipe.length > 0 && (
               <>
-                <div style={{ borderTop: '1px solid #222', margin: '4px 0 8px' }} />
-                <div style={{ fontSize: '10px', color: '#555', marginBottom: '4px' }}>OU DEPUIS L'EFFECTIF</div>
+                <div style={{ borderTop: `1px solid ${colors.border.default}`, margin: '4px 0 8px' }} />
+                <div style={{ fontSize: '10px', color: colors.text.faint, marginBottom: '4px' }}>OU DEPUIS L'EFFECTIF</div>
                 {joueursEquipe.map(j => (
                   <button key={j.id} onClick={() => ajouterJoueurIndividuel(j)}
-                    style={{ display: 'block', width: '100%', padding: '6px 8px', background: 'transparent', border: 'none', color: '#d1d5db', textAlign: 'left', cursor: 'pointer', borderRadius: '6px', fontSize: '13px' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#1a1a1a' }}
+                    style={{ display: 'block', width: '100%', padding: '6px 8px', background: 'transparent', border: 'none', color: colors.text.secondary, textAlign: 'left', cursor: 'pointer', borderRadius: '6px', fontSize: '13px' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
                     {j.numero_maillot ? `#${j.numero_maillot} ` : ''}{j.prenom} {j.nom}
-                    {j.poste && <span style={{ color: '#6b7280', fontSize: '11px' }}> ({j.poste})</span>}
+                    {j.poste && <span style={{ color: colors.text.faint, fontSize: '11px' }}> ({j.poste})</span>}
                   </button>
                 ))}
               </>
             )}
 
             <button onClick={() => setShowPickerJoueur(false)}
-              style={{ marginTop: '8px', width: '100%', padding: '6px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#9ca3af', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+              style={{ marginTop: '8px', width: '100%', padding: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
               Annuler
             </button>
           </div>
