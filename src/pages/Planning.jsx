@@ -326,7 +326,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
   )
 }
 
-function VueMois({ dateRef, evenements, onClic, isMobile }) {
+function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
   const colors = useColors()
   const annee = dateRef.getFullYear()
   const mois = dateRef.getMonth()
@@ -363,9 +363,12 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
             )
           }
           return (
-            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: '8px', minHeight: '90px' }}>
-              <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
-              {evts.slice(0, 3).map(e => (
+            // minWidth: 0 — même correctif que VueSemaine : un titre d'événement
+            // en white-space:nowrap imposerait sinon sa largeur minimale à la
+            // cellule et ferait déborder les 7 colonnes de l'écran sur tablette.
+            <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: isTablet ? '5px 3px' : '8px', minHeight: isTablet ? '70px' : '90px' }}>
+              <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: isTablet ? '12px' : '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
+              {evts.slice(0, isTablet ? 2 : 3).map(e => (
                 <div key={e.id} onClick={() => onClic(e)} style={{
                   background: `${TYPE_COULEURS[e.type]}22`,
                   borderLeft: `2px solid ${TYPE_COULEURS[e.type]}`,
@@ -374,7 +377,7 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{e.titre}</div>
               ))}
-              {evts.length > 3 && <div style={{ color: colors.text.faint, fontSize: '9px' }}>+{evts.length - 3} de plus</div>}
+              {evts.length > (isTablet ? 2 : 3) && <div style={{ color: colors.text.faint, fontSize: '9px' }}>+{evts.length - (isTablet ? 2 : 3)} de plus</div>}
             </div>
           )
         })}
@@ -383,12 +386,12 @@ function VueMois({ dateRef, evenements, onClic, isMobile }) {
   )
 }
 
-function VueAnnee({ dateRef, evenements, isMobile }) {
+function VueAnnee({ dateRef, evenements, isMobile, isTablet }) {
   const colors = useColors()
   const annee = dateRef.getFullYear()
   const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
       {moisNoms.map((nom, i) => {
         const evtsMois = evenements.filter(e => {
           const d = new Date(`${e.date}T12:00:00`)
