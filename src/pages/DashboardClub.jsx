@@ -1123,6 +1123,10 @@ export default function DashboardClub() {
 
   // Profil club
   const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '', stades: [] })
+  // Choix d'offre en libre-service depuis le profil — mêmes clés que
+  // STRIPE_LINKS_CLUB, palier actuel du club présélectionné s'il existe déjà.
+  const [palierChoisiProfil, setPalierChoisiProfil] = useState('')
+  const [cycleChoisiProfil, setCycleChoisiProfil] = useState('mensuel')
   const [savingProfilClub, setSavingProfilClub] = useState(false)
   const [avatarClubUploading, setAvatarClubUploading] = useState(false)
   const [avisRecus, setAvisRecus] = useState([])
@@ -4223,22 +4227,47 @@ Règles :
                 )}
               </div>
 
-              {/* Abonnement — paliers vérifiés manuellement par le support (nb. licenciés) */}
+              {/* Abonnement — libre-service : le club choisit son palier et paie
+                  directement (même route que /offres et l'upgrade de l'onglet
+                  Éducateurs), plus besoin de vérification humaine préalable. */}
               <div style={{ ...st.card, marginBottom: '1.5rem' }}>
                 <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('club_abonnement_titre', lang)}</p>
-                <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('club_abonnement_desc', lang)}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
-                  {Object.values(STRIPE_LINKS_CLUB).map(p => (
-                    <div key={p.label} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', color: colors.text.secondary }}>{p.label}</span>
-                      <span style={{ fontSize: '13px', color: couleurPrincipale, fontWeight: 700 }}>{p.mensuelPrix} · {p.annuelPrix}</span>
-                    </div>
-                  ))}
+                <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>
+                  {club?.palier ? `Offre actuelle : ${STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}.` : ''} {t('club_abonnement_desc', lang)}
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
+                  <select value={palierChoisiProfil || club?.palier || ''} onChange={e => setPalierChoisiProfil(e.target.value)}
+                    style={{ ...st.input, width: 'auto', flex: '1 1 220px' }}>
+                    <option value="" disabled>Choisir un palier...</option>
+                    {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
+                      <option key={key} value={key}>{p.label} — {cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}</option>
+                    ))}
+                  </select>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {['mensuel', 'annuel'].map(c => (
+                      <button key={c} type="button" onClick={() => setCycleChoisiProfil(c)}
+                        style={{ padding: '9px 14px', borderRadius: '8px', border: `1px solid ${cycleChoisiProfil === c ? couleurPrincipale : colors.border.default}`, background: cycleChoisiProfil === c ? couleurPrincipale + alpha.subtle : 'transparent', color: cycleChoisiProfil === c ? couleurPrincipale : colors.text.faint, fontWeight: cycleChoisiProfil === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+                        {c === 'mensuel' ? 'Mensuel' : 'Annuel'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Activation abonnement club — ' + (profilClubEdit.club || club?.club || ''))}`}
-                  style={{ display: 'inline-block', background: couleurPrincipale, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                  {t('club_contacter_support', lang)}
-                </a>
+                {(() => {
+                  const palierActif = palierChoisiProfil || club?.palier || ''
+                  const p = STRIPE_LINKS_CLUB[palierActif]
+                  const lien = p ? stripeUrl(p[cycleChoisiProfil], clubId, club?.email) : null
+                  return (
+                    <a href={lien || undefined} target="_blank" rel="noopener noreferrer"
+                      aria-disabled={!lien}
+                      onClick={e => { if (!lien) e.preventDefault() }}
+                      style={{ display: 'inline-block', background: lien ? couleurPrincipale : colors.background.raised, color: lien ? colors.black : colors.text.faint, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', cursor: lien ? 'pointer' : 'not-allowed' }}>
+                      {p ? `Payer — ${cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}` : 'Choisir un palier'}
+                    </a>
+                  )
+                })()}
+                <p style={{ margin: '10px 0 0', fontSize: '11px', color: colors.text.disabled }}>
+                  Une question avant de vous engager ? <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: colors.text.disabled }}>Contactez-nous</a>.
+                </p>
               </div>
 
               {/* Avis reçus */}
