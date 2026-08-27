@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
+import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, stripeUrl } from '../lib/stripeLinks'
 import { colors } from '../tokens'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
@@ -20,14 +20,6 @@ export default function Register() {
   const navigate = useNavigate()
   const { lang } = useLang()
   const [searchParams] = useSearchParams()
-
-  // Club normalement sans self-service (vente humaine, cf. Offres.jsx) — sauf
-  // si on arrive via un lien d'inscription généré pour un palier précis
-  // (DashboardCoach.jsx EmailBlockClub, /register?profil=club&palier=c0&cycle=...) :
-  // dans ce cas le compte est créé normalement, puis redirigé vers le lien de
-  // paiement Stripe du bon palier — ça évite de dépendre d'un email envoyé
-  // après coup par le webhook pour créer le compte.
-  const palierClub = STRIPE_LINKS_CLUB[searchParams.get('palier')] || null
 
   // Lien de parrainage (?ref=<uuid du parrain>, cf. ParrainageWidget.jsx) —
   // validé au format UUID ici (pas juste "présent") pour limiter le risque
@@ -67,18 +59,13 @@ export default function Register() {
     },
     {
       id: 'club', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
-      color: colors.accent.purpleLight,
-      ...(palierClub
-        ? { badge: palierClub.mensuelPrix, stripeMensuel: palierClub.mensuel, stripeAnnuel: palierClub.annuel }
-        : { badge: t('regchoix_sur_devis', lang), contact: true }),
+      color: colors.accent.purpleLight, badge: 'Dès 50€/mois', assistant: true,
       features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
     },
   ]
 
   // Présélection depuis un lien externe (ex: page Offres) : /register?profil=joueur_pro&cycle=annuel
-  // Club exclu par défaut (pas de compte à créer, cf. onClick des cartes plus
-  // bas) — sauf avec ?palier=..., cf. palierClub ci-dessus.
-  const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil') && !pr.contact) || null
+  const profilPresélectionné = PROFILS.find(pr => pr.id === searchParams.get('profil')) || null
 
   const [etape, setEtape] = useState(profilPresélectionné ? 2 : 1) // 1 = choix profil | 2 = formulaire
   const [profilChoisi, setProfil] = useState(profilPresélectionné)
@@ -154,12 +141,7 @@ export default function Register() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {PROFILS.map(p => (
         <button key={p.id}
-          onClick={() => {
-            // Club : pas de création de compte — vente humaine via le
-            // formulaire de contact de la page Offres (voir demandes_club).
-            if (p.contact) { navigate('/offres'); return }
-            setProfil(p); setCycle('mensuel'); setEtape(2)
-          }}
+          onClick={() => { setProfil(p); setCycle('mensuel'); setEtape(2) }}
           style={{
             background: colors.background.surface, border: '1px solid #1a1a1a',
             borderRadius: '14px', padding: '16px 18px',
@@ -266,7 +248,11 @@ export default function Register() {
         </p>
       </div>
 
-      {profilChoisi && (
+      {profilChoisi?.id === 'club' && (
+        <ClubWizard color={profilChoisi.color} navigate={navigate} palierInitial={searchParams.get('palier') || ''} cycleInitial={searchParams.get('cycle') === 'annuel' ? 'annuel' : 'mensuel'} />
+      )}
+
+      {profilChoisi && profilChoisi.id !== 'club' && (
         <div style={{ width: '100%', maxWidth: '400px' }}>
 
           <div style={{
@@ -305,19 +291,7 @@ export default function Register() {
               style={{ background: colors.background.surface, border: '1px solid #1f1f1f', borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
           </div>
 
-          {/* Club (palier présélectionné via l'URL) : palier + cycle déjà fixés par le
-              lien d'inscription envoyé (cf. EmailBlockClub) — pas de toggle 10€/100€
-              qui n'a aucun rapport avec le prix réel, juste un récapitulatif en lecture
-              seule. cycle reste passé silencieusement à inscrire() via le state déjà
-              initialisé depuis l'URL (searchParams.get('cycle')). */}
-          {profilChoisi.id === 'club' && palierClub ? (
-            <div style={{ background: profilChoisi.color + '10', border: `1px solid ${profilChoisi.color}30`, borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: profilChoisi.color }}>Abonnement Club — {palierClub.label}</p>
-              <p style={{ margin: '4px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>
-                {cycle === 'annuel' ? palierClub.annuelPrix : palierClub.mensuelPrix}
-              </p>
-            </div>
-          ) : profilChoisi.stripeMensuel && (
+          {profilChoisi.stripeMensuel && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
               {[
                 { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: '10€/mois', desc: t('reginsc_cycle_mensuel_desc', lang) },
@@ -365,13 +339,6 @@ export default function Register() {
               <p style={{ fontSize: '12px', color: colors.accent.blue, margin: 0, lineHeight: 1.6 }}>{t('reginsc_educateur_info', lang)}</p>
             </div>
           )}
-          {profilChoisi.id === 'club' && (
-            <div style={{ background: '#a78bfa10', border: '1px solid #a78bfa25', borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
-              <p style={{ fontSize: '12px', color: colors.accent.purpleLight, margin: 0, lineHeight: 1.6 }}>
-                {palierClub ? t('reginsc_club_palier_info', lang) : t('reginsc_club_info', lang)}
-              </p>
-            </div>
-          )}
 
           <button onClick={inscrire} disabled={loading}
             style={{
@@ -387,11 +354,9 @@ export default function Register() {
             }}>
             {loading
               ? t('register_creation_cours', lang)
-              : profilChoisi.contact
-                ? t('reginsc_btn_contact', lang)
-                : profilChoisi.stripeMensuel
-                  ? t('reginsc_btn_payer', lang)
-                  : t('reginsc_btn_gratuit', lang)
+              : profilChoisi.stripeMensuel
+                ? t('reginsc_btn_payer', lang)
+                : t('reginsc_btn_gratuit', lang)
             }
           </button>
 
@@ -401,6 +366,183 @@ export default function Register() {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+// Inscription club en 3 étapes : compte (identité + nom du club), 3
+// disponibilités pour le rendez-vous de démarrage, puis choix de la formule
+// (par nombre d'équipes, cf. PALIERS_QUOTA_EQUIPES) avant redirection Stripe
+// — remplace l'ancien flux "formulaire de contact → email manuel sous
+// 24-48h" (cf. Offres.jsx, désormais limité aux questions).
+function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
+  const [etape, setEtape] = useState(1) // 1 = compte, 2 = disponibilités, 3 = formule + paiement
+  const [prenom, setPrenom] = useState('')
+  const [nom, setNom] = useState('')
+  const [nomClub, setNomClub] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [userId, setUserId] = useState(null)
+  const [dispos, setDispos] = useState(['', '', ''])
+  const [palier, setPalier] = useState(palierInitial || '')
+  const [cycle, setCycle] = useState(cycleInitial || 'mensuel')
+  const [erreur, setErreur] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const inputStyle = { background: colors.background.surface, border: '1px solid #1f1f1f', borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }
+  const btnStyle = (desactive) => ({
+    width: '100%', background: color, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px',
+    fontSize: '15px', fontWeight: 800, cursor: desactive ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif',
+    marginTop: '18px', opacity: desactive ? 0.6 : 1, transition: 'opacity 0.15s',
+  })
+
+  const creerCompte = async () => {
+    if (!prenom.trim() || !nom.trim() || !nomClub.trim() || !email.trim() || !password.trim()) {
+      setErreur('Tous les champs sont obligatoires.')
+      return
+    }
+    if (password.length < 6) {
+      setErreur('Le mot de passe doit contenir au moins 6 caractères.')
+      return
+    }
+    setLoading(true)
+    setErreur('')
+    const { data, error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { prenom: prenom.trim(), nom: nom.trim(), plan: 'club' } },
+    })
+    if (error) { setErreur(error.message); setLoading(false); return }
+    const uid = data.user?.id
+    if (uid) {
+      const { error: profilErr } = await supabase.from('profiles').upsert({
+        id: uid, prenom: prenom.trim(), nom: nom.trim(), email: email.trim().toLowerCase(),
+        plan: 'club', club: nomClub.trim(), abonnement_actif: false,
+      })
+      if (profilErr) console.error('Erreur création profil club (le trigger auto devrait prendre le relais):', profilErr)
+    }
+    setUserId(uid)
+    setLoading(false)
+    setEtape(2)
+  }
+
+  const validerDispos = async () => {
+    const remplies = dispos.map(d => d.trim()).filter(Boolean)
+    if (remplies.length === 0) {
+      setErreur('Indiquez au moins une disponibilité.')
+      return
+    }
+    setErreur('')
+    setLoading(true)
+    const { error } = await supabase.from('demandes_club').insert({
+      prenom: prenom.trim(), nom: nom.trim(), email: email.trim().toLowerCase(), nom_club: nomClub.trim(),
+      type: 'demarrage', statut: 'nouveau',
+      message: `Disponibilités pour le démarrage :\n${remplies.map((d, i) => `${i + 1}. ${d}`).join('\n')}`,
+    })
+    setLoading(false)
+    // Une erreur ici (table demandes_club indisponible, réseau...) ne doit pas
+    // bloquer un compte déjà créé et un club déjà prêt à payer — juste loggée.
+    if (error) console.error('Erreur enregistrement disponibilités démarrage:', error)
+    setEtape(3)
+  }
+
+  const payer = async () => {
+    if (!palier) { setErreur('Choisissez une formule.'); return }
+    const p = STRIPE_LINKS_CLUB[palier]
+    const lien = p?.[cycle]
+    if (!lien) return
+    setLoading(true)
+    window.open(stripeUrl(lien, userId, email), '_blank')
+    // signUp() ne garantit pas de session active — reconnexion explicite avec
+    // le mot de passe qu'on vient de saisir (même pattern que inscrire()
+    // ci-dessus), pour atterrir directement sur le dashboard déjà connecté.
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    navigate(signInErr ? '/login' : '/dashboard')
+  }
+
+  return (
+    <div style={{ width: '100%', maxWidth: '400px' }}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '24px' }}>
+        {[1, 2, 3].map(n => (
+          <div key={n} style={{ flex: 1, height: '4px', borderRadius: '2px', background: n <= etape ? color : colors.background.raised }} />
+        ))}
+      </div>
+
+      {etape === 1 && (
+        <>
+          <p style={{ fontWeight: 800, fontSize: '15px', margin: '0 0 4px' }}>Créer votre compte club</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>Étape 1/3 — vos informations et celles de votre club.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input placeholder="Prénom *" value={prenom} onChange={e => setPrenom(e.target.value)} style={inputStyle} />
+              <input placeholder="Nom *" value={nom} onChange={e => setNom(e.target.value)} style={inputStyle} />
+            </div>
+            <input placeholder="Nom du club *" value={nomClub} onChange={e => setNomClub(e.target.value)} style={inputStyle} />
+            <input placeholder="Email *" type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+            <input placeholder="Mot de passe *" type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
+          </div>
+          {erreur && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>}
+          <button onClick={creerCompte} disabled={loading} style={btnStyle(loading)}>
+            {loading ? 'Création...' : 'Continuer'}
+          </button>
+        </>
+      )}
+
+      {etape === 2 && (
+        <>
+          <p style={{ fontWeight: 800, fontSize: '15px', margin: '0 0 4px' }}>Planifiez votre démarrage</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>
+            Étape 2/3 — indiquez 3 créneaux dans la semaine où votre équipe est disponible, pour caler votre accompagnement de lancement.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[0, 1, 2].map(i => (
+              <input key={i} placeholder={`Disponibilité ${i + 1} — ex. Lundi 14h-16h`} value={dispos[i]}
+                onChange={e => setDispos(prev => prev.map((d, idx) => idx === i ? e.target.value : d))} style={inputStyle} />
+            ))}
+          </div>
+          {erreur && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>}
+          <button onClick={validerDispos} disabled={loading} style={btnStyle(loading)}>
+            {loading ? 'Envoi...' : 'Continuer'}
+          </button>
+        </>
+      )}
+
+      {etape === 3 && (
+        <>
+          <p style={{ fontWeight: 800, fontSize: '15px', margin: '0 0 4px' }}>Choisissez votre formule</p>
+          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>Étape 3/3 — selon le nombre d'équipes de votre club.</p>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+            {['mensuel', 'annuel'].map(c => (
+              <button key={c} type="button" onClick={() => setCycle(c)}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${cycle === c ? color : '#2a2a2a'}`, background: cycle === c ? color + '15' : colors.background.surface, color: cycle === c ? color : colors.text.faint, fontWeight: cycle === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+                {c === 'mensuel' ? 'Mensuel' : 'Annuel — 2 mois offerts'}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {Object.entries(PALIERS_QUOTA_EQUIPES).map(([key, quota]) => {
+              const p = STRIPE_LINKS_CLUB[key]
+              if (!p) return null
+              return (
+                <button key={key} type="button" onClick={() => setPalier(key)}
+                  style={{ textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: palier === key ? color + '15' : colors.background.surface, border: `2px solid ${palier === key ? color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px' }}>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: palier === key ? color : colors.text.primary }}>Jusqu'à {quota} équipes</p>
+                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{cycle === 'annuel' ? p.annuelPrix : p.mensuelPrix}</p>
+                </button>
+              )
+            })}
+          </div>
+          {erreur && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>}
+          <button onClick={payer} disabled={loading || !palier} style={btnStyle(loading || !palier)}>
+            {loading ? 'Redirection...' : 'Payer et accéder à mon dashboard'}
+          </button>
+        </>
+      )}
+
+      <p style={{ textAlign: 'center', fontSize: '11px', color: colors.border.strong, marginTop: '14px', lineHeight: 1.6 }}>
+        En continuant, vous acceptez nos{' '}
+        <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.text.disabled }}>CGU</a>.
+      </p>
     </div>
   )
 }
