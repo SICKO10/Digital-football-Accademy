@@ -100,52 +100,49 @@ function CycleToggle({ cycle, setCycle }) {
 
 const inputStyle = { width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '11px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }
 
-// Formulaire de contact club — pas de paiement en libre-service, une vente
-// humaine convient mieux pour des contrats B2B à 50-250€/mois. Les paliers
-// viennent de STRIPE_LINKS_CLUB (lib/stripeLinks.js), pas d'une liste dupliquée
-// ici, pour ne jamais afficher un prix différent de celui réellement facturé.
+// Le choix du palier et le paiement sont désormais en libre-service
+// (tableau de paliers plus haut, chaque prix renvoie directement vers
+// /register?profil=club&palier=...&cycle=... — même route déjà utilisée par
+// EmailBlockClub côté admin, cf. coach/ClubRequests.jsx). Ce formulaire ne
+// sert donc plus qu'à deux choses qui nécessitent un humain : une question,
+// ou planifier le rendez-vous de démarrage (jusqu'ici demandé par email —
+// "répondez avec vos disponibilités" — remplacé par une saisie structurée).
 function FormulaireClub() {
-  const [ouvert, setOuvert] = useState(false)
+  const [ouvert, setOuvert] = useState(null) // null | 'question' | 'demarrage'
   const [envoye, setEnvoye] = useState(false)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
-  const [typeEnvoye, setTypeEnvoye] = useState(null)
-  const [nbLicencies, setNbLicencies] = useState('')
-  const [cycle, setCycle] = useState('mensuel')
-  const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', ville: '', ligue: '', nbMembres: '', message: '' })
+  const [form, setForm] = useState({ prenom: '', nom: '', email: '', nomClub: '', message: '' })
+  const [dispos, setDispos] = useState(['', '', ''])
 
   const champ = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
-  const envoyerDemande = async (type) => {
+  const envoyer = async () => {
     if (!form.prenom.trim() || !form.nom.trim() || !form.email.trim() || !form.nomClub.trim()) {
       setErreur('Prénom, nom, email et nom du club sont obligatoires.')
       return
     }
-    if (type === 'abonnement' && !nbLicencies) {
-      setErreur('Sélectionnez le nombre de licenciés.')
+    const dispoRemplies = dispos.map(d => d.trim()).filter(Boolean)
+    if (ouvert === 'demarrage' && dispoRemplies.length === 0) {
+      setErreur('Indiquez au moins une disponibilité.')
       return
     }
     setEnvoi(true)
     setErreur('')
-    const palier = STRIPE_LINKS_CLUB[nbLicencies]
-    const prixDemande = cycle === 'annuel' ? palier?.annuelPrix : palier?.mensuelPrix
+    const message = ouvert === 'demarrage'
+      ? `Disponibilités pour le démarrage :\n${dispoRemplies.map((d, i) => `${i + 1}. ${d}`).join('\n')}${form.message.trim() ? `\n\n${form.message.trim()}` : ''}`
+      : (form.message.trim() || 'Question via messagerie')
     const { error } = await supabase.from('demandes_club').insert({
       prenom: form.prenom.trim(),
       nom: form.nom.trim(),
       email: form.email.trim().toLowerCase(),
       nom_club: form.nomClub.trim(),
-      ville: form.ville.trim() || null,
-      ligue: form.ligue.trim() || null,
-      nb_membres: form.nbMembres ? parseInt(form.nbMembres, 10) : null,
-      nb_licencies: type === 'abonnement' ? nbLicencies : null,
-      cycle: type === 'abonnement' ? cycle : null,
-      type,
+      type: ouvert,
       statut: 'nouveau',
-      message: form.message.trim() || (type === 'abonnement' ? `Demande abonnement — ${palier?.label} (${cycle}) — ${prixDemande}` : 'Question via messagerie'),
+      message,
     })
     setEnvoi(false)
     if (error) { setErreur("Une erreur est survenue, réessaie ou écris-nous directement à contact@digital-football.fr."); return }
-    setTypeEnvoye(type)
     setEnvoye(true)
   }
 
@@ -153,56 +150,56 @@ function FormulaireClub() {
     return (
       <div style={{ textAlign: 'center', padding: '1rem 0' }}>
         <p style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>Demande envoyée</p>
-        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
-          {typeEnvoye === 'question' ? 'Notre équipe vous répondra sous 24h.' : 'Vous recevrez votre lien de paiement par email sous 24-48h.'}
-        </p>
+        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Notre équipe vous répondra sous 24h.</p>
       </div>
     )
   }
 
   if (!ouvert) {
-    return <button onClick={() => setOuvert(true)} style={st.cta(colors.accent.purpleLight, true)}>Nous contacter</button>
+    return (
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <button onClick={() => setOuvert('demarrage')} style={{ ...st.cta(colors.accent.purpleLight, true), width: 'auto', flex: 'none', padding: '13px 24px' }}>
+          Planifier mon démarrage
+        </button>
+        <button onClick={() => setOuvert('question')} style={{ ...st.cta(null, false), width: 'auto', flex: 'none', padding: '13px 24px' }}>
+          Poser une question
+        </button>
+      </div>
+    )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {['mensuel', 'annuel'].map(c => (
-          <button key={c} type="button" onClick={() => setCycle(c)}
-            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${cycle === c ? colors.accent.green : '#2a2a2a'}`, background: cycle === c ? colors.accent.green + alpha.subtle : colors.background.base, color: cycle === c ? colors.accent.green : colors.text.faint, fontWeight: cycle === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
-            {c === 'mensuel' ? 'Mensuel' : 'Annuel — 2 mois offerts 🎁'}
-          </button>
-        ))}
-      </div>
-      <label style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nombre de licenciés</label>
-      <select value={nbLicencies} onChange={e => setNbLicencies(e.target.value)} style={{ ...inputStyle, color: nbLicencies ? colors.text.primary : colors.text.faint, cursor: 'pointer' }}>
-        <option value="">Sélectionnez votre tranche</option>
-        {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
-          <option key={key} value={key}>{p.label} — {cycle === 'annuel' ? p.annuelPrix : p.mensuelPrix}</option>
-        ))}
-      </select>
+      {ouvert === 'demarrage' && (
+        <>
+          <p style={{ fontSize: '13px', color: colors.text.dim, margin: '0 0 4px' }}>
+            Indiquez-nous 3 créneaux dans la semaine où votre équipe est disponible — on vous recontacte pour caler le rendez-vous de démarrage.
+          </p>
+          {[0, 1, 2].map(i => (
+            <input key={i} placeholder={`Disponibilité ${i + 1} — ex. Lundi 14h-16h`} value={dispos[i]}
+              onChange={e => setDispos(prev => prev.map((d, idx) => idx === i ? e.target.value : d))} style={inputStyle} />
+          ))}
+        </>
+      )}
       <div style={{ display: 'flex', gap: '10px' }}>
         <input placeholder="Prénom *" value={form.prenom} onChange={champ('prenom')} style={inputStyle} />
         <input placeholder="Nom *" value={form.nom} onChange={champ('nom')} style={inputStyle} />
       </div>
       <input type="email" placeholder="Email de contact *" value={form.email} onChange={champ('email')} style={inputStyle} />
       <input placeholder="Nom du club *" value={form.nomClub} onChange={champ('nomClub')} style={inputStyle} />
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <input placeholder="Ville (optionnel)" value={form.ville} onChange={champ('ville')} style={inputStyle} />
-        <input placeholder="Ligue / championnat (optionnel)" value={form.ligue} onChange={champ('ligue')} style={inputStyle} />
-      </div>
-      <input type="number" min="0" placeholder="Nombre de membres (optionnel)" value={form.nbMembres} onChange={champ('nbMembres')} style={inputStyle} />
-      <textarea placeholder="Message (optionnel)" value={form.message} onChange={champ('message')} rows={3}
-        style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+      {ouvert === 'question' && (
+        <textarea placeholder="Votre question" value={form.message} onChange={champ('message')} rows={3}
+          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+      )}
       {erreur && <p style={{ color: '#f87171', fontSize: '12px', margin: 0 }}>{erreur}</p>}
       <div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={() => envoyerDemande('question')} disabled={envoi}
-          style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '13px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: envoi ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: envoi ? 0.7 : 1 }}>
-          💬 Poser une question
+        <button onClick={() => setOuvert(null)} disabled={envoi}
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '13px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          Annuler
         </button>
-        <button onClick={() => envoyerDemande('abonnement')} disabled={envoi || !nbLicencies}
-          style={{ flex: 1.5, ...st.cta(colors.accent.purpleLight, true), marginTop: 0, opacity: (envoi || !nbLicencies) ? 0.6 : 1, cursor: (envoi || !nbLicencies) ? 'not-allowed' : 'pointer' }}>
-          {envoi ? 'Envoi...' : '→ Demander un abonnement'}
+        <button onClick={envoyer} disabled={envoi}
+          style={{ flex: 1, ...st.cta(colors.accent.purpleLight, true), marginTop: 0, opacity: envoi ? 0.6 : 1, cursor: envoi ? 'not-allowed' : 'pointer' }}>
+          {envoi ? 'Envoi...' : ouvert === 'demarrage' ? 'Envoyer mes disponibilités' : 'Envoyer'}
         </button>
       </div>
     </div>
@@ -338,7 +335,7 @@ export default function Offres() {
         <div style={st.sectionInner}>
           <div style={st.eyebrow}>CLUBS</div>
           <h2 style={st.titre}>Un tarif adapté à la taille de ton club</h2>
-          <p style={st.sousTitre}>Le palier dépend du nombre de joueurs inscrits. Notre équipe vérifie ton effectif avant d'activer l'accès.</p>
+          <p style={st.sousTitre}>Choisissez le palier adapté au nombre de joueurs de votre club — paiement sécurisé, accès immédiat.</p>
 
           <div style={{ overflowX: 'auto', marginBottom: '2rem', border: '1px solid #1f1f1f', borderRadius: '14px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -350,11 +347,21 @@ export default function Offres() {
                 </tr>
               </thead>
               <tbody>
-                {Object.values(STRIPE_LINKS_CLUB).map((p, i) => (
-                  <tr key={p.label} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
+                {Object.entries(STRIPE_LINKS_CLUB).map(([key, p], i) => (
+                  <tr key={key} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 600 }}>{p.label}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.mensuelPrix}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', color: colors.accent.green, fontWeight: 700 }}>{p.annuelPrix}</td>
+                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                      <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
+                        style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
+                        {p.mensuelPrix}
+                      </button>
+                    </td>
+                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                      <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
+                        style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
+                        {p.annuelPrix}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

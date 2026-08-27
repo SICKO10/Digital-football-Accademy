@@ -157,9 +157,10 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
   return (
     <>
       <p style={{ color: c.textMuted, fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-        Demandes de contact envoyées depuis la page /offres (formulaire club — pas de paiement en
-        libre-service). Recontacte sous 24-48h, puis marque comme traité une fois le club activé
-        ou la demande close.
+        Demandes envoyées depuis la page /offres — le choix du palier et le paiement sont
+        désormais en libre-service (tableau de paliers), ce formulaire ne sert plus qu'aux
+        questions et à la planification du rendez-vous de démarrage (disponibilités dans le
+        message). Recontacte sous 24-48h, puis marque comme traité.
       </p>
       {demandesClub.length === 0 ? (
         <Card>
@@ -191,11 +192,15 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                  {d.type ? (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: d.type === 'abonnement' ? c.success : c.accent, background: rgba(d.type === 'abonnement' ? c.success : c.accent, 0.12), border: `1px solid ${rgba(d.type === 'abonnement' ? c.success : c.accent, 0.3)}`, padding: '3px 10px', borderRadius: '20px' }}>
-                      {d.type === 'abonnement' ? 'Abonnement' : 'Question'}
-                    </span>
-                  ) : d.role ? (
+                  {d.type ? (() => {
+                    const label = d.type === 'abonnement' ? 'Abonnement' : d.type === 'demarrage' ? 'Démarrage' : 'Question'
+                    const couleur = d.type === 'abonnement' ? c.success : d.type === 'demarrage' ? c.warn : c.accent
+                    return (
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: couleur, background: rgba(couleur, 0.12), border: `1px solid ${rgba(couleur, 0.3)}`, padding: '3px 10px', borderRadius: '20px' }}>
+                        {label}
+                      </span>
+                    )
+                  })() : d.role ? (
                     <span style={{ fontSize: '10px', fontWeight: 700, color: c.accent, background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.3)}`, padding: '3px 10px', borderRadius: '20px' }}>{d.role}</span>
                   ) : null}
                   {d.nom_club && (
