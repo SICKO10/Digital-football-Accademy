@@ -38,8 +38,8 @@ const st = {
 }
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
-const CATEGORIES_JOUEUR = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors', 'Veteran']
-const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.slice(0, -1), 'U21', 'Seniors']
+const CATEGORIES_JOUEUR = [...CATEGORIES.filter(c => c !== 'Seniors'), 'U21', 'Seniors', 'Veteran']
+const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.filter(c => c !== 'Seniors'), 'U21', 'Seniors']
 
 const IconHome = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

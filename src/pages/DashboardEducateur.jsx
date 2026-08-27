@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
-import { CATEGORIES } from '../lib/categories'
+import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
@@ -4308,7 +4308,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div>
                       <label style={st.label}>{t('equipe_categorie', lang)}</label>
                       <select style={st.input} value={promptCategorieForm.nom} onChange={e => setPromptCategorieForm(p => ({ ...p, nom: e.target.value }))}>
-                        {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                        <optgroup label="Masculin">
+                          {CATEGORIES_MASCULIN.map(c => <option key={c}>{c}</option>)}
+                        </optgroup>
+                        <optgroup label="Féminin">
+                          {CATEGORIES_FEMININ.map(c => <option key={c}>{c}</option>)}
+                        </optgroup>
                       </select>
                     </div>
                     <div>
@@ -4458,7 +4463,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       )}
                       <div style={{ flex: 1 }}>
                         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
-                        <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${j.categorie}` : ''}</p>
+                        <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${labelCategorie(j.categorie)}` : ''}</p>
                         {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
                       </div>
                       {noteGlobale && <div style={{ textAlign: 'center' }}><p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: colors.accent.amber }}>{noteGlobale}</p><p style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>NOTE ÉDU.</p></div>}
@@ -4733,7 +4738,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
                 {monCategorieClub && (
                   <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>
-                    Sera automatiquement rattaché à {monCategorieClub.nom} — Équipe {monCategorieClub.equipe}.
+                    Sera automatiquement rattaché à {labelCategorie(monCategorieClub.nom)} — Équipe {monCategorieClub.equipe}.
                   </p>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -6984,7 +6989,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <h2 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.categorie}</span>}
+                        {j.categorie && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
                         {j.region && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.region}</span>}
                         {j.pied && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Pied {j.pied}</span>}
                       </div>
@@ -7102,7 +7107,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       </div>
                       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
                         {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.categorie}</span>}
+                        {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
                         {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px' }}>
@@ -8401,7 +8406,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
                             {recrutements.map((r, i) => (
                               <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
-                                Recrute · {r.categorie} · {r.poste}
+                                Recrute · {labelCategorie(r.categorie)} · {r.poste}
                               </span>
                             ))}
                           </div>

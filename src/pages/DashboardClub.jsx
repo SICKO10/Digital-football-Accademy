@@ -4,7 +4,7 @@ import { supabase, signOutSafe } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
-import { CATEGORIES as CATEGORIES_STANDARD } from '../lib/categories'
+import { CATEGORIES as CATEGORIES_STANDARD, labelCategorie } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
@@ -507,7 +507,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 
   const catLabel = (educateurId) => {
     const cat = categories.find(c => c.educateur_id === educateurId)
-    return cat ? `${cat.nom}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
+    return cat ? `${labelCategorie(cat.nom)}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
   }
 
   const derniersResultats = matchsClub
@@ -3587,7 +3587,7 @@ Règles :
                   if (!cats.length) return null
                   return (
                     <div key={nom} style={st.card}>
-                      <p style={{ margin: '0 0 10px', fontWeight: 800, color: couleurPrincipale, fontSize: '14px' }}>{nom}</p>
+                      <p style={{ margin: '0 0 10px', fontWeight: 800, color: couleurPrincipale, fontSize: '14px' }}>{labelCategorie(nom)}</p>
                       {cats.map(c => (
                         <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
                           <div>
@@ -3877,7 +3877,7 @@ Règles :
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                 {categories.map(c => (
                   <button key={c.id} onClick={() => setCategorieActive(c.id)} style={st.tab(categorieActive === c.id)}>
-                    {c.nom} — {c.equipe}
+                    {labelCategorie(c.nom)} — {c.equipe}
                   </button>
                 ))}
               </div>
@@ -5271,7 +5271,7 @@ Règles :
                         })}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', cursor: 'pointer' }}>
                         <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px' }}>
-                          {categorie}
+                          {labelCategorie(categorie)}
                         </span>
                         <span style={{ color: colors.text.faint, fontSize: '12px' }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''}</span>
                         <span style={{ color: colors.text.disabled, fontSize: '14px' }}>{ouverte ? '▲' : '▼'}</span>

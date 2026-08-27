@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { labelCategorie } from '../lib/categories'
 
 const VUES = ['Jour', 'Semaine', 'Mois', 'Année']
 
@@ -45,8 +46,15 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
   // Seuil aligné sur PlanningSemaineWidget.jsx (déjà en place ailleurs dans
   // l'app pour le même problème : grille 7 colonnes illisible sur téléphone).
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  // Tablette (portrait/paysage, 640-1024px) : reste sur la grille desktop
+  // (isMobile ne se déclenche qu'en dessous de 640) mais avec des cellules
+  // resserrées — cf. isTablet passé aux vues ci-dessous.
+  const [isTablet, setIsTablet] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024)
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 640)
+    const onResize = () => {
+      setIsMobile(window.innerWidth < 640)
+      setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024)
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -64,7 +72,7 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
 
   const catLabel = (educateurId) => {
     const cat = categories.find(c => c.educateur_id === educateurId)
-    return cat ? `${cat.nom}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
+    return cat ? `${labelCategorie(cat.nom)}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
   }
 
   // Fusionne les 4 sources en une liste normalisée { id, type, date, heure,
@@ -181,9 +189,9 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
       </div>
 
       {vue === 'Jour' && <VueJour dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} />}
-      {vue === 'Semaine' && <VueSemaine dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} />}
-      {vue === 'Mois' && <VueMois dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} />}
-      {vue === 'Année' && <VueAnnee dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} />}
+      {vue === 'Semaine' && <VueSemaine dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
+      {vue === 'Mois' && <VueMois dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
+      {vue === 'Année' && <VueAnnee dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
 
       {popup && (
         <div onClick={() => setPopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -236,7 +244,7 @@ function VueJour({ dateRef, evenements, onClic, isMobile }) {
   )
 }
 
-function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
+function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
   const colors = useColors()
   const lundi = new Date(dateRef)
   lundi.setDate(dateRef.getDate() - ((dateRef.getDay() + 6) % 7))
@@ -281,26 +289,31 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isTablet ? '5px' : '8px' }}>
       {jours.map(jour => {
         const dateStr = dateLocaleStr(jour)
         const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
         const isToday = dateStr === today
         return (
-          <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px', minHeight: '160px' }}>
-            <div style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', marginBottom: '4px' }}>
+          // minWidth: 0 — sans ça, un titre en white-space:nowrap plus bas
+          // impose sa largeur de contenu minimale à la cellule (comportement
+          // par défaut d'un enfant de grid), ce qui pousse les 7 colonnes
+          // au-delà de leur 1fr et fait déborder toute la grille de l'écran
+          // sur tablette (jamais visible sur desktop, où il y a de la marge).
+          <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: isTablet ? '6px' : '10px', minHeight: isTablet ? '110px' : '160px' }}>
+            <div style={{ fontSize: isTablet ? '9px' : '10px', color: colors.text.faint, textTransform: 'uppercase', marginBottom: '4px' }}>
               {jour.toLocaleDateString('fr-FR', { weekday: 'short' })}
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary, marginBottom: '10px' }}>
+            <div style={{ fontSize: isTablet ? '16px' : '20px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary, marginBottom: isTablet ? '6px' : '10px' }}>
               {jour.getDate()}
             </div>
             {evts.map(e => (
               <div key={e.id} onClick={() => onClic(e)} style={{
                 background: `${TYPE_COULEURS[e.type]}18`,
                 borderLeft: `3px solid ${TYPE_COULEURS[e.type]}`,
-                borderRadius: '4px', padding: '4px 6px', marginBottom: '4px', cursor: 'pointer',
+                borderRadius: '4px', padding: isTablet ? '3px 4px' : '4px 6px', marginBottom: '4px', cursor: 'pointer',
               }}>
-                <div style={{ color: colors.text.primary, fontSize: '10px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ color: colors.text.primary, fontSize: isTablet ? '9px' : '10px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {e.heure && <span style={{ color: TYPE_COULEURS[e.type], marginRight: '4px' }}>{e.heure}</span>}
                   {e.titre}
                 </div>
