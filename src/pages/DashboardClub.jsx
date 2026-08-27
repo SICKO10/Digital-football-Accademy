@@ -13,7 +13,7 @@ import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
-import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
+import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
@@ -3663,15 +3663,50 @@ Règles :
                     }} />
                   </div>
 
-                  {restant <= 0 && (
-                    <div style={{ marginTop: '12px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ color: colors.accent.red, fontSize: '12px', fontWeight: 600 }}>Quota atteint — impossible d'ajouter une nouvelle équipe</span>
-                      <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Changer d\'offre — ' + (club?.club || ''))}`}
-                        style={{ background: colors.accent.red, color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
-                        Changer d'offre
-                      </a>
-                    </div>
-                  )}
+                  {restant <= 0 && (() => {
+                    // Libre-service : le nombre d'équipes est déjà connu et vérifiable
+                    // par la plateforme (categories.length), contrairement au nombre de
+                    // licenciés — pas besoin de vérification humaine ni d'email pour
+                    // choisir une offre plus grande. Le paiement Stripe seul suffit à
+                    // débloquer le palier (stripe-webhook y lit désormais aussi le
+                    // palier payé, cf. resoudrePalierClub).
+                    const optionsSuperieures = Object.entries(PALIERS_QUOTA_EQUIPES)
+                      .filter(([, quota]) => quota > club.quota_equipes)
+                      .sort((a, b) => a[1] - b[1])
+                    return (
+                      <div style={{ marginTop: '12px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '10px 14px' }}>
+                        <p style={{ margin: '0 0 10px', color: colors.accent.red, fontSize: '12px', fontWeight: 600 }}>Quota atteint — choisissez une offre avec plus d'équipes :</p>
+                        {optionsSuperieures.length === 0 ? (
+                          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Besoin de plus d\'équipes — ' + (club?.club || ''))}`}
+                            style={{ color: colors.accent.red, fontSize: '12px', textDecoration: 'underline' }}>
+                            Contacter le support (déjà sur l'offre maximale)
+                          </a>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {optionsSuperieures.map(([key, quota]) => {
+                              const p = STRIPE_LINKS_CLUB[key]
+                              if (!p) return null
+                              return (
+                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px' }}>
+                                  <span style={{ fontSize: '12px', color: colors.text.secondary }}>{p.label} · jusqu'à {quota} équipes</span>
+                                  <div style={{ display: 'flex', gap: '6px' }}>
+                                    <a href={stripeUrl(p.mensuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
+                                      style={{ background: colors.accent.green, color: colors.black, borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
+                                      {p.mensuelPrix}
+                                    </a>
+                                    <a href={stripeUrl(p.annuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
+                                      style={{ background: 'transparent', border: `1px solid ${colors.accent.green}60`, color: colors.accent.green, borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
+                                      {p.annuelPrix}
+                                    </a>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {restant > 0 && utilise >= club.quota_equipes * 0.8 && (
                     <div style={{ marginTop: '12px', background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}40`, borderRadius: '8px', padding: '10px 14px' }}>
                       <span style={{ color: colors.accent.amber, fontSize: '12px', fontWeight: 600 }}>Plus que {restant} place{restant > 1 ? 's' : ''} disponible{restant > 1 ? 's' : ''}</span>

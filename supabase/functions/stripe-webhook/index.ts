@@ -162,10 +162,12 @@ async function creerInvitationClub(email: string, stripeCustomerId: string | nul
 // Détermine (cycle, estClub) à partir du montant. Les paliers club sont
 // reconnus par leur montant SEUL, indépendamment du plan déjà en base : un
 // compte peut payer un abonnement club avant même d'avoir plan='club' (ex.
-// compte créé en 'educateur' puis converti club via le lien envoyé
-// manuellement par le support, cf. lib/stripeLinks.js STRIPE_LINKS_CLUB
-// "pas de libre-service") — sans ça, le paiement est capté par Stripe mais
-// jamais reconnu ("montant non reconnu"), et le compte n'est jamais activé.
+// compte créé en 'educateur' puis converti club via un lien palier — cf.
+// lib/stripeLinks.js STRIPE_LINKS_CLUB, désormais accessible en libre-service
+// depuis DashboardClub.jsx quand le quota d'équipes est atteint, pas
+// seulement envoyé manuellement par le support) — sans ça, le paiement est
+// capté par Stripe mais jamais reconnu ("montant non reconnu"), et le compte
+// n'est jamais activé.
 // Seul 10000 centimes (100€) est ambigu : à la fois "joueur/educateur/
 // recruteur annuel" ET "club c100 mensuel" — on retombe sur le plan déjà en
 // base uniquement pour ce cas précis.
@@ -178,6 +180,20 @@ function resoudreCycleEtPlan(montant: number, planActuel: string | undefined | n
   }
   if (montant === MONTANT_MENSUEL) return { cycle: 'mensuel', estClub: false }
   return null
+}
+
+// Palier club (c0..c500) déduit du montant + cycle déjà résolus ci-dessus —
+// mêmes clés et même ordre que STRIPE_LINKS_CLUB (lib/stripeLinks.js) et
+// MONTANTS_CLUB_MENSUEL/ANNUEL. Alimente profiles.palier, qui déclenche à son
+// tour le calcul de quota_equipes côté base (trigger sync_quota_equipes, cf.
+// supabase_profiles_quota_equipes.sql) — sans ce mapping, un club payant en
+// libre-service depuis DashboardClub.jsx resterait avec palier=NULL malgré
+// le paiement réussi.
+const CLES_PALIER_CLUB = ['c0', 'c100', 'c200', 'c300', 'c400', 'c500']
+function resoudrePalierClub(montant: number, cycle: 'mensuel' | 'annuel'): string | null {
+  const montants = cycle === 'mensuel' ? MONTANTS_CLUB_MENSUEL : MONTANTS_CLUB_ANNUEL
+  const idx = montants.indexOf(montant)
+  return idx === -1 ? null : CLES_PALIER_CLUB[idx]
 }
 
 Deno.serve(async (req) => {
@@ -261,12 +277,15 @@ Deno.serve(async (req) => {
           const planSansPalier = ['educateur', 'scout'].includes(profilActuel?.plan ?? '')
           const nouveauPlan = estClub ? 'club' : planSansPalier ? profilActuel!.plan : 'joueur_pro'
 
+          const palierClub = estClub ? resoudrePalierClub(montant, cycle) : null
+
           const { error: updateErr } = await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
             abonnement_actif: true,
             abonnement_cycle: cycle,
             abonnement_mois_payes: 0,
             plan: nouveauPlan,
+            ...(palierClub ? { palier: palierClub } : {}),
           }).eq('id', profileId)
           if (updateErr) console.error('[stripe-webhook] erreur update profil (checkout.session.completed)', updateErr)
           // Le crédit d'analyses (annuel: +2, mensuel: bonus tous les 6 mois)
