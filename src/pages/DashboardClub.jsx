@@ -22,6 +22,7 @@ import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
+import ProjetDetail from '../components/club/ProjetDetail'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -1237,6 +1238,7 @@ export default function DashboardClub() {
   const [exportingPdfId, setExportingPdfId] = useState(null)
 
   const [projetsClub, setProjetsClub] = useState([])
+  const [projetDetailOuvert, setProjetDetailOuvert] = useState(null) // id du projet affiché en vue détail, ou null
   const [showProjetForm, setShowProjetForm] = useState(false)
   const [editingProjetId, setEditingProjetId] = useState(null)
   const [projetForm, setProjetForm] = useState({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [], missions: [] })
@@ -5082,15 +5084,15 @@ Règles :
                               const taches = p.taches_projet || []
                               const fait = taches.filter(t => t.fait).length
                               return (
-                                <div key={p.id} style={{ ...st.card, borderLeft: `3px solid ${colonne.color}` }}>
+                                <div key={p.id} onClick={() => setProjetDetailOuvert(p.id)} style={{ ...st.card, borderLeft: `3px solid ${colonne.color}`, cursor: 'pointer' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{p.nom}</p>
                                     <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                      <button onClick={() => exporterProjetPDF(p)} disabled={exportingPdfId === p.id} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', opacity: exportingPdfId === p.id ? 0.5 : 1 }} title="Export PDF">📄</button>
+                                      <button onClick={e => { e.stopPropagation(); exporterProjetPDF(p) }} disabled={exportingPdfId === p.id} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', opacity: exportingPdfId === p.id ? 0.5 : 1 }} title="Export PDF">📄</button>
                                       {canEditSection('evenements') && (
                                         <>
-                                          <button onClick={() => ouvrirEditionProjet(p)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
-                                          <button onClick={() => supprimerProjet(p.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                          <button onClick={e => { e.stopPropagation(); ouvrirEditionProjet(p) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
+                                          <button onClick={e => { e.stopPropagation(); supprimerProjet(p.id) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
                                         </>
                                       )}
                                     </div>
@@ -5106,36 +5108,38 @@ Règles :
                                   {p.responsable_nom && <p style={{ margin: '0 0 4px', fontSize: '11px', color: couleurPrincipale }}>👤 {p.responsable_nom}</p>}
                                   {p.referents?.length > 0 && <p style={{ margin: '0 0 8px', fontSize: '11px', color: couleurPrincipale }}>⭐ {p.referents.map(r => r.nom).join(', ')}</p>}
 
-                                  {canEditSection('evenements') && (
-                                    <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
-                                      style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.secondary, padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
-                                      {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
-                                    </select>
-                                  )}
+                                  <div onClick={e => e.stopPropagation()}>
+                                    {canEditSection('evenements') && (
+                                      <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
+                                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.secondary, padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
+                                        {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
+                                      </select>
+                                    )}
 
-                                  {taches.length > 0 && (
-                                    <p style={{ margin: '0 0 6px', fontSize: '10px', color: colors.text.faint }}>{fait}/{taches.length} tâches terminées</p>
-                                  )}
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                                    {taches.map(tc => (
-                                      <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? colors.accent.green : colors.text.faint }}>
-                                          {tc.fait ? '☑' : '☐'}
-                                        </span>
-                                        <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : colors.text.secondary, textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
-                                        {canEditSection('evenements') && (
-                                          <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '11px' }}>✕</button>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                  {canEditSection('evenements') && (
-                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                      <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
-                                        onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
-                                        placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                    {taches.length > 0 && (
+                                      <p style={{ margin: '0 0 6px', fontSize: '10px', color: colors.text.faint }}>{fait}/{taches.length} tâches terminées</p>
+                                    )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                                      {taches.map(tc => (
+                                        <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? colors.accent.green : colors.text.faint }}>
+                                            {tc.fait ? '☑' : '☐'}
+                                          </span>
+                                          <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : colors.text.secondary, textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
+                                          {canEditSection('evenements') && (
+                                            <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                                          )}
+                                        </div>
+                                      ))}
                                     </div>
-                                  )}
+                                    {canEditSection('evenements') && (
+                                      <div style={{ display: 'flex', gap: '6px' }}>
+                                        <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                          onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
+                                          placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )
                             })}
@@ -5147,6 +5151,26 @@ Règles :
                   )}
                 </div>
               )}
+
+              {projetDetailOuvert && (() => {
+                const p = projetsClub.find(pr => pr.id === projetDetailOuvert)
+                if (!p) return null
+                return (
+                  <ProjetDetail
+                    projet={p}
+                    canEdit={canEditSection('evenements')}
+                    onClose={() => setProjetDetailOuvert(null)}
+                    onOuvrirEdition={proj => { setProjetDetailOuvert(null); ouvrirEditionProjet(proj) }}
+                    onProjetMisAJour={() => chargerProjets(clubId)}
+                    taches={p.taches_projet || []}
+                    nouvelleTache={nouvelleTache}
+                    setNouvelleTache={setNouvelleTache}
+                    toggleTache={toggleTache}
+                    ajouterTache={ajouterTache}
+                    supprimerTache={supprimerTache}
+                  />
+                )
+              })()}
             </div>
           )
         })()}
