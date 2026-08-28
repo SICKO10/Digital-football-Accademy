@@ -77,8 +77,10 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+  const [rgpdAccepted, setRgpdAccepted] = useState(false)
 
   const inscrire = async () => {
+    if (!rgpdAccepted) return
     if (!prenom.trim() || !email.trim() || !password.trim()) {
       setErreur(t('reginsc_champs_obligatoires', lang))
       return
@@ -340,16 +342,37 @@ export default function Register() {
             </div>
           )}
 
-          <button onClick={inscrire} disabled={loading}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '18px' }}>
+            <input
+              type="checkbox"
+              id="rgpd"
+              checked={rgpdAccepted}
+              onChange={e => setRgpdAccepted(e.target.checked)}
+              style={{ marginTop: '3px', accentColor: colors.accent.green, cursor: 'pointer' }}
+            />
+            <label htmlFor="rgpd" style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.5, cursor: 'pointer' }}>
+              J'accepte les{' '}
+              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                Conditions Générales d'Utilisation
+              </a>{' '}
+              et la{' '}
+              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                Politique de Confidentialité
+              </a>
+              . Mes données sont traitées conformément au RGPD.
+            </label>
+          </div>
+
+          <button onClick={inscrire} disabled={loading || !rgpdAccepted}
             style={{
               width: '100%',
               background: profilChoisi.color || colors.accent.green,
               color: profilChoisi.id === 'joueur_starter' ? colors.text.primary : colors.black,
               border: 'none', borderRadius: '12px', padding: '14px',
               fontSize: '15px', fontWeight: 800,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'Inter, sans-serif', marginTop: '18px',
-              opacity: loading ? 0.7 : 1,
+              cursor: (loading || !rgpdAccepted) ? 'not-allowed' : 'pointer',
+              fontFamily: 'Inter, sans-serif', marginTop: '14px',
+              opacity: (loading || !rgpdAccepted) ? 0.5 : 1,
               transition: 'opacity 0.15s',
             }}>
             {loading
@@ -359,11 +382,6 @@ export default function Register() {
                 : t('reginsc_btn_gratuit', lang)
             }
           </button>
-
-          <p style={{ textAlign: 'center', fontSize: '11px', color: colors.border.strong, marginTop: '14px', lineHeight: 1.6 }}>
-            {t('register_jai_lu_accepte', lang)}{' '}
-            <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.text.disabled }}>{t('register_cgu_reglement', lang)}</a>.
-          </p>
         </div>
       )}
     </div>
@@ -388,6 +406,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
   const [cycle, setCycle] = useState(cycleInitial || 'mensuel')
   const [erreur, setErreur] = useState('')
   const [loading, setLoading] = useState(false)
+  const [rgpdAccepted, setRgpdAccepted] = useState(false)
 
   const inputStyle = { background: colors.background.surface, border: '1px solid #1f1f1f', borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }
   const btnStyle = (desactive) => ({
@@ -397,6 +416,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
   })
 
   const creerCompte = async () => {
+    if (!rgpdAccepted) return
     if (!prenom.trim() || !nom.trim() || !nomClub.trim() || !email.trim() || !password.trim()) {
       setErreur('Tous les champs sont obligatoires.')
       return
@@ -481,8 +501,28 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
             <input placeholder="Email *" type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
             <input placeholder="Mot de passe *" type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
           </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '14px' }}>
+            <input
+              type="checkbox"
+              id="rgpd-club"
+              checked={rgpdAccepted}
+              onChange={e => setRgpdAccepted(e.target.checked)}
+              style={{ marginTop: '3px', accentColor: color, cursor: 'pointer' }}
+            />
+            <label htmlFor="rgpd-club" style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.5, cursor: 'pointer' }}>
+              J'accepte les{' '}
+              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
+                Conditions Générales d'Utilisation
+              </a>{' '}
+              et la{' '}
+              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
+                Politique de Confidentialité
+              </a>
+              . Mes données sont traitées conformément au RGPD.
+            </label>
+          </div>
           {erreur && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px', textAlign: 'center' }}>{erreur}</p>}
-          <button onClick={creerCompte} disabled={loading} style={btnStyle(loading)}>
+          <button onClick={creerCompte} disabled={loading || !rgpdAccepted} style={btnStyle(loading || !rgpdAccepted)}>
             {loading ? 'Création...' : 'Continuer'}
           </button>
         </>
