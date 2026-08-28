@@ -190,7 +190,9 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     // heure_depart reste null, comme avant.
     const { data: clubProfile } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
     const payload = await Promise.all(aCreer.map(async m => {
-      const cat = equipesOptions.find(c => c.educateur_id === m.educateur_id)
+      // Résolu par club_categorie_id (pas educateur_id seul) : un même coach
+      // peut gérer plusieurs équipes, educateur_id seul serait ambigu.
+      const cat = equipesOptions.find(c => c.id === m.club_categorie_id) || equipesOptions.find(c => c.educateur_id === m.educateur_id)
       const horaires = (clubProfile?.ville && m.ville && m.heure)
         ? await estimerDeplacement(clubProfile.ville, m.ville, m.heure)
         : null

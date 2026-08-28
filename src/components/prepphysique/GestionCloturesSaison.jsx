@@ -152,7 +152,7 @@ function ModalCloture({ joueur, educateurId, saison, presenceAuto, onClose, onSa
   )
 }
 
-export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
+export default function GestionCloturesSaison({ educateurId, equipeActiveId, lang = 'fr' }) {
   const st = useSt()
   const [joueurs, setJoueurs] = useState([])
   const [historiques, setHistoriques] = useState([])
@@ -252,9 +252,12 @@ export default function GestionCloturesSaison({ educateurId, lang = 'fr' }) {
     // Libère la catégorie/équipe club déclarée par cet éducateur (cf.
     // declarerMaCategorie côté DashboardEducateur.jsx) : à la nouvelle saison,
     // lui (ou qui reprend cette équipe) sera re-invité à la déclarer plutôt que
-    // de garder silencieusement le rattachement de la saison précédente. Best
-    // effort — une erreur ici ne doit pas faire échouer l'archivage des affiliations.
-    await supabase.from('club_categories').update({ educateur_id: null }).eq('educateur_id', educateurId)
+    // de garder silencieusement le rattachement de la saison précédente. Ciblée
+    // par id (equipeActiveId, l'équipe active du switcher) et non par
+    // educateur_id seul — un coach peut gérer plusieurs équipes, clôturer l'une
+    // ne doit pas désaffecter les autres. Best effort — une erreur ici ne doit
+    // pas faire échouer l'archivage des affiliations.
+    if (equipeActiveId) await supabase.from('club_categories').update({ educateur_id: null }).eq('id', equipeActiveId)
 
     setArchiving(false)
 

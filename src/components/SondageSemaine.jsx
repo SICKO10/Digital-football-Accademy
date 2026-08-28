@@ -47,7 +47,7 @@ const OPTIONS_SONDAGE = [
 // blessé / malade / convoqué, la table `disponibilites` existante), et
 // l'éducateur y voit la réponse de toute l'équipe, semaine par semaine,
 // avant de placer ses séances.
-export default function SondageSemaine({ mode, userId, educateurId, accentColor = colors.accent.blue }) {
+export default function SondageSemaine({ mode, userId, educateurId, equipeCategorieId, accentColor = colors.accent.blue }) {
   const colors2 = useColors()
   // Vue mois : réservée au mode joueur (lecture/navigation seulement, cliquer un
   // événement ramène sur la semaine correspondante pour répondre au sondage) —
@@ -98,10 +98,13 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   const charger = async () => {
     if (!eduId) return
     setLoading(true)
-    const [{ data: ents }, { data: mts }] = await Promise.all([
-      supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true }),
-      supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true }),
-    ])
+    // equipeCategorieId : un même éducateur peut gérer plusieurs équipes
+    // (switcher, cf. DashboardEducateur.jsx) — sans ce filtre, entraînements/
+    // matchs/roster des différentes équipes du coach se mélangeraient.
+    let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+    let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+    if (equipeCategorieId) { qEnt = qEnt.eq('club_categorie_id', equipeCategorieId); qMts = qMts.eq('club_categorie_id', equipeCategorieId) }
+    const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
     setEntrainements(ents || [])
     setMatchs(mts || [])
     const entIds = (ents || []).map(e => e.id)
@@ -117,7 +120,9 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
       dm?.forEach(d => { map[d.match_id] = d.statut })
       setMesDispos(map)
     } else {
-      const { data: eq } = await supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom').eq('educateur_id', userId).not('joueur_id', 'is', null)
+      let qEq = supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom').eq('educateur_id', userId).not('joueur_id', 'is', null)
+      if (equipeCategorieId) qEq = qEq.eq('club_categorie_id', equipeCategorieId)
+      const { data: eq } = await qEq
       setRoster(eq || [])
       const [{ data: de }, { data: dm }] = await Promise.all([
         entIds.length ? supabase.from('disponibilites').select('joueur_id, seance_id, statut').in('seance_id', entIds) : Promise.resolve({ data: [] }),
@@ -132,7 +137,7 @@ export default function SondageSemaine({ mode, userId, educateurId, accentColor 
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId])
+  useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId, equipeCategorieId])
 
   // Sur mobile/tablette, la grille 7 colonnes défile horizontalement (chaque
   // jour garde une largeur lisible plutôt que d'être écrasé) — centre la

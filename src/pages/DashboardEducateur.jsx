@@ -1378,10 +1378,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
-    const [, , , , , , clubAffiliationData] = await Promise.all([chargerJoueurs(targetId), chargerMatchs(targetId), chargerEntrainements(targetId), chargerNotes(targetId), chargerNotationsMatch(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId), chargerNotifications(targetId)])
+    // Phase 1 — chargeurs indépendants de l'équipe active, plus club_categories
+    // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
+    // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
+    const [, , clubAffiliationData, clubCategoriesData] = await Promise.all([chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId), chargerNotifications(targetId)])
     // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
     // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
     if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
+
+    // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
+    // localStorage, sinon la première) : charge joueurs/matchs/entraînements
+    // scopés à cette seule équipe pour ne jamais mélanger les données de 2
+    // équipes gérées par le même coach.
+    const mesEquipesData = clubCategoriesData.filter(c => c.educateur_id === targetId)
+    let idActif = null
+    try { idActif = localStorage.getItem('equipe_active_id') } catch { /* ignore */ }
+    if (!mesEquipesData.some(e => e.id === idActif)) idActif = mesEquipesData[0]?.id || null
+    if (idActif !== equipeActiveId) setEquipeActiveId(idActif)
+    const [, matchsData] = await Promise.all([chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif)])
+    await chargerNotationsMatch(targetId, matchsData.map(m => m.id))
     setLoading(false)
   }
 
@@ -1450,10 +1465,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const chargerClubCategories = async (uid) => {
     const { data: aff } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', uid).eq('statut', 'accepte').maybeSingle()
-    if (!aff) { setClubCategories([]); setClubCategoriesChargees(true); return }
+    if (!aff) { setClubCategories([]); setClubCategoriesChargees(true); return [] }
     const { data } = await supabase.from('club_categories').select('*').eq('club_id', aff.club_id).order('nom')
     setClubCategories(data || [])
     setClubCategoriesChargees(true)
+    return data || []
   }
 
   // Déclare la catégorie/équipe gérée par cet éducateur (un dashboard educateur =
@@ -1465,12 +1481,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!clubAffiliation?.club_id) return
     setSavingCategorieClub(true)
     const vacante = clubCategories.find(c => !c.educateur_id && c.nom === promptCategorieForm.nom && c.equipe === promptCategorieForm.equipe)
-    const { error } = vacante
-      ? await supabase.from('club_categories').update({ educateur_id: userId }).eq('id', vacante.id)
-      : await supabase.from('club_categories').insert({ club_id: clubAffiliation.club_id, nom: promptCategorieForm.nom, equipe: promptCategorieForm.equipe, educateur_id: userId })
+    const { data: nouvelle, error } = vacante
+      ? await supabase.from('club_categories').update({ educateur_id: userId }).eq('id', vacante.id).select().maybeSingle()
+      : await supabase.from('club_categories').insert({ club_id: clubAffiliation.club_id, nom: promptCategorieForm.nom, equipe: promptCategorieForm.equipe, educateur_id: userId }).select().maybeSingle()
     setSavingCategorieClub(false)
     if (error) { alert('Erreur : ' + error.message); return }
     await chargerClubCategories(userId)
+    setAjouterEquipeOuvert(false)
+    // Bascule automatiquement sur l'équipe qu'on vient de déclarer/réclamer —
+    // sinon elle serait créée mais invisible tant qu'on ne la sélectionne pas.
+    if (nouvelle) changerEquipe(nouvelle)
   }
 
   // equipe_joueurs n'a pas de colonne avatar_url — la photo vit sur profiles,
@@ -1478,8 +1498,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // compte lié). Un seul enrichissement ici : tous les consommateurs de
   // `joueurs` (Mon équipe, Évaluations, podiums stats, clôture de saison...)
   // héritent d'avatar_url sans requête supplémentaire de leur côté.
-  const chargerJoueurs = async (uid) => {
-    const { data } = await supabase.from('equipe_joueurs').select('*').eq('educateur_id', uid).order('nom')
+  const chargerJoueurs = async (uid, catId) => {
+    let q = supabase.from('equipe_joueurs').select('*').eq('educateur_id', uid).order('nom')
+    if (catId) q = q.eq('club_categorie_id', catId)
+    const { data } = await q
     const roster = data || []
     const joueurIds = [...new Set(roster.map(j => j.joueur_id).filter(Boolean))]
     if (joueurIds.length === 0) { setJoueurs(roster); return }
@@ -1489,8 +1511,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setJoueurs(roster.map(j => ({ ...j, avatar_url: j.joueur_id ? avatarParId[j.joueur_id] : null })))
   }
 
-  const chargerMatchs = async (uid) => {
-    const { data } = await supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid).order('date', { ascending: false })
+  const chargerMatchs = async (uid, catId) => {
+    let q = supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid).order('date', { ascending: false })
+    if (catId) q = q.eq('club_categorie_id', catId)
+    const { data } = await q
     setMatchs(data || [])
 
     // Dispos auto-déclarées par les joueurs pour ces matchs (mêmes disponibilites
@@ -1505,10 +1529,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     } else {
       setDispoJoueursMatch({})
     }
+    return data || []
   }
 
-  const chargerEntrainements = async (uid) => {
-    const { data } = await supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', uid).order('date', { ascending: false })
+  const chargerEntrainements = async (uid, catId) => {
+    let q = supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', uid).order('date', { ascending: false })
+    if (catId) q = q.eq('club_categorie_id', catId)
+    const { data } = await q
     setEntrainements(data || [])
 
     // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
@@ -1547,8 +1574,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Inclut aussi les notes d'équipe (joueur_id NULL, est_note_equipe=true) pour la
   // card "Note globale équipe" — les lignes équipe n'ont jamais de joueur_id, donc
   // elles ne perturbent pas le calcul de moyenne par joueur ci-dessous.
-  const chargerNotationsMatch = async (uid) => {
-    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid)
+  const chargerNotationsMatch = async (uid, matchIds = []) => {
+    if (matchIds.length === 0) { setNotationsMatch([]); return }
+    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid).in('match_id', matchIds)
     setNotationsMatch(data || [])
   }
 
@@ -1611,10 +1639,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
   const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
   const [savingCategorieClub, setSavingCategorieClub] = useState(false)
-  // Un dashboard educateur = une équipe : la catégorie/équipe club que gère cet
-  // éducateur, une fois déclarée (cf. declarerMaCategorie) — undefined tant
-  // qu'il ne l'a pas encore fait.
-  const monCategorieClub = clubCategories.find(c => c.educateur_id === userId)
+  const [ajouterEquipeOuvert, setAjouterEquipeOuvert] = useState(false)
+  // Un éducateur peut gérer plusieurs équipes (switcher) — toutes les lignes
+  // club_categories qui lui sont assignées, pas juste la première (cf.
+  // declarerMaCategorie, appelable plusieurs fois pour ajouter une équipe).
+  const mesEquipes = clubCategories.filter(c => c.educateur_id === userId)
+  const [equipeActiveId, setEquipeActiveId] = useState(() => {
+    try { return localStorage.getItem('equipe_active_id') || null } catch { return null }
+  })
+  const equipeActive = mesEquipes.find(e => e.id === equipeActiveId) || mesEquipes[0] || null
+  const changerEquipe = (equipe) => {
+    setEquipeActiveId(equipe.id)
+    try { localStorage.setItem('equipe_active_id', equipe.id) } catch { /* ignore */ }
+    chargerJoueurs(userId, equipe.id)
+    chargerMatchs(userId, equipe.id).then(matchs => chargerNotationsMatch(userId, matchs.map(m => m.id)))
+    chargerEntrainements(userId, equipe.id)
+  }
 
   const [mesSeances, setMesSeances] = useState([])
   const [showUploadSeance, setShowUploadSeance] = useState(false)
@@ -2720,13 +2760,13 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setShowAddJoueur(false)
     // date_naissance vaut '' par défaut (input vide) — Postgres rejette '' pour
     // une colonne date, il faut null. club_categorie_id/categorie héritent
-    // automatiquement de la catégorie déclarée par l'éducateur (monCategorieClub) :
+    // automatiquement de l'équipe active du coach (equipeActive, switcher) :
     // plus besoin de le choisir à chaque joueur (cf. declarerMaCategorie).
     const { error } = await supabase.from('equipe_joueurs').insert({
       ...snapshot,
       date_naissance: snapshot.date_naissance || null,
-      club_categorie_id: monCategorieClub?.id || null,
-      categorie: snapshot.categorie || monCategorieClub?.nom || '',
+      club_categorie_id: equipeActive?.id || null,
+      categorie: snapshot.categorie || equipeActive?.nom || '',
       educateur_id: userId,
     })
     setSavingJoueur(false)
@@ -2736,7 +2776,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       setShowAddJoueur(true)
       return
     }
-    await chargerJoueurs(userId)
+    await chargerJoueurs(userId, equipeActive?.id)
   }
 
   const supprimerJoueur = async (id) => {
@@ -2787,7 +2827,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       }
       if (data?.error) throw new Error(data.error)
       setInviteStatus(prev => ({ ...prev, [j.id]: 'sent' }))
-      await chargerJoueurs(userId)
+      await chargerJoueurs(userId, equipeActive?.id)
     } catch (err) {
       alert('Erreur invitation : ' + (err.message || 'Inconnu'))
       setInviteStatus(prev => ({ ...prev, [j.id]: 'error' }))
@@ -2832,7 +2872,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
                 onClick={async () => {
                   await supabase.from('equipe_joueurs').update({ email: null }).eq('id', j.id)
                   setInviteStatus(prev => { const next = { ...prev }; delete next[j.id]; return next })
-                  await chargerJoueurs(userId)
+                  await chargerJoueurs(userId, equipeActive?.id)
                 }}
                 style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
                 ✕ Corriger
@@ -2901,7 +2941,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
   const assignerCategorieClub = async (joueurId, categorieId) => {
     await supabase.from('equipe_joueurs').update({ club_categorie_id: categorieId || null }).eq('id', joueurId)
-    await chargerJoueurs(userId)
+    await chargerJoueurs(userId, equipeActive?.id)
   }
 
   const telechargerTemplate = () => {
@@ -2955,14 +2995,14 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     for (const row of importPreview.rows) {
       await supabase.from('equipe_joueurs').insert({
         ...row,
-        club_categorie_id: monCategorieClub?.id || null,
-        categorie: row.categorie || monCategorieClub?.nom || '',
+        club_categorie_id: equipeActive?.id || null,
+        categorie: row.categorie || equipeActive?.nom || '',
         educateur_id: userId,
       })
       done++
       setImportPreview(prev => ({ ...prev, done }))
     }
-    await chargerJoueurs(userId)
+    await chargerJoueurs(userId, equipeActive?.id)
     setImportPreview(null)
   }
 
@@ -3066,7 +3106,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       return
     }
     if (data) await estimerEtAppliquerHoraires(data)
-    await chargerMatchs(userId)
+    await chargerMatchs(userId, equipeActive?.id)
   }
 
   // Un match est "joué" dès qu'un score (même 0-0) a été saisi. score_nous/score_eux
@@ -3207,7 +3247,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       console.error('Erreur sauvegarde stats match:', erreurs.map(e => e.error.message))
       alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''}.`)
     }
-    await chargerMatchs(userId)
+    await chargerMatchs(userId, equipeActive?.id)
     setMatchActif(null)
     setStatsMatch({})
   }
@@ -3300,7 +3340,7 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
       const restants = calendarMatchs.filter(m => !m.date)
       setCalendarMatchs(restants)
       localStorage.setItem('calendarMatchs', JSON.stringify(restants))
-      await chargerMatchs(userId)
+      await chargerMatchs(userId, equipeActive?.id)
     } else {
       setCalendarError(error.message)
     }
@@ -3519,7 +3559,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         }, { onConflict: 'match_id,joueur_id' })
       }
     }
-    await chargerMatchs(userId)
+    await chargerMatchs(userId, equipeActive?.id)
     setShowScanner(false)
     setScannerResult(null)
     setScannerImageBase64(null)
@@ -3544,7 +3584,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       afficherToast(`Erreur lors de la création de la séance : ${error.message}`, 'erreur')
       return
     }
-    await chargerEntrainements(userId)
+    await chargerEntrainements(userId, equipeActive?.id)
     setNewEntrainement({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
     setShowAddEntrainement(false)
     setShowImportFiche(false)
@@ -3629,7 +3669,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       // Pas de lignes pré-créées : la présence est saisie au clic (evite les faux "absents")
       setPlanProgress({ done: i + 1, total: newDates.length })
     }
-    await chargerEntrainements(userId)
+    await chargerEntrainements(userId, equipeActive?.id)
     setGeneratingPlan(false)
     setShowPlanificateur(false)
     setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
@@ -3766,7 +3806,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         { onConflict: 'entrainement_id,joueur_id' }
       )
     }
-    await chargerEntrainements(userId)
+    await chargerEntrainements(userId, equipeActive?.id)
   }
 
   // Convertit en vraies présences les réponses au sondage (dispoJoueurs, table
@@ -3791,7 +3831,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     })
     const { error } = await supabase.from('presences_entrainement').upsert(payload, { onConflict: 'entrainement_id,joueur_id' })
     if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
-    await chargerEntrainements(userId)
+    await chargerEntrainements(userId, equipeActive?.id)
     afficherToast(`${payload.length} présence${payload.length > 1 ? 's' : ''} importée${payload.length > 1 ? 's' : ''} depuis le sondage`)
   }
 
@@ -3814,7 +3854,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       },
       { onConflict: 'entrainement_id,joueur_id' }
     )
-    await chargerEntrainements(userId)
+    await chargerEntrainements(userId, equipeActive?.id)
   }
 
   const sauvegarderNote = async (joueurId, noteData) => {
@@ -4153,6 +4193,26 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               </div>
               <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
               {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
+              {mesEquipes.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '10px' }}>
+                  {mesEquipes.length > 1 ? mesEquipes.map(equipe => (
+                    <button key={equipe.id} onClick={() => changerEquipe(equipe)} style={{
+                      padding: '4px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                      background: equipeActive?.id === equipe.id ? colors.accent.green : colors.background.raised,
+                      color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted,
+                      fontWeight: equipeActive?.id === equipe.id ? 800 : 500, fontSize: '11px', fontFamily: 'Inter, sans-serif',
+                    }}>
+                      {labelCategorie(equipe.nom)} {equipe.equipe}
+                    </button>
+                  )) : (
+                    <span style={{ fontSize: '11px', color: colors.text.faint }}>{labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}</span>
+                  )}
+                  <button onClick={() => setAjouterEquipeOuvert(true)} title="Ajouter une équipe"
+                    style={{ padding: '4px 10px', borderRadius: '20px', border: `1px dashed ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    + Équipe
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {isMobile && (
@@ -4294,18 +4354,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== MON ÉQUIPE ===== */}
         {activeSection === 'equipe' && (
           <>
-            {/* Déclaration obligatoire de la catégorie/équipe gérée, à la première
-                visite de cet onglet (affilié à un club, aucune ligne club_categories
-                assignée à cet éducateur pour l'instant) — un dashboard educateur =
-                une équipe, cf. declarerMaCategorie. Non dismissable : tant que ce
-                n'est pas répondu, les nouveaux joueurs n'auraient nulle part où
-                s'auto-rattacher. */}
-            {clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && !monCategorieClub && (
+            {/* Déclaration de la catégorie/équipe gérée — obligatoire et non
+                dismissable à la toute première visite de cet onglet (aucune
+                équipe déclarée du tout, mesEquipes vide : les nouveaux joueurs
+                n'auraient nulle part où s'auto-rattacher), ou ouverte
+                volontairement ensuite via "Ajouter une équipe" pour gérer une
+                équipe supplémentaire (cf. declarerMaCategorie, switcher). */}
+            {clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && (mesEquipes.length === 0 || ajouterEquipeOuvert) && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
                 <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
                   <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '17px' }}>Quelle catégorie et équipe gères-tu ?</p>
                   <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint }}>
-                    Nécessaire une seule fois : tes prochains joueurs ajoutés seront ensuite rattachés automatiquement, sans avoir à le refaire à chaque fois.
+                    {mesEquipes.length === 0
+                      ? 'Nécessaire une seule fois : tes prochains joueurs ajoutés seront ensuite rattachés automatiquement, sans avoir à le refaire à chaque fois.'
+                      : 'Cette équipe s\'ajoute aux tiennes — tu pourras basculer entre elles à tout moment.'}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                     <div>
@@ -4326,9 +4388,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       </select>
                     </div>
                   </div>
-                  <button onClick={declarerMaCategorie} disabled={savingCategorieClub} style={{ ...st.btnSolid, width: '100%' }}>
-                    {savingCategorieClub ? 'Enregistrement...' : 'Confirmer'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {mesEquipes.length > 0 && (
+                      <button onClick={() => setAjouterEquipeOuvert(false)} disabled={savingCategorieClub} style={st.btn(colors.text.dim)}>
+                        {t('btn_annuler', lang)}
+                      </button>
+                    )}
+                    <button onClick={declarerMaCategorie} disabled={savingCategorieClub} style={{ ...st.btnSolid, flex: 1 }}>
+                      {savingCategorieClub ? 'Enregistrement...' : 'Confirmer'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -4739,9 +4808,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <div><label style={st.label}>{t('equipe_date_naissance', lang)}</label><input style={st.input} type="date" value={newJoueur.date_naissance} onChange={e => setNewJoueur({ ...newJoueur, date_naissance: e.target.value })} /></div>
                   <div><label style={st.label}>{t('equipe_licence_fff', lang)}</label><input style={st.input} placeholder={t('equipe_numero_licence', lang)} value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
                 </div>
-                {monCategorieClub && (
+                {equipeActive && (
                   <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>
-                    Sera automatiquement rattaché à {labelCategorie(monCategorieClub.nom)} — Équipe {monCategorieClub.equipe}.
+                    Sera automatiquement rattaché à {labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}.
                   </p>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -5656,7 +5725,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     match={matchANoter}
                     joueurs={joueurs}
                     educateurId={userId}
-                    onClose={() => { setMatchANoter(null); chargerMatchs(userId) }}
+                    onClose={() => { setMatchANoter(null); chargerMatchs(userId, equipeActive?.id) }}
                   />
                 </div>
               </div>
@@ -6343,7 +6412,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               ))}
             </div>
 
-            <SondageSemaine mode="educateur" userId={userId} accentColor={colors.accent.blue} />
+            <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue} />
 
             {sousOngletEnt === 'prochaine' && (() => {
               const aujourdHui = new Date().toISOString().split('T')[0]
@@ -8158,7 +8227,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'clotures_saison' && (
-          <GestionCloturesSaison educateurId={userId} lang={lang} />
+          <GestionCloturesSaison educateurId={userId} equipeActiveId={equipeActive?.id} lang={lang} />
         )}
 
         {activeSection === 'tactipad' && (
