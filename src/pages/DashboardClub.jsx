@@ -2874,7 +2874,18 @@ Règles :
       .select('*')
       .eq('educateur_id', cat.educateur_id)
       .order('date', { ascending: false })
-    setClubMatchs(prev => ({ ...prev, [categorieId]: data || [] }))
+    // club_categorie_id (fiable) en priorité — un même éducateur peut gérer
+    // plusieurs équipes (switcher DashboardEducateur.jsx), educateur_id seul
+    // mélangerait leurs matchs (bug initial : U18 visible dans le classement
+    // U11). Repli sur les matchs pas encore rattachés (club_categorie_id
+    // null, créés avant que les points d'insert écrivent cette colonne)
+    // uniquement si ce coach n'a qu'UNE seule catégorie — aucune ambiguïté
+    // possible dans ce cas. S'il en a plusieurs, on les exclut plutôt que de
+    // deviner (matchs_equipe n'a pas de nom de catégorie en texte permettant
+    // un repli fiable, contrairement à equipe_joueurs).
+    const educateurACategorieUnique = categories.filter(c => c.educateur_id === cat.educateur_id).length === 1
+    const filtres = (data || []).filter(m => m.club_categorie_id === categorieId || (m.club_categorie_id == null && educateurACategorieUnique))
+    setClubMatchs(prev => ({ ...prev, [categorieId]: filtres }))
     setLoadingMatchs(false)
   }
 

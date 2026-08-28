@@ -3111,7 +3111,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setShowAddMatch(false)
     const [{ data, error }] = await Promise.all([
       supabase.from('matchs_equipe').insert({
-        ...snapshot, educateur_id: userId, domicile: snapshot.domicile,
+        ...snapshot, educateur_id: userId, club_categorie_id: equipeActive?.id || null, domicile: snapshot.domicile,
         // score_nous/score_eux sont des colonnes integer — une chaîne vide (score pas
         // encore saisi, le cas normal à la création) fait échouer l'insert avec
         // "invalid input syntax for type integer" si on l'envoie telle quelle.
@@ -3221,9 +3221,12 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     setSavingMatchForm(true)
     const { id, ...champs } = modalMatchForm
     if (id) {
-      const { error } = await supabase.from('matchs_equipe').update(champs).eq('id', id)
+      // club_categorie_id republiée à chaque modif : "auto-guérit" les matchs
+      // créés avant l'ajout de cette colonne (ou avant que les points d'insert
+      // ne la renseignent), sans backfill SQL à refaire pour ceux-là.
+      const { error } = await supabase.from('matchs_equipe').update({ ...champs, club_categorie_id: equipeActive?.id || null }).eq('id', id)
       if (error) { afficherToast(`Erreur lors de la modification du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
-      setMatchs(prev => prev.map(m => m.id === id ? { ...m, ...champs } : m))
+      setMatchs(prev => prev.map(m => m.id === id ? { ...m, ...champs, club_categorie_id: equipeActive?.id || null } : m))
       // Optimistic à partir d'ici : la modale se ferme tout de suite,
       // l'estimation des horaires continue en arrière-plan.
       setSavingMatchForm(false)
@@ -3232,7 +3235,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
       return
     }
     const { data, error } = await supabase.from('matchs_equipe').insert({
-      ...champs, educateur_id: userId, score_nous: null, score_eux: null,
+      ...champs, educateur_id: userId, club_categorie_id: equipeActive?.id || null, score_nous: null, score_eux: null,
     }).select().single()
     if (error) { afficherToast(`Erreur lors de la création du match : ${error.message}`, 'erreur'); setSavingMatchForm(false); return }
     if (data) {
@@ -3568,6 +3571,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     const { data: matchInserted } = await supabase.from('matchs_equipe').insert({
       ...scannerMatchData,
       educateur_id: userId,
+      club_categorie_id: equipeActive?.id || null,
       score_nous: parseInt(scannerMatchData.score_nous) || 0,
       score_eux: parseInt(scannerMatchData.score_eux) || 0,
       buts_detail: scannerButsDetail,
