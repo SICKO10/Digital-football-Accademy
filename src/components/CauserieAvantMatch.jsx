@@ -218,10 +218,10 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   // Les schémas (composition/CPA/mouvement) ont un ratio largeur/hauteur fixe
   // — en paysage court, on les limite par la hauteur dispo plutôt que par une
   // largeur fixe pensée pour desktop, sinon ils débordent verticalement.
-  const maxWidthSchema = (ratio, defaut) => isLandscapeCourt ? `min(90vw, calc((100vh - 150px) * ${ratio}))` : defaut
+  const maxWidthSchema = (ratio, defaut) => isLandscapeCourt ? `min(90vw, calc((100dvh - 150px) * ${ratio}))` : defaut
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, background: pal.fond, zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: pal.fond, zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px', flexShrink: 0 }}>
         <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
         <div style={{ display: 'flex', gap: isLandscapeCourt ? '6px' : '10px' }}>
