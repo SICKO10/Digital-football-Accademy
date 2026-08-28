@@ -98,6 +98,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
       const equipe = mode === 'add_nous' ? 'nous' : 'adverse'
       const num = joueurs.filter(j => j.equipe === equipe).length + 1
       majEtape({ joueurs: [...joueurs, { id: nextId.current++, x: p.x, y: p.y, equipe, nom: String(num) }] })
+      setMode('select')
     } else if (mode === 'add_ball') {
       majEtape({ ballon: { x: p.x, y: p.y } })
       setMode('select')
