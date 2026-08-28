@@ -23,6 +23,8 @@ import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
+import { notifierJoueur } from '../lib/notifications'
+import Avatar from '../components/Avatar'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -50,6 +52,8 @@ const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoTerrain   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><circle cx="12" cy="12" r="3"/></svg>
 const IcoLink      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+const IcoMessage   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+const IcoSend      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
@@ -196,6 +200,7 @@ const PERMISSION_SECTIONS = [
   { id: 'organigramme', label: 'Organigramme' },
   { id: 'staff', label: 'Staff' },
   { id: 'inventaire', label: 'Inventaire' },
+  { id: 'messages', label: 'Messages' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -214,6 +219,7 @@ const PERMISSION_DEFAULTS = {
   organigramme: [],
   staff: [],
   inventaire: [],
+  messages: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -1106,6 +1112,18 @@ export default function DashboardClub() {
     return cat?.nom || null
   }
 
+  // Messages — table générique messages (sender_id/receiver_id), déjà en
+  // production côté joueur/éducateur (cf. onglet "Explorer" éducateur) —
+  // le club en était le seul angle mort : des messages lui arrivaient déjà
+  // (ClubPublic.jsx, Explorer éducateur) sans qu'il ait de boîte de réception.
+  const [messagesClub, setMessagesClub] = useState([])
+  const [contactsMessagesJoueurs, setContactsMessagesJoueurs] = useState([])
+  const [contactsMessagesLoaded, setContactsMessagesLoaded] = useState(false)
+  const [messagesOnglet, setMessagesOnglet] = useState('conversations') // 'conversations' | 'educateurs' | 'joueurs'
+  const [chatMessagesOuvert, setChatMessagesOuvert] = useState(null)
+  const [nouveauMessageClub, setNouveauMessageClub] = useState('')
+  const [envoyingMessageClub, setEnvoyingMessageClub] = useState(false)
+
   // Éducateurs affiliés
   const [educateursAffilies, setEducateursAffilies] = useState([])
   const [modalModifEdu, setModalModifEdu] = useState(null) // { educateur_id, prenom, nom, telephone }
@@ -1321,7 +1339,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire']
+    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'messages']
     const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection) || canViewSection('staff')
     if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
       setActiveCategorie('administratif')
@@ -1399,7 +1417,7 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId), chargerMessagesClub(resolvedClubId)])
     setLoading(false)
   }
 
@@ -1862,6 +1880,64 @@ export default function DashboardClub() {
       .eq('club_id', uid)
       .order('nom')
     setCategories(data || [])
+  }
+
+  // messages est une table générique sender_id/receiver_id (déjà utilisée
+  // côté éducateur pour parler à un club/autre éducateur, onglet Explorer) —
+  // aucune restriction RLS par rôle, donc réutilisable telle quelle pour le
+  // club, sans nouvelle table ni policy.
+  const chargerMessagesClub = async (uid) => {
+    const { data } = await supabase
+      .from('messages')
+      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, club, avatar_url), receiver:profiles!messages_receiver_id_fkey(prenom, nom, club, avatar_url)')
+      .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
+      .order('created_at', { ascending: true })
+    setMessagesClub(data || [])
+  }
+
+  // Joueurs contactables : ceux avec un compte lié (joueur_id non null) parmi
+  // tous les éducateurs affiliés au club — mêmes limites que partout ailleurs
+  // (Inventaire, Organigramme) pour les joueurs ajoutés manuellement sans compte.
+  const chargerContactsJoueursMessages = async (uid) => {
+    if (contactsMessagesLoaded) return
+    const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
+    const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
+    const { data } = educateurIds.length
+      ? await supabase.from('equipe_joueurs').select('joueur_id, prenom, nom').in('educateur_id', educateurIds).not('joueur_id', 'is', null)
+      : { data: [] }
+    const uniques = {}
+    ;(data || []).forEach(j => { uniques[j.joueur_id] = { id: j.joueur_id, prenom: j.prenom, nom: j.nom } })
+    setContactsMessagesJoueurs(Object.values(uniques))
+    setContactsMessagesLoaded(true)
+  }
+
+  const conversationsClub = () => {
+    const map = {}
+    messagesClub.forEach(msg => {
+      const otherId = msg.sender_id === clubId ? msg.receiver_id : msg.sender_id
+      const other = msg.sender_id === clubId ? msg.receiver : msg.sender
+      if (!map[otherId]) map[otherId] = { id: otherId, ...other, msgs: [] }
+      map[otherId].msgs.push(msg)
+    })
+    return Object.values(map).sort((a, b) => (b.msgs.at(-1)?.created_at || '').localeCompare(a.msgs.at(-1)?.created_at || ''))
+  }
+
+  const ouvrirChatMessagesClub = (personne) => { setChatMessagesOuvert(personne); setNouveauMessageClub('') }
+
+  const envoyerMessageClub = async () => {
+    if (!nouveauMessageClub.trim() || !chatMessagesOuvert) return
+    setEnvoyingMessageClub(true)
+    await supabase.from('messages').insert({ sender_id: clubId, receiver_id: chatMessagesOuvert.id, content: nouveauMessageClub.trim(), created_at: new Date().toISOString() })
+    await notifierJoueur({
+      type: 'message',
+      userId: chatMessagesOuvert.id,
+      titre: 'Nouveau message',
+      contenu: { auteur: club?.club || 'Ton club', texte: nouveauMessageClub.trim() },
+      lien: '/dashboard',
+    })
+    setNouveauMessageClub('')
+    await chargerMessagesClub(clubId)
+    setEnvoyingMessageClub(false)
   }
 
   const chargerAvisClub = async (uid) => {
@@ -3295,7 +3371,7 @@ Règles :
   })()
 
   const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme'].some(canViewSection) || canViewSection('staff')
+  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'messages'].some(canViewSection) || canViewSection('staff')
 
   const categoriesVisibles = [
     { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
@@ -3327,6 +3403,7 @@ Règles :
     ...(canViewSection('organigramme') ? [{ id: 'organigramme', label: iconLabel(IcoCarteBadge, t('club_tab_organigramme', lang)) }] : []),
     ...(canViewSection('staff') ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
     ...(canViewSection('inventaire') ? [{ id: 'inventaire', label: iconLabel(IcoBox, 'Inventaire') }] : []),
+    ...(canViewSection('messages') ? [{ id: 'messages', label: iconLabel(IcoMessage, 'Messages') }] : []),
   ] : []
 
   const clubOnboardingSteps = [
@@ -6533,6 +6610,114 @@ Règles :
           </div>
         </div>
       )}
+
+        {activeTab === 'messages' && canViewSection('messages') && (() => {
+          const conversations = conversationsClub()
+          const contactsEducateurs = educateursAcceptes.map(e => ({ id: e.educateur_id, prenom: e.educateur?.prenom, nom: e.educateur?.nom, avatar_url: e.educateur?.avatar_url }))
+          const listeActive = messagesOnglet === 'educateurs' ? contactsEducateurs : messagesOnglet === 'joueurs' ? contactsMessagesJoueurs : []
+
+          return (
+            <div style={{ maxWidth: 900 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoMessage /> Messages</h2>
+              <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 20 }}>
+                Échange directement avec tes éducateurs affiliés et leurs joueurs.
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'conversations', label: `Conversations (${conversations.length})` },
+                  { id: 'educateurs', label: `Éducateurs (${contactsEducateurs.length})` },
+                  { id: 'joueurs', label: `Joueurs (${contactsMessagesJoueurs.length})` },
+                ].map(o => (
+                  <button key={o.id} onClick={() => { setMessagesOnglet(o.id); if (o.id === 'joueurs') chargerContactsJoueursMessages(clubId) }}
+                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${messagesOnglet === o.id ? couleurPrincipale : colors.border.default}`, background: messagesOnglet === o.id ? couleurPrincipale + '22' : 'transparent', color: messagesOnglet === o.id ? couleurPrincipale : colors.text.faint, fontSize: '13px', fontWeight: messagesOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+
+              {messagesOnglet === 'conversations' ? (
+                conversations.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune conversation pour l'instant — écris à un éducateur ou un joueur depuis les onglets ci-dessus.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {conversations.map(c => {
+                      const dernier = c.msgs.at(-1)
+                      return (
+                        <div key={c.id} onClick={() => ouvrirChatMessagesClub(c)}
+                          style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                          <Avatar person={c} size={40} border={`2px solid ${couleurPrincipale}40`} textColor={couleurPrincipale} bg={couleurPrincipale + '15'} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{c.club || `${c.prenom || ''} ${c.nom || ''}`.trim()}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {dernier?.sender_id === clubId ? 'Toi : ' : ''}{dernier?.content}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              ) : listeActive.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>
+                  {messagesOnglet === 'educateurs' ? 'Aucun éducateur affilié pour l\'instant.' : 'Aucun joueur avec un compte lié pour l\'instant.'}
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                  {listeActive.map(p => (
+                    <div key={p.id} onClick={() => ouvrirChatMessagesClub(p)} style={{ ...st.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Avatar person={p} size={40} border={`2px solid ${couleurPrincipale}30`} textColor={couleurPrincipale} bg={couleurPrincipale + '15'} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.prenom} {p.nom}</p>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: couleurPrincipale, fontSize: '11px', fontWeight: 600 }}><IcoSend /> Message</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {chatMessagesOuvert && (
+                <div onClick={() => setChatMessagesOuvert(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Avatar person={chatMessagesOuvert} size={36} border={`2px solid ${couleurPrincipale}40`} textColor={couleurPrincipale} bg={couleurPrincipale + '15'} />
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{chatMessagesOuvert.club || `${chatMessagesOuvert.prenom || ''} ${chatMessagesOuvert.nom || ''}`.trim()}</p>
+                      </div>
+                      <button onClick={() => setChatMessagesOuvert(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    </div>
+
+                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                      {messagesClub.filter(m => m.sender_id === chatMessagesOuvert.id || m.receiver_id === chatMessagesOuvert.id).length === 0 ? (
+                        <p style={{ color: colors.text.disabled, fontSize: '12px', fontStyle: 'italic', textAlign: 'center' }}>Aucun message pour l'instant — dis bonjour !</p>
+                      ) : (
+                        messagesClub.filter(m => m.sender_id === chatMessagesOuvert.id || m.receiver_id === chatMessagesOuvert.id).map(m => (
+                          <div key={m.id} style={{ alignSelf: m.sender_id === clubId ? 'flex-end' : 'flex-start', maxWidth: '78%' }}>
+                            <div style={{
+                              background: m.sender_id === clubId ? couleurPrincipale : colors.background.raised,
+                              color: m.sender_id === clubId ? colors.black : colors.text.primary,
+                              borderRadius: '12px', padding: '8px 12px', fontSize: '13px', lineHeight: 1.4,
+                            }}>{m.content}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <input value={nouveauMessageClub} onChange={e => setNouveauMessageClub(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && envoyerMessageClub()}
+                        placeholder="Écrire un message..." style={{ ...st.input, flex: 1 }} />
+                      <button onClick={envoyerMessageClub} disabled={envoyingMessageClub || !nouveauMessageClub.trim()}
+                        style={{ ...st.btnSolid, opacity: (envoyingMessageClub || !nouveauMessageClub.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <IcoSend />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
       {/* Modale préparation équipement + notification */}
       {modalePreparation && (
