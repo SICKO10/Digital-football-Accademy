@@ -482,12 +482,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (!el) return
     const mettreAJourLargeur = () => {
       const disponible = el.getBoundingClientRect().width
-      if (disponible > 0) setWidth(Math.max(280, Math.min(Math.round(disponible), 1000)))
+      if (disponible <= 0) return
+      // Le terrain garde un ratio fixe 16:10 (cf. height ci-dessus) : sans
+      // borne côté hauteur, un conteneur large (ex: panel joueurs masqué,
+      // cf. panelOuvert) produit un terrain plus haut que l'écran, qui pousse
+      // la barre d'actions/lecture hors champ sur mobile/tablette. On plafonne
+      // donc aussi par la hauteur d'écran réellement disponible.
+      const maxParHauteur = Math.round((window.innerHeight - 320) * 1.6)
+      setWidth(Math.max(280, Math.min(Math.round(disponible), 1000, maxParHauteur)))
     }
     mettreAJourLargeur()
     const observer = new ResizeObserver(mettreAJourLargeur)
     observer.observe(el)
-    return () => observer.disconnect()
+    window.addEventListener('resize', mettreAJourLargeur)
+    window.addEventListener('orientationchange', mettreAJourLargeur)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', mettreAJourLargeur)
+      window.removeEventListener('orientationchange', mettreAJourLargeur)
+    }
   }, [])
 
   // Konva stocke les positions en unités absolues (pixels du Stage au moment
