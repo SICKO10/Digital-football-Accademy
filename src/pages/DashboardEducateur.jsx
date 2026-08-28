@@ -8276,18 +8276,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'causerie' && (
-          clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
-          ) : (
-            <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ {t('nav_causerie', lang)}</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
-                {clubAffiliation?.statut === 'en_attente'
-                  ? `⏳ Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
-                  : 'Rejoins un club (code club, dans ton profil) pour accéder à la causerie avant match.'}
-              </p>
-            </div>
-          )
+          // Outil personnel de l'éducateur (cf. supabase_causeries.sql : "pas
+          // une donnée partagée avec le club, pas de club_id nécessaire") —
+          // accessible que le coach soit affilié à un club ou non, club_id
+          // reste optionnel côté CauserieAvantMatch.
+          <CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
         )}
 
         {activeSection === 'dirigeants' && (

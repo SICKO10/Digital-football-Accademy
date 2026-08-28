@@ -383,12 +383,11 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
   const sauvegarder = async () => {
     if (!form.adversaire.trim()) { alert("Renseigne le nom de l'adversaire.") ; return }
-    if (!clubId) { alert("Impossible d'enregistrer : aucun club affilié trouvé sur ton profil."); return }
     setSaving(true)
     const numOuNull = (v) => (v === '' || v === null || v === undefined ? null : parseInt(v, 10))
     const payload = {
       educateur_id: userId,
-      club_id: clubId,
+      club_id: clubId || null,
       club_categorie_id: equipeActiveId || null,
       equipe: equipeNom || null,
       adversaire: form.adversaire.trim(),
@@ -484,7 +483,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     delete rest.id
     delete rest.created_at
     delete rest.updated_at
-    const { error } = await supabase.from('causeries').insert({ ...rest, educateur_id: userId, club_id: clubId })
+    const { error } = await supabase.from('causeries').insert({ ...rest, educateur_id: userId, club_id: clubId || null })
     if (error) { alert('Erreur lors de la duplication : ' + error.message); return }
     await charger()
   }
