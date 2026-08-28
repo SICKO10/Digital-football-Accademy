@@ -1493,6 +1493,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (nouvelle) changerEquipe(nouvelle)
   }
 
+  // "Supprimer" une équipe = libérer la ligne club_categories (educateur_id →
+  // null), pas la supprimer — c'est une catégorie appartenant au club, pas au
+  // coach (même logique que declarerMaCategorie qui réclame une ligne vacante
+  // plutôt que d'en recréer une). L'effectif/séances/matchs déjà enregistrés
+  // pour cette équipe ne sont donc pas perdus, juste plus visibles depuis ce
+  // dashboard tant que personne ne la reprend (cf. le bouton "+ Équipe").
+  const supprimerEquipe = async (equipe) => {
+    if (mesEquipes.length <= 1) return
+    if (!confirm(`Retirer "${labelCategorie(equipe.nom)} — Équipe ${equipe.equipe}" de tes équipes ?\n\nLes joueurs, séances et matchs déjà enregistrés pour cette équipe resteront en base (rien n'est supprimé) mais ne seront plus visibles ici tant que tu ne la reprends pas depuis "+ Équipe".`)) return
+    const { error } = await supabase.from('club_categories').update({ educateur_id: null }).eq('id', equipe.id).eq('educateur_id', userId)
+    if (error) { alert('Erreur : ' + error.message); return }
+    const toutes = await chargerClubCategories(userId)
+    if (equipeActiveId === equipe.id) {
+      const suivante = toutes.find(c => c.educateur_id === userId)
+      if (suivante) changerEquipe(suivante)
+      else { setEquipeActiveId(null); try { localStorage.removeItem('equipe_active_id') } catch { /* ignore */ } }
+    }
+  }
+
   // equipe_joueurs n'a pas de colonne avatar_url — la photo vit sur profiles,
   // reliée via joueur_id (absent pour un joueur ajouté manuellement, sans
   // compte lié). Un seul enrichissement ici : tous les consommateurs de
@@ -4196,14 +4215,24 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               {mesEquipes.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '10px' }}>
                   {mesEquipes.length > 1 ? mesEquipes.map(equipe => (
-                    <button key={equipe.id} onClick={() => changerEquipe(equipe)} style={{
-                      padding: '4px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                    <div key={equipe.id} style={{
+                      display: 'inline-flex', alignItems: 'center', borderRadius: '20px',
                       background: equipeActive?.id === equipe.id ? colors.accent.green : colors.background.raised,
-                      color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted,
-                      fontWeight: equipeActive?.id === equipe.id ? 800 : 500, fontSize: '11px', fontFamily: 'Inter, sans-serif',
                     }}>
-                      {labelCategorie(equipe.nom)} {equipe.equipe}
-                    </button>
+                      <button onClick={() => changerEquipe(equipe)} style={{
+                        padding: '4px 4px 4px 10px', borderRadius: '20px 0 0 20px', border: 'none', cursor: 'pointer', background: 'transparent',
+                        color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted,
+                        fontWeight: equipeActive?.id === equipe.id ? 800 : 500, fontSize: '11px', fontFamily: 'Inter, sans-serif',
+                      }}>
+                        {labelCategorie(equipe.nom)} {equipe.equipe}
+                      </button>
+                      <button onClick={() => supprimerEquipe(equipe)} title="Supprimer cette équipe" style={{
+                        padding: '4px 8px 4px 2px', borderRadius: '0 20px 20px 0', border: 'none', cursor: 'pointer', background: 'transparent',
+                        color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted, fontSize: '12px', lineHeight: 1, opacity: 0.7,
+                      }}>
+                        ×
+                      </button>
+                    </div>
                   )) : (
                     <span style={{ fontSize: '11px', color: colors.text.faint }}>{labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}</span>
                   )}
