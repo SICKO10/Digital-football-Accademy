@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
-export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a5fa', onOuvrirFiche }) {
+export default function DeplacementsAssignesWidget({ userId, equipeActiveId, accentColor = '#60a5fa', onOuvrirFiche }) {
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
 
   const charger = async () => {
     const aujourdHui = new Date().toISOString().split('T')[0]
-    const { data } = await supabase
+    let q = supabase
       .from('deplacements')
       .select('*')
       .eq('educateur_id', userId)
       .gte('date_depart', aujourdHui)
       .order('date_depart')
       .limit(2)
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data } = await q
     setDeplacements(data || [])
     setLoading(false)
   }
@@ -23,6 +25,8 @@ export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a
     charger()
 
     // Live : un déplacement fraîchement publié (ou modifié) apparaît sans reload.
+    // Filtre realtime volontairement large (educateur_id, pas club_categorie_id) —
+    // charger() ré-applique le filtre équipe active à chaque déclenchement.
     const channel = supabase
       .channel(`deplacements_assignes_${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deplacements', filter: `educateur_id=eq.${userId}` }, () => charger())
@@ -30,7 +34,7 @@ export default function DeplacementsAssignesWidget({ userId, accentColor = '#60a
 
     return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId])
+  }, [userId, equipeActiveId])
 
   if (loading || deplacements.length === 0) return null
 

@@ -32,7 +32,7 @@ const getSaison = () => {
   return `${y}-${y + 1}`
 }
 
-function ModalCreerProgramme({ onClose, onSave, educateurId }) {
+function ModalCreerProgramme({ onClose, onSave, educateurId, equipeActiveId }) {
   const st = useSt()
   const [form, setForm] = useState({ titre: '', description: '', date_debut: '', date_fin: '', nb_semaines: 2 })
   const [loading, setLoading] = useState(false)
@@ -42,6 +42,7 @@ function ModalCreerProgramme({ onClose, onSave, educateurId }) {
     setLoading(true)
     const { data, error } = await supabase.from('programmes_prep').insert({
       educateur_id: educateurId,
+      club_categorie_id: equipeActiveId || null,
       titre: form.titre,
       description: form.description,
       date_debut: form.date_debut,
@@ -208,7 +209,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId, clubId, readOnly = false, isMobile = false, lang = 'fr' }) {
+export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveId, readOnly = false, isMobile = false, lang = 'fr' }) {
   const st = useSt()
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
@@ -233,13 +234,15 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
 
   const loadProgrammes = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('programmes_prep').select('*').eq('educateur_id', educateurId).order('created_at', { ascending: false })
+    let q = supabase.from('programmes_prep').select('*').eq('educateur_id', educateurId).order('created_at', { ascending: false })
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data, error } = await q
     if (error?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     setProgrammes(data || [])
     setLoading(false)
   }
 
-  useEffect(() => { loadProgrammes() }, [])
+  useEffect(() => { loadProgrammes() }, [equipeActiveId])
 
   const loadSeances = async (programmeId) => {
     const { data } = await supabase.from('seances_prep').select('*').eq('programme_id', programmeId).order('semaine').order('jour')
@@ -259,10 +262,22 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
     // comptes pro/fan de la plateforme. Même chemin que PrepPhysiqueJoueur/GestionCloturesSaison.
     const { data } = await supabase
       .from('affiliations')
-      .select('profiles!affiliations_joueur_id_fkey(id, nom, prenom)')
+      .select('equipe_joueur_id, profiles!affiliations_joueur_id_fkey(id, nom, prenom)')
       .eq('educateur_id', educateurId)
       .eq('statut', 'accepte')
-    setJoueurs((data || []).map(a => a.profiles).filter(Boolean))
+    let afData = data || []
+    // Un coach peut gérer plusieurs équipes (switcher) — restreint à celle
+    // active via equipe_joueurs.club_categorie_id (affiliations elle-même n'a
+    // pas cette colonne), même pattern que GestionCloturesSaison.load().
+    if (equipeActiveId) {
+      const equipeJoueurIdsBrut = [...new Set(afData.map(a => a.equipe_joueur_id).filter(Boolean))]
+      const { data: ejData } = equipeJoueurIdsBrut.length > 0
+        ? await supabase.from('equipe_joueurs').select('id, club_categorie_id').in('id', equipeJoueurIdsBrut)
+        : { data: [] }
+      const idsEquipeActive = new Set((ejData || []).filter(e => e.club_categorie_id === equipeActiveId).map(e => e.id))
+      afData = afData.filter(a => idsEquipeActive.has(a.equipe_joueur_id))
+    }
+    setJoueurs(afData.map(a => a.profiles).filter(Boolean))
   }
 
   // Les tests physiques ne sont plus scopés à un programme (colonne
@@ -270,7 +285,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
   // cet éducateur, réutilisés à la fois par le classement (dans un programme)
   // et par l'onglet autonome "Tests physiques".
   const loadTests = async () => {
-    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
+    let q = supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data } = await q
     setTests(data || [])
   }
 
@@ -306,6 +323,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
       joueur_id: testForm.joueur_id,
       educateur_id: educateurId,
       club_id: clubId || null,
+      club_categorie_id: equipeActiveId || null,
       date_test: testForm.date_test,
       cmj_cm: testForm.cmj_cm !== '' ? parseFloat(testForm.cmj_cm) : null,
       sprint_10m_s: testForm.sprint_10m_s !== '' ? parseFloat(testForm.sprint_10m_s) : null,
@@ -425,6 +443,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
     const dateFin = new Date(dateDebut.getTime() + (scanResultat.nb_semaines || 1) * 7 * 24 * 60 * 60 * 1000)
     const { data: prog, error } = await supabase.from('programmes_prep').insert({
       educateur_id: educateurId,
+      club_categorie_id: equipeActiveId || null,
       titre: scanResultat.titre,
       saison: getSaison(),
       nb_semaines: scanResultat.nb_semaines,
@@ -554,7 +573,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, readOnly = fa
         </div>
       )}
       {showCreerProgramme && (
-        <ModalCreerProgramme educateurId={educateurId} onClose={() => setShowCreerProgramme(false)}
+        <ModalCreerProgramme educateurId={educateurId} equipeActiveId={equipeActiveId} onClose={() => setShowCreerProgramme(false)}
           onSave={(p) => { setProgrammes(prev => [p, ...prev]); setShowCreerProgramme(false); ouvrirProgramme(p) }} />
       )}
 

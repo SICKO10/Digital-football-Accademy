@@ -163,22 +163,41 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
   const [modalJoueur, setModalJoueur] = useState(null)
   const [archiving, setArchiving] = useState(false)
   const [notesEdu, setNotesEdu] = useState([]) // notes_educateur reçues (tous joueurs, toutes saisons)
+  const [affiliationIdsEquipeActive, setAffiliationIdsEquipeActive] = useState(null) // null = pas de filtrage équipe (fallback)
 
   const load = async () => {
     setLoading(true)
 
     // Joueurs affiliés à cet éducateur (même chemin que PrepPhysiqueJoueur : table
     // `affiliations`, statut 'accepte' — pas tous les comptes pro/fan de la plateforme).
-    const { data: afData } = await supabase
+    const { data: afDataBrute } = await supabase
       .from('affiliations')
-      .select('joueur_id, equipe_joueur_id')
+      .select('id, joueur_id, equipe_joueur_id')
       .eq('educateur_id', educateurId)
       .eq('statut', 'accepte')
-    const joueurIds = [...new Set((afData || []).map(a => a.joueur_id))]
+
+    // Un coach peut gérer plusieurs équipes (switcher) — restreint à celle
+    // active via equipe_joueurs.club_categorie_id (affiliations elle-même n'a
+    // pas cette colonne, seul equipe_joueurs l'a) pour ne jamais clôturer/
+    // afficher les deux équipes mélangées.
+    let afData = afDataBrute || []
+    if (equipeActiveId) {
+      const equipeJoueurIdsBrut = [...new Set(afData.map(a => a.equipe_joueur_id).filter(Boolean))]
+      const { data: ejData } = equipeJoueurIdsBrut.length > 0
+        ? await supabase.from('equipe_joueurs').select('id, club_categorie_id').in('id', equipeJoueurIdsBrut)
+        : { data: [] }
+      const idsEquipeActive = new Set((ejData || []).filter(e => e.club_categorie_id === equipeActiveId).map(e => e.id))
+      afData = afData.filter(a => idsEquipeActive.has(a.equipe_joueur_id))
+      setAffiliationIdsEquipeActive(afData.map(a => a.id))
+    } else {
+      setAffiliationIdsEquipeActive(null)
+    }
+
+    const joueurIds = [...new Set(afData.map(a => a.joueur_id))]
     // presences_entrainement.joueur_id référence equipe_joueurs(id), pas profiles(id) —
     // il faut donc passer par l'affiliation pour retrouver l'equipe_joueur_id de chacun.
     const equipeJoueurIdMap = {}
-    ;(afData || []).forEach(a => { equipeJoueurIdMap[a.joueur_id] = a.equipe_joueur_id })
+    afData.forEach(a => { equipeJoueurIdMap[a.joueur_id] = a.equipe_joueur_id })
 
     const { data: joueursData } = joueurIds.length > 0
       ? await supabase
@@ -187,12 +206,16 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
           .in('id', joueurIds)
       : { data: [] }
 
-    // Historiques de la saison
-    const { data: histData, error: histError } = await supabase
-      .from('historique_saisons')
-      .select('*')
-      .eq('educateur_id', educateurId)
-      .eq('saison', saison)
+    // Historiques de la saison — restreints aux joueurs de l'équipe active
+    // (historique_saisons n'a pas de club_categorie_id propre).
+    const { data: histData, error: histError } = joueurIds.length > 0
+      ? await supabase
+          .from('historique_saisons')
+          .select('*')
+          .eq('educateur_id', educateurId)
+          .eq('saison', saison)
+          .in('joueur_id', joueurIds)
+      : { data: [], error: null }
 
     if (histError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
 
@@ -233,7 +256,7 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [saison])
+  useEffect(() => { load() }, [saison, equipeActiveId])
 
   const archiverAffiliations = async () => {
     const incomplet = joueurs.length - nbClotures
@@ -243,11 +266,12 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
     if (!confirm(message)) return
 
     setArchiving(true)
-    const { error } = await supabase
-      .from('affiliations')
-      .update({ statut: 'archive', saison, date_fin: new Date().toISOString() })
-      .eq('educateur_id', educateurId)
-      .eq('statut', 'accepte')
+    // Restreint à l'équipe active (affiliationIdsEquipeActive, calculé dans
+    // load()) quand un equipeActiveId est fourni — sinon archive tout le
+    // coach comme avant (fallback si le composant est utilisé sans switcher).
+    let q = supabase.from('affiliations').update({ statut: 'archive', saison, date_fin: new Date().toISOString() }).eq('educateur_id', educateurId).eq('statut', 'accepte')
+    if (affiliationIdsEquipeActive) q = q.in('id', affiliationIdsEquipeActive)
+    const { error } = await q
 
     // Libère la catégorie/équipe club déclarée par cet éducateur (cf.
     // declarerMaCategorie côté DashboardEducateur.jsx) : à la nouvelle saison,

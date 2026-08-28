@@ -129,7 +129,7 @@ const st = {
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
 }
 
-export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, accentColor = '#4ade80', readOnly = false }) {
+export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, equipeActiveId, accentColor = '#4ade80', readOnly = false }) {
   const estDirigeant = mode === 'dirigeant' && !readOnly
   const [vue, setVue] = useState('planning') // 'configuration' | 'planning'
 
@@ -213,7 +213,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     const ids = educateurs.map(e => e.educateur_id)
     if (ids.length === 0) { setMatchsSemaine([]); return }
     const dates = getDatesSemaine(offset)
-    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id')
+    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id, club_categorie_id')
       .in('educateur_id', ids).eq('domicile', true).gte('date', dates[0].dateStr).lte('date', dates[6].dateStr)
     setMatchsSemaine(data || [])
   }
@@ -226,7 +226,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, a
     const ids = educateurs.map(e => e.educateur_id)
     if (ids.length === 0) { setMatchsSansTerrainTous([]); return }
     const aujourdhui = getDatesSemaine(0)[0].dateStr
-    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id')
+    const { data } = await supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, educateur_id, terrain_id, club_categorie_id')
       .in('educateur_id', ids).eq('domicile', true).is('terrain_id', null).gte('date', aujourdhui).order('date')
     setMatchsSansTerrainTous(data || [])
   }
@@ -550,7 +550,7 @@ Règles :
   const reclamerCreneauDate = async (creneau, dateStr) => {
     const cle = `${creneau.id}_${dateStr}`
     setReclamingId(cle)
-    const { error } = await supabase.rpc('reclamer_creneau_date', { p_creneau_id: creneau.id, p_date: dateStr })
+    const { error } = await supabase.rpc('reclamer_creneau_date', { p_creneau_id: creneau.id, p_date: dateStr, p_club_categorie_id: equipeActiveId || null })
     setReclamingId(null)
     if (error) { alert('Erreur : ' + error.message); return }
     await chargerExceptions(semaineOffset)
@@ -1059,7 +1059,7 @@ Règles :
                   <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné (toutes semaines à venir)</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {matchsSansTerrainTous.map(m => {
-                      const cat = categories.find(c => c.educateur_id === m.educateur_id)
+                      const cat = categories.find(c => c.id === m.club_categorie_id) || categories.find(c => c.educateur_id === m.educateur_id)
                       const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
                       const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
                       return (
@@ -1096,7 +1096,7 @@ Règles :
                         {matchsJour.length > 0 && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
                             {matchsJour.map(m => {
-                              const cat = categories.find(c => c.educateur_id === m.educateur_id)
+                              const cat = categories.find(c => c.id === m.club_categorie_id) || categories.find(c => c.educateur_id === m.educateur_id)
                               const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
                               const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
                               const couleur = cat?.couleur || couleurEquipe(nomEquipe, categories)

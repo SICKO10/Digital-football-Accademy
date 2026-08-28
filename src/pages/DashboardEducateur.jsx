@@ -666,7 +666,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
-function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, userId, equipeActiveId, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -817,7 +817,7 @@ function AccueilEducateur({ clubId, userId, joueurs, entrainements, matchs, rapp
       </div>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
-      <DeplacementsAssignesWidget userId={userId} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
+      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
@@ -1381,7 +1381,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Phase 1 — chargeurs indépendants de l'équipe active, plus club_categories
     // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
     // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
-    const [, , clubAffiliationData, clubCategoriesData] = await Promise.all([chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerRapportsRecents(targetId), chargerNotifications(targetId)])
+    const [, , clubAffiliationData, clubCategoriesData] = await Promise.all([chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerNotifications(targetId)])
     // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
     // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
     if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
@@ -1395,7 +1395,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try { idActif = localStorage.getItem('equipe_active_id') } catch { /* ignore */ }
     if (!mesEquipesData.some(e => e.id === idActif)) idActif = mesEquipesData[0]?.id || null
     if (idActif !== equipeActiveId) setEquipeActiveId(idActif)
-    const [, matchsData] = await Promise.all([chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif)])
+    const [, matchsData] = await Promise.all([chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif), chargerRapportsRecents(targetId, idActif)])
     await chargerNotationsMatch(targetId, matchsData.map(m => m.id))
     setLoading(false)
   }
@@ -1569,8 +1569,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
   }
 
-  const chargerRapportsRecents = async (uid) => {
-    const { data } = await supabase.from('rapports_analyse').select('id, prenom_joueur, poste, created_at, date_analyse').eq('educateur_id', uid).order('created_at', { ascending: false }).limit(5)
+  const chargerRapportsRecents = async (uid, catId) => {
+    let q = supabase.from('rapports_analyse').select('id, prenom_joueur, poste, created_at, date_analyse').eq('educateur_id', uid).order('created_at', { ascending: false }).limit(5)
+    if (catId) q = q.eq('club_categorie_id', catId)
+    const { data } = await q
     setRapportsRecents(data || [])
   }
 
@@ -1673,6 +1675,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     chargerJoueurs(userId, equipe.id)
     chargerMatchs(userId, equipe.id).then(matchs => chargerNotationsMatch(userId, matchs.map(m => m.id)))
     chargerEntrainements(userId, equipe.id)
+    chargerRapportsRecents(userId, equipe.id)
   }
 
   const [mesSeances, setMesSeances] = useState([])
@@ -4365,6 +4368,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
               userId={userId}
+              equipeActiveId={equipeActive?.id}
               joueurs={joueurs}
               entrainements={entrainements}
               matchs={matchs}
@@ -6280,7 +6284,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <Deplacements clubId={clubAffiliation.club_id} accentColor={colors.accent.blue} />
+            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
@@ -6296,7 +6300,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== TERRAINS ===== */}
         {activeSection === 'terrains' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} accentColor={colors.accent.blue} />
+            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_terrains', lang)}</h1>
@@ -8248,11 +8252,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'analyse_video' && (
-          <AnalyseVideo userId={userId} lang={lang} />
+          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} lang={lang} />
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
+          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
         )}
 
         {activeSection === 'clotures_saison' && (
@@ -8277,7 +8281,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'causerie' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
+            <CauserieAvantMatch userId={userId} clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎙️ {t('nav_causerie', lang)}</h1>

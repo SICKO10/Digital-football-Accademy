@@ -305,7 +305,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   )
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs = [] }) {
+export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, clubId, joueurs = [] }) {
   const colors = useColors()
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
@@ -323,11 +323,11 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
   const [saving, setSaving] = useState(false)
 
   const charger = async () => {
-    const { data, error } = await supabase
-      .from('causeries')
-      .select('*')
-      .eq('educateur_id', userId)
-      .order('date_match', { ascending: false })
+    // equipeActiveId : un coach peut gérer plusieurs équipes (switcher) — sans
+    // ce filtre, les fiches causerie des deux équipes se mélangeraient.
+    let q = supabase.from('causeries').select('*').eq('educateur_id', userId).order('date_match', { ascending: false })
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data, error } = await q
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       return
@@ -336,6 +336,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
     setFiches((data || []).map(normaliserFiche))
   }
 
+  // tactipads volontairement PAS filtré par équipe : un schéma tactique n'est
+  // pas spécifique à un groupe d'âge, reste partagé entre les équipes du coach.
   const chargerTactipads = async () => {
     const { data, error } = await supabase.from('tactipads').select('id, nom, schema').eq('educateur_id', userId).order('created_at', { ascending: false })
     if (error) console.error('chargerTactipads (Causerie) error:', error)
@@ -343,7 +345,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
     setTactipadsLoaded(true)
   }
 
-  useEffect(() => { if (userId) { charger(); chargerTactipads() } }, [userId])
+  useEffect(() => { if (userId) { charger(); chargerTactipads() } }, [userId, equipeActiveId])
 
   // equipe_joueurs n'a pas de colonne avatar — snapshot resolu ici puis
   // stocké tel quel dans titulaires/remplacants au moment de la sélection
@@ -387,6 +389,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, clubId, joueurs 
     const payload = {
       educateur_id: userId,
       club_id: clubId,
+      club_categorie_id: equipeActiveId || null,
       equipe: equipeNom || null,
       adversaire: form.adversaire.trim(),
       date_match: form.date_match || null,

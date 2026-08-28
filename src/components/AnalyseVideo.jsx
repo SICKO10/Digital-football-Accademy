@@ -105,7 +105,7 @@ async function genererPDF(playerInfo, rapport, lang = 'fr') {
   doc.save(`analyse_${playerInfo.nom || 'joueur'}_${playerInfo.date}.pdf`)
 }
 
-export default function AnalyseVideo({ userId, lang = 'fr' }) {
+export default function AnalyseVideo({ userId, equipeActiveId, lang = 'fr' }) {
   const st = useSt()
   const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
   const [transcript, setTranscript] = useState('')
@@ -125,7 +125,9 @@ export default function AnalyseVideo({ userId, lang = 'fr' }) {
 
   const chargerRapports = async () => {
     setLoadingRapports(true)
-    const { data, error } = await supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).order('created_at', { ascending: false })
+    let q = supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).order('created_at', { ascending: false })
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data, error } = await q
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       setLoadingRapports(false)
@@ -136,7 +138,7 @@ export default function AnalyseVideo({ userId, lang = 'fr' }) {
     setLoadingRapports(false)
   }
 
-  useEffect(() => { if (userId) chargerRapports() }, [userId])
+  useEffect(() => { if (userId) chargerRapports() }, [userId, equipeActiveId])
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -294,6 +296,7 @@ Instructions:
     setSavingRapport(true)
     const { error } = await supabase.from('rapports_analyse').insert({
       educateur_id: userId,
+      club_categorie_id: equipeActiveId || null,
       prenom_joueur: `${playerInfo.prenom} ${playerInfo.nom}`.trim(),
       poste: playerInfo.poste,
       url_video: null,

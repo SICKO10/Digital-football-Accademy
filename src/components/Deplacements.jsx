@@ -61,7 +61,7 @@ const grouperParSemaine = (deplacements) => {
   return groupes
 }
 
-export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly = false }) {
+export default function Deplacements({ clubId, equipeActiveId, accentColor = '#4ade80', readOnly = false }) {
   const st = useSt()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -93,7 +93,12 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
 
   const charger = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('deplacements').select('*').eq('club_id', clubId).order('date_depart', { ascending: false })
+    // equipeActiveId : côté éducateur (switcher), isole les déplacements de
+    // l'équipe active — non fourni côté club (dirigeant), qui garde la vue
+    // complète nécessaire à la coordination inter-équipes.
+    let q = supabase.from('deplacements').select('*').eq('club_id', clubId).order('date_depart', { ascending: false })
+    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+    const { data, error } = await q
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       setLoading(false)
@@ -166,7 +171,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     setClubVille(data?.ville || null)
   }
 
-  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules(); chargerClubVille() } }, [clubId])
+  useEffect(() => { if (clubId) { charger(); chargerEquipes(); chargerVehicules(); chargerClubVille() } }, [clubId, equipeActiveId])
 
   // Récupère les matchs Extérieur (matchs_equipe.domicile = false) des éducateurs
   // du club qui n'ont pas encore de déplacement correspondant. Un déplacement
@@ -200,6 +205,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
         club_id: clubId,
         equipe: cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : null,
         educateur_id: m.educateur_id,
+        club_categorie_id: cat?.id || null,
         date_depart: m.date,
         heure_depart: horaires?.heure_depart || m.heure || null,
         heure_retour_estimee: horaires?.heure_retour_estimee || null,
@@ -534,6 +540,7 @@ export default function Deplacements({ clubId, accentColor = '#4ade80', readOnly
     const champs = {
       equipe: form.equipe || null,
       educateur_id: categorieMatch?.educateur_id || null,
+      club_categorie_id: categorieMatch?.id || null,
       educateur_responsable: form.educateur_responsable.trim() || null,
       date_depart: form.date_depart,
       heure_depart: form.heure_depart || null,
