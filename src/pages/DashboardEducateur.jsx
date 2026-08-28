@@ -2879,6 +2879,9 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     if (!joueurEnEdition) return
     // Même correctif que ajouterJoueur : '' n'est pas une date Postgres valide.
     const { id, ...fields } = { ...joueurEnEdition, date_naissance: joueurEnEdition.date_naissance || null }
+    // avatar_url est enrichi côté client depuis profiles (cf. chargerJoueurs) —
+    // equipe_joueurs n'a pas cette colonne, il ne doit jamais partir dans l'update.
+    delete fields.avatar_url
     // Optimistic : on connaît déjà exactement les nouvelles valeurs, donc la
     // liste locale se met à jour et la modale se ferme tout de suite, sans
     // attendre la réponse Supabase (aucune vérification d'erreur n'existait
