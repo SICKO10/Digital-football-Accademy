@@ -485,10 +485,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       if (disponible <= 0) return
       // Le terrain garde un ratio fixe 16:10 (cf. height ci-dessus) : sans
       // borne côté hauteur, un conteneur large (ex: panel joueurs masqué,
-      // cf. panelOuvert) produit un terrain plus haut que l'écran, qui pousse
-      // la barre d'actions/lecture hors champ sur mobile/tablette. On plafonne
-      // donc aussi par la hauteur d'écran réellement disponible.
-      const maxParHauteur = Math.round((window.innerHeight - 80) * 1.6)
+      // cf. panelOuvert) produit un terrain plus haut que l'écran en
+      // portrait, où la hauteur disponible est la ressource rare. En
+      // paysage c'est l'inverse (largeur abondante, hauteur confortable
+      // vu le format du terrain) : la même marge y réduisait le terrain
+      // bien plus qu'il n'était nécessaire — on ne plafonne donc que
+      // par la hauteur en portrait, pas en paysage.
+      const paysage = window.innerWidth > window.innerHeight
+      const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) * 1.6)
       setWidth(Math.max(280, Math.min(Math.round(disponible), 900, maxParHauteur)))
     }
     mettreAJourLargeur()
