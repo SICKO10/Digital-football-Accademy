@@ -32,6 +32,11 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
   const [missionsOuvertes, setMissionsOuvertes] = useState(false)
   const [nouvelleEtape, setNouvelleEtape] = useState({ titre: '', responsable_nom: '' })
   const [nouveauPoste, setNouveauPoste] = useState({ poste: '', montant: '' })
+  // Équipe (participants) et matériel par étape — repliés par défaut, une
+  // étape avec juste un titre/statut n'a pas besoin d'affichage étendu.
+  const [etapesOuvertes, setEtapesOuvertes] = useState({})
+  const [saisieParticipantEtape, setSaisieParticipantEtape] = useState({})
+  const [saisieMaterielEtape, setSaisieMaterielEtape] = useState({})
 
   useEffect(() => {
     let annule = false
@@ -73,6 +78,53 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
     const avant = etapes
     setEtapes(prev => prev.filter(e => e.id !== id))
     const { error } = await supabase.from('projet_etapes').delete().eq('id', id)
+    if (error) { setEtapes(avant); alert('Erreur : ' + error.message) }
+  }
+  const toggleEtapeOuverte = (id) => setEtapesOuvertes(prev => ({ ...prev, [id]: !prev[id] }))
+
+  // Équipe (participants) d'une étape — même principe que les participants
+  // de mission (saisie libre prénom/nom, chips), stocké en jsonb sur la
+  // ligne projet_etapes elle-même.
+  const ajouterParticipantEtape = async (etapeId) => {
+    const s = saisieParticipantEtape[etapeId] || {}
+    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
+    if (!nom) return
+    const etape = etapes.find(e => e.id === etapeId)
+    if ((etape.participants || []).some(p => p.nom.toLowerCase() === nom.toLowerCase())) return
+    const participants = [...(etape.participants || []), { id: crypto.randomUUID(), nom }]
+    const avant = etapes
+    setEtapes(prev => prev.map(e => (e.id === etapeId ? { ...e, participants } : e)))
+    setSaisieParticipantEtape(prev => ({ ...prev, [etapeId]: { prenom: '', nom: '' } }))
+    const { error } = await supabase.from('projet_etapes').update({ participants }).eq('id', etapeId)
+    if (error) { setEtapes(avant); alert('Erreur : ' + error.message) }
+  }
+  const retirerParticipantEtape = async (etapeId, participantId) => {
+    const etape = etapes.find(e => e.id === etapeId)
+    const participants = (etape.participants || []).filter(p => p.id !== participantId)
+    const avant = etapes
+    setEtapes(prev => prev.map(e => (e.id === etapeId ? { ...e, participants } : e)))
+    const { error } = await supabase.from('projet_etapes').update({ participants }).eq('id', etapeId)
+    if (error) { setEtapes(avant); alert('Erreur : ' + error.message) }
+  }
+
+  // Matériel nécessaire à une étape — simple liste de libellés libres.
+  const ajouterMaterielEtape = async (etapeId) => {
+    const texte = (saisieMaterielEtape[etapeId] || '').trim()
+    if (!texte) return
+    const etape = etapes.find(e => e.id === etapeId)
+    const materiel = [...(etape.materiel || []), { id: crypto.randomUUID(), texte }]
+    const avant = etapes
+    setEtapes(prev => prev.map(e => (e.id === etapeId ? { ...e, materiel } : e)))
+    setSaisieMaterielEtape(prev => ({ ...prev, [etapeId]: '' }))
+    const { error } = await supabase.from('projet_etapes').update({ materiel }).eq('id', etapeId)
+    if (error) { setEtapes(avant); alert('Erreur : ' + error.message) }
+  }
+  const retirerMaterielEtape = async (etapeId, materielId) => {
+    const etape = etapes.find(e => e.id === etapeId)
+    const materiel = (etape.materiel || []).filter(m => m.id !== materielId)
+    const avant = etapes
+    setEtapes(prev => prev.map(e => (e.id === etapeId ? { ...e, materiel } : e)))
+    const { error } = await supabase.from('projet_etapes').update({ materiel }).eq('id', etapeId)
     if (error) { setEtapes(avant); alert('Erreur : ' + error.message) }
   }
 
@@ -176,26 +228,97 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
             {loading ? <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p> : (
               <>
                 {etapes.length === 0 && <p style={{ color: colors.text.faint, fontSize: '12px', fontStyle: 'italic', margin: '0 0 10px' }}>Aucune étape pour l'instant.</p>}
-                {etapes.map((etape, idx) => (
-                  <div key={etape.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                    <span style={{ color: colors.border.strong, fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{idx + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{etape.titre}</div>
-                      {etape.responsable_nom && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{etape.responsable_nom}</div>}
+                {etapes.map((etape, idx) => {
+                  const ouvert = !!etapesOuvertes[etape.id]
+                  const participants = etape.participants || []
+                  const materiel = etape.materiel || []
+                  return (
+                    <div key={etape.id} style={{ padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ color: colors.border.strong, fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{idx + 1}</span>
+                        <div onClick={() => toggleEtapeOuverte(etape.id)} style={{ flex: 1, minWidth: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: colors.text.faint, fontSize: '10px', transform: ouvert ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block' }}>▶</span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{etape.titre}</div>
+                            {(etape.responsable_nom || participants.length > 0 || materiel.length > 0) && (
+                              <div style={{ color: colors.text.faint, fontSize: '11px' }}>
+                                {etape.responsable_nom}
+                                {etape.responsable_nom && (participants.length > 0 || materiel.length > 0) && ' · '}
+                                {participants.length > 0 && `👥 ${participants.length}`}
+                                {participants.length > 0 && materiel.length > 0 && ' · '}
+                                {materiel.length > 0 && `🧰 ${materiel.length}`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {canEdit ? (
+                          <select value={etape.statut} onChange={e => updateStatutEtape(etape.id, e.target.value)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '11px', color: STATUTS_ETAPE.find(s => s.val === etape.statut)?.emoji ? undefined : colors.text.faint }}>
+                            {STATUTS_ETAPE.map(s => <option key={s.val} value={s.val}>{s.emoji} {s.label}</option>)}
+                          </select>
+                        ) : (
+                          <span style={{ fontSize: '11px', fontWeight: 700 }}>{STATUTS_ETAPE.find(s => s.val === etape.statut)?.emoji} {STATUTS_ETAPE.find(s => s.val === etape.statut)?.label}</span>
+                        )}
+                        {canEdit && (
+                          <button onClick={() => supprimerEtape(etape.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                        )}
+                      </div>
+
+                      {ouvert && (
+                        <div style={{ marginLeft: '32px', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {/* Équipe de l'étape */}
+                          <div>
+                            <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>👥 Équipe</p>
+                            {participants.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                {participants.map(p => (
+                                  <span key={p.id} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {p.nom}
+                                    {canEdit && <button onClick={() => retirerParticipantEtape(etape.id, p.id)} style={{ background: 'none', border: 'none', color: colors.accent.blue, opacity: 0.6, fontSize: '12px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {canEdit && (
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                <input placeholder="Prénom" value={(saisieParticipantEtape[etape.id] || {}).prenom || ''}
+                                  onChange={e => setSaisieParticipantEtape(prev => ({ ...prev, [etape.id]: { ...(prev[etape.id] || {}), prenom: e.target.value } }))}
+                                  onKeyDown={e => e.key === 'Enter' && ajouterParticipantEtape(etape.id)} style={{ ...input, width: '110px' }} />
+                                <input placeholder="Nom" value={(saisieParticipantEtape[etape.id] || {}).nom || ''}
+                                  onChange={e => setSaisieParticipantEtape(prev => ({ ...prev, [etape.id]: { ...(prev[etape.id] || {}), nom: e.target.value } }))}
+                                  onKeyDown={e => e.key === 'Enter' && ajouterParticipantEtape(etape.id)} style={{ ...input, width: '110px' }} />
+                                <button onClick={() => ajouterParticipantEtape(etape.id)} style={{ background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, border: `1px solid ${colors.accent.blue}40`, borderRadius: '8px', padding: '0 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>+ Ajouter</button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Matériel nécessaire */}
+                          <div>
+                            <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>🧰 Matériel nécessaire</p>
+                            {materiel.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                {materiel.map(m => (
+                                  <span key={m.id} style={{ background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}40`, color: colors.accent.amber, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {m.texte}
+                                    {canEdit && <button onClick={() => retirerMaterielEtape(etape.id, m.id)} style={{ background: 'none', border: 'none', color: colors.accent.amber, opacity: 0.6, fontSize: '12px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {canEdit && (
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                <input placeholder="Ex: Ballons, chasubles..." value={saisieMaterielEtape[etape.id] || ''}
+                                  onChange={e => setSaisieMaterielEtape(prev => ({ ...prev, [etape.id]: e.target.value }))}
+                                  onKeyDown={e => e.key === 'Enter' && ajouterMaterielEtape(etape.id)} style={{ ...input, flex: 1, minWidth: '140px' }} />
+                                <button onClick={() => ajouterMaterielEtape(etape.id)} style={{ background: colors.accent.amber + alpha.subtle, color: colors.accent.amber, border: `1px solid ${colors.accent.amber}40`, borderRadius: '8px', padding: '0 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>+ Ajouter</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {canEdit ? (
-                      <select value={etape.statut} onChange={e => updateStatutEtape(etape.id, e.target.value)}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '11px', color: STATUTS_ETAPE.find(s => s.val === etape.statut)?.emoji ? undefined : colors.text.faint }}>
-                        {STATUTS_ETAPE.map(s => <option key={s.val} value={s.val}>{s.emoji} {s.label}</option>)}
-                      </select>
-                    ) : (
-                      <span style={{ fontSize: '11px', fontWeight: 700 }}>{STATUTS_ETAPE.find(s => s.val === etape.statut)?.emoji} {STATUTS_ETAPE.find(s => s.val === etape.statut)?.label}</span>
-                    )}
-                    {canEdit && (
-                      <button onClick={() => supprimerEtape(etape.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '13px' }}>✕</button>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
                 {canEdit && (
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '12px' }}>
                     <input placeholder="Titre de l'étape" value={nouvelleEtape.titre} onChange={e => setNouvelleEtape(f => ({ ...f, titre: e.target.value }))}
