@@ -488,7 +488,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       // cf. panelOuvert) produit un terrain plus haut que l'écran, qui pousse
       // la barre d'actions/lecture hors champ sur mobile/tablette. On plafonne
       // donc aussi par la hauteur d'écran réellement disponible.
-      const maxParHauteur = Math.round((window.innerHeight - 160) * 1.6)
+      const maxParHauteur = Math.round((window.innerHeight - 80) * 1.6)
       setWidth(Math.max(280, Math.min(Math.round(disponible), 900, maxParHauteur)))
     }
     mettreAJourLargeur()
