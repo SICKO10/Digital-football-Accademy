@@ -309,9 +309,19 @@ const buildS = (colors) => ({
 // accentColor : couleur du dashboard hôte, passée explicitement par chaque
 // Dashboard*.jsx (Éducateur #60a5fa, Recruteur #f97316, Joueur/Club #4ade80) —
 // même logique que la prop accentColor d'OnboardingGuide.jsx.
-export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80" }) {
+// estAccueil : chaque Dashboard*.jsx le calcule à partir de son propre onglet
+// actif (ex: activeTab === 'accueil'). Sur mobile/tablette, le bouton flottant
+// est masqué en dehors de l'accueil — il chevauche trop souvent le contenu
+// (ex: le panel joueurs du Tacticboard) sur les écrans étroits.
+export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80", estAccueil = true }) {
   const colors = useColors();
   const S = buildS(colors);
+  const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024);
+  useEffect(() => {
+    const onResize = () => setMobileOuTablette(window.innerWidth < 1024);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [view, setView] = useState("faq"); // 'faq' | 'support'
@@ -419,6 +429,8 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
     }
     setSendingThreadMsg(false);
   };
+
+  if (mobileOuTablette && !estAccueil) return null;
 
   return (
     <>

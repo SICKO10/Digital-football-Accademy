@@ -493,7 +493,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       // par la hauteur en portrait, pas en paysage.
       const paysage = window.innerWidth > window.innerHeight
       const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) * 1.6)
-      setWidth(Math.max(280, Math.min(Math.round(disponible), 900, maxParHauteur)))
+      // -20 : petite marge pour ne pas coller pile au bord du panel/de l'écran.
+      setWidth(Math.max(280, Math.min(Math.round(disponible) - 20, 880, maxParHauteur)))
     }
     mettreAJourLargeur()
     const observer = new ResizeObserver(mettreAJourLargeur)

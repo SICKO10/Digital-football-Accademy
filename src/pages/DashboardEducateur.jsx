@@ -4178,7 +4178,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       </div>
     )}
     <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor={colors.accent.blue} />
-    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} />
+    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
 
       {/* Overlay mobile */}

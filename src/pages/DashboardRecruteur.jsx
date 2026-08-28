@@ -883,7 +883,7 @@ export default function DashboardRecruteur() {
     <div style={st.page}>
       <style>{`@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
       <OnboardingGuide key={onboardingKey} userId={recruteurId} steps={RECRUTEUR_ONBOARDING_STEPS} accentColor={colors.accent.orange} />
-      <FloatingHelper userId={recruteurId} onReplayOnboarding={replayOnboarding} faq={RECRUTEUR_FAQ} accentColor={colors.accent.orange} />
+      <FloatingHelper userId={recruteurId} onReplayOnboarding={replayOnboarding} faq={RECRUTEUR_FAQ} accentColor={colors.accent.orange} estAccueil={activeTab === 'accueil'} />
       <nav style={st.navbar}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "32px", height: "32px", background: colors.accent.orange, borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
