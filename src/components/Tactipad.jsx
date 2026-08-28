@@ -411,6 +411,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [colorPickerOpen, setColorPickerOpen] = useState(null) // 'A' | 'B' | 'C' | 'D' | null
   const [tool, setTool] = useState('select')
   const [showMaterielPanel, setShowMaterielPanel] = useState(false)
+  // Panneau joueurs à droite : rétractable — sur un écran étroit (mobile/
+  // tablette) ses 170px fixes mordent lourdement sur la largeur du terrain.
+  const [panelOuvert, setPanelOuvert] = useState(true)
   const [showGrid, setShowGrid] = useState(false)
   const [arrowColor, setArrowColor] = useState('#ffffff')
   const [pendingStart, setPendingStart] = useState(null)
@@ -740,6 +743,16 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setElements(prev => prev.map(e => (e.id === id ? { ...e, nom } : e)))
   }
 
+  // e.evt est l'événement DOM natif (Konva le laisse passer tel quel) — un
+  // TouchEvent n'a pas de clientX/clientY sur lui-même (seulement sur ses
+  // Touch dans touches/changedTouches), contrairement à un MouseEvent. Sans
+  // ça, le picker "Ajouter un joueur" se positionnait à des coordonnées
+  // undefined au tactile (donc hors écran) : le clic semblait ne rien faire.
+  const clientXY = (evt) => {
+    const touch = evt.touches?.[0] || evt.changedTouches?.[0]
+    return touch ? { x: touch.clientX, y: touch.clientY } : { x: evt.clientX, y: evt.clientY }
+  }
+
   const handleStageClick = (e) => {
     const stage = e.target.getStage()
     const pos = stage.getPointerPosition()
@@ -752,7 +765,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     if (tool === 'joueur') {
       const dejaPlaces = elements.filter(el => el.type === 'joueur' && el.equipe === equipeActive).length
       setPickerStagePos(pos)
-      setPickerScreenPos({ x: e.evt.clientX, y: e.evt.clientY })
+      const { x, y } = clientXY(e.evt)
+      setPickerScreenPos({ x: Math.max(10, Math.min(x, window.innerWidth - 230)), y: Math.max(10, Math.min(y, window.innerHeight - 330)) })
       setPickerNumero(String(dejaPlaces + 1))
       setPickerNom('')
       setShowPickerJoueur(true)
@@ -761,6 +775,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
 
     if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h'].includes(tool)) {
       applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y, rotation: 0 }])
+      setTool('select')
       return
     }
 
@@ -768,17 +783,20 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       const texte = prompt('Texte à afficher :', '')
       if (texte && texte.trim()) {
         applyElements([...elements, { id: uid(), type: 'texte', x: pos.x, y: pos.y, text: texte.trim(), color: arrowColor }])
+        setTool('select')
       }
       return
     }
 
     if (tool === 'zone-rect') {
       applyElements([...elements, { id: uid(), type: 'zone-rect', x: pos.x - 50, y: pos.y - 30, width: 100, height: 60, color: arrowColor }])
+      setTool('select')
       return
     }
 
     if (tool === 'zone-cercle') {
       applyElements([...elements, { id: uid(), type: 'zone-cercle', x: pos.x, y: pos.y, radius: 40, color: arrowColor }])
+      setTool('select')
       return
     }
 
@@ -1358,6 +1376,20 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             glisser tactile sur le terrain comme un scroll/pinch-zoom de la
             page, ce qui entrerait en conflit avec le drag natif de Konva. */}
         <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '1000px', overflow: 'hidden', touchAction: 'none' }}>
+          {hasJoueurs && (
+            <button
+              onClick={() => setPanelOuvert(v => !v)}
+              title={panelOuvert ? 'Masquer les joueurs' : 'Afficher les joueurs'}
+              style={{
+                position: 'absolute', top: '50%', right: '6px', transform: 'translateY(-50%)',
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`,
+                borderRadius: '8px', padding: '10px 6px', cursor: 'pointer', zIndex: 10,
+                color: '#4ade80', fontSize: '13px', lineHeight: 1,
+              }}
+            >
+              {panelOuvert ? '›' : '‹'}
+            </button>
+          )}
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
               Clique le point d'arrivée de la flèche… <span style={{ color: colors.text.faint }}>(Échap pour annuler)</span>
@@ -1425,7 +1457,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                   <Arrow key={e.id} ref={n => (nodeRefs.current[e.id] = n)}
                     x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
                     stroke={e.color} fill={e.color}
-                    strokeWidth={3} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
+                    strokeWidth={3} hitStrokeWidth={24} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
                     draggable onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
                     onDragEnd={ev => {
                       const node = ev.target
@@ -1522,6 +1554,24 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             )}
           </Stage>
 
+          {/* Panneau de modification de l'élément sélectionné (flèche/zone/texte —
+              tout élément avec un champ color) : sur desktop le Transformer sur le
+              canvas suffit pour recolorer/redimensionner, mais ses poignées sont
+              difficiles à viser au doigt — ce panneau donne un accès tactile direct
+              à la couleur et à la suppression, sous le terrain. */}
+          {selectedElement && 'color' in selectedElement && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', padding: '8px 12px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 700 }}>COULEUR</span>
+              {COULEURS.map(c => (
+                <button key={c.val} onClick={() => updateElement({ ...selectedElement, color: c.val })} title={c.label}
+                  style={{ width: '26px', height: '26px', borderRadius: '50%', background: c.val, border: selectedElement.color === c.val ? '2px solid #4ade80' : '1px solid #444', cursor: 'pointer' }} />
+              ))}
+              <button onClick={supprimerSelection} style={{ marginLeft: 'auto', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                🗑 Supprimer
+              </button>
+            </div>
+          )}
+
           {/* Actions */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
             <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
@@ -1534,6 +1584,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 style={{ background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '0 14px', height: '38px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                 🗑 Supprimer {selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''}
               </button>
+            )}
+            {/* Raccourci lecture — le même bouton existe plus bas dans "Séquences",
+                mais sur mobile cette section peut demander de scroller pour l'atteindre. */}
+            {sequences.length > 1 && (
+              !playing ? (
+                <button onClick={lire} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#4ade80', fontWeight: 700 }}>▶ Lire</button>
+              ) : (
+                <button onClick={stopLecture} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#ef4444', fontWeight: 700 }}>⏹ Stop</button>
+              )
             )}
             <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 {t('tac_tout_effacer', lang)}</button>
             <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ {t('tac_export_png', lang)}</button>
@@ -1644,7 +1703,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
         </div>
 
         {/* ── NOUVEAU : panneau joueurs à droite ──────────────────────────── */}
-        {hasJoueurs && (
+        {hasJoueurs && panelOuvert && (
           <div style={{ width: 170, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {joueursParEquipe.map(({ eq, joueurs }) => (
               <div key={eq}>
