@@ -4,7 +4,7 @@ import { supabase, signOutSafe } from '../supabase'
 import ScoutCenter from '../components/ScoutCenter'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
-import { CATEGORIES as CATEGORIES_STANDARD, labelCategorie } from '../lib/categories'
+import { CATEGORIES as CATEGORIES_STANDARD, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
@@ -3558,7 +3558,12 @@ Règles :
                   <div>
                     <label style={st.label}>{t('equipe_categorie', lang)}</label>
                     <select style={st.input} value={newCategorie.nom} onChange={e => setNewCategorie(p => ({ ...p, nom: e.target.value }))}>
-                      {CATEGORIES_STANDARD.map(c => <option key={c}>{c}</option>)}
+                      <optgroup label="Masculin">
+                        {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                      </optgroup>
+                      <optgroup label="Féminin">
+                        {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                      </optgroup>
                     </select>
                   </div>
                   <div>

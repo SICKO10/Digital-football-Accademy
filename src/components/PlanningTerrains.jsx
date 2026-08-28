@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { normaliserHeure, normaliserCle, trouverFeuilleAvecDonnees } from '../lib/excelImport'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { labelCategorie } from '../lib/categories'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -992,7 +993,7 @@ Règles :
                       {categories.length > 0 ? (
                         <select style={st.input} value={formCreneau.equipe} onChange={e => setFormCreneau(f => ({ ...f, equipe: e.target.value }))}>
                           <option value="">—</option>
-                          {categories.map(c => <option key={c.id} value={`${c.nom} ${c.equipe || ''}`.trim()}>{c.nom} {c.equipe}</option>)}
+                          {categories.map(c => <option key={c.id} value={`${c.nom} ${c.equipe || ''}`.trim()}>{labelCategorie(c.nom)} {c.equipe}</option>)}
                         </select>
                       ) : (
                         <input style={st.input} value={formCreneau.equipe} onChange={e => setFormCreneau(f => ({ ...f, equipe: e.target.value }))} placeholder="Ex: U15 A" />

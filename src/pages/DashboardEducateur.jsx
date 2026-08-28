@@ -4407,10 +4407,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <label style={st.label}>{t('equipe_categorie', lang)}</label>
                       <select style={st.input} value={promptCategorieForm.nom} onChange={e => setPromptCategorieForm(p => ({ ...p, nom: e.target.value }))}>
                         <optgroup label="Masculin">
-                          {CATEGORIES_MASCULIN.map(c => <option key={c}>{c}</option>)}
+                          {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
                         </optgroup>
                         <optgroup label="Féminin">
-                          {CATEGORIES_FEMININ.map(c => <option key={c}>{c}</option>)}
+                          {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
                         </optgroup>
                       </select>
                     </div>
