@@ -4,6 +4,7 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS } from '../lib/translations'
 import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
+import NewsletterForm from '../components/NewsletterForm'
 
 const etapesEducateur = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil éducateur en 2 minutes' },
@@ -280,6 +281,24 @@ function Home() {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Créer mon profil</button>
           <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>{t('auth_connexion_titre', lang)}</button>
+        </div>
+      </section>
+
+      <section style={{ padding: '80px 24px', background: colors.background.sunken, textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <p style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px' }}>Newsletter</p>
+          <h2 style={{ fontSize: '28px', fontWeight: 800, color: colors.text.primary, marginBottom: '12px' }}>
+            Les actus du football digital, chaque semaine.
+          </h2>
+          <p style={{ color: colors.text.faint, fontSize: '15px', marginBottom: '32px' }}>
+            Analyses, nouveautés plateforme, conseils carrière — directement dans ta boîte mail.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <NewsletterForm source="home_page" />
+          </div>
+          <p style={{ color: colors.border.strong, fontSize: '12px', marginTop: '16px' }}>
+            Pas de spam. Désabonnement en 1 clic. Données protégées RGPD.
+          </p>
         </div>
       </section>
 
