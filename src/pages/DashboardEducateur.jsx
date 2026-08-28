@@ -8267,15 +8267,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 {t('nav_tacticboard', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
-            {isMobile ? (
-              <div style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px 20px', textAlign: 'center', marginTop: '1rem' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🖥️</div>
-                <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px', color: colors.text.primary }}>{t('tactic_dispo_ordinateur', lang)}</p>
-                <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('tactic_optimise_grands_ecrans', lang)}</p>
-              </div>
-            ) : (
-              <Tactipad userId={userId} lang={lang} />
-            )}
+            <Tactipad userId={userId} lang={lang} />
           </div>
         )}
 

@@ -382,7 +382,6 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
 
 export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer, lang = 'fr' }) {
   const colors = useColors()
-  const [isMobile] = useState(window.innerWidth < 768)
   const isModal = mode === 'modal'
 
   const [sport, setSport] = useState('football')
@@ -521,7 +520,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const terrainImg = useSvgImage(svgString)
 
   useEffect(() => {
-    if (!isMobile && !isModal) { chargerSchemas(); chargerDossiers() }
+    if (!isModal) { chargerSchemas(); chargerDossiers() }
   }, [])
 
   // Effectif réel de l'éducateur, pour proposer ses vrais joueurs dans le
@@ -1129,15 +1128,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     await chargerSchemas()
   }
 
-  if (isMobile) {
-    return (
-      <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: colors.text.faint }}>
-        <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
-        <p>Utilisez un écran plus large pour dessiner.</p>
-      </div>
-    )
-  }
-
   const iconeZigzag = (
     <svg width="16" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <polyline points="1,12 5,4 9,12 13,4 17,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1364,7 +1354,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             padding de la modale...), que canvasRef mesure pour dimensionner
             le Stage Konva. overflow:hidden en filet de sécurité contre tout
             débordement d'1-2px (arrondi sub-pixel). */}
-        <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '1000px', overflow: 'hidden' }}>
+        {/* touchAction:'none' empêche le navigateur d'interpréter un
+            glisser tactile sur le terrain comme un scroll/pinch-zoom de la
+            page, ce qui entrerait en conflit avec le drag natif de Konva. */}
+        <div ref={canvasRef} style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '1000px', overflow: 'hidden', touchAction: 'none' }}>
           {pendingStart && (
             <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px' }}>
               Clique le point d'arrivée de la flèche… <span style={{ color: colors.text.faint }}>(Échap pour annuler)</span>
