@@ -1732,8 +1732,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioLoading, setBiblioLoading] = useState(false)
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
-  const [biblioRubrique, setBiblioRubrique] = useState('procedes') // 'procedes' | 'videos' — rubrique Bibliothèque, deux contenus distincts
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '' }
+  const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', visibility: 'personal' }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -2085,16 +2085,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   // ── Bibliothèque de procédés ──────────────────────────────────────────────────
-  const chargerBiblio = async (uid) => {
+  // 3 niveaux de visibilité (cf. supabase_bibliotheque_visibilite.sql) : un
+  // procédé vit dans EXACTEMENT une rubrique selon sa visibilité, pas de vue
+  // "mixte" — même modèle que la bibliothèque vidéo (perso/df).
+  const chargerBiblio = async (uid, rubrique = 'personal') => {
     setBiblioLoading(true)
-    const { data } = await supabase.from('bibliotheque_exercices').select('*').eq('educateur_id', uid).order('type').order('nom')
+    if (rubrique === 'club' && !clubAffiliation?.club_id) { setBiblio([]); setBiblioLoading(false); return }
+    let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? '*' : '*, educateur:educateur_id(prenom, nom)')
+    if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('visibility', 'club')
+    else if (rubrique === 'platform') query = query.eq('visibility', 'platform')
+    else query = query.eq('educateur_id', uid).eq('visibility', 'personal')
+    const { data } = await query.order('type').order('nom')
     setBiblio(data || [])
     setBiblioLoading(false)
   }
 
+  useEffect(() => {
+    if (activeSection !== 'bibliotheque' || biblioRubrique === 'videos' || !userId) return
+    chargerBiblio(userId, biblioRubrique)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, biblioRubrique])
+
   const sauvegarderProcede = async () => {
     if (!procedeForm.nom.trim()) return
-    const payload = { ...procedeForm, educateur_id: userId, duree: procedeForm.duree ? parseInt(procedeForm.duree) : null }
+    const payload = {
+      ...procedeForm,
+      educateur_id: userId,
+      duree: procedeForm.duree ? parseInt(procedeForm.duree) : null,
+      club_id: procedeForm.visibility === 'club' ? (clubAffiliation?.club_id || null) : null,
+    }
     // Optimistic : la modale se ferme tout de suite sans attendre la réponse
     // Supabase. Erreur → réouverte avec la saisie intacte (aucune
     // vérification d'erreur n'existait avant, on en ajoute a minima).
@@ -2118,13 +2137,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setModalProcede(true)
       return
     }
-    await chargerBiblio(userId)
+    await chargerBiblio(userId, biblioRubrique === 'videos' ? 'personal' : biblioRubrique)
   }
 
   const supprimerProcede = async (id) => {
     if (!confirm(t('biblio_confirmer_suppr', lang))) return
     await supabase.from('bibliotheque_exercices').delete().eq('id', id)
     setBiblio(prev => prev.filter(p => p.id !== id))
+  }
+
+  // Clone un procédé partagé (club/platform) dans sa propre bibliothèque
+  // personnelle — la propriété ne se transfère jamais, copier est le seul
+  // moyen de se l'approprier pour le modifier ensuite.
+  const copierProcede = async (p) => {
+    const rest = { ...p }
+    delete rest.id
+    delete rest.created_at
+    delete rest.updated_at
+    delete rest.educateur
+    delete rest.club_id
+    delete rest.visibility
+    const { error } = await supabase.from('bibliotheque_exercices').insert({ ...rest, educateur_id: userId, visibility: 'personal' })
+    if (error) { alert('Erreur : ' + error.message); return }
+    alert('Copié dans ta bibliothèque personnelle.')
   }
 
   const ouvrirEditionProcede = (procede) => {
@@ -8051,7 +8086,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           <div>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               {[
-                { id: 'procedes', label: t('nav_bibliotheque', lang) },
+                { id: 'personal', label: 'Ma bibliothèque' },
+                { id: 'club', label: 'Bibliothèque club' },
+                { id: 'platform', label: 'Digital Football' },
                 { id: 'videos', label: 'Vidéos' },
               ].map(r => (
                 <button key={r.id} onClick={() => setBiblioRubrique(r.id)}
@@ -8061,7 +8098,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               ))}
             </div>
 
-            {biblioRubrique === 'procedes' && (
+            {['personal', 'club', 'platform'].includes(biblioRubrique) && (
+            <>
+            {biblioRubrique === 'club' && !clubAffiliation?.club_id ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Rejoins un club (code club, dans ton profil) pour accéder à sa bibliothèque partagée.</p>
+            ) : (
             <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
@@ -8071,7 +8112,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </h1>
                 <p style={{ fontSize: '13px', color: colors.text.faint }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
               </div>
-              {canEdit('entrainements') && (
+              {biblioRubrique === 'personal' && canEdit('entrainements') && (
                 <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
                   style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
                   + {t('biblio_nouveau_procede', lang)}
@@ -8131,16 +8172,26 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {cfg.emoji} {cfg.label}
                           </span>
-                          {canEdit('entrainements') && (
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
-                              <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
-                            </div>
+                          {p.educateur_id === userId ? (
+                            canEdit('entrainements') && (
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
+                                <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                              </div>
+                            )
+                          ) : (
+                            <button onClick={() => copierProcede(p)}
+                              style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              Copier
+                            </button>
                           )}
                         </div>
                         <div>
                           <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
                           {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
+                          {p.educateur_id !== userId && p.educateur && (
+                            <p style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                          )}
                         </div>
                         {p.description && (
                           <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
@@ -8165,6 +8216,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               )
             })()}
+            </>
+            )}
             </>
             )}
 
@@ -8215,6 +8268,30 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <button key={opt.val} onClick={() => setProcedeForm(f => ({ ...f, type: opt.val }))}
                       style={{ background: procedeForm.type === opt.val ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${procedeForm.type === opt.val ? colors.accent.blue + alpha.medium : colors.border.default}`, color: procedeForm.type === opt.val ? colors.accent.blue : colors.text.faint, padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>Sauvegarder dans</label>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {[
+                    { value: 'personal', label: 'Ma bibliothèque', desc: 'Visible uniquement par toi' },
+                    { value: 'club', label: 'Bibliothèque club', desc: 'Partagé avec ton club', disabled: !clubAffiliation?.club_id },
+                    { value: 'platform', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button" disabled={opt.disabled}
+                      onClick={() => !opt.disabled && setProcedeForm(f => ({ ...f, visibility: opt.value }))}
+                      style={{
+                        flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px',
+                        border: `2px solid ${procedeForm.visibility === opt.value ? colors.accent.blue : colors.border.default}`,
+                        borderRadius: '10px', cursor: opt.disabled ? 'not-allowed' : 'pointer',
+                        background: procedeForm.visibility === opt.value ? colors.accent.blue + alpha.subtle : colors.background.surfaceAlt,
+                        opacity: opt.disabled ? 0.4 : 1, fontFamily: 'Inter, sans-serif',
+                      }}>
+                      <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '13px', marginBottom: '3px' }}>{opt.label}</div>
+                      <div style={{ color: colors.text.faint, fontSize: '11px' }}>{opt.desc}</div>
                     </button>
                   ))}
                 </div>
