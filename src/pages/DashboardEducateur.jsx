@@ -1733,7 +1733,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', visibility: 'personal' }
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', partage_club: false, partage_platform: false }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -2091,10 +2091,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerBiblio = async (uid, rubrique = 'personal') => {
     setBiblioLoading(true)
     if (rubrique === 'club' && !clubAffiliation?.club_id) { setBiblio([]); setBiblioLoading(false); return }
+    // Un procédé peut être partagé en club ET/OU en platform en plus de rester
+    // dans "Ma bibliothèque" (pas de rubrique exclusive) — "Ma bibliothèque"
+    // montre donc tout ce que ce coach a créé, peu importe ses partages.
     let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? '*' : '*, educateur:educateur_id(prenom, nom)')
-    if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('visibility', 'club')
-    else if (rubrique === 'platform') query = query.eq('visibility', 'platform')
-    else query = query.eq('educateur_id', uid).eq('visibility', 'personal')
+    if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('partage_club', true)
+    else if (rubrique === 'platform') query = query.eq('partage_platform', true)
+    else query = query.eq('educateur_id', uid)
     const { data } = await query.order('type').order('nom')
     setBiblio(data || [])
     setBiblioLoading(false)
@@ -2112,7 +2115,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       ...procedeForm,
       educateur_id: userId,
       duree: procedeForm.duree ? parseInt(procedeForm.duree) : null,
-      club_id: procedeForm.visibility === 'club' ? (clubAffiliation?.club_id || null) : null,
+      club_id: clubAffiliation?.club_id || null,
     }
     // Optimistic : la modale se ferme tout de suite sans attendre la réponse
     // Supabase. Erreur → réouverte avec la saisie intacte (aucune
@@ -2156,8 +2159,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     delete rest.updated_at
     delete rest.educateur
     delete rest.club_id
-    delete rest.visibility
-    const { error } = await supabase.from('bibliotheque_exercices').insert({ ...rest, educateur_id: userId, visibility: 'personal' })
+    delete rest.partage_club
+    delete rest.partage_platform
+    const { error } = await supabase.from('bibliotheque_exercices').insert({ ...rest, educateur_id: userId, club_id: clubAffiliation?.club_id || null, partage_club: false, partage_platform: false })
     if (error) { alert('Erreur : ' + error.message); return }
     alert('Copié dans ta bibliothèque personnelle.')
   }
@@ -8274,20 +8278,23 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>Sauvegarder dans</label>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>Visible dans</label>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px', border: `2px solid ${colors.accent.blue}`, borderRadius: '10px', background: colors.accent.blue + alpha.subtle, fontFamily: 'Inter, sans-serif' }}>
+                    <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '13px', marginBottom: '3px' }}>Ma bibliothèque</div>
+                    <div style={{ color: colors.text.faint, fontSize: '11px' }}>Toujours visible par toi</div>
+                  </div>
                   {[
-                    { value: 'personal', label: 'Ma bibliothèque', desc: 'Visible uniquement par toi' },
-                    { value: 'club', label: 'Bibliothèque club', desc: 'Partagé avec ton club', disabled: !clubAffiliation?.club_id },
-                    { value: 'platform', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
+                    { key: 'partage_club', label: 'Bibliothèque club', desc: 'Partagé avec ton club', disabled: !clubAffiliation?.club_id },
+                    { key: 'partage_platform', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
                   ].map(opt => (
-                    <button key={opt.value} type="button" disabled={opt.disabled}
-                      onClick={() => !opt.disabled && setProcedeForm(f => ({ ...f, visibility: opt.value }))}
+                    <button key={opt.key} type="button" disabled={opt.disabled}
+                      onClick={() => !opt.disabled && setProcedeForm(f => ({ ...f, [opt.key]: !f[opt.key] }))}
                       style={{
                         flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px',
-                        border: `2px solid ${procedeForm.visibility === opt.value ? colors.accent.blue : colors.border.default}`,
+                        border: `2px solid ${procedeForm[opt.key] ? colors.accent.blue : colors.border.default}`,
                         borderRadius: '10px', cursor: opt.disabled ? 'not-allowed' : 'pointer',
-                        background: procedeForm.visibility === opt.value ? colors.accent.blue + alpha.subtle : colors.background.surfaceAlt,
+                        background: procedeForm[opt.key] ? colors.accent.blue + alpha.subtle : colors.background.surfaceAlt,
                         opacity: opt.disabled ? 0.4 : 1, fontFamily: 'Inter, sans-serif',
                       }}>
                       <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '13px', marginBottom: '3px' }}>{opt.label}</div>
