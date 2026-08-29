@@ -29,7 +29,9 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
   const [cartonsRouges, setCartonsRouges] = useState([])
   const [remplacements, setRemplacements] = useState([])
   const [analyse, setAnalyse] = useState({ offensif_positif: '', offensif_probleme: '', defensif_positif: '', defensif_probleme: '' })
+  const [scoreMiTemps, setScoreMiTemps] = useState({ nous: '', eux: '' })
   const [causerie, setCauserie] = useState('')
+  const [causerieSupports, setCauserieSupports] = useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -46,7 +48,9 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
         setCartonsRouges(c.cartons_rouges || [])
         setRemplacements(c.remplacements || [])
         setAnalyse(c.analyse || { offensif_positif: '', offensif_probleme: '', defensif_positif: '', defensif_probleme: '' })
+        setScoreMiTemps(c.score_mi_temps || { nous: '', eux: '' })
         setCauserie(c.causerie || '')
+        setCauserieSupports(c.causerie_supports || '')
       } else {
         // Pré-remplissage depuis la feuille de match (stats_match) et les buts
         // détaillés (buts_detail) — le reste (remplacements, analyse, causerie)
@@ -103,7 +107,9 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
         cartons_rouges: cartonsRouges,
         remplacements,
         analyse,
+        score_mi_temps: scoreMiTemps,
         causerie,
+        causerie_supports: causerieSupports,
       },
     }
     const { error } = rapportId
@@ -142,6 +148,16 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
           <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p>
         ) : (
           <>
+            {/* Score mi-temps — n'existe nulle part ailleurs (matchs_equipe n'a que le score final) */}
+            <div style={st.section}>
+              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Score mi-temps</p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', maxWidth: '200px' }}>
+                <input placeholder="Nous" value={scoreMiTemps.nous} onChange={e => setScoreMiTemps(s => ({ ...s, nous: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
+                <span style={{ color: colors.text.faint }}>-</span>
+                <input placeholder="Eux" value={scoreMiTemps.eux} onChange={e => setScoreMiTemps(s => ({ ...s, eux: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
+              </div>
+            </div>
+
             {/* Composition de départ */}
             <div style={st.section}>
               <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Composition de départ</p>
@@ -246,10 +262,16 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
               </div>
             </div>
 
-            {/* Causerie */}
-            <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Plan de causerie et idées forces</p>
-              <textarea rows={4} value={causerie} onChange={e => setCauserie(e.target.value)} placeholder="Système, consignes, points clés évoqués avant le match..." style={{ ...st.input, resize: 'vertical' }} />
+            {/* Causerie avant-match */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={st.section}>
+                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Plan de causerie et idées forces</p>
+                <textarea rows={4} value={causerie} onChange={e => setCauserie(e.target.value)} placeholder="Système, consignes, points clés évoqués avant le match..." style={{ ...st.input, resize: 'vertical' }} />
+              </div>
+              <div style={st.section}>
+                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Supports et méthodes</p>
+                <textarea rows={4} value={causerieSupports} onChange={e => setCauserieSupports(e.target.value)} placeholder="Paper board, vidéo, plots..." style={{ ...st.input, resize: 'vertical' }} />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -269,90 +291,203 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
 
 // Export PDF façon "feuille de match" — réutilisé par AnalyseVideo.jsx pour le
 // bouton "Re-télécharger" des rapports mode_analyse === 'match'.
+// Reproduit la mise en page du modèle "BEF - Rapport de match" (tableaux
+// bordés, en-têtes de couleur) plutôt qu'un simple texte — colonnes/couleurs
+// approchées à l'oeil sur le PDF fourni en exemple, pas un pixel-perfect.
+const PDF_MARGE = 15
+const PDF_LARGEUR_UTILE = 210 - PDF_MARGE * 2
+const BLEU_BG = [222, 235, 247]
+const BLEU_BORDURE = [155, 187, 224]
+const BLEU_TEXTE = [31, 78, 121]
+const ORANGE_BG = [252, 228, 214]
+const ORANGE_BORDURE = [230, 175, 145]
+const VERT_BG = [146, 208, 80]
+const ROUGE_BG = [255, 99, 71]
+const GRIS_BORDURE = [190, 190, 190]
+
 export async function genererPDFMatch(rapport, clubNom) {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF()
-  let y = 20
-
-  const addLine = (text, size = 11, bold = false, color = [0, 0, 0]) => {
-    doc.setFontSize(size)
-    doc.setFont('helvetica', bold ? 'bold' : 'normal')
-    doc.setTextColor(...color)
-    const lines = doc.splitTextToSize(String(text), 170)
-    lines.forEach(line => {
-      if (y > 275) { doc.addPage(); y = 20 }
-      doc.text(line, 20, y)
-      y += size * 0.5
-    })
-    y += 2
-  }
-
-  doc.setFillColor(20, 83, 45)
-  doc.rect(0, 0, 210, 30, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(18)
-  doc.setFont('helvetica', 'bold')
-  doc.text('RAPPORT DE MATCH', 20, 15)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Digital Football Academy', 20, 22)
-  y = 40
-
   const c = rapport.contenu || {}
-  addLine(`${clubNom || 'Nous'} ${c.score_nous ?? ''} - ${c.score_eux ?? ''} ${c.adversaire || ''}`, 14, true, [20, 83, 45])
-  addLine(`${rapport.date_analyse ? new Date(rapport.date_analyse).toLocaleDateString('fr-FR') : ''} · ${c.domicile ? 'Domicile' : 'Extérieur'}`)
-  y += 4
+  let y = 15
 
-  if (c.composition?.length) {
-    addLine('COMPOSITION DE DÉPART', 12, true, [20, 83, 45])
-    c.composition.filter(j => j.titulaire).forEach(j => addLine(`${j.numero || '—'}  ${j.prenom} ${j.nom}`))
-    y += 3
+  // ── Table drawer générique — cellules = string ou {text,bg,border,color,bold,align} ──
+  const drawTable = (x, startY, colWidths, rows, fontSize = 9) => {
+    let cy = startY
+    rows.forEach(row => {
+      doc.setFontSize(fontSize)
+      const cells = row.map(cell => (typeof cell === 'string' ? { text: cell } : cell))
+      const cellLines = cells.map((cell, i) => doc.splitTextToSize(String(cell.text ?? ''), colWidths[i] - 4))
+      const lineH = fontSize * 0.42 + 1.3
+      const rowHeight = Math.max(6, ...cellLines.map(l => l.length * lineH + 3))
+      if (cy + rowHeight > 282) { doc.addPage(); cy = 15 }
+      let cx = x
+      cells.forEach((cell, i) => {
+        const w = colWidths[i]
+        doc.setFillColor(...(cell.bg || [255, 255, 255]))
+        doc.rect(cx, cy, w, rowHeight, 'F')
+        doc.setDrawColor(...(cell.border || GRIS_BORDURE))
+        doc.rect(cx, cy, w, rowHeight)
+        doc.setFont('helvetica', cell.bold ? 'bold' : 'normal')
+        doc.setTextColor(...(cell.color || [30, 30, 30]))
+        const align = cell.align || 'left'
+        const tx = align === 'center' ? cx + w / 2 : cx + 3
+        cellLines[i].forEach((line, li) => doc.text(line, tx, cy + 5 + li * lineH, { align }))
+        cx += w
+      })
+      cy += rowHeight
+    })
+    return cy
   }
 
+  const titre = (texte) => {
+    if (y + 10 > 282) { doc.addPage(); y = 15 }
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...BLEU_TEXTE)
+    doc.text(texte, PDF_MARGE, y + 5)
+    y += 9
+  }
+
+  // ── Bandeau ──
+  doc.setFillColor(20, 83, 45)
+  doc.rect(0, 0, 210, 22, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('RAPPORT DE MATCH', 105, 14, { align: 'center' })
+  y = 30
+
+  // ── Équipe domicile / visiteuse, date, scores ──
+  const nomNous = clubNom || 'Nous'
+  const nomAdv = c.adversaire || 'Adversaire'
+  const domicileNom = c.domicile ? nomNous : nomAdv
+  const visiteurNom = c.domicile ? nomAdv : nomNous
+  const w4 = PDF_LARGEUR_UTILE / 4
+  y = drawTable(PDF_MARGE, y, [w4, w4, w4, w4], [[
+    { text: 'Équipe Domicile', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    { text: domicileNom, align: 'center' },
+    { text: visiteurNom, align: 'center' },
+    { text: 'Équipe visiteuse', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+  ]])
+  y += 3
+  y = drawTable(PDF_MARGE, y, [w4, w4 * 3], [[
+    { text: 'DATE :', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    { text: rapport.date_analyse ? new Date(rapport.date_analyse).toLocaleDateString('fr-FR') : '', align: 'center' },
+  ]])
+  y += 3
+  y = drawTable(PDF_MARGE, y, [w4 * 1.5, w4, w4], [[
+    { text: 'Score Mi-temps', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    { text: String(c.score_mi_temps?.nous ?? ''), align: 'center' },
+    { text: String(c.score_mi_temps?.eux ?? ''), align: 'center' },
+  ]])
+  y += 3
+  y = drawTable(PDF_MARGE, y, [w4 * 1.5, w4, w4], [[
+    { text: 'Score Fin de Match', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    { text: String(c.score_nous ?? ''), align: 'center' },
+    { text: String(c.score_eux ?? ''), align: 'center' },
+  ]])
+  y += 8
+
+  // ── Composition de départ ──
+  if (c.composition?.length) {
+    titre('Composition de départ')
+    const wCompo = [PDF_LARGEUR_UTILE * 0.2, PDF_LARGEUR_UTILE * 0.4, PDF_LARGEUR_UTILE * 0.4]
+    const header = [{ text: 'Numéro', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Nom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }, { text: 'Prénom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }]
+    const rows = c.composition.map(j => [{ text: j.numero || '—', align: 'center' }, j.nom || '', j.prenom || ''])
+    y = drawTable(PDF_MARGE, y, wCompo, [header, ...rows])
+    y += 8
+  }
+
+  // ── Buts marqués / encaissés ──
   if (c.buts_marques?.length) {
-    addLine('BUTS MARQUÉS', 12, true, [20, 83, 45])
-    c.buts_marques.forEach(b => addLine(`[${b.minute || '?'}'] N°${b.numero || '?'} — ${b.description || ''}`))
-    y += 3
+    titre('Buts marqués')
+    const w = [PDF_LARGEUR_UTILE * 0.12, PDF_LARGEUR_UTILE * 0.15, PDF_LARGEUR_UTILE * 0.73]
+    const header = [{ text: 'N°', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Minute', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Description', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }]
+    const rows = c.buts_marques.map(b => [{ text: b.numero || '—', align: 'center' }, { text: b.minute || '—', align: 'center' }, b.description || ''])
+    y = drawTable(PDF_MARGE, y, w, [header, ...rows])
+    y += 8
   }
 
   if (c.buts_encaisses?.length) {
-    addLine('BUTS ENCAISSÉS', 12, true, [20, 83, 45])
-    c.buts_encaisses.forEach(b => addLine(`[${b.minute || '?'}'] ${b.description || ''}`))
-    y += 3
+    titre('Buts encaissés')
+    const w = [PDF_LARGEUR_UTILE * 0.15, PDF_LARGEUR_UTILE * 0.85]
+    const header = [{ text: 'Min', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Description', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }]
+    const rows = c.buts_encaisses.map(b => [{ text: b.minute || '—', align: 'center' }, b.description || ''])
+    y = drawTable(PDF_MARGE, y, w, [header, ...rows])
+    y += 8
   }
 
-  if (c.cartons_jaunes?.length) {
-    addLine('CARTONS JAUNES', 12, true, [20, 83, 45])
-    c.cartons_jaunes.forEach(ct => addLine(`N°${ct.numero || '?'} — ${ct.minute || '?'}'`))
-    y += 3
+  // ── Cartons jaunes / rouges — côte à côte, même point de départ pour les
+  //    deux colonnes ; la hauteur finale retenue est celle de la plus grande
+  //    des deux tables (sinon la section suivante chevaucherait la plus haute).
+  if (c.cartons_jaunes?.length || c.cartons_rouges?.length) {
+    if (y + 10 > 282) { doc.addPage(); y = 15 }
+    const wCarton = PDF_LARGEUR_UTILE / 2 - 3
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...BLEU_TEXTE)
+    if (c.cartons_jaunes?.length) doc.text('Cartons jaunes', PDF_MARGE, y + 5)
+    if (c.cartons_rouges?.length) doc.text('Cartons rouges', PDF_MARGE + wCarton + 6, y + 5)
+    const yTables = y + 9
+    let yFin = yTables
+    if (c.cartons_jaunes?.length) {
+      const yJaunes = drawTable(PDF_MARGE, yTables, [wCarton / 2, wCarton / 2], [
+        [{ text: 'N°', bg: [255, 243, 176], bold: true, align: 'center' }, { text: 'Minute', bg: [255, 243, 176], bold: true, align: 'center' }],
+        ...c.cartons_jaunes.map(ct => [{ text: ct.numero || '—', align: 'center' }, { text: ct.minute || '—', align: 'center' }]),
+      ])
+      yFin = Math.max(yFin, yJaunes)
+    }
+    if (c.cartons_rouges?.length) {
+      const yRouges = drawTable(PDF_MARGE + wCarton + 6, yTables, [wCarton / 2, wCarton / 2], [
+        [{ text: 'N°', bg: [255, 205, 205], bold: true, align: 'center' }, { text: 'Minute', bg: [255, 205, 205], bold: true, align: 'center' }],
+        ...c.cartons_rouges.map(ct => [{ text: ct.numero || '—', align: 'center' }, { text: ct.minute || '—', align: 'center' }]),
+      ])
+      yFin = Math.max(yFin, yRouges)
+    }
+    y = yFin + 8
   }
 
-  if (c.cartons_rouges?.length) {
-    addLine('CARTONS ROUGES', 12, true, [20, 83, 45])
-    c.cartons_rouges.forEach(ct => addLine(`N°${ct.numero || '?'} — ${ct.minute || '?'}'`))
-    y += 3
-  }
-
+  // ── Remplacements ──
   if (c.remplacements?.length) {
-    addLine('REMPLACEMENTS', 12, true, [20, 83, 45])
-    c.remplacements.forEach(r => addLine(`N°${r.entrant || '?'} remplace N°${r.sortant || '?'} à la ${r.minute || '?'}'`))
-    y += 3
+    titre('Remplacements')
+    const w = [PDF_LARGEUR_UTILE]
+    const rows = c.remplacements.map(r => [`N°${r.entrant || '__'} remplace le N°${r.sortant || '__'} à la ${r.minute || '__'}e`])
+    y = drawTable(PDF_MARGE, y, w, rows)
+    y += 8
   }
 
-  if (c.analyse) {
-    addLine('ANALYSE OFFENSIVE', 12, true, [20, 83, 45])
-    if (c.analyse.offensif_positif) addLine(`Points positifs : ${c.analyse.offensif_positif}`)
-    if (c.analyse.offensif_probleme) addLine(`Problèmes : ${c.analyse.offensif_probleme}`)
-    y += 3
-    addLine('ANALYSE DÉFENSIVE', 12, true, [20, 83, 45])
-    if (c.analyse.defensif_positif) addLine(`Points positifs : ${c.analyse.defensif_positif}`)
-    if (c.analyse.defensif_probleme) addLine(`Problèmes : ${c.analyse.defensif_probleme}`)
-    y += 3
+  // ── Analyse offensive / défensive — grille 2x2 colorée ──
+  if (c.analyse && (c.analyse.offensif_positif || c.analyse.offensif_probleme || c.analyse.defensif_positif || c.analyse.defensif_probleme)) {
+    titre('Analyse du match')
+    const w4a = PDF_LARGEUR_UTILE / 4
+    y = drawTable(PDF_MARGE, y, [w4a * 2, w4a * 2], [[
+      { text: 'Sur le plan offensif', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+      { text: 'Sur le plan défensif', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    ]])
+    y = drawTable(PDF_MARGE, y, [w4a, w4a, w4a, w4a], [
+      [
+        { text: 'Points positifs', bg: VERT_BG, color: [255, 255, 255], bold: true, align: 'center' },
+        { text: 'Problèmes rencontrés', bg: ROUGE_BG, color: [255, 255, 255], bold: true, align: 'center' },
+        { text: 'Points positifs', bg: VERT_BG, color: [255, 255, 255], bold: true, align: 'center' },
+        { text: 'Problèmes rencontrés', bg: ROUGE_BG, color: [255, 255, 255], bold: true, align: 'center' },
+      ],
+      [c.analyse.offensif_positif || '—', c.analyse.offensif_probleme || '—', c.analyse.defensif_positif || '—', c.analyse.defensif_probleme || '—'],
+    ])
+    y += 8
   }
 
-  if (c.causerie) {
-    addLine('CAUSERIE AVANT-MATCH', 12, true, [20, 83, 45])
-    addLine(c.causerie)
+  // ── Causerie avant-match ──
+  if (c.causerie || c.causerie_supports) {
+    titre('Causerie avant-match')
+    const w2 = PDF_LARGEUR_UTILE / 2
+    y = drawTable(PDF_MARGE, y, [w2, w2], [
+      [
+        { text: 'Plan de causerie et idées forces', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+        { text: 'Supports et méthodes', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+      ],
+      [c.causerie || '—', c.causerie_supports || '—'],
+    ])
   }
 
   doc.save(`rapport_match_${(c.adversaire || 'match').replace(/\s+/g, '_')}_${rapport.date_analyse || ''}.pdf`)
