@@ -1259,15 +1259,8 @@ export default function DashboardClub() {
   const [projetDetailOuvert, setProjetDetailOuvert] = useState(null) // id du projet affiché en vue détail, ou null
   const [showProjetForm, setShowProjetForm] = useState(false)
   const [editingProjetId, setEditingProjetId] = useState(null)
-  const [projetForm, setProjetForm] = useState({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [], missions: [] })
-  // Saisie libre du responsable/participant en cours, par mission de projet —
-  // même principe que saisieResponsableMission/saisieParticipantMission pour
-  // les événements (cf. note plus haut), dupliqué plutôt que généralisé : ces
-  // deux formulaires (événement/projet) évoluent indépendamment dans ce fichier.
-  const [saisieResponsableMissionProjet, setSaisieResponsableMissionProjet] = useState({})
-  const [saisieParticipantMissionProjet, setSaisieParticipantMissionProjet] = useState({})
+  const [projetForm, setProjetForm] = useState({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
   const [savingProjet, setSavingProjet] = useState(false)
-  const [nouvelleTache, setNouvelleTache] = useState({}) // { [projetId]: titre en cours de saisie }
   // Référents du projet — même saisie libre nom/prénom que pour les
   // événements (cf. ajouterReferent), en plus du responsable existant
   // (sélectionné parmi le staff, inchangé).
@@ -2257,20 +2250,26 @@ export default function DashboardClub() {
   }
 
   // ── Projets club ─────────────────────────────────────────────────────────────
+  // Étapes → Missions → Actions chargées d'un coup en imbriqué (même
+  // convention que l'ancien taches_projet(*)) : ProjetDetail n'a plus besoin
+  // de son propre fetch, et la carte Kanban peut calculer son % d'avancement
+  // à partir de ces mêmes données (cf. calculerAvancementProjet).
   const chargerProjets = async (uid) => {
-    const { data } = await supabase.from('projets_club').select('*, taches_projet(*)').eq('club_id', uid).order('created_at', { ascending: false })
+    const { data } = await supabase.from('projets_club')
+      .select('*, projet_etapes(*, etape_missions(*, mission_actions(*))), projet_budget(*)')
+      .eq('club_id', uid).order('created_at', { ascending: false })
     setProjetsClub(data || [])
   }
 
   const ouvrirNouveauProjet = () => {
     setEditingProjetId(null)
-    setProjetForm({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [], missions: [] })
+    setProjetForm({ nom: '', description: '', objectif: '', date_debut: '', date_fin: '', responsable_id: '', responsable_nom: '', statut: 'en_attente', referents: [] })
     setShowProjetForm(true)
   }
 
   const ouvrirEditionProjet = (p) => {
     setEditingProjetId(p.id)
-    setProjetForm({ nom: p.nom || '', description: p.description || '', objectif: p.objectif || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente', referents: p.referents || [], missions: p.missions || [] })
+    setProjetForm({ nom: p.nom || '', description: p.description || '', objectif: p.objectif || '', date_debut: p.date_debut || '', date_fin: p.date_fin || '', responsable_id: p.responsable_id || '', responsable_nom: p.responsable_nom || '', statut: p.statut || 'en_attente', referents: p.referents || [] })
     setShowProjetForm(true)
   }
 
@@ -2287,56 +2286,6 @@ export default function DashboardClub() {
     setProjetForm(f => ({ ...f, referents: f.referents.filter(r => r.id !== id) }))
   }
 
-  // ── Missions d'un projet — même structure que les missions d'événement
-  // (responsable_id/responsable_nom, participants en saisie libre), étendue
-  // avec dates propres à la mission, les 3 catégories de ressources et le
-  // suivi (résultats / problème rencontré) demandés spécifiquement pour les
-  // projets. ──
-  const ajouterMissionProjet = () => {
-    setProjetForm(f => ({
-      ...f,
-      missions: [...f.missions, {
-        id: crypto.randomUUID(), titre: '', responsable_id: '', responsable_nom: '', participants: [],
-        objectif: '', comment: '', date_debut: '', date_fin: '',
-        ressource_humaine: '', ressource_materielle: '', ressource_financiere: '',
-        resultats: '', probleme_rencontre: '',
-      }],
-    }))
-  }
-  const modifierMissionProjet = (id, champ, valeur) => {
-    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === id ? { ...m, [champ]: valeur } : m) }))
-  }
-  const supprimerMissionProjet = (id) => {
-    setProjetForm(f => ({ ...f, missions: f.missions.filter(m => m.id !== id) }))
-  }
-  const validerResponsableMissionProjet = (missionId) => {
-    const s = saisieResponsableMissionProjet[missionId] || {}
-    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
-    if (!nom) return
-    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: nom } : m) }))
-    setSaisieResponsableMissionProjet(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
-  }
-  const effacerResponsableMissionProjet = (missionId) => {
-    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, responsable_id: null, responsable_nom: '' } : m) }))
-  }
-  const ajouterParticipantMissionProjet = (missionId) => {
-    const s = saisieParticipantMissionProjet[missionId] || {}
-    const nom = `${s.prenom || ''} ${s.nom || ''}`.trim()
-    if (!nom) return
-    setProjetForm(f => ({
-      ...f,
-      missions: f.missions.map(m => {
-        if (m.id !== missionId) return m
-        if (m.participants.some(p => p.nom.toLowerCase() === nom.toLowerCase())) return m
-        return { ...m, participants: [...m.participants, { id: crypto.randomUUID(), nom }] }
-      }),
-    }))
-    setSaisieParticipantMissionProjet(prev => ({ ...prev, [missionId]: { prenom: '', nom: '' } }))
-  }
-  const retirerParticipantMissionProjet = (missionId, participantId) => {
-    setProjetForm(f => ({ ...f, missions: f.missions.map(m => m.id === missionId ? { ...m, participants: m.participants.filter(p => p.id !== participantId) } : m) }))
-  }
-
   const sauvegarderProjet = async () => {
     if (!projetForm.nom.trim()) return
     const payload = {
@@ -2350,7 +2299,6 @@ export default function DashboardClub() {
       responsable_nom: projetForm.responsable_nom || null,
       statut: projetForm.statut,
       referents: projetForm.referents,
-      missions: projetForm.missions,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -2450,12 +2398,18 @@ export default function DashboardClub() {
         y += 4
       }
 
-      const taches = p.taches_projet || []
-      if (taches.length > 0) {
-        const fait = taches.filter(t => t.fait).length
-        titreSection(`Tâches (${fait}/${taches.length} terminées)`)
-        taches.forEach(tc => ligne(`${tc.fait ? '☑' : '☐'}  ${tc.titre}`, { couleur: tc.fait ? GRIS : NOIR }))
-      }
+      const etapes = [...(p.projet_etapes || [])].sort((a, b) => a.ordre - b.ordre)
+      etapes.forEach(etape => {
+        const missions = [...(etape.etape_missions || [])].sort((a, b) => a.ordre - b.ordre)
+        if (missions.length === 0) return
+        titreSection(`Étape — ${etape.titre}`)
+        missions.forEach(mission => {
+          ligne(mission.titre, { taille: 11 })
+          const actions = [...(mission.mission_actions || [])].sort((a, b) => a.ordre - b.ordre)
+          actions.forEach(a => ligne(`${a.fait ? '☑' : '☐'}  ${a.quoi}`, { couleur: a.fait ? GRIS : NOIR, indent: 4 }))
+        })
+        y += 4
+      })
 
       doc.save(`projet-${(p.nom || 'sans-nom').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`)
     } finally {
@@ -2463,22 +2417,13 @@ export default function DashboardClub() {
     }
   }
 
-  const ajouterTache = async (projetId) => {
-    const titre = (nouvelleTache[projetId] || '').trim()
-    if (!titre) return
-    await supabase.from('taches_projet').insert({ projet_id: projetId, titre })
-    setNouvelleTache(prev => ({ ...prev, [projetId]: '' }))
-    await chargerProjets(clubId)
-  }
-
-  const toggleTache = async (tache) => {
-    await supabase.from('taches_projet').update({ fait: !tache.fait }).eq('id', tache.id)
-    await chargerProjets(clubId)
-  }
-
-  const supprimerTache = async (id) => {
-    await supabase.from('taches_projet').delete().eq('id', id)
-    await chargerProjets(clubId)
+  // % d'avancement du projet = actions cochées / total des actions, toutes
+  // missions et étapes confondues — remonte ensuite au niveau étape et
+  // mission dans ProjetDetail avec le même calcul restreint à leur portée.
+  const calculerAvancementProjet = (p) => {
+    const actions = (p.projet_etapes || []).flatMap(e => (e.etape_missions || []).flatMap(m => m.mission_actions || []))
+    if (actions.length === 0) return 0
+    return Math.round((actions.filter(a => a.fait).length / actions.length) * 100)
   }
 
   const chargerSeancesRecues = async (uid) => {
@@ -5029,126 +4974,6 @@ Règles :
                         )}
                       </div>
 
-                      {/* ── Missions du projet ── */}
-                      <div style={{ marginBottom: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <label style={st.label}>🎯 Missions</label>
-                          <button type="button" onClick={ajouterMissionProjet} style={st.btnSecondary}>+ Créer une mission</button>
-                        </div>
-                        {projetForm.missions.length === 0 && (
-                          <p style={{ color: colors.border.strong, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucune mission créée.</p>
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {projetForm.missions.map(mission => (
-                            <div key={mission.id} style={{ background: colors.background.raised, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <input placeholder="Titre de la mission (ex: Devis entreprises, Suivi chantier…)" value={mission.titre} onChange={e => modifierMissionProjet(mission.id, 'titre', e.target.value)} style={{ ...st.input, flex: 1, fontWeight: 700 }} />
-                                <button type="button" onClick={() => supprimerMissionProjet(mission.id)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '16px', cursor: 'pointer' }}>✕</button>
-                              </div>
-
-                              <div>
-                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Référent de la mission</p>
-                                {mission.responsable_nom ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ background: couleurPrincipale + alpha.soft, border: `1px solid ${couleurPrincipale}`, color: couleurPrincipale, padding: '5px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>
-                                      ⭐ {mission.responsable_nom}
-                                    </span>
-                                    <button type="button" onClick={() => effacerResponsableMissionProjet(mission.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '14px', cursor: 'pointer' }}>✕</button>
-                                  </div>
-                                ) : (
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    <input placeholder="Prénom" value={(saisieResponsableMissionProjet[mission.id] || {}).prenom || ''}
-                                      onChange={e => setSaisieResponsableMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
-                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMissionProjet(mission.id)}
-                                      style={{ ...st.input, width: '130px' }} />
-                                    <input placeholder="Nom" value={(saisieResponsableMissionProjet[mission.id] || {}).nom || ''}
-                                      onChange={e => setSaisieResponsableMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
-                                      onKeyDown={e => e.key === 'Enter' && validerResponsableMissionProjet(mission.id)}
-                                      style={{ ...st.input, width: '130px' }} />
-                                    <button type="button" onClick={() => validerResponsableMissionProjet(mission.id)}
-                                      style={{ background: couleurPrincipale + alpha.subtle, border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
-                                      Valider
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div>
-                                <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 6px' }}>Participants à la mission ({mission.participants.length})</p>
-                                {mission.participants.length > 0 && (
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-                                    {mission.participants.map(p => (
-                                      <span key={p.id} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        {p.nom}
-                                        <button type="button" onClick={() => retirerParticipantMissionProjet(mission.id, p.id)} style={{ background: 'none', border: 'none', color: colors.accent.blue, opacity: 0.6, fontSize: '12px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                  <input placeholder="Prénom" value={(saisieParticipantMissionProjet[mission.id] || {}).prenom || ''}
-                                    onChange={e => setSaisieParticipantMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), prenom: e.target.value } }))}
-                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMissionProjet(mission.id)}
-                                    style={{ ...st.input, width: '130px' }} />
-                                  <input placeholder="Nom" value={(saisieParticipantMissionProjet[mission.id] || {}).nom || ''}
-                                    onChange={e => setSaisieParticipantMissionProjet(prev => ({ ...prev, [mission.id]: { ...(prev[mission.id] || {}), nom: e.target.value } }))}
-                                    onKeyDown={e => e.key === 'Enter' && ajouterParticipantMissionProjet(mission.id)}
-                                    style={{ ...st.input, width: '130px' }} />
-                                  <button type="button" onClick={() => ajouterParticipantMissionProjet(mission.id)}
-                                    style={{ background: colors.background.base, border: `1px solid ${colors.border.strong}`, color: colors.accent.blue, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
-                                    + Ajouter
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-                                <div>
-                                  <label style={st.label}>Date de début</label>
-                                  <input style={st.input} type="date" value={mission.date_debut} onChange={e => modifierMissionProjet(mission.id, 'date_debut', e.target.value)} />
-                                </div>
-                                <div>
-                                  <label style={st.label}>Date de fin</label>
-                                  <input style={st.input} type="date" value={mission.date_fin} onChange={e => modifierMissionProjet(mission.id, 'date_fin', e.target.value)} />
-                                </div>
-                              </div>
-
-                              <div>
-                                <label style={st.label}>Objectif</label>
-                                <textarea placeholder="Quel est l'objectif de cette mission ?" value={mission.objectif} onChange={e => modifierMissionProjet(mission.id, 'objectif', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
-                              </div>
-                              <div>
-                                <label style={st.label}>Comment</label>
-                                <textarea placeholder="Comment réaliser cette mission ? (étapes, consignes, timing…)" value={mission.comment} onChange={e => modifierMissionProjet(mission.id, 'comment', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
-                              </div>
-
-                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '10px' }}>
-                                <div>
-                                  <label style={st.label}>Ressource humaine</label>
-                                  <input placeholder="Ex: 2 bénévoles" style={st.input} value={mission.ressource_humaine} onChange={e => modifierMissionProjet(mission.id, 'ressource_humaine', e.target.value)} />
-                                </div>
-                                <div>
-                                  <label style={st.label}>Ressource matérielle</label>
-                                  <input placeholder="Ex: Camionnette, outillage" style={st.input} value={mission.ressource_materielle} onChange={e => modifierMissionProjet(mission.id, 'ressource_materielle', e.target.value)} />
-                                </div>
-                                <div>
-                                  <label style={st.label}>Ressource financière</label>
-                                  <input placeholder="Ex: 500€ budget matériel" style={st.input} value={mission.ressource_financiere} onChange={e => modifierMissionProjet(mission.id, 'ressource_financiere', e.target.value)} />
-                                </div>
-                              </div>
-
-                              <div>
-                                <label style={st.label}>Résultats de la mission</label>
-                                <textarea placeholder="Ce qui a été accompli" value={mission.resultats} onChange={e => modifierMissionProjet(mission.id, 'resultats', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
-                              </div>
-                              <div>
-                                <label style={st.label}>Problème rencontré</label>
-                                <textarea placeholder="Difficultés, retards, blocages…" value={mission.probleme_rencontre} onChange={e => modifierMissionProjet(mission.id, 'probleme_rencontre', e.target.value)} rows={2} style={{ ...st.input, resize: 'vertical' }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={sauvegarderProjet} disabled={savingProjet || !projetForm.nom.trim()} style={st.btnSolid}>
                           {savingProjet ? t('jp_enregistrement', lang) : editingProjetId ? t('btn_sauvegarder', lang) : t('btn_ajouter', lang)}
@@ -5169,8 +4994,7 @@ Règles :
                           </p>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {projetsParStatut(colonne.val).map(p => {
-                              const taches = p.taches_projet || []
-                              const fait = taches.filter(t => t.fait).length
+                              const avancement = calculerAvancementProjet(p)
                               return (
                                 <div key={p.id} onClick={() => setProjetDetailOuvert(p.id)} style={{ ...st.card, borderLeft: `3px solid ${colonne.color}`, cursor: 'pointer' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
@@ -5204,27 +5028,12 @@ Règles :
                                       </select>
                                     )}
 
-                                    {taches.length > 0 && (
-                                      <p style={{ margin: '0 0 6px', fontSize: '10px', color: colors.text.faint }}>{fait}/{taches.length} tâches terminées</p>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                                      {taches.map(tc => (
-                                        <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                          <span onClick={() => canEditSection('evenements') && toggleTache(tc)} style={{ cursor: canEditSection('evenements') ? 'pointer' : 'default', fontSize: '13px', color: tc.fait ? colors.accent.green : colors.text.faint }}>
-                                            {tc.fait ? '☑' : '☐'}
-                                          </span>
-                                          <span style={{ flex: 1, fontSize: '11px', color: tc.fait ? colors.text.faint : colors.text.secondary, textDecoration: tc.fait ? 'line-through' : 'none' }}>{tc.titre}</span>
-                                          {canEditSection('evenements') && (
-                                            <button onClick={() => supprimerTache(tc.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '11px' }}>✕</button>
-                                          )}
+                                    {(p.projet_etapes?.length > 0) && (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
+                                          <div style={{ width: `${avancement}%`, height: '100%', background: colonne.color, borderRadius: '3px' }} />
                                         </div>
-                                      ))}
-                                    </div>
-                                    {canEditSection('evenements') && (
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <input value={nouvelleTache[p.id] || ''} onChange={e => setNouvelleTache(prev => ({ ...prev, [p.id]: e.target.value }))}
-                                          onKeyDown={e => e.key === 'Enter' && ajouterTache(p.id)}
-                                          placeholder="+ Tâche..." style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '4px 8px', fontSize: '11px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                                        <span style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700 }}>{avancement}%</span>
                                       </div>
                                     )}
                                   </div>
@@ -5250,12 +5059,6 @@ Règles :
                     onClose={() => setProjetDetailOuvert(null)}
                     onOuvrirEdition={proj => { setProjetDetailOuvert(null); ouvrirEditionProjet(proj) }}
                     onProjetMisAJour={() => chargerProjets(clubId)}
-                    taches={p.taches_projet || []}
-                    nouvelleTache={nouvelleTache}
-                    setNouvelleTache={setNouvelleTache}
-                    toggleTache={toggleTache}
-                    ajouterTache={ajouterTache}
-                    supprimerTache={supprimerTache}
                   />
                 )
               })()}

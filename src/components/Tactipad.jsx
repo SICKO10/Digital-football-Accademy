@@ -475,11 +475,24 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
   const canvasRef = useRef(null)
   const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
-  // Ratio hauteur/largeur du terrain — assoupli de 10/16 (0.625) à 0.56 sur
-  // demande (largeur un peu plus grande, hauteur un peu plus réduite) ;
-  // RATIO_H_INV (son inverse) sert à reconvertir une hauteur d'écran dispo
-  // en largeur équivalente dans mettreAJourLargeur ci-dessous.
-  const RATIO_H = 0.56
+  // Sizing entièrement séparé desktop / mobile-tablette (même seuil que le
+  // reste de l'app, cf. isMobile des Dashboard*.jsx) : sur ordinateur le
+  // terrain peut être franchement plus grand (pas de barre d'action à
+  // atteindre au doigt, pas de panel joueurs qui mord dessus de la même
+  // façon) ; les contraintes de hauteur/largeur ci-dessous ne concernent
+  // que le mobile/tablette.
+  const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024)
+  useEffect(() => {
+    const onResize = () => setMobileOuTablette(window.innerWidth < 1024)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => { window.removeEventListener('resize', onResize); window.removeEventListener('orientationchange', onResize) }
+  }, [])
+  // Ratio hauteur/largeur du terrain — 0.625 (10/16, proportions pitch
+  // classiques) sur ordinateur ; assoupli à 0.56 sur mobile/tablette
+  // (largeur un peu plus grande, hauteur un peu plus réduite, demandé après
+  // retour visuel sur petit écran).
+  const RATIO_H = mobileOuTablette ? 0.56 : 0.625
   const height = Math.round(width * RATIO_H)
 
   useLayoutEffect(() => {
@@ -488,6 +501,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     const mettreAJourLargeur = () => {
       const disponible = el.getBoundingClientRect().width
       if (disponible <= 0) return
+      if (window.innerWidth >= 1024) {
+        // Desktop : uniquement borné par l'espace réellement disponible.
+        setWidth(Math.max(280, Math.min(Math.round(disponible) - 20, 1200)))
+        return
+      }
       // Le terrain garde un ratio fixe (RATIO_H ci-dessus) : sans
       // borne côté hauteur, un conteneur large (ex: panel joueurs masqué,
       // cf. panelOuvert) produit un terrain plus haut que l'écran en
@@ -497,7 +515,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       // bien plus qu'il n'était nécessaire — on ne plafonne donc que
       // par la hauteur en portrait, pas en paysage.
       const paysage = window.innerWidth > window.innerHeight
-      const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) / RATIO_H)
+      const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) / 0.56)
       // -20 : petite marge pour ne pas coller pile au bord du panel/de l'écran.
       const plafonne = Math.max(280, Math.min(Math.round(disponible) - 20, 880, maxParHauteur))
       // ×0.96 : largeur légèrement augmentée par rapport à la réduction
