@@ -96,6 +96,73 @@ function ModalCreerProgramme({ onClose, onSave, educateurId, equipeActiveId }) {
   )
 }
 
+function EtoilesNote({ valeur, onChange, label, st }) {
+  return (
+    <div>
+      <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>{label}</label>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <button key={n} type="button" onClick={() => onChange(n)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, padding: 0, color: n <= valeur ? '#eab308' : st.border, lineHeight: 1 }}>
+            ★
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ModalClotureProgramme({ programme, onClose, onSave }) {
+  const st = useSt()
+  const [form, setForm] = useState({
+    ressenti_general: programme.ressenti_general || '',
+    nb_blesses: programme.nb_blesses ?? 0,
+    note_capacite_match: programme.note_capacite_match || 0,
+    note_reperes_tactiques: programme.note_reperes_tactiques || 0,
+    note_qualite_technique: programme.note_qualite_technique || 0,
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleCloturer = async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from('programmes_prep').update({
+      ...form,
+      statut: 'cloture',
+      cloture_le: new Date().toISOString(),
+    }).eq('id', programme.id).select().single()
+    setLoading(false)
+    if (!error) onSave(data)
+  }
+
+  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ color: st.text, marginBottom: 4 }}>Clôturer le programme</h3>
+        <p style={{ color: st.muted, fontSize: 13, marginBottom: 24 }}>{programme.titre}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div>
+            <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Ressenti général</label>
+            <textarea value={form.ressenti_general} onChange={e => setForm(f => ({ ...f, ressenti_general: e.target.value }))} rows={4} placeholder="Bilan de la préparation : ce qui a fonctionné, ce qui a manqué..." style={{ ...inp, resize: 'vertical' }} />
+          </div>
+          <div>
+            <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Nombre de joueurs blessés sur la période</label>
+            <input type="number" min="0" value={form.nb_blesses} onChange={e => setForm(f => ({ ...f, nb_blesses: parseInt(e.target.value) || 0 }))} style={{ ...inp, width: 100 }} />
+          </div>
+          <EtoilesNote label="Capacité à tenir un match de 90 min" valeur={form.note_capacite_match} onChange={n => setForm(f => ({ ...f, note_capacite_match: n }))} st={st} />
+          <EtoilesNote label="Repères tactiques" valeur={form.note_reperes_tactiques} onChange={n => setForm(f => ({ ...f, note_reperes_tactiques: n }))} st={st} />
+          <EtoilesNote label="Qualité technique" valeur={form.note_qualite_technique} onChange={n => setForm(f => ({ ...f, note_qualite_technique: n }))} st={st} />
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handleCloturer} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Clôturer'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ModalSeance({ seance, programmeId, semaine, jour, onClose, onSave }) {
   const st = useSt()
   const [form, setForm] = useState(seance || { type_seance: 'course', titre: '', description: '', duree_cible: '', distance_cible: '', semaine, jour })
@@ -221,6 +288,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showCreerProgramme, setShowCreerProgramme] = useState(false)
+  const [showClotureProgramme, setShowClotureProgramme] = useState(false)
+  const [filtreProgrammes, setFiltreProgrammes] = useState('en_cours') // 'en_cours' | 'archivees'
   const [modalSeance, setModalSeance] = useState(null)
   const [modalSoumission, setModalSoumission] = useState(null)
   const [scanLoading, setScanLoading] = useState(false)
@@ -543,14 +612,27 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           {t('equipe_mode_lecture', lang)}
         </div>
       )}
-      {programmes.length === 0 ? (
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {[
+          { id: 'en_cours', label: `En cours (${programmes.filter(p => p.statut === 'actif').length})` },
+          { id: 'archivees', label: `Archivées (${programmes.filter(p => p.statut !== 'actif').length})` },
+        ].map(o => (
+          <button key={o.id} onClick={() => setFiltreProgrammes(o.id)}
+            style={{ padding: '7px 16px', borderRadius: 20, border: `1px solid ${filtreProgrammes === o.id ? st.green : st.border}`, background: filtreProgrammes === o.id ? st.green + '22' : 'transparent', color: filtreProgrammes === o.id ? st.green : st.muted, fontSize: 13, fontWeight: filtreProgrammes === o.id ? 700 : 400, cursor: 'pointer' }}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {(() => {
+        const programmesFiltres = programmes.filter(p => filtreProgrammes === 'en_cours' ? p.statut === 'actif' : p.statut !== 'actif')
+        return programmesFiltres.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: st.muted }}>
-          <div style={{ color: st.text, marginBottom: 8 }}>{t('phys_aucun_programme', lang)}</div>
-          <div style={{ fontSize: 14 }}>{t('phys_creer_premier', lang)}</div>
+          <div style={{ color: st.text, marginBottom: 8 }}>{filtreProgrammes === 'archivees' ? 'Aucun programme archivé pour l\'instant.' : t('phys_aucun_programme', lang)}</div>
+          {filtreProgrammes === 'en_cours' && <div style={{ fontSize: 14 }}>{t('phys_creer_premier', lang)}</div>}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {programmes.map(p => (
+          {programmesFiltres.map(p => (
             <div key={p.id} onClick={() => ouvrirProgramme(p)} style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = st.green}
               onMouseLeave={e => e.currentTarget.style.borderColor = st.border}>
@@ -575,7 +657,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             </div>
           ))}
         </div>
-      )}
+      )
+      })()}
       {showCreerProgramme && (
         <ModalCreerProgramme educateurId={educateurId} equipeActiveId={equipeActiveId} onClose={() => setShowCreerProgramme(false)}
           onSave={(p) => { setProgrammes(prev => [p, ...prev]); setShowCreerProgramme(false); ouvrirProgramme(p) }} />
@@ -813,8 +896,38 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_suivi', lang)}</button>
             <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('nav_stats', lang)}</button>
             <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_classement', lang)}</button>
+            {!readOnly && selectedProgramme.statut === 'actif' && (
+              <button onClick={() => setShowClotureProgramme(true)} style={{ padding: '8px 16px', background: '#eab30822', border: '1px solid #eab308', borderRadius: 8, color: '#eab308', fontWeight: 700, cursor: 'pointer' }}>Clôturer</button>
+            )}
           </div>
         </div>
+        {selectedProgramme.statut !== 'actif' && (
+          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <p style={{ color: st.text, fontWeight: 700, margin: 0 }}>Bilan de clôture</p>
+              {selectedProgramme.cloture_le && <span style={{ color: st.muted, fontSize: 12 }}>{new Date(selectedProgramme.cloture_le).toLocaleDateString('fr-FR')}</span>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16, marginBottom: selectedProgramme.ressenti_general ? 16 : 0 }}>
+              <div>
+                <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>Joueurs blessés</div>
+                <div style={{ color: st.text, fontSize: 18, fontWeight: 700 }}>{selectedProgramme.nb_blesses ?? '—'}</div>
+              </div>
+              {[
+                ['Capacité match 90 min', selectedProgramme.note_capacite_match],
+                ['Repères tactiques', selectedProgramme.note_reperes_tactiques],
+                ['Qualité technique', selectedProgramme.note_qualite_technique],
+              ].map(([label, note]) => (
+                <div key={label}>
+                  <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>{label}</div>
+                  <div style={{ color: '#eab308', fontSize: 14 }}>{note ? '★'.repeat(note) + '☆'.repeat(5 - note) : '—'}</div>
+                </div>
+              ))}
+            </div>
+            {selectedProgramme.ressenti_general && (
+              <p style={{ color: st.muted, fontSize: 13, lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>{selectedProgramme.ressenti_general}</p>
+            )}
+          </div>
+        )}
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
           <div key={sem} style={{ marginBottom: 24 }}>
             <h3 style={{ color: st.green, marginBottom: 12, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em' }}>SEMAINE {sem}</h3>
@@ -847,6 +960,14 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           </div>
         ))}
         {modalSeance && <ModalSeance {...modalSeance} programmeId={selectedProgramme.id} onClose={() => setModalSeance(null)} onSave={async () => { await loadSeances(selectedProgramme.id); setModalSeance(null) }} />}
+        {showClotureProgramme && (
+          <ModalClotureProgramme programme={selectedProgramme} onClose={() => setShowClotureProgramme(false)}
+            onSave={(updated) => {
+              setSelectedProgramme(updated)
+              setProgrammes(prev => prev.map(p => p.id === updated.id ? updated : p))
+              setShowClotureProgramme(false)
+            }} />
+        )}
       </div>
     )
   }
