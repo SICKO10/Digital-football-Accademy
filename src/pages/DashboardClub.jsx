@@ -24,7 +24,6 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
-import BibliothequeVideos from '../components/BibliothequeVideos'
 import NotificationBanner from '../components/NotificationBanner'
 
 const CLUB_FAQ = [
@@ -57,7 +56,6 @@ const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
-const IcoPlayCircle = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
 
 const EQUIPES = ['A', 'B']
 
@@ -202,7 +200,6 @@ const PERMISSION_SECTIONS = [
   { id: 'staff', label: 'Staff' },
   { id: 'inventaire', label: 'Inventaire' },
   { id: 'newsletter', label: 'Newsletter' },
-  { id: 'bibliotheque_videos', label: 'Bibliothèque vidéo' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -222,7 +219,6 @@ const PERMISSION_DEFAULTS = {
   staff: [],
   inventaire: [],
   newsletter: [],
-  bibliotheque_videos: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -1170,7 +1166,6 @@ export default function DashboardClub() {
   const [statsParCategorie, setStatsParCategorie] = useState({})
   const [loadingClassements, setLoadingClassements] = useState(false)
   const [categorieActive, setCategorieActive] = useState(null)
-  const [biblioVideoTabClub, setBiblioVideoTabClub] = useState('club') // 'club' | 'df'
   const [triClassement, setTriClassement] = useState('buts')
   const [effectifModal, setEffectifModal] = useState(null) // categorieId en cours d'affichage
   const [effectifVue, setEffectifVue] = useState('poste') // 'poste' | 'liste'
@@ -3285,7 +3280,6 @@ Règles :
     ...(canViewSection('staff') ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
     ...(canViewSection('inventaire') ? [{ id: 'inventaire', label: iconLabel(IcoBox, 'Inventaire') }] : []),
     ...(canViewSection('newsletter') ? [{ id: 'newsletter', label: iconLabel(IcoMegaphone, 'Newsletter') }] : []),
-    ...(canViewSection('bibliotheque_videos') ? [{ id: 'bibliotheque_videos', label: iconLabel(IcoPlayCircle, 'Bibliothèque vidéo') }] : []),
   ] : []
 
   const clubOnboardingSteps = [
@@ -6362,28 +6356,6 @@ Règles :
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('newsletter')}
           />
-        )}
-
-        {activeTab === 'bibliotheque_videos' && canViewSection('bibliotheque_videos') && (
-          <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'club', label: 'Club' },
-                { id: 'df', label: 'Digital Football' },
-              ].map(t2 => (
-                <button key={t2.id} onClick={() => setBiblioVideoTabClub(t2.id)}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTabClub === t2.id ? `1px solid ${couleurPrincipale}` : `1px solid ${colors.border.default}`, background: biblioVideoTabClub === t2.id ? couleurPrincipale + '20' : colors.background.surface, color: biblioVideoTabClub === t2.id ? couleurPrincipale : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {t2.label}
-                </button>
-              ))}
-            </div>
-            {biblioVideoTabClub === 'club' && (
-              <BibliothequeVideos type="club" clubId={clubId} peutAjouter={canEditSection('bibliotheque_videos')} accentColor={couleurPrincipale} />
-            )}
-            {biblioVideoTabClub === 'df' && (
-              <BibliothequeVideos type="df" peutAjouter={false} accentColor={couleurPrincipale} />
-            )}
-          </div>
         )}
 
       {/* Modale préparation équipement + notification */}

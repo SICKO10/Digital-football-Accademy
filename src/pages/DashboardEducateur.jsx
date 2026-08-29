@@ -8330,11 +8330,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {activeSection === 'bibliotheque_videos' && (
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>Bibliothèque vidéo</h1>
-            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>Mes vidéos, celles partagées par le club, et le contenu officiel Digital Football.</p>
+            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>Mes vidéos et le contenu officiel Digital Football.</p>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               {[
                 { id: 'perso', label: 'Ma bibliothèque' },
-                { id: 'club', label: 'Club' },
                 { id: 'df', label: 'Digital Football' },
               ].map(t2 => (
                 <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
@@ -8345,13 +8344,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             </div>
             {biblioVideoTab === 'perso' && (
               <BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} />
-            )}
-            {biblioVideoTab === 'club' && (
-              clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-                <BibliothequeVideos type="club" clubId={clubAffiliation.club_id} peutAjouter={false} accentColor={colors.accent.blue} />
-              ) : (
-                <p style={{ color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '40px' }}>Rejoins un club pour accéder à sa bibliothèque vidéo.</p>
-              )
             )}
             {biblioVideoTab === 'df' && (
               <BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} />
