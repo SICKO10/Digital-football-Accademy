@@ -1264,6 +1264,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
   const [modalMatchForm, setModalMatchForm] = useState(null)
   const [savingMatchForm, setSavingMatchForm] = useState(false)
+
+  // Menu ⋮ des cartes "Matchs à venir" — un seul ouvert à la fois (id du match),
+  // fermé au clic en dehors via délégation sur document (évite un ref par carte).
+  const [openMenuId, setOpenMenuId] = useState(null)
+  useEffect(() => {
+    if (!openMenuId) return
+    const fermerSiClicDehors = (e) => { if (!e.target.closest('.match-menu-wrapper')) setOpenMenuId(null) }
+    document.addEventListener('click', fermerSiClicDehors)
+    return () => document.removeEventListener('click', fermerSiClicDehors)
+  }, [openMenuId])
   const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
   const [scannerModalButsDetail, setScannerModalButsDetail] = useState([]) // [{ minute, equipe, nature }] — pour matchs_equipe.buts_detail
@@ -5961,10 +5971,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             const dispoStats = statsDispoMatch(m.id)
                             const aDesReponses = dispoStats.present + dispoStats.absent + dispoStats.blesse + dispoStats.malade + dispoStats.convoque > 0
                             return (
-                            <div key={m.id} style={{ ...st.card, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div key={m.id} style={{ ...st.card, display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: `3px solid ${m.competition === 'Amical' ? '#f97316' : m.domicile ? '#4ade80' : '#60a5fa'}` }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ flex: 1 }}>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
                                     {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                                     {m.heure ? ` · ${m.heure}` : ''}
@@ -5972,42 +5982,58 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
                                   </p>
                                 </div>
-                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }} title="Sondage dispo" style={st.iconBtnDiscret(colors.accent.purple)}><IcoClipboard /></button>
-                                  <button onClick={() => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) }} title="Convocation" style={st.iconBtnDiscret(colors.accent.green)}><IcoSend /></button>
-                                  {canEdit('competition') && (
-                                    <button onClick={() => ouvrirModalModifierMatch(m)} title={t('comp_modifier_match', lang)} style={st.iconBtnDiscret(colors.accent.blue)}><IcoEdit /></button>
-                                  )}
-                                  {canEdit('competition') && (
-                                    <button
-                                      onClick={async () => {
-                                        if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
-                                        const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
-                                        if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
-                                        const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
-                                        if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
-                                        setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
-                                        supprimerDeplacementLieAuMatch(m)
-                                      }}
-                                      title="Supprimer ce match"
-                                      style={st.iconBtnDiscret(colors.accent.red)}
-                                    >
-
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                                  {canEdit('stats') && (
+                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid #4ade80', background: 'transparent', color: '#4ade80', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                      ✓ {t('comp_marquer_joue', lang)}
                                     </button>
                                   )}
-                                  {canEdit('stats') && (
-                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('comp_marquer_joue', lang)}</button>
-                                  )}
+                                  <div className="match-menu-wrapper" style={{ position: 'relative' }}>
+                                    <button
+                                      onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
+                                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', fontSize: '18px', padding: '6px 12px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
+                                    >
+                                      ⋮
+                                    </button>
+                                    {openMenuId === m.id && (
+                                      <div style={{ position: 'absolute', right: 0, top: '110%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, minWidth: '180px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                                        {[
+                                          { icon: '📋', label: 'Sondage dispo', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) } },
+                                          { icon: '📤', label: 'Convocation', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) } },
+                                          ...(canEdit('competition') ? [{ icon: '✏️', label: t('comp_modifier_match', lang), action: () => ouvrirModalModifierMatch(m) }] : []),
+                                          ...(canEdit('competition') ? [{
+                                            icon: '🗑️', label: 'Supprimer', danger: true, action: async () => {
+                                              if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
+                                              const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                              if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
+                                              const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                              if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
+                                              setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                              supprimerDeplacementLieAuMatch(m)
+                                            },
+                                          }] : []),
+                                        ].map(item => (
+                                          <button key={item.label} onClick={() => { item.action(); setOpenMenuId(null) }}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : '#ccc', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                            onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                          >
+                                            <span>{item.icon}</span> {item.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               {aDesReponses && (
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px' }}>
-                                  <span style={{ color: colors.accent.green }}>{dispoStats.present}</span>
-                                  <span style={{ color: colors.accent.red }}>{dispoStats.absent}</span>
-                                  <span style={{ color: colors.accent.orange }}>{dispoStats.blesse}</span>
-                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>{dispoStats.malade}</span>}
-                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>{dispoStats.convoque}</span>}
-                                  <span style={{ color: colors.text.dim }}>{dispoStats.sans_reponse} en attente</span>
+                                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ color: '#4ade80' }}>✅ {dispoStats.present}</span>
+                                  <span style={{ color: '#f87171' }}>❌ {dispoStats.absent}</span>
+                                  <span style={{ color: '#f97316' }}>⚠️ {dispoStats.blesse}</span>
+                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>🤒 {dispoStats.malade}</span>}
+                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>📣 {dispoStats.convoque}</span>}
+                                  <span style={{ color: '#888' }}>⏳ {dispoStats.sans_reponse} en attente</span>
                                 </div>
                               )}
                             </div>
