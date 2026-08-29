@@ -5,7 +5,6 @@ import { ModalNotation } from '../components/Notation'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { notifierJoueur } from '../lib/notifications'
 import AnalyseurIA from '../components/AnalyseurIA'
-import { STRIPE_LINKS_CLUB, stripeUrl } from '../lib/stripeLinks'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 
 import { CoachThemeProvider } from './coach/ThemeContext'
@@ -40,17 +39,6 @@ function DashboardCoachInner() {
   const [sending, setSending] = useState({})
   const [coachId, setCoachId] = useState(null)
   const [coachEmail, setCoachEmail] = useState(null)
-
-  // Clubs en attente d'activation (accès restreint, cf. COACH_ADMIN_EMAILS)
-  const [clubsEnAttente, setClubsEnAttente] = useState([])
-  const [palierChoisi, setPalierChoisi] = useState({}) // { [clubId]: 'c0' | 'c100' | ... }
-  const [activatingClub, setActivatingClub] = useState(null)
-  // Nombre d'éducateurs inclus gratuitement, réglé manuellement au moment de
-  // l'activation — pas de table de paliers "nombre d'équipes" figée pour
-  // l'instant (cf. supabase_profiles_educateurs_inclus.sql), donc une saisie
-  // libre plutôt qu'un menu déroulant qu'il faudrait déjà retoucher.
-  const [educateursInclusInput, setEducateursInclusInput] = useState({}) // { [clubId]: string }
-  const [savingEducateursInclus, setSavingEducateursInclus] = useState(null)
 
   // Demandes de contact club envoyées depuis /offres (accès restreint, cf. COACH_ADMIN_EMAILS)
   const [demandesClub, setDemandesClub] = useState([])
@@ -102,7 +90,7 @@ function DashboardCoachInner() {
       setCoachEmail(user.email)
     }
     const taches = [getDemandes(), getCertifications(), getRecruteurs(), chargerSeancesTransferees(), getTickets()]
-    if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getClubsEnAttente(), getDemandesClub())
+    if (COACH_ADMIN_EMAILS.includes(user?.email)) taches.push(getDemandesClub())
     await Promise.all(taches)
   }
 
@@ -164,51 +152,6 @@ function DashboardCoachInner() {
     } else {
       pushToast('Demande marquée comme traitée')
     }
-  }
-
-  const getClubsEnAttente = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, prenom, nom, email, club, created_at, educateurs_inclus')
-      .eq('plan', 'club')
-      .eq('abonnement_actif', false)
-      .order('created_at', { ascending: false })
-    setClubsEnAttente(data || [])
-  }
-
-  const activerClub = async (clubId) => {
-    // Optimistic : le club sort de la liste "en attente" tout de suite, sans
-    // attendre la réponse Supabase ni un rechargement complet.
-    const avant = clubsEnAttente.find(cl => cl.id === clubId)
-    setClubsEnAttente(prev => prev.filter(cl => cl.id !== clubId))
-    setActivatingClub(clubId)
-    // Persiste aussi le palier choisi dans le sélecteur (StripeLinks.jsx) —
-    // jusqu'ici jamais enregistré nulle part (uniquement gardé en state React
-    // le temps de générer le lien de paiement), donc quota_equipes ne pouvait
-    // jamais se calculer pour aucun club, même après activation.
-    const { error } = await supabase.from('profiles').update({ abonnement_actif: true, palier: palierChoisi[clubId] || 'c0' }).eq('id', clubId)
-    setActivatingClub(null)
-    if (error) {
-      alert('Erreur : ' + error.message)
-      if (avant) setClubsEnAttente(prev => [avant, ...prev])
-    } else {
-      pushToast('Club activé')
-    }
-  }
-
-  const enregistrerEducateursInclus = async (clubId) => {
-    const brut = educateursInclusInput[clubId]
-    const valeur = brut === '' || brut == null ? null : Math.max(0, parseInt(brut, 10) || 0)
-    setSavingEducateursInclus(clubId)
-    const { error } = await supabase.from('profiles').update({ educateurs_inclus: valeur }).eq('id', clubId)
-    setSavingEducateursInclus(null)
-    if (error) { alert('Erreur : ' + error.message); return }
-    pushToast(valeur == null ? 'Limite retirée (illimité)' : `Limite fixée à ${valeur} éducateur${valeur > 1 ? 's' : ''}`)
-  }
-
-  const copierLienClub = (clubId, palier, cycle) => {
-    const lien = stripeUrl(STRIPE_LINKS_CLUB[palier][cycle], clubId)
-    navigator.clipboard.writeText(lien)
   }
 
   const prendreEnCharge = async (table, id, dejaPris) => {
@@ -470,7 +413,7 @@ function DashboardCoachInner() {
     { id: 'seances_club', label: 'Analyse Séance', Icon: IcoBook, badge: seancesEnAttente.length },
     ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', Icon: IcoHome, badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
     { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
-    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', Icon: IcoLink, badge: clubsEnAttente.length }] : []),
+    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', Icon: IcoLink, badge: 0 }] : []),
     { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
     { id: 'analyseur_ia', label: 'Analyseur IA', Icon: IcoMic, badge: 0 },
   ]
@@ -664,20 +607,7 @@ function DashboardCoachInner() {
             />
           )}
 
-          {activeSection === 'clubs_admin' && isAdminClubs && (
-            <StripeLinks
-              clubsEnAttente={clubsEnAttente}
-              palierChoisi={palierChoisi}
-              setPalierChoisi={setPalierChoisi}
-              activatingClub={activatingClub}
-              activerClub={activerClub}
-              copierLienClub={copierLienClub}
-              educateursInclusInput={educateursInclusInput}
-              setEducateursInclusInput={setEducateursInclusInput}
-              enregistrerEducateursInclus={enregistrerEducateursInclus}
-              savingEducateursInclus={savingEducateursInclus}
-            />
-          )}
+          {activeSection === 'clubs_admin' && isAdminClubs && <StripeLinks />}
 
           {activeSection === 'demandes_club' && isAdminClubs && (
             <ClubRequests
