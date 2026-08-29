@@ -463,6 +463,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [compositionActive, setCompositionActive] = useState(null) // composition (causerie) publiée la plus pertinente, cf. chargerCompositionActive
   // Inventaire club (Équipement) — tailles déclarées par le joueur + statut de préparation
   const [clubIdInventaire, setClubIdInventaire] = useState(null)
+  const [annoncesClub, setAnnoncesClub] = useState([])
+  const [annoncesLuesIds, setAnnoncesLuesIds] = useState(new Set())
   const [champsEquipement, setChampsEquipement] = useState([])
   const [mesTailles, setMesTailles] = useState([])
   const [equipementPret, setEquipementPret] = useState(null) // ligne equipement_commandes si statut='pret'
@@ -685,7 +687,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     await chargerConversations(targetId)
     const mesAff = await chargerAffiliations(targetId)
     await verifierCloturesSaison(targetId, mesAff || [])
-    await chargerInventaireJoueur(targetId, mesAff || [])
+    const clubIdAffilie = await chargerInventaireJoueur(targetId, mesAff || [])
+    await chargerAnnoncesJoueur(targetId, clubIdAffilie)
     await chargerConvocationActive(targetId)
     await chargerCompositionActive()
     await chargerParentsInvites(targetId)
@@ -884,9 +887,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // il n'y a pas de club_id direct sur affiliations/equipe_joueurs.
   const chargerInventaireJoueur = async (uid, affiliations) => {
     const a = (affiliations || []).find(af => af.statut === 'accepte')
-    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return }
+    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
-    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return }
+    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     setClubIdInventaire(ce.club_id)
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
@@ -907,6 +910,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setMesTailles(tailles || [])
     setEquipementCommande(commande || null)
     setEquipementPret(commande?.statut === 'pret' ? commande : null)
+    return ce.club_id
+  }
+
+  // Annonces publiées par le club de l'éducateur affilié — même résolution
+  // club_id que chargerInventaireJoueur, réutilisée pour éviter une 2e requête
+  // club_educateurs (le club_id retourné par chargerInventaireJoueur suffit).
+  const chargerAnnoncesJoueur = async (uid, clubId) => {
+    if (!clubId) { setAnnoncesClub([]); setAnnoncesLuesIds(new Set()); return }
+    const { data } = await supabase.from('annonces_club').select('*').eq('club_id', clubId).in('cible', ['tous', 'joueurs']).order('created_at', { ascending: false })
+    setAnnoncesClub(data || [])
+    const { data: lues } = await supabase.from('annonces_lues').select('annonce_id').eq('user_id', uid)
+    setAnnoncesLuesIds(new Set((lues || []).map(l => l.annonce_id)))
+  }
+
+  const marquerAnnonceLue = async (annonceId) => {
+    if (annoncesLuesIds.has(annonceId)) return
+    setAnnoncesLuesIds(prev => new Set(prev).add(annonceId))
+    await supabase.from('annonces_lues').upsert({ annonce_id: annonceId, user_id: userId }, { onConflict: 'annonce_id,user_id' })
   }
 
   const sauvegarderMaTaille = async (champId, valeur) => {
@@ -1822,6 +1843,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
+      { id: 'annonces',      label: 'Actualités du club',             icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
 
       { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
       { id: 'feed',          label: t('recrut_feed', lang),         icon: <IconGlobe />,  locked: true },
@@ -1869,6 +1891,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
+                      {item.badge}
+                    </span>
+                  )}
                   {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                   {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />}
                 </button>
@@ -2568,6 +2595,33 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               )}
             </div>
           )}
+          {onglet === 'annonces' && (
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>Actualités du club</h1>
+              {annoncesClub.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune annonce pour le moment.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {annoncesClub.map(a => {
+                    const lue = annoncesLuesIds.has(a.id)
+                    return (
+                      <div key={a.id} onClick={() => marquerAnnonceLue(a.id)}
+                        style={{ background: colors.background.sunken, border: `1px solid ${lue ? colors.border.faint : colors.accent.green}`, borderRadius: '12px', padding: '18px', cursor: lue ? 'default' : 'pointer' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                          <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '14px', fontWeight: 700 }}>{a.titre}</h3>
+                          {!lue && <span style={{ background: colors.accent.green + '22', color: colors.accent.green, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>Nouveau</span>}
+                        </div>
+                        <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '8px' }}>
+                          {a.auteur_nom} · {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                        <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           {onglet === 'profil' && (
             <div>
               <ProfilAffilieOnglet profil={profil} userId={userId} setProfil={setProfil} lang={lang} readOnly={readOnly} />
@@ -2806,6 +2860,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
+    { id: 'annonces', label: 'Actualités du club', icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
     { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
@@ -3834,6 +3889,35 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── ANNONCES DU CLUB ── */}
+        {onglet === 'annonces' && (
+          <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Actualités du club</h1>
+            {annoncesClub.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune annonce pour le moment.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {annoncesClub.map(a => {
+                  const lue = annoncesLuesIds.has(a.id)
+                  return (
+                    <div key={a.id} onClick={() => marquerAnnonceLue(a.id)}
+                      style={{ background: colors.background.sunken, border: `1px solid ${lue ? colors.border.faint : colors.accent.green}`, borderRadius: '12px', padding: '18px', cursor: lue ? 'default' : 'pointer' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                        <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '14px', fontWeight: 700 }}>{a.titre}</h3>
+                        {!lue && <span style={{ background: colors.accent.green + '22', color: colors.accent.green, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>Nouveau</span>}
+                      </div>
+                      <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '8px' }}>
+                        {a.auteur_nom} · {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                      <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
