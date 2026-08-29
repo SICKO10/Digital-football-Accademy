@@ -1264,6 +1264,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [matchActif, setMatchActif] = useState(null)
   const [menuResultatOuvert, setMenuResultatOuvert] = useState(null) // id du résultat dont le menu "⋯" (modifier/supprimer) est ouvert
   const [rapportMatchOuvert, setRapportMatchOuvert] = useState(null) // match pour lequel la modale "Rapport de match" est ouverte, ou null
+  const [matchIdsAvecRapport, setMatchIdsAvecRapport] = useState(new Set()) // Set des match_id ayant déjà un rapport (rapports_analyse.mode_analyse = 'match')
   const [statsMatch, setStatsMatch] = useState({})
   const [matchANoter, setMatchANoter] = useState(null)
   const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
@@ -1587,7 +1588,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     } else {
       setDispoJoueursMatch({})
     }
+    await chargerMatchIdsAvecRapport(uid)
     return data || []
+  }
+
+  // Quels matchs ont déjà un rapport de match sauvegardé (rapports_analyse,
+  // mode_analyse='match') — juste pour afficher un badge sur la carte
+  // résultat, contenu du rapport chargé seulement à l'ouverture de la modale.
+  const chargerMatchIdsAvecRapport = async (uid) => {
+    const { data } = await supabase.from('rapports_analyse').select('contenu').eq('educateur_id', uid).eq('mode_analyse', 'match')
+    setMatchIdsAvecRapport(new Set((data || []).map(r => r.contenu?.match_id).filter(Boolean)))
   }
 
   const chargerEntrainements = async (uid, catId) => {
@@ -5844,6 +5854,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                             <div style={{ fontSize: '11px', fontWeight: 600, color: scoreColor, marginTop: '2px' }}>
                               {resultLabel}
                             </div>
+                            {matchIdsAvecRapport.has(m.id) && (
+                              <div onClick={ev => { ev.stopPropagation(); setRapportMatchOuvert(m) }}
+                                style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', cursor: 'pointer' }}>
+                                📄 Rapport
+                              </div>
+                            )}
                           </div>
 
                           {canEdit('competition') && (
@@ -5858,7 +5874,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '170px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
                                     <button onClick={() => { setMenuResultatOuvert(null); setRapportMatchOuvert(m) }}
                                       style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                      📄 Rapport de match
+                                      📄 {matchIdsAvecRapport.has(m.id) ? 'Voir le rapport de match' : 'Rapport de match'}
                                     </button>
                                     <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
                                       style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
@@ -6334,7 +6350,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 equipeActiveId={equipeActive?.id}
                 clubNom={profilEdu?.club}
                 onClose={() => setRapportMatchOuvert(null)}
-                onSaved={() => afficherToast('Rapport de match enregistré')}
+                onSaved={() => {
+                  afficherToast('Rapport de match enregistré')
+                  setMatchIdsAvecRapport(prev => new Set(prev).add(rapportMatchOuvert.id))
+                }}
               />
             )}
 
