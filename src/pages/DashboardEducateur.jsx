@@ -223,11 +223,21 @@ const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
     <line x1="12" y1="14" x2="14" y2="14"/>
   </svg>
 )
-const IcoDossier = ({ size = 32, color = colors.accent.blue }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-  </svg>
-)
+// Dossiers "Mes séances" — palette rotative + emoji déduit du nom de catégorie
+// tactique, à la place de l'icône SVG grise uniforme d'avant.
+const FOLDER_COLORS = ['#4ade8015', '#60a5fa15', '#f9731615', '#a78bfa15', '#f472b615', '#34d39915']
+const FOLDER_BORDERS = ['#4ade8040', '#60a5fa40', '#f9731640', '#a78bfa40', '#f472b640', '#34d39940']
+const getFolderEmoji = (nom) => {
+  const n = (nom || '').toLowerCase()
+  if (n.includes('progress') || n.includes('techni')) return '📈'
+  if (n.includes('but') || n.includes('finish') || n.includes('finir')) return '⚽'
+  if (n.includes('défens') || n.includes('protég')) return '🛡️'
+  if (n.includes('conserv') || n.includes('posses')) return '🔄'
+  if (n.includes('déséquilib') || n.includes('attaqu')) return '⚡'
+  if (n.includes('physi') || n.includes('prép')) return '💪'
+  if (n.includes('échauff')) return '🔥'
+  return '📁'
+}
 const IcoTypeTous = ({ size = 16, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1750,6 +1760,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
   const [savingProcede, setSavingProcede] = useState(false)
   const [modalBiblioImport, setModalBiblioImport] = useState(null) // index du procédé cible dans la fiche, ou null si fermé
+  const [showVisibilityPicker, setShowVisibilityPicker] = useState(null) // procédé (bloc de la fiche) en cours de sauvegarde rapide, ou null si fermé
   const [modalImportFicheEntrainement, setModalImportFicheEntrainement] = useState(null) // id de l'entraînement cible, ou null si fermé
   const [moisOuverts, setMoisOuverts] = useState(() => {
     const now = new Date()
@@ -2182,22 +2193,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setModalProcede(true)
   }
 
-  // Pré-remplit le formulaire bibliothèque depuis un procédé de la fiche en cours de rédaction
-  // (réutilise le modal Créer/Éditer existant — pas d'insert direct, le type doit être choisi/confirmé)
-  const sauvegarderProcedeDansBiblio = (p) => {
-    setProcedeEnEdition(null)
-    setProcedeForm({
+  // Sauvegarde rapide d'un procédé de la fiche en cours de rédaction vers la
+  // bibliothèque, avec choix direct du niveau de visibilité (picker "Bibliothèque")
+  // — plus besoin de repasser par le modal Créer/Éditer complet.
+  const sauvegarderProcedeBibliotheque = async (visibilite) => {
+    const p = showVisibilityPicker
+    if (!p) return
+    if (visibilite === 'club' && !clubAffiliation?.club_id) {
+      alert("Rejoins un club pour partager ce procédé avec ton club.")
+      return
+    }
+    const payload = {
       type: 'exercice',
       nom: p.titre || '',
       theme: p.but || '',
       description: p.organisation || '',
       consignes: p.consignes || '',
       variables: p.variables || '',
-      duree: p.duree ? String(p.duree) : '',
+      duree: p.duree ? parseInt(p.duree) : null,
       nb_joueurs: p.nb_joueurs || '',
       tags: '',
-    })
-    setModalProcede(true)
+      educateur_id: userId,
+      club_id: clubAffiliation?.club_id || null,
+      partage_club: visibilite === 'club',
+      partage_platform: visibilite === 'platform',
+    }
+    setShowVisibilityPicker(null)
+    const { error } = await supabase.from('bibliotheque_exercices').insert(payload)
+    if (error) { alert('Erreur : ' + error.message); return }
+    afficherToast('Ajouté à la bibliothèque')
   }
 
   // Injecte un procédé de la bibliothèque dans un bloc procédé de la fiche en cours de rédaction
@@ -7776,14 +7800,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <button
                     type="button"
                     onClick={() => setSport('football')}
-                    style={{ flex: 1, background: sport === 'football' ? colors.accent.blue : colors.background.base, color: sport === 'football' ? colors.black : colors.text.dim, border: `1px solid ${colors.border.faint}`, padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', ...(sport === 'football' ? { background: '#4ade80', color: '#0a0a0a', border: 'none' } : { background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }) }}
                   >
                     ⚽ Football
                   </button>
                   <button
                     type="button"
                     onClick={() => setSport('futsal')}
-                    style={{ flex: 1, background: sport === 'futsal' ? colors.accent.blue : colors.background.base, color: sport === 'futsal' ? colors.black : colors.text.dim, border: `1px solid ${colors.border.faint}`, padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    style={{ flex: 1, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', ...(sport === 'futsal' ? { background: '#4ade80', color: '#0a0a0a', border: 'none' } : { background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }) }}
                   >
                     🏟️ Futsal
                   </button>
@@ -7807,18 +7831,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     champs "objectif" à la fois. */}
                 <div>
                   <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>🎓 Mode diplôme (optionnel)</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     {[null, 'BMF', 'BEF', 'DEF'].map(m => (
                       <button
                         key={m ?? 'libre'}
                         type="button"
                         onClick={() => setFiche(f => ({ ...f, mode_diplome: f.mode_diplome === m ? null : m }))}
                         style={{
-                          padding: '7px 16px', borderRadius: '8px', border: '1px solid',
-                          borderColor: fiche.mode_diplome === m ? colors.accent.green : colors.border.default,
-                          background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.12)' : colors.background.base,
-                          color: fiche.mode_diplome === m ? colors.accent.green : colors.text.faint,
-                          fontSize: '13px', fontWeight: fiche.mode_diplome === m ? 700 : 400, cursor: 'pointer',
+                          padding: '10px 8px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                          border: fiche.mode_diplome === m ? '2px solid #4ade80' : '1px solid #2a2a2a',
+                          background: fiche.mode_diplome === m ? 'rgba(74,222,128,0.1)' : '#1a1a1a',
+                          color: fiche.mode_diplome === m ? '#4ade80' : '#888',
                         }}>
                         {m === null ? 'Libre' : m}
                         {m === 'BMF' && ' — Moniteur'}
@@ -7923,30 +7946,25 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setTactipadModal(i)}
-                        style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setModalBiblioImport(i)}
-                        style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        📚 {t('biblio_importer_procede', lang)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => sauvegarderProcedeDansBiblio(p)}
-                        style={{ background: '#1a2e1a', border: '1px solid #60a5fa', color: colors.accent.blue, padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        💾 {t('biblio_sauvegarder_procede', lang)}
-                      </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {[
+                        { icon: '🎨', label: p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang), action: () => setTactipadModal(i), color: '#a78bfa' },
+                        { icon: '📚', label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i), color: '#60a5fa' },
+                        { icon: '💾', label: t('biblio_sauvegarder_procede', lang), action: () => setShowVisibilityPicker(p), color: '#4ade80' },
+                      ].map(btn => (
+                        <button key={btn.label} type="button" onClick={btn.action} style={{
+                          flex: 1, padding: '10px 6px', borderRadius: '10px',
+                          border: `1px solid ${btn.color}40`,
+                          background: `${btn.color}10`,
+                          color: btn.color, fontWeight: 600, fontSize: '12px',
+                          cursor: 'pointer', textAlign: 'center', lineHeight: 1.4,
+                        }}>
+                          <div style={{ fontSize: '20px', marginBottom: '4px' }}>{btn.icon}</div>
+                          {btn.label}
+                        </button>
+                      ))}
                       {p.schema_png && (
-                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
+                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
                       )}
                     </div>
                     <textarea
@@ -7981,6 +7999,29 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               ))}
 
+              {showVisibilityPicker && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px 16px 0 0', padding: '24px', width: '100%', maxWidth: '480px' }}>
+                    <p style={{ color: '#888', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>Sauvegarder dans...</p>
+                    {[
+                      { value: 'personal', icon: '👤', label: 'Ma bibliothèque', desc: 'Visible uniquement par moi' },
+                      { value: 'club', icon: '🏟️', label: 'Bibliothèque Club', desc: 'Partagé avec mon club' },
+                      { value: 'platform', icon: '⚡', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
+                    ].map(opt => (
+                      <button key={opt.value} onClick={() => sauvegarderProcedeBibliotheque(opt.value)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', padding: '14px', marginBottom: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', cursor: 'pointer', textAlign: 'left' }}>
+                        <span style={{ fontSize: '24px' }}>{opt.icon}</span>
+                        <div>
+                          <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{opt.label}</div>
+                          <div style={{ color: '#666', fontSize: '12px' }}>{opt.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                    <button onClick={() => setShowVisibilityPicker(null)} style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: '#666', fontSize: '14px', cursor: 'pointer', marginTop: '4px' }}>Annuler</button>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={ajouterProcedeFiche}
@@ -7989,17 +8030,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 + {t('seance_ajouter_procede', lang)}
               </button>
 
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '20px' }}>
                 <button
                   onClick={sauvegarderFiche}
                   disabled={savingFiche}
-                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
+                  style={{ flex: 2, minWidth: '160px', padding: '13px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
                 >
                   {savingFiche ? 'Enregistrement...' : `💾 ${t('seance_sauvegarder_fiche', lang)}`}
                 </button>
                 <button
                   onClick={() => window.print()}
-                  style={{ background: 'transparent', color: colors.accent.blue, border: '1px solid #60a5fa40', padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                  style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
                 >
                   🖨️ {t('seance_imprimer_fiche', lang)}
                 </button>
@@ -8013,14 +8054,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       educateur: `${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim(),
                       phases: derniereGenerationIA.phases,
                     })}
-                    style={{ background: '#003893', color: colors.text.primary, border: 'none', borderRadius: '10px', padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: 'none', background: '#003893', color: colors.text.primary, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
                   >
                     📋 Format FFF
                   </button>
                 )}
                 <button
                   onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); setDerniereGenerationIA(null); window.print() }}
-                  style={{ background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, padding: '12px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                  style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
                 >
                   📄 {t('seance_fiche_vierge', lang)}
                 </button>
@@ -8043,18 +8084,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <>
                     {/* Grille de cartes dossiers */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-                      {Object.entries(seancesParCategorie).map(([categorie, items]) => {
+                      {Object.entries(seancesParCategorie).map(([categorie, items], index) => {
                         const ouvert = !!dossiersOuverts[categorie]
                         return (
                           <div key={categorie}
                             onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
-                            style={{ background: colors.background.raised, border: `1px solid ${ouvert ? colors.accent.blue : colors.border.default}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
+                            style={{ background: FOLDER_COLORS[index % 6], border: `1px solid ${ouvert ? colors.accent.blue : FOLDER_BORDERS[index % 6]}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent.blue }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? colors.accent.blue : colors.border.default }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? colors.accent.blue : FOLDER_BORDERS[index % 6] }}
                           >
-                            <IcoDossier size={36} color={ouvert ? colors.accent.blue : colors.text.dim} />
+                            <span style={{ fontSize: '28px', lineHeight: 1 }}>{getFolderEmoji(categorie)}</span>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{categorie}</p>
-                            <span style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
+                            <span style={{ background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
                           </div>
                         )
                       })}
