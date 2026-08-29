@@ -5735,7 +5735,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Résultats ── */}
             {competitionSubTab === 'resultats' && (
-              <div style={{ maxWidth: '640px' }}>
+              <div style={{ maxWidth: '960px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 1rem' }}>{t('comp_resultats', lang)}</h2>
 
                 {canEdit('competition') && (
@@ -5952,7 +5952,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Calendrier ── */}
             {competitionSubTab === 'calendrier' && (
-              <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ maxWidth: '960px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
                 {/* Upload zone */}
                 <div style={st.card}>
@@ -6151,7 +6151,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* ── Classement ── */}
             {competitionSubTab === 'classement' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '960px' }}>
 
                 {/* Lien vers le classement officiel — persisté sur profil_educateur.ligue_url
                     (même champ que "Profil" et que ce que voient les joueurs sur leur
