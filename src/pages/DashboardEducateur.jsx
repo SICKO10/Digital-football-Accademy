@@ -36,6 +36,11 @@ import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 
+// "Générer une séance avec l'IA" pas encore assez fiable pour être proposée à
+// tous les éducateurs — visible seulement pour ce compte le temps de l'affiner
+// en conditions réelles, à retirer de cette liste (ou vider) une fois prête.
+const SEANCE_IA_BETA_EMAILS = ['deabreu.amorim@gmail.com']
+
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
 // l'onglet actif). Voir OnboardingGuide.jsx pour le composant générique.
@@ -7306,12 +7311,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               >
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
-              <button
-                onClick={() => setModalGenerationIA(true)}
-                style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                🤖 Générer avec l'IA
-              </button>
+              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
+                <button
+                  onClick={() => setModalGenerationIA(true)}
+                  style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                >
+                  🤖 Générer avec l'IA
+                </button>
+              )}
               <button
                 onClick={() => setModeSeance('rediger')}
                 style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
