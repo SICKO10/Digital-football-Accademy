@@ -25,7 +25,6 @@ import Support from './coach/Support'
 import StripeLinks from './coach/StripeLinks'
 import ClubsAgents from './coach/ClubsAgents'
 import Communication from './coach/Communication'
-import BibliothequeVideos from '../components/BibliothequeVideos'
 
 function DashboardCoachInner() {
   const navigate = useNavigate()
@@ -404,7 +403,6 @@ function DashboardCoachInner() {
       { id: 'revenue', label: "Chiffre d'affaires", Icon: IcoDollar, badge: 0 },
       { id: 'referrals', label: 'Parrainage FreePlay', Icon: IcoShare, badge: 0 },
       { id: 'communication', label: 'Communication', Icon: IcoMegaphone, badge: 0 },
-      { id: 'bibliotheque_df', label: 'Bibliothèque vidéo', Icon: IcoPlay, badge: 0 },
     ] : []),
   ]
   const NAV_ACTIVITE = [
@@ -551,9 +549,6 @@ function DashboardCoachInner() {
           {activeSection === 'revenue' && isAdminClubs && <Revenue />}
           {activeSection === 'referrals' && isAdminClubs && <Referrals coachId={coachId} />}
           {activeSection === 'communication' && isAdminClubs && <Communication adminId={coachId} />}
-          {activeSection === 'bibliotheque_df' && isAdminClubs && (
-            <BibliothequeVideos type="df" peutAjouter={isAdminClubs} accentColor={c.accent} />
-          )}
 
           {activeSection === 'analyses' && (
             <PlayerAnalysis

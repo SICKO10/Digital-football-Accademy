@@ -1732,6 +1732,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioLoading, setBiblioLoading] = useState(false)
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
+  const [biblioRubrique, setBiblioRubrique] = useState('procedes') // 'procedes' | 'videos' — rubrique Bibliothèque, deux contenus distincts
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '' }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
@@ -4030,7 +4031,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
       { key: 'mes_seances', label: t('nav_seances', lang), icon: <IcoFilm /> },
       { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
-      { key: 'bibliotheque_videos', label: 'Bibliothèque vidéo', icon: <IcoFilm /> },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
     ] },
@@ -8049,6 +8049,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'bibliotheque' && (
           <div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'procedes', label: t('nav_bibliotheque', lang) },
+                { id: 'videos', label: 'Vidéos' },
+              ].map(r => (
+                <button key={r.id} onClick={() => setBiblioRubrique(r.id)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: biblioRubrique === r.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioRubrique === r.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioRubrique === r.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+
+            {biblioRubrique === 'procedes' && (
+            <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -8151,6 +8165,30 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               )
             })()}
+            </>
+            )}
+
+            {biblioRubrique === 'videos' && (
+              <div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'perso', label: 'Ma bibliothèque' },
+                    { id: 'df', label: 'Digital Football' },
+                  ].map(t2 => (
+                    <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
+                      style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTab === t2.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioVideoTab === t2.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioVideoTab === t2.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {t2.label}
+                    </button>
+                  ))}
+                </div>
+                {biblioVideoTab === 'perso' && (
+                  <BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} />
+                )}
+                {biblioVideoTab === 'df' && (
+                  <BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} />
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -8325,30 +8363,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'analyse_video' && (
           <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} lang={lang} />
-        )}
-
-        {activeSection === 'bibliotheque_videos' && (
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>Bibliothèque vidéo</h1>
-            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>Mes vidéos et le contenu officiel Digital Football.</p>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'perso', label: 'Ma bibliothèque' },
-                { id: 'df', label: 'Digital Football' },
-              ].map(t2 => (
-                <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTab === t2.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioVideoTab === t2.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioVideoTab === t2.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {t2.label}
-                </button>
-              ))}
-            </div>
-            {biblioVideoTab === 'perso' && (
-              <BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} />
-            )}
-            {biblioVideoTab === 'df' && (
-              <BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} />
-            )}
-          </div>
         )}
 
         {activeSection === 'prep_physique' && (
