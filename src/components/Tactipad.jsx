@@ -494,7 +494,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       const paysage = window.innerWidth > window.innerHeight
       const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) * 1.6)
       // -20 : petite marge pour ne pas coller pile au bord du panel/de l'écran.
-      setWidth(Math.max(280, Math.min(Math.round(disponible) - 20, 880, maxParHauteur)))
+      const plafonne = Math.max(280, Math.min(Math.round(disponible) - 20, 880, maxParHauteur))
+      // ×0.9 : réduction supplémentaire légère (largeur ET hauteur, qui suit
+      // le même ratio) demandée après retour visuel — le terrain semblait
+      // encore un peu trop grand une fois tous les plafonds ci-dessus posés.
+      setWidth(Math.max(280, Math.round(plafonne * 0.9)))
     }
     mettreAJourLargeur()
     const observer = new ResizeObserver(mettreAJourLargeur)
