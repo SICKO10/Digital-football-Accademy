@@ -10,6 +10,34 @@ const NATURE_LABELS = {
   exploit_personnel: 'Exploit personnel',
 }
 
+// Pré-remplissage composition/buts/cartons depuis stats_match + buts_detail —
+// extrait à part pour être réutilisé aussi bien par la modale (édition) que
+// par l'export PDF rapide depuis la carte résultat (sans ouvrir de modale, si
+// aucun rapport n'a encore été sauvegardé pour ce match).
+export function preRemplirDepuisMatch(match, joueurs) {
+  const statsParJoueur = {}
+  ;(match.stats_match || []).forEach(s => { statsParJoueur[s.joueur_id] = s })
+  const composition = [...joueurs]
+    .filter(j => statsParJoueur[j.id])
+    .sort((a, b) => (a.numero_maillot || 99) - (b.numero_maillot || 99))
+    .map(j => ({ numero: j.numero_maillot || '', nom: j.nom, prenom: j.prenom, titulaire: (statsParJoueur[j.id].minutes || 0) >= 45 }))
+
+  const buts = match.buts_detail || []
+  const buts_marques = buts.filter(b => b.equipe === 'nous').map(b => ({ numero: '', minute: b.minute || '', description: NATURE_LABELS[b.nature] || '' }))
+  const buts_encaisses = buts.filter(b => b.equipe === 'eux').map(b => ({ minute: b.minute || '', description: NATURE_LABELS[b.nature] || '' }))
+
+  const cartons_jaunes = []
+  const cartons_rouges = []
+  joueurs.forEach(j => {
+    const s = statsParJoueur[j.id]
+    if (!s) return
+    if (s.carton_jaune) cartons_jaunes.push({ numero: j.numero_maillot || '', minute: '' })
+    if (s.carton_rouge) cartons_rouges.push({ numero: j.numero_maillot || '', minute: '' })
+  })
+
+  return { composition, buts_marques, buts_encaisses, cartons_jaunes, cartons_rouges }
+}
+
 // Rapport de match façon "feuille BEF" — composition/buts/cartons pré-remplis
 // depuis les données déjà saisies (feuille de match stats_match, buts_detail),
 // le reste (remplacements, analyse offensive/défensive, causerie) est manuel
@@ -52,31 +80,14 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
         setCauserie(c.causerie || '')
         setCauserieSupports(c.causerie_supports || '')
       } else {
-        // Pré-remplissage depuis la feuille de match (stats_match) et les buts
-        // détaillés (buts_detail) — le reste (remplacements, analyse, causerie)
-        // n'a pas d'équivalent en base, l'éducateur part d'une page blanche.
-        const statsParJoueur = {}
-        ;(match.stats_match || []).forEach(s => { statsParJoueur[s.joueur_id] = s })
-        const compo = [...joueurs]
-          .filter(j => statsParJoueur[j.id])
-          .sort((a, b) => (a.numero_maillot || 99) - (b.numero_maillot || 99))
-          .map(j => ({ numero: j.numero_maillot || '', nom: j.nom, prenom: j.prenom, titulaire: (statsParJoueur[j.id].minutes || 0) >= 45 }))
-        setComposition(compo)
-
-        const buts = match.buts_detail || []
-        setButsMarques(buts.filter(b => b.equipe === 'nous').map(b => ({ numero: '', minute: b.minute || '', description: NATURE_LABELS[b.nature] || '' })))
-        setButsEncaisses(buts.filter(b => b.equipe === 'eux').map(b => ({ minute: b.minute || '', description: NATURE_LABELS[b.nature] || '' })))
-
-        const jaunes = []
-        const rouges = []
-        joueurs.forEach(j => {
-          const s = statsParJoueur[j.id]
-          if (!s) return
-          if (s.carton_jaune) jaunes.push({ numero: j.numero_maillot || '', minute: '' })
-          if (s.carton_rouge) rouges.push({ numero: j.numero_maillot || '', minute: '' })
-        })
-        setCartonsJaunes(jaunes)
-        setCartonsRouges(rouges)
+        // Le reste (remplacements, analyse, causerie) n'a pas d'équivalent en
+        // base, l'éducateur part d'une page blanche.
+        const p = preRemplirDepuisMatch(match, joueurs)
+        setComposition(p.composition)
+        setButsMarques(p.buts_marques)
+        setButsEncaisses(p.buts_encaisses)
+        setCartonsJaunes(p.cartons_jaunes)
+        setCartonsRouges(p.cartons_rouges)
       }
       setLoading(false)
     }
@@ -299,11 +310,16 @@ const PDF_LARGEUR_UTILE = 210 - PDF_MARGE * 2
 const BLEU_BG = [222, 235, 247]
 const BLEU_BORDURE = [155, 187, 224]
 const BLEU_TEXTE = [31, 78, 121]
+const ORANGE_TEXTE = [196, 130, 20]
 const ORANGE_BG = [252, 228, 214]
 const ORANGE_BORDURE = [230, 175, 145]
 const VERT_BG = [146, 208, 80]
 const ROUGE_BG = [255, 99, 71]
 const GRIS_BORDURE = [190, 190, 190]
+
+// Cellule "label" façon feuille Excel : bordure bleue, fond blanc, texte
+// orange gras — le style des cellules Équipe Domicile/DATE/Score du modèle.
+const labelCell = (text) => ({ text, border: BLEU_BORDURE, color: ORANGE_TEXTE, bold: true, align: 'center' })
 
 export async function genererPDFMatch(rapport, clubNom) {
   const { jsPDF } = await import('jspdf')
@@ -349,14 +365,12 @@ export async function genererPDFMatch(rapport, clubNom) {
     y += 9
   }
 
-  // ── Bandeau ──
-  doc.setFillColor(20, 83, 45)
-  doc.rect(0, 0, 210, 22, 'F')
-  doc.setTextColor(255, 255, 255)
+  // ── Titre ──
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('RAPPORT DE MATCH', 105, 14, { align: 'center' })
-  y = 30
+  doc.setTextColor(0, 0, 0)
+  doc.text('RAPPORT DE MATCH', 105, y + 5, { align: 'center' })
+  y += 15
 
   // ── Équipe domicile / visiteuse, date, scores ──
   const nomNous = clubNom || 'Nous'
@@ -365,33 +379,33 @@ export async function genererPDFMatch(rapport, clubNom) {
   const visiteurNom = c.domicile ? nomAdv : nomNous
   const w4 = PDF_LARGEUR_UTILE / 4
   y = drawTable(PDF_MARGE, y, [w4, w4, w4, w4], [[
-    { text: 'Équipe Domicile', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
-    { text: domicileNom, align: 'center' },
-    { text: visiteurNom, align: 'center' },
-    { text: 'Équipe visiteuse', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    labelCell('Équipe Domicile'),
+    { text: domicileNom, border: BLEU_BORDURE, align: 'center' },
+    { text: visiteurNom, border: BLEU_BORDURE, align: 'center' },
+    labelCell('Équipe visiteuse'),
   ]])
   y += 3
   y = drawTable(PDF_MARGE, y, [w4, w4 * 3], [[
-    { text: 'DATE :', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
-    { text: rapport.date_analyse ? new Date(rapport.date_analyse).toLocaleDateString('fr-FR') : '', align: 'center' },
+    labelCell('DATE :'),
+    { text: rapport.date_analyse ? new Date(rapport.date_analyse).toLocaleDateString('fr-FR') : '', border: BLEU_BORDURE, align: 'center' },
   ]])
   y += 3
   y = drawTable(PDF_MARGE, y, [w4 * 1.5, w4, w4], [[
-    { text: 'Score Mi-temps', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
-    { text: String(c.score_mi_temps?.nous ?? ''), align: 'center' },
-    { text: String(c.score_mi_temps?.eux ?? ''), align: 'center' },
+    labelCell('Score Mi-temps'),
+    { text: String(c.score_mi_temps?.nous ?? ''), border: BLEU_BORDURE, align: 'center' },
+    { text: String(c.score_mi_temps?.eux ?? ''), border: BLEU_BORDURE, align: 'center' },
   ]])
   y += 3
   y = drawTable(PDF_MARGE, y, [w4 * 1.5, w4, w4], [[
-    { text: 'Score Fin de Match', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
-    { text: String(c.score_nous ?? ''), align: 'center' },
-    { text: String(c.score_eux ?? ''), align: 'center' },
+    labelCell('Score Fin de Match'),
+    { text: String(c.score_nous ?? ''), border: BLEU_BORDURE, align: 'center' },
+    { text: String(c.score_eux ?? ''), border: BLEU_BORDURE, align: 'center' },
   ]])
   y += 8
 
   // ── Composition de départ ──
   if (c.composition?.length) {
-    titre('Composition de départ')
+    titre('composition de départ')
     const wCompo = [PDF_LARGEUR_UTILE * 0.2, PDF_LARGEUR_UTILE * 0.4, PDF_LARGEUR_UTILE * 0.4]
     const header = [{ text: 'Numéro', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Nom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }, { text: 'Prénom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }]
     const rows = c.composition.map(j => [{ text: j.numero || '—', align: 'center' }, j.nom || '', j.prenom || ''])
@@ -427,8 +441,8 @@ export async function genererPDFMatch(rapport, clubNom) {
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...BLEU_TEXTE)
-    if (c.cartons_jaunes?.length) doc.text('Cartons jaunes', PDF_MARGE, y + 5)
-    if (c.cartons_rouges?.length) doc.text('Cartons rouges', PDF_MARGE + wCarton + 6, y + 5)
+    if (c.cartons_jaunes?.length) doc.text('CARTONS JAUNES', PDF_MARGE, y + 5)
+    if (c.cartons_rouges?.length) doc.text('CARTONS ROUGES', PDF_MARGE + wCarton + 6, y + 5)
     const yTables = y + 9
     let yFin = yTables
     if (c.cartons_jaunes?.length) {
@@ -451,6 +465,11 @@ export async function genererPDFMatch(rapport, clubNom) {
   // ── Remplacements ──
   if (c.remplacements?.length) {
     titre('Remplacements')
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(80, 80, 80)
+    doc.text('(noter les premiers remplacements)', PDF_MARGE, y)
+    y += 5
     const w = [PDF_LARGEUR_UTILE]
     const rows = c.remplacements.map(r => [`N°${r.entrant || '__'} remplace le N°${r.sortant || '__'} à la ${r.minute || '__'}e`])
     y = drawTable(PDF_MARGE, y, w, rows)
@@ -459,8 +478,10 @@ export async function genererPDFMatch(rapport, clubNom) {
 
   // ── Analyse offensive / défensive — grille 2x2 colorée ──
   if (c.analyse && (c.analyse.offensif_positif || c.analyse.offensif_probleme || c.analyse.defensif_positif || c.analyse.defensif_probleme)) {
-    titre('Analyse du match')
     const w4a = PDF_LARGEUR_UTILE / 4
+    y = drawTable(PDF_MARGE, y, [w4a * 4], [[
+      { text: 'Analyse du match', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    ]])
     y = drawTable(PDF_MARGE, y, [w4a * 2, w4a * 2], [[
       { text: 'Sur le plan offensif', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
       { text: 'Sur le plan défensif', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
@@ -479,8 +500,10 @@ export async function genererPDFMatch(rapport, clubNom) {
 
   // ── Causerie avant-match ──
   if (c.causerie || c.causerie_supports) {
-    titre('Causerie avant-match')
     const w2 = PDF_LARGEUR_UTILE / 2
+    y = drawTable(PDF_MARGE, y, [w2 * 2], [[
+      { text: 'Causerie avant-match', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },
+    ]])
     y = drawTable(PDF_MARGE, y, [w2, w2], [
       [
         { text: 'Plan de causerie et idées forces', bg: BLEU_BG, border: BLEU_BORDURE, color: BLEU_TEXTE, bold: true, align: 'center' },

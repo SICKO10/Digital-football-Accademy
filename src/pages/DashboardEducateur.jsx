@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
-import RapportMatch from '../components/RapportMatch'
+import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../components/RapportMatch'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
@@ -1598,6 +1598,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerMatchIdsAvecRapport = async (uid) => {
     const { data } = await supabase.from('rapports_analyse').select('contenu').eq('educateur_id', uid).eq('mode_analyse', 'match')
     setMatchIdsAvecRapport(new Set((data || []).map(r => r.contenu?.match_id).filter(Boolean)))
+  }
+
+  // Export PDF direct depuis la carte résultat, sans ouvrir la modale — si un
+  // rapport a déjà été sauvegardé pour ce match, on exporte son contenu tel
+  // quel (avec l'analyse/causerie déjà saisies) ; sinon on exporte un rapport
+  // pré-rempli à la volée depuis la feuille de match (mêmes données que le
+  // pré-remplissage de la modale), sans le sauvegarder.
+  const exporterRapportMatchPdf = async (m) => {
+    const { data } = await supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).eq('mode_analyse', 'match')
+    const existant = (data || []).find(r => r.contenu?.match_id === m.id)
+    if (existant) {
+      await genererPDFMatch(existant, profilEdu?.club)
+      return
+    }
+    const p = preRemplirDepuisMatch(m, joueurs)
+    await genererPDFMatch({
+      date_analyse: m.date,
+      contenu: { match_id: m.id, adversaire: m.adversaire, domicile: m.domicile, score_nous: m.score_nous, score_eux: m.score_eux, ...p },
+    }, profilEdu?.club)
   }
 
   const chargerEntrainements = async (uid, catId) => {
@@ -5875,6 +5894,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                     <button onClick={() => { setMenuResultatOuvert(null); setRapportMatchOuvert(m) }}
                                       style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                                       📄 {matchIdsAvecRapport.has(m.id) ? 'Voir le rapport de match' : 'Rapport de match'}
+                                    </button>
+                                    <button onClick={() => { setMenuResultatOuvert(null); exporterRapportMatchPdf(m) }}
+                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
+                                      ⬇️ Extraire en PDF
                                     </button>
                                     <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
                                       style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
