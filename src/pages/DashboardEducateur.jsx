@@ -5675,17 +5675,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             {/* ── Résultats ── */}
             {competitionSubTab === 'resultats' && (
               <div style={{ maxWidth: '640px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{t('comp_resultats', lang)}</h2>
-                  {canEdit('competition') && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {canEdit('stats') && (
-                        <button onClick={() => setShowScanner(true)} style={{ ...st.btn(), background: '#1a1a2e', border: '1px solid #60a5fa40', color: colors.accent.blue }}>{t('seance_scanner', lang)}</button>
-                      )}
-                      <button onClick={() => setShowAddMatch(true)} style={st.btn()}>+ {t('comp_bouton_match', lang)}</button>
-                    </div>
-                  )}
-                </div>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 1rem' }}>{t('comp_resultats', lang)}</h2>
+
+                {canEdit('competition') && (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    {canEdit('stats') && (
+                      <button onClick={() => setShowScanner(true)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        📷 {t('seance_scanner', lang)}
+                      </button>
+                    )}
+                    <button onClick={() => setShowAddMatch(true)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      + {t('comp_bouton_match', lang)}
+                    </button>
+                  </div>
+                )}
 
                 {showAddMatch && canEdit('competition') && (
                   <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
@@ -5717,40 +5720,75 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   </div>
                 )}
 
+                {/* ── Bilan de saison — calculé depuis les matchs joués (pas de colonne
+                    "resultat" en base, on compare score_nous/score_eux comme partout
+                    ailleurs dans ce fichier, ex. widget Accueil) ── */}
+                {(() => {
+                  const matchsJoues = matchs.filter(matchJoue)
+                  if (matchsJoues.length === 0) return null
+                  const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
+                  const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
+                  const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+                  return (
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                      {[
+                        { label: 'V', count: victoires, color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
+                        { label: 'N', count: nuls, color: '#888', bg: 'rgba(136,136,136,0.1)' },
+                        { label: 'D', count: defaites, color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+                      ].map(item => (
+                        <div key={item.label} style={{ flex: 1, background: item.bg, border: `1px solid ${item.color}33`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '22px', fontWeight: 800, color: item.color }}>{item.count}</div>
+                          <div style={{ fontSize: '11px', color: item.color, fontWeight: 600, letterSpacing: '1px' }}>{item.label === 'V' ? 'Victoires' : item.label === 'N' ? 'Nuls' : 'Défaites'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                   {grouperMatchsParMois(matchs.filter(matchJoue), true).map(([moisKey, { label, items }]) => (
                     <div key={moisKey}>
                       <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {items.map(m => {
-                          const aScore = true
-                          const nous = parseInt(m.score_nous)
-                          const eux = parseInt(m.score_eux)
-                          const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
-                          const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? '#f87171' : '#f59e0b'
+                          const nous = Number(m.score_nous)
+                          const eux = Number(m.score_eux)
+                          const isVictoire = nous > eux
+                          const isNul = nous === eux
+                          const borderColor = isVictoire ? '#4ade80' : isNul ? '#555' : '#f87171'
+                          const scoreColor = isVictoire ? '#4ade80' : isNul ? '#888' : '#f87171'
+                          const resultLabel = isVictoire ? 'Victoire' : isNul ? 'Nul' : 'Défaite'
                           return (
-                      <div key={m.id} style={{ ...st.card }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
-                          {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '12px', padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>}
-                          <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
+                      <div key={m.id} style={{ background: '#111', border: '1px solid #1e1e1e', borderLeft: `4px solid ${borderColor}`, borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, color: '#fff', fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {m.domicile ? 'vs' : '@'} {m.adversaire}
-                            </p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
+                            </div>
+                            <div style={{ color: '#666', fontSize: '12px', marginTop: '2px' }}>
                               {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                               {m.heure ? ` · ${m.heure}` : ''}
-                              {m.competition ? ` · ${m.competition}` : ''}
-                              {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
-                              {m.lieu ? ` · ${m.lieu}` : ''}
-                            </p>
+                            </div>
+                            <div style={{ color: '#555', fontSize: '12px' }}>
+                              {m.competition ? `${m.competition} · ` : ''}{m.domicile ? '🏠 Domicile' : '✈️ Extérieur'}{m.lieu ? ` · ${m.lieu}` : ''}
+                            </div>
                           </div>
-                          {aScore && <span style={{ fontWeight: 800, fontSize: '16px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
+
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: '20px', fontWeight: 800, color: scoreColor, letterSpacing: '1px' }}>
+                              {m.score_nous} - {m.score_eux}
+                            </div>
+                            <div style={{ fontSize: '11px', fontWeight: 600, color: scoreColor, marginTop: '2px' }}>
+                              {resultLabel}
+                            </div>
+                          </div>
+
                           {canEdit('competition') && (
                             <div style={{ position: 'relative', flexShrink: 0 }} onClick={ev => ev.stopPropagation()}>
                               <button
                                 onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
-                                style={{ background: 'none', border: `1px solid ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '16px', width: '32px', height: '32px', cursor: 'pointer', lineHeight: 1 }}
-                              >⋯</button>
+                                style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#666', fontSize: '16px', padding: '6px 10px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
+                              >···</button>
                               {menuResultatOuvert === m.id && (
                                 <>
                                   <div onClick={() => setMenuResultatOuvert(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
