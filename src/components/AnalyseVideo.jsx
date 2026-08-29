@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { makeUseSt } from '../lib/theme'
+import { genererPDFMatch } from './RapportMatch'
 
 const playerInfoVide = () => ({
   prenom: '',
@@ -105,7 +106,7 @@ async function genererPDF(playerInfo, rapport, lang = 'fr') {
   doc.save(`analyse_${playerInfo.nom || 'joueur'}_${playerInfo.date}.pdf`)
 }
 
-export default function AnalyseVideo({ userId, equipeActiveId, equipeUnique = true, lang = 'fr' }) {
+export default function AnalyseVideo({ userId, equipeActiveId, equipeUnique = true, clubNom, lang = 'fr' }) {
   const st = useSt()
   const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
   const [transcript, setTranscript] = useState('')
@@ -495,19 +496,29 @@ Instructions:
           <p style={{ color: st.borderStrong, fontSize: '13px' }}>{t('analyse_aucun_rapport', lang)}.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {rapports.map(r => (
-              <div key={r.id} style={{ ...st.card, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{r.prenom_joueur || 'Sans nom'} {r.poste ? `— ${r.poste}` : ''}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>
-                    {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''} · Vocale
-                  </p>
+            {rapports.map(r => {
+              const estMatch = r.mode_analyse === 'match'
+              return (
+                <div key={r.id} style={{ ...st.card, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {r.prenom_joueur || 'Sans nom'} {r.poste ? `— ${r.poste}` : ''}
+                      <span style={{ background: estMatch ? '#4ade8015' : '#60a5fa15', border: `1px solid ${estMatch ? '#4ade8040' : '#60a5fa40'}`, color: estMatch ? '#4ade80' : '#60a5fa', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>
+                        {estMatch ? 'Match' : 'Vidéo'}
+                      </span>
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>
+                      {r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''}{estMatch ? '' : ' · Vocale'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => estMatch ? genererPDFMatch(r, clubNom) : genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {}, lang)}
+                    style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                    Re-télécharger PDF
+                  </button>
                 </div>
-                <button onClick={() => genererPDF(r.contenu?.playerInfo || {}, r.contenu?.rapport || {}, lang)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  Re-télécharger PDF
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

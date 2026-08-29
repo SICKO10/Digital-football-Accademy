@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import AnalyseVideo from '../components/AnalyseVideo'
+import RapportMatch from '../components/RapportMatch'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
@@ -1262,6 +1263,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerWarning, setScannerWarning] = useState(null) // avertissement si peu de joueurs détectés vs effectif
   const [matchActif, setMatchActif] = useState(null)
   const [menuResultatOuvert, setMenuResultatOuvert] = useState(null) // id du résultat dont le menu "⋯" (modifier/supprimer) est ouvert
+  const [rapportMatchOuvert, setRapportMatchOuvert] = useState(null) // match pour lequel la modale "Rapport de match" est ouverte, ou null
   const [statsMatch, setStatsMatch] = useState({})
   const [matchANoter, setMatchANoter] = useState(null)
   const [dispoJoueursMatch, setDispoJoueursMatch] = useState({}) // { [match_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur, via disponibilites.match_id
@@ -5853,9 +5855,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                               {menuResultatOuvert === m.id && (
                                 <>
                                   <div onClick={() => setMenuResultatOuvert(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                                  <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                                    <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
+                                  <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '170px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                    <button onClick={() => { setMenuResultatOuvert(null); setRapportMatchOuvert(m) }}
                                       style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      📄 Rapport de match
+                                    </button>
+                                    <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
+                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
                                       Modifier
                                     </button>
                                     <button onClick={async () => {
@@ -6318,6 +6324,19 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 </div>
               )
             })()}
+
+            {/* ── Modale "Rapport de match" ── */}
+            {rapportMatchOuvert && (
+              <RapportMatch
+                match={rapportMatchOuvert}
+                joueurs={joueurs}
+                userId={userId}
+                equipeActiveId={equipeActive?.id}
+                clubNom={profilEdu?.club}
+                onClose={() => setRapportMatchOuvert(null)}
+                onSaved={() => afficherToast('Rapport de match enregistré')}
+              />
+            )}
 
             {/* ── Modale "Marquer comme joué" ── */}
             {modalMatchJoue && (
@@ -8588,7 +8607,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'analyse_video' && (
-          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} lang={lang} />
+          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} clubNom={profilEdu?.club} lang={lang} />
         )}
 
         {activeSection === 'prep_physique' && (
