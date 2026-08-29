@@ -79,3 +79,6 @@ export const IcoInbox = ({ size = 15 }) => (
 export const IcoX = ({ size = 15 }) => (
   <svg {...base(size)}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 )
+export const IcoMegaphone = ({ size = 15 }) => (
+  <svg {...base(size)}><path d="M3 11l18-5v12L3 13z" /><path d="M11.6 16.8a3 3 0 01-5.8-1.6" /></svg>
+)

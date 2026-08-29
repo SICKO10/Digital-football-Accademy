@@ -8,6 +8,7 @@ import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
+import NotificationBanner from '../components/NotificationBanner'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
@@ -1919,6 +1920,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         </aside>
 
         <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto' }}>
+          {!readOnly && (
+            <div style={{ marginBottom: '16px', borderRadius: '10px', overflow: 'hidden' }}>
+              <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />
+            </div>
+          )}
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)}
               style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
@@ -3063,6 +3069,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
       {/* ── MAIN CONTENT ── */}
       <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh' }}>
+
+        {!readOnly && <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />}
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)}
