@@ -1,22 +1,27 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
-export default function DeplacementsAssignesWidget({ userId, equipeActiveId, accentColor = '#60a5fa', onOuvrirFiche }) {
+export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equipeUnique = true, accentColor = '#60a5fa', onOuvrirFiche }) {
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
 
   const charger = async () => {
     const aujourdHui = new Date().toISOString().split('T')[0]
-    let q = supabase
+    // Filtre équipe côté client (comme Deplacements.jsx) : reste robuste même
+    // si club_categorie_id n'existe pas encore en base. Le .limit() passe
+    // donc après le filtre, pas dans la requête, sinon on risquerait de ne
+    // récupérer que des lignes d'une autre équipe avant même de filtrer.
+    const { data } = await supabase
       .from('deplacements')
       .select('*')
       .eq('educateur_id', userId)
       .gte('date_depart', aujourdHui)
       .order('date_depart')
-      .limit(2)
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data } = await q
-    setDeplacements(data || [])
+      .limit(10)
+    const scopes = equipeActiveId
+      ? (data || []).filter(d => d.club_categorie_id === equipeActiveId || (d.club_categorie_id == null && equipeUnique))
+      : (data || [])
+    setDeplacements(scopes.slice(0, 2))
     setLoading(false)
   }
 

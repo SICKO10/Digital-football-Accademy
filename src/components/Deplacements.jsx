@@ -61,7 +61,7 @@ const grouperParSemaine = (deplacements) => {
   return groupes
 }
 
-export default function Deplacements({ clubId, equipeActiveId, accentColor = '#4ade80', readOnly = false }) {
+export default function Deplacements({ clubId, equipeActiveId, equipeUnique = true, accentColor = '#4ade80', readOnly = false }) {
   const st = useSt()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -96,20 +96,23 @@ export default function Deplacements({ clubId, equipeActiveId, accentColor = '#4
     // equipeActiveId : côté éducateur (switcher), isole les déplacements de
     // l'équipe active — non fourni côté club (dirigeant), qui garde la vue
     // complète nécessaire à la coordination inter-équipes.
-    let q = supabase.from('deplacements').select('*').eq('club_id', clubId).order('date_depart', { ascending: false })
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data, error } = await q
+    // Filtre équipe appliqué côté client : reste robuste même si
+    // club_categorie_id n'existe pas encore en base (migration pas lancée).
+    const { data, error } = await supabase.from('deplacements').select('*').eq('club_id', clubId).order('date_depart', { ascending: false })
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       setLoading(false)
       return
     }
     setTableMissing(false)
+    const scopes = equipeActiveId
+      ? (data || []).filter(d => d.club_categorie_id === equipeActiveId || (d.club_categorie_id == null && equipeUnique))
+      : (data || [])
     // Filet de sécurité si jamais le même id apparaissait deux fois dans une
     // seule réponse (ne peut pas arriver avec ce select plat sans jointure,
     // donc n'a aucun effet sur deux lignes distinctes qui partagent juste la
     // même destination — voir supprimerDeplacement plus bas pour ce cas).
-    const uniques = (data || []).filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)
+    const uniques = scopes.filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)
     setDeplacements(uniques)
     setLoading(false)
   }

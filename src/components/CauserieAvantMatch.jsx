@@ -305,7 +305,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   )
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, clubId, joueurs = [] }) {
+export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [] }) {
   const colors = useColors()
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
@@ -324,16 +324,21 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
   const charger = async () => {
     // equipeActiveId : un coach peut gérer plusieurs équipes (switcher) — sans
-    // ce filtre, les fiches causerie des deux équipes se mélangeraient.
-    let q = supabase.from('causeries').select('*').eq('educateur_id', userId).order('date_match', { ascending: false })
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data, error } = await q
+    // ce filtre, les fiches causerie des deux équipes se mélangeraient. Les
+    // fiches pas encore rattachées (club_categorie_id null, créées avant ce
+    // filtre) restent visibles uniquement si ce coach n'a qu'UNE équipe —
+    // sinon impossible de savoir laquelle sans deviner, cf. auto-guérison à
+    // la sauvegarde (sauvegarder() republie club_categorie_id à chaque modif).
+    const { data, error } = await supabase.from('causeries').select('*').eq('educateur_id', userId).order('date_match', { ascending: false })
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       return
     }
     setTableMissing(false)
-    setFiches((data || []).map(normaliserFiche))
+    const filtrees = equipeActiveId
+      ? (data || []).filter(f => f.club_categorie_id === equipeActiveId || (f.club_categorie_id == null && equipeUnique))
+      : (data || [])
+    setFiches(filtrees.map(normaliserFiche))
   }
 
   // tactipads volontairement PAS filtré par équipe : un schéma tactique n'est

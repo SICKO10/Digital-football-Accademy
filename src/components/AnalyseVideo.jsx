@@ -105,7 +105,7 @@ async function genererPDF(playerInfo, rapport, lang = 'fr') {
   doc.save(`analyse_${playerInfo.nom || 'joueur'}_${playerInfo.date}.pdf`)
 }
 
-export default function AnalyseVideo({ userId, equipeActiveId, lang = 'fr' }) {
+export default function AnalyseVideo({ userId, equipeActiveId, equipeUnique = true, lang = 'fr' }) {
   const st = useSt()
   const [playerInfo, setPlayerInfo] = useState(playerInfoVide)
   const [transcript, setTranscript] = useState('')
@@ -125,16 +125,21 @@ export default function AnalyseVideo({ userId, equipeActiveId, lang = 'fr' }) {
 
   const chargerRapports = async () => {
     setLoadingRapports(true)
-    let q = supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).order('created_at', { ascending: false })
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data, error } = await q
+    // Filtre appliqué côté client (pas en requête) : reste robuste même si
+    // club_categorie_id n'existe pas encore en base (migration pas encore
+    // lancée) — .eq() sur une colonne absente ferait échouer toute la
+    // requête au lieu de simplement ignorer le filtre.
+    const { data, error } = await supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).order('created_at', { ascending: false })
     if (error) {
       if (error.code === '42P01') setTableMissing(true)
       setLoadingRapports(false)
       return
     }
     setTableMissing(false)
-    setRapports(data || [])
+    const filtres = equipeActiveId
+      ? (data || []).filter(r => r.club_categorie_id === equipeActiveId || (r.club_categorie_id == null && equipeUnique))
+      : (data || [])
+    setRapports(filtres)
     setLoadingRapports(false)
   }
 

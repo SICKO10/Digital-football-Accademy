@@ -209,7 +209,7 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   )
 }
 
-export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveId, readOnly = false, isMobile = false, lang = 'fr' }) {
+export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveId, equipeUnique = true, readOnly = false, isMobile = false, lang = 'fr' }) {
   const st = useSt()
   const [vue, setVue] = useState('programmes')
   const [programmes, setProgrammes] = useState([])
@@ -234,11 +234,14 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
 
   const loadProgrammes = async () => {
     setLoading(true)
-    let q = supabase.from('programmes_prep').select('*').eq('educateur_id', educateurId).order('created_at', { ascending: false })
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data, error } = await q
+    // Filtre appliqué côté client : reste robuste même si club_categorie_id
+    // n'existe pas encore en base (migration pas encore lancée).
+    const { data, error } = await supabase.from('programmes_prep').select('*').eq('educateur_id', educateurId).order('created_at', { ascending: false })
     if (error?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
-    setProgrammes(data || [])
+    const filtres = equipeActiveId
+      ? (data || []).filter(p => p.club_categorie_id === equipeActiveId || (p.club_categorie_id == null && equipeUnique))
+      : (data || [])
+    setProgrammes(filtres)
     setLoading(false)
   }
 
@@ -285,10 +288,11 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   // cet éducateur, réutilisés à la fois par le classement (dans un programme)
   // et par l'onglet autonome "Tests physiques".
   const loadTests = async () => {
-    let q = supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
-    if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
-    const { data } = await q
-    setTests(data || [])
+    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
+    const filtres = equipeActiveId
+      ? (data || []).filter(tt => tt.club_categorie_id === equipeActiveId || (tt.club_categorie_id == null && equipeUnique))
+      : (data || [])
+    setTests(filtres)
   }
 
   const ouvrirProgramme = async (p) => {

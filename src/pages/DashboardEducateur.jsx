@@ -666,7 +666,7 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
-function AccueilEducateur({ clubId, userId, equipeActiveId, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -817,7 +817,7 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, joueurs, entrainemen
       </div>
 
       {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
-      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
+      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
 
       {/* Widgets résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
@@ -4373,6 +4373,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               clubId={clubAffiliation?.club_id}
               userId={userId}
               equipeActiveId={equipeActive?.id}
+              equipeUnique={mesEquipes.length <= 1}
               joueurs={joueurs}
               entrainements={entrainements}
               matchs={matchs}
@@ -6288,7 +6289,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} />
+            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
@@ -8256,11 +8257,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         )}
 
         {activeSection === 'analyse_video' && (
-          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} lang={lang} />
+          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} lang={lang} />
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
+          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
         )}
 
         {activeSection === 'clotures_saison' && (
@@ -8280,7 +8281,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           // une donnée partagée avec le club, pas de club_id nécessaire") —
           // accessible que le coach soit affilié à un club ou non, club_id
           // reste optionnel côté CauserieAvantMatch.
-          <CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
+          <CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
         )}
 
         {activeSection === 'dirigeants' && (

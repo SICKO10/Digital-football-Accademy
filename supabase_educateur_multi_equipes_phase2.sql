@@ -16,28 +16,37 @@ alter table programmes_prep  add column if not exists club_categorie_id uuid ref
 alter table tests_physiques  add column if not exists club_categorie_id uuid references club_categories(id);
 alter table deplacements     add column if not exists club_categorie_id uuid references club_categories(id);
 
--- Backfill : comme pour la phase 1, aucun coach n'a jamais pu avoir plus
--- d'une ligne club_categories avant ce switcher, donc le rattachement par
--- educateur_id est non ambigu pour toutes les lignes existantes.
+-- Backfill : SEULEMENT pour les éducateurs n'ayant qu'UNE seule ligne
+-- club_categories — aucune ambiguïté possible dans ce cas. Pour un coach
+-- gérant déjà plusieurs équipes (switcher utilisé avant cette migration),
+-- impossible de deviner sans risque laquelle de ses équipes chaque ligne
+-- orpheline concerne (même leçon que le bug matchs_equipe/classement club
+-- corrigé séparément) — ces lignes restent null, à réassigner au cas par
+-- cas plutôt que par une jointure aveugle sur educateur_id.
 update rapports_analyse r set club_categorie_id = cc.id
 from club_categories cc
-where cc.educateur_id = r.educateur_id and r.club_categorie_id is null;
+where cc.educateur_id = r.educateur_id and r.club_categorie_id is null
+  and (select count(*) from club_categories cc2 where cc2.educateur_id = r.educateur_id) = 1;
 
 update causeries c set club_categorie_id = cc.id
 from club_categories cc
-where cc.educateur_id = c.educateur_id and c.club_categorie_id is null;
+where cc.educateur_id = c.educateur_id and c.club_categorie_id is null
+  and (select count(*) from club_categories cc2 where cc2.educateur_id = c.educateur_id) = 1;
 
 update programmes_prep p set club_categorie_id = cc.id
 from club_categories cc
-where cc.educateur_id = p.educateur_id and p.club_categorie_id is null;
+where cc.educateur_id = p.educateur_id and p.club_categorie_id is null
+  and (select count(*) from club_categories cc2 where cc2.educateur_id = p.educateur_id) = 1;
 
 update tests_physiques t set club_categorie_id = cc.id
 from club_categories cc
-where cc.educateur_id = t.educateur_id and t.club_categorie_id is null;
+where cc.educateur_id = t.educateur_id and t.club_categorie_id is null
+  and (select count(*) from club_categories cc2 where cc2.educateur_id = t.educateur_id) = 1;
 
 update deplacements d set club_categorie_id = cc.id
 from club_categories cc
-where cc.educateur_id = d.educateur_id and d.club_categorie_id is null;
+where cc.educateur_id = d.educateur_id and d.club_categorie_id is null
+  and (select count(*) from club_categories cc2 where cc2.educateur_id = d.educateur_id) = 1;
 
 create index if not exists idx_rapports_analyse_club_categorie_id on rapports_analyse(club_categorie_id);
 create index if not exists idx_causeries_club_categorie_id on causeries(club_categorie_id);
