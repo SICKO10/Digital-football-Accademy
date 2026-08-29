@@ -11,6 +11,7 @@ import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSai
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import CauserieAvantMatch from '../components/CauserieAvantMatch'
+import BibliothequeVideos from '../components/BibliothequeVideos'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 import NotationMatch from '../components/NotationMatch'
@@ -188,6 +189,7 @@ const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 const IcoEdit      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
+const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -1181,6 +1183,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
+  const [biblioVideoTab, setBiblioVideoTab] = useState('perso') // 'perso' | 'club' | 'df'
   const [statsTri, setStatsTri] = useState('buts') // pour classement
 
   // Équipe
@@ -1611,6 +1614,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [affiliations, setAffiliations] = useState([])
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  const [annoncesClub, setAnnoncesClub] = useState([])
+  const [annoncesLuesIds, setAnnoncesLuesIds] = useState(new Set())
   const [monMateriel, setMonMateriel] = useState([]) // materiel_distribution où educateur_id = userId
   const [champsEquipementEduc, setChampsEquipementEduc] = useState([])
   const [mesTaillesEduc, setMesTaillesEduc] = useState([])
@@ -1656,6 +1661,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   useEffect(() => { if (activeSection === 'materiel' && clubAffiliation?.club_id) { chargerMonMateriel(); chargerMesTaillesEquipementEduc() } }, [activeSection, clubAffiliation])
+
+  // Actualités publiées par le club — visibles dès l'affiliation acceptée (pas
+  // besoin d'ouvrir l'onglet, contrairement au matériel) pour que le badge de
+  // non-lus dans la sidebar reflète l'état réel.
+  const chargerAnnoncesClub = async () => {
+    if (!clubAffiliation?.club_id) return
+    const { data } = await supabase.from('annonces_club').select('*').eq('club_id', clubAffiliation.club_id).in('cible', ['tous', 'educateurs']).order('created_at', { ascending: false })
+    setAnnoncesClub(data || [])
+    const { data: lues } = await supabase.from('annonces_lues').select('annonce_id').eq('user_id', userId)
+    setAnnoncesLuesIds(new Set((lues || []).map(l => l.annonce_id)))
+  }
+  useEffect(() => { if (clubAffiliation?.club_id && clubAffiliation.statut === 'accepte') chargerAnnoncesClub() }, [clubAffiliation])
+
+  const marquerAnnonceLue = async (annonceId) => {
+    if (annoncesLuesIds.has(annonceId)) return
+    setAnnoncesLuesIds(prev => new Set(prev).add(annonceId))
+    await supabase.from('annonces_lues').upsert({ annonce_id: annonceId, user_id: userId }, { onConflict: 'annonce_id,user_id' })
+  }
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
   const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
@@ -3996,11 +4019,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
       { key: 'terrains', label: t('nav_terrains', lang), icon: <IcoCalendar /> },
       { key: 'materiel', label: 'Mon matériel', icon: <IcoBox /> },
+      { key: 'annonces', label: 'Actualités du club', icon: <IcoMegaphone />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
     ] },
     { titre: t('section_entrainement', lang), items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
       { key: 'mes_seances', label: t('nav_seances', lang), icon: <IcoFilm /> },
       { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
+      { key: 'bibliotheque_videos', label: 'Bibliothèque vidéo', icon: <IcoFilm /> },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
     ] },
@@ -4280,6 +4305,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', marginTop: isTablet ? '4px' : 0, borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
+                  {!!item.badge && (
+                    <span style={{ background: colors.accent.blue, color: colors.background.base, borderRadius: '10px', minWidth: '18px', height: '18px', padding: '0 5px', fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.badge}</span>
+                  )}
                   {item.locked && !isTablet && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
                   {activeSection === item.key && (
                     <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.blue, borderRadius: '0 3px 3px 0' }} />
@@ -6318,6 +6346,38 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           )
         )}
 
+        {/* ===== ACTUALITÉS DU CLUB ===== */}
+        {activeSection === 'annonces' && (
+          <div style={{ maxWidth: 700 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoMegaphone /> Actualités du club</h2>
+            <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 20 }}>Communiqués publiés par {profilEdu?.club || 'ton club'}.</p>
+            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Rejoins un club pour voir ses actualités.</p>
+            ) : annoncesClub.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune actualité pour le moment.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {annoncesClub.map(a => {
+                  const lue = annoncesLuesIds.has(a.id)
+                  return (
+                    <div key={a.id} onClick={() => marquerAnnonceLue(a.id)}
+                      style={{ background: colors.background.sunken, border: `1px solid ${lue ? colors.border.faint : colors.accent.blue}`, borderRadius: '12px', padding: '18px', cursor: lue ? 'default' : 'pointer' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                        <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '14px', fontWeight: 700 }}>{a.titre}</h3>
+                        {!lue && <span style={{ background: colors.accent.blue + '22', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>Nouveau</span>}
+                      </div>
+                      <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '8px' }}>
+                        {a.auteur_nom} · {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                      <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ===== MON MATÉRIEL ===== */}
         {activeSection === 'materiel' && (() => {
           const STATUT_MATERIEL = {
@@ -8258,6 +8318,38 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'analyse_video' && (
           <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} lang={lang} />
+        )}
+
+        {activeSection === 'bibliotheque_videos' && (
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>Bibliothèque vidéo</h1>
+            <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>Mes vidéos, celles partagées par le club, et le contenu officiel Digital Football.</p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'perso', label: 'Ma bibliothèque' },
+                { id: 'club', label: 'Club' },
+                { id: 'df', label: 'Digital Football' },
+              ].map(t2 => (
+                <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTab === t2.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioVideoTab === t2.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioVideoTab === t2.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {t2.label}
+                </button>
+              ))}
+            </div>
+            {biblioVideoTab === 'perso' && (
+              <BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} />
+            )}
+            {biblioVideoTab === 'club' && (
+              clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
+                <BibliothequeVideos type="club" clubId={clubAffiliation.club_id} peutAjouter={false} accentColor={colors.accent.blue} />
+              ) : (
+                <p style={{ color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '40px' }}>Rejoins un club pour accéder à sa bibliothèque vidéo.</p>
+              )
+            )}
+            {biblioVideoTab === 'df' && (
+              <BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} />
+            )}
+          </div>
         )}
 
         {activeSection === 'prep_physique' && (

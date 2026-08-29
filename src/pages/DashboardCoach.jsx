@@ -11,7 +11,7 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
-import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail } from './coach/NavIcons'
+import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone } from './coach/NavIcons'
 import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
@@ -25,6 +25,8 @@ import ClubRequests from './coach/ClubRequests'
 import Support from './coach/Support'
 import StripeLinks from './coach/StripeLinks'
 import ClubsAgents from './coach/ClubsAgents'
+import Communication from './coach/Communication'
+import BibliothequeVideos from '../components/BibliothequeVideos'
 
 function DashboardCoachInner() {
   const navigate = useNavigate()
@@ -458,6 +460,8 @@ function DashboardCoachInner() {
       { id: 'subscriptions', label: 'Abonnements', Icon: IcoCard, badge: 0 },
       { id: 'revenue', label: "Chiffre d'affaires", Icon: IcoDollar, badge: 0 },
       { id: 'referrals', label: 'Parrainage FreePlay', Icon: IcoShare, badge: 0 },
+      { id: 'communication', label: 'Communication', Icon: IcoMegaphone, badge: 0 },
+      { id: 'bibliotheque_df', label: 'Bibliothèque vidéo', Icon: IcoPlay, badge: 0 },
     ] : []),
   ]
   const NAV_ACTIVITE = [
@@ -603,6 +607,10 @@ function DashboardCoachInner() {
           {activeSection === 'subscriptions' && isAdminClubs && <Subscriptions />}
           {activeSection === 'revenue' && isAdminClubs && <Revenue />}
           {activeSection === 'referrals' && isAdminClubs && <Referrals coachId={coachId} />}
+          {activeSection === 'communication' && isAdminClubs && <Communication adminId={coachId} />}
+          {activeSection === 'bibliotheque_df' && isAdminClubs && (
+            <BibliothequeVideos type="df" peutAjouter={isAdminClubs} accentColor={c.accent} />
+          )}
 
           {activeSection === 'analyses' && (
             <PlayerAnalysis
