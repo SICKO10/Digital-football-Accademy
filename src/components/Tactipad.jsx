@@ -475,7 +475,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
   const canvasRef = useRef(null)
   const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
-  const height = Math.round(width * 10 / 16)
+  // Ratio hauteur/largeur du terrain — assoupli de 10/16 (0.625) à 0.56 sur
+  // demande (largeur un peu plus grande, hauteur un peu plus réduite) ;
+  // RATIO_H_INV (son inverse) sert à reconvertir une hauteur d'écran dispo
+  // en largeur équivalente dans mettreAJourLargeur ci-dessous.
+  const RATIO_H = 0.56
+  const height = Math.round(width * RATIO_H)
 
   useLayoutEffect(() => {
     const el = canvasRef.current
@@ -483,7 +488,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     const mettreAJourLargeur = () => {
       const disponible = el.getBoundingClientRect().width
       if (disponible <= 0) return
-      // Le terrain garde un ratio fixe 16:10 (cf. height ci-dessus) : sans
+      // Le terrain garde un ratio fixe (RATIO_H ci-dessus) : sans
       // borne côté hauteur, un conteneur large (ex: panel joueurs masqué,
       // cf. panelOuvert) produit un terrain plus haut que l'écran en
       // portrait, où la hauteur disponible est la ressource rare. En
@@ -492,13 +497,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
       // bien plus qu'il n'était nécessaire — on ne plafonne donc que
       // par la hauteur en portrait, pas en paysage.
       const paysage = window.innerWidth > window.innerHeight
-      const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) * 1.6)
+      const maxParHauteur = paysage ? Infinity : Math.round((window.innerHeight - 160) / RATIO_H)
       // -20 : petite marge pour ne pas coller pile au bord du panel/de l'écran.
       const plafonne = Math.max(280, Math.min(Math.round(disponible) - 20, 880, maxParHauteur))
-      // ×0.9 : réduction supplémentaire légère (largeur ET hauteur, qui suit
-      // le même ratio) demandée après retour visuel — le terrain semblait
-      // encore un peu trop grand une fois tous les plafonds ci-dessus posés.
-      setWidth(Math.max(280, Math.round(plafonne * 0.9)))
+      // ×0.96 : largeur légèrement augmentée par rapport à la réduction
+      // précédente (×0.9) — la hauteur, elle, est réduite via RATIO_H
+      // ci-dessus plutôt qu'ici, sur demande explicite de dissocier les deux.
+      setWidth(Math.max(280, Math.round(plafonne * 0.96)))
     }
     mettreAJourLargeur()
     const observer = new ResizeObserver(mettreAJourLargeur)
