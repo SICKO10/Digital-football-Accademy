@@ -3744,10 +3744,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       afficherToast('Impossible de créer la séance : utilisateur non chargé, réessaie dans un instant.', 'erreur')
       return
     }
-    const payload = { ...newEntrainement, educateur_id: userId }
-    console.log('ajouterEntrainement: insert payload', payload)
+    // club_categorie_id est indispensable : chargerEntrainements() filtre
+    // dessus dès qu'une équipe est active (.eq('club_categorie_id', catId)),
+    // donc une séance créée sans ce champ est bien insérée en base mais
+    // disparaît aussitôt de la liste au rechargement — elle semblait "ne pas
+    // se créer" alors qu'aucune erreur n'était renvoyée par Supabase.
+    const payload = { ...newEntrainement, educateur_id: userId, club_categorie_id: equipeActive?.id || null }
     const { data, error } = await supabase.from('entrainements').insert(payload).select()
-    console.log('ajouterEntrainement: résultat insert', { data, error })
     if (error) {
       afficherToast(`Erreur lors de la création de la séance : ${error.message}`, 'erreur')
       return
@@ -3832,7 +3835,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       const { data } = await supabase.from('entrainements').insert({
         date: newDates[i],
         description: planSaison.theme || '',
-        educateur_id: userId
+        educateur_id: userId,
+        club_categorie_id: equipeActive?.id || null
       }).select().single()
       // Pas de lignes pré-créées : la présence est saisie au clic (evite les faux "absents")
       setPlanProgress({ done: i + 1, total: newDates.length })

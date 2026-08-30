@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import CompositionTerrain, { ModalSelectionJoueur, FORMATIONS } from './CompositionTerrain'
 
 const NATURE_LABELS = {
   cpa: 'CPA',
@@ -10,17 +11,15 @@ const NATURE_LABELS = {
   exploit_personnel: 'Exploit personnel',
 }
 
-// Pré-remplissage composition/buts/cartons depuis stats_match + buts_detail —
-// extrait à part pour être réutilisé aussi bien par la modale (édition) que
-// par l'export PDF rapide depuis la carte résultat (sans ouvrir de modale, si
-// aucun rapport n'a encore été sauvegardé pour ce match).
+// Pré-remplissage buts/cartons depuis stats_match + buts_detail — extrait à
+// part pour être réutilisé aussi bien par la modale (édition) que par l'export
+// PDF rapide depuis la carte résultat (sans ouvrir de modale, si aucun
+// rapport n'a encore été sauvegardé pour ce match). La composition (terrain)
+// n'a pas d'équivalent en base — elle reste 100% manuelle, placée par
+// l'éducateur via CompositionTerrain, jamais pré-remplie automatiquement.
 export function preRemplirDepuisMatch(match, joueurs) {
   const statsParJoueur = {}
   ;(match.stats_match || []).forEach(s => { statsParJoueur[s.joueur_id] = s })
-  const composition = [...joueurs]
-    .filter(j => statsParJoueur[j.id])
-    .sort((a, b) => (a.numero_maillot || 99) - (b.numero_maillot || 99))
-    .map(j => ({ numero: j.numero_maillot || '', nom: j.nom, prenom: j.prenom, titulaire: (statsParJoueur[j.id].minutes || 0) >= 45 }))
 
   const buts = match.buts_detail || []
   const buts_marques = buts.filter(b => b.equipe === 'nous').map(b => ({ numero: '', minute: b.minute || '', description: NATURE_LABELS[b.nature] || '' }))
@@ -35,7 +34,7 @@ export function preRemplirDepuisMatch(match, joueurs) {
     if (s.carton_rouge) cartons_rouges.push({ numero: j.numero_maillot || '', minute: '' })
   })
 
-  return { composition, buts_marques, buts_encaisses, cartons_jaunes, cartons_rouges }
+  return { buts_marques, buts_encaisses, cartons_jaunes, cartons_rouges }
 }
 
 // Rapport de match façon "feuille BEF" — composition/buts/cartons pré-remplis
@@ -50,7 +49,11 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [rapportId, setRapportId] = useState(null)
-  const [composition, setComposition] = useState([])
+  const [formation, setFormation] = useState('4-4-2')
+  const [titulaires, setTitulaires] = useState([])
+  const [remplacants, setRemplacants] = useState([])
+  const [affichageNom, setAffichageNom] = useState('nom')
+  const [compoModal, setCompoModal] = useState(null) // { type: 'titulaire'|'remplacant', slotIndex? }
   const [butsMarques, setButsMarques] = useState([])
   const [butsEncaisses, setButsEncaisses] = useState([])
   const [cartonsJaunes, setCartonsJaunes] = useState([])
@@ -69,7 +72,10 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
       if (existant) {
         const c = existant.contenu || {}
         setRapportId(existant.id)
-        setComposition(c.composition || [])
+        setFormation(c.formation || '4-4-2')
+        setTitulaires(c.titulaires || [])
+        setRemplacants(c.remplacants || [])
+        setAffichageNom(c.composition_affichage_nom || 'nom')
         setButsMarques(c.buts_marques || [])
         setButsEncaisses(c.buts_encaisses || [])
         setCartonsJaunes(c.cartons_jaunes || [])
@@ -80,10 +86,10 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
         setCauserie(c.causerie || '')
         setCauserieSupports(c.causerie_supports || '')
       } else {
-        // Le reste (remplacements, analyse, causerie) n'a pas d'équivalent en
-        // base, l'éducateur part d'une page blanche.
+        // La composition (terrain) reste vide — c'est à l'éducateur de la
+        // placer lui-même. Le reste (remplacements, analyse, causerie) n'a
+        // pas d'équivalent en base non plus, page blanche également.
         const p = preRemplirDepuisMatch(match, joueurs)
-        setComposition(p.composition)
         setButsMarques(p.buts_marques)
         setButsEncaisses(p.buts_encaisses)
         setCartonsJaunes(p.cartons_jaunes)
@@ -94,6 +100,30 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match.id])
+
+  // ── Composition (terrain) — même mécanisme que CauserieAvantMatch.jsx :
+  // ModalSelectionJoueur ne propose que les joueurs à compte lié (joueur_id),
+  // c'est une contrainte du composant partagé, pas spécifique à ce rapport.
+  const dejaUtilisesCompo = (exclureId) => {
+    const t = titulaires.filter(Boolean).map(j => j.joueur_id)
+    const r = remplacants.map(j => j.joueur_id)
+    return new Set([...t, ...r].filter(id => id !== exclureId))
+  }
+  const confirmerSelectionCompo = (joueur) => {
+    if (!compoModal) return
+    if (compoModal.type === 'titulaire') {
+      setTitulaires(prev => {
+        const next = [...prev]
+        next[compoModal.slotIndex] = joueur
+        return next
+      })
+    } else {
+      setRemplacants(prev => [...prev, joueur])
+    }
+    setCompoModal(null)
+  }
+  const retirerTitulaireCompo = (slotIndex) => setTitulaires(prev => { const next = [...prev]; next[slotIndex] = null; return next })
+  const retirerRemplacantCompo = (idx) => setRemplacants(prev => prev.filter((_, i) => i !== idx))
 
   const sauvegarder = async () => {
     setSaving(true)
@@ -111,7 +141,10 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
         domicile: match.domicile,
         score_nous: match.score_nous,
         score_eux: match.score_eux,
-        composition,
+        formation,
+        titulaires,
+        remplacants,
+        composition_affichage_nom: affichageNom,
         buts_marques: butsMarques,
         buts_encaisses: butsEncaisses,
         cartons_jaunes: cartonsJaunes,
@@ -169,23 +202,33 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
               </div>
             </div>
 
-            {/* Composition de départ */}
+            {/* Composition de départ — terrain visuel, placée à la main */}
             <div style={st.section}>
               <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Composition de départ</p>
-              {composition.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun joueur n'a de statistiques enregistrées pour ce match — remplis d'abord la feuille de match.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {composition.map((c, i) => (
-                    <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={!!c.titulaire} onChange={e => majLigne(setComposition, i, 'titulaire', e.target.checked)} />
-                      <span style={{ color: colors.text.faint, width: '28px', flexShrink: 0 }}>{c.numero || '—'}</span>
-                      <span style={{ flex: 1 }}>{c.prenom} {c.nom}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <CompositionTerrain
+                formation={formation}
+                titulaires={titulaires}
+                remplacants={remplacants}
+                modeEdit
+                affichageNom={affichageNom}
+                onChangerAffichageNom={setAffichageNom}
+                onChangerFormation={setFormation}
+                onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
+                onRetirerTitulaire={retirerTitulaireCompo}
+                onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}
+                onRetirerRemplacant={retirerRemplacantCompo}
+              />
             </div>
+
+            {compoModal && (
+              <ModalSelectionJoueur
+                joueursDispo={joueurs.filter(j => j.joueur_id)}
+                dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? titulaires[compoModal.slotIndex]?.joueur_id : undefined)}
+                onConfirmer={confirmerSelectionCompo}
+                onRetirer={compoModal.type === 'titulaire' && titulaires[compoModal.slotIndex] ? () => { retirerTitulaireCompo(compoModal.slotIndex); setCompoModal(null) } : null}
+                onFermer={() => setCompoModal(null)}
+              />
+            )}
 
             {/* Buts marqués */}
             <div style={st.section}>
@@ -403,12 +446,68 @@ export async function genererPDFMatch(rapport, clubNom) {
   ]])
   y += 8
 
-  // ── Composition de départ ──
-  if (c.composition?.length) {
+  // ── Terrain — reproduit la disposition choisie dans CompositionTerrain
+  //    (mêmes lignes que FORMATIONS), avec les numéros de maillot placés par
+  //    l'éducateur. Gardien (1er slot de la 1ère ligne) en vert, reste en bleu.
+  if ((c.titulaires || []).some(Boolean)) {
+    if (y + 75 > 282) { doc.addPage(); y = 15 }
+    const terrainX = PDF_MARGE
+    const terrainW = PDF_LARGEUR_UTILE
+    const terrainH = 68
+    doc.setFillColor(30, 110, 30)
+    doc.rect(terrainX, y, terrainW, terrainH, 'F')
+    doc.setFillColor(38, 125, 38)
+    const nBandes = 10
+    const bandeW = terrainW / nBandes
+    for (let i = 0; i < nBandes; i += 2) doc.rect(terrainX + i * bandeW, y, bandeW, terrainH, 'F')
+    doc.setDrawColor(255, 255, 255)
+    doc.setLineWidth(0.4)
+    doc.rect(terrainX + 2, y + 2, terrainW - 4, terrainH - 4)
+    doc.line(terrainX + terrainW / 2, y + 2, terrainX + terrainW / 2, y + terrainH - 2)
+    doc.circle(terrainX + terrainW / 2, y + terrainH / 2, 12)
+    const boxW = terrainW * 0.09
+    const boxH = terrainH * 0.55
+    doc.rect(terrainX + 2, y + (terrainH - boxH) / 2, boxW, boxH)
+    doc.rect(terrainX + terrainW - 2 - boxW, y + (terrainH - boxH) / 2, boxW, boxH)
+
+    const config = FORMATIONS[c.formation] || FORMATIONS['4-4-2']
+    let curseur = 0
+    const lignesIndexees = config.lignes.map(l => { const debut = curseur; curseur += l.n; return { n: l.n, debut } })
+    const colW = terrainW / lignesIndexees.length
+    lignesIndexees.forEach((ligne, li) => {
+      const cx = terrainX + colW * li + colW / 2
+      for (let i = 0; i < ligne.n; i++) {
+        const slotIndex = ligne.debut + i
+        const joueur = (c.titulaires || [])[slotIndex]
+        if (!joueur) continue
+        const cy = y + (terrainH / (ligne.n + 1)) * (i + 1)
+        doc.setFillColor(...(slotIndex === 0 ? [34, 139, 34] : [37, 99, 235]))
+        doc.setDrawColor(255, 255, 255)
+        doc.setLineWidth(0.3)
+        doc.circle(cx, cy, 4.2, 'FD')
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(255, 255, 255)
+        doc.text(String(joueur.numero ?? ''), cx, cy + 1.4, { align: 'center' })
+        if (joueur.nom) {
+          doc.setFontSize(5.5)
+          doc.setFont('helvetica', 'normal')
+          doc.text(joueur.nom.toUpperCase(), cx, cy + 7, { align: 'center' })
+        }
+      }
+    })
+    y += terrainH + 8
+  }
+
+  // ── Composition de départ — titulaires (placés sur le terrain) puis
+  //    remplaçants, triés par numéro de maillot comme sur le modèle ──
+  const compoJoueurs = [...(c.titulaires || []).filter(Boolean), ...(c.remplacants || [])]
+    .sort((a, b) => (a.numero ?? 99) - (b.numero ?? 99))
+  if (compoJoueurs.length) {
     titre('composition de départ')
     const wCompo = [PDF_LARGEUR_UTILE * 0.2, PDF_LARGEUR_UTILE * 0.4, PDF_LARGEUR_UTILE * 0.4]
     const header = [{ text: 'Numéro', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true, align: 'center' }, { text: 'Nom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }, { text: 'Prénom', bg: ORANGE_BG, border: ORANGE_BORDURE, bold: true }]
-    const rows = c.composition.map(j => [{ text: j.numero || '—', align: 'center' }, j.nom || '', j.prenom || ''])
+    const rows = compoJoueurs.map(j => [{ text: j.numero ?? '—', align: 'center' }, j.nom || '', j.prenom || ''])
     y = drawTable(PDF_MARGE, y, wCompo, [header, ...rows])
     y += 8
   }
