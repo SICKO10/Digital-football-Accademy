@@ -535,6 +535,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     setCompoModal(null)
   }
 
+  const confirmerSelectionMultipleCompo = (joueursChoisis) => {
+    const avecAvatars = joueursChoisis.map(j => ({ ...j, avatar_url: j.avatar_url || avatarsParJoueurId[j.joueur_id] || null }))
+    patchComposition({ remplacants: [...(ficheCourante.remplacants || []), ...avecAvatars] })
+    setCompoModal(null)
+  }
+
   const retirerTitulaireCompo = (slotIndex) => {
     const titulaires = [...(ficheCourante.titulaires || [])]
     titulaires[slotIndex] = null
@@ -1083,7 +1089,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         <ModalSelectionJoueur
           joueursDispo={joueurs.filter(j => j.joueur_id)}
           dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? f.titulaires?.[compoModal.slotIndex]?.joueur_id : undefined)}
+          multiSelect={compoModal.type === 'remplacant'}
           onConfirmer={confirmerSelectionCompo}
+          onConfirmerMultiple={confirmerSelectionMultipleCompo}
           onRetirer={compoModal.type === 'titulaire' && f.titulaires?.[compoModal.slotIndex] ? () => { retirerTitulaireCompo(compoModal.slotIndex); setCompoModal(null) } : null}
           onFermer={() => setCompoModal(null)}
         />

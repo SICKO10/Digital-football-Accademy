@@ -209,9 +209,14 @@ export default function CompositionTerrain({
 
 // Sélection d'un joueur du roster + numéro de maillot pour ce match — jamais
 // stocké dans profiles/equipe_joueurs, propre à chaque composition.
-export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, onRetirer, onFermer }) {
+// multiSelect (remplaçants uniquement — un slot titulaire reste toujours un
+// choix unique) : coche plusieurs joueurs d'un coup, numéro repris tel quel
+// depuis numero_maillot (pas d'édition ligne par ligne dans ce mode, pour
+// rester rapide) ; onConfirmerMultiple reçoit la liste entière en un appel.
+export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, onConfirmerMultiple, onRetirer, onFermer, multiSelect = false }) {
   const [choisi, setChoisi] = useState(null)
   const [numero, setNumero] = useState('')
+  const [choisisMultiple, setChoisisMultiple] = useState([])
 
   const choisir = (j) => {
     setChoisi(j)
@@ -219,34 +224,50 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
     setNumero(Number.isFinite(n) ? String(n) : '')
   }
 
+  const toggleMultiple = (j) => {
+    setChoisisMultiple(prev => prev.some(x => x.joueur_id === j.joueur_id) ? prev.filter(x => x.joueur_id !== j.joueur_id) : [...prev, j])
+  }
+
+  const confirmerMultiple = () => {
+    onConfirmerMultiple(choisisMultiple.map(j => {
+      const n = parseInt(j.numero_maillot, 10)
+      return { joueur_id: j.joueur_id, prenom: j.prenom, nom: j.nom, avatar_url: j.avatar_url || null, numero: Number.isFinite(n) ? n : null }
+    }))
+  }
+
   return (
     <div onClick={onFermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '75vh', overflowY: 'auto', fontFamily: 'Inter, sans-serif' }}>
-        <h3 style={{ color: '#fff', margin: '0 0 16px' }}>Choisir un joueur</h3>
+        <h3 style={{ color: '#fff', margin: '0 0 16px' }}>{multiSelect ? 'Choisir un ou plusieurs joueurs' : 'Choisir un joueur'}</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
           {joueursDispo.map(j => {
-            const indisponible = dejaUtilises.has(j.joueur_id) && choisi?.joueur_id !== j.joueur_id
+            const estChoisiMultiple = choisisMultiple.some(x => x.joueur_id === j.joueur_id)
+            const indisponible = dejaUtilises.has(j.joueur_id) && (multiSelect ? !estChoisiMultiple : choisi?.joueur_id !== j.joueur_id)
+            const actif = multiSelect ? estChoisiMultiple : choisi?.joueur_id === j.joueur_id
             return (
-              <div key={j.joueur_id} onClick={() => !indisponible && choisir(j)}
+              <div key={j.joueur_id} onClick={() => !indisponible && (multiSelect ? toggleMultiple(j) : choisir(j))}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '10px',
                   cursor: indisponible ? 'default' : 'pointer', opacity: indisponible ? 0.35 : 1,
-                  background: choisi?.joueur_id === j.joueur_id ? '#0d1a0d' : '#111',
-                  border: `1px solid ${choisi?.joueur_id === j.joueur_id ? '#4ade80' : '#1a1a1a'}`,
+                  background: actif ? '#0d1a0d' : '#111',
+                  border: `1px solid ${actif ? '#4ade80' : '#1a1a1a'}`,
                 }}>
+                {multiSelect && (
+                  <input type="checkbox" checked={estChoisiMultiple} readOnly disabled={indisponible} style={{ flexShrink: 0 }} />
+                )}
                 <div style={{ width: TAILLE_LISTE, height: TAILLE_LISTE, borderRadius: '50%', overflow: 'hidden', background: '#2a2a2a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <AvatarJoueur joueur={j} fontSize="clamp(11px, 1.8vw, 14px)" />
                 </div>
                 <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px', flex: 1 }}>{j.prenom} {j.nom}</span>
                 {indisponible && <span style={{ color: '#555', fontSize: '11px' }}>déjà placé</span>}
-                {choisi?.joueur_id === j.joueur_id && <span style={{ color: '#4ade80' }}>✓</span>}
+                {!multiSelect && choisi?.joueur_id === j.joueur_id && <span style={{ color: '#4ade80' }}>✓</span>}
               </div>
             )
           })}
         </div>
 
-        {choisi && (
+        {!multiSelect && choisi && (
           <div style={{ marginBottom: '16px', padding: '14px', background: '#111', borderRadius: '12px', border: '1px solid #2a2a2a' }}>
             <div style={{ color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>N° de maillot (ce match)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -260,13 +281,20 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={onFermer} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
-          {onRetirer && (
+          {!multiSelect && onRetirer && (
             <button onClick={onRetirer} style={{ flex: 1, background: 'none', border: '1px solid #ef444444', color: '#ef4444', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Retirer</button>
           )}
-          <button disabled={!choisi} onClick={() => onConfirmer({ joueur_id: choisi.joueur_id, prenom: choisi.prenom, nom: choisi.nom, avatar_url: choisi.avatar_url || null, numero: parseInt(numero, 10) || null })}
-            style={{ flex: 2, background: choisi ? '#4ade80' : '#1a1a1a', border: 'none', color: choisi ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisi ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
-            Confirmer
-          </button>
+          {multiSelect ? (
+            <button disabled={choisisMultiple.length === 0} onClick={confirmerMultiple}
+              style={{ flex: 2, background: choisisMultiple.length ? '#4ade80' : '#1a1a1a', border: 'none', color: choisisMultiple.length ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisisMultiple.length ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+              Ajouter {choisisMultiple.length > 0 ? `(${choisisMultiple.length})` : ''}
+            </button>
+          ) : (
+            <button disabled={!choisi} onClick={() => onConfirmer({ joueur_id: choisi.joueur_id, prenom: choisi.prenom, nom: choisi.nom, avatar_url: choisi.avatar_url || null, numero: parseInt(numero, 10) || null })}
+              style={{ flex: 2, background: choisi ? '#4ade80' : '#1a1a1a', border: 'none', color: choisi ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisi ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+              Confirmer
+            </button>
+          )}
         </div>
       </div>
     </div>

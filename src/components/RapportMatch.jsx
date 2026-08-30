@@ -122,6 +122,10 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
     }
     setCompoModal(null)
   }
+  const confirmerSelectionMultipleCompo = (joueursChoisis) => {
+    setRemplacants(prev => [...prev, ...joueursChoisis])
+    setCompoModal(null)
+  }
   const retirerTitulaireCompo = (slotIndex) => setTitulaires(prev => { const next = [...prev]; next[slotIndex] = null; return next })
   const retirerRemplacantCompo = (idx) => setRemplacants(prev => prev.filter((_, i) => i !== idx))
 
@@ -224,7 +228,9 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
               <ModalSelectionJoueur
                 joueursDispo={joueurs.filter(j => j.joueur_id)}
                 dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? titulaires[compoModal.slotIndex]?.joueur_id : undefined)}
+                multiSelect={compoModal.type === 'remplacant'}
                 onConfirmer={confirmerSelectionCompo}
+                onConfirmerMultiple={confirmerSelectionMultipleCompo}
                 onRetirer={compoModal.type === 'titulaire' && titulaires[compoModal.slotIndex] ? () => { retirerTitulaireCompo(compoModal.slotIndex); setCompoModal(null) } : null}
                 onFermer={() => setCompoModal(null)}
               />
