@@ -47,6 +47,15 @@ export default function ClubPublic() {
   const [mesCandidatures, setMesCandidatures] = useState({}) // { [recrutement_id]: statut }
   const [postulantId, setPostulantId] = useState(null)
 
+  // Feed de publications du club — visible sur la page publique, gérable par
+  // le club lui-même ou un éducateur affilié (cf. isClubAdmin ci-dessous).
+  const [posts, setPosts] = useState([])
+  const [newPost, setNewPost] = useState('')
+  const [postType, setPostType] = useState('annonce')
+  const [postingLoading, setPostingLoading] = useState(false)
+  const [likedPosts, setLikedPosts] = useState(new Set())
+  const [isClubAdmin, setIsClubAdmin] = useState(false)
+
   // Validation participation
   const [validations, setValidations] = useState([]) // mes validations pour ce club
   const [showValForm, setShowValForm] = useState(false)
@@ -97,6 +106,27 @@ export default function ClubPublic() {
         const mapCand = {}
         cand?.forEach(c => { mapCand[c.recrutement_id] = c.statut })
         setMesCandidatures(mapCand)
+
+        // Feed du club + mes likes
+        const { data: postsData } = await supabase
+          .from('club_posts')
+          .select('*, auteur:auteur_id(prenom, nom, avatar_url)')
+          .eq('club_id', id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        setPosts(postsData || [])
+        const { data: likesData } = await supabase.from('club_posts_likes').select('post_id').eq('user_id', user.id)
+        setLikedPosts(new Set((likesData || []).map(l => l.post_id)))
+
+        // Admin du feed : le club lui-même, ou un éducateur affilié accepté
+        // (club_educateurs) — pas de colonne owner_id/tableau educateurs sur
+        // profiles, la relation club↔éducateur passe par cette table.
+        if (user.id === id) {
+          setIsClubAdmin(true)
+        } else {
+          const { data: affilie } = await supabase.from('club_educateurs').select('id').eq('club_id', id).eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle()
+          setIsClubAdmin(!!affilie)
+        }
       }
 
       // Joueurs de l'équipe
@@ -133,6 +163,41 @@ export default function ClubPublic() {
     }
     init()
   }, [id])
+
+  const handlePost = async () => {
+    if (!newPost.trim() || postingLoading) return
+    setPostingLoading(true)
+    const { data, error } = await supabase
+      .from('club_posts')
+      .insert({ club_id: id, auteur_id: userId, contenu: newPost.trim(), type: postType })
+      .select('*, auteur:auteur_id(prenom, nom, avatar_url)')
+      .single()
+    if (!error && data) {
+      setPosts(prev => [data, ...prev])
+      setNewPost('')
+    }
+    setPostingLoading(false)
+  }
+
+  // likes_count n'est pas modifié ici directement (contrairement à un simple
+  // update client) : un trigger sur club_posts_likes le maintient côté base
+  // (cf. supabase_club_posts.sql) — évite qu'un client puisse y écrire une
+  // valeur arbitraire, et les doubles clics simultanés ne désynchronisent pas
+  // le compteur. Mise à jour locale ci-dessous purement optimiste, pour un
+  // retour visuel immédiat.
+  const handleLike = async (postId) => {
+    if (!userId) return
+    const isLiked = likedPosts.has(postId)
+    if (isLiked) {
+      setLikedPosts(prev => { const s = new Set(prev); s.delete(postId); return s })
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 0) - 1) } : p))
+      await supabase.from('club_posts_likes').delete().eq('post_id', postId).eq('user_id', userId)
+    } else {
+      setLikedPosts(prev => new Set([...prev, postId]))
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p))
+      await supabase.from('club_posts_likes').insert({ post_id: postId, user_id: userId })
+    }
+  }
 
   const soumettreValidation = async () => {
     const remplies = valFeuilles.filter(f => f.trim())
@@ -288,6 +353,87 @@ export default function ClubPublic() {
           ))}
         </div>
       </div>
+
+      {/* ── Feed de publications (clubs uniquement) ── */}
+      {estClub && (
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 1.5rem 2.5rem' }}>
+          {isClubAdmin && (
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: 16, padding: 20, marginBottom: 24 }}>
+              <textarea
+                placeholder="Partagez une actualité, un résultat, une annonce..."
+                value={newPost}
+                onChange={e => setNewPost(e.target.value)}
+                rows={3}
+                style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 10, padding: 12, color: colors.text.primary, fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 12, fontFamily: 'Inter, sans-serif' }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                {[
+                  { value: 'annonce', label: 'Annonce' },
+                  { value: 'resultat', label: 'Résultat' },
+                  { value: 'photo', label: 'Photo' },
+                  { value: 'recrutement', label: 'Recrutement' },
+                ].map(pt => (
+                  <button key={pt.value} onClick={() => setPostType(pt.value)}
+                    style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: postType === pt.value ? 'none' : `1px solid ${colors.border.default}`, background: postType === pt.value ? colors.accent.green : colors.background.raised, color: postType === pt.value ? colors.background.base : colors.text.faint, fontFamily: 'Inter, sans-serif' }}>
+                    {pt.label}
+                  </button>
+                ))}
+              </div>
+              <button onClick={handlePost} disabled={!newPost.trim() || postingLoading}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: newPost.trim() ? colors.accent.green : colors.background.raised, color: newPost.trim() ? colors.background.base : colors.text.disabled, fontWeight: 700, fontSize: 14, cursor: newPost.trim() ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif' }}>
+                {postingLoading ? 'Publication...' : 'Publier →'}
+              </button>
+            </div>
+          )}
+
+          {posts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: colors.text.disabled }}>
+              <p style={{ fontSize: 15, margin: 0 }}>Aucune publication pour l'instant.</p>
+            </div>
+          ) : (
+            posts.map(post => {
+              const typeConfig = {
+                annonce: { label: 'Annonce', color: colors.accent.blue },
+                resultat: { label: 'Résultat', color: colors.accent.green },
+                photo: { label: 'Photo', color: colors.accent.orange },
+                recrutement: { label: 'Recrutement', color: colors.accent.purpleLight },
+              }[post.type] || { label: 'Annonce', color: colors.text.faint }
+
+              return (
+                <div key={post.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: 16, padding: 20, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: colors.text.primary, fontSize: 14, flexShrink: 0 }}>
+                      {post.auteur?.prenom?.[0]}{post.auteur?.nom?.[0]}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: 14 }}>{post.auteur?.prenom} {post.auteur?.nom}</div>
+                      <div style={{ color: colors.text.disabled, fontSize: 12 }}>
+                        {new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                    </div>
+                    <span style={{ padding: '4px 10px', borderRadius: 20, background: `${typeConfig.color}15`, border: `1px solid ${typeConfig.color}30`, color: typeConfig.color, fontSize: 11, fontWeight: 600 }}>
+                      {typeConfig.label}
+                    </span>
+                  </div>
+
+                  <p style={{ color: colors.text.secondary, fontSize: 15, lineHeight: 1.7, margin: '0 0 16px', whiteSpace: 'pre-wrap' }}>{post.contenu}</p>
+
+                  {post.image_url && (
+                    <img src={post.image_url} alt="" style={{ width: '100%', borderRadius: 10, marginBottom: 16, objectFit: 'cover', maxHeight: 300 }} />
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: `1px solid ${colors.border.faint}` }}>
+                    <button onClick={() => handleLike(post.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', color: likedPosts.has(post.id) ? colors.accent.green : colors.text.disabled, fontSize: 14, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                      {likedPosts.has(post.id) ? '♥' : '♡'} {post.likes_count || 0}
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 1.5rem 3rem' }}>
         {/* ── Onglets ── */}
