@@ -96,7 +96,7 @@ function StatutBadge({ statut }) {
   )
 }
 
-function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false, accentColor = '#4ade80' }) {
+function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false }) {
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
   const total = Number(sponsor.montant_contrat) || 0
@@ -143,7 +143,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
         </div>
         <div>
           <p style={st.label}>Reçu</p>
-          <p style={{ margin: 0, fontWeight: 700, color: accentColor }}>{recu.toLocaleString('fr-FR')} €</p>
+          <p style={{ margin: 0, fontWeight: 700, color: '#22c55e' }}>{recu.toLocaleString('fr-FR')} €</p>
         </div>
         <div>
           <p style={st.label}>Reste</p>
@@ -167,7 +167,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
               const livree = contrepartiesLivrees.includes(c)
               return (
                 <button key={i} onClick={() => !readOnly && onToggleContrepartie(sponsor, c)} disabled={readOnly}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? accentColor : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#22c55e' : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
                   <span>{livree ? '✓' : '○'}</span> {c}
                 </button>
               )
@@ -181,10 +181,10 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
 
 function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOnly = false }) {
   return (
-    <div style={{ ...st.card, borderLeft: `4px solid ${niveau.couleur}` }}>
+    <div style={{ ...st.card, borderTop: `3px solid ${niveau.couleur}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
         <div>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: '15px' }}>{niveau.nom}</p>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: niveau.couleur }}>{niveau.nom}</p>
           <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{Number(niveau.montant_annuel || 0).toLocaleString('fr-FR')} € / an indicatif</p>
         </div>
         {!readOnly && (
@@ -651,8 +651,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
             <KpiCard label="Sponsors actifs" valeur={sponsors.length} couleur={accentColor} />
-            <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur="#60a5fa" />
-            <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur={accentColor} />
+            <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur="#d4d4d8" />
+            <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur="#22c55e" />
             <KpiCard label="Restant à recevoir" valeur={`${Math.max(0, budgetTotal - encaisse).toLocaleString('fr-FR')} €`} couleur="#f59e0b" />
           </div>
 
@@ -739,7 +739,6 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                   onAjouterPaiement={setModalPaiement}
                   onToggleContrepartie={toggleContrepartie}
                   readOnly={readOnly}
-                  accentColor={accentColor}
                 />
               ))}
             </div>
