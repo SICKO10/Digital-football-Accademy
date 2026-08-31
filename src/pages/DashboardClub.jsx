@@ -1315,7 +1315,7 @@ export default function DashboardClub() {
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
     tab: (active) => ({
       padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-      ...(active ? { background: colors.accent.green, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
+      ...(active ? { background: couleurPrincipale, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
     }),
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: couleurPrincipale, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
@@ -3424,7 +3424,7 @@ Règles :
                     fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
                     whiteSpace: 'nowrap', flexShrink: 0,
                     ...(activeCategorie === cat.id
-                      ? { background: colors.accent.green, color: colors.black, border: 'none' }
+                      ? { background: couleurPrincipale, color: colors.black, border: 'none' }
                       : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
                   }}
                 >
@@ -3483,8 +3483,8 @@ Règles :
                     }}
                     style={{
                       display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                      background: activeCategorie === cat.id ? colors.accent.green + '15' : 'transparent',
-                      color: activeCategorie === cat.id ? colors.accent.green : colors.text.secondary,
+                      background: activeCategorie === cat.id ? couleurPrincipale + '15' : 'transparent',
+                      color: activeCategorie === cat.id ? couleurPrincipale : colors.text.secondary,
                       fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
                     }}>
                     {cat.label}
@@ -3542,7 +3542,7 @@ Règles :
               </button>
               <button
                 onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
-                style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
+                style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
                 {t('club_ajouter_categorie', lang)}
               </button>
             </div>
