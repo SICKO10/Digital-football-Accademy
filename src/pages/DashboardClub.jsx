@@ -3767,7 +3767,7 @@ Règles :
                 <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>{t('club_partage_code_desc', lang)}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: '22px', fontWeight: 800, color: '#4ade80', letterSpacing: '4px', background: 'rgba(74,222,128,0.08)', border: '1px solid #4ade8030', borderRadius: '10px', padding: '10px 20px' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: '22px', fontWeight: 800, color: couleurPrincipale, letterSpacing: '4px', background: couleurPrincipale + alpha.faint, border: `1px solid ${couleurPrincipale}30`, borderRadius: '10px', padding: '10px 20px' }}>
                   {codeClub}
                 </span>
                 <button onClick={copierCode} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
@@ -3818,7 +3818,7 @@ Règles :
                 <input style={{ ...st.input, flex: '2 1 220px' }} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()}
-                style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', fontWeight: 700, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
+                style={{ ...st.btnSolid, opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
                 {invitingEducateur ? '...' : '✉️ Envoyer l\'invitation'}
               </button>
               {inviteEducateurMessage && (
@@ -3975,7 +3975,7 @@ Règles :
                           border: '1px solid #1e1e1e', borderRadius: '10px',
                           cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
                         }}>
-                        <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>
+                        <span style={{ color: couleurPrincipale, fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>
                           📅 {t('profil_saison', lang)} {saison}
                         </span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -4103,7 +4103,7 @@ Règles :
                     <p style={{ fontSize: '13px', fontWeight: 700, color: couleurPrincipale, marginBottom: '10px' }}>🏆 {t('club_classement_officiel', lang)}</p>
                     {ligueUrls[categorieActive] ? (
                       <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '1.5rem' }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '10px', border: `1px solid ${couleurPrincipale}40`, background: couleurPrincipale + alpha.faint, color: couleurPrincipale, fontWeight: 600, fontSize: '14px', textDecoration: 'none', marginBottom: '1.5rem' }}>
                         🏆 {t('club_voir_classement_ligue', lang)}
                       </a>
                     ) : (
@@ -4113,21 +4113,27 @@ Règles :
                     {derniersMatchs.length > 0 && (
                       <>
                         <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.blue, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
                           {derniersMatchs.map(m => {
                             const aScore = m.score_nous !== '' && m.score_nous !== null
                             const nous = parseInt(m.score_nous)
                             const eux = parseInt(m.score_eux)
-                            const resultat = aScore ? (nous > eux ? 'V' : nous < eux ? 'D' : 'N') : null
-                            const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? colors.accent.red : '#f59e0b'
+                            const v = aScore && nous > eux
+                            const n = aScore && nous === eux
+                            const label = !aScore ? null : v ? 'V' : n ? 'N' : 'D'
+                            const couleur = v ? '#4ade80' : n ? '#888' : '#f87171'
                             return (
-                              <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px' }}>
-                                {resultat && <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{resultat}</span>}
+                              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#111', border: '1px solid #1e1e1e', borderLeft: `3px solid ${label ? couleur : '#2a2a2a'}`, borderRadius: '10px' }}>
+                                {label && (
+                                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${couleur}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', color: couleur, flexShrink: 0 }}>
+                                    {label}
+                                  </div>
+                                )}
                                 <div style={{ flex: 1 }}>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
+                                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</div>
+                                  <div style={{ color: '#555', fontSize: '12px' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</div>
                                 </div>
-                                {aScore && <span style={{ fontWeight: 800, fontSize: '14px', color: couleur }}>{m.score_nous} - {m.score_eux}</span>}
+                                {aScore && <div style={{ fontSize: '16px', fontWeight: 800, color: couleur, flexShrink: 0 }}>{m.score_nous} - {m.score_eux}</div>}
                               </div>
                             )
                           })}
@@ -4169,7 +4175,7 @@ Règles :
                           const val = j.stats[triClassement]
                           return (
                             <tr key={j.id} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled }}>{i + 1}</td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontSize: '15px', color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#555' }}>{i + 1}</td>
                               <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
                               <td style={{ padding: '10px 12px', color: colors.text.dim }}>{j.poste || '—'}</td>
                               <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color }}>
