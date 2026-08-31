@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase, signOutSafe } from "../supabase";
-import { colors, alpha } from "../tokens";
+import { alpha } from "../tokens";
+import { useColors } from "../lib/theme";
+import { ThemeToggleButton } from "../lib/ThemeProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
@@ -52,6 +54,7 @@ const getCloudinaryThumb = (url) => {
 
 // Radar chart SVG (pentagon)
 function RadarChart({ j, size = 180 }) {
+  const colors = useColors();
   const stats = [
     { label: "Buts",       value: Math.min((j.buts_total || 0) / 20, 1) },
     { label: "Passes",    value: Math.min((j.passes_decisives || 0) / 15, 1) },
@@ -80,6 +83,7 @@ function RadarChart({ j, size = 180 }) {
 
 // Toast notification
 function Toast({ message, onClose }) {
+  const colors = useColors();
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
   return (
     <div style={{ position: "fixed", bottom: "2rem", right: "2rem", background: colors.accent.orange, color: colors.black, padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "14px", zIndex: 9999, boxShadow: "0 4px 24px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: "8px", animation: "slideIn 0.3s ease" }}>
@@ -91,6 +95,7 @@ function Toast({ message, onClose }) {
 export default function DashboardRecruteur() {
   const navigate = useNavigate();
   const location = useLocation();
+  const colors = useColors();
   const [recruteur, setRecruteur] = useState(null);
   const [recruteurId, setRecruteurId] = useState(null);
   const [joueurs, setJoueurs] = useState([]);
@@ -535,7 +540,10 @@ export default function DashboardRecruteur() {
       <div style={st.page}>
         <nav style={st.navbar}>
           <span style={st.logo}>⬡ DIGITAL FOOTBALL</span>
-          <button style={st.btnSecondary} onClick={() => setSelectedJoueur(null)}>← Retour</button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ThemeToggleButton />
+            <button style={st.btnSecondary} onClick={() => setSelectedJoueur(null)}>← Retour</button>
+          </div>
         </nav>
         <div style={{ ...st.content, maxWidth: "700px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
@@ -901,6 +909,7 @@ export default function DashboardRecruteur() {
             )}
           </button>
           <span style={{ fontSize: "13px", color: colors.text.dim }}>{recruteur?.prenom} {recruteur?.nom}{recruteur?.club ? ` · ${recruteur.club}` : ""}</span>
+          <ThemeToggleButton />
           <button style={st.logoutBtn} onClick={handleLogout}>Déconnexion</button>
         </div>
       </nav>
@@ -1459,6 +1468,7 @@ export default function DashboardRecruteur() {
 
 // ── Composant Contact Coach ─────────────────────────────────────────────────
 function CoachContact({ coaches, recruteurId, contacterCoach, chargerConversations, setActiveTab, ouvrirConversation, conversations, st }) {
+  const colors = useColors();
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
