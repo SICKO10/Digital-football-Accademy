@@ -402,7 +402,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
 
       matchsSansTerrain?.forEach(m => {
         toutes.push({
-          id: `terrain_${m.id}`, couleur: colors.accent.blue,
+          id: `terrain_${m.id}`, couleur: colors.accent.orange,
           titre: `Terrain à planifier — vs ${m.adversaire || 'adversaire'}`,
           sousTitre: `Match à domicile le ${new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}`,
           onClick: () => { setActiveCategorie('administratif'); setActiveTab('terrains') },
@@ -431,7 +431,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       projets?.forEach(p => {
         const titre = p.nom || p.titre || 'Projet'
         toutes.push({
-          id: `projet_${p.id}`, couleur: colors.accent.purpleLight,
+          id: `projet_${p.id}`, couleur: colors.accent.blue,
           titre: `Projet en cours — ${titre}`,
           sousTitre: 'Voir le détail',
           onClick: () => setPopup({ titre, description: p.objectif }),
@@ -460,7 +460,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Alertes & infos</p>
         {alertes.length > 0 && (
-          <span style={{ background: colors.accent.red, color: colors.text.primary, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
+          <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
         )}
       </div>
 
