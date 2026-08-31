@@ -4,6 +4,12 @@ import { repartirBus, effectifParDefautMatch } from '../lib/repartitionBus'
 import { estimerDeplacement, calculerTrajet, diagnostiquerEchecTrajet } from '../lib/mapbox'
 import { makeUseSt } from '../lib/theme'
 
+const IcoBus = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="6" width="18" height="10" rx="2" /><path d="M3 11h18" /><circle cx="7.5" cy="18.5" r="1.5" /><circle cx="16.5" cy="18.5" r="1.5" />
+  </svg>
+)
+
 const NATURES = [
   { val: 'match', label: 'Match' },
   { val: 'tournoi', label: 'Tournoi' },
@@ -709,8 +715,8 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
           vehicules.map(v => (
             <span key={v.id}
               onClick={() => setVehiculeDetail(v)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: st.bgRaised, border: `1px solid ${st.border}`, borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
-              {v.plaque} · {v.capacite} places
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: st.bgRaised, border: `1px solid ${st.border}`, borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
+              <IcoBus /> {v.plaque} · {v.capacite} places
               {!readOnly && (
                 <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
               )}
@@ -981,15 +987,23 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
             return (
               <div key={cle} style={{ marginBottom: '2rem' }}>
                 <div style={{
-                  fontSize: '13px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.1em',
-                  padding: '6px 0 12px', borderBottom: `1px solid ${st.bgRaised}`, marginBottom: '14px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
+                  padding: '10px 0', marginBottom: '14px', borderBottom: `1px solid ${accentColor}20`,
                 }}>
-                  <span>{label} · {deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: accentColor, fontWeight: 800, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '10px', background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textFaint, fontSize: '11px' }}>
+                      {deps.length} déplacement{deps.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
                   {aVerifier > 0 ? (
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>{aVerifier} à vérifier</span>
+                    <span style={{ padding: '4px 12px', borderRadius: '20px', background: '#f9731615', border: '1px solid #f9731640', color: '#f97316', fontSize: '12px', fontWeight: 700 }}>
+                      {aVerifier} à vérifier
+                    </span>
                   ) : (
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: accentColor }}>Bus OK</span>
+                    <span style={{ padding: '4px 12px', borderRadius: '20px', background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, fontSize: '12px', fontWeight: 700 }}>
+                      Bus OK
+                    </span>
                   )}
                 </div>
                 {Object.entries(grouperParSemaine(deps)).map(([semaineLabel, depsSemaine]) => {
@@ -1002,10 +1016,23 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '10px 14px', background: ouvert ? st.bgRaised : st.bg,
                           border: `1px solid ${st.bgRaised}`, borderRadius: '8px', color: st.textDim, cursor: 'pointer',
-                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif',
+                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif', textAlign: 'left',
                         }}>
-                        <span>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</span>
-                        <span style={{ color: st.textFaint }}>{ouvert ? '▲' : '▼'}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</div>
+                          <div style={{ color: st.textFaint, fontSize: '11px', fontWeight: 400, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {depsSemaine[0].lieu_destination}{depsSemaine[0].equipe ? ` · ${depsSemaine[0].equipe}` : ''}
+                            {depsSemaine.length > 1 ? ` +${depsSemaine.length - 1}` : ''}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                          {depsSemaine[0].vehicule && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: st.textFaint, fontSize: '11px' }}>
+                              <IcoBus /> {depsSemaine[0].vehicule}
+                            </span>
+                          )}
+                          <span style={{ color: st.textFaint }}>{ouvert ? '▲' : '▼'}</span>
+                        </div>
                       </button>
                       {ouvert && (
                         <div style={{ paddingTop: '10px' }}>
