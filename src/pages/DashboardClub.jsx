@@ -4294,28 +4294,42 @@ Règles :
               {/* Abonnement — libre-service : le club choisit son palier et paie
                   directement (même route que /offres et l'upgrade de l'onglet
                   Éducateurs), plus besoin de vérification humaine préalable. */}
-              <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('club_abonnement_titre', lang)}</p>
-                <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>
-                  {club?.palier ? `Offre actuelle : ${STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}.` : ''} {t('club_abonnement_desc', lang)}
+              <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '20px' }}>💳</span>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_abonnement_titre', lang)}</h3>
+                  {club?.palier && (
+                    <span style={{ padding: '3px 10px', borderRadius: '20px', background: 'rgba(74,222,128,0.1)', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700 }}>ACTIF</span>
+                  )}
+                </div>
+
+                <p style={{ color: '#666', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>
+                  {club?.palier ? `Offre actuelle : ${STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}. ` : ''}{t('club_abonnement_desc', lang)}
                 </p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
+
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <select value={palierChoisiProfil || club?.palier || ''} onChange={e => setPalierChoisiProfil(e.target.value)}
-                    style={{ ...st.input, width: 'auto', flex: '1 1 220px' }}>
+                    style={{ flex: 1, minWidth: '220px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#fff', fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
                     <option value="" disabled>Choisir un palier...</option>
                     {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
                       <option key={key} value={key}>{p.label} — {cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}</option>
                     ))}
                   </select>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {['mensuel', 'annuel'].map(c => (
+
+                  <div style={{ display: 'flex', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', overflow: 'hidden' }}>
+                    {[['mensuel', 'Mensuel'], ['annuel', 'Annuel']].map(([c, label]) => (
                       <button key={c} type="button" onClick={() => setCycleChoisiProfil(c)}
-                        style={{ padding: '9px 14px', borderRadius: '8px', border: `1px solid ${cycleChoisiProfil === c ? couleurPrincipale : colors.border.default}`, background: cycleChoisiProfil === c ? couleurPrincipale + alpha.subtle : 'transparent', color: cycleChoisiProfil === c ? couleurPrincipale : colors.text.faint, fontWeight: cycleChoisiProfil === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
-                        {c === 'mensuel' ? 'Mensuel' : 'Annuel'}
+                        style={{ padding: '11px 20px', border: 'none', background: cycleChoisiProfil === c ? couleurPrincipale : 'transparent', color: cycleChoisiProfil === c ? '#0a0a0a' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {label}
+                        {/* -17% (pas -20%) : c'est l'écart réel mensuel×12 vs annuel sur
+                            STRIPE_LINKS_CLUB (ex. c0 : 50×12=600 vs 500 → -16,7%), constant
+                            sur tous les paliers. */}
+                        {c === 'annuel' && <span style={{ marginLeft: '6px', fontSize: '10px', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '10px' }}>-17%</span>}
                       </button>
                     ))}
                   </div>
                 </div>
+
                 {(() => {
                   const palierActif = palierChoisiProfil || club?.palier || ''
                   const p = STRIPE_LINKS_CLUB[palierActif]
@@ -4324,21 +4338,29 @@ Règles :
                     <a href={lien || undefined} target="_blank" rel="noopener noreferrer"
                       aria-disabled={!lien}
                       onClick={e => { if (!lien) e.preventDefault() }}
-                      style={{ display: 'inline-block', background: lien ? couleurPrincipale : colors.background.raised, color: lien ? colors.black : colors.text.faint, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', cursor: lien ? 'pointer' : 'not-allowed' }}>
-                      {p ? `Payer — ${cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}` : 'Choisir un palier'}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '12px', border: 'none', background: lien ? couleurPrincipale : '#1a1a1a', color: lien ? '#0a0a0a' : '#555', fontWeight: 800, fontSize: '15px', cursor: lien ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}>
+                      {p ? <>🔒 Payer — {cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}</> : 'Choisir un palier'}
                     </a>
                   )
                 })()}
-                <p style={{ margin: '10px 0 0', fontSize: '11px', color: colors.text.disabled }}>
-                  Une question avant de vous engager ? <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: colors.text.disabled }}>Contactez-nous</a>.
+                <p style={{ color: '#444', fontSize: '12px', textAlign: 'center', marginTop: '10px' }}>
+                  Paiement sécurisé via Stripe · <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: '#666' }}>Une question ?</a>
                 </p>
               </div>
 
               {/* Avis reçus */}
-              <div style={st.card}>
-                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('club_avis_recus_titre', lang)} ({avisRecus.length})</p>
+              <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span>⭐</span>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '15px', margin: 0 }}>{t('club_avis_recus_titre', lang)}</h3>
+                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#555', fontSize: '11px' }}>{avisRecus.length}</span>
+                </div>
                 {avisRecus.length === 0 ? (
-                  <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_avis_desc', lang)}</p>
+                  <div style={{ textAlign: 'center', padding: '32px 20px' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '12px' }}>⭐</div>
+                    <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>{t('club_aucun_avis_desc', lang)}</p>
+                    <p style={{ color: '#444', fontSize: '12px', marginTop: '6px' }}>Les joueurs et éducateurs affiliés pourront noter le club.</p>
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {avisRecus.map(a => (
