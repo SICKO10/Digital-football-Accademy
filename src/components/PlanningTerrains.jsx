@@ -748,9 +748,9 @@ Règles :
         {estDirigeant && (
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
             <button onClick={() => setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' })}
-              style={{ background: '#ffffff10', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}>✏️</button>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#888', fontSize: '12px', cursor: 'pointer' }}>✏️</button>
             <button onClick={() => supprimerCreneau(cBase.id)}
-              style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)', background: 'transparent', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>×</button>
             {c.exception && (
               <button onClick={() => supprimerException(c.exception.id)} title="Supprimer cette exception — le créneau de base reprend"
                 style={{ marginLeft: 'auto', background: 'none', border: '1px solid #2a2a2a', color: '#888', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
@@ -761,8 +761,12 @@ Règles :
         )}
 
         {((mode === 'educateur' && cBase.educateur_id === userId) || estDirigeant) && !c.estRemplacement && (
-          <button onClick={() => libererCreneauDate(cBase, dateStr, !c.libere)} disabled={liberating[cle]}
-            style={{ marginTop: '8px', width: '100%', background: c.libere ? '#1a1a1a' : accentColor, color: c.libere ? '#aaa' : '#000', border: c.libere ? '1px solid #2a2a2a' : 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button
+            onClick={() => { if (c.libere || window.confirm('Libérer ce créneau ?')) libererCreneauDate(cBase, dateStr, !c.libere) }}
+            disabled={liberating[cle]}
+            style={c.libere
+              ? { marginTop: '8px', width: '100%', background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+              : { marginTop: '8px', width: '100%', background: 'transparent', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', padding: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
         )}
@@ -1072,7 +1076,7 @@ Règles :
                             disabled={assigningMatchId === m.id}
                             value=""
                             onChange={e => assignerTerrainMatch(m, e.target.value)}
-                            style={{ ...st.input, width: 'auto', fontSize: '11px', padding: '4px 8px' }}>
+                            style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: '#1a1a1a', color: accentColor, fontWeight: 600, fontSize: '12px', cursor: 'pointer', outline: 'none', fontFamily: 'Inter, sans-serif' }}>
                             <option value="" disabled>+ Affecter un terrain</option>
                             {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
                           </select>
