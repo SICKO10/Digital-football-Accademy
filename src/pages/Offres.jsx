@@ -333,90 +333,76 @@ export default function Offres() {
       </section>
 
       {/* ── CLUBS — hero ── */}
-      <section style={{ background: 'linear-gradient(160deg, #06100a 0%, #0a1a0f 50%, #030d07 100%)', padding: '4rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 50% at 50% 100%, #4ade8012 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ maxWidth: 960, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={st.eyebrow}>CLUBS</div>
-          <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px', maxWidth: 600 }}>
-            Gérez votre club de A à Z.<br /><span style={{ color: colors.accent.green }}>Une seule plateforme.</span>
+      <section style={{ background: 'linear-gradient(135deg, #0d1f0d 0%, #0a0a0a 60%)', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid #1a2a1a' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+          <span style={st.eyebrow}>Offre Club</span>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, color: colors.text.primary, lineHeight: 1.1, marginBottom: '20px' }}>
+            Gérez votre club.<br /><span style={{ color: colors.accent.green }}>Développez vos joueurs.</span>
           </h2>
-          <p style={{ color: colors.text.dim, fontSize: 15, maxWidth: 520, lineHeight: 1.7, marginBottom: '2.5rem' }}>
-            Connectez tous les acteurs de votre club — éducateurs, joueurs, dirigeants, parents, scouts — dans un écosystème unique.
+          <p style={{ color: colors.text.dim, fontSize: '17px', lineHeight: 1.7, marginBottom: '40px' }}>
+            Connectez tous les acteurs de votre club — éducateurs, joueurs, dirigeants, parents — dans un écosystème unique.
           </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ fontSize: 13, color: colors.text.faint }}>Dashboard joueur <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
-            <div style={{ width: 1, height: 14, background: '#333' }} />
-            <div style={{ fontSize: 13, color: colors.text.faint }}>Dashboard éducateur <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
-            <div style={{ width: 1, height: 14, background: '#333' }} />
-            <div style={{ fontSize: 13, color: colors.text.faint }}>Accès dirigeant <strong style={{ color: colors.accent.green }}>gratuit</strong></div>
-          </div>
+          <button onClick={() => document.getElementById('tarifs-club').scrollIntoView({ behavior: 'smooth' })}
+            style={{ padding: '16px 40px', borderRadius: '12px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 800, fontSize: '16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            Voir les tarifs →
+          </button>
         </div>
       </section>
 
       {/* ── CLUBS — fonctionnalités ── */}
       <section style={st.sectionOuter('#0d0d0d')}>
         <div style={st.sectionInner}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center' }}>Tout ce qui est inclus</h3>
-          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Les mêmes outils, quel que soit le palier choisi.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-            {[
-              { categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
-              { categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
-              { categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur — gratuit pour tous', 'Dashboard dirigeant — accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
-              { categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ['Organisation des déplacements par IA', 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
-            ].map(cat => (
-              <div key={cat.categorie} style={{ background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${cat.color}, transparent)` }} />
-                <p style={{ margin: '0 0 1rem', fontWeight: 700, fontSize: 13, color: cat.color }}>{cat.categorie}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {cat.items.map(item => (
-                    <div key={item} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <span style={{ color: cat.color, flexShrink: 0, marginTop: 1 }}>✓</span>
-                      <span style={{ fontSize: 13, color: colors.text.secondary, lineHeight: 1.5 }}>{item}</span>
-                    </div>
-                  ))}
-                </div>
+          <h3 style={{ fontSize: 28, fontWeight: 800, marginBottom: '3rem', textAlign: 'center', color: colors.text.primary }}>Tout ce dont votre club a besoin</h3>
+          {[
+            { icon: '⚙️', categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
+            { icon: '⚽', categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
+            { icon: '📊', categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur — gratuit pour tous', 'Dashboard dirigeant — accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
+            { icon: '🤖', categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ['Organisation des déplacements par IA', 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
+          ].map(cat => (
+            <div key={cat.categorie} style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '22px' }}>{cat.icon}</span>
+                <h4 style={{ fontSize: '18px', fontWeight: 700, color: cat.color, margin: 0 }}>{cat.categorie}</h4>
               </div>
-            ))}
-          </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+                {cat.items.map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: '10px' }}>
+                    <span style={{ color: cat.color, fontSize: '14px', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    <span style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.5 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ── CLUBS — tarifs ── */}
-      <section style={st.sectionOuter(colors.background.base)}>
+      <section id="tarifs-club" style={st.sectionOuter(colors.background.base)}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center' }}>Un tarif selon la taille de votre club</h3>
-          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club — paiement sécurisé, accès immédiat.</p>
+          <h3 style={{ fontSize: 26, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center', color: colors.text.primary }}>Un tarif selon la taille de votre club</h3>
+          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club — paiement sécurisé, accès immédiat.</p>
 
-          <div style={{ border: '1px solid #1f1f1f', borderRadius: 16, overflow: 'hidden', marginBottom: '2rem' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: colors.background.surface }}>
-                  <th style={{ textAlign: 'left', padding: '14px 20px', color: colors.text.dim, fontWeight: 700 }}>Palier</th>
-                  <th style={{ textAlign: 'right', padding: '14px 16px', color: colors.text.dim, fontWeight: 700 }}>Mensuel</th>
-                  <th style={{ textAlign: 'right', padding: '14px 20px', color: colors.text.dim, fontWeight: 700 }}>Annuel</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(STRIPE_LINKS_CLUB).map(([key, p], i) => (
-                  <tr key={key} style={{ borderTop: '1px solid #1f1f1f', background: i % 2 ? colors.background.sunken : 'transparent' }}>
-                    <td style={{ padding: '14px 20px', fontWeight: 600 }}>{p.label}</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right' }}>
-                      <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
-                        style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
-                        {p.mensuelPrix}
-                      </button>
-                    </td>
-                    <td style={{ padding: '6px 16px', textAlign: 'right' }}>
-                      <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
-                        style={{ background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 10px' }}>
-                        {p.annuelPrix}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ marginBottom: '2.5rem' }}>
+            {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
+              <div key={key} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
+                padding: '18px 24px', marginBottom: '10px', borderRadius: '12px',
+                background: colors.background.surface, border: `1px solid ${colors.border.faint}`,
+              }}>
+                <span style={{ fontWeight: 800, color: colors.text.primary, fontSize: '15px' }}>🏟️ {p.label}</span>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
+                    style={{ padding: '10px 18px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                    {p.mensuelPrix}/mois
+                  </button>
+                  <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
+                    style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                    {p.annuelPrix}/an
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.purpleLight}25`, borderRadius: 16, padding: '1.75rem' }}>
