@@ -59,6 +59,20 @@ const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 
 const EQUIPES = ['A', 'B']
 
+// Couleur repère par tranche d'âge sur les cartes "Catégories & Équipes" —
+// purement visuel (regroupement rapide à l'œil), aucun lien avec
+// couleurPrincipale (identité du club) ni les tokens de thème clair/sombre.
+const getCategoryColor = (nom) => {
+  const n = (nom || '').toLowerCase()
+  if (n.includes('u9') || n.includes('u10') || n.includes('u11')) return '#4ade80'
+  if (n.includes('u12') || n.includes('u13')) return '#60a5fa'
+  if (n.includes('u14') || n.includes('u15')) return '#f97316'
+  if (n.includes('u16') || n.includes('u17')) return '#a78bfa'
+  if (n.includes('u18') || n.includes('u19')) return '#f472b6'
+  if (n.includes('u20') || n.includes('senior')) return '#34d399'
+  return '#888'
+}
+
 const ROLES_STAFF = [
   { val: 'president', label: 'Président' },
   { val: 'directeur_sportif', label: 'Directeur sportif' },
@@ -1116,6 +1130,7 @@ export default function DashboardClub() {
   const [educateursAffilies, setEducateursAffilies] = useState([])
   const [modalModifEdu, setModalModifEdu] = useState(null) // { educateur_id, prenom, nom, telephone }
   const [savingModifEdu, setSavingModifEdu] = useState(false)
+  const [openEduMenu, setOpenEduMenu] = useState(null) // id de la carte éducateur dont le menu "⋯" est ouvert
   const [searchEducateur, setSearchEducateur] = useState('')
   const [resultatsEducateurs, setResultatsEducateurs] = useState([])
   const [invitingId, setInvitingId] = useState(null)
@@ -1298,7 +1313,10 @@ export default function DashboardClub() {
     logo: { color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
     tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
-    tab: (active) => ({ padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', border: active ? 'none' : `1px solid ${colors.border.strong}`, background: active ? couleurPrincipale : 'transparent', color: active ? colors.black : colors.text.secondary, fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }),
+    tab: (active) => ({
+      padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
+      ...(active ? { background: colors.accent.green, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
+    }),
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: couleurPrincipale, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
     btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
@@ -1312,6 +1330,15 @@ export default function DashboardClub() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  // Menu ⋯ des cartes éducateur — fermé au clic en dehors, même pattern que
+  // les menus ⋯ des cartes match/résultat/joueur (DashboardEducateur.jsx).
+  useEffect(() => {
+    if (!openEduMenu) return
+    const fermerSiClicDehors = (e) => { if (!e.target.closest('.edu-menu-wrapper')) setOpenEduMenu(null) }
+    document.addEventListener('click', fermerSiClicDehors)
+    return () => document.removeEventListener('click', fermerSiClicDehors)
+  }, [openEduMenu])
 
   // Corrige la catégorie/onglet actifs si le rôle (ou les permissions configurées par
   // le président) ne permet(tent) plus de voir la sélection courante — au chargement
@@ -3393,11 +3420,12 @@ Règles :
                   id={`cat-${cat.id}`}
                   onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
                   style={{
-                    padding: '12px 28px', borderRadius: '10px', border: 'none',
-                    background: activeCategorie === cat.id ? couleurPrincipale : colors.background.raised,
-                    color: activeCategorie === cat.id ? colors.black : colors.text.dim,
+                    padding: '12px 28px', borderRadius: '10px',
                     fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
                     whiteSpace: 'nowrap', flexShrink: 0,
+                    ...(activeCategorie === cat.id
+                      ? { background: colors.accent.green, color: colors.black, border: 'none' }
+                      : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
                   }}
                 >
                   {cat.label}
@@ -3455,8 +3483,8 @@ Règles :
                     }}
                     style={{
                       display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                      background: activeCategorie === cat.id ? couleurPrincipale + '15' : 'transparent',
-                      color: activeCategorie === cat.id ? couleurPrincipale : colors.text.secondary,
+                      background: activeCategorie === cat.id ? colors.accent.green + '15' : 'transparent',
+                      color: activeCategorie === cat.id ? colors.accent.green : colors.text.secondary,
                       fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
                     }}>
                     {cat.label}
@@ -3617,26 +3645,27 @@ Règles :
               const parEducateur = {}
               categories.forEach(c => { if (c.educateur_id) parEducateur[c.educateur_id] = (parEducateur[c.educateur_id] || 0) + 1 })
               return (
-                <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
-                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>Quota d'équipes</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Offre {STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}</p>
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>Quota d'équipes</h3>
+                      <p style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>Offre {STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, color: restant <= 1 ? colors.accent.red : colors.accent.green, fontSize: '22px', fontWeight: 900 }}>{utilise} / {club.quota_equipes}</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>
+                      <span style={{ fontSize: '24px', fontWeight: 800, color: restant <= 0 ? '#f87171' : '#4ade80' }}>{utilise}</span>
+                      <span style={{ color: '#555', fontSize: '18px' }}> / {club.quota_equipes}</span>
+                      <p style={{ color: '#555', fontSize: '12px', margin: '2px 0 0' }}>
                         {restant > 0 ? `${restant} place${restant > 1 ? 's' : ''} disponible${restant > 1 ? 's' : ''}` : 'Quota atteint'}
                       </p>
                     </div>
                   </div>
 
-                  <div style={{ background: colors.background.raised, borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
+                  <div style={{ background: '#1a1a1a', borderRadius: '8px', height: '8px', marginBottom: '20px', overflow: 'hidden' }}>
                     <div style={{
-                      height: '100%', borderRadius: '10px',
+                      background: utilise >= club.quota_equipes ? '#f87171' : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : '#4ade80',
+                      borderRadius: '8px', height: '8px',
                       width: `${Math.min((utilise / club.quota_equipes) * 100, 100)}%`,
-                      background: utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green,
-                      transition: 'width 0.4s ease',
+                      transition: 'width 0.5s',
                     }} />
                   </div>
 
@@ -3691,16 +3720,22 @@ Règles :
                   )}
 
                   {educateursAcceptes.length > 0 && (
-                    <div style={{ marginTop: '16px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
-                      <p style={{ margin: '0 0 10px', color: colors.text.disabled, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Répartition par éducateur</p>
-                      {educateursAcceptes.map(e => (
-                        <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
-                          <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</span>
-                          <span style={{ color: colors.text.dim, fontSize: '12px' }}>
-                            {parEducateur[e.educateur_id] || 0} équipe{(parEducateur[e.educateur_id] || 0) > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      ))}
+                    <div style={{ marginTop: '16px', borderTop: '1px solid #1e1e1e', paddingTop: '14px' }}>
+                      <p style={{ color: '#555', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Répartition</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {educateursAcceptes.map(e => {
+                          const nbEquipes = parEducateur[e.educateur_id] || 0
+                          return (
+                            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                                {e.educateur?.prenom?.[0]}
+                              </div>
+                              <span style={{ flex: 1, color: '#ccc', fontSize: '14px' }}>{e.educateur?.prenom} {e.educateur?.nom}</span>
+                              <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 600 }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -3708,14 +3743,18 @@ Règles :
             })()}
 
             {/* Code club */}
-            <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}30`, marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '20px 24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
               <div>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔑 {t('club_ton_code', lang)}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{t('club_partage_code_desc', lang)}</p>
+                <p style={{ color: '#fff', fontWeight: 700, fontSize: '15px', margin: '0 0 4px' }}>🔑 {t('club_ton_code', lang)}</p>
+                <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>{t('club_partage_code_desc', lang)}</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, fontWeight: 800, fontSize: '18px', padding: '8px 18px', borderRadius: '10px', letterSpacing: '3px', fontFamily: 'monospace' }}>{codeClub}</span>
-                <button onClick={copierCode} style={st.btnSecondary}>📋 {t('club_copier', lang)}</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: '22px', fontWeight: 800, color: '#4ade80', letterSpacing: '4px', background: 'rgba(74,222,128,0.08)', border: '1px solid #4ade8030', borderRadius: '10px', padding: '10px 20px' }}>
+                  {codeClub}
+                </span>
+                <button onClick={copierCode} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+                  📋 {t('club_copier', lang)}
+                </button>
               </div>
             </div>
 
@@ -3760,7 +3799,8 @@ Règles :
                 <input style={{ ...st.input, flex: '1 1 140px' }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
                 <input style={{ ...st.input, flex: '2 1 220px' }} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
               </div>
-              <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()} style={{ ...st.btnSolid, opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
+              <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()}
+                style={{ background: '#4ade80', color: '#0a0a0a', border: 'none', fontWeight: 700, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
                 {invitingEducateur ? '...' : '✉️ Envoyer l\'invitation'}
               </button>
               {inviteEducateurMessage && (
@@ -3816,21 +3856,42 @@ Règles :
               <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {educateursAcceptes.map(e => (
-                  <div key={e.id} style={{ ...st.card, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: couleurPrincipale, fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>
+                {educateursAcceptes.map(e => {
+                  const nbEquipes = categories.filter(c => c.educateur_id === e.educateur_id).length
+                  return (
+                    <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px' }}>
+                      <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: '14px', flexShrink: 0 }}>
                         {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
                       </div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '15px' }}>{e.educateur?.prenom} {e.educateur?.nom}</div>
+                        {nbEquipes > 0 && <div style={{ color: '#666', fontSize: '12px' }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</div>}
+                      </div>
+                      <div className="edu-menu-wrapper" style={{ position: 'relative' }}>
+                        <button onClick={() => setOpenEduMenu(openEduMenu === e.id ? null : e.id)}
+                          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#666', fontSize: '18px', padding: '6px 12px', cursor: 'pointer' }}>
+                          ···
+                        </button>
+                        {openEduMenu === e.id && (
+                          <div style={{ position: 'absolute', right: 0, top: '110%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, minWidth: '160px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                            {[
+                              { icon: '⭐', label: t('club_noter', lang), action: () => ouvrirNotationEducateur(e) },
+                              { icon: '✏️', label: 'Modifier', action: () => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' }) },
+                              { icon: '🚪', label: t('club_retirer', lang), action: () => retirerEducateur(e.id), danger: true },
+                            ].map(item => (
+                              <button key={item.label} onClick={() => { item.action(); setOpenEduMenu(null) }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : '#ccc', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                onMouseEnter={ev => ev.currentTarget.style.background = '#2a2a2a'}
+                                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
+                                {item.icon} {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                      <button onClick={() => ouvrirNotationEducateur(e)} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: isMobile ? 1 : 'none' }}>⭐ {t('club_noter', lang)}</button>
-                      <button onClick={() => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' })} style={{ ...st.btnSecondary, flex: isMobile ? 1 : 'none' }}>Modifier</button>
-                      <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_retirer', lang)}</button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 
@@ -3867,8 +3928,12 @@ Règles :
             )}
 
             {/* ── Séances reçues pour évaluation ── */}
-            <div style={{ marginTop: '2rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.blue }}>🎥 {t('club_seances_recues_titre', lang)} ({seancesRecues.length})</p>
+            <div style={{ marginTop: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '18px' }}>📋</span>
+                <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_seances_recues_titre', lang)}</h3>
+                <span style={{ padding: '3px 10px', borderRadius: '20px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', fontSize: '12px', fontWeight: 600 }}>{seancesRecues.length}</span>
+              </div>
               {seancesRecues.length === 0 ? (
                 <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucune_seance_uploadee', lang)}</p>
               ) : (() => {
@@ -3887,18 +3952,20 @@ Règles :
                       <button
                         onClick={() => toggleSaison(saison)}
                         style={{
-                          width: '100%', display: 'flex', alignItems: 'center',
-                          gap: '10px', padding: '10px 16px', background: colors.background.raised,
-                          border: `1px solid ${colors.border.default}`, borderRadius: '10px',
-                          color: couleurPrincipale, fontWeight: 700, fontSize: '14px',
-                          cursor: 'pointer', textAlign: 'left',
+                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 16px', marginBottom: '10px', background: '#111',
+                          border: '1px solid #1e1e1e', borderRadius: '10px',
+                          cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
                         }}>
-                        <span>{ouverte ? '📂' : '📁'}</span>
-                        <span>{t('profil_saison', lang)} {saison}</span>
-                        <span style={{ marginLeft: 'auto', color: colors.text.dim, fontSize: '12px' }}>
-                          {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
+                        <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>
+                          📅 {t('profil_saison', lang)} {saison}
                         </span>
-                        <span style={{ color: colors.text.disabled }}>{ouverte ? '▼' : '▶'}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: '#555', fontSize: '12px' }}>
+                            {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
+                          </span>
+                          <span style={{ color: '#555' }}>{ouverte ? '▼' : '▶'}</span>
+                        </span>
                       </button>
 
                       {ouverte && parSaison[saison].map(s => {
