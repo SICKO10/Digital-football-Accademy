@@ -10,7 +10,7 @@ const TYPE_COULEURS = {
   match_dom:    '#4ade80',
   match_ext:    '#f97316',
   evenement:    '#a78bfa',
-  projet:       '#fb7185',
+  projet:       '#a855f7',
 }
 
 const TYPE_LABELS = {
