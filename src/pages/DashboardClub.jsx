@@ -4486,12 +4486,15 @@ Règles :
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
                 {[
-                  { label: t('club_recettes', lang), val: totalRecettes, color: colors.accent.green, bg: '#4ade8010', sign: '+' },
-                  { label: t('club_depenses', lang), val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
-                  { label: t('club_solde', lang), val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
-                ].map(({ label, val, color, bg, sign }) => (
+                  { label: t('club_recettes', lang), icone: '↑', val: totalRecettes, color: colors.accent.green, bg: '#4ade8010', sign: '+' },
+                  { label: t('club_depenses', lang), icone: '↓', val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
+                  { label: t('club_solde', lang), icone: '⚖️', val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
+                ].map(({ label, icone, val, color, bg, sign }) => (
                   <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 16, padding: '16px 18px' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: 11, color: colors.text.dim, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, color }}>{icone}</span>
+                      <p style={{ margin: 0, fontSize: 11, color: colors.text.dim, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
+                    </div>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>
                       {sign}{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                     </p>
@@ -4503,11 +4506,17 @@ Règles :
                 {/* Donut Recettes */}
                 <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
                   <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
-                  <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
+                  {totalRecettes === 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180 }}>
+                      <div style={{ width: 100, height: 100, borderRadius: '50%', border: `3px dashed ${colors.border.strong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                        <span style={{ fontSize: 26, color: colors.border.strong }}>↑</span>
+                      </div>
+                      <p style={{ color: colors.text.faint, fontSize: 13, textAlign: 'center', margin: 0 }}>{t('club_aucune_entree', lang)}</p>
+                    </div>
+                  ) : (
+                    <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
+                  )}
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {categoriesRecetteArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: colors.border.strong }}>{t('club_aucune_entree', lang)}</p>
-                    )}
                     {categoriesRecetteArr.slice(0, 4).map((seg, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
@@ -4583,7 +4592,7 @@ Règles :
                   const segCat = categoriesArr.find(c => c.cat === e.categorie)
                   const couleur = segCat?.color || colors.text.faint
                   return (
-                    <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.green : colors.accent.red}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle }}>
                         {meta?.emoji || (e.type === 'recette' ? '↑' : '↓')}
                       </div>
