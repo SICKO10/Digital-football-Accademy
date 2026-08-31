@@ -3535,10 +3535,16 @@ Règles :
           <>
             {canEditSection('sportif') && (
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
-              <button style={{ ...st.btnSecondary, width: isMobile ? '100%' : 'auto' }} onClick={autoAssignerJoueurs} disabled={autoAssignLoading}>
+              <button
+                onClick={autoAssignerJoueurs} disabled={autoAssignLoading}
+                style={{ padding: '10px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
                 {autoAssignLoading ? `⏳ ${t('club_assignation_cours', lang)}` : `⚡ ${t('club_auto_assigner', lang)}`}
               </button>
-              <button style={{ ...st.btnSolid, width: isMobile ? '100%' : 'auto' }} onClick={() => setShowAddCategorie(true)}>{t('club_ajouter_categorie', lang)}</button>
+              <button
+                onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
+                style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
+                {t('club_ajouter_categorie', lang)}
+              </button>
             </div>
             )}
 
@@ -3590,29 +3596,41 @@ Règles :
                 {t('club_aucune_categorie', lang)}
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-start' }}>
                 {CATEGORIES_STANDARD.map(nom => {
                   const cats = categories.filter(c => c.nom === nom)
                   if (!cats.length) return null
+                  const color = getCategoryColor(nom)
+                  const prochaineEquipe = EQUIPES.find(e => !cats.some(c => c.equipe === e))
                   return (
-                    <div key={nom} style={st.card}>
-                      <p style={{ margin: '0 0 10px', fontWeight: 800, color: couleurPrincipale, fontSize: '14px' }}>{labelCategorie(nom)}</p>
+                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}`, minWidth: '220px', flex: '1 1 260px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                        <p style={{ margin: 0, fontWeight: 800, color, fontSize: '15px' }}>{labelCategorie(nom)}</p>
+                        <span style={{ color: colors.text.faint, fontSize: '12px' }}>{cats.length} {t('club_equipe_label', lang)}{cats.length > 1 ? 's' : ''}</span>
+                      </div>
                       {cats.map(c => (
-                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 12px', marginBottom: '6px' }}>
-                          <div>
+                        <div key={c.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{t('club_equipe_label', lang)} {c.equipe}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>
-                              {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : t('club_pas_educateur_assigne', lang)}
-                            </p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => { setEffectifModal(c.id); chargerClassements() }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '5px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>👥 {t('club_effectif', lang)}</button>
                             {canEditSection('sportif') && (
-                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer' }}>✕</button>
+                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }}>✕</button>
                             )}
                           </div>
+                          <p style={{ margin: '0 0 10px', fontSize: '11px', color: colors.text.dim }}>
+                            {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : t('club_pas_educateur_assigne', lang)}
+                          </p>
+                          <button onClick={() => { setEffectifModal(c.id); chargerClassements() }}
+                            style={{ width: '100%', padding: '7px', borderRadius: '8px', border: `1px solid ${color}40`, background: `${color}18`, color, fontWeight: 600, fontSize: '11px', cursor: 'pointer' }}>
+                            {t('club_effectif', lang)}
+                          </button>
                         </div>
                       ))}
+                      {canEditSection('sportif') && prochaineEquipe && (
+                        <button onClick={() => { setNewCategorie({ nom, equipe: prochaineEquipe, educateur_id: '' }); setShowAddCategorie(true) }}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: `1px dashed ${color}50`, background: 'transparent', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', marginTop: '2px' }}>
+                          + {t('club_equipe_label', lang)}
+                        </button>
+                      )}
                     </div>
                   )
                 })}
