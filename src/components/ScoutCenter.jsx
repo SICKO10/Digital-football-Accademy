@@ -306,9 +306,6 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   const isNouveau = (j) => j.created_at && new Date(j.created_at) > sevenDaysAgo;
   const aEteContacte = (joueurId) => conversations.some(c => c.otherId === joueurId);
   const nbNouveaux = joueurs.filter(isNouveau).length;
-  const maxButs = Math.max(...joueurs.map(j => j.buts_total || 0), 1);
-  const maxMatchs = Math.max(...joueurs.map(j => j.matchs_officiel || 0), 1);
-  const maxPasses = Math.max(...joueurs.map(j => j.passes_decisives || 0), 1);
   const showToast = (msg) => { setToast(msg); };
 
   const chargerConversations = async (uid) => {
@@ -447,10 +444,10 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     content: { padding: isMobile ? "1rem" : "2rem", maxWidth: "1200px", margin: "0 auto" },
     tabs: { display: "flex", gap: "8px", marginBottom: "1.5rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: "2px" },
     tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#f97316" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
-    filterBar: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: isMobile ? "1rem" : "1.25rem", marginBottom: "1.5rem", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" },
+    filterBar: { background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: isMobile ? "1rem" : "16px 20px", marginBottom: "1.5rem", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-end" },
     filterLabel: { fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" },
-    select: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px" },
-    searchInput: { background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "8px 12px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
+    select: { background: "#0a0a0a", border: "1px solid #222", borderRadius: "10px", color: "#fff", padding: "10px 12px", fontSize: "13px", cursor: "pointer" },
+    searchInput: { background: "#0a0a0a", border: "1px solid #222", borderRadius: "10px", color: "#fff", padding: "10px 14px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
     grid: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
     card: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem" },
     avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px" },
@@ -882,7 +879,17 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
       <div style={st.content}>
         <div style={{ marginBottom: "1.5rem" }}>
           <h1 style={{ margin: "0 0 4px", fontSize: "1.4rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Scout Center</h1>
-          <p style={{ margin: 0, color: "#555", fontSize: "13px" }}>{joueurs.length} joueur{joueurs.length !== 1 ? "s" : ""} Pro actif{joueurs.length !== 1 ? "s" : ""}{nbNouveaux > 0 ? ` · ${nbNouveaux} nouveau${nbNouveaux > 1 ? "x" : ""} cette semaine` : ""}</p>
+          <div style={{ display: "flex", gap: "20px", alignItems: "center", marginTop: "8px", flexWrap: "wrap" }}>
+            <span style={{ color: "#f97316", fontWeight: 700, fontSize: "13px" }}>⚽ {joueurs.length} joueur{joueurs.length !== 1 ? "s" : ""}</span>
+            <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+            <span style={{ color: "#4ade80", fontWeight: 600, fontSize: "13px" }}>📹 {joueurs.filter(j => j.clip_url).length} avec vidéo</span>
+            <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+            <span style={{ color: "#60a5fa", fontWeight: 600, fontSize: "13px" }}>★ {favoris.length} favoris</span>
+            {nbNouveaux > 0 && <>
+              <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+              <span style={{ color: "#f97316", fontWeight: 600, fontSize: "13px" }}>{nbNouveaux} nouveau{nbNouveaux > 1 ? "x" : ""} cette semaine</span>
+            </>}
+          </div>
         </div>
 
         <div style={st.tabs}>
@@ -946,9 +953,9 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             </div>
 
             <div style={st.filterBar}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: isMobile ? "1 1 100%" : "1 1 180px", minWidth: "160px" }}>
                 <label style={st.filterLabel}>Recherche</label>
-                <input type="text" placeholder="Nom, club, ville..." value={search} onChange={e => setSearch(e.target.value)} style={st.searchInput} />
+                <input type="text" placeholder="🔍 Nom, club, ville..." value={search} onChange={e => setSearch(e.target.value)} style={st.searchInput} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Catégorie</label>
@@ -974,7 +981,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Ville</label>
-                <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={st.searchInput} />
+                <input type="text" placeholder="Ex : Lyon, Paris..." value={ville} onChange={e => setVille(e.target.value)} style={{ ...st.searchInput, width: "140px" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={st.filterLabel}>Trier par</label>
@@ -1011,57 +1018,77 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>⚽</p><p>Aucun joueur ne correspond à vos filtres.</p></div>
             ) : modeAffichage === "grille" ? (
               <div style={st.grid}>
-                {filtered.map(j => (
-                  <div key={j.id} style={st.card}>
-                    {/* Badges en-tête */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <Avatar person={j} size={52} bg="#1a2e1a" />
-                        <div>
+                {filtered.map(j => {
+                  const pc = posteColor(j.poste);
+                  return (
+                  <div key={j.id}
+                    style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", overflow: "hidden", position: "relative", transition: "border-color 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "#f9731640"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "#1a1a1a"}>
+
+                    {/* Bande colorée en haut selon le poste */}
+                    <div style={{ height: "3px", background: pc.text, width: "100%" }} />
+
+                    {/* Badge poste top-right */}
+                    {j.poste && <div style={{ position: "absolute", top: "12px", right: "12px", padding: "3px 10px", borderRadius: "8px", background: pc.text + "20", color: pc.text, fontSize: "11px", fontWeight: 700 }}>{j.poste}</div>}
+
+                    {/* Badge vidéo top-left */}
+                    {j.clip_url && <div style={{ position: "absolute", top: "12px", left: "12px", padding: "3px 8px", borderRadius: "8px", background: "#f9731620", color: "#f97316", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>📹 Vidéo</div>}
+
+                    <div style={{ padding: "16px" }}>
+                      {/* Avatar + nom */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", marginTop: (j.clip_url || j.poste) ? "8px" : "0" }}>
+                        <Avatar person={j} size={44} bg="#1a2e1a" border="2px solid #f9731630" textColor="#f97316" />
+                        <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                            <p style={{ fontSize: "15px", fontWeight: 700, margin: 0 }}>{j.prenom} {j.nom}</p>
+                            <p style={{ fontWeight: 700, color: "#fff", fontSize: "14px", margin: 0 }}>{j.prenom} {j.nom}</p>
                             {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
                             {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "10px", padding: "1px 6px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>Contacté</span>}
                             {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "10px", fontWeight: 700, padding: "1px 7px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau}</span>}
                           </div>
-                          <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0" }}>{j.categorie || "—"} · {j.region || "—"}</p>
-                          {j.style_de_jeu && <span style={{ fontSize: "10px", color: "#60a5fa", background: "#60a5fa10", border: "1px solid #60a5fa30", padding: "1px 7px", borderRadius: "20px", display: "inline-block", marginTop: "3px" }}>⚡ {j.style_de_jeu}</span>}
+                          <div style={{ color: "#555", fontSize: "12px" }}>{j.categorie || "—"}{j.region ? ` · ${j.region}` : ""}</div>
                         </div>
                       </div>
-                      {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
-                    </div>
 
-                    {/* Stats + barres de progression */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
-                      {[
-                        { label: "Buts", val: j.buts_total || 0, max: maxButs, color: "#f97316" },
-                        { label: "Passes déc.", val: j.passes_decisives || 0, max: maxPasses, color: "#f97316" },
-                        { label: "Matchs", val: j.matchs_officiel || 0, max: maxMatchs, color: "#60a5fa" },
-                      ].map(s => (
-                        <div key={s.label}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                            <span style={{ fontSize: "11px", color: "#555" }}>{s.label}</span>
-                            <span style={{ fontSize: "11px", fontWeight: 700, color: s.color }}>{s.val}</span>
-                          </div>
-                          <div style={{ background: "#1a1a1a", borderRadius: "4px", height: "4px" }}>
-                            <div style={{ background: s.color, width: `${Math.min((s.val / s.max) * 100, 100)}%`, height: "100%", borderRadius: "4px", transition: "width 0.4s ease" }} />
-                          </div>
+                      {/* Style de jeu */}
+                      {j.style_de_jeu && (
+                        <div style={{ marginBottom: "12px" }}>
+                          <span style={{ padding: "3px 10px", borderRadius: "6px", background: "#f9731610", color: "#f97316", fontSize: "11px", fontWeight: 600 }}>⚡ {j.style_de_jeu}</span>
                         </div>
-                      ))}
-                    </div>
+                      )}
 
-                    {j.clip_url && <p style={{ fontSize: "11px", color: "#f97316", margin: "0 0 10px" }}>🎬 Vidéo disponible</p>}
-                    <div style={st.cardActions}>
-                      <button style={st.btnPrimary} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
-                      <button
-                        style={isFavori(j.id) ? { ...st.favoriBtnActive, background: "#f9731615" } : st.btnSecondary}
-                        onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}>
-                        {isFavori(j.id) ? "★ Favori" : "☆ Favori"}
-                      </button>
-                      <button style={st.btnSecondary} onClick={() => setMessageModal(j)}>✉️</button>
+                      {/* Stats en ligne */}
+                      <div style={{ display: "flex", background: "#0a0a0a", borderRadius: "10px", marginBottom: "14px", overflow: "hidden" }}>
+                        {[
+                          { label: "Buts", value: j.buts_total || 0 },
+                          { label: "Passes", value: j.passes_decisives || 0 },
+                          { label: "Matchs", value: j.matchs_officiel || 0 },
+                        ].map((s, i) => (
+                          <div key={s.label} style={{ flex: 1, padding: "10px 4px", textAlign: "center", borderRight: i < 2 ? "1px solid #1a1a1a" : "none" }}>
+                            <div style={{ fontSize: "18px", fontWeight: 800, color: s.value > 0 ? "#f97316" : "#333" }}>{s.value}</div>
+                            <div style={{ fontSize: "10px", color: "#555", marginTop: "2px" }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => ouvrirProfilJoueur(j)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>
+                          Profil →
+                        </button>
+                        <button
+                          onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}
+                          style={{ width: 38, height: 38, borderRadius: "10px", border: `1px solid ${isFavori(j.id) ? "#f97316" : "#222"}`, background: isFavori(j.id) ? "#f9731620" : "transparent", color: isFavori(j.id) ? "#f97316" : "#555", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {isFavori(j.id) ? "★" : "☆"}
+                        </button>
+                        <button onClick={() => setMessageModal(j)} style={{ width: 38, height: 38, borderRadius: "10px", border: "1px solid #222", background: "transparent", color: "#555", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          💬
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               /* Mode liste */
