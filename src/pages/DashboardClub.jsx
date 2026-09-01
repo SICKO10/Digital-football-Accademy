@@ -5788,11 +5788,11 @@ Règles :
           const categoriesDisponibles = [...new Set(categories.map(c => c.nom).filter(Boolean))].sort()
           const personnesFiltrees = filtreCategorieEquipement === 'tous' ? personnes : personnes.filter(p => p.categorie === null || p.categorie === filtreCategorieEquipement)
           const STATUT_DISTRIB = {
-            distribue:        { label: 'Distribué',        color: colors.accent.blue },
-            remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber },
-            remis:            { label: 'Remis',            color: colors.accent.green },
-            refuse:           { label: 'Refusé',            color: colors.accent.red },
-            partiel:          { label: 'Partiellement remis', color: colors.accent.amber },
+            distribue:        { label: '📦 Distribué',           bg: '#f9731615', color: '#f97316' },
+            remise_demandee:  { label: '⏳ Remise demandée',     bg: '#f59e0b15', color: '#f59e0b' },
+            remis:            { label: '✓ Remis',                bg: '#4ade8015', color: '#4ade80' },
+            refuse:           { label: '✕ Refusé',               bg: '#f8717115', color: '#f87171' },
+            partiel:          { label: '◐ Partiellement remis',  bg: '#f59e0b15', color: '#f59e0b' },
           }
           return (
           <div>
@@ -5905,11 +5905,20 @@ Règles :
                       <tbody>
                         {groupes.map(groupe => (
                           <Fragment key={groupe}>
-                            <tr>
-                              <td colSpan={3} style={{ background: colors.background.raised, color: colors.accent.green, fontWeight: 700, fontSize: '12px', padding: '10px 12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                                {groupe} — {parGroupe[groupe].length} personne{parGroupe[groupe].length > 1 ? 's' : ''}
-                              </td>
-                            </tr>
+                            {(() => {
+                              const catColor = groupe === 'Staff' ? '#f59e0b' : getCategoryColor(groupe)
+                              return (
+                                <tr>
+                                  <td colSpan={3} style={{ padding: '0' }}>
+                                    <div style={{ background: catColor + '15', borderLeft: `3px solid ${catColor}`, borderRadius: '8px', padding: '8px 14px', margin: '20px 4px 4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                      <span style={{ color: catColor, fontWeight: 800, fontSize: '12px', letterSpacing: '1px' }}>
+                                        {groupe.toUpperCase()} — {parGroupe[groupe].length} PERSONNE{parGroupe[groupe].length > 1 ? 'S' : ''}
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })()}
                             {parGroupe[groupe].map(p => {
                               const commande = equipementCommandes.find(c => c.destinataire_id === p.id)
                               const packAttribue = equipementAttributions.find(a => a.user_id === p.id)?.pack_id || ''
@@ -5923,12 +5932,25 @@ Règles :
                               return (
                               <tr key={p.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
                                 <td style={{ padding: '8px' }}>
-                                  <p style={{ margin: 0, fontWeight: 600 }}>{p.nom}</p>
-                                  {p.sousLabel && <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{p.sousLabel}</p>}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    {(() => {
+                                      const avColor = couleurAvatarPersonne(p.nom, '')
+                                      const initiales = p.nom.split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase()
+                                      return (
+                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: avColor.bg, color: avColor.text, fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                          {initiales}
+                                        </div>
+                                      )
+                                    })()}
+                                    <div>
+                                      <p style={{ margin: 0, fontWeight: 600 }}>{p.nom}</p>
+                                      {p.sousLabel && <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{p.sousLabel}</p>}
+                                    </div>
+                                  </div>
                                 </td>
                                 <td style={{ padding: '8px' }}>
                                   {!p.compteLie ? (
-                                    <span style={{ fontSize: '11px', color: colors.text.faint, fontStyle: 'italic' }}>Compte non lié</span>
+                                    <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#f9731615', color: '#f97316', fontSize: '11px', fontWeight: 600 }}>⚠ Compte non lié</span>
                                   ) : canEditSection('inventaire') ? (
                                     <select value={packAttribue} onChange={e => attribuerPack(p.id, e.target.value)} style={{ ...st.input, width: 'auto', padding: '4px 8px' }}>
                                       <option value="">— Aucun pack —</option>
@@ -5946,23 +5968,27 @@ Règles :
                                 {canEditSection('inventaire') && (
                                   <td style={{ padding: '8px' }}>
                                     {!p.compteLie ? (
-                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
+                                      <span style={{ color: '#333' }}>—</span>
                                     ) : commande ? (
                                       <div>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: commande.statut === 'pret' ? colors.accent.amber : colors.accent.green }}>{commande.statut === 'pret' ? 'Prêt' : 'FAIT'}</span>
+                                        {commande.statut === 'pret' ? (
+                                          <span style={{ color: '#f97316', fontWeight: 600, fontSize: '12px' }}>◔ Prêt</span>
+                                        ) : (
+                                          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>✓ FAIT</span>
+                                        )}
                                         {commande.statut === 'pret' && (
                                           <button onClick={() => marquerEquipementRecupere(commande)} style={{ ...st.btnSecondary, display: 'block', marginTop: '4px', padding: '3px 8px', fontSize: '11px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Récupérer</button>
                                         )}
                                         {commande.statut === 'recupere' && commande.recupere_le && (
-                                          <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>
+                                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>
                                             {new Date(commande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(commande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                           </p>
                                         )}
                                       </div>
                                     ) : !pack ? (
-                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>—</span>
+                                      <span style={{ color: '#333' }}>—</span>
                                     ) : !packComplet ? (
-                                      <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.amber }}>En attente</span>
+                                      <span style={{ color: '#f97316', fontWeight: 600, fontSize: '12px' }}>◔ En attente</span>
                                     ) : (
                                       <button onClick={() => ouvrirPreparation(p)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Préparer</button>
                                     )}
@@ -6013,6 +6039,16 @@ Règles :
               })
               const saisonsTriees = Object.keys(lotsParSaison).sort((a, b) => b.localeCompare(a))
 
+              // Stock du club groupé par catégorie de matériel (Ballons, Cônes...)
+              // — plus lisible qu'une colonne "Catégorie" répétée à chaque ligne.
+              const stockGroupes = []
+              const stockParGroupe = {}
+              materielCatalogue.forEach(item => {
+                const cle = item.categorie || 'Autre'
+                if (!stockParGroupe[cle]) { stockParGroupe[cle] = []; stockGroupes.push(cle) }
+                stockParGroupe[cle].push(item)
+              })
+
               return (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
@@ -6023,26 +6059,36 @@ Règles :
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
-                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Catégorie</th>
                         <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Matériel</th>
                         <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Quantité</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {materielCatalogue.map(item => {
-                        const s = materielStock.find(st2 => st2.catalogue_id === item.id)
-                        return (
-                          <tr key={item.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
-                            <td style={{ padding: '8px', color: colors.text.faint }}>{item.categorie}</td>
-                            <td style={{ padding: '8px' }}>{item.nom}</td>
-                            <td style={{ padding: '8px' }}>
-                              {canEditSection('inventaire') ? (
-                                <input type="number" min="0" defaultValue={s?.quantite_totale || 0} onBlur={e => mettreAJourStockMateriel(item.id, Math.max(0, Number(e.target.value) || 0))} style={{ ...st.input, width: '80px', padding: '4px 8px' }} />
-                              ) : (s?.quantite_totale || 0)}
+                      {stockGroupes.map(cat => (
+                        <Fragment key={cat}>
+                          <tr>
+                            <td colSpan={2} style={{ padding: 0 }}>
+                              <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', padding: '10px 0 4px', borderBottom: '1px solid #1a1a1a', textTransform: 'uppercase' }}>{cat}</div>
                             </td>
                           </tr>
-                        )
-                      })}
+                          {stockParGroupe[cat].map(item => {
+                            const s = materielStock.find(st2 => st2.catalogue_id === item.id)
+                            const qte = s?.quantite_totale || 0
+                            return (
+                              <tr key={item.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
+                                <td style={{ padding: '8px' }}>{item.nom}</td>
+                                <td style={{ padding: '8px' }}>
+                                  {canEditSection('inventaire') ? (
+                                    <input type="number" min="0" defaultValue={qte} onBlur={e => mettreAJourStockMateriel(item.id, Math.max(0, Number(e.target.value) || 0))} style={{ ...st.input, width: '80px', padding: '4px 8px' }} />
+                                  ) : (
+                                    <span style={{ color: qte > 0 ? '#4ade80' : '#444', fontWeight: qte > 0 ? 700 : 400 }}>{qte}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </Fragment>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -6161,7 +6207,7 @@ Règles :
                                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
                                       <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{d.educateur_nom}{d.equipe_nom ? ` — ${d.equipe_nom}` : ''}</p>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: stConf.color }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: stConf.color, display: 'inline-block' }} />{stConf.label}</span>
+                                        <span style={{ padding: '3px 10px', borderRadius: '20px', background: stConf.bg, color: stConf.color, fontSize: '11px', fontWeight: 700 }}>{stConf.label}</span>
                                         {canEditSection('inventaire') && lot.enAttenteRendu && (
                                           <>
                                             <button onClick={() => ouvrirModaleRendu(lot)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>📦 Rendu</button>
@@ -6173,14 +6219,14 @@ Règles :
                                         )}
                                       </div>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                       {lot.items.map(item => (
-                                        <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
-                                          {item.nom_materiel} × {item.quantite}
+                                        <span key={item.id} style={{ padding: '3px 10px', borderRadius: '6px', background: '#1a1a1a', color: '#ccc', fontSize: '12px', border: '1px solid #222', display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '2px' }}>
+                                          {item.nom_materiel} <strong style={{ color: '#fff' }}>×{item.quantite}</strong>
                                           {item.quantite_rendue != null && item.quantite_rendue < item.quantite && (
-                                            <span style={{ color: colors.accent.red, fontWeight: 700 }}> — {item.quantite - item.quantite_rendue} perdu(s)</span>
+                                            <span style={{ color: colors.accent.red, fontWeight: 700 }}>−{item.quantite - item.quantite_rendue} perdu(s)</span>
                                           )}
-                                        </p>
+                                        </span>
                                       ))}
                                     </div>
                                   </div>
