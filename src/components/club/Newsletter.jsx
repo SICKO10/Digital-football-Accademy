@@ -24,8 +24,24 @@ export default function Newsletter({ clubId, clubNom, auteurNom, auteurId, coule
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ titre: '', contenu: '', cible: 'tous' })
   const [envoi, setEnvoi] = useState(false)
+  const [compteurs, setCompteurs] = useState({ tous: 0, educateurs: 0, joueurs: 0 })
 
   useEffect(() => { chargerAnnonces() }, [clubId])
+  useEffect(() => { chargerCompteurs() }, [clubId])
+
+  // Comptage seul (pas d'email) — mêmes tables que recupererDestinataires,
+  // sans le fetch profiles (inutile juste pour afficher un nombre).
+  const chargerCompteurs = async () => {
+    if (!clubId) return
+    const { data: educRows } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', clubId).eq('statut', 'accepte')
+    const educateurIds = [...new Set((educRows || []).map(r => r.educateur_id).filter(Boolean))]
+    let joueurIds = []
+    if (educateurIds.length > 0) {
+      const { data: affRows } = await supabase.from('affiliations').select('joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte')
+      joueurIds = [...new Set((affRows || []).map(r => r.joueur_id).filter(Boolean))]
+    }
+    setCompteurs({ tous: educateurIds.length + joueurIds.length, educateurs: educateurIds.length, joueurs: joueurIds.length })
+  }
 
   const chargerAnnonces = async () => {
     if (!clubId) return
@@ -111,43 +127,75 @@ export default function Newsletter({ clubId, clubNom, auteurNom, auteurId, coule
       </div>
 
       {!readOnly && (
-        <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '24px', marginBottom: '32px' }}>
-          <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Nouvelle communication</h3>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1.2 1 360px', background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '24px', boxSizing: 'border-box' }}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Nouvelle communication</h3>
 
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Envoyer à</div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {CIBLES.map(c => (
-                <button key={c.val} onClick={() => setForm(f => ({ ...f, cible: c.val }))}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                    background: form.cible === c.val ? accent + alpha.subtle : 'transparent',
-                    borderColor: form.cible === c.val ? accent : colors.border.strong,
-                    color: form.cible === c.val ? accent : colors.text.faint }}>
-                  {c.label}
-                </button>
-              ))}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Envoyer à</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {CIBLES.map(c => (
+                  <button key={c.val} onClick={() => setForm(f => ({ ...f, cible: c.val }))}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                      background: form.cible === c.val ? accent + alpha.subtle : 'transparent',
+                      borderColor: form.cible === c.val ? accent : colors.border.strong,
+                      color: form.cible === c.val ? accent : colors.text.faint }}>
+                    {c.label} <span style={{ opacity: 0.6, fontSize: '11px' }}>({compteurs[c.val]})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
+              placeholder="Objet / Titre"
+              style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box' }} />
+
+            <textarea value={form.contenu} onChange={e => setForm(f => ({ ...f, contenu: e.target.value }))}
+              placeholder="Contenu du message..." rows={6}
+              style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', marginBottom: '16px', boxSizing: 'border-box' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={envoyer} disabled={!form.titre.trim() || !form.contenu.trim() || envoi}
+                style={{ background: accent, color: colors.background.base, border: 'none', borderRadius: '8px', padding: '12px 24px', fontWeight: 800, fontSize: '14px', cursor: envoi ? 'default' : 'pointer', opacity: envoi ? 0.6 : 1 }}>
+                {envoi ? 'Envoi...' : 'Envoyer'}
+              </button>
             </div>
           </div>
 
-          <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
-            placeholder="Objet / Titre"
-            style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box' }} />
+          <div style={{ flex: '0.8 1 240px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
+            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 16px' }}>Statistiques</p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary }}>{annonces.length}</div>
+                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Envois</div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 800, color: colors.accent.green }}>{Object.values(lusParAnnonce).reduce((s, v) => s + v, 0)}</div>
+                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Lus</div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 800, color: accent }}>{compteurs.tous}</div>
+                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Membres</div>
+                </div>
+              </div>
+            </div>
 
-          <textarea value={form.contenu} onChange={e => setForm(f => ({ ...f, contenu: e.target.value }))}
-            placeholder="Contenu du message..." rows={6}
-            style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', marginBottom: '16px', boxSizing: 'border-box' }} />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={envoyer} disabled={!form.titre.trim() || !form.contenu.trim() || envoi}
-              style={{ background: accent, color: colors.background.base, border: 'none', borderRadius: '8px', padding: '12px 24px', fontWeight: 800, fontSize: '14px', cursor: envoi ? 'default' : 'pointer', opacity: envoi ? 0.6 : 1 }}>
-              {envoi ? 'Envoi...' : 'Envoyer'}
-            </button>
+            <div style={{ background: accent + alpha.faint, border: `1px solid ${accent}20`, borderRadius: '14px', padding: '16px' }}>
+              <p style={{ color: accent, fontWeight: 700, fontSize: '13px', margin: '0 0 6px' }}>Conseil</p>
+              <p style={{ color: colors.text.faint, fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
+                Chaque communication est aussi envoyée par email aux destinataires ciblés — vérifiez le groupe choisi avant d'envoyer.
+              </p>
+            </div>
           </div>
         </div>
       )}
 
       <div>
-        <h3 style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Historique des envois</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Historique des envois</h3>
+          <span style={{ color: colors.text.faint, fontSize: '13px' }}>{annonces.length} message{annonces.length > 1 ? 's' : ''}</span>
+        </div>
         {loading ? (
           <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p>
         ) : (
