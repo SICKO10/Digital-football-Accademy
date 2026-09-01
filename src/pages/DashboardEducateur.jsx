@@ -1320,7 +1320,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingCloture, setSavingCloture] = useState(false)
   const [savingHeureSeance, setSavingHeureSeance] = useState(false)
   const [showPlanificateur, setShowPlanificateur] = useState(false)
-  const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
+  const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', heure: '', theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
   const [planProgress, setPlanProgress] = useState({ done: 0, total: 0 })
 
@@ -3834,6 +3834,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     for (let i = 0; i < newDates.length; i++) {
       const { data } = await supabase.from('entrainements').insert({
         date: newDates[i],
+        heure: planSaison.heure || null,
         description: planSaison.theme || '',
         educateur_id: userId,
         club_categorie_id: equipeActive?.id || null
@@ -3844,7 +3845,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     await chargerEntrainements(userId, equipeActive?.id)
     setGeneratingPlan(false)
     setShowPlanificateur(false)
-    setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', theme: '' })
+    setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', heure: '', theme: '' })
   }
 
   const toggleJourPlan = (jour) => {
@@ -7025,10 +7026,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   })}
                 </div>
 
-                {/* Dates + thème */}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
+                {/* Dates + heure + thème */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
                   <div><label style={st.label}>{t('ent_debut_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} /></div>
                   <div><label style={st.label}>{t('ent_fin_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} /></div>
+                  <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={planSaison.heure} onChange={e => setPlanSaison(p => ({ ...p, heure: e.target.value }))} /></div>
                   <div><label style={st.label}>{t('ent_theme_defaut', lang)}</label><input style={st.input} placeholder="Ex: Entraînement, Préparation physique..." value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} /></div>
                 </div>
 
