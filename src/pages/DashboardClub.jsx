@@ -244,9 +244,9 @@ const TYPES_EVENEMENT = [
 const TYPE_EVENEMENT_INFO = (val) => TYPES_EVENEMENT.find(t => t.val === val) || TYPES_EVENEMENT[3]
 
 const STATUTS_PROJET = [
-  { val: 'en_attente', label: 'En attente', color: '#f59e0b' },
-  { val: 'en_cours', label: 'En cours', color: colors.accent.blue },
-  { val: 'termine', label: 'Terminé', color: colors.accent.green },
+  { val: 'en_attente', label: 'En attente', color: '#f97316', icon: '⏳' },
+  { val: 'en_cours', label: 'En cours', color: colors.accent.blue, icon: '🔄' },
+  { val: 'termine', label: 'Terminé', color: colors.accent.green, icon: '✅' },
 ]
 const MOIS_LABEL = (dateStr) => {
   const d = new Date(dateStr + 'T12:00:00')
@@ -4890,7 +4890,16 @@ Règles :
                   )}
 
                   {Object.keys(evenementsParMois).length === 0 ? (
-                    <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>Aucun événement à venir.</div>
+                    <div style={{ textAlign: 'center', padding: '60px 24px', background: '#0d0d0d', borderRadius: '14px', border: '1px dashed #2a2a2a' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
+                      <p style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: '0 0 8px' }}>Aucun événement à venir</p>
+                      <p style={{ color: '#555', fontSize: '13px', margin: '0 0 24px' }}>Tournois, stages, réunions — centralisez tout ici.</p>
+                      {canEditSection('evenements') && (
+                        <button onClick={ouvrirNouvelEvenement} style={{ padding: '11px 24px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                          + Créer un événement
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     Object.entries(evenementsParMois).map(([mois, evs]) => (
                       <div key={mois} style={{ marginBottom: '1.5rem' }}>
@@ -5041,12 +5050,16 @@ Règles :
                   {projetsClub.length === 0 ? (
                     <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>Aucun projet pour l'instant.</div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '14px', alignItems: 'start' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                       {STATUTS_PROJET.map(colonne => (
-                        <div key={colonne.val}>
-                          <p style={{ fontSize: '12px', fontWeight: 700, color: colonne.color, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            {colonne.label} ({projetsParStatut(colonne.val).length})
-                          </p>
+                        <div key={colonne.val} style={{ flex: isMobile ? '1 1 100%' : '1 1 300px', minWidth: isMobile ? '100%' : '280px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px 10px', borderBottom: `2px solid ${colonne.color}30`, marginBottom: '12px' }}>
+                            <span style={{ fontSize: '15px' }}>{colonne.icon}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: colonne.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{colonne.label}</span>
+                            <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 700, color: colonne.color, background: colonne.color + '18', borderRadius: '999px', padding: '2px 9px' }}>
+                              {projetsParStatut(colonne.val).length}
+                            </span>
+                          </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {projetsParStatut(colonne.val).map(p => {
                               const avancement = calculerAvancementProjet(p)
@@ -5058,28 +5071,40 @@ Règles :
                                       <button onClick={e => { e.stopPropagation(); exporterProjetPDF(p) }} disabled={exportingPdfId === p.id} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', opacity: exportingPdfId === p.id ? 0.5 : 1 }} title="Export PDF">📄</button>
                                       {canEditSection('evenements') && (
                                         <>
-                                          <button onClick={e => { e.stopPropagation(); ouvrirEditionProjet(p) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✎</button>
-                                          <button onClick={e => { e.stopPropagation(); supprimerProjet(p.id) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                          <button onClick={e => { e.stopPropagation(); ouvrirEditionProjet(p) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }} title="Modifier">✎</button>
+                                          <button onClick={e => { e.stopPropagation(); supprimerProjet(p.id) }} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px' }} title="Supprimer">✕</button>
                                         </>
                                       )}
                                     </div>
                                   </div>
                                   {p.description && <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.muted }}>{p.description}</p>}
                                   {(p.date_debut || p.date_fin) && (
-                                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: colors.text.dim }}>
-                                      {p.date_debut ? new Date(p.date_debut + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
+                                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.dim }}>
+                                      📆 {p.date_debut ? new Date(p.date_debut + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
                                       {' → '}
                                       {p.date_fin ? new Date(p.date_fin + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '?'}
                                     </p>
                                   )}
-                                  {p.responsable_nom && <p style={{ margin: '0 0 4px', fontSize: '11px', color: couleurPrincipale }}>👤 {p.responsable_nom}</p>}
-                                  {p.referents?.length > 0 && <p style={{ margin: '0 0 8px', fontSize: '11px', color: couleurPrincipale }}>⭐ {p.referents.map(r => r.nom).join(', ')}</p>}
+                                  {(p.responsable_nom || p.referents?.length > 0) && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                                      {p.responsable_nom && (
+                                        <span style={{ fontSize: '10px', fontWeight: 600, color: couleurPrincipale, background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}30`, borderRadius: '999px', padding: '3px 9px' }}>
+                                          👤 {p.responsable_nom}
+                                        </span>
+                                      )}
+                                      {p.referents?.map(r => (
+                                        <span key={r.nom} style={{ fontSize: '10px', fontWeight: 600, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b30', borderRadius: '999px', padding: '3px 9px' }}>
+                                          ⭐ {r.nom}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
 
                                   <div onClick={e => e.stopPropagation()}>
                                     {canEditSection('evenements') && (
                                       <select value={p.statut} onChange={e => changerStatutProjet(p.id, e.target.value)}
                                         style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.secondary, padding: '4px 8px', fontSize: '11px', marginBottom: '10px', fontFamily: 'Inter, sans-serif' }}>
-                                        {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
+                                        {STATUTS_PROJET.map(s => <option key={s.val} value={s.val}>{s.icon} {s.label}</option>)}
                                       </select>
                                     )}
 
