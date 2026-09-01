@@ -117,6 +117,35 @@ const ROLES_ACCES_COMPLET_DEFAUT = ['directeur_sportif', 'secretaire']
 const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur', 'responsable_buvette', 'responsable_securite', 'responsable_equipements']
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
+// Style de badge par famille de rôle (cf. ROLES_STAFF) — président en doré,
+// direction sportive en bleu, finances en vert, communication/secrétariat en
+// violet, le reste en gris neutre.
+const ROLE_BADGE_STYLE = (role) => {
+  if (role === 'president') return { bg: '#f59e0b15', border: '#f59e0b40', color: '#f59e0b' }
+  if (['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation'].includes(role)) return { bg: '#60a5fa10', border: '#60a5fa30', color: '#60a5fa' }
+  if (['tresorier', 'comptable'].includes(role)) return { bg: '#4ade8010', border: '#4ade8030', color: '#4ade80' }
+  if (['secretaire', 'responsable_communication', 'marketing'].includes(role)) return { bg: '#a78bfa10', border: '#a78bfa30', color: '#a78bfa' }
+  return { bg: '#1a1a1a', border: '#2a2a2a', color: '#888' }
+}
+
+// Couleur d'avatar par personne (pas par rôle, déjà couvert par
+// ROLE_BADGE_STYLE) — simple hash nom+prénom sur une petite palette, pour
+// distinguer les membres au premier coup d'œil dans une longue liste.
+const PALETTE_AVATAR = [
+  { bg: '#1a2e1a', text: '#4ade80' },
+  { bg: '#1a1a2e', text: '#60a5fa' },
+  { bg: '#2a1a2e', text: '#a78bfa' },
+  { bg: '#2e1a1a', text: '#f97316' },
+  { bg: '#2e2a1a', text: '#f59e0b' },
+  { bg: '#1a2e2a', text: '#22d3ee' },
+]
+const couleurAvatarPersonne = (prenom, nom) => {
+  const s = `${prenom || ''}${nom || ''}`
+  let hash = 0
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) & 0xffffffff
+  return PALETTE_AVATAR[Math.abs(hash) % PALETTE_AVATAR.length]
+}
+
 // Rôles de l'organigramme (annuaire de contacts) — texte libre, distinct de
 // ROLES_STAFF (rôles d'accès à l'app, valeurs contraintes utilisées par la RLS).
 const ROLES_ORGANIGRAMME = [
@@ -5605,12 +5634,18 @@ Règles :
           return (
           <div style={{ maxWidth: '700px' }}>
             {monRole === 'president' && (
-              <div style={{ ...st.card, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🔐 Permissions par rôle</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+              <div style={{ background: 'linear-gradient(135deg, #1a1a2a 0%, #111 100%)', border: '1px solid #a78bfa20', borderRadius: '14px', padding: '20px 24px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>🔐</span>
+                  <div>
+                    <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>Permissions par rôle</p>
+                    <p style={{ margin: '3px 0 0', fontSize: '13px', color: colors.text.dim }}>Contrôle ce que chaque rôle du staff peut voir et modifier.</p>
+                  </div>
                 </div>
-                <button onClick={() => setShowPermissionsModal(true)} style={st.btnSolid}>Gérer les permissions</button>
+                <button onClick={() => setShowPermissionsModal(true)}
+                  style={{ padding: '11px 20px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                  Gérer les permissions →
+                </button>
               </div>
             )}
 
@@ -5684,14 +5719,20 @@ Règles :
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: couleurPrincipale, fontWeight: 700, fontSize: '12px' }}>
                     {(club?.club || club?.prenom || '?')[0]}
                   </div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{club?.club || club?.prenom} <span style={{ color: colors.text.faint, fontWeight: 400 }}>{t('club_vous', lang)}</span></p>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
+                    {club?.club || club?.prenom}
+                    <span style={{ padding: '2px 6px', borderRadius: '6px', background: colors.background.raised, color: colors.text.faint, fontSize: '10px', fontWeight: 600, marginLeft: '6px' }}>{t('club_vous', lang)}</span>
+                  </p>
                 </div>
-                <span style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}40`, color: couleurPrincipale, padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>{t('club_president_badge', lang)}</span>
+                <span style={{ background: ROLE_BADGE_STYLE('president').bg, border: `1px solid ${ROLE_BADGE_STYLE('president').border}`, color: ROLE_BADGE_STYLE('president').color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>{t('club_president_badge', lang)}</span>
               </div>
-              {staffMembers.map(m => (
+              {staffMembers.map(m => {
+                const avatarC = couleurAvatarPersonne(m.membre?.prenom, m.membre?.nom)
+                const badgeC = ROLE_BADGE_STYLE(m.role)
+                return (
                 <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: avatarC.bg, border: `1px solid ${avatarC.text}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: avatarC.text, fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>
                       {m.membre?.prenom?.[0]}{m.membre?.nom?.[0]}
                     </div>
                     <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{m.membre?.prenom} {m.membre?.nom}</p>
@@ -5705,11 +5746,12 @@ Règles :
                         <button onClick={() => retirerStaff(m.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>{t('club_retirer', lang)}</button>
                       </>
                     ) : (
-                      <span style={{ fontSize: '12px', color: colors.text.dim }}>{ROLE_STAFF_LABEL(m.role)}</span>
+                      <span style={{ background: badgeC.bg, border: `1px solid ${badgeC.border}`, color: badgeC.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>{ROLE_STAFF_LABEL(m.role)}</span>
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
           )
