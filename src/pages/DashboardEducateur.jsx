@@ -4167,14 +4167,18 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   // Gating par permissions (dirigeant délégué uniquement — permissions est undefined
   // pour l'éducateur lui-même, donc canView/canEdit renvoient toujours true).
   // Seules les sections avec une clé de permission correspondante sont masquables ;
-  // les autres (séances, tactipad, recrutement, dirigeants...) restent visibles faute
-  // de permission dédiée pour l'instant.
+  // les autres (séances, tactipad...) restent visibles faute de permission dédiée
+  // pour l'instant. "recrutement" (recherche perso de joueurs par l'éducateur) et
+  // "dirigeants" (gestion des accès délégués, réservée à l'éducateur lui-même) sont
+  // toujours masqués pour un dirigeant délégué : non pertinents pour ce rôle.
+  const SECTIONS_MASQUEES_DIRIGEANT = ['recrutement', 'dirigeants']
   const PERMISSION_PAR_SECTION = {
     equipe: 'effectif', stats: 'stats', matchs: 'competition',
     entrainements: 'entrainements', prep_physique: 'prep_physique', notes: 'notes',
   }
   const canView = (sidebarKey) => {
     if (!permissions) return true
+    if (SECTIONS_MASQUEES_DIRIGEANT.includes(sidebarKey)) return false
     const permKey = PERMISSION_PAR_SECTION[sidebarKey]
     return !permKey || permissions[permKey] !== 'aucun'
   }
