@@ -1793,7 +1793,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', partage_club: false, partage_platform: false }
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -8576,7 +8576,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 userId={userId}
                 mode="modal"
                 vueParDefaut="demi"
-                onValider={png => { setProcedeForm(f => ({ ...f, schema_png: png })); setShowTactipadBiblio(false) }}
+                initialSchema={procedeForm.schema_data}
+                onValider={(png, schema) => { setProcedeForm(f => ({ ...f, schema_png: png, schema_data: schema })); setShowTactipadBiblio(false) }}
                 onFermer={() => setShowTactipadBiblio(false)}
                 lang={lang}
               />
@@ -9736,7 +9737,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             userId={userId}
             mode="modal"
             vueParDefaut="demi"
-            onValider={png => { updateProcede(tactipadModal, 'schema_png', png); setTactipadModal(null) }}
+            initialSchema={fiche.procedes[tactipadModal]?.schema_data}
+            onValider={(png, schema) => {
+              const newProcedes = [...fiche.procedes]
+              newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
+              setFiche({ ...fiche, procedes: newProcedes })
+              setTactipadModal(null)
+            }}
             onFermer={() => setTactipadModal(null)}
             lang={lang}
           />

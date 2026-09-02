@@ -380,15 +380,38 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   )
 }
 
-export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, onValider, onFermer, lang = 'fr' }) {
+export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, initialSchema, onValider, onFermer, lang = 'fr' }) {
   const colors = useColors()
   const isModal = mode === 'modal'
 
-  const [sport, setSport] = useState('football')
-  const [vue, setVue] = useState(vueParDefaut || 'complet')
-  const [fond, setFond] = useState('vert')
+  // Largeur du Stage, remontée ici (au lieu de sa place naturelle plus bas,
+  // avec canvasRef/useLayoutEffect) pour être disponible dès l'état initial
+  // de sequences/elements ci-dessous (rescale d'un initialSchema éventuel) —
+  // la vraie mesure (ResizeObserver) arrive juste après et corrige déjà tout
+  // au premier rendu si cette estimation était trop large/étroite.
+  const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
 
-  const [elements, setElements] = useState([])
+  // Hydrate l'éditeur depuis un schéma structuré déjà existant (édition d'un
+  // schéma de procédé de séance/bibliothèque) — sans ça, rouvrir "Modifier le
+  // schéma" repartait toujours d'un plateau vide : seul un PNG plat était
+  // sauvegardé côté procédé, jamais les éléments éditables. Chaque state
+  // recalcule la même chose indépendamment dans son propre initialiseur lazy
+  // (au lieu de partager une valeur via une ref, interdit pendant le rendu) —
+  // le calcul ne tourne qu'une fois par state, au tout premier rendu.
+  const seqsDepuisSchema = (schema) => {
+    if (!schema) return null
+    const seqsRaw = schema.sequences?.length ? schema.sequences : [schema.elements || []]
+    return seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width))
+  }
+
+  const [sport, setSport] = useState(() => initialSchema?.terrain?.sport || 'football')
+  const [vue, setVue] = useState(() => initialSchema?.terrain?.vue || vueParDefaut || 'complet')
+  const [fond, setFond] = useState(() => initialSchema?.terrain?.fond || 'vert')
+
+  const [elements, setElements] = useState(() => {
+    const seqs = seqsDepuisSchema(initialSchema)
+    return seqs ? seqs[0] || [] : []
+  })
   const [selectedId, setSelectedId] = useState(null)
   // Sélection multiple — glisser sur le fond du terrain (outil "select") pose
   // un rectangle, puis Suppr ou le bouton dédié efface tout ce qu'il contient.
@@ -404,6 +427,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // initialisées depuis EQUIPES_CONFIG, sauvegardées/rechargées avec le
   // schéma (cf. sauvegarderSchema/chargerSchema) pour survivre à la fermeture.
   const [equipesCouleurs, setEquipesCouleurs] = useState(() => {
+    if (initialSchema?.equipesCouleurs) return initialSchema.equipesCouleurs
     const init = {}
     Object.keys(EQUIPES_CONFIG).forEach(eq => { init[eq] = EQUIPES_CONFIG[eq].color })
     return init
@@ -437,7 +461,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
 
-  const [sequences, setSequences] = useState([[]])
+  const [sequences, setSequences] = useState(() => (seqsDepuisSchema(initialSchema) || [[]]))
   const [etapeActive, setEtapeActive] = useState(0)
   const [playing, setPlaying] = useState(false)
   const playIntervalRef = useRef(null)
@@ -478,7 +502,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   // première mesure n'est pas encore arrivée ; useLayoutEffect (avant peinture)
   // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
   const canvasRef = useRef(null)
-  const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
+  // width est déclaré plus haut (avant sequences/elements, pour hydrater un
+  // initialSchema éventuel dès l'état initial) — inchangé ici sinon.
   // Sizing entièrement séparé desktop / mobile-tablette (même seuil que le
   // reste de l'app, cf. isMobile des Dashboard*.jsx) : sur ordinateur le
   // terrain peut être franchement plus grand (pas de barre d'action à
@@ -952,7 +977,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setSelectedId(null)
     setTimeout(() => {
       const uri = stageRef.current.toDataURL({ pixelRatio: 2 })
-      onValider?.(uri)
+      // schema : même structure que sauvegarderSchema (galerie "Mes schémas"),
+      // gardée à part du PNG (juste un aperçu raster affiché dans la liste des
+      // procédés) pour que "Modifier le schéma" puisse un jour recharger les
+      // éléments éditables au lieu de repartir d'un plateau vide.
+      const syncedSequences = sequences.map((s, i) => (i === etapeActive ? elements : s))
+      const schema = { terrain: { sport, vue, fond, w: width, h: height }, elements, sequences: syncedSequences, equipesCouleurs }
+      onValider?.(uri, schema)
     }, 50)
   }
 
