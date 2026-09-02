@@ -365,12 +365,6 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
            interactive (le cercle ci-dessus n'existe que déjà sélectionné). */
         <Text text={el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'} fontSize={22} x={-12} y={-13} />
       )}
-      {el.quantite > 1 && (
-        <Group x={delX} y={-delY} listening={false}>
-          <Circle radius={9} fill="#111" stroke="#fff" strokeWidth={1} />
-          <Text text={`×${el.quantite}`} fontSize={9} fontStyle="bold" fill="#fff" width={24} height={18} x={-12} y={-9} align="center" verticalAlign="middle" />
-        </Group>
-      )}
       {draggable && hovered && (
         <Group
           x={delX}
@@ -435,6 +429,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
   const [pickerNumero, setPickerNumero] = useState('')
   const [pickerNom, setPickerNom] = useState('')
   const [pickerNbJoueurs, setPickerNbJoueurs] = useState('1')
+
+  const [showPickerMateriel, setShowPickerMateriel] = useState(false)
+  const [pickerMaterielKind, setPickerMaterielKind] = useState(null)
+  const [pickerNbMateriel, setPickerNbMateriel] = useState('1')
 
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
@@ -779,6 +777,29 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     setTool('select')
   }
 
+  // Pose n exemplaires du même matériel d'un coup (ex: "6" coupelles rouges),
+  // en grille centrée sur le point cliqué — même logique que
+  // ajouterJoueursMultiples, pour éviter de reposer un plot à la fois.
+  const ajouterMaterielMultiple = () => {
+    const n = Math.max(1, parseInt(pickerNbMateriel, 10) || 1)
+    const spacing = 28
+    const parLigne = 6
+    const nbLignes = Math.ceil(n / parLigne)
+    const nouveaux = Array.from({ length: n }, (_, i) => {
+      const ligne = Math.floor(i / parLigne)
+      const col = i % parLigne
+      const nbColLigne = Math.min(parLigne, n - ligne * parLigne)
+      return {
+        id: uid(), type: 'objet', kind: pickerMaterielKind, rotation: 0,
+        x: pickerStagePos.x + (col - (nbColLigne - 1) / 2) * spacing,
+        y: pickerStagePos.y + (ligne - (nbLignes - 1) / 2) * spacing,
+      }
+    })
+    applyElements([...elements, ...nouveaux])
+    setShowPickerMateriel(false)
+    setTool('select')
+  }
+
   // Joueur "joker" — pas rattaché à une équipe (utile pour un exercice, un
   // remplaçant polyvalent...), rendu en pointillés blancs dans JoueurNode.
   const ajouterJoker = () => {
@@ -825,8 +846,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
     }
 
     if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h'].includes(tool)) {
-      applyElements([...elements, { id: uid(), type: 'objet', kind: tool, x: pos.x, y: pos.y, rotation: 0 }])
-      setTool('select')
+      setPickerStagePos(pos)
+      const { x, y } = clientXY(e.evt)
+      setPickerScreenPos({ x: Math.max(10, Math.min(x, window.innerWidth - 230)), y: Math.max(10, Math.min(y, window.innerHeight - 180)) })
+      setPickerMaterielKind(tool)
+      setPickerNbMateriel('1')
+      setShowPickerMateriel(true)
       return
     }
 
@@ -1623,30 +1648,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             </div>
           )}
 
-          {/* Panneau de quantité — un élément de matériel (type:'objet') peut
-              représenter plusieurs exemplaires du même objet (ex: "×5 coupelles")
-              plutôt que de devoir en poser un par un ; affiche un badge sur le
-              plateau (cf ObjetNode) au lieu de dupliquer réellement les éléments. */}
-          {selectedElement && selectedElement.type === 'objet' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', padding: '8px 12px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 700 }}>QUANTITÉ</span>
-              <button
-                onClick={() => updateElement({ ...selectedElement, quantite: Math.max(1, (selectedElement.quantite || 1) - 1) })}
-                style={{ width: '26px', height: '26px', borderRadius: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.primary, fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>
-                −
-              </button>
-              <span style={{ minWidth: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 700, color: colors.text.primary }}>{selectedElement.quantite || 1}</span>
-              <button
-                onClick={() => updateElement({ ...selectedElement, quantite: (selectedElement.quantite || 1) + 1 })}
-                style={{ width: '26px', height: '26px', borderRadius: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.primary, fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>
-                +
-              </button>
-              <button onClick={supprimerSelection} style={{ marginLeft: 'auto', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                🗑 Supprimer
-              </button>
-            </div>
-          )}
-
           {/* Actions */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
             <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
@@ -1971,6 +1972,41 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
             )}
 
             <button onClick={() => setShowPickerJoueur(false)}
+              style={{ marginTop: '8px', width: '100%', padding: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+              Annuler
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ── Picker "Ajouter du matériel" — ouvert par un clic sur le terrain avec
+          un outil matériel actif, même logique que le picker joueur : pose 1
+          exemplaire par défaut, ou n d'un coup en grille via "Ajouter en série". */}
+      {showPickerMateriel && (
+        <>
+          <div onClick={() => setShowPickerMateriel(false)} style={{ position: 'fixed', inset: 0, zIndex: 499 }} />
+          <div style={{
+            position: 'fixed', top: pickerScreenPos.y, left: pickerScreenPos.x,
+            background: colors.background.surface, border: `1px solid ${colors.border.default}`,
+            borderRadius: '12px', padding: '12px', zIndex: 500,
+            minWidth: '200px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '8px', fontWeight: '700' }}>
+              {[...outilsObjets, ...outilsMateriel].find(o => o.key === pickerMaterielKind)?.title?.toUpperCase() || 'MATÉRIEL'}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <input
+                type="number" min="1" value={pickerNbMateriel} onChange={e => setPickerNbMateriel(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && ajouterMaterielMultiple()}
+                style={{ width: '50px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.primary, padding: '6px', fontSize: '12px', textAlign: 'center' }}
+                autoFocus
+              />
+              <button onClick={ajouterMaterielMultiple}
+                style={{ flex: 1, padding: '6px', background: '#4ade8020', border: '1px solid #4ade8050', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+                + Poser
+              </button>
+            </div>
+            <button onClick={() => setShowPickerMateriel(false)}
               style={{ marginTop: '8px', width: '100%', padding: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
               Annuler
             </button>
