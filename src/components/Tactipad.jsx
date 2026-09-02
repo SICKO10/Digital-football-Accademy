@@ -365,6 +365,12 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
            interactive (le cercle ci-dessus n'existe que déjà sélectionné). */
         <Text text={el.kind === 'cone' ? '🔸' : el.kind === 'ballon' ? '⚽' : '👤'} fontSize={22} x={-12} y={-13} />
       )}
+      {el.quantite > 1 && (
+        <Group x={delX} y={-delY} listening={false}>
+          <Circle radius={9} fill="#111" stroke="#fff" strokeWidth={1} />
+          <Text text={`×${el.quantite}`} fontSize={9} fontStyle="bold" fill="#fff" width={24} height={18} x={-12} y={-9} align="center" verticalAlign="middle" />
+        </Group>
+      )}
       {draggable && hovered && (
         <Group
           x={delX}
@@ -1611,6 +1617,30 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, on
                 <button key={c.val} onClick={() => updateElement({ ...selectedElement, color: c.val })} title={c.label}
                   style={{ width: '26px', height: '26px', borderRadius: '50%', background: c.val, border: selectedElement.color === c.val ? '2px solid #4ade80' : '1px solid #444', cursor: 'pointer' }} />
               ))}
+              <button onClick={supprimerSelection} style={{ marginLeft: 'auto', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                🗑 Supprimer
+              </button>
+            </div>
+          )}
+
+          {/* Panneau de quantité — un élément de matériel (type:'objet') peut
+              représenter plusieurs exemplaires du même objet (ex: "×5 coupelles")
+              plutôt que de devoir en poser un par un ; affiche un badge sur le
+              plateau (cf ObjetNode) au lieu de dupliquer réellement les éléments. */}
+          {selectedElement && selectedElement.type === 'objet' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', padding: '8px 12px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 700 }}>QUANTITÉ</span>
+              <button
+                onClick={() => updateElement({ ...selectedElement, quantite: Math.max(1, (selectedElement.quantite || 1) - 1) })}
+                style={{ width: '26px', height: '26px', borderRadius: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.primary, fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>
+                −
+              </button>
+              <span style={{ minWidth: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 700, color: colors.text.primary }}>{selectedElement.quantite || 1}</span>
+              <button
+                onClick={() => updateElement({ ...selectedElement, quantite: (selectedElement.quantite || 1) + 1 })}
+                style={{ width: '26px', height: '26px', borderRadius: '6px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.primary, fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>
+                +
+              </button>
               <button onClick={supprimerSelection} style={{ marginLeft: 'auto', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                 🗑 Supprimer
               </button>
