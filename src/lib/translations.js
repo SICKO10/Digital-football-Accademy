@@ -756,7 +756,7 @@ export const T = {
   club_sportif:              { fr: 'SPORTIF',                  en: 'SPORTS',                 pt: 'DESPORTIVO',            es: 'DEPORTIVO',              it: 'SPORTIVO',              de: 'SPORTLICH'            },
   club_administratif:        { fr: 'ADMINISTRATIF',            en: 'ADMIN',                  pt: 'ADMINISTRATIVO',        es: 'ADMINISTRATIVO',         it: 'AMMINISTRATIVO',        de: 'VERWALTUNG'           },
   club_tab_categories:       { fr: 'Catégories & Équipes',      en: 'Categories & Teams',     pt: 'Categorias & Equipas',  es: 'Categorías & Equipos',   it: 'Categorie & Squadre',   de: 'Kategorien & Teams'   },
-  club_tab_classements:      { fr: 'Classements',               en: 'Rankings',               pt: 'Classificações',        es: 'Clasificaciones',        it: 'Classifiche',           de: 'Ranglisten'           },
+  club_tab_classements:      { fr: 'Stat équipe',               en: 'Team stats',             pt: 'Estatísticas da equipa', es: 'Estadísticas del equipo', it: 'Statistiche squadra',   de: 'Team-Statistiken'     },
   club_tab_recrutement:      { fr: 'Recrutement',               en: 'Recruitment',            pt: 'Recrutamento',          es: 'Reclutamiento',          it: 'Reclutamento',          de: 'Rekrutierung'         },
   club_tab_educateurs:       { fr: 'Éducateurs',                en: 'Coaches',                pt: 'Educadores',            es: 'Entrenadores',           it: 'Educatori',             de: 'Trainer'              },
   club_tab_sponsors:         { fr: 'Sponsors',                  en: 'Sponsors',               pt: 'Patrocinadores',        es: 'Patrocinadores',         it: 'Sponsor',               de: 'Sponsoren'            },
