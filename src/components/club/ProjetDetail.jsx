@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
+import ProjetKanban from './ProjetKanban'
 
 const STATUTS_PROJET_COULEUR = { en_attente: '#f59e0b', en_cours: '#3b82f6', termine: '#4ade80' }
 const STATUTS_PROJET_LABEL = { en_attente: 'En attente', en_cours: 'En cours', termine: 'Terminé' }
@@ -30,6 +31,7 @@ const actionsDeEtape = (e) => (e.etape_missions || []).flatMap(actionsDeMission)
 export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition, onProjetMisAJour }) {
   const colors = useColors()
   const [notes, setNotes] = useState(projet.notes || '')
+  const [ongletActif, setOngletActif] = useState('kanban')
   const [etapesOuvertes, setEtapesOuvertes] = useState({})
   const [missionsOuvertes, setMissionsOuvertes] = useState({})
   const [nouvelleEtape, setNouvelleEtape] = useState({ titre: '', responsable_nom: '' })
@@ -82,6 +84,24 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
     setNouvelleMission(prev => ({ ...prev, [etape.id]: '' }))
     rafraichir()
   }
+  // Création rapide depuis le Kanban (colonne "+") — étape_id est NOT NULL en
+  // base, donc un projet sans aucune étape se voit d'abord créer une étape
+  // "Général" (même pattern que la migration legacy dans
+  // supabase_projet_missions_actions.sql), sinon rattache à la 1ère étape.
+  const creerMissionRapide = async ({ titre, statut }) => {
+    if (!titre.trim()) return
+    let etapeId = etapes[0]?.id
+    if (!etapeId) {
+      const { data, error } = await supabase.from('projet_etapes').insert({ projet_id: projet.id, titre: 'Général', statut: 'a_faire', ordre: 0 }).select().single()
+      if (echec(error)) return
+      etapeId = data.id
+    }
+    const etape = etapes.find(e => e.id === etapeId)
+    const { error } = await supabase.from('etape_missions').insert({ etape_id: etapeId, titre: titre.trim(), statut, ordre: (etape?.etape_missions || []).length })
+    if (echec(error)) return
+    rafraichir()
+  }
+
   const modifierMission = async (missionId, champs) => {
     const { error } = await supabase.from('etape_missions').update(champs).eq('id', missionId)
     if (echec(error)) return
@@ -210,6 +230,12 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
 
         {/* KPIs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+          {projet.objectif && (
+            <div style={kpiCard}>
+              <div style={{ color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Objectif</div>
+              <div style={{ color: colors.text.secondary, fontSize: '12px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{projet.objectif}</div>
+            </div>
+          )}
           <div style={{ ...kpiCard, display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
               <svg viewBox="0 0 36 36" style={{ width: '48px', height: '48px', transform: 'rotate(-90deg)' }}>
@@ -243,7 +269,37 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
           </div>
         </div>
 
+        {/* Onglets */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: `1px solid ${colors.border.faint}` }}>
+          {[
+            { val: 'kanban', label: 'Kanban' },
+            { val: 'etapes', label: 'Étapes' },
+            { val: 'budget', label: 'Budget' },
+            { val: 'notes', label: 'Notes' },
+          ].map(o => (
+            <button key={o.val} onClick={() => setOngletActif(o.val)}
+              style={{
+                background: 'none', border: 'none', borderBottom: ongletActif === o.val ? `2px solid ${colors.accent.green}` : '2px solid transparent',
+                color: ongletActif === o.val ? colors.accent.green : colors.text.faint, fontWeight: ongletActif === o.val ? 700 : 500,
+                padding: '8px 4px', fontSize: '13px', cursor: 'pointer', marginBottom: '-1px',
+              }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+
+        {ongletActif === 'kanban' && (
+          <ProjetKanban
+            projet={projet}
+            canEdit={canEdit}
+            onChangerStatut={(id, statut) => modifierMission(id, { statut })}
+            onChangerPriorite={(id, priorite) => modifierMission(id, { priorite })}
+            onCreerMission={creerMissionRapide}
+          />
+        )}
+
         {/* Étapes → Missions → Actions */}
+        {ongletActif === 'etapes' && (
         <div style={{ ...card, marginBottom: '20px' }}>
           <h3 style={{ ...sectionTitle, marginBottom: '16px' }}>Étapes du projet</h3>
           {etapes.length === 0 && <p style={{ color: colors.text.faint, fontSize: '12px', fontStyle: 'italic', margin: '0 0 10px' }}>Aucune étape pour l'instant.</p>}
@@ -447,9 +503,9 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
             </div>
           )}
         </div>
+        )}
 
-        {/* Budget + Objectif/Notes — 2 colonnes */}
-        <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 900 ? '1fr' : '1fr 1fr', gap: '20px' }}>
+        {ongletActif === 'budget' && (
           <div style={card}>
             <h3 style={{ ...sectionTitle, marginBottom: '16px' }}>Budget prévisionnel</h3>
             {budget.length === 0 ? (
@@ -500,20 +556,16 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
               </div>
             )}
           </div>
+        )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={card}>
-              <h3 style={{ color: colors.accent.green, margin: '0 0 12px', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Objectif du projet</h3>
-              <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0, whiteSpace: 'pre-wrap' }}>{projet.objectif || '—'}</p>
-            </div>
-            <div style={{ ...card, flex: 1 }}>
-              <h3 style={{ ...sectionTitle, margin: '0 0 12px' }}>Notes & Points clés</h3>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={sauvegarderNotes} disabled={!canEdit}
-                placeholder="Ajouter des notes..." rows={4}
-                style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '10px', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
-            </div>
+        {ongletActif === 'notes' && (
+          <div style={card}>
+            <h3 style={{ ...sectionTitle, margin: '0 0 12px' }}>Notes & Points clés</h3>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={sauvegarderNotes} disabled={!canEdit}
+              placeholder="Ajouter des notes..." rows={4}
+              style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '10px', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
