@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { ZONES, couleurZone } from './PlanningTerrains'
+import { useColors } from '../lib/theme'
 
 // Date du jour au format local YYYY-MM-DD — jamais toISOString() (convertit en
 // UTC, ce qui décale la date d'un jour en France, cf. le même bug déjà corrigé
@@ -34,6 +35,7 @@ const BadgeZone = ({ zone, accentColor }) => {
 }
 
 export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#4ade80', titre = 'Terrains disponibles cette semaine' }) {
+  const colors = useColors()
   const [creneaux, setCreneaux] = useState([])
   const [recuperes, setRecuperes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -113,10 +115,10 @@ export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
                   {' '}<BadgeZone zone={c.creneau?.zone} accentColor={accentColor} />
                   <br />
-                  <span style={{ color: '#555', fontSize: '11px' }}>libéré par {c.libere_par || '—'}</span>
+                  <span style={{ color: colors.text.faint, fontSize: '11px' }}>libéré par {c.libere_par || '—'}</span>
                 </span>
                 {userId && c.educateur_id === userId ? (
-                  <span style={{ color: '#555', fontSize: '11px', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Libéré par moi</span>
+                  <span style={{ color: colors.text.faint, fontSize: '11px', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Libéré par moi</span>
                 ) : userId ? (
                   <button onClick={() => prendreCreneau(c)} disabled={reclamingId === c.id}
                     style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>
@@ -141,7 +143,7 @@ export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#
                   </span>
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
                 </span>
-                <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>récupéré par {c.equipe_remplacante || '—'}</span>
+                <span style={{ color: colors.text.faint, fontSize: '11px', whiteSpace: 'nowrap' }}>récupéré par {c.equipe_remplacante || '—'}</span>
               </div>
             ))}
           </div>

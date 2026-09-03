@@ -329,7 +329,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
           const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
           const isToday = dateStr === today
           return (
-            <div key={dateStr} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px' }}>
+            <div key={dateStr} style={{ background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: evts.length ? '8px' : 0 }}>
                 <div style={{ fontSize: '17px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary }}>{jour.getDate()}</div>
                 <div style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{jour.toLocaleDateString('fr-FR', { weekday: 'long' })}</div>
@@ -365,7 +365,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
           // par défaut d'un enfant de grid), ce qui pousse les 7 colonnes
           // au-delà de leur 1fr et fait déborder toute la grille de l'écran
           // sur tablette (jamais visible sur desktop, où il y a de la marge).
-          <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: isTablet ? '6px' : '10px', minHeight: isTablet ? '110px' : '160px' }}>
+          <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: isTablet ? '6px' : '10px', minHeight: isTablet ? '110px' : '160px' }}>
             <div style={{ fontSize: isTablet ? '9px' : '10px', color: colors.text.faint, textTransform: 'uppercase', marginBottom: '4px' }}>
               {jour.toLocaleDateString('fr-FR', { weekday: 'short' })}
             </div>
@@ -417,7 +417,7 @@ function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
           // le premier), même esprit que le calendrier joueur déjà réglé.
           if (isMobile) {
             return (
-              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
+              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
                 <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: '11px', fontWeight: isToday ? 800 : 400 }}>{jour}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {evts.slice(0, 4).map(e => (
@@ -431,7 +431,7 @@ function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
             // minWidth: 0 — même correctif que VueSemaine : un titre d'événement
             // en white-space:nowrap imposerait sinon sa largeur minimale à la
             // cellule et ferait déborder les 7 colonnes de l'écran sur tablette.
-            <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? '#0d1a0d' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: isTablet ? '5px 3px' : '8px', minHeight: isTablet ? '70px' : '90px' }}>
+            <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: isTablet ? '5px 3px' : '8px', minHeight: isTablet ? '70px' : '90px' }}>
               <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: isTablet ? '12px' : '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
               {evts.slice(0, isTablet ? 2 : 3).map(e => (
                 <div key={e.id} onClick={() => onClic(e)} style={{

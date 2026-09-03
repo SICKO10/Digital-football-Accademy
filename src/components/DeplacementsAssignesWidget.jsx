@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import { useColors } from '../lib/theme'
 
 export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equipeUnique = true, accentColor = '#60a5fa', onOuvrirFiche }) {
+  const colors = useColors()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -70,10 +72,10 @@ export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equ
               </div>
 
               <div style={{ flex: 1, minWidth: '140px' }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {d.lieu_destination || d.equipe || 'Déplacement'}
                 </p>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>
                   {dateStr}
                   {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
                   {d.ville_destination ? ` · ${d.ville_destination}` : ''}
@@ -93,7 +95,7 @@ export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equ
 
               {onOuvrirFiche && (
                 <button onClick={() => onOuvrirFiche(d)}
-                  style={{ flexShrink: 0, background: 'transparent', border: '1px solid #2a2a2a', color: d.fiche_completee ? accentColor : '#888', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${colors.border.default}`, color: d.fiche_completee ? accentColor : colors.text.faint, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {d.fiche_completee ? '✅ Fiche remplie' : '✏️ Remplir la fiche'}
                 </button>
               )}

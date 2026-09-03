@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import { useColors } from '../lib/theme'
 
 // Aperçu des dernières actualités du club sur l'Accueil éducateur — remplace
 // le lien de nav dédié "Actualités du club" (retiré, la nav étant déjà
 // dense) : la page complète (activeSection === 'annonces', inchangée) reste
 // accessible via "Voir tout".
 export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentColor = '#60a5fa' }) {
+  const colors = useColors()
   const [annonces, setAnnonces] = useState([])
   const [luesIds, setLuesIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
@@ -38,10 +40,10 @@ export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentC
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
         {annonces.map(a => (
           <button key={a.id} onClick={onVoirTout} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ fontSize: '12px', color: luesIds.has(a.id) ? '#888' : '#fff', fontWeight: luesIds.has(a.id) ? 400 : 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '12px', color: luesIds.has(a.id) ? colors.text.faint : colors.text.primary, fontWeight: luesIds.has(a.id) ? 400 : 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {a.titre}
             </span>
-            <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ color: colors.text.faint, fontSize: '11px', whiteSpace: 'nowrap', flexShrink: 0 }}>
               {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
             </span>
           </button>
