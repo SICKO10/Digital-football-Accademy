@@ -19,6 +19,7 @@ import NotationMatch from '../components/NotationMatch'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
+import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
 import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -710,7 +711,7 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
   )
 }
 
-function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -1073,7 +1074,6 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
         {[
           { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
           { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
-          { Icon: IcoLayout, label: 'Tacticboard', section: 'tactipad' },
         ].map(a => (
           <button key={a.section} onClick={() => setActiveSection(a.section)}
             style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
@@ -1083,6 +1083,10 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
           </button>
         ))}
+        {prochainMatch && (
+          <DerniereCauserieWidget userId={userId} prochainMatch={prochainMatch} accentColor={colors.accent.green}
+            onOuvrir={() => { setActiveSection('matchs'); setCompetitionSubTab('causerie') }} />
+        )}
       </div>
 
       {/* Fil d'activité récente */}
@@ -4549,6 +4553,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               setActiveSection={setActiveSection}
               setSousOngletEnt={setSousOngletEnt}
               setStatsSubTab={setStatsSubTab}
+              setCompetitionSubTab={setCompetitionSubTab}
               lang={lang}
               isMobile={isMobile}
               mesSeancesOuvertes={mesSeancesOuvertes}
