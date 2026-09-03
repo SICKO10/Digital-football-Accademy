@@ -24,6 +24,7 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
+import ProjetSportif from '../components/club/ProjetSportif'
 import NotificationBanner from '../components/NotificationBanner'
 
 const CLUB_FAQ = [
@@ -3321,6 +3322,7 @@ Règles :
     ...(canViewSection('sportif') ? [
       { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
       { id: 'planning', label: iconLabel(IcoCalendar, 'Planning') },
+      { id: 'projet_sportif', label: iconLabel(IcoStar, 'Projet Sportif') },
       { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
       { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
       { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
@@ -3671,6 +3673,11 @@ Règles :
         {/* ── PLANNING (vue générale : matchs, entraînements, événements, projets) ── */}
         {activeTab === 'planning' && canViewSection('sportif') && (
           <Planning matchs={matchsClub} evenements={evenementsClub} projets={projetsClub} categories={categories} />
+        )}
+
+        {/* ── PROJET SPORTIF ── */}
+        {activeTab === 'projet_sportif' && canViewSection('sportif') && (
+          <ProjetSportif categories={categories} />
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}

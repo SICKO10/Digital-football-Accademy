@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { labelCategorie } from '../lib/categories'
+import { POLES, getPoleDeCategorie } from '../constants/poles'
 
 const VUES = ['Jour', 'Semaine', 'Mois', 'Année']
 
@@ -42,6 +43,8 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
     entrainement: true, match_dom: true, match_ext: true,
     evenement: true, projet: true,
   })
+  // 'general' = toutes les catégories ; sinon clé de POLES (cf. constants/poles.js).
+  const [filtrePole, setFiltrePole] = useState('general')
   const [popup, setPopup] = useState(null)
   // Seuil aligné sur PlanningSemaineWidget.jsx (déjà en place ailleurs dans
   // l'app pour le même problème : grille 7 colonnes illisible sur téléphone).
@@ -75,36 +78,43 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
     return cat ? `${labelCategorie(cat.nom)}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
   }
 
+  const poleDe = (educateurId) => {
+    const cat = categories.find(c => c.educateur_id === educateurId)
+    return cat ? getPoleDeCategorie(cat.nom)?.key || null : null
+  }
+
   // Fusionne les 4 sources en une liste normalisée { id, type, date, heure,
-  // titre, sousTitre, description } — un projet (date_debut/date_fin, pas de
-  // date unique) est ancré sur sa date de début.
+  // titre, sousTitre, description, pole } — un projet (date_debut/date_fin,
+  // pas de date unique) est ancré sur sa date de début. evenements/projets
+  // n'ont pas de catégorie (club_id uniquement, cf. schéma) donc pole=null :
+  // ils n'apparaissent que dans le planning général, pas dans un pôle précis.
   const tousEvenements = useMemo(() => {
     const tous = []
     entrainements.forEach(e => tous.push({
       id: `s_${e.id}`, type: 'entrainement', date: e.date, heure: e.heure?.slice(0, 5) || null,
       titre: `${catLabel(e.educateur_id) ? catLabel(e.educateur_id) + ' · ' : ''}${e.description || 'Entraînement'}`,
-      sousTitre: e.lieu || '',
+      sousTitre: e.lieu || '', pole: poleDe(e.educateur_id),
     }))
     matchs.forEach(m => tous.push({
       id: `m_${m.id}`, type: m.domicile ? 'match_dom' : 'match_ext', date: m.date, heure: m.heure?.slice(0, 5) || null,
       titre: `${catLabel(m.educateur_id) ? catLabel(m.educateur_id) + ' · ' : ''}${m.domicile ? 'vs' : '@'} ${m.adversaire || 'Match'}`,
-      sousTitre: `${m.domicile ? 'Domicile' : 'Extérieur'}${m.lieu ? ' · ' + m.lieu : ''}`,
+      sousTitre: `${m.domicile ? 'Domicile' : 'Extérieur'}${m.lieu ? ' · ' + m.lieu : ''}`, pole: poleDe(m.educateur_id),
     }))
     evenements.forEach(e => tous.push({
       id: `e_${e.id}`, type: 'evenement', date: e.date, heure: e.heure?.slice(0, 5) || null,
-      titre: e.titre, sousTitre: e.lieu || '', description: e.description,
+      titre: e.titre, sousTitre: e.lieu || '', description: e.description, pole: null,
     }))
     projets.forEach(p => tous.push({
       id: `p_${p.id}`, type: 'projet', date: p.date_debut, heure: null,
       titre: p.nom,
       sousTitre: p.date_fin && p.date_fin !== p.date_debut ? `Jusqu'au ${new Date(`${p.date_fin}T12:00:00`).toLocaleDateString('fr-FR')}` : '',
-      description: p.description,
+      description: p.description, pole: null,
     }))
     return tous.filter(e => e.date)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entrainements, matchs, evenements, projets, categories])
 
-  const evtsFiltres = tousEvenements.filter(e => filtres[e.type])
+  const evtsFiltres = tousEvenements.filter(e => filtres[e.type] && (filtrePole === 'general' || e.pole === filtrePole))
 
   const getPlageDates = (ref, v) => {
     const d = new Date(ref)
@@ -147,6 +157,27 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
     <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1100px' }}>
       <h2 style={{ color: colors.text.primary, fontSize: isMobile ? '18px' : '22px', fontWeight: 800, marginBottom: '4px' }}>Planning</h2>
       <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: isMobile ? '16px' : '24px' }}>Vue générale de toutes les équipes</p>
+
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', marginBottom: isMobile ? '12px' : '16px', WebkitOverflowScrolling: 'touch' }}>
+        <button onClick={() => setFiltrePole('general')} style={{
+          padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === 'general' ? colors.text.primary : colors.border.faint}`,
+          background: filtrePole === 'general' ? colors.background.raised : 'transparent',
+          color: filtrePole === 'general' ? colors.text.primary : colors.text.disabled,
+          fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+        }}>
+          Planning général
+        </button>
+        {Object.entries(POLES).map(([key, pole]) => (
+          <button key={key} onClick={() => setFiltrePole(key)} style={{
+            padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === key ? pole.couleur : colors.border.faint}`,
+            background: filtrePole === key ? pole.couleur + '22' : 'transparent',
+            color: filtrePole === key ? pole.couleur : colors.text.disabled,
+            fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+          }}>
+            {pole.label}
+          </button>
+        ))}
+      </div>
 
       <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '20px', flexWrap: 'wrap', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
         <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '10px', padding: '3px', gap: '2px', overflowX: isMobile ? 'auto' : 'visible' }}>
