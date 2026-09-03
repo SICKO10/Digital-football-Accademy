@@ -881,7 +881,7 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
                 <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
               </div>
 
-              <div style={{ height: '1px', background: '#ffffff20', flexShrink: 0 }} />
+              <div style={{ height: '1px', background: colors.border.subtle, flexShrink: 0 }} />
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', paddingTop: '1rem' }}>
                 <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
@@ -1046,16 +1046,16 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
           const clos = sondageEstClos(prochainEnt)
           return (
             <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
-              style={{ background: clos ? '#1f2937' : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? '#374151' : colors.accent.green}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: clos ? colors.background.raised : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? colors.border.strong : colors.accent.green}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
               <div style={{ fontSize: '10px', color: colors.text.dim, marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
-              <div style={{ fontSize: '13px', color: 'white', fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 📋 {prochainEnt.description || 'Entraînement'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
                 <span style={{ color: colors.accent.green }}>✅ {presents}</span>
                 <span style={{ color: colors.accent.red }}>❌ {absents}</span>
                 <span style={{ color: colors.text.dim }}>⏳ {enAttente}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? '#374151' : 'rgba(74,222,128,0.15)', color: clos ? '#6b7280' : colors.accent.green }}>
+                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? colors.background.base : 'rgba(74,222,128,0.15)', color: clos ? colors.text.faint : colors.accent.green }}>
                   {clos ? '🔒 Fermé' : '🟢 Ouvert'}
                 </span>
               </div>
