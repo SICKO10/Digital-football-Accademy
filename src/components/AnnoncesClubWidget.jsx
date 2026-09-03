@@ -28,6 +28,10 @@ export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentC
 
   if (loading || annonces.length === 0) return null
   const nbNonLues = annonces.filter(a => !luesIds.has(a.id)).length
+  // Une fois toutes les actualités affichées lues, le widget s'efface —
+  // il ne réapparaît qu'à la prochaine actualité publiée par le club,
+  // au lieu de rester affiché indéfiniment en grisé.
+  if (nbNonLues === 0) return null
 
   return (
     <div style={{ background: accentColor + '10', border: `1px solid ${accentColor}40`, borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
