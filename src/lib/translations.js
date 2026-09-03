@@ -18,6 +18,7 @@ export const T = {
   nav_deplacements:     { fr: 'Déplacements',         en: 'Travel',            pt: 'Deslocações',       es: 'Desplazamientos',   it: 'Trasferte',         de: 'Fahrten'           },
   nav_terrains:         { fr: 'Terrains',             en: 'Pitches',           pt: 'Campos',            es: 'Campos',            it: 'Campi',             de: 'Plätze'            },
   nav_materiel:         { fr: 'Matériel',             en: 'Equipment',         pt: 'Material',          es: 'Material',          it: 'Materiale',         de: 'Ausrüstung'        },
+  nav_planning:         { fr: 'Planning',             en: 'Planning',          pt: 'Planeamento',       es: 'Planificación',     it: 'Pianificazione',    de: 'Planung'           },
   nav_entrainements:    { fr: 'Entraînements',        en: 'Training',          pt: 'Treinos',           es: 'Entrenamientos',    it: 'Allenamenti',       de: 'Training'          },
   nav_seances:          { fr: 'Séances',              en: 'Sessions',          pt: 'Sessões',           es: 'Sesiones',          it: 'Sedute',            de: 'Einheiten'         },
   nav_prep_physique:    { fr: 'Préparation physique', en: 'Physical prep',     pt: 'Preparação física', es: 'Preparación física',it: 'Prep. fisica',      de: 'Phys. Vorbereitung'},
@@ -47,6 +48,7 @@ export const T = {
   section_entrainement: { fr: 'ENTRAÎNEMENT',         en: 'TRAINING',          pt: 'TREINO',            es: 'ENTRENAMIENTO',     it: 'ALLENAMENTO',       de: 'TRAINING'          },
   section_analyse:      { fr: 'SUIVI & ANALYSE',      en: 'TRACKING & ANALYSIS',pt:'ACOMPANHAMENTO',   es: 'SEGUIMIENTO',       it: 'MONITORAGGIO',      de: 'ANALYSE'           },
   section_reseau:       { fr: 'RÉSEAU',               en: 'NETWORK',           pt: 'REDE',              es: 'RED',               it: 'RETE',              de: 'NETZWERK'          },
+  section_suivi_reseau: { fr: 'SUIVI & RÉSEAU',       en: 'TRACKING & NETWORK',pt: 'ACOMPANHAMENTO E REDE', es: 'SEGUIMIENTO Y RED', it: 'MONITORAGGIO E RETE', de: 'ANALYSE & NETZWERK' },
   section_compte:       { fr: 'MON COMPTE',           en: 'MY ACCOUNT',        pt: 'MINHA CONTA',       es: 'MI CUENTA',         it: 'IL MIO ACCOUNT',    de: 'MEIN KONTO'        },
 
   // ── Actions communes ────────────────────────────────────────────────────────
