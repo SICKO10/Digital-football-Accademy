@@ -45,6 +45,7 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
   const [rows, setRows] = useState(null)
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [erreur, setErreur] = useState(null)
 
   const charger = async () => {
     const { data } = await supabase.from('evaluations_joueur').select('*')
@@ -70,19 +71,32 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
   // doit pouvoir autoriser le pré-remplissage avant même d'avoir écrit quoi
   // que ce soit, et la visibilité peut changer à tout moment sans re-verrouiller.
   const basculerFlag = async (flagKey, valeur) => {
+    setErreur(null)
     const payload = { equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, [flagKey]: valeur }
-    const { data } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
-    if (data) setRows(prev => ({ ...prev, [periodeActive]: data }))
+    try {
+      const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
+      if (error) throw error
+      setRows(prev => ({ ...prev, [periodeActive]: data }))
+    } catch (e) {
+      setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie.")
+    }
   }
 
   const sauvegarder = async () => {
     setSaving(true)
+    setErreur(null)
     const { id, created_at, ...reste } = form
     const payload = { ...reste, equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, updated_at: new Date().toISOString() }
     if (role === 'educateur') payload.verrouillee_joueur = true
-    const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
-    setSaving(false)
-    if (!error && data) setRows(prev => ({ ...prev, [periodeActive]: data }))
+    try {
+      const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
+      if (error) throw error
+      setRows(prev => ({ ...prev, [periodeActive]: data }))
+    } catch (e) {
+      setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const estFinSaison = periodeActive === 'fin_saison'
@@ -196,7 +210,8 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
             )}
 
             {peutEditer && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                {erreur && <span style={{ color: '#ef4444', fontSize: 12 }}>{erreur}</span>}
                 <button onClick={sauvegarder} disabled={saving}
                   style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '10px 22px', fontWeight: 800, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                   {saving ? 'Enregistrement...' : role === 'educateur' ? 'Enregistrer (verrouille la fiche)' : 'Enregistrer mon pré-remplissage'}
