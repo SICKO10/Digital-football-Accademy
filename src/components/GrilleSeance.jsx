@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useColors } from '../lib/theme'
 
 export const GRILLE_SEANCE = [
   { key: 'preparation', label: '1. Préparation de la séance', criteres: [
@@ -54,13 +55,14 @@ export const calculerNoteDomaine = (grilleCriteres, domaineKey) => {
 
 // Composant modal réutilisable de la grille (le formulaire lui-même)
 export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType }) {
+  const colors = useColors()
   const [grilleCriteres, setGrilleCriteres] = useState({})
   const [grilleObservations, setGrilleObservations] = useState({ points_forts: '', axes_amelioration: '', actions: '' })
   const [saving, setSaving] = useState(false)
 
   const st = {
-    label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-    input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
+    label: { fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
   }
 
   const handleSubmit = async () => {
@@ -79,27 +81,27 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', width: '100%', maxWidth: '700px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '700px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Grille d'évaluation — {seance.theme || 'Séance'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
-        <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#666' }}>{seance.educateur?.prenom} {seance.educateur?.nom} — {seance.saison}</p>
+        <p style={{ margin: '0 0 20px', fontSize: '12px', color: colors.text.faint }}>{seance.educateur?.prenom} {seance.educateur?.nom} — {seance.saison}</p>
 
         {GRILLE_SEANCE.map(domaine => (
-          <div key={domaine.key} style={{ background: '#111', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+          <div key={domaine.key} style={{ background: colors.background.surface, borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: '#4ade80' }}>{domaine.label}</p>
-              <span style={{ fontSize: '12px', color: '#666' }}>{calculerNoteDomaine(grilleCriteres, domaine.key)}/20</span>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>{domaine.label}</p>
+              <span style={{ fontSize: '12px', color: colors.text.faint }}>{calculerNoteDomaine(grilleCriteres, domaine.key)}/20</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {domaine.criteres.map(c => (
                 <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                  <span style={{ flex: 1, fontSize: '12px', color: colors.text.secondary }}>{c.label}</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {[1,2,3,4,5].map(n => (
                       <button key={n} onClick={() => setGrilleCriteres(prev => ({ ...prev, [c.key]: n }))}
-                        style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? '#4ade80' : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                        style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? colors.accent.green : colors.border.default, padding: '2px', lineHeight: 1 }}>★</button>
                     ))}
                   </div>
                 </div>
@@ -108,16 +110,16 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
           </div>
         ))}
 
-        <div style={{ background: '#111', borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid #fbbf2430' }}>
+        <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid #fbbf2430' }}>
           <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>✨ Bonus</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {GRILLE_BONUS.map(c => (
               <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ flex: 1, fontSize: '12px', color: '#aaa' }}>{c.label}</span>
+                <span style={{ flex: 1, fontSize: '12px', color: colors.text.secondary }}>{c.label}</span>
                 <div style={{ display: 'flex', gap: '4px' }}>
                   {[1,2,3,4,5].map(n => (
                     <button key={n} onClick={() => setGrilleCriteres(prev => ({ ...prev, [c.key]: n }))}
-                      style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? '#fbbf24' : '#2a2a2a', padding: '2px', lineHeight: 1 }}>★</button>
+                      style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: (grilleCriteres[c.key] || 0) >= n ? '#fbbf24' : colors.border.default, padding: '2px', lineHeight: 1 }}>★</button>
                   ))}
                 </div>
               </div>
