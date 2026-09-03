@@ -313,7 +313,7 @@ const buildS = (colors) => ({
 // actif (ex: activeTab === 'accueil'). Sur mobile/tablette, le bouton flottant
 // est masqué en dehors de l'accueil — il chevauche trop souvent le contenu
 // (ex: le panel joueurs du Tacticboard) sur les écrans étroits.
-export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80", estAccueil = true }) {
+export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80", estAccueil = true, masque = false }) {
   const colors = useColors();
   const S = buildS(colors);
   const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024);
@@ -431,6 +431,10 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
   };
 
   if (mobileOuTablette && !estAccueil) return null;
+  // masque : un formulaire hôte (ex: Événements & Projets) a son propre
+  // bouton "Enregistrer" en bas de page — le ballon (fixed, zIndex 900)
+  // le recouvre sinon dès qu'on scrolle jusqu'à ce bouton.
+  if (masque) return null;
 
   return (
     <>
