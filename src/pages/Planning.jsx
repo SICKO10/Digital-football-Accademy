@@ -68,19 +68,33 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
   useEffect(() => {
     const charger = async () => {
       if (educateurIds.length === 0) { setEntrainements([]); return }
-      const { data } = await supabase.from('entrainements').select('id, date, heure, description, lieu, educateur_id').in('educateur_id', educateurIds)
+      const { data } = await supabase.from('entrainements').select('id, date, heure, description, lieu, educateur_id, club_categorie_id').in('educateur_id', educateurIds)
       setEntrainements(data || [])
     }
     charger()
   }, [educateurIds])
 
-  const catLabel = (educateurId) => {
-    const cat = categories.find(c => c.educateur_id === educateurId)
+  // Résout la catégorie d'un entraînement/match par son club_categorie_id
+  // d'abord — un éducateur peut encadrer plusieurs catégories (ex: U11 et
+  // U18), donc retomber sur educateur_id seul attribuerait tout à sa
+  // première catégorie trouvée. Fallback educateur_id conservé uniquement
+  // pour les lignes créées avant l'ajout de la colonne (club_categorie_id
+  // encore NULL).
+  const catDeRecord = (record) => {
+    if (record.club_categorie_id) {
+      const cat = categories.find(c => c.id === record.club_categorie_id)
+      if (cat) return cat
+    }
+    return categories.find(c => c.educateur_id === record.educateur_id) || null
+  }
+
+  const catLabel = (record) => {
+    const cat = catDeRecord(record)
     return cat ? `${labelCategorie(cat.nom)}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
   }
 
-  const poleDe = (educateurId) => {
-    const cat = categories.find(c => c.educateur_id === educateurId)
+  const poleDe = (record) => {
+    const cat = catDeRecord(record)
     return cat ? getPoleDeCategorie(cat.nom)?.key || null : null
   }
 
@@ -93,13 +107,13 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
     const tous = []
     entrainements.forEach(e => tous.push({
       id: `s_${e.id}`, type: 'entrainement', date: e.date, heure: e.heure?.slice(0, 5) || null,
-      titre: `${catLabel(e.educateur_id) ? catLabel(e.educateur_id) + ' · ' : ''}${e.description || 'Entraînement'}`,
-      sousTitre: e.lieu || '', pole: poleDe(e.educateur_id),
+      titre: `${catLabel(e) ? catLabel(e) + ' · ' : ''}${e.description || 'Entraînement'}`,
+      sousTitre: e.lieu || '', pole: poleDe(e),
     }))
     matchs.forEach(m => tous.push({
       id: `m_${m.id}`, type: m.domicile ? 'match_dom' : 'match_ext', date: m.date, heure: m.heure?.slice(0, 5) || null,
-      titre: `${catLabel(m.educateur_id) ? catLabel(m.educateur_id) + ' · ' : ''}${m.domicile ? 'vs' : '@'} ${m.adversaire || 'Match'}`,
-      sousTitre: `${m.domicile ? 'Domicile' : 'Extérieur'}${m.lieu ? ' · ' + m.lieu : ''}`, pole: poleDe(m.educateur_id),
+      titre: `${catLabel(m) ? catLabel(m) + ' · ' : ''}${m.domicile ? 'vs' : '@'} ${m.adversaire || 'Match'}`,
+      sousTitre: `${m.domicile ? 'Domicile' : 'Extérieur'}${m.lieu ? ' · ' + m.lieu : ''}`, pole: poleDe(m),
     }))
     evenements.forEach(e => tous.push({
       id: `e_${e.id}`, type: 'evenement', date: e.date, heure: e.heure?.slice(0, 5) || null,
