@@ -5,6 +5,7 @@ import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
+import { useColors } from "../lib/theme";
 
 const CATEGORIES = ["Toutes", ...CATEGORIES_BASE];
 const PIEDS = ["Tous", "Droit", "Gauche", "Les deux"];
@@ -26,6 +27,7 @@ const getCloudinaryThumb = (url) => {
 
 // Radar chart SVG (pentagon)
 function RadarChart({ j, size = 180 }) {
+  const colors = useColors();
   const stats = [
     { label: "Buts",       value: Math.min((j.buts_total || 0) / 20, 1) },
     { label: "Passes",    value: Math.min((j.passes_decisives || 0) / 15, 1) },
@@ -42,12 +44,12 @@ function RadarChart({ j, size = 180 }) {
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {[0.25, 0.5, 0.75, 1].map(l => (
-        <polygon key={l} points={poly(l)} fill="none" stroke={l === 1 ? "#333" : "#1e1e1e"} strokeWidth={l === 1 ? 1 : 0.5} />
+        <polygon key={l} points={poly(l)} fill="none" stroke={l === 1 ? colors.border.strong : colors.border.subtle} strokeWidth={l === 1 ? 1 : 0.5} />
       ))}
-      {stats.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#2a2a2a" strokeWidth="1" />; })}
+      {stats.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={colors.border.default} strokeWidth="1" />; })}
       <polygon points={stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return `${p.x},${p.y}`; }).join(" ")} fill="#f9731625" stroke="#f97316" strokeWidth="1.5" />
       {stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return <circle key={i} cx={p.x} cy={p.y} r="3" fill="#f97316" />; })}
-      {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill="#666" fontSize="9" fontFamily="Inter,sans-serif">{s.label}</text>; })}
+      {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill={colors.text.faint} fontSize="9" fontFamily="Inter,sans-serif">{s.label}</text>; })}
     </svg>
   );
 }
@@ -65,6 +67,7 @@ function Toast({ message, onClose }) {
 export default function ScoutCenter({ userId, profil, embedded = false }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const colors = useColors();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -428,8 +431,8 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   };
 
   const posteColor = (p) => {
-    const map = { "Attaquant": { bg: "#1a0a00", text: "#f97316" }, "Milieu": { bg: "#001a0a", text: "#f97316" }, "Défenseur": { bg: "#00061a", text: "#60a5fa" }, "Gardien": { bg: "#1a001a", text: "#a855f7" } };
-    return map[p] || { bg: "#1a1a1a", text: "#aaa" };
+    const map = { "Attaquant": { bg: "#f9731615", text: "#f97316" }, "Milieu": { bg: "#f9731615", text: "#f97316" }, "Défenseur": { bg: "#60a5fa15", text: "#60a5fa" }, "Gardien": { bg: "#a855f715", text: "#a855f7" } };
+    return map[p] || { bg: colors.background.raised, text: colors.text.secondary };
   };
   const getInitials = (j) => `${(j.prenom || "?")[0]}${(j.nom || "?")[0]}`.toUpperCase();
   const isVeo = (url) => url && url.includes("veo.co");
@@ -437,40 +440,40 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   const isCloudinary = (url) => url && url.includes("cloudinary.com");
 
   const st = {
-    page: { background: "#0a0a0a", minHeight: "100vh", color: "#fff", fontFamily: "Inter, sans-serif" },
-    navbar: { background: "#111", borderBottom: "1px solid #222", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" },
+    page: { background: colors.background.base, minHeight: "100vh", color: colors.text.primary, fontFamily: "Inter, sans-serif" },
+    navbar: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.default}`, padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" },
     logo: { color: "#f97316", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
-    logoutBtn: { background: "transparent", border: "1px solid #333", color: "#aaa", padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
+    logoutBtn: { background: "transparent", border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
     content: { padding: isMobile ? "1rem" : "2rem", maxWidth: "1200px", margin: "0 auto" },
     tabs: { display: "flex", gap: "8px", marginBottom: "1.5rem", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: "2px" },
-    tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : "1px solid #333", background: active ? "#f97316" : "transparent", color: active ? "#000" : "#aaa", fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
-    filterBar: { background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: isMobile ? "1rem" : "16px 20px", marginBottom: "1.5rem", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-end" },
-    filterLabel: { fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" },
-    select: { background: "#0a0a0a", border: "1px solid #222", borderRadius: "10px", color: "#fff", padding: "10px 12px", fontSize: "13px", cursor: "pointer" },
-    searchInput: { background: "#0a0a0a", border: "1px solid #222", borderRadius: "10px", color: "#fff", padding: "10px 14px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
+    tab: (active) => ({ padding: isMobile ? "8px 14px" : "10px 24px", borderRadius: "8px", border: active ? "none" : `1px solid ${colors.border.strong}`, background: active ? "#f97316" : "transparent", color: active ? "#000" : colors.text.secondary, fontWeight: active ? 600 : 400, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", whiteSpace: "nowrap", flexShrink: 0 }),
+    filterBar: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: "14px", padding: isMobile ? "1rem" : "16px 20px", marginBottom: "1.5rem", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-end" },
+    filterLabel: { fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px" },
+    select: { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: "10px", color: colors.text.primary, padding: "10px 12px", fontSize: "13px", cursor: "pointer" },
+    searchInput: { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: "10px", color: colors.text.primary, padding: "10px 14px", fontSize: "13px", width: "100%", boxSizing: "border-box" },
     grid: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" },
-    card: { background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.25rem" },
-    avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px" },
+    card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", padding: "1.25rem" },
+    avatar: { width: "44px", height: "44px", borderRadius: "50%", background: "#f9731615", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px" },
     posteBadge: (p) => ({ background: posteColor(p).bg, color: posteColor(p).text, fontSize: "11px", padding: "3px 10px", borderRadius: "20px", fontWeight: 500 }),
-    statsRow: { display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "8px", marginTop: "12px", borderTop: "1px solid #1e1e1e", paddingTop: "12px" },
+    statsRow: { display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "8px", marginTop: "12px", borderTop: `1px solid ${colors.border.subtle}`, paddingTop: "12px" },
     stat: { textAlign: "center" },
     statVal: { fontSize: "18px", fontWeight: 700, color: "#f97316" },
-    statLabel: { fontSize: "10px", color: "#555", textTransform: "uppercase" },
+    statLabel: { fontSize: "10px", color: colors.text.faint, textTransform: "uppercase" },
     cardActions: { display: "flex", gap: "8px", marginTop: "12px" },
     btnPrimary: { flex: 1, background: "#f97316", color: "#000", border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", fontWeight: 600, fontSize: "13px" },
-    btnSecondary: { background: "transparent", border: "1px solid #333", color: "#aaa", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
+    btnSecondary: { background: "transparent", border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
     favoriBtnActive: { background: "transparent", border: "1px solid #f97316", color: "#f97316", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontSize: "13px" },
     overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" },
-    modal: { background: "#111", border: "1px solid #333", borderRadius: "16px", padding: "2rem", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto" },
+    modal: { background: colors.background.surface, border: `1px solid ${colors.border.strong}`, borderRadius: "16px", padding: "2rem", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto" },
     sectionTitle: { fontSize: "11px", color: "#f97316", textTransform: "uppercase", letterSpacing: "1px", margin: "1.5rem 0 0.75rem" },
     statsGrid: { display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "12px" },
-    statBox: { background: "#1a1a1a", borderRadius: "8px", padding: "12px", textAlign: "center" },
+    statBox: { background: colors.background.raised, borderRadius: "8px", padding: "12px", textAlign: "center" },
     statBoxVal: { fontSize: "22px", fontWeight: 700, color: "#f97316" },
-    statBoxLabel: { fontSize: "11px", color: "#555", marginTop: "2px" },
-    textarea: { width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "120px", boxSizing: "border-box", marginTop: "8px", fontFamily: "inherit" },
-    emptyState: { textAlign: "center", padding: "4rem 2rem", color: "#444" },
-    videoBox: { background: "#1a1a1a", borderRadius: "8px", padding: "1rem", marginTop: "8px" },
-    msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#f97316" : "#1a1a1a", color: mine ? "#000" : "#fff", fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
+    statBoxLabel: { fontSize: "11px", color: colors.text.faint, marginTop: "2px" },
+    textarea: { width: "100%", background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: "8px", color: colors.text.primary, padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "120px", boxSizing: "border-box", marginTop: "8px", fontFamily: "inherit" },
+    emptyState: { textAlign: "center", padding: "4rem 2rem", color: colors.text.ghost },
+    videoBox: { background: colors.background.raised, borderRadius: "8px", padding: "1rem", marginTop: "8px" },
+    msgBubble: (mine) => ({ maxWidth: "70%", padding: "10px 14px", borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: mine ? "#f97316" : colors.background.raised, color: mine ? "#000" : colors.text.primary, fontSize: "14px", alignSelf: mine ? "flex-end" : "flex-start", marginBottom: "8px" }),
   };
 
   const handleLogout = async () => { await signOutSafe(); navigate("/"); };
@@ -510,7 +513,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
         </nav>
         <div style={{ ...st.content, maxWidth: "700px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-            <Avatar person={j} size={72} bg="#1a2e1a" border="2px solid #f9731660" />
+            <Avatar person={j} size={72} bg="#f9731615" border="2px solid #f9731660" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
                 <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{j.prenom} {j.nom}</h1>
@@ -521,15 +524,15 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               </div>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                 {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
-                {j.categorie && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>{j.categorie}</span>}
-                {j.pied && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>Pied {j.pied.toLowerCase()}</span>}
-                {j.region && <span style={{ ...st.posteBadge(""), background: "#1a1a1a", color: "#aaa" }}>{j.region}</span>}
+                {j.categorie && <span style={{ ...st.posteBadge(""), background: colors.background.raised, color: colors.text.secondary }}>{j.categorie}</span>}
+                {j.pied && <span style={{ ...st.posteBadge(""), background: colors.background.raised, color: colors.text.secondary }}>Pied {j.pied.toLowerCase()}</span>}
+                {j.region && <span style={{ ...st.posteBadge(""), background: colors.background.raised, color: colors.text.secondary }}>{j.region}</span>}
               </div>
             </div>
           </div>
 
           {/* Radar chart */}
-          <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "1.5rem", background: "#111", border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.5rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "1.5rem", background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: "12px", padding: "1.5rem", flexWrap: "wrap" }}>
             <RadarChart j={j} size={180} />
             <div style={{ flex: 1, minWidth: "160px" }}>
               <p style={{ ...st.sectionTitle, margin: "0 0 1rem" }}>Performance globale</p>
@@ -541,10 +544,10 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               ].map(s => (
                 <div key={s.label} style={{ marginBottom: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                    <span style={{ fontSize: "12px", color: "#666" }}>{s.label}</span>
+                    <span style={{ fontSize: "12px", color: colors.text.faint }}>{s.label}</span>
                     <span style={{ fontSize: "12px", fontWeight: 700, color: s.color }}>{s.val}</span>
                   </div>
-                  <div style={{ background: "#1a1a1a", borderRadius: "4px", height: "5px" }}>
+                  <div style={{ background: colors.background.raised, borderRadius: "4px", height: "5px" }}>
                     <div style={{ background: s.color, width: `${Math.min((s.val / s.max) * 100, 100)}%`, height: "100%", borderRadius: "4px" }} />
                   </div>
                 </div>
@@ -569,9 +572,9 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           {j.niveau_equipe && (
             <>
               <p style={st.sectionTitle}>Club actuel</p>
-              <div style={{ background: "#1a1a1a", borderRadius: "8px", padding: "1rem" }}>
+              <div style={{ background: colors.background.raised, borderRadius: "8px", padding: "1rem" }}>
                 <p style={{ margin: 0, fontWeight: 500 }}>{j.club || "Non renseigné"}</p>
-                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#666" }}>{j.niveau_equipe}</p>
+                <p style={{ margin: "4px 0 0", fontSize: "13px", color: colors.text.faint }}>{j.niveau_equipe}</p>
               </div>
             </>
           )}
@@ -601,21 +604,21 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           {joueurParcours.length > 0 && (
             <>
               <p style={st.sectionTitle}>Parcours footballistique</p>
-              <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.25rem" }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: "12px", padding: "1.25rem" }}>
                 {joueurParcours.map((p, i) => (
                   <div key={p.id} style={{ display: "flex", gap: "14px" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
                       <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#f97316", marginTop: "5px", flexShrink: 0 }} />
-                      {i < joueurParcours.length - 1 && <div style={{ width: "1px", flex: 1, background: "#222", marginTop: "2px" }} />}
+                      {i < joueurParcours.length - 1 && <div style={{ width: "1px", flex: 1, background: colors.border.default, marginTop: "2px" }} />}
                     </div>
                     <div style={{ flex: 1, paddingBottom: i < joueurParcours.length - 1 ? "18px" : 0, display: "flex", alignItems: "center", gap: "10px" }}>
                       {p.logo_url
                         ? <img src={p.logo_url} alt={p.club} style={{ width: "26px", height: "26px", objectFit: "contain", flexShrink: 0 }} />
-                        : <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: getClubColor(p.club), display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 800, color: "#fff", flexShrink: 0 }}>{getClubInitials(p.club)}</div>
+                        : <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: getClubColor(p.club), display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 800, color: colors.text.primary, flexShrink: 0 }}>{getClubInitials(p.club)}</div>
                       }
                       <div>
                         <p style={{ fontWeight: 700, fontSize: "14px", margin: 0 }}>{p.club}</p>
-                        <p style={{ fontSize: "11px", color: "#555", margin: "2px 0 4px" }}>{[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
+                        <p style={{ fontSize: "11px", color: colors.text.faint, margin: "2px 0 4px" }}>{[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(" · ")}</p>
                         {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
                           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                             {p.matchs_joues > 0 && <span style={{ fontSize: "11px", color: "#f97316" }}>⚽ {p.matchs_joues} matchs</span>}
@@ -674,11 +677,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           )}
 
           {/* ── Validation note de saison ─────────────────────────────────── */}
-          <div style={{ marginTop: "2rem", background: "#0d1a0d", border: "1px solid #1e3a1e", borderRadius: "14px", padding: "1.5rem" }}>
+          <div style={{ marginTop: "2rem", background: "#f9731608", border: "1px solid #f9731630", borderRadius: "14px", padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: "#f97316" }}>✅ Notes de saison validées par votre club</p>
-                <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#555" }}>Prouvez que le joueur a joué pour vous (5 feuilles de match ou numéro de licence)</p>
+                <p style={{ margin: "4px 0 0", fontSize: "12px", color: colors.text.faint }}>Prouvez que le joueur a joué pour vous (5 feuilles de match ou numéro de licence)</p>
               </div>
               <button
                 onClick={() => { setValSaison('2024-2025'); setValNote(0); setValJustif('feuilles'); setValLicence(''); setValFeuilles(['','','','','']); setShowValidationModal(true); }}
@@ -687,14 +690,14 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             </div>
 
             {validationsClub.length === 0 ? (
-              <p style={{ margin: "1rem 0 0", fontSize: "13px", color: "#444", textAlign: "center" }}>Aucune note validée pour ce joueur</p>
+              <p style={{ margin: "1rem 0 0", fontSize: "13px", color: colors.text.ghost, textAlign: "center" }}>Aucune note validée pour ce joueur</p>
             ) : (
               <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "10px" }}>
                 {validationsClub.map(v => (
-                  <div key={v.id} style={{ background: "#111", border: "1px solid #1e2e1e", borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                  <div key={v.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                     <div>
                       <span style={{ fontWeight: 700, fontSize: "14px" }}>Saison {v.saison}</span>
-                      <span style={{ marginLeft: "10px", fontSize: "12px", color: "#555" }}>
+                      <span style={{ marginLeft: "10px", fontSize: "12px", color: colors.text.faint }}>
                         {v.justif_type === 'licence' ? `🪪 Licence · ${v.numero_licence_justif}` : `📄 ${(v.feuilles_match || []).length} feuilles`}
                       </span>
                     </div>
@@ -719,18 +722,18 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           {/* ── Modal validation ──────────────────────────────────────────── */}
           {showValidationModal && (
             <div onClick={() => setShowValidationModal(false)} style={{ position: "fixed", inset: 0, background: "#000000bb", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
-              <div onClick={e => e.stopPropagation()} style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: "16px", padding: "2rem", maxWidth: "480px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "16px", padding: "2rem", maxWidth: "480px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
                 <h3 style={{ margin: "0 0 4px", fontSize: "18px", fontWeight: 800 }}>Valider une note de saison</h3>
-                <p style={{ margin: "0 0 1.5rem", fontSize: "13px", color: "#666" }}>{j.prenom} {j.nom}</p>
+                <p style={{ margin: "0 0 1.5rem", fontSize: "13px", color: colors.text.faint }}>{j.prenom} {j.nom}</p>
 
                 {/* Saison */}
-                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "6px" }}>Saison</label>
-                <select value={valSaison} onChange={e => setValSaison(e.target.value)} style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", marginBottom: "1.25rem", boxSizing: "border-box" }}>
+                <label style={{ fontSize: "12px", color: colors.text.secondary, display: "block", marginBottom: "6px" }}>Saison</label>
+                <select value={valSaison} onChange={e => setValSaison(e.target.value)} style={{ width: "100%", background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: "8px", color: colors.text.primary, padding: "10px 12px", fontSize: "14px", marginBottom: "1.25rem", boxSizing: "border-box" }}>
                   {["2025-2026","2024-2025","2023-2024","2022-2023","2021-2022","2020-2021"].map(s => <option key={s}>{s}</option>)}
                 </select>
 
                 {/* Note */}
-                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Note pour cette saison</label>
+                <label style={{ fontSize: "12px", color: colors.text.secondary, display: "block", marginBottom: "8px" }}>Note pour cette saison</label>
                 <div style={{ display: "flex", gap: "6px", marginBottom: "1.25rem" }}>
                   {[1,2,3,4,5].map(n => (
                     <span
@@ -742,13 +745,13 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     >⭐</span>
                   ))}
                 </div>
-                {valNote > 0 && <p style={{ margin: "-0.75rem 0 1.25rem", fontSize: "13px", color: "#666" }}>{['','Très insuffisant','Insuffisant','Bien','Très bien','Excellent'][valNote]}</p>}
+                {valNote > 0 && <p style={{ margin: "-0.75rem 0 1.25rem", fontSize: "13px", color: colors.text.faint }}>{['','Très insuffisant','Insuffisant','Bien','Très bien','Excellent'][valNote]}</p>}
 
                 {/* Justification */}
-                <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Justification</label>
+                <label style={{ fontSize: "12px", color: colors.text.secondary, display: "block", marginBottom: "8px" }}>Justification</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem" }}>
                   {[{ val: 'feuilles', label: '📄 5 feuilles de match' }, { val: 'licence', label: '🪪 Numéro de licence' }].map(opt => (
-                    <button key={opt.val} onClick={() => setValJustif(opt.val)} style={{ flex: 1, background: valJustif === opt.val ? "#f9731615" : "#1a1a1a", border: `1px solid ${valJustif === opt.val ? "#f97316" : "#333"}`, color: valJustif === opt.val ? "#f97316" : "#aaa", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                    <button key={opt.val} onClick={() => setValJustif(opt.val)} style={{ flex: 1, background: valJustif === opt.val ? "#f9731615" : colors.background.raised, border: `1px solid ${valJustif === opt.val ? "#f97316" : colors.border.strong}`, color: valJustif === opt.val ? "#f97316" : colors.text.secondary, padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                       {opt.label}
                     </button>
                   ))}
@@ -756,11 +759,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
                 {valJustif === 'feuilles' && (
                   <div style={{ marginBottom: "1.25rem" }}>
-                    <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#666" }}>Upload tes 5 feuilles de match (photo ou PDF)</p>
+                    <p style={{ margin: "0 0 10px", fontSize: "12px", color: colors.text.faint }}>Upload tes 5 feuilles de match (photo ou PDF)</p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       {valFeuilles.map((url, i) => (
                         <label key={i} style={{ cursor: "pointer", gridColumn: i === 4 ? "1 / -1" : "auto" }}>
-                          <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#f9731608" : "#1a1a1a", borderColor: url ? "#f9731660" : "#2a2a2a", transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#f9731608" : colors.background.raised, borderColor: url ? "#f9731660" : colors.border.default, transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                             {valFeuillesUploading[i] ? (
                               <p style={{ margin: 0, fontSize: "12px", color: "#f97316" }}>⏳ Upload...</p>
                             ) : url ? (
@@ -770,13 +773,13 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                                   : <p style={{ margin: "0 0 4px", fontSize: "20px" }}>📄</p>
                                 }
                                 <p style={{ margin: "4px 0 0", fontSize: "10px", color: "#f97316", fontWeight: 700 }}>✓ Feuille #{i+1}</p>
-                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#444" }}>Changer</p>
+                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: colors.text.ghost }}>Changer</p>
                               </div>
                             ) : (
                               <div>
                                 <p style={{ margin: "0 0 4px", fontSize: "20px" }}>📋</p>
-                                <p style={{ margin: 0, fontSize: "11px", color: "#444", fontWeight: 600 }}>Feuille #{i+1}</p>
-                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#333" }}>JPG · PNG · PDF</p>
+                                <p style={{ margin: 0, fontSize: "11px", color: colors.text.ghost, fontWeight: 600 }}>Feuille #{i+1}</p>
+                                <p style={{ margin: "2px 0 0", fontSize: "10px", color: colors.border.strong }}>JPG · PNG · PDF</p>
                               </div>
                             )}
                           </div>
@@ -792,11 +795,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
                 {valJustif === 'licence' && (
                   <div style={{ marginBottom: "1.25rem" }}>
-                    <label style={{ fontSize: "12px", color: "#aaa", display: "block", marginBottom: "8px" }}>Document de licence (photo ou PDF)</label>
+                    <label style={{ fontSize: "12px", color: colors.text.secondary, display: "block", marginBottom: "8px" }}>Document de licence (photo ou PDF)</label>
 
                     {/* Zone upload */}
                     <label style={{ display: "block", cursor: "pointer" }}>
-                      <div style={{ border: "2px dashed #2a2a2a", borderRadius: "10px", padding: "20px", textAlign: "center", background: valLicenceUrl ? "#f9731608" : "#1a1a1a", borderColor: valLicenceUrl ? "#f9731660" : "#2a2a2a", transition: "all 0.2s" }}>
+                      <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: "10px", padding: "20px", textAlign: "center", background: valLicenceUrl ? "#f9731608" : colors.background.raised, borderColor: valLicenceUrl ? "#f9731660" : colors.border.default, transition: "all 0.2s" }}>
                         {valLicenceUploading ? (
                           <p style={{ margin: 0, fontSize: "13px", color: "#f97316" }}>⏳ Upload en cours...</p>
                         ) : valLicenceUrl ? (
@@ -805,13 +808,13 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                             {valLicenceUrl.match(/\.(jpg|jpeg|png|webp)$/i) && (
                               <img src={valLicenceUrl} alt="licence" style={{ maxHeight: "120px", maxWidth: "100%", borderRadius: "8px", marginTop: "6px" }} />
                             )}
-                            <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#555" }}>Clique pour changer</p>
+                            <p style={{ margin: "8px 0 0", fontSize: "11px", color: colors.text.faint }}>Clique pour changer</p>
                           </div>
                         ) : (
                           <div>
                             <p style={{ margin: "0 0 4px", fontSize: "22px" }}>📄</p>
-                            <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>Clique pour uploader la licence</p>
-                            <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#333" }}>JPG, PNG, PDF acceptés</p>
+                            <p style={{ margin: 0, fontSize: "13px", color: colors.text.faint }}>Clique pour uploader la licence</p>
+                            <p style={{ margin: "4px 0 0", fontSize: "11px", color: colors.border.strong }}>JPG, PNG, PDF acceptés</p>
                           </div>
                         )}
                       </div>
@@ -819,16 +822,16 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     </label>
 
                     <div style={{ margin: "12px 0 4px", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ flex: 1, height: "1px", background: "#2a2a2a" }} />
-                      <span style={{ fontSize: "11px", color: "#444" }}>ou renseigne le numéro</span>
-                      <div style={{ flex: 1, height: "1px", background: "#2a2a2a" }} />
+                      <div style={{ flex: 1, height: "1px", background: colors.border.default }} />
+                      <span style={{ fontSize: "11px", color: colors.text.ghost }}>ou renseigne le numéro</span>
+                      <div style={{ flex: 1, height: "1px", background: colors.border.default }} />
                     </div>
 
                     <input
                       value={valLicence}
                       onChange={e => setValLicence(e.target.value)}
                       placeholder="Numéro de licence FFF (ex: 123456789)"
-                      style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "13px", outline: "none", boxSizing: "border-box", marginTop: "4px" }}
+                      style={{ width: "100%", background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: "8px", color: colors.text.primary, padding: "10px 12px", fontSize: "13px", outline: "none", boxSizing: "border-box", marginTop: "4px" }}
                     />
                   </div>
                 )}
@@ -839,7 +842,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     disabled={valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)}
                     style={{ flex: 1, background: "#f97316", color: "#000", border: "none", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer", opacity: (valSending || valLicenceUploading || valFeuillesUploading.some(Boolean) || !valNote || (valJustif === 'feuilles' && valFeuilles.filter(f => f.trim()).length < 5) || (valJustif === 'licence' && !valLicence.trim() && !valLicenceUrl)) ? 0.4 : 1 }}
                   >{valSending ? "Validation..." : "✅ Valider cette note"}</button>
-                  <button onClick={() => setShowValidationModal(false)} style={{ background: "#1a1a1a", color: "#666", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
+                  <button onClick={() => setShowValidationModal(false)} style={{ background: colors.background.raised, color: colors.text.faint, border: `1px solid ${colors.border.default}`, padding: "12px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>Annuler</button>
                 </div>
               </div>
             </div>
@@ -859,7 +862,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <div style={{ width: "32px", height: "32px", background: "#f97316", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>⚡</div>
             <div>
               <div style={{ ...st.logo, fontSize: "1rem", letterSpacing: "2px" }}>DIGITAL FOOTBALL</div>
-              <div style={{ fontSize: "10px", color: "#555", letterSpacing: "1px", textTransform: "uppercase" }}>Scout Center</div>
+              <div style={{ fontSize: "10px", color: colors.text.faint, letterSpacing: "1px", textTransform: "uppercase" }}>Scout Center</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -867,10 +870,10 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <button onClick={() => setActiveTab("joueurs")} style={{ position: "relative", background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", padding: "4px 8px" }} title={`${nbNouveaux} nouveau${nbNouveaux > 1 ? "x" : ""} joueur${nbNouveaux > 1 ? "s" : ""} cette semaine`}>
               🔔
               {nbNouveaux > 0 && (
-                <span style={{ position: "absolute", top: "0", right: "0", background: "#ef4444", color: "#fff", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{nbNouveaux}</span>
+                <span style={{ position: "absolute", top: "0", right: "0", background: "#ef4444", color: colors.text.primary, borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{nbNouveaux}</span>
               )}
             </button>
-            <span style={{ fontSize: "13px", color: "#666" }}>{profilLocal?.prenom} {profilLocal?.nom}{profilLocal?.club ? ` · ${profilLocal.club}` : ""}</span>
+            <span style={{ fontSize: "13px", color: colors.text.faint }}>{profilLocal?.prenom} {profilLocal?.nom}{profilLocal?.club ? ` · ${profilLocal.club}` : ""}</span>
             <button style={st.logoutBtn} onClick={handleLogout}>Déconnexion</button>
           </div>
         </nav>
@@ -881,12 +884,12 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           <h1 style={{ margin: "0 0 4px", fontSize: "1.4rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Scout Center</h1>
           <div style={{ display: "flex", gap: "20px", alignItems: "center", marginTop: "8px", flexWrap: "wrap" }}>
             <span style={{ color: "#f97316", fontWeight: 700, fontSize: "13px" }}>⚽ {joueurs.length} joueur{joueurs.length !== 1 ? "s" : ""}</span>
-            <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+            <span style={{ color: colors.text.faint, fontSize: "13px" }}>•</span>
             <span style={{ color: "#4ade80", fontWeight: 600, fontSize: "13px" }}>📹 {joueurs.filter(j => j.clip_url).length} avec vidéo</span>
-            <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+            <span style={{ color: colors.text.faint, fontSize: "13px" }}>•</span>
             <span style={{ color: "#60a5fa", fontWeight: 600, fontSize: "13px" }}>★ {favoris.length} favoris</span>
             {nbNouveaux > 0 && <>
-              <span style={{ color: "#555", fontSize: "13px" }}>•</span>
+              <span style={{ color: colors.text.faint, fontSize: "13px" }}>•</span>
               <span style={{ color: "#f97316", fontWeight: 600, fontSize: "13px" }}>{nbNouveaux} nouveau{nbNouveaux > 1 ? "x" : ""} cette semaine</span>
             </>}
           </div>
@@ -915,25 +918,25 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 { label: "Favoris", val: favoris.length, sub: "joueurs suivis" },
                 { label: "Messages", val: conversations.length, sub: "conversations" },
               ].map(s => (
-                <div key={s.label} style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", textAlign: "center" }}>
+                <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", padding: "1.5rem", textAlign: "center" }}>
                   <p style={{ fontSize: "32px", fontWeight: 800, color: "#f97316", margin: "0 0 4px" }}>{s.val}</p>
                   <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{s.label}</p>
-                  <p style={{ fontSize: "12px", color: "#555", margin: "2px 0 0" }}>{s.sub}</p>
+                  <p style={{ fontSize: "12px", color: colors.text.faint, margin: "2px 0 0" }}>{s.sub}</p>
                 </div>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <button onClick={() => navigate("/jogabonito")}
-                style={{ background: "#111", border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
+                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
                 <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>🎬</p>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Jogabonito</p>
-                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Reels courts des joueurs</p>
+                <p style={{ fontSize: "13px", color: colors.text.faint, margin: 0 }}>Reels courts des joueurs</p>
               </button>
               <button onClick={() => navigate("/feed")}
-                style={{ background: "#111", border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: "#fff" }}>
+                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
                 <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>📋</p>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Feed Scout</p>
-                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Clips + stats des joueurs Pro</p>
+                <p style={{ fontSize: "13px", color: colors.text.faint, margin: 0 }}>Clips + stats des joueurs Pro</p>
               </button>
             </div>
           </div>
@@ -946,7 +949,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <div style={{ display: "flex", gap: "8px", marginBottom: "1rem", flexWrap: "wrap" }}>
               {POSTE_PILLS.map(p => (
                 <button key={p.val} onClick={() => { setPoste(p.val); setStyleDeJeu("Tous"); }}
-                  style={{ padding: "7px 14px", borderRadius: "20px", border: poste === p.val ? "none" : "1px solid #333", background: poste === p.val ? posteColor(p.val === "Tous" ? "" : p.val).text : "transparent", color: poste === p.val ? "#000" : "#aaa", fontWeight: poste === p.val ? 700 : 400, cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "5px" }}>
+                  style={{ padding: "7px 14px", borderRadius: "20px", border: poste === p.val ? "none" : `1px solid ${colors.border.strong}`, background: poste === p.val ? posteColor(p.val === "Tous" ? "" : p.val).text : "transparent", color: poste === p.val ? "#000" : colors.text.secondary, fontWeight: poste === p.val ? 700 : 400, cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "5px" }}>
                   <span>{p.icon}</span> {p.label}
                 </button>
               ))}
@@ -996,10 +999,10 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             {/* Barre résultats + toggle */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""}</p>
+                <p style={{ fontSize: "13px", color: colors.text.faint, margin: 0 }}>{filtered.length} joueur{filtered.length !== 1 ? "s" : ""}</p>
                 {(poste !== "Tous" || categorie !== "Toutes" || pied !== "Tous" || region !== "Toutes" || styleDeJeu !== "Tous" || ville || search) && (
                   <button onClick={() => { setPoste("Tous"); setCategorie("Toutes"); setPied("Tous"); setRegion("Toutes"); setStyleDeJeu("Tous"); setVille(""); setSearch(""); }}
-                    style={{ background: "transparent", border: "1px solid #333", color: "#aaa", padding: "3px 10px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>
+                    style={{ background: "transparent", border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, padding: "3px 10px", borderRadius: "6px", fontSize: "11px", cursor: "pointer" }}>
                     ✕ Réinitialiser
                   </button>
                 )}
@@ -1007,7 +1010,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <div style={{ display: "flex", gap: "4px" }}>
                 {["grille", "liste"].map(m => (
                   <button key={m} onClick={() => setModeAffichage(m)}
-                    style={{ background: modeAffichage === m ? "#f97316" : "transparent", border: "1px solid #333", color: modeAffichage === m ? "#000" : "#666", padding: "5px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
+                    style={{ background: modeAffichage === m ? "#f97316" : "transparent", border: `1px solid ${colors.border.strong}`, color: modeAffichage === m ? "#000" : colors.text.faint, padding: "5px 10px", borderRadius: "6px", cursor: "pointer", fontSize: "14px" }}>
                     {m === "grille" ? "⊞" : "☰"}
                   </button>
                 ))}
@@ -1022,9 +1025,9 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                   const pc = posteColor(j.poste);
                   return (
                   <div key={j.id}
-                    style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", overflow: "hidden", position: "relative", transition: "border-color 0.2s" }}
+                    style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "16px", overflow: "hidden", position: "relative", transition: "border-color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = "#f9731640"}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = "#1a1a1a"}>
+                    onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
 
                     {/* Bande colorée en haut selon le poste */}
                     <div style={{ height: "3px", background: pc.text, width: "100%" }} />
@@ -1038,15 +1041,15 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     <div style={{ padding: "16px" }}>
                       {/* Avatar + nom */}
                       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", marginTop: (j.clip_url || j.poste) ? "8px" : "0" }}>
-                        <Avatar person={j} size={44} bg="#1a2e1a" border="2px solid #f9731630" textColor="#f97316" />
+                        <Avatar person={j} size={44} bg="#f9731615" border="2px solid #f9731630" textColor="#f97316" />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                            <p style={{ fontWeight: 700, color: "#fff", fontSize: "14px", margin: 0 }}>{j.prenom} {j.nom}</p>
+                            <p style={{ fontWeight: 700, color: colors.text.primary, fontSize: "14px", margin: 0 }}>{j.prenom} {j.nom}</p>
                             {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>NEW</span>}
                             {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "10px", padding: "1px 6px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>Contacté</span>}
                             {certifications[j.id] && <span style={{ background: "#f0c03020", color: "#f0c030", fontSize: "10px", fontWeight: 700, padding: "1px 7px", borderRadius: "20px", border: "1px solid #f0c03050" }}>⭐ Certifié {certifications[j.id].niveau}</span>}
                           </div>
-                          <div style={{ color: "#555", fontSize: "12px" }}>{j.categorie || "—"}{j.region ? ` · ${j.region}` : ""}</div>
+                          <div style={{ color: colors.text.faint, fontSize: "12px" }}>{j.categorie || "—"}{j.region ? ` · ${j.region}` : ""}</div>
                         </div>
                       </div>
 
@@ -1058,30 +1061,30 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                       )}
 
                       {/* Stats en ligne */}
-                      <div style={{ display: "flex", background: "#0a0a0a", borderRadius: "10px", marginBottom: "14px", overflow: "hidden" }}>
+                      <div style={{ display: "flex", background: colors.background.base, borderRadius: "10px", marginBottom: "14px", overflow: "hidden" }}>
                         {[
                           { label: "Buts", value: j.buts_total || 0 },
                           { label: "Passes", value: j.passes_decisives || 0 },
                           { label: "Matchs", value: j.matchs_officiel || 0 },
                         ].map((s, i) => (
-                          <div key={s.label} style={{ flex: 1, padding: "10px 4px", textAlign: "center", borderRight: i < 2 ? "1px solid #1a1a1a" : "none" }}>
-                            <div style={{ fontSize: "18px", fontWeight: 800, color: s.value > 0 ? "#f97316" : "#333" }}>{s.value}</div>
-                            <div style={{ fontSize: "10px", color: "#555", marginTop: "2px" }}>{s.label}</div>
+                          <div key={s.label} style={{ flex: 1, padding: "10px 4px", textAlign: "center", borderRight: i < 2 ? `1px solid ${colors.border.default}` : "none" }}>
+                            <div style={{ fontSize: "18px", fontWeight: 800, color: s.value > 0 ? "#f97316" : colors.border.strong }}>{s.value}</div>
+                            <div style={{ fontSize: "10px", color: colors.text.faint, marginTop: "2px" }}>{s.label}</div>
                           </div>
                         ))}
                       </div>
 
                       {/* Actions */}
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <button onClick={() => ouvrirProfilJoueur(j)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>
+                        <button onClick={() => ouvrirProfilJoueur(j)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", background: "#f97316", color: colors.text.primary, fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>
                           Profil →
                         </button>
                         <button
                           onClick={() => { toggleFavori(j.id); showToast(isFavori(j.id) ? "Retiré des favoris" : `${j.prenom} ajouté aux favoris`); }}
-                          style={{ width: 38, height: 38, borderRadius: "10px", border: `1px solid ${isFavori(j.id) ? "#f97316" : "#222"}`, background: isFavori(j.id) ? "#f9731620" : "transparent", color: isFavori(j.id) ? "#f97316" : "#555", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          style={{ width: 38, height: 38, borderRadius: "10px", border: `1px solid ${isFavori(j.id) ? "#f97316" : colors.border.default}`, background: isFavori(j.id) ? "#f9731620" : "transparent", color: isFavori(j.id) ? "#f97316" : colors.text.faint, cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {isFavori(j.id) ? "★" : "☆"}
                         </button>
-                        <button onClick={() => setMessageModal(j)} style={{ width: 38, height: 38, borderRadius: "10px", border: "1px solid #222", background: "transparent", color: "#555", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <button onClick={() => setMessageModal(j)} style={{ width: 38, height: 38, borderRadius: "10px", border: `1px solid ${colors.border.default}`, background: "transparent", color: colors.text.faint, cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           💬
                         </button>
                       </div>
@@ -1095,19 +1098,19 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {filtered.map(j => (
                   <div key={j.id} style={{ ...st.card, padding: "12px 16px", display: "flex", alignItems: "center", gap: "14px" }}>
-                    <Avatar person={j} size={40} bg="#1a2e1a" />
+                    <Avatar person={j} size={40} bg="#f9731615" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: "14px" }}>{j.prenom} {j.nom}</p>
                         {isNouveau(j) && <span style={{ background: "#f97316", color: "#000", fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "20px" }}>NEW</span>}
                         {aEteContacte(j.id) && <span style={{ background: "#60a5fa20", color: "#60a5fa", fontSize: "9px", padding: "1px 5px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓</span>}
                       </div>
-                      <p style={{ margin: "1px 0 0", fontSize: "11px", color: "#555" }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
+                      <p style={{ margin: "1px 0 0", fontSize: "11px", color: colors.text.faint }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
                     </div>
-                    <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: "#666" }}>
-                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.buts_total || 0} <span style={{ color: "#555", fontWeight: 400 }}>buts</span></span>
-                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.passes_decisives || 0} <span style={{ color: "#555", fontWeight: 400 }}>passes</span></span>
-                      <span style={{ color: "#60a5fa", fontWeight: 700 }}>{j.matchs_officiel || 0} <span style={{ color: "#555", fontWeight: 400 }}>matchs</span></span>
+                    <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: colors.text.faint }}>
+                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.buts_total || 0} <span style={{ color: colors.text.faint, fontWeight: 400 }}>buts</span></span>
+                      <span style={{ color: "#f97316", fontWeight: 700 }}>{j.passes_decisives || 0} <span style={{ color: colors.text.faint, fontWeight: 400 }}>passes</span></span>
+                      <span style={{ color: "#60a5fa", fontWeight: 700 }}>{j.matchs_officiel || 0} <span style={{ color: colors.text.faint, fontWeight: 400 }}>matchs</span></span>
                     </div>
                     <div style={{ display: "flex", gap: "6px" }}>
                       <button style={{ ...st.btnPrimary, flex: "none", padding: "6px 14px" }} onClick={() => ouvrirProfilJoueur(j)}>Profil</button>
@@ -1128,25 +1131,25 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               {["Tous", ...dossiers].map(d => (
                 <button key={d} onClick={() => setDossierActif(d)}
-                  style={{ padding: "6px 14px", borderRadius: "20px", border: dossierActif === d ? "none" : "1px solid #333", background: dossierActif === d ? "#f97316" : "transparent", color: dossierActif === d ? "#000" : "#aaa", fontWeight: dossierActif === d ? 600 : 400, cursor: "pointer", fontSize: "13px" }}>
+                  style={{ padding: "6px 14px", borderRadius: "20px", border: dossierActif === d ? "none" : `1px solid ${colors.border.strong}`, background: dossierActif === d ? "#f97316" : "transparent", color: dossierActif === d ? "#000" : colors.text.secondary, fontWeight: dossierActif === d ? 600 : 400, cursor: "pointer", fontSize: "13px" }}>
                   {d} {d !== "Tous" ? `(${favoris.filter(f => f.dossier === d).length})` : `(${favoris.length})`}
                 </button>
               ))}
             </div>
 
             {favoris.length === 0 ? (
-              <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>☆</p><p>Aucun favori pour l'instant.<br /><span style={{ fontSize: "13px", color: "#444" }}>Cliquez sur ☆ depuis la liste des joueurs.</span></p></div>
+              <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>☆</p><p>Aucun favori pour l'instant.<br /><span style={{ fontSize: "13px", color: colors.text.ghost }}>Cliquez sur ☆ depuis la liste des joueurs.</span></p></div>
             ) : (
               <div style={st.grid}>
                 {joueurs.filter(j => isFavori(j.id) && (dossierActif === "Tous" || favoris.find(f => f.joueur_id === j.id)?.dossier === dossierActif)).map(j => {
                   const fav = favoris.find(f => f.joueur_id === j.id);
                   return (
-                    <div key={j.id} style={{ ...st.card, border: "1px solid #1a3a1a" }}>
+                    <div key={j.id} style={{ ...st.card, border: "1px solid #f9731630" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-                        <Avatar person={j} size={44} bg="#1a2e1a" />
+                        <Avatar person={j} size={44} bg="#f9731615" />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: "15px", fontWeight: 600, margin: "0 0 2px" }}>{j.prenom} {j.nom}</p>
-                          <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
+                          <p style={{ fontSize: "12px", color: colors.text.faint, margin: 0 }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
                         </div>
                         <span style={{ background: "#f9731620", color: "#f97316", fontSize: "11px", padding: "2px 8px", borderRadius: "20px", flexShrink: 0 }}>{fav?.dossier || "Général"}</span>
                       </div>
@@ -1186,7 +1189,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           const avecVideo = joueurs.filter(j => j.clip_url);
           return (
             <div>
-              <p style={{ fontSize: "13px", color: "#555", marginBottom: "1.5rem" }}>{avecVideo.length} vidéo{avecVideo.length !== 1 ? "s" : ""} disponible{avecVideo.length !== 1 ? "s" : ""}</p>
+              <p style={{ fontSize: "13px", color: colors.text.faint, marginBottom: "1.5rem" }}>{avecVideo.length} vidéo{avecVideo.length !== 1 ? "s" : ""} disponible{avecVideo.length !== 1 ? "s" : ""}</p>
               {avecVideo.length === 0 ? (
                 <div style={st.emptyState}><p style={{ fontSize: "2rem" }}>🎬</p><p>Aucune vidéo pour l'instant.</p></div>
               ) : (
@@ -1198,7 +1201,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     return (
                       <div key={j.id} style={st.card}>
                         {/* Thumbnail */}
-                        <div onClick={() => ouvrirProfilJoueur(j)} style={{ borderRadius: "8px", overflow: "hidden", marginBottom: "12px", cursor: "pointer", position: "relative", aspectRatio: "16/9", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div onClick={() => ouvrirProfilJoueur(j)} style={{ borderRadius: "8px", overflow: "hidden", marginBottom: "12px", cursor: "pointer", position: "relative", aspectRatio: "16/9", background: colors.background.raised, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {thumb ? (
                             <img src={thumb} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} onError={e => { e.target.style.display = "none"; }} />
                           ) : isVeoUrl ? (
@@ -1219,10 +1222,10 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                          <Avatar person={j} size={36} bg="#1a2e1a" />
+                          <Avatar person={j} size={36} bg="#f9731615" />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: "14px" }}>{j.prenom} {j.nom}</p>
-                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#555" }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
+                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: colors.text.faint }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ""}</p>
                           </div>
                           <span style={st.posteBadge(j.poste)}>{j.poste}</span>
                         </div>
@@ -1243,21 +1246,21 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
         {activeTab === "messages" && (
           <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "16px", minHeight: "500px" }}>
             {/* Sidebar conversations */}
-            <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", overflow: "hidden" }}>
-              <div style={{ padding: "1rem", borderBottom: "1px solid #222" }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", overflow: "hidden" }}>
+              <div style={{ padding: "1rem", borderBottom: `1px solid ${colors.border.default}` }}>
                 <p style={{ margin: 0, fontWeight: 600, color: "#f97316", fontSize: "14px" }}>💬 Conversations</p>
               </div>
               {conversations.length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "#555", fontSize: "13px" }}>
+                <div style={{ padding: "2rem", textAlign: "center", color: colors.text.faint, fontSize: "13px" }}>
                   <p>Aucun message.</p>
                   <p style={{ marginTop: "8px" }}>Contactez un joueur depuis son profil.</p>
                 </div>
               ) : (
                 conversations.map(conv => (
                   <div key={conv.otherId} onClick={() => ouvrirConversation(conv)}
-                    style={{ padding: "12px 1rem", borderBottom: "1px solid #1a1a1a", cursor: "pointer", background: convActive?.otherId === conv.otherId ? "#f9731610" : "transparent", borderLeft: convActive?.otherId === conv.otherId ? "2px solid #f97316" : "2px solid transparent" }}>
+                    style={{ padding: "12px 1rem", borderBottom: `1px solid ${colors.border.default}`, cursor: "pointer", background: convActive?.otherId === conv.otherId ? "#f9731610" : "transparent", borderLeft: convActive?.otherId === conv.otherId ? "2px solid #f97316" : "2px solid transparent" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "11px", flexShrink: 0 }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#f9731615", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "11px", flexShrink: 0 }}>
                         {(conv.other?.prenom || "?")[0]}{(conv.other?.nom || "?")[0]}
                       </div>
                       <div style={{ minWidth: 0 }}>
@@ -1267,18 +1270,18 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                         </p>
                       </div>
                     </div>
-                    <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.msgs[0]?.content}</p>
+                    <p style={{ margin: "6px 0 0", fontSize: "12px", color: colors.text.faint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.msgs[0]?.content}</p>
                   </div>
                 ))
               )}
             </div>
 
             {/* Zone de chat */}
-            <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", display: "flex", flexDirection: "column" }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", display: "flex", flexDirection: "column" }}>
               {convActive ? (
                 <>
-                  <div style={{ padding: "1rem", borderBottom: "1px solid #222", display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "13px" }}>
+                  <div style={{ padding: "1rem", borderBottom: `1px solid ${colors.border.default}`, display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#f9731615", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "13px" }}>
                       {(convActive.other?.prenom || "?")[0]}{(convActive.other?.nom || "?")[0]}
                     </div>
                     <div>
@@ -1291,7 +1294,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
                   <div style={{ flex: 1, padding: "1rem", overflowY: "auto", display: "flex", flexDirection: "column", minHeight: "300px" }}>
                     {convMessages.length === 0 ? (
-                      <div style={{ margin: "auto", textAlign: "center", color: "#555" }}>
+                      <div style={{ margin: "auto", textAlign: "center", color: colors.text.faint }}>
                         <p>Début de la conversation</p>
                       </div>
                     ) : (
@@ -1306,9 +1309,9 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                     )}
                   </div>
 
-                  <div style={{ padding: "1rem", borderTop: "1px solid #222", display: "flex", gap: "8px" }}>
+                  <div style={{ padding: "1rem", borderTop: `1px solid ${colors.border.default}`, display: "flex", gap: "8px" }}>
                     <input
-                      style={{ flex: 1, background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "10px 12px", fontSize: "14px", outline: "none" }}
+                      style={{ flex: 1, background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: "8px", color: colors.text.primary, padding: "10px 12px", fontSize: "14px", outline: "none" }}
                       placeholder="Écrire un message..."
                       value={newMessage}
                       onChange={e => setNewMessage(e.target.value)}
@@ -1318,7 +1321,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                   </div>
                 </>
               ) : (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#555", flexDirection: "column", gap: "8px" }}>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: colors.text.faint, flexDirection: "column", gap: "8px" }}>
                   <p style={{ fontSize: "2rem" }}>💬</p>
                   <p>Sélectionnez une conversation</p>
                 </div>
@@ -1335,18 +1338,18 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
         {activeTab === "profil" && (
           <div style={{ maxWidth: "680px", margin: "0 auto" }}>
             <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "6px" }}>Mon Profil</h2>
-            <p style={{ fontSize: "13px", color: "#555", marginBottom: "2rem" }}>Ces informations sont visibles par les joueurs Pro qui reçoivent vos messages.</p>
+            <p style={{ fontSize: "13px", color: colors.text.faint, marginBottom: "2rem" }}>Ces informations sont visibles par les joueurs Pro qui reçoivent vos messages.</p>
 
             {/* Avatar */}
-            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "20px" }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "16px", padding: "24px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "20px" }}>
               <div style={{ position: "relative", flexShrink: 0 }}>
                 {profilLocal?.avatar_url
                   ? <img src={profilLocal.avatar_url} alt="" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid #f9731640" }} />
-                  : <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 800, color: "#f97316" }}>
+                  : <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#f9731615", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 800, color: "#f97316" }}>
                       {(profilEdit.prenom || "?")[0]}{(profilEdit.nom || "?")[0]}
                     </div>
                 }
-                <label style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", background: "#f97316", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: avatarUploading ? "wait" : "pointer", border: "2px solid #0a0a0a", fontSize: "11px" }}>
+                <label style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", background: "#f97316", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: avatarUploading ? "wait" : "pointer", border: `2px solid ${colors.background.base}`, fontSize: "11px" }}>
                   {avatarUploading ? "…" : "✎"}
                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
@@ -1358,20 +1361,20 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
             </div>
 
             {/* Formulaire */}
-            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Prénom</label>
+                  <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Prénom</label>
                   <input value={profilEdit.prenom} onChange={e => setProfilEdit(p => ({ ...p, prenom: e.target.value }))} style={st.searchInput} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Nom</label>
+                  <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Nom</label>
                   <input value={profilEdit.nom} onChange={e => setProfilEdit(p => ({ ...p, nom: e.target.value }))} style={st.searchInput} />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Type de profil</label>
+                <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Type de profil</label>
                 <select value={profilEdit.type_recruteur} onChange={e => setProfilEdit(p => ({ ...p, type_recruteur: e.target.value }))} style={st.select}>
                   <option value="">— Choisir —</option>
                   {["Club professionnel", "Club amateur", "Agent FIFA", "Scout indépendant", "Détecteur", "Centre de formation"].map(t => <option key={t}>{t}</option>)}
@@ -1380,27 +1383,27 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Club / Agence</label>
+                  <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Club / Agence</label>
                   <input value={profilEdit.club} onChange={e => setProfilEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex : AS Monaco, SL Benfica..." style={st.searchInput} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Région</label>
+                  <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Région</label>
                   <input value={profilEdit.region} onChange={e => setProfilEdit(p => ({ ...p, region: e.target.value }))} placeholder="Ex : Île-de-France..." style={st.searchInput} />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Présentation</label>
+                <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Présentation</label>
                 <textarea value={profilEdit.description} onChange={e => setProfilEdit(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Qui êtes-vous ? Depuis combien de temps dans le recrutement..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Ce que je recherche</label>
+                <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Ce que je recherche</label>
                 <textarea value={profilEdit.recherche_profil} onChange={e => setProfilEdit(p => ({ ...p, recherche_profil: e.target.value }))} rows={3} placeholder="Ex : Milieu U20 évoluant en Régional 1, capable de jouer en profondeur..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
               </div>
 
               <button onClick={handleSaveProfil} disabled={savingProfil}
-                style={{ background: savingProfil ? "#333" : "#f97316", color: savingProfil ? "#666" : "#000", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: savingProfil ? "not-allowed" : "pointer", alignSelf: "flex-start" }}>
+                style={{ background: savingProfil ? colors.border.strong : "#f97316", color: savingProfil ? colors.text.faint : "#000", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: savingProfil ? "not-allowed" : "pointer", alignSelf: "flex-start" }}>
                 {savingProfil ? "Enregistrement..." : "✓ Sauvegarder"}
               </button>
             </div>
@@ -1416,7 +1419,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
           <div style={st.modal} onClick={e => e.stopPropagation()}>
             <button style={{ ...st.btnSecondary, float: "right" }} onClick={() => setMessageModal(null)}>✕</button>
             <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Contacter {messageModal.prenom} {messageModal.nom}</h2>
-            <p style={{ fontSize: "13px", color: "#666", margin: "0 0 1.5rem" }}>{messageModal.poste} · {messageModal.categorie}</p>
+            <p style={{ fontSize: "13px", color: colors.text.faint, margin: "0 0 1.5rem" }}>{messageModal.poste} · {messageModal.categorie}</p>
             {messageSent ? (
               <div style={{ textAlign: "center", padding: "2rem", color: "#f97316" }}><p style={{ fontSize: "2rem" }}>✓</p><p>Message envoyé !</p></div>
             ) : (
@@ -1440,6 +1443,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
 // ── Composant Contact Coach ─────────────────────────────────────────────────
 function CoachContact({ coaches, userId, contacterCoach, chargerConversations, setActiveTab, ouvrirConversation, conversations, st }) {
+  const colors = useColors();
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
@@ -1462,18 +1466,18 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
 
   if (coaches.length === 0) {
     return (
-      <div style={{ background: "#111", border: "1px dashed #333", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#555" }}>
+      <div style={{ background: colors.background.surface, border: `1px dashed ${colors.border.strong}`, borderRadius: "12px", padding: "3rem", textAlign: "center", color: colors.text.faint }}>
         <p style={{ fontSize: "3rem", margin: "0 0 1rem" }}>🎙️</p>
-        <p style={{ fontSize: "1.1rem", color: "#555" }}>Aucun coach disponible pour l'instant.</p>
+        <p style={{ fontSize: "1.1rem", color: colors.text.faint }}>Aucun coach disponible pour l'instant.</p>
       </div>
     );
   }
 
   return (
     <div style={{ maxWidth: "600px" }}>
-      <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem", marginBottom: "1.5rem" }}>
+      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", padding: "1.5rem", marginBottom: "1.5rem" }}>
         <h2 style={{ margin: "0 0 4px", fontSize: "1.1rem", fontWeight: 700 }}>🎙️ Contacter notre coach expert</h2>
-        <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>Posez vos questions sur un joueur ou demandez une collaboration.</p>
+        <p style={{ margin: 0, fontSize: "13px", color: colors.text.faint }}>Posez vos questions sur un joueur ou demandez une collaboration.</p>
       </div>
 
       {/* Sélection coach */}
@@ -1481,14 +1485,14 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
         {coaches.map(coach => (
           <div key={coach.id}
             onClick={() => setSelectedCoach(coach)}
-            style={{ background: "#111", border: `1px solid ${selectedCoach?.id === coach.id ? "#f97316" : "#222"}`, borderRadius: "12px", padding: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#1a1a0a", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px", flexShrink: 0 }}>
+            style={{ background: colors.background.surface, border: `1px solid ${selectedCoach?.id === coach.id ? "#f97316" : colors.border.default}`, borderRadius: "12px", padding: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#f9731615", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", fontWeight: 700, fontSize: "16px", flexShrink: 0 }}>
               {(coach.prenom || "C")[0]}{(coach.nom || "")[0]}
             </div>
             <div>
               <p style={{ margin: 0, fontWeight: 600 }}>{coach.prenom} {coach.nom}</p>
               <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#f97316" }}>🎙️ Coach Expert</p>
-              {coach.club && <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#666" }}>{coach.club}</p>}
+              {coach.club && <p style={{ margin: "2px 0 0", fontSize: "12px", color: colors.text.faint }}>{coach.club}</p>}
             </div>
             {selectedCoach?.id === coach.id && <span style={{ marginLeft: "auto", color: "#f97316", fontSize: "18px" }}>✓</span>}
           </div>
@@ -1497,8 +1501,8 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
 
       {/* Message */}
       {selectedCoach && (
-        <div style={{ background: "#111", border: "1px solid #222", borderRadius: "12px", padding: "1.5rem" }}>
-          <label style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "8px" }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", padding: "1.5rem" }}>
+          <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "8px" }}>
             Votre message à {selectedCoach.prenom}
           </label>
           {sent ? (
@@ -1509,7 +1513,7 @@ function CoachContact({ coaches, userId, contacterCoach, chargerConversations, s
           ) : (
             <>
               <textarea
-                style={{ width: "100%", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "#fff", padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "140px", boxSizing: "border-box", fontFamily: "inherit" }}
+                style={{ width: "100%", background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: "8px", color: colors.text.primary, padding: "12px", fontSize: "14px", resize: "vertical", minHeight: "140px", boxSizing: "border-box", fontFamily: "inherit" }}
                 placeholder={`Bonjour ${selectedCoach.prenom}, je souhaitais vous contacter au sujet de...`}
                 value={message}
                 onChange={e => setMessage(e.target.value)}
