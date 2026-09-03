@@ -4,6 +4,8 @@ import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
 import { labelCategorie } from '../../lib/categories'
 import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
+import { saisonActuelle } from '../../lib/saison'
+import PlanificationAnnuelle from './PlanificationAnnuelle'
 
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
@@ -19,23 +21,6 @@ const PHASES = [
   { val: 'transition_def', label: 'Transition défensive' },
   { val: 'coups_pied_arretes', label: 'Coups de pied arrêtés' },
 ]
-
-const TYPE_PERIODE = {
-  preparation: { label: 'Préparation', couleur: '#f59e0b' },
-  competition: { label: 'Compétition', couleur: '#4ade80' },
-  treve: { label: 'Trêve', couleur: '#3b82f6' },
-  reprise: { label: 'Reprise', couleur: '#a78bfa' },
-}
-
-// Saison française (juillet → juin) : en juillet/août on est déjà sur la
-// saison qui commence, sinon sur celle en cours depuis l'automne précédent.
-const saisonActuelle = () => {
-  const d = new Date()
-  const y = d.getFullYear()
-  return d.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`
-}
-
-const dateFr = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 
 function PlaceholderAVenir({ couleur, texte }) {
   return (
@@ -118,164 +103,6 @@ function SectionPrincipes({ pole, clubId, readOnly }) {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-const PERIODE_VIDE = (saison) => ({ periode_nom: '', date_debut: '', date_fin: '', type: 'competition', objectif_technique: '', objectif_physique: '', objectif_mental: '', objectif_tactique: '', saison })
-
-function SectionPlanification({ pole, clubId, readOnly }) {
-  const colors = useColors()
-  const [periodes, setPeriodes] = useState([])
-  const [periodeActive, setPeriodeActive] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(PERIODE_VIDE(saisonActuelle()))
-
-  const charger = async () => {
-    const { data } = await supabase.from('planification_annuelle').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('date_debut')
-    setPeriodes(data || [])
-  }
-  useEffect(() => { charger() }, [pole.key, clubId])
-
-  const ouvrirNouvelle = () => { setPeriodeActive(null); setForm(PERIODE_VIDE(saisonActuelle())); setShowForm(true) }
-  const ouvrirEdition = (p) => { setPeriodeActive(p); setForm(p); setShowForm(true) }
-
-  const sauvegarder = async () => {
-    if (periodeActive) {
-      await supabase.from('planification_annuelle').update(form).eq('id', periodeActive.id)
-    } else {
-      await supabase.from('planification_annuelle').insert({ ...form, club_id: clubId, pole_key: pole.key })
-    }
-    setShowForm(false)
-    setPeriodeActive(null)
-    charger()
-  }
-
-  const supprimer = async (id) => {
-    await supabase.from('planification_annuelle').delete().eq('id', id)
-    setShowForm(false)
-    setPeriodeActive(null)
-    charger()
-  }
-
-  const objectifs = (p) => [
-    { label: 'Technique', val: p.objectif_technique, couleur: '#3b82f6' },
-    { label: 'Physique', val: p.objectif_physique, couleur: '#f97316' },
-    { label: 'Mental', val: p.objectif_mental, couleur: '#a78bfa' },
-    { label: 'Tactique', val: p.objectif_tactique, couleur: '#4ade80' },
-  ]
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <span style={{ color: colors.text.faint, fontSize: 13 }}>Saison {saisonActuelle()}</span>
-        {!readOnly && (
-          <button onClick={ouvrirNouvelle} style={{ background: pole.couleur, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
-            + Ajouter une période
-          </button>
-        )}
-      </div>
-
-      {periodes.length === 0 ? (
-        <PlaceholderAVenir couleur={pole.couleur} texte="Aucune période planifiée pour ce pôle." />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {periodes.map(p => {
-            const cfg = TYPE_PERIODE[p.type]
-            return (
-              <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${cfg.couleur}33`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ background: cfg.couleur + '22', color: cfg.couleur, borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 800 }}>{cfg.label}</span>
-                    <span style={{ color: colors.text.primary, fontWeight: 700 }}>{p.periode_nom}</span>
-                    <span style={{ color: colors.text.faint, fontSize: 11 }}>{dateFr(p.date_debut)} → {dateFr(p.date_fin)}</span>
-                  </div>
-                  {!readOnly && (
-                    <button onClick={() => ouvrirEdition(p)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '4px 10px', color: colors.text.faint, fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      Modifier
-                    </button>
-                  )}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
-                  {objectifs(p).map((obj, i) => (
-                    <div key={i} style={{ background: colors.background.base, borderRadius: 8, padding: 10 }}>
-                      <div style={{ color: obj.couleur, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>{obj.label}</div>
-                      <div style={{ color: obj.val ? colors.text.secondary : colors.text.faint, fontSize: 11, lineHeight: 1.4, fontStyle: obj.val ? 'normal' : 'italic' }}>
-                        {obj.val || 'Non défini'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {showForm && (
-        <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 28, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: 16, fontWeight: 700 }}>
-              {periodeActive ? 'Modifier la période' : 'Nouvelle période'}
-            </h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <input value={form.periode_nom} onChange={e => setForm(f => ({ ...f, periode_nom: e.target.value }))}
-                placeholder="Nom (ex: Préparation estivale)"
-                style={{ gridColumn: '1 / -1', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '10px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
-              <input type="date" value={form.date_debut} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))}
-                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '10px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
-              <input type="date" value={form.date_fin} onChange={e => setForm(f => ({ ...f, date_fin: e.target.value }))}
-                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '10px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              {Object.entries(TYPE_PERIODE).map(([val, cfg]) => (
-                <button key={val} onClick={() => setForm(f => ({ ...f, type: val }))}
-                  style={{
-                    flex: '1 1 100px', padding: 7, borderRadius: 8, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    background: form.type === val ? cfg.couleur + '22' : 'transparent',
-                    borderColor: form.type === val ? cfg.couleur : colors.border.default,
-                    color: form.type === val ? cfg.couleur : colors.text.faint,
-                  }}>
-                  {cfg.label}
-                </button>
-              ))}
-            </div>
-
-            {[
-              { key: 'objectif_technique', label: 'Objectif Technique' },
-              { key: 'objectif_physique', label: 'Objectif Physique' },
-              { key: 'objectif_mental', label: 'Objectif Mental' },
-              { key: 'objectif_tactique', label: 'Objectif Tactique' },
-            ].map(obj => (
-              <div key={obj.key} style={{ marginBottom: 10 }}>
-                <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{obj.label}</div>
-                <textarea value={form[obj.key] || ''} onChange={e => setForm(f => ({ ...f, [obj.key]: e.target.value }))}
-                  placeholder="Décrire l'objectif..." rows={2}
-                  style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 12px', color: colors.text.primary, fontSize: 12, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
-              </div>
-            ))}
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', marginTop: 16 }}>
-              {periodeActive ? (
-                <button onClick={() => supprimer(periodeActive.id)} style={{ background: 'transparent', color: colors.accent.red, border: `1px solid ${colors.accent.red}44`, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 700 }}>
-                  Supprimer
-                </button>
-              ) : <span />}
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowForm(false)} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontWeight: 700 }}>
-                  Annuler
-                </button>
-                <button onClick={sauvegarder} disabled={!form.periode_nom || !form.date_debut || !form.date_fin}
-                  style={{ background: pole.couleur, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 800, cursor: 'pointer', opacity: (!form.periode_nom || !form.date_debut || !form.date_fin) ? 0.5 : 1 }}>
-                  Sauvegarder
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -388,6 +215,13 @@ function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
   const equipesDuPole = categories.filter(c => pole.categories.includes(c.nom))
+  // La planification annuelle est propre à chaque catégorie précise (un U15 et
+  // un U16 n'ont pas le même contenu de saison), pas au pôle dans son ensemble.
+  const [categorieActive, setCategorieActive] = useState(equipesDuPole[0]?.nom || null)
+  useEffect(() => {
+    if (!equipesDuPole.some(c => c.nom === categorieActive)) setCategorieActive(equipesDuPole[0]?.nom || null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pole.key])
 
   return (
     <div>
@@ -440,7 +274,29 @@ function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
         )
       )}
       {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly={readOnly} />}
-      {onglet === 'planification' && <SectionPlanification pole={pole} clubId={clubId} readOnly={readOnly} />}
+      {onglet === 'planification' && (
+        equipesDuPole.length === 0 ? (
+          <PlaceholderAVenir couleur={pole.couleur} texte="Aucune équipe créée dans ce pôle pour l'instant. Ajoute une catégorie depuis Sportif → Catégories." />
+        ) : (
+          <div>
+            {equipesDuPole.length > 1 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+                {equipesDuPole.map(c => (
+                  <button key={c.id} onClick={() => setCategorieActive(c.nom)} style={{
+                    padding: '6px 14px', borderRadius: 20, border: `1px solid ${categorieActive === c.nom ? pole.couleur : colors.border.faint}`,
+                    background: categorieActive === c.nom ? pole.couleur + '22' : 'transparent',
+                    color: categorieActive === c.nom ? pole.couleur : colors.text.faint,
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  }}>
+                    {labelCategorie(c.nom)}{c.equipe ? ` ${c.equipe}` : ''}
+                  </button>
+                ))}
+              </div>
+            )}
+            <PlanificationAnnuelle categorie={categorieActive} clubId={clubId} pole={pole} readOnly={readOnly} />
+          </div>
+        )
+      )}
       {onglet === 'regles' && <SectionRegles pole={pole} clubId={clubId} readOnly={readOnly} />}
     </div>
   )
