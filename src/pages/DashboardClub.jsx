@@ -126,19 +126,19 @@ const ROLE_BADGE_STYLE = (role) => {
   if (['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation'].includes(role)) return { bg: '#60a5fa10', border: '#60a5fa30', color: '#60a5fa' }
   if (['tresorier', 'comptable'].includes(role)) return { bg: '#4ade8010', border: '#4ade8030', color: '#4ade80' }
   if (['secretaire', 'responsable_communication', 'marketing'].includes(role)) return { bg: '#a78bfa10', border: '#a78bfa30', color: '#a78bfa' }
-  return { bg: '#1a1a1a', border: '#2a2a2a', color: '#888' }
+  return { bg: '#6b728015', border: '#6b728040', color: '#6b7280' }
 }
 
 // Couleur d'avatar par personne (pas par rôle, déjà couvert par
 // ROLE_BADGE_STYLE) — simple hash nom+prénom sur une petite palette, pour
 // distinguer les membres au premier coup d'œil dans une longue liste.
 const PALETTE_AVATAR = [
-  { bg: '#1a2e1a', text: '#4ade80' },
-  { bg: '#1a1a2e', text: '#60a5fa' },
-  { bg: '#2a1a2e', text: '#a78bfa' },
-  { bg: '#2e1a1a', text: '#f97316' },
-  { bg: '#2e2a1a', text: '#f59e0b' },
-  { bg: '#1a2e2a', text: '#22d3ee' },
+  { bg: '#4ade8015', text: '#4ade80' },
+  { bg: '#60a5fa15', text: '#60a5fa' },
+  { bg: '#a78bfa15', text: '#a78bfa' },
+  { bg: '#f9731615', text: '#f97316' },
+  { bg: '#f59e0b15', text: '#f59e0b' },
+  { bg: '#22d3ee15', text: '#22d3ee' },
 ]
 const couleurAvatarPersonne = (prenom, nom) => {
   const s = `${prenom || ''}${nom || ''}`
@@ -159,17 +159,24 @@ const ROLES_ORGANIGRAMME = [
 ]
 // Organigramme V2 : département (regroupement visuel, indépendant des catégories
 // ci-dessus qui servaient à l'ancien affichage en grille) et couleur associée pour
-// l'arbre hiérarchique.
-const DEPT_COLORS = {
-  'Direction':      { bg: '#1a1a2e', border: '#818cf8', text: '#818cf8', dot: '#818cf8' },
-  'Sportif':        { bg: '#0f1f0f', border: colors.accent.green, text: colors.accent.green, dot: colors.accent.green },
-  'Administration': { bg: '#1a1200', border: colors.accent.amber, text: colors.accent.amber, dot: colors.accent.amber },
-  'Communication':  { bg: '#1a0f1f', border: '#c084fc', text: '#c084fc', dot: '#c084fc' },
-  'Finance':        { bg: '#0f1a1a', border: colors.accent.cyan, text: colors.accent.cyan, dot: colors.accent.cyan },
-  'Médical':        { bg: '#1f0f0f', border: '#f87171', text: '#f87171', dot: '#f87171' },
-  'Autre':          { bg: colors.background.raised, border: '#6b7280', text: '#9ca3af', dot: '#6b7280' },
+// l'arbre hiérarchique. `colors` doit être le résultat d'un useColors() local à
+// l'appelant (pas l'import statique en tête de fichier) — bg dérivé en teinte
+// transparente de la couleur d'accent plutôt qu'un hex sombre fixe, pour rester
+// lisible dans les deux thèmes sans dupliquer une table claire/sombre séparée.
+const DEPT_NOMS = ['Direction', 'Sportif', 'Administration', 'Communication', 'Finance', 'Médical', 'Autre']
+const getDeptColor = (dept, colors) => {
+  const accents = {
+    'Direction': '#818cf8',
+    'Sportif': colors.accent.green,
+    'Administration': colors.accent.amber,
+    'Communication': '#c084fc',
+    'Finance': colors.accent.cyan,
+    'Médical': '#f87171',
+    'Autre': '#6b7280',
+  }
+  const accent = accents[dept] || accents['Autre']
+  return { bg: accent + '15', border: accent, text: dept === 'Autre' ? '#9ca3af' : accent, dot: accent }
 }
-const getDeptColor = (dept) => DEPT_COLORS[dept] || DEPT_COLORS['Autre']
 
 // Construit l'arbre hiérarchique à partir de la liste plate organigramme_club, en
 // reliant chaque membre à son "superieur" via la clé "Nom Prénom" (même convention
@@ -994,7 +1001,7 @@ function OrgNode({ node, depth = 0, expandedNodes, onToggle, searchQuery, canEdi
   // et non {primary}) — les confondre plante dès qu'un nœud existe (colors
   // .accent.red devient undefined.red), invisible tant que l'organigramme
   // était vide.
-  const deptColors = getDeptColor(node.departement)
+  const deptColors = getDeptColor(node.departement, colors)
 
   const matchSearch = !searchQuery ||
     `${node.nom} ${node.prenom} ${node.role} ${node.departement}`.toLowerCase().includes(searchQuery.toLowerCase())
@@ -3397,7 +3404,7 @@ Règles :
             position: 'absolute', inset: 0,
             background: club?.image_fond_url
               ? `linear-gradient(135deg, ${couleurPrincipale}33 0%, ${couleurSecondaire}22 100%)`
-              : `linear-gradient(135deg, ${couleurPrincipale}22 0%, #111 70%)`,
+              : `linear-gradient(135deg, ${couleurPrincipale}22 0%, ${colors.background.raised} 70%)`,
           }} />
           <div style={{ position: 'relative', padding: isMobile ? '16px' : '20px 24px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -3405,7 +3412,7 @@ Règles :
                 ? <img src={club.image_hero_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '18px', objectFit: 'cover', border: `2px solid ${couleurPrincipale}66`, boxShadow: `0 0 20px ${couleurPrincipale}33` }} />
                 : club?.avatar_url
                   ? <img src={club.avatar_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
-                  : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: couleurPrincipale }}>
+                  : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: couleurPrincipale }}>
                       {clubInitiales}
                     </div>
               }
@@ -3421,7 +3428,7 @@ Règles :
                 <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: colors.text.primary }}>{club?.club || t('club_mon_club', lang)}</h1>
                 {monRole === 'president' && (
                   <button onClick={() => setShowThemeEditor(v => !v)}
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '8px', color: colors.text.secondary, padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.secondary, padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {showThemeEditor ? 'Fermer' : 'Personnaliser'}
                   </button>
                 )}
@@ -4251,7 +4258,7 @@ Règles :
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   {club?.avatar_url
                     ? <img src={club.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
-                    : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 800, color: couleurPrincipale }}>
+                    : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 800, color: couleurPrincipale }}>
                         {(profilClubEdit.club || club?.club || '?')[0]}
                       </div>
                   }
@@ -4331,32 +4338,32 @@ Règles :
               {/* Abonnement — libre-service : le club choisit son palier et paie
                   directement (même route que /offres et l'upgrade de l'onglet
                   Éducateurs), plus besoin de vérification humaine préalable. */}
-              <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '20px' }}>💳</span>
-                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_abonnement_titre', lang)}</h3>
+                  <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_abonnement_titre', lang)}</h3>
                   {club?.palier && (
                     <span style={{ padding: '3px 10px', borderRadius: '20px', background: 'rgba(74,222,128,0.1)', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700 }}>ACTIF</span>
                   )}
                 </div>
 
-                <p style={{ color: '#666', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>
+                <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>
                   {club?.palier ? `Offre actuelle : ${STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}. ` : ''}{t('club_abonnement_desc', lang)}
                 </p>
 
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <select value={palierChoisiProfil || club?.palier || ''} onChange={e => setPalierChoisiProfil(e.target.value)}
-                    style={{ flex: 1, minWidth: '220px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#fff', fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
+                    style={{ flex: 1, minWidth: '220px', padding: '11px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.primary, fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
                     <option value="" disabled>Choisir un palier...</option>
                     {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
                       <option key={key} value={key}>{p.label} — {cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}</option>
                     ))}
                   </select>
 
-                  <div style={{ display: 'flex', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden' }}>
                     {[['mensuel', 'Mensuel'], ['annuel', 'Annuel']].map(([c, label]) => (
                       <button key={c} type="button" onClick={() => setCycleChoisiProfil(c)}
-                        style={{ padding: '11px 20px', border: 'none', background: cycleChoisiProfil === c ? couleurPrincipale : 'transparent', color: cycleChoisiProfil === c ? '#0a0a0a' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        style={{ padding: '11px 20px', border: 'none', background: cycleChoisiProfil === c ? couleurPrincipale : 'transparent', color: cycleChoisiProfil === c ? colors.black : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {label}
                         {/* -17% (pas -20%) : c'est l'écart réel mensuel×12 vs annuel sur
                             STRIPE_LINKS_CLUB (ex. c0 : 50×12=600 vs 500 → -16,7%), constant
@@ -4375,28 +4382,28 @@ Règles :
                     <a href={lien || undefined} target="_blank" rel="noopener noreferrer"
                       aria-disabled={!lien}
                       onClick={e => { if (!lien) e.preventDefault() }}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '12px', border: 'none', background: lien ? couleurPrincipale : '#1a1a1a', color: lien ? '#0a0a0a' : '#555', fontWeight: 800, fontSize: '15px', cursor: lien ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}>
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '12px', border: 'none', background: lien ? couleurPrincipale : colors.background.raised, color: lien ? colors.black : colors.text.faint, fontWeight: 800, fontSize: '15px', cursor: lien ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}>
                       {p ? <>🔒 Payer — {cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}</> : 'Choisir un palier'}
                     </a>
                   )
                 })()}
-                <p style={{ color: '#444', fontSize: '12px', textAlign: 'center', marginTop: '10px' }}>
-                  Paiement sécurisé via Stripe · <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: '#666' }}>Une question ?</a>
+                <p style={{ color: colors.text.ghost, fontSize: '12px', textAlign: 'center', marginTop: '10px' }}>
+                  Paiement sécurisé via Stripe · <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: colors.text.faint }}>Une question ?</a>
                 </p>
               </div>
 
               {/* Avis reçus */}
-              <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '24px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <span>⭐</span>
-                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '15px', margin: 0 }}>{t('club_avis_recus_titre', lang)}</h3>
-                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#555', fontSize: '11px' }}>{avisRecus.length}</span>
+                  <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', margin: 0 }}>{t('club_avis_recus_titre', lang)}</h3>
+                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.faint, fontSize: '11px' }}>{avisRecus.length}</span>
                 </div>
                 {avisRecus.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '32px 20px' }}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>⭐</div>
-                    <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>{t('club_aucun_avis_desc', lang)}</p>
-                    <p style={{ color: '#444', fontSize: '12px', marginTop: '6px' }}>Les joueurs et éducateurs affiliés pourront noter le club.</p>
+                    <p style={{ color: colors.text.faint, fontSize: '14px', margin: 0 }}>{t('club_aucun_avis_desc', lang)}</p>
+                    <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '6px' }}>Les joueurs et éducateurs affiliés pourront noter le club.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -4927,12 +4934,12 @@ Règles :
                   )}
 
                   {Object.keys(evenementsParMois).length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px 24px', background: '#0d0d0d', borderRadius: '14px', border: '1px dashed #2a2a2a' }}>
+                    <div style={{ textAlign: 'center', padding: '60px 24px', background: colors.background.sunken, borderRadius: '14px', border: `1px dashed ${colors.border.default}` }}>
                       <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
-                      <p style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: '0 0 8px' }}>Aucun événement à venir</p>
-                      <p style={{ color: '#555', fontSize: '13px', margin: '0 0 24px' }}>Tournois, stages, réunions — centralisez tout ici.</p>
+                      <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: '0 0 8px' }}>Aucun événement à venir</p>
+                      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 24px' }}>Tournois, stages, réunions — centralisez tout ici.</p>
                       {canEditSection('evenements') && (
-                        <button onClick={ouvrirNouvelEvenement} style={{ padding: '11px 24px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                        <button onClick={ouvrirNouvelEvenement} style={{ padding: '11px 24px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
                           + Créer un événement
                         </button>
                       )}
@@ -5196,13 +5203,13 @@ Règles :
                   <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
                   <button
                     onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
-                    style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: colors.accent.amber + '15', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                   >
                     📊 Importer Excel
                   </button>
                   <button
                     onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
-                    style={{ background: '#0f1f0f', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                   >
                     📷 Scanner un document
                   </button>
@@ -5228,7 +5235,7 @@ Règles :
                   Utilise le template avec les colonnes : <strong style={{ color: colors.text.primary }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button onClick={telechargerTemplateOrganigramme} style={{ background: '#1a1a0a', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                  <button onClick={telechargerTemplateOrganigramme} style={{ background: colors.accent.amber + '15', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
                     ⬇️ Télécharger le template
                   </button>
                   <label style={{ background: colors.accent.amber, borderRadius: '8px', color: colors.black, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
@@ -5248,7 +5255,7 @@ Règles :
                   Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <label style={{ background: '#0f1f0f', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                  <label style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
                     🖼️ {orgScanFile ? orgScanFile.name : 'Choisir une image'}
                     <input type="file" accept="image/*" onChange={e => setOrgScanFile(e.target.files[0])} style={{ display: 'none' }} />
                   </label>
@@ -5278,7 +5285,7 @@ Règles :
             {organigramme.length > 0 && (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
                 {[...new Set(organigramme.map(m => m.departement || 'Autre'))].map(dept => {
-                  const c = getDeptColor(dept)
+                  const c = getDeptColor(dept, colors)
                   return (
                     <span key={dept} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: `1px solid ${c.border}`, color: c.text, background: c.bg }}>
                       ● {dept}
@@ -5324,7 +5331,7 @@ Règles :
                           <div key={e.id}
                             onClick={() => setEducateurOrgDetail(e)}
                             style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
-                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a2a3a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '8px', overflow: 'hidden' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: colors.accent.blue + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '8px', overflow: 'hidden' }}>
                               {e.educateur?.avatar_url
                                 ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
@@ -5400,7 +5407,7 @@ Règles :
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                   {parentsFiltres.map(p => (
                     <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: colors.accent.green + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
                         {p.prenom?.[0]}{p.nom?.[0]}
                       </div>
                       <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
@@ -5453,7 +5460,7 @@ Règles :
                             <div key={j.id}
                               onClick={() => setJoueurOrgDetail(j)}
                               style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
-                              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a3a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>
+                              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: colors.accent.green + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>
                                 {j.prenom?.[0]}{j.nom?.[0]}
                               </div>
                               <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
@@ -5596,7 +5603,7 @@ Règles :
                     la couleur "Autre" (gris), sans planter (déjà géré par le fallback
                     de getDeptColor). */}
                 <datalist id="departements-organigramme-suggestions">
-                  {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d} />)}
+                  {DEPT_NOMS.map(d => <option key={d} value={d} />)}
                 </datalist>
               </div>
 
@@ -5642,7 +5649,7 @@ Règles :
           return (
           <div style={{ maxWidth: '700px' }}>
             {monRole === 'president' && (
-              <div style={{ background: 'linear-gradient(135deg, #1a1a2a 0%, #111 100%)', border: '1px solid #a78bfa20', borderRadius: '14px', padding: '20px 24px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ background: `linear-gradient(135deg, #a78bfa15 0%, ${colors.background.surface} 100%)`, border: '1px solid #a78bfa20', borderRadius: '14px', padding: '20px 24px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '24px' }}>🔐</span>
                   <div>
@@ -5724,7 +5731,7 @@ Règles :
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a2e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: couleurPrincipale, fontWeight: 700, fontSize: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: couleurPrincipale, fontWeight: 700, fontSize: '12px' }}>
                     {(club?.club || club?.prenom || '?')[0]}
                   </div>
                   <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
