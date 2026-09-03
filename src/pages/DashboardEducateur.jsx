@@ -1838,6 +1838,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [modeEditionApercu, setModeEditionApercu] = useState(false)
   const [ficheApercuEdit, setFicheApercuEdit] = useState(null) // copie éditable de ficheApercu.fiche_seance + categorie_tactique, tant que modeEditionApercu est actif
   const [savingFicheApercu, setSavingFicheApercu] = useState(false)
+  const [generantPartage, setGenerantPartage] = useState(false)
   const [scanImageFile, setScanImageFile] = useState(null)
   const [scanImagePreview, setScanImagePreview] = useState(null)
   const [scanImageBase64, setScanImageBase64] = useState(null)
@@ -2349,6 +2350,53 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       }
     }
     window.open(`https://wa.me/?text=${encodeURIComponent(`${titre ? titre + ' — ' : ''}${url}`)}`, '_blank')
+  }
+
+  // Une fiche importée/saisie manuellement (uploaderMaSeance) n'a de fichier_url
+  // que si un fichier a été explicitement uploadé — sinon rien à partager. On
+  // génère le PDF à la volée depuis le rendu .fiche-render déjà affiché dans le
+  // modal d'aperçu (même styling imprimable que #fiche-print, cf. index.css),
+  // on l'archive comme fichier_url de cette fiche, puis on enchaîne le partage.
+  const genererEtPartagerFicheApercu = async () => {
+    if (!ficheApercu) return
+    setGenerantPartage(true)
+    try {
+      const el = document.querySelector('.fiche-render')
+      if (!el) throw new Error('Rendu de la fiche introuvable')
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const { jsPDF } = await import('jspdf')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const imgData = canvas.toDataURL('image/png')
+      let heightLeft = imgHeight
+      let position = 0
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      const blob = pdf.output('blob')
+      const path = `fiches/${userId}/${Date.now()}.pdf`
+      const { error: uploadError } = await supabase.storage.from('documents').upload(path, blob, { contentType: 'application/pdf', upsert: true })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+      await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', ficheApercu.id)
+      setFicheApercu(prev => ({ ...prev, fichier_url: publicUrl }))
+      setMesSeancesOuvertes(prev => prev.map(s => s.id === ficheApercu.id ? { ...s, fichier_url: publicUrl } : s))
+      await partagerFiche(publicUrl, ficheApercu.theme)
+    } catch (e) {
+      console.error('Erreur génération PDF pour partage:', e)
+      alert('Impossible de générer le PDF pour le moment.')
+    } finally {
+      setGenerantPartage(false)
+    }
   }
 
   const sauvegarderFiche = async () => {
@@ -8284,12 +8332,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   {s.fichier_url && (
                                     <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
                                   )}
-                                  {s.fichier_url && (
-                                    <button onClick={() => partagerFiche(s.fichier_url, s.theme)}
-                                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                      Partager
-                                    </button>
-                                  )}
+                                  <button onClick={(ev) => { ev.stopPropagation(); s.fichier_url ? partagerFiche(s.fichier_url, s.theme) : setFicheApercu(s) }}
+                                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                    Partager
+                                  </button>
                                   {confirmSuppr === s.id ? (
                                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                       <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
@@ -9616,17 +9662,27 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         onClick={() => { if (!modeEditionApercu) setFicheApercu(null) }}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
-            {ficheApercu.fichier_url && !modeEditionApercu && (
-              <>
-                <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
-                  style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  ⬇️ {t('seance_fichier', lang)}
-                </a>
-                <button onClick={() => partagerFiche(ficheApercu.fichier_url, ficheApercu.theme)}
-                  style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  Partager
+            {!modeEditionApercu && (
+              ficheApercu.fichier_url ? (
+                <>
+                  <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
+                    style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ⬇️ {t('seance_fichier', lang)}
+                  </a>
+                  <button onClick={() => partagerFiche(ficheApercu.fichier_url, ficheApercu.theme)}
+                    style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Partager
+                  </button>
+                </>
+              ) : (
+                // Fiche sans PDF déjà archivé (import manuel sans fichier, ou
+                // fiche rédigée avant l'ajout de la génération automatique) —
+                // on le génère à la volée à partir de l'aperçu affiché.
+                <button onClick={genererEtPartagerFicheApercu} disabled={generantPartage}
+                  style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: generantPartage ? 0.6 : 1 }}>
+                  {generantPartage ? 'Génération...' : 'Partager'}
                 </button>
-              </>
+              )
             )}
             {modeEditionApercu ? (
               <>
