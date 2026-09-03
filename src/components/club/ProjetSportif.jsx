@@ -3,7 +3,7 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
 import { labelCategorie } from '../../lib/categories'
-import { POLES } from '../../constants/poles'
+import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
 
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
@@ -387,10 +387,7 @@ function SectionRegles({ pole, clubId, readOnly }) {
 function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
-  const equipesDuPole = categories.filter(c => {
-    const base = c.nom?.endsWith('F') ? c.nom.slice(0, -1) : c.nom
-    return pole.categories.includes(base)
-  })
+  const equipesDuPole = categories.filter(c => pole.categories.includes(c.nom))
 
   return (
     <div>
@@ -457,23 +454,42 @@ function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
 export default function ProjetSportif({ categories = [], clubId, readOnly = false }) {
   const colors = useColors()
   const [poleActifKey, setPoleActifKey] = useState(null)
+  const [genre, setGenre] = useState('masculin')
 
   if (poleActifKey) {
     return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly} onRetour={() => setPoleActifKey(null)} />
   }
 
+  const poles = genre === 'masculin' ? polesMasculins() : polesFeminins()
+
   return (
     <div>
-      <p style={{ color: colors.text.faint, fontSize: 13, margin: '0 0 20px' }}>
-        Organisation, objectifs et principes de jeu par pôle.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <p style={{ color: colors.text.faint, fontSize: 13, margin: 0 }}>
+          Organisation, objectifs et principes de jeu par pôle.
+        </p>
+        <div style={{ display: 'flex', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: 3, gap: 3 }}>
+          <button onClick={() => setGenre('masculin')} style={{
+            padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'Inter, sans-serif',
+            background: genre === 'masculin' ? colors.background.raised : 'transparent',
+            color: genre === 'masculin' ? colors.text.primary : colors.text.faint,
+          }}>
+            Masculin
+          </button>
+          <button onClick={() => setGenre('feminin')} style={{
+            padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'Inter, sans-serif',
+            background: genre === 'feminin' ? '#ec489922' : 'transparent',
+            color: genre === 'feminin' ? '#ec4899' : colors.text.faint,
+          }}>
+            Féminin
+          </button>
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-        {Object.entries(POLES).map(([key, pole]) => {
-          const nbEquipes = categories.filter(c => {
-            const base = c.nom?.endsWith('F') ? c.nom.slice(0, -1) : c.nom
-            return pole.categories.includes(base)
-          }).length
+        {poles.map(pole => {
+          const key = pole.key
+          const nbEquipes = categories.filter(c => pole.categories.includes(c.nom)).length
           return (
             <div key={key} onClick={() => setPoleActifKey(key)}
               style={{ background: colors.background.surface, border: `1px solid ${pole.couleur}33`, borderRadius: 16, padding: 22, cursor: 'pointer' }}>

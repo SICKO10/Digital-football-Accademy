@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { labelCategorie } from '../lib/categories'
-import { POLES, getPoleDeCategorie } from '../constants/poles'
+import { getPoleDeCategorie, polesMasculins, polesFeminins } from '../constants/poles'
 
 const VUES = ['Jour', 'Semaine', 'Mois', 'Année']
 
@@ -45,6 +45,7 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
   })
   // 'general' = toutes les catégories ; sinon clé de POLES (cf. constants/poles.js).
   const [filtrePole, setFiltrePole] = useState('general')
+  const [genrePole, setGenrePole] = useState('masculin')
   const [popup, setPopup] = useState(null)
   // Seuil aligné sur PlanningSemaineWidget.jsx (déjà en place ailleurs dans
   // l'app pour le même problème : grille 7 colonnes illisible sur téléphone).
@@ -158,25 +159,44 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
       <h2 style={{ color: colors.text.primary, fontSize: isMobile ? '18px' : '22px', fontWeight: 800, marginBottom: '4px' }}>Planning</h2>
       <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: isMobile ? '16px' : '24px' }}>Vue générale de toutes les équipes</p>
 
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', marginBottom: isMobile ? '12px' : '16px', WebkitOverflowScrolling: 'touch' }}>
-        <button onClick={() => setFiltrePole('general')} style={{
-          padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === 'general' ? colors.text.primary : colors.border.faint}`,
-          background: filtrePole === 'general' ? colors.background.raised : 'transparent',
-          color: filtrePole === 'general' ? colors.text.primary : colors.text.disabled,
-          fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
-        }}>
-          Planning général
-        </button>
-        {Object.entries(POLES).map(([key, pole]) => (
-          <button key={key} onClick={() => setFiltrePole(key)} style={{
-            padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === key ? pole.couleur : colors.border.faint}`,
-            background: filtrePole === key ? pole.couleur + '22' : 'transparent',
-            color: filtrePole === key ? pole.couleur : colors.text.disabled,
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch' }}>
+          <button onClick={() => setFiltrePole('general')} style={{
+            padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === 'general' ? colors.text.primary : colors.border.faint}`,
+            background: filtrePole === 'general' ? colors.background.raised : 'transparent',
+            color: filtrePole === 'general' ? colors.text.primary : colors.text.disabled,
             fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
           }}>
-            {pole.label}
+            Planning général
           </button>
-        ))}
+          {(genrePole === 'masculin' ? polesMasculins() : polesFeminins()).map(pole => (
+            <button key={pole.key} onClick={() => setFiltrePole(pole.key)} style={{
+              padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === pole.key ? pole.couleur : colors.border.faint}`,
+              background: filtrePole === pole.key ? pole.couleur + '22' : 'transparent',
+              color: filtrePole === pole.key ? pole.couleur : colors.text.disabled,
+              fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+            }}>
+              {pole.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: 3, gap: 3, flexShrink: 0 }}>
+          <button onClick={() => { setGenrePole('masculin'); setFiltrePole('general') }} style={{
+            padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 11, fontFamily: 'Inter, sans-serif',
+            background: genrePole === 'masculin' ? colors.background.raised : 'transparent',
+            color: genrePole === 'masculin' ? colors.text.primary : colors.text.faint,
+          }}>
+            Masculin
+          </button>
+          <button onClick={() => { setGenrePole('feminin'); setFiltrePole('general') }} style={{
+            padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 11, fontFamily: 'Inter, sans-serif',
+            background: genrePole === 'feminin' ? '#ec489922' : 'transparent',
+            color: genrePole === 'feminin' ? '#ec4899' : colors.text.faint,
+          }}>
+            Féminin
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '20px', flexWrap: 'wrap', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
