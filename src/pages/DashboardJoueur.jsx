@@ -18,6 +18,8 @@ import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
+import { saisonActuelle } from '../lib/saison'
+import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
@@ -1072,6 +1074,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
+  const [evalFicheOuverte, setEvalFicheOuverte] = useState(null) // { equipeJoueurId, educateurId } — fiche d'évaluation en cours de consultation
   const [statsLoading, setStatsLoading] = useState({})
 
   const chargerStatsJoueur = async (affiliationId, equipeJoueurId, educateurId) => {
@@ -1107,7 +1110,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const [
       { data: matchsMoi },
       { data: tousMatchs },
-      { data: noteEdu },
+      { data: evaluations },
       { data: profilEdu },
       { data: prochainMatchs },
       { data: effectif },
@@ -1116,7 +1119,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
       supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
-      supabase.from('notes_joueurs').select('technique, physique, mental, tactique, commentaire').eq('joueur_id', equipeJoueurId).eq('visible_joueur', true).maybeSingle(),
+      supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonActuelle()),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
@@ -1214,7 +1217,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         buts, passes, matchsJoues, cleanSheets, jaunes, rouges, minutesJouees,
         presenceMensuelle,
         rankButs, rankPasses, rankMatchs, rankClean, rankPoints,
-        noteEdu: noteEdu || null,
+        evaluations: evaluations || [],
         ligueUrl: profilEdu?.ligue_url || null,
         prochainMatchs: prochainMatchs || [],
         leaderButs, leaderPasses, leaderVictoires, leaderPoints,
@@ -2106,7 +2109,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               {statsJoueur[affiliation.id] && (() => {
                 const s = statsJoueur[affiliation.id]
 
-                const hasDonnees = s.present || s.points || s.matchsJoues || s.noteEdu ||
+                const hasDonnees = s.present || s.points || s.matchsJoues || s.evaluations?.length > 0 ||
                   s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
                 if (!hasDonnees) return (
                   <EmptyState compact title={t('aff_aucune_seance_match', lang)} />
@@ -2196,39 +2199,22 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       </div>
                     )}
 
-                    {/* Avis éducateur */}
+                    {/* Fiche d'évaluation */}
                     <div>
                       <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: '#f59e0b', letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_avis_ton_educateur', lang)}</p>
-                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
-                        {s.noteEdu ? (
-                          <>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
-                              {[
-                                { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
-                                { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
-                                { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
-                                { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
-                              ].map(n => (
-                                <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontSize: '11px', color: colors.text.faint, flex: 1 }}>{n.label}</span>
-                                  <div style={{ display: 'flex', gap: '2px' }}>
-                                    {[1, 2, 3, 4, 5].map(i => (
-                                      <span key={i} style={{ fontSize: '12px', color: i <= (n.value || 0) ? n.color : colors.text.ghost }}>★</span>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {s.noteEdu.commentaire && (
-                              <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', lineHeight: 1.6 }}>
-                                "{s.noteEdu.commentaire}"
-                              </p>
-                            )}
-                          </>
-                        ) : (
-                          <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>
-                            {t('aff_pas_note_partagee', lang)}
+                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        {s.evaluations?.length > 0 ? (
+                          <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary }}>
+                            {s.evaluations.length} évaluation{s.evaluations.length > 1 ? 's' : ''} disponible{s.evaluations.length > 1 ? 's' : ''} cette saison
                           </p>
+                        ) : (
+                          <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>
+                        )}
+                        {s.evaluations?.length > 0 && (
+                          <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: affiliation.equipe_joueur_id, educateurId: affiliation.educateur_id })}
+                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                            Voir ma fiche
+                          </button>
                         )}
                       </div>
                     </div>
@@ -2445,28 +2431,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                     )}
                                     <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: `1px solid ${colors.border.subtle}` }}>
                                       <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
-                                      {s.noteEdu ? (
-                                        <>
-                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
-                                            {[
-                                              { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
-                                              { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
-                                              { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
-                                              { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
-                                            ].map(n => (
-                                              <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ fontSize: '11px', color: colors.text.faint, width: '70px', flexShrink: 0 }}>{n.label}</span>
-                                                <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
-                                                  <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
-                                                </div>
-                                                <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
-                                              </div>
-                                            ))}
-                                          </div>
-                                          {s.noteEdu.commentaire && (
-                                            <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
-                                          )}
-                                        </>
+                                      {s.evaluations?.length > 0 ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                          <p style={{ margin: 0, fontSize: 12, color: colors.text.secondary }}>
+                                            {s.evaluations.length} évaluation{s.evaluations.length > 1 ? 's' : ''} disponible{s.evaluations.length > 1 ? 's' : ''}
+                                          </p>
+                                          <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id })}
+                                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                            Voir ma fiche
+                                          </button>
+                                        </div>
                                       ) : <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
                                     </div>
                                   </div>
@@ -4659,28 +4633,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                   )}
                                   <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: `1px solid ${colors.border.subtle}` }}>
                                     <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_avis_educateur_court', lang)}</p>
-                                    {s.noteEdu ? (
-                                      <>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: s.noteEdu.commentaire ? '14px' : '0' }}>
-                                          {[
-                                            { label: t('aff_technique', lang), value: s.noteEdu.technique, color: colors.accent.blue },
-                                            { label: t('aff_physique', lang), value: s.noteEdu.physique, color: colors.accent.green },
-                                            { label: t('aff_mental', lang), value: s.noteEdu.mental, color: colors.accent.purpleLight },
-                                            { label: t('aff_tactique', lang), value: s.noteEdu.tactique, color: '#f59e0b' },
-                                          ].map(n => (
-                                            <div key={n.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                              <span style={{ fontSize: '11px', color: colors.text.faint, width: '70px', flexShrink: 0 }}>{n.label}</span>
-                                              <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
-                                                <div style={{ width: `${((n.value || 0) / 5) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${n.color}, ${n.color}88)`, borderRadius: '3px' }} />
-                                              </div>
-                                              <span style={{ fontSize: '13px', fontWeight: 700, color: n.color, width: '16px', textAlign: 'right', flexShrink: 0 }}>{n.value || 0}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                        {s.noteEdu.commentaire && (
-                                          <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', lineHeight: 1.6 }}>"{s.noteEdu.commentaire}"</p>
-                                        )}
-                                      </>
+                                    {s.evaluations?.length > 0 ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                        <p style={{ margin: 0, fontSize: 12, color: colors.text.secondary }}>
+                                          {s.evaluations.length} évaluation{s.evaluations.length > 1 ? 's' : ''} disponible{s.evaluations.length > 1 ? 's' : ''}
+                                        </p>
+                                        <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id })}
+                                          style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                          Voir ma fiche
+                                        </button>
+                                      </div>
                                     ) : <p style={{ margin: 0, fontSize: '12px', color: colors.border.strong, fontStyle: 'italic' }}>{t('aff_pas_note_partagee', lang)}</p>}
                                   </div>
                                 </div>
@@ -5065,6 +5027,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           cible={notationCible}
           onClose={() => setNotationCible(null)}
           onDone={() => setNotationCible(null)}
+        />
+      )}
+
+      {evalFicheOuverte && (
+        <FicheEvaluationJoueur
+          equipeJoueurId={evalFicheOuverte.equipeJoueurId}
+          educateurId={evalFicheOuverte.educateurId}
+          role="joueur"
+          readOnly={readOnly}
+          onClose={() => setEvalFicheOuverte(null)}
         />
       )}
     </div>

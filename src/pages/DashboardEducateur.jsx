@@ -20,6 +20,7 @@ import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
 import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
+import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
@@ -1351,11 +1352,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [planProgress, setPlanProgress] = useState({ done: 0, total: 0 })
 
   // Notes / Évaluations
-  const [notes, setNotes] = useState({})
-  const [localNotes, setLocalNotes] = useState({}) // édition en cours par joueur_id
   const [notationsMatch, setNotationsMatch] = useState([]) // notations_match brutes : [{ joueur_id, note, match_id }]
   const [filtreCompTableau, setFiltreCompTableau] = useState('all') // filtre compétition, onglet Stats > Tableau
-  const [savingNote, setSavingNote] = useState(false)
+  const [evalJoueurOuverte, setEvalJoueurOuverte] = useState(null) // joueur dont la fiche d'évaluation est ouverte
 
   // Mon Profil éducateur
   const [profilEdu, setProfilEdu] = useState(null)
@@ -1447,7 +1446,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Phase 1 — chargeurs indépendants de l'équipe active, plus club_categories
     // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
     // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
-    const [, , clubAffiliationData, clubCategoriesData] = await Promise.all([chargerNotes(targetId), chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerNotifications(targetId)])
+    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerNotifications(targetId)])
     // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
     // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
     if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
@@ -1670,35 +1669,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setRapportsRecents(data || [])
   }
 
-  const chargerNotes = async (uid) => {
-    const { data } = await supabase.from('notes_joueurs').select('*').eq('educateur_id', uid)
-    if (data) {
-      const map = {}
-      const localMap = {}
-      data.forEach(n => {
-        map[n.joueur_id] = n
-        localMap[n.joueur_id] = { technique: n.technique || 0, physique: n.physique || 0, mental: n.mental || 0, tactique: n.tactique || 0, commentaire: n.commentaire || '', visible_joueur: n.visible_joueur || false }
-      })
-      setNotes(map)
-      setLocalNotes(localMap)
-    }
-  }
-
   // Notes de match (notations_match, une note/10 par joueur et par match — distinct
-  // de notes_joueurs ci-dessus qui est une notation technique/physique/mental/tactique).
-  // Inclut aussi les notes d'équipe (joueur_id NULL, est_note_equipe=true) pour la
-  // card "Note globale équipe" — les lignes équipe n'ont jamais de joueur_id, donc
-  // elles ne perturbent pas le calcul de moyenne par joueur ci-dessous.
+  // de la fiche d'évaluation par saison, cf. FicheEvaluationJoueur). Inclut aussi
+  // les notes d'équipe (joueur_id NULL, est_note_equipe=true) pour la card "Note
+  // globale équipe" — les lignes équipe n'ont jamais de joueur_id, donc elles ne
+  // perturbent pas le calcul de moyenne par joueur ci-dessous.
   const chargerNotationsMatch = async (uid, matchIds = []) => {
     if (matchIds.length === 0) { setNotationsMatch([]); return }
     const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid).in('match_id', matchIds)
     setNotationsMatch(data || [])
-  }
-
-  const getLocalNote = (joueurId) => localNotes[joueurId] || { technique: 0, physique: 0, mental: 0, tactique: 0, commentaire: '', visible_joueur: false }
-
-  const setLocalNote = (joueurId, update) => {
-    setLocalNotes(prev => ({ ...prev, [joueurId]: { ...getLocalNote(joueurId), ...update } }))
   }
 
   const [notesEdu, setNotesEdu] = useState([])
@@ -4056,26 +4035,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     await chargerEntrainements(userId, equipeActive?.id)
   }
 
-  const sauvegarderNote = async (joueurId, noteData) => {
-    // Optimistic : la note locale se met à jour tout de suite, sans attendre
-    // la réponse Supabase ni un rechargement complet de toutes les notes.
-    const avantNotes = notes[joueurId]
-    const avantLocal = localNotes[joueurId]
-    setNotes(prev => ({ ...prev, [joueurId]: { ...prev[joueurId], joueur_id: joueurId, educateur_id: userId, ...noteData } }))
-    setLocalNotes(prev => ({ ...prev, [joueurId]: { technique: noteData.technique || 0, physique: noteData.physique || 0, mental: noteData.mental || 0, tactique: noteData.tactique || 0, commentaire: noteData.commentaire || '', visible_joueur: noteData.visible_joueur || false } }))
-    setSavingNote(true)
-    const { error } = await supabase.from('notes_joueurs').upsert(
-      { joueur_id: joueurId, educateur_id: userId, ...noteData },
-      { onConflict: 'joueur_id,educateur_id' }
-    )
-    setSavingNote(false)
-    if (error) {
-      alert('Erreur : ' + error.message)
-      setNotes(prev => ({ ...prev, [joueurId]: avantNotes }))
-      setLocalNotes(prev => ({ ...prev, [joueurId]: avantLocal }))
-    }
-  }
-
   // Classement calculé
   const classement = () => {
     const equipes = {}
@@ -4766,10 +4725,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               const j = joueurProfil
               const tx = tauxPresence(j.id)
               const s = statsGlobalesJoueur(j.id)
-              const ln = getLocalNote(j.id)
               const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-              const noteGlobale = (ln.technique || ln.physique || ln.mental || ln.tactique)
-                ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1) : null
               const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
@@ -4789,7 +4745,6 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${labelCategorie(j.categorie)}` : ''}</p>
                         {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
                       </div>
-                      {noteGlobale && <div style={{ textAlign: 'center' }}><p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: colors.accent.amber }}>{noteGlobale}</p><p style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>NOTE ÉDU.</p></div>}
                       <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
                     </div>
 
@@ -7364,7 +7319,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {activeSection === 'notes' && (
           <>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('eval_titre_joueurs', lang)}</h1>
-            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>{t('eval_note_chaque', lang)}</p>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>Fiche d'évaluation par saison — début, mi-saison, fin de saison.</p>
             {permissions?.notes === 'lecture' && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 {t('equipe_mode_lecture', lang)}
@@ -7374,65 +7329,29 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('eval_ajoute_joueurs', lang)}</p></div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {joueurs.map(j => {
-                  const ln = getLocalNote(j.id)
-                  const noteGlobale = ln.technique || ln.physique || ln.mental || ln.tactique
-                    ? ((ln.technique + ln.physique + ln.mental + ln.tactique) / 4).toFixed(1)
-                    : null
-                  return (
-                    <div key={j.id} style={st.card}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                        <Avatar person={j} size={40} bg="#1a2e1a" border="none" textColor={colors.accent.green} />
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
-                        </div>
-                        {noteGlobale && <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '4px 14px', borderRadius: '20px' }}>{noteGlobale}</span>}
-                      </div>
-                      <div className="criteres-grid" style={{ marginBottom: '12px' }}>
-                        {[['technique', `${t('eval_technique', lang)}`], ['physique', `${t('eval_physique', lang)}`], ['mental', `${t('eval_mental', lang)}`], ['tactique', `${t('eval_tactique', lang)}`]].map(([key, label]) => (
-                          <div key={key} className="critere-bloc">
-                            <label className="critere-label" style={st.label}>{label}</label>
-                            <div className="etoiles" style={{ display: 'flex', gap: '4px' }}>
-                              {[1,2,3,4,5].map(n => (
-                                <span key={n} onClick={() => canEdit('notes') && setLocalNote(j.id, { [key]: n })}
-                                  style={{ cursor: canEdit('notes') ? 'pointer' : 'default', fontSize: '20px', color: colors.accent.amber, opacity: ln[key] >= n ? 1 : 0.2 }}>★</span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Toggle visible par le joueur */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: ln.visible_joueur ? '#4ade8010' : colors.background.raised, border: `1px solid ${ln.visible_joueur ? colors.accent.green + alpha.light : colors.border.default}`, borderRadius: '8px', marginBottom: '12px', cursor: canEdit('notes') ? 'pointer' : 'default' }}
-                        onClick={() => canEdit('notes') && setLocalNote(j.id, { visible_joueur: !ln.visible_joueur })}>
-                        <div style={{ width: '36px', height: '20px', background: ln.visible_joueur ? colors.accent.green : colors.border.strong, borderRadius: '10px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                          <div style={{ position: 'absolute', top: '3px', left: ln.visible_joueur ? '19px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
-                        </div>
-                        <div>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: ln.visible_joueur ? colors.accent.green : colors.text.secondary }}>
-                            {ln.visible_joueur ? `${t('eval_visible', lang)}` : `${t('eval_prive_non_visible', lang)}`}
-                          </p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
-                            {ln.visible_joueur ? t('eval_joueur_verra', lang) : t('eval_seul_vous', lang)}
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '12px' }}>
-                        <label style={st.label}>{ln.visible_joueur ? `${t('eval_commentaire_visible', lang)}` : `${t('eval_commentaire_prive', lang)}`}</label>
-                        <textarea value={ln.commentaire} onChange={e => setLocalNote(j.id, { commentaire: e.target.value })}
-                          placeholder={t('eval_placeholder_commentaire', lang)}
-                          disabled={!canEdit('notes')}
-                          style={{ ...st.input, minHeight: '70px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
-                      </div>
-                      {canEdit('notes') && (
-                        <button onClick={() => sauvegarderNote(j.id, ln)} disabled={savingNote} style={st.btnSolid}>
-                          {savingNote ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}
-                        </button>
-                      )}
+                {joueurs.map(j => (
+                  <div key={j.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Avatar person={j} size={40} bg="#1a2e1a" border="none" textColor={colors.accent.green} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
                     </div>
-                  )
-                })}
+                    <button onClick={() => setEvalJoueurOuverte(j)} style={st.btnSolid}>
+                      Fiche d'évaluation
+                    </button>
+                  </div>
+                ))}
               </div>
+            )}
+            {evalJoueurOuverte && (
+              <FicheEvaluationJoueur
+                equipeJoueurId={evalJoueurOuverte.id}
+                educateurId={userId}
+                joueurNom={`${evalJoueurOuverte.prenom} ${evalJoueurOuverte.nom}`}
+                role="educateur"
+                readOnly={!canEdit('notes')}
+                onClose={() => setEvalJoueurOuverte(null)}
+              />
             )}
           </>
         )}

@@ -2770,17 +2770,17 @@ Règles :
     const [{ data: statsMatch }, { data: presences }, { data: notes }] = await Promise.all([
       supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', joueurIds),
       supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainements(date)').in('joueur_id', joueurIds),
-      supabase.from('notes_joueurs').select('joueur_id, technique, physique, mental, tactique').in('joueur_id', joueurIds),
+      supabase.from('evaluations_joueur').select('equipe_joueur_id, note_globale_saison').eq('periode', 'fin_saison').in('equipe_joueur_id', joueurIds),
     ])
 
     const buildStats = (joueurId) => {
       const sm = (statsMatch || []).filter(s => s.joueur_id === joueurId)
       const pr = (presences || []).filter(p => p.joueur_id === joueurId)
-      const note = (notes || []).find(n => n.joueur_id === joueurId)
+      const note = (notes || []).find(n => n.equipe_joueur_id === joueurId)
       const totalPresences = pr.filter(p => p.statut && p.statut !== 'non_saisi').length
       const presents = pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length
       const points = pr.filter(p => p.point_seance).length
-      const noteGlobale = note ? ((note.technique + note.physique + note.mental + note.tactique) / 4) : null
+      const noteGlobale = note?.note_globale_saison ?? null
 
       // Matchs réellement joués (minutes > 0) — le résultat V/N/D vient du match lié, pas d'une
       // colonne stats_match.victoire (existe en base mais jamais renseignée par l'app).
@@ -4063,7 +4063,7 @@ Règles :
             { key: 'matchsJoues', label: t('stats_graph_matchs', lang), color: colors.accent.purpleLight },
             { key: 'tauxPresence', label: t('stats_filtre_presence', lang), color: '#34d399', unit: '%' },
             { key: 'pointsSeance', label: t('club_points_seance', lang), color: colors.accent.amber },
-            { key: 'noteGlobale', label: t('club_note_educateur', lang), color: '#f59e0b', unit: '/5' },
+            { key: 'noteGlobale', label: t('club_note_educateur', lang), color: '#f59e0b', unit: '/20' },
           ]
           const catData = categorieActive ? statsParCategorie[categorieActive] : null
           const triActif = TRIS.find(t => t.key === triClassement) || TRIS[0]
@@ -6789,7 +6789,7 @@ Règles :
                                 {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/5</span> : <span style={{ color: colors.border.strong }}>—</span>}
+                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/20</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                             </tr>
                           )
@@ -6835,7 +6835,7 @@ Règles :
                                   <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
                                 )}
                                 {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: colors.accent.amber }}>⭐ {j.stats.pointsSeance}</span>}
-                                {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/5</span>}
+                                {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/20</span>}
                               </div>
                               <button
                                 onClick={(e) => {
