@@ -4,6 +4,7 @@ import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { saisonActuelle, bornesSaison, dateFr } from '../../lib/saison'
 import { enqueueGroqRequest, libelleStatutGroq } from '../../lib/groqQueue'
+import { getPhasesOffensives, getPhasesDefensives, getThemes, getPrincipes, getSousPrincipes, trouverPhaseDuTheme } from '../../constants/methodologie'
 import PlanificationPDFTemplate from './PlanificationPDFTemplate'
 
 const TYPE_PHASE = {
@@ -364,16 +365,115 @@ function SetupPlan({ categorie, clubId, pole, onCreer }) {
   )
 }
 
+// Sélecteur en cascade phase de jeu → thème → principes → sous-principes,
+// alimenté par la bibliothèque méthodologique (constants/methodologie.js).
+// principes/sousPrincipes multi-sélectionnables : les deux sont fusionnés à
+// la sauvegarde dans la seule colonne sous_principes_offensifs/defensifs
+// (TEXT[], pas de distinction de niveau en base).
+function SelecteurMethodo({ camp, sel, setSel, couleur, label }) {
+  const colors = useColors()
+  const phases = camp === 'offensif' ? getPhasesOffensives() : getPhasesDefensives()
+  const pill = (actif) => ({
+    padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    background: actif ? couleur + '22' : 'transparent', borderColor: actif ? couleur : colors.border.default, color: actif ? couleur : colors.text.faint,
+  })
+
+  return (
+    <div style={{ background: colors.background.base, border: `1px solid ${couleur}33`, borderRadius: 10, padding: 14 }}>
+      <div style={{ color: couleur, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', marginBottom: 12 }}>{label}</div>
+
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ color: colors.text.faint, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Phase de jeu</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {phases.map(ph => (
+            <button key={ph.key} onClick={() => setSel({ phase: ph.key, theme: '', principes: [], sousPrincipes: [] })} style={pill(sel.phase === ph.key)}>
+              {ph.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {sel.phase && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ color: colors.text.faint, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Thème</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {getThemes(camp, sel.phase).map(theme => (
+              <button key={theme} onClick={() => setSel(s => ({ ...s, theme, principes: [], sousPrincipes: [] }))} style={pill(sel.theme === theme)}>
+                {theme}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sel.theme && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ color: colors.text.faint, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Principes recherchés</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {getPrincipes(camp, sel.phase, sel.theme).map(principe => {
+              const actif = sel.principes.includes(principe)
+              return (
+                <button key={principe}
+                  onClick={() => setSel(s => ({
+                    ...s,
+                    principes: actif ? s.principes.filter(p => p !== principe) : [...s.principes, principe],
+                    sousPrincipes: actif ? s.sousPrincipes.filter(sp => !getSousPrincipes(camp, s.phase, s.theme, principe).includes(sp)) : s.sousPrincipes,
+                  }))}
+                  style={pill(actif)}>
+                  {principe}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {sel.principes.length > 0 && (
+        <div>
+          <div style={{ color: colors.text.faint, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Sous-principes travaillés</div>
+          {sel.principes.map(principe => (
+            <div key={principe} style={{ marginBottom: 8 }}>
+              <div style={{ color: couleur, fontSize: 10, fontWeight: 700, marginBottom: 4 }}>{principe}</div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {getSousPrincipes(camp, sel.phase, sel.theme, principe).map(sp => {
+                  const actif = sel.sousPrincipes.includes(sp)
+                  return (
+                    <button key={sp}
+                      onClick={() => setSel(s => ({ ...s, sousPrincipes: actif ? s.sousPrincipes.filter(x => x !== sp) : [...s.sousPrincipes, sp] }))}
+                      style={{ ...pill(actif), padding: '3px 10px', fontSize: 10 }}>
+                      {sp}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ModalPhase({ phase, planId, pole, onSave, onClose, onDelete }) {
   const colors = useColors()
   const [form, setForm] = useState({
     nom: phase.nom || '', type: phase.type || 'competition',
     date_debut: phase.date_debut || '', date_fin: phase.date_fin || '', duree_semaines: phase.duree_semaines || '',
-    theme_offensif: phase.theme_offensif || '', sous_principes_offensifs: listeVersLignes(phase.sous_principes_offensifs),
-    theme_defensif: phase.theme_defensif || '', sous_principes_defensifs: listeVersLignes(phase.sous_principes_defensifs),
     objectifs_prioritaires: listeVersLignes(phase.objectifs_prioritaires), criteres_reussite: listeVersLignes(phase.criteres_reussite),
     ordre: phase.ordre ?? 0,
   })
+  // Édition d'une phase existante : la distinction principe/sous-principe n'est
+  // pas conservée en base (une seule colonne TEXT[] par camp) — tout revient
+  // dans `principes` au rechargement, `sousPrincipes` vide. Perte cosmétique
+  // acceptable (l'affichage final ne distingue pas les deux niveaux non plus).
+  const [selOff, setSelOff] = useState(() => ({
+    phase: trouverPhaseDuTheme('offensif', phase.theme_offensif), theme: phase.theme_offensif || '',
+    principes: phase.sous_principes_offensifs || [], sousPrincipes: [],
+  }))
+  const [selDef, setSelDef] = useState(() => ({
+    phase: trouverPhaseDuTheme('defensif', phase.theme_defensif), theme: phase.theme_defensif || '',
+    principes: phase.sous_principes_defensifs || [], sousPrincipes: [],
+  }))
   const [saving, setSaving] = useState(false)
 
   const sauvegarder = async () => {
@@ -381,8 +481,8 @@ function ModalPhase({ phase, planId, pole, onSave, onClose, onDelete }) {
     const data = {
       nom: form.nom, type: form.type, date_debut: form.date_debut, date_fin: form.date_fin,
       duree_semaines: parseInt(form.duree_semaines) || null,
-      theme_offensif: form.theme_offensif || null, sous_principes_offensifs: lignesVersListe(form.sous_principes_offensifs),
-      theme_defensif: form.theme_defensif || null, sous_principes_defensifs: lignesVersListe(form.sous_principes_defensifs),
+      theme_offensif: selOff.theme || null, sous_principes_offensifs: [...selOff.principes, ...selOff.sousPrincipes],
+      theme_defensif: selDef.theme || null, sous_principes_defensifs: [...selDef.principes, ...selDef.sousPrincipes],
       objectifs_prioritaires: lignesVersListe(form.objectifs_prioritaires), criteres_reussite: lignesVersListe(form.criteres_reussite),
       ordre: form.ordre,
     }
@@ -419,24 +519,8 @@ function ModalPhase({ phase, planId, pole, onSave, onClose, onDelete }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div>
-            <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Thème Offensif</div>
-            <input value={form.theme_offensif} onChange={e => setForm(f => ({ ...f, theme_offensif: e.target.value }))}
-              placeholder="Ex: Progresser vers l'avant"
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', marginBottom: 6, fontFamily: 'Inter, sans-serif' }} />
-            <textarea value={form.sous_principes_offensifs} onChange={e => setForm(f => ({ ...f, sous_principes_offensifs: e.target.value }))}
-              placeholder="Sous-principes (1 par ligne)" rows={3}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
-          </div>
-          <div>
-            <div style={{ color: '#ef4444', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Thème Défensif</div>
-            <input value={form.theme_defensif} onChange={e => setForm(f => ({ ...f, theme_defensif: e.target.value }))}
-              placeholder="Ex: Gêner pour récupérer"
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', marginBottom: 6, fontFamily: 'Inter, sans-serif' }} />
-            <textarea value={form.sous_principes_defensifs} onChange={e => setForm(f => ({ ...f, sous_principes_defensifs: e.target.value }))}
-              placeholder="Sous-principes (1 par ligne)" rows={3}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
-          </div>
+          <SelecteurMethodo camp="offensif" sel={selOff} setSel={setSelOff} couleur="#4ade80" label="Thème Offensif" />
+          <SelecteurMethodo camp="defensif" sel={selDef} setSel={setSelDef} couleur="#ef4444" label="Thème Défensif" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -501,6 +585,31 @@ function ModalSemaine({ semaine, planId, phases, pole, onSave, onClose, onDelete
     </div>
   )
 
+  const selectStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }
+
+  // Thème (select groupé par phase de jeu) + principe (options des seules
+  // phases où ce thème existe, cf. getPrincipes qui renvoie [] sinon).
+  const selectTheme = (label, camp, themeKey, principeKey) => {
+    const phasesCamp = camp === 'offensif' ? getPhasesOffensives() : getPhasesDefensives()
+    return (
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{label}</div>
+        <select value={form[themeKey]} onChange={e => setForm(f => ({ ...f, [themeKey]: e.target.value, [principeKey]: '' }))} style={{ ...selectStyle, marginBottom: 6 }}>
+          <option value="">— Thème {label.toLowerCase()}</option>
+          {phasesCamp.map(ph => (
+            <optgroup key={ph.key} label={ph.label}>
+              {getThemes(camp, ph.key).map(theme => <option key={theme} value={theme}>{theme}</option>)}
+            </optgroup>
+          ))}
+        </select>
+        <select value={form[principeKey]} onChange={e => setForm(f => ({ ...f, [principeKey]: e.target.value }))} disabled={!form[themeKey]} style={{ ...selectStyle, opacity: form[themeKey] ? 1 : 0.5 }}>
+          <option value="">— Principe</option>
+          {form[themeKey] && phasesCamp.flatMap(ph => getPrincipes(camp, ph.key, form[themeKey]).map(p => <option key={p} value={p}>{p}</option>))}
+        </select>
+      </div>
+    )
+  }
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 28, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
@@ -534,10 +643,8 @@ function ModalSemaine({ semaine, planId, phases, pole, onSave, onClose, onDelete
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {champ('Thème offensif', 'theme_offensif')}
-          {champ('Thème défensif', 'theme_defensif')}
-          {champ('Sous-principe OFF', 'sous_principe_offensif')}
-          {champ('Sous-principe DEF', 'sous_principe_defensif')}
+          {selectTheme('Thème offensif', 'offensif', 'theme_offensif', 'sous_principe_offensif')}
+          {selectTheme('Thème défensif', 'defensif', 'theme_defensif', 'sous_principe_defensif')}
           {champ('Objectif OFF', 'objectif_offensif')}
           {champ('Objectif DEF', 'objectif_defensif')}
         </div>
