@@ -18,6 +18,8 @@ import StatsEquipe from '../components/StatsEquipe'
 import NotationMatch from '../components/NotationMatch'
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
+import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
+import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
@@ -684,6 +686,29 @@ function FicheSeancePrint({ fiche, categorieLabel }) {
   )
 }
 
+// Barre de sous-onglets pour les entrées de nav fusionnées (subKeys) — affichée
+// une seule fois, positionnée juste avant le premier bloc de contenu du groupe
+// dans l'ordre du JSX (les autres blocs, plus loin, ne rendent rien tant que
+// activeSection ne correspond pas à leur propre clé).
+function SousOngletsBar({ items, activeSection, setActiveSection }) {
+  const colors = useColors()
+  return (
+    <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: 20, overflowX: 'auto' }}>
+      {items.map(it => (
+        <button key={it.key} onClick={() => setActiveSection(it.key)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '10px 18px',
+            fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+            color: activeSection === it.key ? colors.accent.blue : colors.text.faint,
+            borderBottom: activeSection === it.key ? `2px solid ${colors.accent.blue}` : '2px solid transparent',
+          }}>
+          {it.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
@@ -834,6 +859,7 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
         />
       </div>
 
+      {clubId && <AnnoncesClubWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} onVoirTout={() => setActiveSection('annonces')} />}
       {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
       <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
 
@@ -4134,28 +4160,36 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     </div>
   )
 
+  // Regroupement en 6 groupes logiques — les clés réelles de activeSection ne
+  // changent pas (aucun contenu de page déplacé/renommé), seuls les points
+  // d'entrée de la nav sont fusionnés via `subKeys` : un item avec subKeys
+  // pointe vers plusieurs activeSection réels, sélectionnés via un petit
+  // sous-onglet affiché au-dessus du contenu (cf. SousOngletsBar plus bas).
+  // "annonces" n'est plus un lien dédié : son contenu (activeSection ===
+  // 'annonces', inchangé) reste accessible via le widget Actualités sur
+  // l'Accueil. "dirigeants" est conservé dans RÉSEAU (feature active pour
+  // l'éducateur, pas de raison de la retirer de la nav).
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
-      { key: 'equipe', label: t('nav_equipe', lang), icon: <IcoUsers /> },
-      { key: 'stats', label: t('nav_stats', lang), icon: <IcoChart /> },
+      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats'] },
+      { key: 'materiel', label: 'Mon matériel', icon: <IcoBox /> },
+    ] },
+    { titre: 'COMPÉTITION', items: [
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'causerie', label: t('nav_causerie', lang), icon: <IcoMic /> },
-      { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus /> },
-      { key: 'terrains', label: t('nav_terrains', lang), icon: <IcoCalendar /> },
-      { key: 'materiel', label: 'Mon matériel', icon: <IcoBox /> },
-      { key: 'annonces', label: 'Actualités du club', icon: <IcoMegaphone />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
+      { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus />, subKeys: ['deplacements', 'terrains'] },
     ] },
-    { titre: t('section_entrainement', lang), items: [
-      { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun /> },
-      { key: 'mes_seances', label: t('nav_seances', lang), icon: <IcoFilm /> },
-      { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
+    { titre: 'ENTRAÎNEMENT', items: [
+      { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun />, subKeys: ['entrainements', 'mes_seances'] },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
+      { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
     ] },
-    { titre: t('section_analyse', lang), items: [
-      { key: 'analyse_video', label: t('nav_analyse', lang), icon: <IcoVideo /> },
-      { key: 'notes', label: t('nav_evaluations', lang), icon: <IcoClipboard /> },
-      { key: 'clotures_saison', label: t('nav_clotures', lang), icon: <IcoCalendar /> },
+    { titre: 'PROJET SPORTIF', items: [
+      { key: 'projet_sportif', label: 'Projet Sportif', icon: <IcoStar /> },
+    ] },
+    { titre: 'SUIVI', items: [
+      { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
     ] },
     { titre: t('section_reseau', lang), items: [
       { key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> },
@@ -4183,9 +4217,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     return !permKey || permissions[permKey] !== 'aucun'
   }
   const canEdit = (permKey) => !permissions || permissions[permKey] === 'edition'
+  // Un item fusionné (subKeys) reste visible dès qu'au moins un de ses
+  // sous-onglets est autorisé ; sinon comportement inchangé sur item.key.
+  const itemVisible = (item) => item.subKeys ? item.subKeys.some(canView) : canView(item.key)
 
   const sidebarSectionsVisibles = sidebarSections
-    .map(section => ({ ...section, items: section.items.filter(item => canView(item.key)) }))
+    .map(section => ({ ...section, items: section.items.filter(itemVisible) }))
     .filter(section => section.items.length > 0)
 
   const chargerRecrutJoueurs = async () => {
@@ -4427,20 +4464,24 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   {section.titre}
                 </div>
               )}
-              {section.items.map(item => (
-                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(item.key); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', marginTop: isTablet ? '4px' : 0, borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === item.key ? '#60a5fa12' : 'transparent', color: activeSection === item.key ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: activeSection === item.key ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+              {section.items.map(item => {
+                const actif = item.subKeys ? item.subKeys.includes(activeSection) : activeSection === item.key
+                const cible = item.subKeys ? (item.subKeys.find(canView) || item.subKeys[0]) : item.key
+                return (
+                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(cible); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', marginTop: isTablet ? '4px' : 0, borderRadius: '10px', border: 'none', cursor: 'pointer', background: actif ? '#60a5fa12' : 'transparent', color: actif ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: actif ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
                   {!!item.badge && (
                     <span style={{ background: colors.accent.blue, color: colors.background.base, borderRadius: '10px', minWidth: '18px', height: '18px', padding: '0 5px', fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.badge}</span>
                   )}
                   {item.locked && !isTablet && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
-                  {activeSection === item.key && (
+                  {actif && (
                     <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.blue, borderRadius: '0 3px 3px 0' }} />
                   )}
                 </button>
-              ))}
+                )
+              })}
             </div>
           ))}
         </nav>
@@ -4542,6 +4583,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               mesSeancesOuvertes={mesSeancesOuvertes}
             />
           </>
+        )}
+
+        {['equipe', 'stats'].includes(activeSection) && (
+          <SousOngletsBar
+            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }].filter(it => canView(it.key))}
+            activeSection={activeSection} setActiveSection={setActiveSection}
+          />
         )}
 
         {/* ===== MON ÉQUIPE ===== */}
@@ -6553,6 +6601,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           </>
         )}
 
+        {['deplacements', 'terrains'].includes(activeSection) && (
+          <SousOngletsBar
+            items={[{ key: 'deplacements', label: t('nav_deplacements', lang) }, { key: 'terrains', label: t('nav_terrains', lang) }]}
+            activeSection={activeSection} setActiveSection={setActiveSection}
+          />
+        )}
+
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
@@ -6719,6 +6774,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           </div>
           )
         })()}
+
+        {['entrainements', 'mes_seances'].includes(activeSection) && (
+          <SousOngletsBar
+            items={[{ key: 'entrainements', label: t('nav_entrainements', lang) }, { key: 'mes_seances', label: t('nav_seances', lang) }].filter(it => canView(it.key))}
+            activeSection={activeSection} setActiveSection={setActiveSection}
+          />
+        )}
 
         {/* ===== ENTRAÎNEMENTS ===== */}
         {activeSection === 'entrainements' && (
@@ -7285,6 +7347,17 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               </div>
             )}
           </>
+        )}
+
+        {['analyse_video', 'notes', 'clotures_saison'].includes(activeSection) && (
+          <SousOngletsBar
+            items={[
+              { key: 'analyse_video', label: t('nav_analyse', lang) },
+              { key: 'notes', label: t('nav_evaluations', lang) },
+              { key: 'clotures_saison', label: t('nav_clotures', lang) },
+            ].filter(it => canView(it.key))}
+            activeSection={activeSection} setActiveSection={setActiveSection}
+          />
         )}
 
         {/* ===== ÉVALUATIONS ===== */}
@@ -8685,6 +8758,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           // accessible que le coach soit affilié à un club ou non, club_id
           // reste optionnel côté CauserieAvantMatch.
           <CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
+        )}
+
+        {activeSection === 'projet_sportif' && (
+          <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id} />
         )}
 
         {activeSection === 'dirigeants' && (

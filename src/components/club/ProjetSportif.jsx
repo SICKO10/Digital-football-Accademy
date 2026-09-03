@@ -31,7 +31,7 @@ function PlaceholderAVenir({ couleur, texte }) {
   )
 }
 
-function SectionPrincipes({ pole, clubId, readOnly }) {
+export function SectionPrincipes({ pole, clubId, readOnly }) {
   const colors = useColors()
   const [principes, setPrincipes] = useState([])
   const [ajoutPhase, setAjoutPhase] = useState(null)
@@ -107,7 +107,7 @@ function SectionPrincipes({ pole, clubId, readOnly }) {
   )
 }
 
-function SectionRegles({ pole, clubId, readOnly }) {
+export function SectionRegles({ pole, clubId, readOnly }) {
   const colors = useColors()
   const [regles, setRegles] = useState([])
   const [showForm, setShowForm] = useState(false)

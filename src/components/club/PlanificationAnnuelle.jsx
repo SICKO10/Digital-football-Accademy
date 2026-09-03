@@ -887,7 +887,12 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
   }
 
   if (plan === undefined) return null
-  if (plan === null) return <SetupPlan categorie={categorie} clubId={clubId} pole={pole} onCreer={chargerPlan} />
+  if (plan === null) {
+    if (readOnly) {
+      return <div style={{ padding: 40, color: colors.text.faint, textAlign: 'center' }}>Aucun plan annuel publié pour cette catégorie pour l'instant.</div>
+    }
+    return <SetupPlan categorie={categorie} clubId={clubId} pole={pole} onCreer={chargerPlan} />
+  }
 
   return (
     <div>
