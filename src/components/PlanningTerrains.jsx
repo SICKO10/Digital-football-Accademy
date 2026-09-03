@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { normaliserHeure, normaliserCle, trouverFeuilleAvecDonnees } from '../lib/excelImport'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { labelCategorie } from '../lib/categories'
+import { makeUseSt } from '../lib/theme'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -124,13 +125,26 @@ const jourDepuisDate = (dateStr) => {
   return JOURS[(jsDay + 6) % 7].val
 }
 
-const st = {
+const stSombre = {
   input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
+  bg: '#0a0a0a', bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
+  text: '#fff', textDim: '#ccc', textFaint: '#555', textGhost: '#444',
+  overlaySubtle: '#ffffff08', alertBg: '#1a1505',
 }
+const stClaire = {
+  input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+  label: { fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
+  bg: '#f8fafc', bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
+  text: '#0f172a', textDim: '#334155', textFaint: '#64748b', textGhost: '#94a3b8',
+  overlaySubtle: '#00000006', alertBg: '#fffbeb',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, equipeActiveId, accentColor = '#4ade80', readOnly = false }) {
+  const st = useSt()
   const estDirigeant = mode === 'dirigeant' && !readOnly
   const [vue, setVue] = useState('planning') // 'configuration' | 'planning'
 
@@ -705,16 +719,16 @@ Règles :
     const cle = `${cBase.id}_${dateStr}`
     const zone = c.zone || 'plein'
     const enConflit = !c.libere && liste.some(autre => autre.id !== c.id && !autre.libere && (autre.zone || 'plein') === zone && seChevauchent(c, autre))
-    const couleurBord = zone !== 'plein' ? couleurZone(zone, accentColor) : (c.libere ? accentColor : '#1a1a1a')
+    const couleurBord = zone !== 'plein' ? couleurZone(zone, accentColor) : (c.libere ? accentColor : st.border)
     return (
       <div key={c.id} style={{
-        background: c.libere ? accentColor + '10' : '#0a0a0a',
-        border: `1px solid ${enConflit ? '#ef4444' : (c.libere ? accentColor + '40' : '#1a1a1a')}`,
+        background: c.libere ? accentColor + '10' : st.bg,
+        border: `1px solid ${enConflit ? '#ef4444' : (c.libere ? accentColor + '40' : st.border)}`,
         borderLeft: `3px solid ${enConflit ? '#ef4444' : couleurBord}`,
         borderRadius: '10px', padding: '10px 12px', marginBottom: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.libere ? accentColor : '#fff' }}>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.libere ? accentColor : st.text }}>
             {c.heure_debut?.slice(0, 5)} – {c.heure_fin?.slice(0, 5)}
           </p>
           {zone !== 'plein' && (
@@ -735,25 +749,25 @@ Règles :
                 Remplacement ce jour
               </span>
             )}
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ccc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textDim, display: 'flex', alignItems: 'center', gap: '6px' }}>
               {couleurEquipe(c.equipe, categories) && (
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleurEquipe(c.equipe, categories), flexShrink: 0 }} />
               )}
               {c.equipe || '—'}
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#555' }}>{nomEducateur(c.educateur_id) || '—'}</p>
+            <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>{nomEducateur(c.educateur_id) || '—'}</p>
           </>
         )}
 
         {estDirigeant && (
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
             <button onClick={() => setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' })}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#888', fontSize: '12px', cursor: 'pointer' }}>✏️</button>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${st.border}`, background: st.bgRaised, color: st.textDim, fontSize: '12px', cursor: 'pointer' }}>✏️</button>
             <button onClick={() => supprimerCreneau(cBase.id)}
               style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)', background: 'transparent', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>×</button>
             {c.exception && (
               <button onClick={() => supprimerException(c.exception.id)} title="Supprimer cette exception — le créneau de base reprend"
-                style={{ marginLeft: 'auto', background: 'none', border: '1px solid #2a2a2a', color: '#888', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
+                style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
                 ↩ exception
               </button>
             )}
@@ -765,7 +779,7 @@ Règles :
             onClick={() => { if (c.libere || window.confirm('Libérer ce créneau ?')) libererCreneauDate(cBase, dateStr, !c.libere) }}
             disabled={liberating[cle]}
             style={c.libere
-              ? { marginTop: '8px', width: '100%', background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+              ? { marginTop: '8px', width: '100%', background: st.bgRaised, color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
               : { marginTop: '8px', width: '100%', background: 'transparent', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', padding: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
@@ -780,7 +794,7 @@ Règles :
 
         {c.estRemplacement && (estDirigeant || (mode === 'educateur' && c.exception?.educateur_id === userId)) && (
           <button onClick={() => annulerReclamationDate(cBase, dateStr)} disabled={reclamingId === cle}
-            style={{ marginTop: '8px', width: '100%', background: '#1a1a1a', color: '#aaa', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ marginTop: '8px', width: '100%', background: st.bgRaised, color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {reclamingId === cle ? '...' : 'Rendre ce créneau'}
           </button>
         )}
@@ -791,7 +805,7 @@ Règles :
   return (
     <div>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Planning des terrains</h1>
-      <p style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>
+      <p style={{ color: st.textFaint, fontSize: '13px', marginBottom: '1.5rem' }}>
         {estDirigeant ? "Configure tes terrains et organise l'occupation hebdomadaire." : "Planning de la semaine — libère un créneau si tu n'en as pas besoin."}
       </p>
 
@@ -799,7 +813,7 @@ Règles :
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
           {[['planning', 'Planning'], ['configuration', 'Configuration']].map(([val, label]) => (
             <button key={val} onClick={() => setVue(val)}
-              style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: vue === val ? accentColor : '#1a1a1a', color: vue === val ? '#000' : '#888', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: vue === val ? accentColor : st.bgRaised, color: vue === val ? '#000' : st.textDim, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               {label}
             </button>
           ))}
@@ -828,21 +842,21 @@ Règles :
             </div>
           )}
           {loadingTerrains ? (
-            <p style={{ color: '#444', fontSize: '12px' }}>Chargement...</p>
+            <p style={{ color: st.textGhost, fontSize: '12px' }}>Chargement...</p>
           ) : terrains.length === 0 ? (
-            <p style={{ color: '#444', fontSize: '12px' }}>Aucun terrain configuré pour l'instant.</p>
+            <p style={{ color: st.textGhost, fontSize: '12px' }}>Aucun terrain configuré pour l'instant.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {terrains.map(t => {
                 const edit = terrainEdits[t.id]
                 return (
-                  <div key={t.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+                  <div key={t.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: st.bg, border: `1px solid ${st.border}`, borderRadius: '10px', padding: '10px 12px' }}>
                     <input style={{ ...st.input, maxWidth: '220px' }} value={edit?.nom ?? t.nom} onChange={e => modifierTerrainChamp(t.id, 'nom', e.target.value)} />
                     <select style={{ ...st.input, maxWidth: '150px' }} value={edit?.type ?? t.type} onChange={e => modifierTerrainChamp(t.id, 'type', e.target.value)}>
                       {TYPES_TERRAIN.map(ty => <option key={ty.val} value={ty.val}>{ty.label}</option>)}
                     </select>
                     <button onClick={() => toggleActifTerrain(t)}
-                      style={{ background: t.actif ? accentColor + '15' : '#ffffff08', border: `1px solid ${t.actif ? accentColor + '40' : '#2a2a2a'}`, color: t.actif ? accentColor : '#666', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                      style={{ background: t.actif ? accentColor + '15' : st.overlaySubtle, border: `1px solid ${t.actif ? accentColor + '40' : st.border}`, color: t.actif ? accentColor : st.textDim, borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
                       {t.actif ? 'Actif' : 'Inactif'}
                     </button>
                     {edit && (
@@ -850,7 +864,7 @@ Règles :
                         style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>💾 Enregistrer</button>
                     )}
                     <button onClick={() => supprimerTerrain(t.id)}
-                      style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                      style={{ marginLeft: 'auto', background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '14px' }}>✕</button>
                   </div>
                 )
               })}
@@ -862,9 +876,9 @@ Règles :
       {(vue === 'planning' || !estDirigeant) && (
         <div>
           {loadingTerrains ? (
-            <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+            <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement...</p>
           ) : terrains.length === 0 ? (
-            <div style={{ ...st.card, textAlign: 'center', color: '#555' }}>
+            <div style={{ ...st.card, textAlign: 'center', color: st.textFaint }}>
               {estDirigeant ? "Ajoute d'abord un terrain dans l'onglet Configuration." : "Aucun terrain configuré par le club pour l'instant."}
             </div>
           ) : (
@@ -872,7 +886,7 @@ Règles :
               <div style={{ display: 'flex', gap: '6px', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 {terrains.map(t => (
                   <button key={t.id} onClick={() => setTerrainActif(t.id)}
-                    style={{ background: terrainActif === t.id ? accentColor + '15' : 'transparent', border: `1px solid ${terrainActif === t.id ? accentColor + '40' : '#2a2a2a'}`, color: terrainActif === t.id ? accentColor : '#888', padding: '7px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: terrainActif === t.id ? accentColor + '15' : 'transparent', border: `1px solid ${terrainActif === t.id ? accentColor + '40' : st.border}`, color: terrainActif === t.id ? accentColor : st.textDim, padding: '7px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {t.nom}{!t.actif ? ' (inactif)' : ''}
                   </button>
                 ))}
@@ -885,11 +899,11 @@ Règles :
                     + Nouveau créneau
                   </button>
                   <button onClick={telechargerTemplate}
-                    style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     📥 Télécharger le template
                   </button>
                   <button onClick={() => setShowImport(v => !v)}
-                    style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : '#333'}`, color: showImport ? accentColor : '#888', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : st.borderStrong}`, color: showImport ? accentColor : st.textDim, padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {showImport ? '✕ Fermer' : '📊 Importer Excel / CSV'}
                   </button>
                 </div>
@@ -898,7 +912,7 @@ Règles :
               {estDirigeant && showImport && (
                 <div style={{ ...st.card, marginBottom: '1.5rem' }}>
                   <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Import Excel / CSV</p>
-                  <p style={{ fontSize: '12px', color: '#555', margin: '0 0 12px' }}>
+                  <p style={{ fontSize: '12px', color: st.textFaint, margin: '0 0 12px' }}>
                     L'IA analyse directement le fichier, quel que soit son format (grille par semaine, tableau croisé, liste avec en-têtes...) — utilise le template si tu pars de zéro. Depuis Numbers : exporte d'abord en .xlsx ou .csv.
                   </p>
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFichierImport} style={{ display: 'none' }} id="input-import-terrains" />
@@ -914,22 +928,22 @@ Règles :
                       <div style={{ overflow: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '760px' }}>
                           <thead>
-                            <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Terrain</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Équipe</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Éducateur</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Jour</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Début</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Fin</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Zone</th>
+                            <tr style={{ borderBottom: `1px solid ${st.border}` }}>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Terrain</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Équipe</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Éducateur</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Jour</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Début</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Fin</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: st.textFaint, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Zone</th>
                               <th></th>
                             </tr>
                           </thead>
                           <tbody>
                             {importLignes.map(l => (
-                              <tr key={l._id} style={{ borderBottom: '1px solid #141414', background: !l.terrain_id ? '#ef444408' : 'transparent' }}>
+                              <tr key={l._id} style={{ borderBottom: `1px solid ${st.border}`, background: !l.terrain_id ? '#ef444408' : 'transparent' }}>
                                 <td style={{ padding: '6px 10px' }}>
-                                  <select style={{ ...st.input, borderColor: !l.terrain_id ? '#ef444460' : '#2a2a2a', minWidth: '130px' }} value={l.terrain_id} onChange={e => modifierLigneImport(l._id, 'terrain_id', e.target.value)}>
+                                  <select style={{ ...st.input, borderColor: !l.terrain_id ? '#ef444460' : st.border, minWidth: '130px' }} value={l.terrain_id} onChange={e => modifierLigneImport(l._id, 'terrain_id', e.target.value)}>
                                     <option value="">— aucun —</option>
                                     {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
                                   </select>
@@ -953,7 +967,7 @@ Règles :
                                     {ZONES.map(z => <option key={z.val} value={z.val}>{z.label}</option>)}
                                   </select>
                                 </td>
-                                <td style={{ padding: '6px 10px' }}><button onClick={() => supprimerLigneImport(l._id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '14px' }}>✕</button></td>
+                                <td style={{ padding: '6px 10px' }}><button onClick={() => supprimerLigneImport(l._id)} style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '14px' }}>✕</button></td>
                               </tr>
                             ))}
                           </tbody>
@@ -1017,7 +1031,7 @@ Règles :
                       </select>
                     </div>
                   </div>
-                  <p style={{ fontSize: '11px', color: '#555', margin: '-4px 0 12px' }}>
+                  <p style={{ fontSize: '11px', color: st.textFaint, margin: '-4px 0 12px' }}>
                     Horaires du club : {heuresClub.ouverture}–{heuresClub.fermeture}. Foot à 11 (U13+) : un demi-terrain par équipe (2 max sur un terrain plein). Foot à 5/futsal/U6-U11 : jusqu'à 5 zones sur un même terrain.
                   </p>
                   <div style={{ display: 'flex', gap: '10px' }}>
@@ -1026,7 +1040,7 @@ Règles :
                       {savingCreneau ? 'Enregistrement...' : 'Enregistrer'}
                     </button>
                     <button onClick={() => setFormCreneau(null)}
-                      style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       Annuler
                     </button>
                   </div>
@@ -1037,10 +1051,10 @@ Règles :
                   ceux de la semaine visible uniquement (exceptions datées). ── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                 <button onClick={() => setSemaineOffset(o => o - 1)}
-                  style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#fff', padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: st.card.background, border: `1px solid ${st.border}`, borderRadius: '8px', color: st.text, padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ‹
                 </button>
-                <span style={{ color: '#ccc', fontWeight: 600, fontSize: '13px' }}>
+                <span style={{ color: st.textDim, fontWeight: 600, fontSize: '13px' }}>
                   {(() => {
                     const dates = getDatesSemaine(semaineOffset)
                     return `${dates[0].labelCourt} – ${dates[6].labelCourt}`
@@ -1048,19 +1062,19 @@ Règles :
                   {semaineOffset === 0 && <span style={{ color: accentColor, marginLeft: '8px', fontSize: '11px', fontWeight: 700 }}>Cette semaine</span>}
                 </span>
                 <button onClick={() => setSemaineOffset(o => o + 1)}
-                  style={{ background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#fff', padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: st.card.background, border: `1px solid ${st.border}`, borderRadius: '8px', color: st.text, padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   ›
                 </button>
                 {semaineOffset !== 0 && (
                   <button onClick={() => setSemaineOffset(0)}
-                    style={{ background: 'none', border: 'none', color: '#555', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
                     revenir à cette semaine
                   </button>
                 )}
               </div>
 
               {estDirigeant && matchsSansTerrainTous.length > 0 && (
-                <div style={{ background: '#1a1505', border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
+                <div style={{ background: st.alertBg, border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
                   <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné (toutes semaines à venir)</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {matchsSansTerrainTous.map(m => {
@@ -1069,14 +1083,14 @@ Règles :
                       const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
                       return (
                         <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px' }}>
-                          <span style={{ color: '#ccc' }}>
+                          <span style={{ color: st.textDim }}>
                             {nomEquipe || 'Équipe'} · {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'} · {new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.heure ? ` ${m.heure.slice(0, 5)}` : ''}
                           </span>
                           <select
                             disabled={assigningMatchId === m.id}
                             value=""
                             onChange={e => assignerTerrainMatch(m, e.target.value)}
-                            style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: '#1a1a1a', color: accentColor, fontWeight: 600, fontSize: '12px', cursor: 'pointer', outline: 'none', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: st.bgRaised, color: accentColor, fontWeight: 600, fontSize: '12px', cursor: 'pointer', outline: 'none', fontFamily: 'Inter, sans-serif' }}>
                             <option value="" disabled>+ Affecter un terrain</option>
                             {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
                           </select>
@@ -1088,7 +1102,7 @@ Règles :
               )}
 
               {loadingPlanning ? (
-                <p style={{ color: '#444', fontSize: '13px' }}>Chargement du planning...</p>
+                <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
                   {getDatesSemaine(semaineOffset).map(j => {
@@ -1096,8 +1110,8 @@ Règles :
                     const matchsJour = matchsDuJour(j.dateStr)
                     return (
                       <div key={j.val}>
-                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px', textAlign: 'center' }}>{j.label.slice(0, 3)}</p>
-                        <p style={{ fontSize: '11px', color: '#333', margin: '0 0 8px', textAlign: 'center' }}>{j.labelCourt}</p>
+                        <p style={{ fontSize: '11px', fontWeight: 700, color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px', textAlign: 'center' }}>{j.label.slice(0, 3)}</p>
+                        <p style={{ fontSize: '11px', color: st.textGhost, margin: '0 0 8px', textAlign: 'center' }}>{j.labelCourt}</p>
                         {matchsJour.length > 0 && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
                             {matchsJour.map(m => {
@@ -1112,7 +1126,7 @@ Règles :
                                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: couleur, flexShrink: 0 }} />
                                     <span style={{ color: couleur, fontWeight: 700, fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomEquipe || 'Équipe'}</span>
                                   </div>
-                                  <p style={{ margin: '2px 0 0', color: '#888', fontSize: '9px' }}>
+                                  <p style={{ margin: '2px 0 0', color: st.textDim, fontSize: '9px' }}>
                                     ⚽ {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
                                   </p>
                                   {conflits.length > 0 && (
@@ -1124,7 +1138,7 @@ Règles :
                           </div>
                         )}
                         {liste.length === 0 ? (
-                          matchsJour.length === 0 && <p style={{ fontSize: '11px', color: '#333', textAlign: 'center' }}>—</p>
+                          matchsJour.length === 0 && <p style={{ fontSize: '11px', color: st.textGhost, textAlign: 'center' }}>—</p>
                         ) : (
                           liste.map(c => renderCreneauCard(c, j.dateStr, liste))
                         )}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useColors } from '../lib/theme'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -31,6 +32,7 @@ const grilleDuMois = (offset) => {
 // joueur) — même rendu de puces événement que le calendrier éducateur/club,
 // pas une deuxième implémentation qui dériverait de celle-ci avec le temps.
 export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClickMatch, onClickEvenement }) {
+  const colors = useColors()
   const items = [
     ...ents.map(e => ({ type: 'entrainement', data: e })),
     ...mts.map(m => ({ type: 'match', data: m })),
@@ -68,7 +70,7 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
         return (
           <div key={`m-${data.id}`} onClick={() => onClickMatch?.(data)}
             style={{
-              background: '#262626', border: '1px solid #333', color: '#ddd',
+              background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary,
               borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
               cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
             }}>
@@ -104,7 +106,7 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
           </div>
         )
       })}
-      {reste > 0 && <p style={{ margin: 0, fontSize: '9px', color: '#555' }}>+{reste}</p>}
+      {reste > 0 && <p style={{ margin: 0, fontSize: '9px', color: colors.text.faint }}>+{reste}</p>}
     </>
   )
 }
@@ -122,6 +124,7 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
 // fixes (rouge/gris/violet) pour rester distinguables entre elles quel que soit
 // le dashboard hôte.
 export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], onClickEntrainement, onClickMatch, onClickEvenement, accentColor = '#60a5fa' }) {
+  const colors = useColors()
   const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
@@ -155,18 +158,18 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
         <button onClick={() => setOffset(o => o - 1)}
-          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
           ‹
         </button>
-        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#888', flex: 1, textAlign: 'center' }}>{label}</p>
+        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, flex: 1, textAlign: 'center' }}>{label}</p>
         <button onClick={() => setOffset(o => o + 1)}
-          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
           ›
         </button>
-        <div style={{ display: 'flex', background: '#1a1a1a', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+        <div style={{ display: 'flex', background: colors.background.raised, borderRadius: '8px', padding: '2px', gap: '2px' }}>
           {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
             <button key={v} onClick={() => changerVue(v)}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? '#000' : '#888' }}>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors.black : colors.text.faint }}>
               {lbl}
             </button>
           ))}
@@ -185,16 +188,16 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             return (
               <div key={s} style={{
                 display: 'flex', gap: '10px', alignItems: vide ? 'center' : 'flex-start',
-                background: '#0a0a0a', borderRadius: '10px', padding: '8px 10px',
-                border: `1px solid ${estAujourdhui ? accentColor : '#1a1a1a'}`,
+                background: colors.background.sunken, borderRadius: '10px', padding: '8px 10px',
+                border: `1px solid ${estAujourdhui ? accentColor : colors.border.subtle}`,
               }}>
                 <div style={{ width: '46px', flexShrink: 0, textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : '#555' }}>{JOURS[i]}</p>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: estAujourdhui ? accentColor : '#fff' }}>{d.getDate()}</p>
+                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : colors.text.faint }}>{JOURS[i]}</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: estAujourdhui ? accentColor : colors.text.primary }}>{d.getDate()}</p>
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {vide ? (
-                    <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>—</p>
+                    <p style={{ margin: 0, fontSize: '11px', color: colors.text.ghost }}>—</p>
                   ) : (
                     <EvenementsJour ents={ents} mts={mts} evts={evts} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
                   )}
@@ -215,14 +218,14 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             const horsMois = vue === 'mois' && d.getMonth() !== moisCourant
             return (
               <div key={s} style={{
-                minHeight: vue === 'mois' ? (isMobile ? '44px' : '56px') : '90px', background: '#0a0a0a', borderRadius: '10px', padding: isMobile && vue === 'mois' ? '3px' : '5px',
-                border: `1px solid ${estAujourdhui ? accentColor : '#1a1a1a'}`,
+                minHeight: vue === 'mois' ? (isMobile ? '44px' : '56px') : '90px', background: colors.background.sunken, borderRadius: '10px', padding: isMobile && vue === 'mois' ? '3px' : '5px',
+                border: `1px solid ${estAujourdhui ? accentColor : colors.border.subtle}`,
                 display: 'flex', flexDirection: 'column', gap: '3px',
                 opacity: horsMois ? 0.35 : 1,
                 minWidth: 0, // sans ça, une grille à 1fr respecte quand même la largeur "min-content"
                 // du contenu (texte nowrap des chips) et déborde — piège classique de CSS Grid.
               }}>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : vide ? '#333' : '#555' }}>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : vide ? colors.text.ghost : colors.text.faint }}>
                   {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
                 </p>
                 <EvenementsJour ents={ents} mts={mts} evts={evts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
