@@ -2330,6 +2330,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
   }
 
+  // Partage d'une fiche déjà archivée (fichier_url = PDF public sur le storage) :
+  // API Web Share natif quand disponible (menu de partage du téléphone, WhatsApp
+  // inclus automatiquement parmi les apps installées) — sur desktop/navigateurs
+  // sans support, repli sur un lien wa.me pré-rempli (uniquement le lien, pas le
+  // fichier lui-même : wa.me ne sait pas joindre une pièce jointe).
+  const partagerFiche = async (url, titre) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: titre || 'Fiche séance', url })
+        return
+      } catch (e) {
+        if (e.name === 'AbortError') return
+      }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${titre ? titre + ' — ' : ''}${url}`)}`, '_blank')
+  }
+
   const sauvegarderFiche = async () => {
     setSavingFiche(true)
     const { data: inserted, error } = await supabase.from('seances_uploadees').insert({
@@ -8262,6 +8279,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                                   {s.fichier_url && (
                                     <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
                                   )}
+                                  {s.fichier_url && (
+                                    <button onClick={() => partagerFiche(s.fichier_url, s.theme)}
+                                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      Partager
+                                    </button>
+                                  )}
                                   {confirmSuppr === s.id ? (
                                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                       <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
@@ -9589,10 +9612,16 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
             {ficheApercu.fichier_url && !modeEditionApercu && (
-              <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
-                style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ⬇️ {t('seance_fichier', lang)}
-              </a>
+              <>
+                <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
+                  style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ⬇️ {t('seance_fichier', lang)}
+                </a>
+                <button onClick={() => partagerFiche(ficheApercu.fichier_url, ficheApercu.theme)}
+                  style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Partager
+                </button>
+              </>
             )}
             {modeEditionApercu ? (
               <>
