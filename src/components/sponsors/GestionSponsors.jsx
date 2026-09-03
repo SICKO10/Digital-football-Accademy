@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
+import { makeUseSt } from '../../lib/theme'
 
 const COULEURS_NIVEAU = [
   { val: '#22c55e', label: 'Vert' },
@@ -37,7 +38,7 @@ const CONTACT_ROLES = [
 ]
 const CONTACT_ROLE_LABEL = (role) => CONTACT_ROLES.find(r => r.val === role)?.label || null
 
-const st = {
+const stSombre = {
   card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   tab: (active, color = '#4ade80') => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? color : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
@@ -46,7 +47,24 @@ const st = {
   btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }),
   input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
   label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
+  modalBg: '#0a0a0a', modalBorder: '#1a1a1a',
+  bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
+  text: '#fff', textDim: '#ccc', textFaint: '#666', textGhost: '#444',
 }
+const stClaire = {
+  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
+  tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  tab: (active, color = '#4ade80') => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #cbd5e1', background: active ? color : 'transparent', color: active ? '#000' : '#334155', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
+  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
+  btnSecondary: { background: 'transparent', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
+  btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }),
+  input: { background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
+  label: { fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
+  modalBg: '#ffffff', modalBorder: '#e2e8f0',
+  bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
+  text: '#0f172a', textDim: '#334155', textFaint: '#64748b', textGhost: '#94a3b8',
+}
+const useSt = makeUseSt(stSombre, stClaire)
 
 // ── Calculs (fonctions pures, hors composant) ────────────────────────────────
 const getMontantRecu = (sponsor) => {
@@ -80,10 +98,11 @@ const getAlerts = (sponsors) => {
 
 // ── Petits composants de présentation ────────────────────────────────────────
 function KpiCard({ label, valeur, couleur = '#4ade80' }) {
+  const st = useSt()
   return (
     <div style={{ ...st.card, textAlign: 'center' }}>
       <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: couleur }}>{valeur}</p>
-      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+      <p style={{ margin: '4px 0 0', fontSize: '11px', color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
     </div>
   )
 }
@@ -97,6 +116,7 @@ function StatutBadge({ statut }) {
 }
 
 function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false }) {
+  const st = useSt()
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
   const total = Number(sponsor.montant_contrat) || 0
@@ -116,13 +136,13 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
             )}
             <StatutBadge statut={statut} />
             {sponsor.role && (
-              <span style={{ fontSize: '11px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '4px', padding: '2px 8px', color: '#aaa' }}>
+              <span style={{ fontSize: '11px', background: st.bgRaised, border: `1px solid ${st.border}`, borderRadius: '4px', padding: '2px 8px', color: st.textDim }}>
                 {ROLE_LABEL(sponsor.role)}
               </span>
             )}
           </div>
           {(sponsor.contact_nom || sponsor.contact_email) && (
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>
               {[sponsor.contact_nom, CONTACT_ROLE_LABEL(sponsor.contact_role), sponsor.contact_email].filter(Boolean).join(' · ')}
             </p>
           )}
@@ -147,16 +167,16 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
         </div>
         <div>
           <p style={st.label}>Reste</p>
-          <p style={{ margin: 0, fontWeight: 700, color: total - recu > 0 ? '#f59e0b' : '#666' }}>{Math.max(0, total - recu).toLocaleString('fr-FR')} €</p>
+          <p style={{ margin: 0, fontWeight: 700, color: total - recu > 0 ? '#f59e0b' : st.textFaint }}>{Math.max(0, total - recu).toLocaleString('fr-FR')} €</p>
         </div>
       </div>
 
-      <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden', marginBottom: '10px' }}>
+      <div style={{ background: st.bgRaised, borderRadius: '6px', height: '6px', overflow: 'hidden', marginBottom: '10px' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: statut.color }} />
       </div>
 
       {sponsor.date_fin && (
-        <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666' }}>Fin de contrat : {new Date(sponsor.date_fin).toLocaleDateString('fr-FR')}</p>
+        <p style={{ margin: '0 0 10px', fontSize: '12px', color: st.textFaint }}>Fin de contrat : {new Date(sponsor.date_fin).toLocaleDateString('fr-FR')}</p>
       )}
 
       {contrepartiesNiveau.length > 0 && (
@@ -167,7 +187,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
               const livree = contrepartiesLivrees.includes(c)
               return (
                 <button key={i} onClick={() => !readOnly && onToggleContrepartie(sponsor, c)} disabled={readOnly}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#22c55e' : '#666', cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#22c55e' : st.textFaint, cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
                   <span>{livree ? '✓' : '○'}</span> {c}
                 </button>
               )
@@ -180,12 +200,13 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
 }
 
 function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOnly = false }) {
+  const st = useSt()
   return (
     <div style={{ ...st.card, borderTop: `3px solid ${niveau.couleur}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
         <div>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: niveau.couleur }}>{niveau.nom}</p>
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{Number(niveau.montant_annuel || 0).toLocaleString('fr-FR')} € / an indicatif</p>
+          <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>{Number(niveau.montant_annuel || 0).toLocaleString('fr-FR')} € / an indicatif</p>
         </div>
         {!readOnly && (
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
@@ -195,17 +216,18 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
         )}
       </div>
       {niveau.contreparties?.length > 0 && (
-        <ul style={{ margin: '10px 0 0', paddingLeft: '18px', color: '#aaa', fontSize: '12px' }}>
+        <ul style={{ margin: '10px 0 0', paddingLeft: '18px', color: st.textDim, fontSize: '12px' }}>
           {niveau.contreparties.map((c, i) => <li key={i}>{c}</li>)}
         </ul>
       )}
-      <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#555' }}>{nbSponsors} sponsor{nbSponsors > 1 ? 's' : ''} · {montantTotal.toLocaleString('fr-FR')} € cette saison</p>
+      <p style={{ margin: '10px 0 0', fontSize: '11px', color: st.textFaint }}>{nbSponsors} sponsor{nbSponsors > 1 ? 's' : ''} · {montantTotal.toLocaleString('fr-FR')} € cette saison</p>
     </div>
   )
 }
 
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
 function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor = '#4ade80' }) {
+  const st = useSt()
   const [form, setForm] = useState(() => ({
     entreprise: sponsor?.entreprise || '',
     contact_nom: sponsor?.contact_nom || '',
@@ -246,10 +268,10 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{sponsor ? 'Modifier le sponsor' : 'Nouveau sponsor'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -310,7 +332,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
               <label style={st.label}>Contreparties livrées</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {niveauActif.contreparties.map((c, i) => (
-                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#ccc', cursor: 'pointer' }}>
+                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: st.textDim, cursor: 'pointer' }}>
                     <input type="checkbox" checked={form.contreparties_livrees.includes(c)} onChange={() => toggleContrepartie(c)} />
                     {c}
                   </label>
@@ -337,6 +359,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
 }
 
 function ModalPaiement({ sponsor, onClose, onSave, saving }) {
+  const st = useSt()
   const [montant, setMontant] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [mode, setMode] = useState(MODES_PAIEMENT[0])
@@ -346,10 +369,10 @@ function ModalPaiement({ sponsor, onClose, onSave, saving }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Ajouter un paiement — {sponsor.entreprise}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -385,6 +408,7 @@ function ModalPaiement({ sponsor, onClose, onSave, saving }) {
 }
 
 function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, saving, accentColor = '#4ade80' }) {
+  const st = useSt()
   const [nom, setNom] = useState(niveau?.nom || '')
   const [montantAnnuel, setMontantAnnuel] = useState(niveau?.montant_annuel != null ? String(niveau.montant_annuel) : '')
   const [couleur, setCouleur] = useState(niveau?.couleur || COULEURS_NIVEAU[0].val)
@@ -403,10 +427,10 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{niveau ? 'Modifier le niveau' : 'Nouveau niveau'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -422,7 +446,7 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
             <div style={{ display: 'flex', gap: '8px' }}>
               {COULEURS_NIVEAU.map(c => (
                 <button key={c.val} onClick={() => setCouleur(c.val)} title={c.label}
-                  style={{ width: '28px', height: '28px', borderRadius: '50%', background: c.val, border: couleur === c.val ? '2px solid #fff' : '1px solid #333', cursor: 'pointer' }} />
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', background: c.val, border: couleur === c.val ? `2px solid ${st.text}` : `1px solid ${st.borderStrong}`, cursor: 'pointer' }} />
               ))}
             </div>
           </div>
@@ -430,9 +454,9 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
             <label style={st.label}>Contreparties</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
               {contreparties.map((c, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1a1a1a', borderRadius: '8px', padding: '6px 10px' }}>
-                  <span style={{ flex: 1, fontSize: '13px', color: '#ccc' }}>{c}</span>
-                  <button onClick={() => supprimerContrepartie(i)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>✕</button>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: st.bgRaised, borderRadius: '8px', padding: '6px 10px' }}>
+                  <span style={{ flex: 1, fontSize: '13px', color: st.textDim }}>{c}</span>
+                  <button onClick={() => supprimerContrepartie(i)} style={{ background: 'none', border: 'none', color: st.textDim, cursor: 'pointer' }}>✕</button>
                 </div>
               ))}
             </div>
@@ -472,6 +496,7 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 
 // ── Composant principal ──────────────────────────────────────────────────────
 export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
+  const st = useSt()
   const [vue, setVue] = useState('dashboard')
   const [saisonActive, setSaisonActive] = useState(saison)
   const [niveaux, setNiveaux] = useState([])
@@ -605,7 +630,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     )
   }
 
-  if (loading) return <p style={{ color: '#444', fontSize: '13px' }}>Chargement...</p>
+  if (loading) return <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement...</p>
 
   // Tri/filtre appliqué uniquement à l'affichage de l'onglet "Sponsors" — ne
   // touche ni les KPI ni le dashboard, calculés sur `sponsors` en entier.
@@ -651,7 +676,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
             <KpiCard label="Sponsors actifs" valeur={sponsors.length} couleur={accentColor} />
-            <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur="#d4d4d8" />
+            <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur={st.text} />
             <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur="#22c55e" />
             <KpiCard label="Restant à recevoir" valeur={`${Math.max(0, budgetTotal - encaisse).toLocaleString('fr-FR')} €`} couleur="#f59e0b" />
           </div>
@@ -661,7 +686,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
               <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#ef4444' }}>Alertes</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {alerts.map((a, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
+                  <p key={i} style={{ margin: 0, fontSize: '13px', color: st.textDim }}>
                     {a.type === 'expiration'
                       ? `Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`
                       : `Paiement en retard — ${a.sponsor.entreprise}`}
@@ -681,7 +706,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                   return (
                     <div key={n.id} style={{ ...st.card, borderLeft: `4px solid ${n.couleur}` }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{n.nom}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''} · {montant.toLocaleString('fr-FR')} €</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''} · {montant.toLocaleString('fr-FR')} €</p>
                     </div>
                   )
                 })}
@@ -692,7 +717,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           <div>
             <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 10px' }}>Derniers sponsors</p>
             {sponsors.length === 0 ? (
-              <p style={{ color: '#444', fontSize: '13px' }}>Aucun sponsor pour l'instant.</p>
+              <p style={{ color: st.textGhost, fontSize: '13px' }}>Aucun sponsor pour l'instant.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {[...sponsors].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map(s => (
@@ -723,11 +748,11 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             )}
           </div>
           {sponsors.length === 0 ? (
-            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
               Aucun sponsor pour la saison {saisonActive}. Clique sur "+ Nouveau sponsor" pour commencer.
             </div>
           ) : sponsorsAffiches.length === 0 ? (
-            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
               Aucun sponsor impayé — tout est à jour
             </div>
           ) : (
@@ -752,7 +777,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             <button onClick={() => setModalNiveau('new')} style={{ ...st.btnSolid(accentColor), marginBottom: '1.25rem' }}>+ Ajouter un niveau</button>
           )}
           {niveaux.length === 0 ? (
-            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: '#555' }}>
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
               Commence par créer tes niveaux de partenariat (ex: Bronze 500€, Silver 1000€, Gold 2000€).
             </div>
           ) : (
