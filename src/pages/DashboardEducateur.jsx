@@ -4131,12 +4131,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
       { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats'] },
-      { key: 'materiel', label: 'Mon matériel', icon: <IcoBox /> },
     ] },
     { titre: 'COMPÉTITION', items: [
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'causerie', label: t('nav_causerie', lang), icon: <IcoMic /> },
-      { key: 'deplacements', label: t('nav_deplacements', lang), icon: <IcoBus />, subKeys: ['deplacements', 'terrains'] },
+      { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
       { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun />, subKeys: ['entrainements', 'mes_seances'] },
@@ -6556,9 +6555,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           </>
         )}
 
-        {['deplacements', 'terrains'].includes(activeSection) && (
+        {['materiel', 'terrains', 'deplacements'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'deplacements', label: t('nav_deplacements', lang) }, { key: 'terrains', label: t('nav_terrains', lang) }]}
+            items={[{ key: 'materiel', label: t('nav_materiel', lang) }, { key: 'terrains', label: t('nav_terrains', lang) }, { key: 'deplacements', label: t('nav_deplacements', lang) }]}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
