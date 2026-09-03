@@ -3677,7 +3677,8 @@ Règles :
 
         {/* ── PROJET SPORTIF ── */}
         {activeTab === 'projet_sportif' && canViewSection('sportif') && (
-          <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')} />
+          <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
+            logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}

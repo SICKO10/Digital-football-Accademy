@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { saisonActuelle, bornesSaison, dateFr } from '../../lib/saison'
 import { enqueueGroqRequest, libelleStatutGroq } from '../../lib/groqQueue'
+import PlanificationPDFTemplate from './PlanificationPDFTemplate'
 
 const TYPE_PHASE = {
   preparation: { label: 'Préparation', couleur: '#4ade80' },
@@ -760,87 +761,7 @@ function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, 
   )
 }
 
-// Document imprimable (thème clair, indépendant de l'UI à l'écran) capturé en
-// PDF via html2canvas + jsPDF — même technique que #fiche-print (cf. index.css
-// et DashboardEducateur.jsx/genererPdfFiche), avec une mise en page dédiée
-// plutôt que de figer l'UI sombre telle quelle.
-function DocumentImprimable({ plan, phases, semaines, competitions, categorie }) {
-  return (
-    <div id="plan-annuel-print" style={{ display: 'none', width: 1400, padding: 30, background: '#ffffff', color: '#111', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box' }}>
-      <h1 style={{ fontSize: 22, margin: '0 0 4px' }}>Planification Annuelle — {labelCategorie(categorie)}</h1>
-      <p style={{ fontSize: 12, color: '#444', margin: '0 0 4px' }}>
-        {dateFr(plan.date_debut, { day: '2-digit', month: 'long', year: 'numeric' })} → {dateFr(plan.date_fin, { day: '2-digit', month: 'long', year: 'numeric' })}
-        {plan.nb_seances_semaine && ` · ${plan.nb_seances_semaine} entraînements / semaine`}
-      </p>
-      {plan.projet_jeu && <p style={{ fontSize: 12, fontStyle: 'italic', color: '#111', margin: '0 0 12px' }}>« {plan.projet_jeu} »</p>}
-
-      {phases.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 20 }}>
-          <thead>
-            <tr style={{ background: '#111', color: '#fff' }}>
-              {['Phase', 'Période', 'Thème OFF', 'Thème DEF', 'Objectifs', 'Critères de réussite'].map(c => (
-                <th key={c} style={{ padding: 6, textAlign: 'left', border: '1px solid #ccc' }}>{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {phases.map(ph => (
-              <tr key={ph.id}>
-                <td style={{ padding: 6, border: '1px solid #ccc', fontWeight: 700 }}>{ph.nom}</td>
-                <td style={{ padding: 6, border: '1px solid #ccc' }}>{dateFr(ph.date_debut)} → {dateFr(ph.date_fin)}</td>
-                <td style={{ padding: 6, border: '1px solid #ccc' }}>{ph.theme_offensif}{ph.sous_principes_offensifs?.length ? ' — ' + ph.sous_principes_offensifs.join(', ') : ''}</td>
-                <td style={{ padding: 6, border: '1px solid #ccc' }}>{ph.theme_defensif}{ph.sous_principes_defensifs?.length ? ' — ' + ph.sous_principes_defensifs.join(', ') : ''}</td>
-                <td style={{ padding: 6, border: '1px solid #ccc' }}>{ph.objectifs_prioritaires?.join(', ')}</td>
-                <td style={{ padding: 6, border: '1px solid #ccc' }}>{ph.criteres_reussite?.join(', ')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {competitions.length > 0 && (
-        <p style={{ fontSize: 11, marginBottom: 16 }}>
-          <strong>Compétitions : </strong>
-          {competitions.map(c => `${c.nom} (${dateFr(c.date, { day: '2-digit', month: 'short', year: '2-digit' })})`).join(' · ')}
-        </p>
-      )}
-
-      {semaines.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9 }}>
-          <thead>
-            <tr style={{ background: '#111', color: '#fff' }}>
-              {COLONNES_SEMAINES.map(c => <th key={c} style={{ padding: 4, textAlign: 'left', border: '1px solid #ccc' }}>{c}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {semaines.map(sem => {
-              const phase = phases.find(ph => ph.id === sem.phase_id)
-              return (
-                <tr key={sem.id}>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{phase?.nom || ''}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.mois}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.numero_semaine}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.theme_offensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.sous_principe_offensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.theme_defensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.sous_principe_defensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.objectif_offensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.objectif_defensif}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.charge_s1}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.charge_s2}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.competition}</td>
-                  <td style={{ padding: 4, border: '1px solid #ccc' }}>{sem.remarques}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
-  )
-}
-
-export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnly }) {
+export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnly, logoUrl, couleurPrimaire, couleurSecondaire }) {
   const colors = useColors()
   const [vue, setVue] = useState('phases')
   const [plan, setPlan] = useState(undefined) // undefined = chargement, null = aucun plan
@@ -849,9 +770,12 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
   const [competitions, setCompetitions] = useState([])
   const [phaseActive, setPhaseActive] = useState(null)
   const [semaineActive, setSemaineActive] = useState(null)
-  const [exporting, setExporting] = useState(false)
   const [scanMode, setScanMode] = useState(null) // null | 'scan' | 'revue'
   const [scanExtrait, setScanExtrait] = useState(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportConfig, setExportConfig] = useState({ couleurPrimaire: couleurPrimaire || '#1a3a6e', couleurSecondaire: couleurSecondaire || '#4ade80', logoUrl: logoUrl || null })
+  const [exportLoading, setExportLoading] = useState(false)
+  const pdfRef = useRef(null)
 
   const chargerPlan = async () => {
     const { data: p } = await supabase.from('plan_annuel').select('*').eq('club_id', clubId).eq('categorie', categorie).eq('saison', saisonActuelle()).maybeSingle()
@@ -921,17 +845,20 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
     chargerPlan()
   }
 
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => setExportConfig(c => ({ ...c, logoUrl: reader.result }))
+    reader.readAsDataURL(file)
+  }
+
   const exporterPDF = async () => {
-    const el = document.getElementById('plan-annuel-print')
-    if (!el) return
-    setExporting(true)
-    el.style.display = 'block'
-    el.style.position = 'fixed'
-    el.style.left = '-9999px'
-    el.style.top = '0'
+    if (!pdfRef.current) return
+    setExportLoading(true)
     try {
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 1400 })
       const { jsPDF } = await import('jspdf')
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a3' })
       const pageWidth = pdf.internal.pageSize.getWidth()
@@ -949,10 +876,13 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
-      pdf.save(`planification-${categorie}-${saisonActuelle()}.pdf`)
+      pdf.save(`planification-${categorie}-${plan.saison}.pdf`)
+      setShowExportModal(false)
+    } catch (e) {
+      console.error('Erreur export PDF planification:', e)
+      alert('Erreur lors de la génération du PDF.')
     } finally {
-      el.style.display = 'none'
-      setExporting(false)
+      setExportLoading(false)
     }
   }
 
@@ -976,9 +906,9 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
               </button>
             ))}
           </div>
-          <button onClick={exporterPDF} disabled={exporting}
-            style={{ background: colors.background.raised, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: exporting ? 0.6 : 1 }}>
-            {exporting ? 'Export...' : 'Exporter PDF'}
+          <button onClick={() => setShowExportModal(true)}
+            style={{ background: colors.background.raised, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            Exporter PDF
           </button>
         </div>
       </div>
@@ -999,7 +929,64 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
           onEditSemaine={setSemaineActive} onAjouterSemaine={() => setSemaineActive({ _new: true, numero_semaine: semaines.length + 1 })} onGenererSemaines={genererSemaines} />
       )}
 
-      <DocumentImprimable plan={plan} phases={phases} semaines={semaines} competitions={competitions} categorie={categorie} />
+      {/* Template caché utilisé pour la capture html2canvas — toujours monté
+          hors-écran, pas togglé en display, pour une mise en page déjà stable
+          au moment de l'export. */}
+      <div style={{ position: 'fixed', left: -9999, top: 0 }}>
+        <PlanificationPDFTemplate ref={pdfRef} plan={plan} phases={phases} competitions={competitions} categorie={categorie}
+          logoUrl={exportConfig.logoUrl} couleurPrimaire={exportConfig.couleurPrimaire} couleurSecondaire={exportConfig.couleurSecondaire} />
+      </div>
+
+      {showExportModal && (
+        <div onClick={() => setShowExportModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 28, maxWidth: 420, width: '100%' }}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: 16, fontWeight: 700 }}>Personnaliser le PDF</h3>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>Logo du club</div>
+              <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ color: colors.text.faint, fontSize: 12 }} />
+              {exportConfig.logoUrl && <img src={exportConfig.logoUrl} alt="" style={{ marginTop: 8, height: 50, objectFit: 'contain' }} />}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div>
+                <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Couleur principale</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="color" value={exportConfig.couleurPrimaire} onChange={e => setExportConfig(c => ({ ...c, couleurPrimaire: e.target.value }))}
+                    style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+                  <span style={{ color: colors.text.faint, fontSize: 12 }}>{exportConfig.couleurPrimaire}</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Couleur accent</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="color" value={exportConfig.couleurSecondaire} onChange={e => setExportConfig(c => ({ ...c, couleurSecondaire: e.target.value }))}
+                    style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+                  <span style={{ color: colors.text.faint, fontSize: 12 }}>{exportConfig.couleurSecondaire}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: exportConfig.couleurPrimaire, borderRadius: 8, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+              {exportConfig.logoUrl && <img src={exportConfig.logoUrl} alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} />}
+              <div>
+                <div style={{ color: exportConfig.couleurSecondaire, fontSize: 9, fontWeight: 800 }}>PLANIFICATION ANNUELLE</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>Catégorie {labelCategorie(categorie)}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowExportModal(false)} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 700 }}>
+                Annuler
+              </button>
+              <button onClick={exporterPDF} disabled={exportLoading}
+                style={{ background: pole.couleur, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 800, cursor: 'pointer', opacity: exportLoading ? 0.6 : 1 }}>
+                {exportLoading ? 'Génération...' : 'Générer le PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {phaseActive && (
         <ModalPhase phase={phaseActive} planId={plan.id} pole={pole} onDelete={supprimerPhase}

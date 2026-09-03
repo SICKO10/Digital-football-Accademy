@@ -211,7 +211,7 @@ function SectionRegles({ pole, clubId, readOnly }) {
   )
 }
 
-function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
+function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimaire, couleurSecondaire, onRetour }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
   const equipesDuPole = categories.filter(c => pole.categories.includes(c.nom))
@@ -293,7 +293,8 @@ function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
                 ))}
               </div>
             )}
-            <PlanificationAnnuelle categorie={categorieActive} clubId={clubId} pole={pole} readOnly={readOnly} />
+            <PlanificationAnnuelle categorie={categorieActive} clubId={clubId} pole={pole} readOnly={readOnly}
+              logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} />
           </div>
         )
       )}
@@ -307,13 +308,14 @@ function DetailPole({ pole, categories, clubId, readOnly, onRetour }) {
 // club (club_categories) ; Principes de jeu / Planification annuelle / Règles
 // du jeu sont des sections à part entière (principes_jeu, planification_annuelle,
 // regles_jeu), en écriture pour le club/staff et lecture seule sinon.
-export default function ProjetSportif({ categories = [], clubId, readOnly = false }) {
+export default function ProjetSportif({ categories = [], clubId, readOnly = false, logoUrl, couleurPrimaire, couleurSecondaire }) {
   const colors = useColors()
   const [poleActifKey, setPoleActifKey] = useState(null)
   const [genre, setGenre] = useState('masculin')
 
   if (poleActifKey) {
-    return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly} onRetour={() => setPoleActifKey(null)} />
+    return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly}
+      logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} onRetour={() => setPoleActifKey(null)} />
   }
 
   const poles = genre === 'masculin' ? polesMasculins() : polesFeminins()
