@@ -394,32 +394,42 @@ function DashboardCoachInner() {
 
   const isAdminClubs = COACH_ADMIN_EMAILS.includes(coachEmail)
 
-  // Deux groupes de nav (cf. maquette) : PLATEFORME = vue d'ensemble + pages
-  // admin, ACTIVITÉ = le travail quotidien du coach (accessible à tous).
-  const NAV_PLATEFORME = [
+  // 4 groupes logiques (au lieu de 2 fourre-tout Plateforme/Activité) :
+  // TABLEAU DE BORD = vue d'ensemble + pages chiffres, ACTIVITÉ = travail
+  // quotidien à traiter (analyses/demandes), CONTENU = alimentation
+  // plateforme (bibliothèque, IA, communication, parrainage), OUTILS =
+  // support/annuaire/liens. Le gating isAdminClubs par item est inchangé
+  // (mêmes items réservés aux 2 comptes admin qu'avant ce regroupement).
+  const NAV_TABLEAU_DE_BORD = [
     { id: 'overview', label: "Vue d'ensemble", Icon: IcoGrid, badge: 0 },
     ...(isAdminClubs ? [
       { id: 'users', label: 'Utilisateurs', Icon: IcoUsers, badge: 0 },
       { id: 'subscriptions', label: 'Abonnements', Icon: IcoCard, badge: 0 },
       { id: 'revenue', label: "Chiffre d'affaires", Icon: IcoDollar, badge: 0 },
-      { id: 'referrals', label: 'Parrainage FreePlay', Icon: IcoShare, badge: 0 },
-      { id: 'communication', label: 'Communication', Icon: IcoMegaphone, badge: 0 },
     ] : []),
   ]
   const NAV_ACTIVITE = [
     { id: 'analyses', label: 'Analyse Joueur', Icon: IcoPlay, badge: enAttente.length },
-    { id: 'certifications', label: 'Badge Certifié', Icon: IcoShield, badge: certifsEnAttente.length },
     { id: 'seances_club', label: 'Analyse Séance', Icon: IcoBook, badge: seancesEnAttente.length },
+    { id: 'certifications', label: 'Badge Certifié', Icon: IcoShield, badge: certifsEnAttente.length },
     ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', Icon: IcoHome, badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
+  ]
+  const NAV_CONTENU = [
     ...(isAdminClubs ? [{ id: 'bibliotheque', label: 'Bibliothèque', Icon: IcoLibrary, badge: 0 }] : []),
-    { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
-    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', Icon: IcoLink, badge: 0 }] : []),
-    { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
     { id: 'analyseur_ia', label: 'Analyseur IA', Icon: IcoMic, badge: 0 },
+    ...(isAdminClubs ? [
+      { id: 'communication', label: 'Communication', Icon: IcoMegaphone, badge: 0 },
+      { id: 'referrals', label: 'Parrainage FreePlay', Icon: IcoShare, badge: 0 },
+    ] : []),
+  ]
+  const NAV_OUTILS = [
+    { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
+    { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
+    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Stripe Club', Icon: IcoLink, badge: 0 }] : []),
   ]
 
   const TITRES_SECTION = Object.fromEntries(
-    [...NAV_PLATEFORME, ...NAV_ACTIVITE].map(item => [item.id, item.label])
+    [...NAV_TABLEAU_DE_BORD, ...NAV_ACTIVITE, ...NAV_CONTENU, ...NAV_OUTILS].map(item => [item.id, item.label])
   )
 
   const renderNavItem = (item) => {
@@ -428,6 +438,8 @@ function DashboardCoachInner() {
     return (
       <button key={item.id}
         onClick={() => { setActiveSection(item.id); if (isMobile) setSidebarOpen(false) }}
+        onMouseEnter={e => { if (!actif) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+        onMouseLeave={e => { if (!actif) e.currentTarget.style.background = 'transparent' }}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 9,
           padding: '8px 18px', background: actif ? SIDEBAR.active : 'transparent',
@@ -446,6 +458,15 @@ function DashboardCoachInner() {
       </button>
     )
   }
+
+  const renderNavSection = (label, items) => items.length > 0 && (
+    <div key={label}>
+      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 18px 5px', margin: 0 }}>
+        {label}
+      </p>
+      {items.map(renderNavItem)}
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: c.bg, color: c.text, fontFamily: fonts.body, fontSize: 14 }}>
@@ -482,15 +503,10 @@ function DashboardCoachInner() {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 18px 5px', margin: 0 }}>
-            Plateforme
-          </p>
-          {NAV_PLATEFORME.map(renderNavItem)}
-
-          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 18px 5px', margin: 0 }}>
-            Activité
-          </p>
-          {NAV_ACTIVITE.map(renderNavItem)}
+          {renderNavSection('Tableau de bord', NAV_TABLEAU_DE_BORD)}
+          {renderNavSection('Activité', NAV_ACTIVITE)}
+          {renderNavSection('Contenu', NAV_CONTENU)}
+          {renderNavSection('Outils', NAV_OUTILS)}
         </div>
 
         <div style={{ padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
