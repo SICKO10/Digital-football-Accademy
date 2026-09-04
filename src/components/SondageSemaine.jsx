@@ -47,7 +47,7 @@ const OPTIONS_SONDAGE = [
 // blessé / malade / convoqué, la table `disponibilites` existante), et
 // l'éducateur y voit la réponse de toute l'équipe, semaine par semaine,
 // avant de placer ses séances.
-export default function SondageSemaine({ mode, userId, educateurId, equipeCategorieId, accentColor = colors.accent.blue }) {
+export default function SondageSemaine({ mode, userId, educateurId, equipeCategorieId, accentColor = colors.accent.blue, onVoirFiche }) {
   const colors2 = useColors()
   // Vue mois : réservée au mode joueur (lecture/navigation seulement, cliquer un
   // événement ramène sur la semaine correspondante pour répondre au sondage) —
@@ -101,7 +101,7 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
     // equipeCategorieId : un même éducateur peut gérer plusieurs équipes
     // (switcher, cf. DashboardEducateur.jsx) — sans ce filtre, entraînements/
     // matchs/roster des différentes équipes du coach se mélangeraient.
-    let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+    let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant, fiche_id').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
     let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
     if (equipeCategorieId) { qEnt = qEnt.eq('club_categorie_id', equipeCategorieId); qMts = qMts.eq('club_categorie_id', equipeCategorieId) }
     const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
@@ -218,7 +218,8 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {evenementsSemaine.map(ev => (
               <CarteEvenementEducateur key={ev.id} ev={ev} roster={roster} reponses={dispoEquipe[ev.id] || {}}
-                ouvert={evenementOuvert === ev.id} onToggle={() => setEvenementOuvert(o => o === ev.id ? null : ev.id)} accentColor={accentColor} />
+                ouvert={evenementOuvert === ev.id} onToggle={() => setEvenementOuvert(o => o === ev.id ? null : ev.id)} accentColor={accentColor}
+                onVoirFiche={onVoirFiche} />
             ))}
           </div>
         )}
@@ -331,7 +332,7 @@ const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', emoji: '⏳'
 // taux de réponse avec barre de progression, clic → détail des joueurs
 // groupés par statut (y compris "sans réponse", qui n'est pas un statut
 // stocké mais l'absence de ligne dans `disponibilites` pour ce joueur).
-function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor }) {
+function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor, onVoirFiche }) {
   const colors = useColors()
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   const compte = (val) => Object.values(reponses).filter(s => s === val).length
@@ -369,6 +370,13 @@ function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accen
               )
             })}
           </div>
+
+          {ev.type === 'entrainement' && ev.fiche_id && onVoirFiche && (
+            <button onClick={e => { e.stopPropagation(); onVoirFiche(ev.fiche_id) }}
+              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+              Voir fiche
+            </button>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ textAlign: 'right' }}>

@@ -156,6 +156,17 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
                 {form.verrouillee_joueur ? 'Déjà verrouillée' : 'Le joueur peut compléter cette évaluation avant toi'}
               </div>
             </button>
+            {form.verrouillee_joueur && (
+              <button onClick={() => basculerFlag('verrouillee_joueur', false)}
+                style={{ flex: '1 1 220px', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 10, padding: 12, cursor: 'pointer' }}>
+                <div style={{ color: colors.text.faint, fontWeight: 700, fontSize: 12 }}>
+                  🔓 Déverrouiller
+                </div>
+                <div style={{ color: colors.text.faint, fontSize: 11, marginTop: 2 }}>
+                  Le joueur pourra à nouveau compléter cette évaluation (si le pré-remplissage est autorisé)
+                </div>
+              </button>
+            )}
           </div>
         )}
 
