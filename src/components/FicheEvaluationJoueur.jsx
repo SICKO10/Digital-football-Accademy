@@ -70,9 +70,17 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
   // Bascule immédiate (indépendante du bouton "Enregistrer") — l'éducateur
   // doit pouvoir autoriser le pré-remplissage avant même d'avoir écrit quoi
   // que ce soit, et la visibilité peut changer à tout moment sans re-verrouiller.
+  // Le payload inclut tout `form` (comme sauvegarder) et pas seulement le flag :
+  // un payload partiel ferait un upsert qui écrase les autres colonnes à NULL
+  // tant qu'aucune ligne n'existe encore pour cette période — ce qui effaçait
+  // le texte saisi mais jamais enregistré dès qu'on cliquait sur "Rendre visible"
+  // avant "Enregistrer" (bug rapporté).
   const basculerFlag = async (flagKey, valeur) => {
     setErreur(null)
-    const payload = { equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, [flagKey]: valeur }
+    const reste = { ...form }
+    delete reste.id
+    delete reste.created_at
+    const payload = { ...reste, equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, [flagKey]: valeur, updated_at: new Date().toISOString() }
     try {
       const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
       if (error) throw error
