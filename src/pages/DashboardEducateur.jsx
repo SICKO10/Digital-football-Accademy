@@ -1466,6 +1466,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (idActif !== equipeActiveId) setEquipeActiveId(idActif)
     const [, matchsData] = await Promise.all([chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif), chargerRapportsRecents(targetId, idActif)])
     await chargerNotationsMatch(targetId, matchsData.map(m => m.id))
+    await chargerEvaluationsJoueurs(targetId)
     setLoading(false)
   }
 
@@ -1684,6 +1685,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setNotationsMatch(data || [])
   }
 
+  // Fiches d'évaluation (evaluations_joueur, cf. FicheEvaluationJoueur.jsx) —
+  // distinct de notations_match (note/10 par match). equipe_joueur_id référence
+  // equipe_joueurs.id (= joueurs[].id dans ce fichier), pas profiles.id.
+  const [evaluationsJoueurs, setEvaluationsJoueurs] = useState([])
+  const chargerEvaluationsJoueurs = async (uid) => {
+    const { data } = await supabase.from('evaluations_joueur').select('equipe_joueur_id, note_globale_saison, updated_at').eq('educateur_id', uid)
+    setEvaluationsJoueurs(data || [])
+  }
+  // Dernière évaluation renseignée pour un joueur (toutes périodes/saisons
+  // confondues), utilisée pour la note "éducateur" du classement et le
+  // profil joueur — seule note_globale_saison est numérique dans la fiche,
+  // les 4 aspects (technique/physique/mental/tactique) ne sont que du texte
+  // libre (points forts / à améliorer), pas de score par aspect.
+  const derniereEvaluation = (equipeJoueurId) => {
+    const rows = evaluationsJoueurs.filter(e => e.equipe_joueur_id === equipeJoueurId && e.note_globale_saison != null)
+    if (rows.length === 0) return null
+    return rows.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]
+  }
+
   const [notesEdu, setNotesEdu] = useState([])
   const [affiliations, setAffiliations] = useState([])
 
@@ -1771,6 +1791,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try { localStorage.setItem('equipe_active_id', equipe.id) } catch { /* ignore */ }
     chargerJoueurs(userId, equipe.id)
     chargerMatchs(userId, equipe.id).then(matchs => chargerNotationsMatch(userId, matchs.map(m => m.id)))
+    chargerEvaluationsJoueurs(userId)
     chargerEntrainements(userId, equipe.id)
     chargerRapportsRecents(userId, equipe.id)
   }
@@ -4842,19 +4863,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         ) : <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('equipe_aucune_presence', lang)}</p>}
                       </div>
 
-                      {/* Évaluations - Radial skills */}
-                      {(ln.technique || ln.physique || ln.mental || ln.tactique) ? (
-                        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-                          <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('equipe_evaluation_educateur', lang)}</p>
-                          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '12px' }}>
-                            <RadialSkill value={ln.technique} color={colors.accent.green} label={t('eval_technique', lang)} size={90} />
-                            <RadialSkill value={ln.physique} color={colors.accent.blue} label={t('eval_physique', lang)} size={90} />
-                            <RadialSkill value={ln.mental} color={colors.accent.purpleLight} label={t('eval_mental', lang)} size={90} />
-                            <RadialSkill value={ln.tactique} color={colors.accent.amber} label={t('eval_tactique', lang)} size={90} />
+                      {/* Dernière évaluation (evaluations_joueur.note_globale_saison, /20) —
+                          seule valeur numérique de la fiche, les 4 aspects (technique/
+                          physique/mental/tactique) ne sont que du texte libre côté fiche. */}
+                      {(() => {
+                        const evalJoueur = derniereEvaluation(j.id)
+                        return evalJoueur ? (
+                          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
+                            <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('equipe_evaluation_educateur', lang)}</p>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                              <RadialSkill value={evalJoueur.note_globale_saison} max={20} color={colors.accent.amber} label="Note globale" size={90} />
+                            </div>
                           </div>
-                          {ln.commentaire && <p style={{ margin: '14px 0 0', fontSize: '13px', color: colors.text.secondary, background: colors.background.base, borderRadius: '8px', padding: '10px 14px', fontStyle: 'italic' }}>"{ln.commentaire}"</p>}
-                        </div>
-                      ) : null}
+                        ) : null
+                      })()}
 
                       {/* Stats matchs */}
                       {s.matchs > 0 && (() => {
@@ -5384,14 +5406,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                 {/* ─ Classement ─ */}
                 {statsSubTab === 'classement' && (() => {
-                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: notes[j.id] }))
+                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: derniereEvaluation(j.id) }))
                   const TRIS = [
                     { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unit: 'but' },
                     { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unit: 'passe' },
                     { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unit: 'V' },
                     { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unit: "'" },
                     { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
-                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note ? ((j.note.technique+j.note.physique+j.note.mental+j.note.tactique)/4) : 0, color: colors.accent.amber, unit: '/5' },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.note_globale_saison ?? 0, color: colors.accent.amber, unit: '/20' },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
