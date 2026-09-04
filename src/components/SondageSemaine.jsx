@@ -64,6 +64,14 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
   const [saving, setSaving] = useState(null) // eventId en cours de sauvegarde
   const [evenementOuvert, setEvenementOuvert] = useState(null) // mode educateur : détail dépliable
   const grilleRef = useRef(null)
+  // Mobile : layout carte mode éducateur en colonne (cf. CarteEvenementEducateur)
+  // plutôt qu'une seule ligne qui se compresse et pousse le bouton "Voir séance".
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const changerVue = (v) => { setVue(v); setOffset(0) }
 
@@ -219,7 +227,7 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
             {evenementsSemaine.map(ev => (
               <CarteEvenementEducateur key={ev.id} ev={ev} roster={roster} reponses={dispoEquipe[ev.id] || {}}
                 ouvert={evenementOuvert === ev.id} onToggle={() => setEvenementOuvert(o => o === ev.id ? null : ev.id)} accentColor={accentColor}
-                onVoirFiche={onVoirFiche} />
+                onVoirFiche={onVoirFiche} isMobile={isMobile} />
             ))}
           </div>
         )}
@@ -332,7 +340,7 @@ const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', emoji: '⏳'
 // taux de réponse avec barre de progression, clic → détail des joueurs
 // groupés par statut (y compris "sans réponse", qui n'est pas un statut
 // stocké mais l'absence de ligne dans `disponibilites` pour ce joueur).
-function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor, onVoirFiche }) {
+function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accentColor, onVoirFiche, isMobile }) {
   const colors = useColors()
   const couleurType = ev.type === 'match' ? colors.accent.blue : colors.accent.green
   const compte = (val) => Object.values(reponses).filter(s => s === val).length
@@ -345,6 +353,24 @@ function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accen
 
   const joueursParStatut = (val) => roster.filter(j => (reponses[j.joueur_id] || 'sans_reponse') === val)
 
+  const boutonVoirSeance = ev.type === 'entrainement' && ev.fiche_id && onVoirFiche && (
+    <button onClick={e => { e.stopPropagation(); onVoirFiche(ev.fiche_id) }}
+      style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: isMobile ? '5px 12px' : '6px 12px', fontSize: isMobile ? '12px' : '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+      Voir séance{isMobile ? ' →' : ''}
+    </button>
+  )
+
+  const badges = [...OPTIONS_SONDAGE, SANS_REPONSE].map(opt => {
+    const n = opt.val === 'sans_reponse' ? sansReponse : compte(opt.val)
+    if (n === 0 && opt.val !== 'present' && opt.val !== 'sans_reponse') return null
+    return (
+      <div key={opt.val} style={{ background: `${opt.color}18`, border: `1px solid ${opt.color}33`, borderRadius: '8px', padding: '4px 10px', textAlign: 'center', minWidth: '48px' }}>
+        <p style={{ margin: 0, color: opt.color, fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>{n}</p>
+        <p style={{ margin: '1px 0 0', color: opt.color, fontSize: '9px', fontWeight: 600, opacity: 0.85 }}>{opt.label.split(' ')[0]}</p>
+      </div>
+    )
+  })
+
   return (
     <div>
       <div onClick={onToggle} style={{
@@ -352,44 +378,60 @@ function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accen
         border: `1px solid ${ouvert ? `${accentColor}55` : colors.border.faint}`,
         borderRadius: ouvert ? '14px 14px 0 0' : '14px', padding: '14px 16px', cursor: 'pointer',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ minWidth: '140px' }}>
-            <p style={{ margin: 0, color: couleurType, fontWeight: 700, fontSize: '13px', textTransform: 'capitalize' }}>{dateLabel}</p>
-            <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{ev.heure ? ev.heure.slice(0, 5) : '—'} · {ev.titre}</p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
-            {[...OPTIONS_SONDAGE, SANS_REPONSE].map(opt => {
-              const n = opt.val === 'sans_reponse' ? sansReponse : compte(opt.val)
-              if (n === 0 && opt.val !== 'present' && opt.val !== 'sans_reponse') return null
-              return (
-                <div key={opt.val} style={{ background: `${opt.color}18`, border: `1px solid ${opt.color}33`, borderRadius: '8px', padding: '4px 10px', textAlign: 'center', minWidth: '48px' }}>
-                  <p style={{ margin: 0, color: opt.color, fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>{n}</p>
-                  <p style={{ margin: '1px 0 0', color: opt.color, fontSize: '9px', fontWeight: 600, opacity: 0.85 }}>{opt.label.split(' ')[0]}</p>
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, color: couleurType, fontWeight: 700, fontSize: '13px', textTransform: 'capitalize' }}>{dateLabel}</p>
+                <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{ev.heure ? ev.heure.slice(0, 5) : '—'} · {ev.titre}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: 0, color: couleurTaux, fontWeight: 800, fontSize: '18px' }}>{tauxReponse}%</p>
+                  <p style={{ margin: 0, color: colors.text.faint, fontSize: '9px' }}>{repondu}/{total}</p>
                 </div>
-              )
-            })}
-          </div>
-
-          {ev.type === 'entrainement' && ev.fiche_id && onVoirFiche && (
-            <button onClick={e => { e.stopPropagation(); onVoirFiche(ev.fiche_id) }}
-              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-              Voir fiche
-            </button>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ margin: 0, color: couleurTaux, fontWeight: 700, fontSize: '14px' }}>{tauxReponse}%</p>
-              <p style={{ margin: 0, color: colors.text.faint, fontSize: '9px' }}>{repondu}/{total}</p>
+                <span style={{ color: colors.text.faint, fontSize: '16px', transition: 'transform 0.2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+              </div>
             </div>
-            <span style={{ color: colors.text.faint, fontSize: '16px', transition: 'transform 0.2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
-          </div>
-        </div>
 
-        <div style={{ marginTop: '10px', height: '4px', background: colors.border.faint, borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${tauxReponse}%`, background: couleurTaux, borderRadius: '2px' }} />
-        </div>
+            {boutonVoirSeance && <div style={{ alignSelf: 'flex-start' }}>{boutonVoirSeance}</div>}
+
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {badges}
+            </div>
+
+            <div style={{ height: '4px', background: colors.border.faint, borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${tauxReponse}%`, background: couleurTaux, borderRadius: '2px' }} />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ minWidth: '140px' }}>
+                <p style={{ margin: 0, color: couleurType, fontWeight: 700, fontSize: '13px', textTransform: 'capitalize' }}>{dateLabel}</p>
+                <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{ev.heure ? ev.heure.slice(0, 5) : '—'} · {ev.titre}</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
+                {badges}
+              </div>
+
+              {boutonVoirSeance}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: 0, color: couleurTaux, fontWeight: 700, fontSize: '14px' }}>{tauxReponse}%</p>
+                  <p style={{ margin: 0, color: colors.text.faint, fontSize: '9px' }}>{repondu}/{total}</p>
+                </div>
+                <span style={{ color: colors.text.faint, fontSize: '16px', transition: 'transform 0.2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '10px', height: '4px', background: colors.border.faint, borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${tauxReponse}%`, background: couleurTaux, borderRadius: '2px' }} />
+            </div>
+          </>
+        )}
       </div>
 
       {ouvert && (
