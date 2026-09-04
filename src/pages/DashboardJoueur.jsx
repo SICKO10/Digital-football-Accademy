@@ -358,6 +358,38 @@ function CerclePresence({ presents, convoque, absents, blesses, malade, total, s
   )
 }
 
+// Classement complet en modal ("Voir tout") — les cartes compactes n'affichent
+// que les 3 à 5 premiers, buildLeader() ne plafonne plus la liste elle-même.
+function VoirToutClassement({ classement, onClose }) {
+  const colors = useColors()
+  const { title, data = [], color = colors.accent.green } = classement
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ color: colors.text.primary, margin: 0, fontSize: 16, fontWeight: 800 }}>{title}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
+        </div>
+        {data.length === 0 ? (
+          <p style={{ color: colors.text.faint, fontSize: 13, textAlign: 'center', margin: '20px 0' }}>Aucune donnée pour l'instant.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.map((row, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: row.isMe ? `${color}15` : 'transparent', border: row.isMe ? `1px solid ${color}40` : '1px solid transparent' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? colors.accent.amber : colors.text.faint, width: 20, flexShrink: 0 }}>{i + 1}</span>
+                <span style={{ fontSize: 13, color: row.isMe ? color : colors.text.secondary, flex: 1, fontWeight: row.isMe ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {row.isMe ? 'Toi' : row.nom}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>{row.val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // joueurIdOverride/readOnly : rendu pour un parent qui consulte le profil de
 // son enfant (cf. DashboardParent.jsx), même principe que educateurIdOverride
 // sur DashboardEducateur.jsx pour un dirigeant délégué. userId (state, utilisé
@@ -1074,6 +1106,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   const [statsJoueur, setStatsJoueur] = useState({}) // key: affiliation.id → { presences, matchs }
   const [evalFicheOuverte, setEvalFicheOuverte] = useState(null) // { equipeJoueurId, educateurId } — fiche d'évaluation en cours de consultation
+  const [classementOuvert, setClassementOuvert] = useState(null) // { title, data, color } — classement complet affiché en modal ("Voir tout")
   const [statsLoading, setStatsLoading] = useState({})
 
   const chargerStatsJoueur = async (affiliationId, equipeJoueurId, educateurId) => {
@@ -1204,9 +1237,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         if (!map[r[idKey]]) map[r[idKey]] = 0
         map[r[idKey]] += keyFn(r)
       })
+      // Pas de plafond ici : la liste complète sert au modal "Voir tout"
+      // (VoirToutClassement), les affichages compacts font leur propre
+      // .slice(0, N) au moment du rendu.
       return Object.entries(map)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
         .map(([id, val]) => {
           const j = effectif?.find(e => e.id === id)
           return { nom: j ? `${j.prenom} ${j.nom}` : '?', val, isMe: id === equipeJoueurId }
@@ -2270,10 +2305,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.accent.orange, letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                           {[
-                            { title: t('aff_top_buteurs', lang), data: s.leaderButs },
-                            { title: t('aff_points_saison', lang), data: s.leaderPointsSaison },
-                            { title: t('aff_points_mois', lang), data: s.leaderPointsMois },
-                          ].map(({ title, data }) => data?.length > 0 && (
+                            { title: t('aff_top_buteurs', lang), data: s.leaderButs, color: colors.accent.green },
+                            { title: t('aff_points_saison', lang), data: s.leaderPointsSaison, color: colors.accent.amber },
+                            { title: t('aff_points_mois', lang), data: s.leaderPointsMois, color: colors.accent.amber },
+                          ].map(({ title, data, color }) => data?.length > 0 && (
                             <div key={title} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '12px 14px' }}>
                               <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
                               {data.slice(0, 3).map((row, i) => (
@@ -2285,6 +2320,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                   <span style={{ fontSize: '11px', fontWeight: 700, color: row.isMe ? colors.accent.green : colors.text.faint }}>{row.val}</span>
                                 </div>
                               ))}
+                              {data.length > 3 && (
+                                <button onClick={() => setClassementOuvert({ title, data, color })}
+                                  style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                  {t('jd_voir_tout', lang)}
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -2552,6 +2593,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                               <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>{row.val}</span>
                                             </div>
                                           )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
+                                          {data?.length > 5 && (
+                                            <button onClick={() => setClassementOuvert({ title, data, color })}
+                                              style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                              {t('jd_voir_tout', lang)}
+                                            </button>
+                                          )}
                                         </div>
                                       ))}
                                     </div>
@@ -4758,6 +4805,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                             <span style={{ fontSize: '12px', fontWeight: 800, color: row.isMe ? color : colors.text.faint, flexShrink: 0 }}>{row.val}</span>
                                           </div>
                                         )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
+                                        {data?.length > 5 && (
+                                          <button onClick={() => setClassementOuvert({ title, data, color })}
+                                            style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                            {t('jd_voir_tout', lang)}
+                                          </button>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -5092,6 +5145,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           readOnly={readOnly}
           onClose={() => setEvalFicheOuverte(null)}
         />
+      )}
+
+      {classementOuvert && (
+        <VoirToutClassement classement={classementOuvert} onClose={() => setClassementOuvert(null)} />
       )}
     </div>
   )
