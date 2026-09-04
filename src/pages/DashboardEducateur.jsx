@@ -6840,7 +6840,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               ))}
             </div>
 
-            <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue} />
+            <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue}
+              onVoirFiche={ficheId => { const s = mesSeancesOuvertes.find(x => x.id === ficheId); if (s) setFicheApercu(s) }} />
 
             {sousOngletEnt === 'prochaine' && (() => {
               const aujourdHui = new Date().toISOString().split('T')[0]
