@@ -10,7 +10,7 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
-import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone } from './coach/NavIcons'
+import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone, IcoLibrary } from './coach/NavIcons'
 import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
@@ -25,6 +25,7 @@ import Support from './coach/Support'
 import StripeLinks from './coach/StripeLinks'
 import ClubsAgents from './coach/ClubsAgents'
 import Communication from './coach/Communication'
+import Bibliotheque from './coach/Bibliotheque'
 
 function DashboardCoachInner() {
   const navigate = useNavigate()
@@ -410,6 +411,7 @@ function DashboardCoachInner() {
     { id: 'certifications', label: 'Badge Certifié', Icon: IcoShield, badge: certifsEnAttente.length },
     { id: 'seances_club', label: 'Analyse Séance', Icon: IcoBook, badge: seancesEnAttente.length },
     ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', Icon: IcoHome, badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
+    ...(isAdminClubs ? [{ id: 'bibliotheque', label: 'Bibliothèque', Icon: IcoLibrary, badge: 0 }] : []),
     { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
     ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Lien Stripe Club', Icon: IcoLink, badge: 0 }] : []),
     { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
@@ -612,6 +614,8 @@ function DashboardCoachInner() {
               setDemandesClub={setDemandesClub}
             />
           )}
+
+          {activeSection === 'bibliotheque' && isAdminClubs && <Bibliotheque coachId={coachId} />}
 
         </div>
       </div>
