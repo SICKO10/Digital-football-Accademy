@@ -18,7 +18,6 @@ import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
-import { saisonActuelle } from '../lib/saison'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -1119,7 +1118,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     ] = await Promise.all([
       supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
       supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
-      supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonActuelle()),
+      supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
       supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
       supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
       supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
