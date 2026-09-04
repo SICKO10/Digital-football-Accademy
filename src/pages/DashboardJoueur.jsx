@@ -1080,22 +1080,36 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!equipeJoueurId || statsJoueur[affiliationId]) return
     setStatsLoading(prev => ({ ...prev, [affiliationId]: true }))
 
-    console.log('[stats] equipeJoueurId:', equipeJoueurId, '| educateurId:', educateurId)
-
     // 1. Mes présences (sans join)
-    const { data: presencesMoi, error: errP } = await supabase
+    const { data: presencesMoi } = await supabase
       .from('presences_entrainement')
       .select('statut, point_seance, entrainement_id')
       .eq('joueur_id', equipeJoueurId)
-    console.log('[stats] presencesMoi:', presencesMoi, errP)
+
+    // 1bis. Toutes les séances de l'équipe (jusqu'à aujourd'hui) + mes réponses
+    // au sondage de présence — même repli que chargerTauxPresence (widget
+    // Accueil) : si le coach n'a pas encore pointé une séance dans
+    // presences_entrainement, on retombe sur la réponse du joueur au sondage
+    // (disponibilites), pour que le taux de présence de "Mon Équipe" reste
+    // cohérent avec celui de l'Accueil au lieu de ne compter que les séances
+    // pointées manuellement (souvent très partiel).
+    const { data: mesEntrainements } = await supabase
+      .from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0])
+    const { data: mesDispos } = await supabase
+      .from('disponibilites').select('seance_id, statut').eq('joueur_id', userId)
+
+    const presenceMap = {}
+    presencesMoi?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+    const dispoMap = {}
+    mesDispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
+    const pointsMap = {}
+    presencesMoi?.forEach(p => { if (p.point_seance) pointsMap[p.entrainement_id] = true })
+    const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+    const saisies = (mesEntrainements || []).filter(e => statutEffectif(e.id) !== null)
 
     // 2. Dates des entraînements pour le mensuel
-    const entrainementIds = presencesMoi?.map(p => p.entrainement_id).filter(Boolean) || []
-    const { data: entDates } = entrainementIds.length
-      ? await supabase.from('entrainements').select('id, date').in('id', entrainementIds)
-      : { data: [] }
     const dateMap = {}
-    entDates?.forEach(e => { dateMap[e.id] = e.date })
+    mesEntrainements?.forEach(e => { dateMap[e.id] = e.date })
 
     // 3. Tous les entraînements de l'éducateur pour classements présence — date
     // incluse pour pouvoir scoper les classements de points par saison/mois.
@@ -1130,8 +1144,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     ])
 
     // --- Stats personnelles ---
-    const total = presencesMoi?.length || 0
-    const present = presencesMoi?.filter(p => estPresent(p.statut)).length || 0
+    const total = saisies.length
+    const present = saisies.filter(e => estPresent(statutEffectif(e.id))).length
     const points = presencesMoi?.filter(p => p.point_seance).length || 0
     const buts = matchsMoi?.reduce((s, m) => s + (m.buts || 0), 0) || 0
     const passes = matchsMoi?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
@@ -1143,14 +1157,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
     // --- Présence par mois (inclut aussi les points de séance du mois) ---
     const byMonth = {}
-    presencesMoi?.forEach(p => {
-      const date = dateMap[p.entrainement_id]
+    saisies.forEach(e => {
+      const date = dateMap[e.id]
       if (!date) return
       const month = date.slice(0, 7)
       if (!byMonth[month]) byMonth[month] = { present: 0, total: 0, points: 0 }
       byMonth[month].total++
-      if (estPresent(p.statut)) byMonth[month].present++
-      if (p.point_seance) byMonth[month].points++
+      if (estPresent(statutEffectif(e.id))) byMonth[month].present++
+      if (pointsMap[e.id]) byMonth[month].points++
     })
     const presenceMensuelle = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, v]) => ({
       month, taux: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total, points: v.points
