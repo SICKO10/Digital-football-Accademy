@@ -1097,13 +1097,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const dateMap = {}
     entDates?.forEach(e => { dateMap[e.id] = e.date })
 
-    // 3. Tous les entraînements de l'éducateur pour classements présence
+    // 3. Tous les entraînements de l'éducateur pour classements présence — date
+    // incluse pour pouvoir scoper les classements de points par saison/mois.
     const { data: tousEntrainements } = await supabase
-      .from('entrainements').select('id').eq('educateur_id', educateurId)
+      .from('entrainements').select('id, date').eq('educateur_id', educateurId)
     const tousEntIds = tousEntrainements?.map(e => e.id) || []
     const { data: toutesPresences } = tousEntIds.length
-      ? await supabase.from('presences_entrainement').select('joueur_id, statut, point_seance').in('entrainement_id', tousEntIds)
+      ? await supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', tousEntIds)
       : { data: [] }
+    const dateMapTous = {}
+    tousEntrainements?.forEach(e => { dateMapTous[e.id] = e.date })
 
     // 4. Stats match
     const [
@@ -1138,19 +1141,28 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const rouges = matchsMoi?.filter(m => m.carton_rouge).length || 0
     const minutesJouees = matchsMoi?.reduce((s, m) => s + (m.minutes || 0), 0) || 0
 
-    // --- Présence par mois ---
+    // --- Présence par mois (inclut aussi les points de séance du mois) ---
     const byMonth = {}
     presencesMoi?.forEach(p => {
       const date = dateMap[p.entrainement_id]
       if (!date) return
       const month = date.slice(0, 7)
-      if (!byMonth[month]) byMonth[month] = { present: 0, total: 0 }
+      if (!byMonth[month]) byMonth[month] = { present: 0, total: 0, points: 0 }
       byMonth[month].total++
       if (estPresent(p.statut)) byMonth[month].present++
+      if (p.point_seance) byMonth[month].points++
     })
     const presenceMensuelle = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, v]) => ({
-      month, taux: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total
+      month, taux: v.total ? Math.round((v.present / v.total) * 100) : 0, present: v.present, total: v.total, points: v.points
     }))
+
+    // --- Points de séance scopés saison en cours / mois en cours (classements
+    // d'équipe ci-dessous) — dateMapTous couvre TOUS les entraînements de
+    // l'éducateur, pas seulement ceux du joueur.
+    const moisCourantStr = new Date().toISOString().slice(0, 7)
+    const saisonCourantePoints = saisonDeDate(new Date().toISOString())
+    const presencesSaisonCourante = (toutesPresences || []).filter(p => dateMapTous[p.entrainement_id] && saisonDeDate(dateMapTous[p.entrainement_id]) === saisonCourantePoints)
+    const presencesMoisCourant = (toutesPresences || []).filter(p => dateMapTous[p.entrainement_id]?.slice(0, 7) === moisCourantStr)
 
     // --- Classements équipe ---
     const calcRank = (playerVal, allData, keyFn, idKey = 'joueur_id', higher = true) => {
@@ -1169,7 +1181,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const rankPasses = calcRank(passes, tousMatchs, r => r.passes_dec || 0, 'joueur_id')
     const rankMatchs = calcRank(matchsJoues, tousMatchs, r => (r.minutes || 0) > 0 ? 1 : 0, 'joueur_id')
     const rankClean = calcRank(cleanSheets, tousMatchs, r => r.clean_sheet ? 1 : 0, 'joueur_id')
-    const rankPoints = calcRank(points, toutesPresences, r => r.point_seance ? 1 : 0, 'joueur_id')
+    const rankPoints = calcRank(points, presencesSaisonCourante, r => r.point_seance ? 1 : 0, 'joueur_id')
 
     // --- Leaderboards internes ---
     const buildLeader = (allData, keyFn, idKey = 'joueur_id') => {
@@ -1193,7 +1205,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const leaderButs = buildLeader(tousMatchs, r => r.buts || 0)
     const leaderPasses = buildLeader(tousMatchs, r => r.passes_dec || 0)
     const leaderVictoires = buildLeader(tousMatchs, r => (r.match_id && victoireMap[r.match_id]) ? 1 : 0)
-    const leaderPoints = buildLeader(toutesPresences, r => r.point_seance ? 1 : 0)
+    const leaderPointsSaison = buildLeader(presencesSaisonCourante, r => r.point_seance ? 1 : 0)
+    const leaderPointsMois = buildLeader(presencesMoisCourant, r => r.point_seance ? 1 : 0)
 
     // --- Évaluations coach par match (notations_match) — regroupées par saison
     // (juillet-juin) à partir de la date du match, pas d'archivage séparé : les
@@ -1219,7 +1232,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         evaluations: evaluations || [],
         ligueUrl: profilEdu?.ligue_url || null,
         prochainMatchs: prochainMatchs || [],
-        leaderButs, leaderPasses, leaderVictoires, leaderPoints,
+        leaderButs, leaderPasses, leaderVictoires, leaderPointsSaison, leaderPointsMois,
         matchsEquipe: matchsEquipe || [],
         evals, evalsParSaison, saisonActuelle,
       }
@@ -2109,7 +2122,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 const s = statsJoueur[affiliation.id]
 
                 const hasDonnees = s.present || s.points || s.matchsJoues || s.evaluations?.length > 0 ||
-                  s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPoints?.length > 0
+                  s.prochainMatchs?.length > 0 || s.leaderButs?.length > 0 || s.leaderPointsSaison?.length > 0 || s.leaderPointsMois?.length > 0
                 if (!hasDonnees) return (
                   <EmptyState compact title={t('aff_aucune_seance_match', lang)} />
                 )
@@ -2156,7 +2169,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     {/* Présence par mois */}
                     {s.presenceMensuelle?.length > 0 && (
                       <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
-                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: colors.accent.purpleLight, letterSpacing: '1px', textTransform: 'uppercase' }}>📅 {t('aff_points_seance_par_mois', lang)}</p>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: colors.accent.purpleLight, letterSpacing: '1px', textTransform: 'uppercase' }}>📅 {t('aff_presence_par_mois', lang)}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                             const [y, m] = month.split('-')
@@ -2170,6 +2183,25 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                 </div>
                                 <span style={{ fontSize: '11px', fontWeight: 700, color, width: '36px', textAlign: 'right', flexShrink: 0 }}>{taux}%</span>
                                 <span style={{ fontSize: '10px', color: colors.border.strong, flexShrink: 0 }}>{present}/{total}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Points de séance par mois */}
+                    {s.presenceMensuelle?.length > 0 && (
+                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: colors.accent.amber, letterSpacing: '1px', textTransform: 'uppercase' }}>⭐ {t('aff_points_seance_par_mois', lang)}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {s.presenceMensuelle.map(({ month, points }) => {
+                            const [y, m] = month.split('-')
+                            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
+                            return (
+                              <div key={month} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                                <span style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{label}</span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: points > 0 ? colors.accent.amber : colors.text.faint }}>{points}</span>
                               </div>
                             )
                           })}
@@ -2219,13 +2251,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     </div>
 
                     {/* Classements équipe */}
-                    {(s.leaderButs?.length > 0 || s.leaderPoints?.length > 0) && (
+                    {(s.leaderButs?.length > 0 || s.leaderPointsSaison?.length > 0 || s.leaderPointsMois?.length > 0) && (
                       <div>
                         <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.accent.orange, letterSpacing: '1px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                           {[
                             { title: t('aff_top_buteurs', lang), data: s.leaderButs },
-                            { title: t('aff_points_seance', lang), data: s.leaderPoints },
+                            { title: t('aff_points_saison', lang), data: s.leaderPointsSaison },
+                            { title: t('aff_points_mois', lang), data: s.leaderPointsMois },
                           ].map(({ title, data }) => data?.length > 0 && (
                             <div key={title} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '12px 14px' }}>
                               <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
@@ -2409,7 +2442,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                       <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: `1px solid ${colors.border.subtle}` }}>
                                         <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                          {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                          {s.presenceMensuelle.map(({ month, taux, present, total, points }) => {
                                             const [y, m] = month.split('-')
                                             const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
                                             const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
@@ -2417,7 +2450,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                               <div key={month}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                   <span style={{ fontSize: '11px', color: colors.text.dim, textTransform: 'capitalize' }}>{label}</span>
-                                                  <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span></span>
+                                                  <span style={{ fontSize: '11px', fontWeight: 700, color }}>
+                                                    {taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span>
+                                                    {points > 0 && <span style={{ color: colors.accent.amber, fontWeight: 700, marginLeft: '6px' }}>· {points} {t('aff_points_seance', lang)}</span>}
+                                                  </span>
                                                 </div>
                                                 <div style={{ height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                   <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
@@ -2476,12 +2512,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                   {/* Classements — pleine largeur */}
                                   <div>
                                     <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: '12px' }}>
                                       {[
                                         { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: colors.accent.green },
                                         { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: colors.accent.blue },
                                         { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: colors.accent.amber },
-                                        { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: colors.accent.purpleLight },
+                                        { title: t('aff_points_saison', lang), icon: '⭐', data: s.leaderPointsSaison, color: colors.accent.purpleLight },
+                                        { title: t('aff_points_mois', lang), icon: '⭐', data: s.leaderPointsMois, color: colors.accent.purpleLight },
                                       ].map(({ title, icon, data, color }) => (
                                         <div key={title} style={{ background: colors.background.surface, borderRadius: '18px', padding: '16px', border: `1px solid ${colors.border.subtle}`, position: 'relative', overflow: 'hidden' }}>
                                           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
@@ -4611,7 +4648,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                     <div style={{ background: colors.background.surface, borderRadius: '20px', padding: '20px 22px', border: `1px solid ${colors.border.subtle}` }}>
                                       <p style={{ margin: '0 0 16px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('club_presence_par_mois', lang)}</p>
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {s.presenceMensuelle.map(({ month, taux, present, total }) => {
+                                        {s.presenceMensuelle.map(({ month, taux, present, total, points }) => {
                                           const [y, m] = month.split('-')
                                           const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(localeOf(lang), { month: 'long', year: '2-digit' })
                                           const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
@@ -4619,7 +4656,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                             <div key={month}>
                                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                 <span style={{ fontSize: '11px', color: colors.text.dim, textTransform: 'capitalize' }}>{label}</span>
-                                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>{taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span></span>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>
+                                                  {taux}% <span style={{ color: colors.border.strong, fontWeight: 400 }}>({present}/{total})</span>
+                                                  {points > 0 && <span style={{ color: colors.accent.amber, fontWeight: 700, marginLeft: '6px' }}>· {points} {t('aff_points_seance', lang)}</span>}
+                                                </span>
                                               </div>
                                               <div style={{ height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${taux}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: '3px' }} />
@@ -4678,12 +4718,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                 {/* Classements — pleine largeur */}
                                 <div>
                                   <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: colors.text.disabled, letterSpacing: '2px', textTransform: 'uppercase' }}>{t('aff_classements_equipe', lang)}</p>
-                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: '12px' }}>
                                     {[
                                       { title: t('aff_top_buteurs', lang), icon: '⚽', data: s.leaderButs, color: colors.accent.green },
                                       { title: t('aff_top_passeurs', lang), icon: '🎯', data: s.leaderPasses, color: colors.accent.blue },
                                       { title: t('aff_top_victoires', lang), icon: '🏆', data: s.leaderVictoires, color: colors.accent.amber },
-                                      { title: t('aff_points_seance', lang), icon: '⭐', data: s.leaderPoints, color: colors.accent.purpleLight },
+                                      { title: t('aff_points_saison', lang), icon: '⭐', data: s.leaderPointsSaison, color: colors.accent.purpleLight },
+                                      { title: t('aff_points_mois', lang), icon: '⭐', data: s.leaderPointsMois, color: colors.accent.purpleLight },
                                     ].map(({ title, icon, data, color }) => (
                                       <div key={title} style={{ background: colors.background.surface, borderRadius: '18px', padding: '16px', border: `1px solid ${colors.border.subtle}`, position: 'relative', overflow: 'hidden' }}>
                                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${color}60, transparent)` }} />
