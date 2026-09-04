@@ -348,11 +348,12 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
     <div style={{ marginTop: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h3 style={{ color: st.text, margin: 0, fontSize: 15 }}>🏆 Tests physiques</h3>
-        <span style={{ color: st.muted, fontSize: 11, fontStyle: 'italic' }}>Résultats saisis par votre éducateur</span>
+        <span style={{ color: st.muted, fontSize: 11, fontStyle: 'italic' }}>Résultats saisis par ton éducateur</span>
       </div>
       {tests.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '24px 16px', color: st.muted, background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, fontSize: 13 }}>
-          Aucun test enregistré pour le moment.
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 14, padding: '40px 24px', textAlign: 'center' }}>
+          <p style={{ color: st.muted, fontWeight: 600, fontSize: 14, margin: '0 0 4px' }}>Aucun test enregistré</p>
+          <p style={{ color: st.border, fontSize: 12, margin: 0 }}>Ton éducateur saisira tes résultats ici</p>
         </div>
       ) : (
         tests.map((test, i) => <CarteTest key={test.id} test={test} precedent={tests[i + 1]} />)
@@ -381,36 +382,40 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
 
   return (
     <div style={{ padding: 16 }}>
-      {/* Header */}
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+      {/* Header — plan actif */}
+      <div style={{ background: st.card, border: `1px solid ${st.green}25`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <h2 style={{ color: st.text, margin: '0 0 4px', fontSize: 18 }}>🏋️ {programme.titre}</h2>
+            <p style={{ color: st.green, fontSize: 11, fontWeight: 700, letterSpacing: '2px', margin: '0 0 6px' }}>PLAN ACTIF</p>
+            <h2 style={{ color: st.text, fontWeight: 800, fontSize: 18, margin: '0 0 4px', lineHeight: 1.3 }}>{programme.titre}</h2>
             <p style={{ color: st.muted, fontSize: 13, margin: 0 }}>
               {new Date(programme.date_debut).toLocaleDateString('fr-FR')} → {new Date(programme.date_fin).toLocaleDateString('fr-FR')}
             </p>
             {programme.description && <p style={{ color: st.muted, fontSize: 13, margin: '8px 0 0' }}>{programme.description}</p>}
           </div>
+          <div style={{ textAlign: 'center', flexShrink: 0 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, color: st.green, lineHeight: 1 }}>{progression}%</div>
+            <div style={{ fontSize: 11, color: st.muted, marginTop: 2 }}>complété</div>
+          </div>
         </div>
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ color: st.muted, fontSize: 12 }}>Progression</span>
-            <span style={{ color: st.green, fontWeight: 700 }}>{progression}%</span>
-          </div>
-          <div style={{ background: st.card2, borderRadius: 99, height: 8 }}>
-            <div style={{ background: st.green, borderRadius: 99, height: 8, width: `${progression}%`, transition: 'width 0.5s' }} />
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-            <span style={{ color: st.green, fontSize: 12 }}>✅ {nbValides} validées</span>
-            <span style={{ color: st.muted, fontSize: 12 }}>📋 {nbTotal - nbValides} à faire</span>
-          </div>
+
+        <div style={{ background: st.bg, borderRadius: 999, height: 8, marginBottom: 12, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${progression}%`, background: `linear-gradient(90deg, ${st.green}, #22d3ee)`, borderRadius: 999, transition: 'width 0.8s ease' }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ padding: '5px 12px', borderRadius: 8, background: st.green + '20', color: st.green, fontSize: 13, fontWeight: 700 }}>✅ {nbValides} validées</span>
+          <span style={{ padding: '5px 12px', borderRadius: 8, background: st.muted + '20', color: st.muted, fontSize: 13, fontWeight: 600 }}>{nbTotal - nbValides} à faire</span>
         </div>
       </div>
 
       {/* Grille */}
       {Array.from({ length: programme.nb_semaines || 2 }, (_, i) => i + 1).map(sem => (
         <div key={sem} style={{ marginBottom: 24 }}>
-          <h3 style={{ color: st.green, marginBottom: 12, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em' }}>SEMAINE {sem}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <span style={{ color: st.green, fontWeight: 800, fontSize: 13, letterSpacing: '1px' }}>SEMAINE {sem}</span>
+            <div style={{ flex: 1, height: 1, background: st.border }} />
+          </div>
           <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(90px, 1fr))', gap: 6, minWidth: isMobile ? 630 : 'auto' }}>
               {Array.from({ length: 7 }, (_, ji) => ji + 1).map(jour => {
@@ -418,23 +423,31 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
                 const soumission = seance ? soumissions.find(s => s.seance_id === seance.id) : null
                 const isRepos = seance?.type_seance === 'repos'
                 const typeInfo = seance ? TYPES_SEANCE.find(t => t.value === seance.type_seance) : null
-                let borderColor = st.border, bgColor = st.card, statusIcon = null
+                const nomCourt = seance ? `${seance.titre.substring(0, 16)}${seance.titre.length > 16 ? '…' : ''}` : null
+
+                // 4 états réels (pas seulement "validé/à faire/repos") : une
+                // soumission peut aussi être en attente ou refusée par le coach.
+                let cellStyle = { background: 'transparent', border: `1px solid ${st.border}` }
+                let icone = null, couleurTexte = st.muted
+
                 if (seance && !isRepos) {
-                  if (soumission?.statut === 'valide') { borderColor = st.green; bgColor = '#0a1a0a'; statusIcon = '✅' }
-                  else if (soumission?.statut === 'soumis') { borderColor = st.yellow; bgColor = '#1a1a00'; statusIcon = '⏳' }
-                  else if (soumission?.statut === 'refuse') { borderColor = st.red; bgColor = '#1a0000'; statusIcon = '🔄' }
+                  if (soumission?.statut === 'valide') { cellStyle = { background: st.green + '10', border: `1px solid ${st.green}30` }; icone = '✅'; couleurTexte = st.green }
+                  else if (soumission?.statut === 'soumis') { cellStyle = { background: st.yellow + '10', border: `1px solid ${st.yellow}30` }; icone = '⏳'; couleurTexte = st.yellow }
+                  else if (soumission?.statut === 'refuse') { cellStyle = { background: st.red + '10', border: `1px solid ${st.red}30` }; icone = '🔄'; couleurTexte = st.red }
+                  else { cellStyle = { background: st.card2, border: `1px dashed ${st.border}` }; icone = typeInfo?.icon || '🏋️'; couleurTexte = st.muted }
                 }
+
                 return (
                   <div key={jour}>
                     <div style={{ color: st.muted, fontSize: 10, textAlign: 'center', marginBottom: 3, fontWeight: 600 }}>{'LMMJVSD'[jour - 1]}</div>
                     <div onClick={() => seance && !isRepos && setModalSeance({ seance, soumission })}
-                      style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 8, padding: 8, minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, opacity: isRepos ? 0.4 : 1 }}>
+                      style={{ ...cellStyle, borderRadius: 12, padding: '10px 6px', minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.4 : 1 }}>
                       {seance ? (
                         <>
-                          <div style={{ fontSize: statusIcon ? 14 : 18 }}>{statusIcon || typeInfo?.icon || '🏋️'}</div>
-                          <div style={{ color: st.text, fontSize: 9, textAlign: 'center', lineHeight: 1.2 }}>{seance.titre.substring(0, 18)}{seance.titre.length > 18 ? '…' : ''}</div>
+                          <span style={{ fontSize: 18 }}>{icone}</span>
+                          <span style={{ color: couleurTexte, fontSize: 10, fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{nomCourt}</span>
                         </>
-                      ) : <div style={{ color: st.border }}>—</div>}
+                      ) : <span style={{ color: st.border, fontSize: 18 }}>—</span>}
                     </div>
                   </div>
                 )
@@ -454,24 +467,32 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
           {accordeonOuvert && (
             <div style={{ padding: '0 20px 16px' }}>
               {mesSoumissions.map(s => {
+                const typeInfo = TYPES_SEANCE.find(t => t.value === s.seance.type_seance)
                 const estCourseS = ['course', 'fractionne'].includes(s.seance.type_seance)
                 return (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${st.border}`, flexWrap: 'wrap' }}>
-                    <span style={{ color: st.text, fontSize: 13 }}>{s.seance.titre}</span>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 12, color: st.muted, flexWrap: 'wrap' }}>
-                      {estCourseS ? (
-                        <>
-                          {s.distance_reelle != null && <span>{s.distance_reelle} km</span>}
-                          {s.duree_reelle != null && <span>{s.duree_reelle} min</span>}
-                          {s.allure && <span>{s.allure}/km</span>}
-                        </>
-                      ) : (
-                        <>
-                          {s.objectifs_atteints && <span style={{ color: st.green }}>✅ Objectifs atteints</span>}
-                          {s.bonus && <span style={{ color: st.yellow }}>⭐ Bonus</span>}
-                        </>
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 12, marginBottom: 8 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: st.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                      {typeInfo?.icon || '🏋️'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: st.text, fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.seance.titre}</div>
+                      {estCourseS && (s.distance_reelle != null || s.duree_reelle != null || s.allure) && (
+                        <div style={{ display: 'flex', gap: 10, marginTop: 3, flexWrap: 'wrap' }}>
+                          {s.distance_reelle != null && <span style={{ color: st.muted, fontSize: 11 }}>Distance {s.distance_reelle} km</span>}
+                          {s.duree_reelle != null && <span style={{ color: st.muted, fontSize: 11 }}>Durée {s.duree_reelle} min</span>}
+                          {s.allure && <span style={{ color: st.muted, fontSize: 11 }}>Allure {s.allure}/km</span>}
+                        </div>
                       )}
-                      {s.proof_url && <a href={s.proof_url} target="_blank" rel="noreferrer" style={{ color: st.green, textDecoration: 'none' }}>📎 Voir</a>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {s.objectifs_atteints && <span style={{ padding: '3px 8px', borderRadius: 6, background: st.green + '15', color: st.green, fontSize: 11, fontWeight: 600 }}>✅ Objectifs</span>}
+                      {s.bonus && <span style={{ padding: '3px 8px', borderRadius: 6, background: st.yellow + '15', color: st.yellow, fontSize: 11, fontWeight: 600 }}>⭐ Bonus</span>}
+                      {s.proof_url && (
+                        <a href={s.proof_url} target="_blank" rel="noreferrer"
+                          style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${st.border}`, background: 'transparent', color: st.muted, fontSize: 11, textDecoration: 'none' }}>
+                          Voir →
+                        </a>
+                      )}
                     </div>
                   </div>
                 )
