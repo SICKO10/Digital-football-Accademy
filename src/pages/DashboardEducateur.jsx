@@ -1694,14 +1694,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setEvaluationsJoueurs(data || [])
   }
   // Dernière évaluation renseignée pour un joueur (toutes périodes/saisons
-  // confondues), utilisée pour la note "éducateur" du classement et le
-  // profil joueur — seule note_globale_saison est numérique dans la fiche,
-  // les 4 aspects (technique/physique/mental/tactique) ne sont que du texte
-  // libre (points forts / à améliorer), pas de score par aspect.
+  // confondues), utilisée dans le profil joueur — seule note_globale_saison
+  // est numérique dans la fiche, les 4 aspects (technique/physique/mental/
+  // tactique) ne sont que du texte libre (points forts / à améliorer), pas
+  // de score par aspect.
   const derniereEvaluation = (equipeJoueurId) => {
     const rows = evaluationsJoueurs.filter(e => e.equipe_joueur_id === equipeJoueurId && e.note_globale_saison != null)
     if (rows.length === 0) return null
     return rows.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]
+  }
+  // Note moyenne "coach" d'un joueur sur tous ses matchs notés (notations_match,
+  // /10) — même agrégat que "Note coach" sur l'Accueil joueur (DashboardJoueur.jsx,
+  // moyennePerso), utilisé pour le tri "Note" du classement.
+  const noteMoyenneMatch = (equipeJoueurId) => {
+    const notesJoueur = notationsMatch.filter(n => n.joueur_id === equipeJoueurId && !n.est_note_equipe)
+    if (!notesJoueur.length) return null
+    const moy = notesJoueur.reduce((s, n) => s + Number(n.note), 0) / notesJoueur.length
+    return { moyenne: Number(moy.toFixed(1)), nb: notesJoueur.length }
   }
 
   const [notesEdu, setNotesEdu] = useState([])
@@ -5406,14 +5415,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
                 {/* ─ Classement ─ */}
                 {statsSubTab === 'classement' && (() => {
-                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: derniereEvaluation(j.id) }))
+                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id) }))
                   const TRIS = [
                     { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unit: 'but' },
                     { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unit: 'passe' },
                     { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unit: 'V' },
                     { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unit: "'" },
                     { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
-                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.note_globale_saison ?? 0, color: colors.accent.amber, unit: '/20' },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.moyenne ?? 0, color: colors.accent.amber, unit: '/10' },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
