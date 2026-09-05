@@ -5,6 +5,28 @@ const W = 520
 const H = 340
 const GRID_SIZE = 40 // espacement du quadrillage repère, en unités SVG
 
+// Géométrie du terrain — dérivée de FIELD_BOTTOM (vraie limite de jeu, pas H)
+// pour que la grande/petite surface ne dépasse jamais la ligne de but : avant
+// ce correctif, leur hauteur était calculée depuis H directement, ce qui les
+// faisait déborder de 10 unités sous la ligne de touche du bas.
+const FIELD_MARGIN = 10
+const FIELD_BOTTOM = H - FIELD_MARGIN
+const BOX_W = 280 // grande surface élargie (était 250) : plus d'espace pour placer les joueurs
+const BOX_H = 116 // idem (était 108)
+const BOX_X = (W - BOX_W) / 2
+const BOX_Y = FIELD_BOTTOM - BOX_H
+const SIX_W = 140 // petite surface élargie (était 116)
+const SIX_H = 54 // idem (était 48)
+const SIX_X = (W - SIX_W) / 2
+const SIX_Y = FIELD_BOTTOM - SIX_H
+const GOAL_W = 90
+const GOAL_X = (W - GOAL_W) / 2
+const PENALTY_R = 92
+const PENALTY_Y = FIELD_BOTTOM - 77
+const PENALTY_ARC_DX = Math.sqrt(Math.max(0, PENALTY_R ** 2 - (PENALTY_Y - BOX_Y) ** 2))
+
+const RAYON_JOUEUR = 11 // était 15 — jetons plus petits, moins de chevauchement
+
 const emptyEtape = () => ({ joueurs: [], ballon: null })
 const EMPTY_DATA = { etapes: [emptyEtape()] }
 
@@ -37,6 +59,11 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const [zonesH, setZonesH] = useState(0) // 0 = désactivé, sinon nb de bandes horizontales
   const [zonesV, setZonesV] = useState(0) // 0 = désactivé, sinon nb de colonnes verticales
   const [drag, setDrag] = useState(null) // { type:'joueur'|'ballon', id }
+  // Sélection tactile : le clic droit ("supprimer") n'existe pas sur tablette,
+  // là où ce board est réellement utilisé (causerie d'avant-match) — un
+  // bouton "Supprimer" explicite apparaît dans la barre d'outils dès qu'un
+  // jeton est sélectionné, en plus du clic droit qui reste dispo sur desktop.
+  const [selection, setSelection] = useState(null) // { type:'joueur'|'ballon', id }
   const [editId, setEditId] = useState(null)
   const [editVal, setEditVal] = useState('')
   const [serieN, setSerieN] = useState(5)
@@ -61,6 +88,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     onChange({ etapes: next })
     setPlayIdx(null)
     setEtapeIdx(next.length - 1)
+    setSelection(null)
   }
 
   const supprimerEtape = (i) => {
@@ -68,13 +96,13 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     const next = etapes.filter((_, ix) => ix !== i)
     onChange({ etapes: next })
     setEtapeIdx(p => Math.min(p, next.length - 1))
+    setSelection(null)
   }
 
-  // Marge = rayon du jeton (15, cf. cercle des joueurs plus bas) + un peu de
-  // jeu, pas 5 : sinon un jeton dragué près du bord a son cercle à moitié
-  // hors du viewBox (donc rogné/invisible côté SVG). Même marge que
-  // ELEMENT_DRAG_MARGIN dans Tactipad.jsx, pour rester cohérent.
-  const MARGIN = 18
+  // Marge = rayon du jeton (RAYON_JOUEUR) + un peu de jeu, pas 5 : sinon un
+  // jeton dragué près du bord a son cercle à moitié hors du viewBox (donc
+  // rogné/invisible côté SVG).
+  const MARGIN = RAYON_JOUEUR + 3
   const svgPos = (e) => {
     const r = svgRef.current?.getBoundingClientRect()
     if (!r) return { x: W / 2, y: H / 2 }
@@ -93,6 +121,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const clickSVG = (e) => {
     if (readOnly || drag || playIdx !== null) return
     if (e.target.closest('.dot')) return
+    setSelection(null)
     const p = svgPos(e)
     if (mode === 'add_nous' || mode === 'add_adv') {
       const equipe = mode === 'add_nous' ? 'nous' : 'adverse'
@@ -140,14 +169,23 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
     if (readOnly || mode !== 'select' || playIdx !== null) return
     e.stopPropagation()
     setDrag({ type, id })
+    setSelection({ type, id })
   }
 
   const stopDrag = () => setDrag(null)
 
-  const delJoueur = (e, id) => {
+  const delJoueur = (id) => {
     if (readOnly || playIdx !== null) return
-    e.preventDefault(); e.stopPropagation()
     majEtape({ joueurs: joueurs.filter(j => j.id !== id) })
+  }
+
+  // Bouton "Supprimer" de la barre d'outils — équivalent tactile du clic
+  // droit (indisponible sur tablette).
+  const supprimerSelection = () => {
+    if (!selection || readOnly || playIdx !== null) return
+    if (selection.type === 'joueur') delJoueur(selection.id)
+    else majEtape({ ballon: null })
+    setSelection(null)
   }
 
   const beginEdit = (e, j) => {
@@ -193,7 +231,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
           {etapes.map((_, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
               <button
-                onClick={() => { setPlayIdx(null); setEtapeIdx(i) }}
+                onClick={() => { setPlayIdx(null); setEtapeIdx(i); setSelection(null) }}
                 disabled={playIdx !== null}
                 style={{
                   background: displayIdx === i ? 'rgba(167,139,250,0.18)' : colors.background.raised,
@@ -250,13 +288,16 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
               style={{ width: '36px', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', color: colors.text.primary, fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
             <button style={tb(false, '#4ade80')} onClick={() => ajouterSerie('nous')}>+ Série 🟢</button>
             <button style={tb(false, '#f87171')} onClick={() => ajouterSerie('adverse')}>+ Série 🔴</button>
+            {selection && (
+              <button onClick={supprimerSelection} style={tb(true, '#f87171')}>Supprimer</button>
+            )}
             {(joueurs.length || ballon) ? (
               <button onClick={() => majEtape({ joueurs: [], ballon: null })}
                 style={{ ...tb(false), marginLeft: 'auto', color: colors.text.dim }}>↺ Vider l'étape</button>
             ) : null}
           </div>
           <p style={{ color: colors.text.ghost, fontSize: '10px', margin: '0 0 6px' }}>
-            {mode === 'select' && 'Glisse les joueurs/ballon · Double-clic → renommer · Clic droit → supprimer'}
+            {mode === 'select' && 'Glisse les joueurs/ballon · Double-clic → renommer · Clic droit ou bouton "Supprimer" → supprimer'}
             {mode === 'add_nous' && 'Clique sur le terrain pour placer un joueur (notre équipe)'}
             {mode === 'add_adv' && 'Clique sur le terrain pour placer un joueur (adversaire)'}
             {mode === 'add_ball' && 'Clique sur le terrain pour placer le ballon'}
@@ -285,11 +326,11 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         {/* Lignes */}
         <rect x={10} y={10} width={W - 20} height={H - 20} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} rx={3} />
         <text x={W / 2} y={23} textAnchor="middle" fill="#ffffff1a" fontSize={9} fontFamily="sans-serif">— CÔTÉ ADVERSE —</text>
-        <rect x={135} y={H - 108} width={W - 270} height={108} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
-        <rect x={202} y={H - 48} width={W - 404} height={48} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1} strokeOpacity={0.3} />
-        <rect x={218} y={H - 10} width={W - 436} height={10} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
-        <circle cx={W / 2} cy={H - 74} r={3} fill="#fff" fillOpacity={0.5} />
-        <path d={`M 158 ${H - 108} A 88 88 0 0 0 ${W - 158} ${H - 108}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
+        <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
+        <rect x={SIX_X} y={SIX_Y} width={SIX_W} height={SIX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1} strokeOpacity={0.3} />
+        <rect x={GOAL_X} y={FIELD_BOTTOM} width={GOAL_W} height={FIELD_MARGIN} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
+        <circle cx={W / 2} cy={PENALTY_Y} r={3} fill="#fff" fillOpacity={0.5} />
+        <path d={`M ${W / 2 - PENALTY_ARC_DX} ${BOX_Y} A ${PENALTY_R} ${PENALTY_R} 0 0 0 ${W / 2 + PENALTY_ARC_DX} ${BOX_Y}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
 
         {/* Quadrillage repère */}
         {showGrid && (
@@ -330,15 +371,16 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
         )}
 
         {/* Ballon */}
-        {displayBallon && (() => { const bp = clampPos(displayBallon); return (
+        {displayBallon && (() => { const bp = clampPos(displayBallon); const selectionne = selection?.type === 'ballon'; return (
           <g className="dot"
             style={{ transform: `translate(${bp.x}px, ${bp.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
             onMouseDown={e => startDrag(e, 'ballon', null)}
             onTouchStart={e => startDrag(e, 'ballon', null)}
             onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (!readOnly && playIdx === null) majEtape({ ballon: null }) }}
           >
-            <circle r={13} fill="#fff" fillOpacity={0.12} stroke="#fff" strokeWidth={1} />
-            <text textAnchor="middle" y={6} fontSize={17}>⚽</text>
+            {selectionne && <circle r={13} fill="none" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="3 2" />}
+            <circle r={10} fill="#fff" fillOpacity={0.12} stroke="#fff" strokeWidth={1} />
+            <text textAnchor="middle" y={5} fontSize={14}>⚽</text>
           </g>
         )})()}
 
@@ -348,19 +390,21 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
           const c = isN ? '#4ade80' : '#f87171'
           const initiales = (j.nom || '').slice(0, 3)
           const jp = clampPos(j)
+          const selectionne = selection?.type === 'joueur' && selection.id === j.id
           return (
             <g key={j.id} className="dot"
               style={{ transform: `translate(${jp.x}px, ${jp.y}px)`, transition: playIdx !== null ? 'transform 1.1s ease' : 'none', cursor: !readOnly && mode === 'select' && playIdx === null ? 'grab' : 'default' }}
               onMouseDown={e => startDrag(e, 'joueur', j.id)}
               onTouchStart={e => startDrag(e, 'joueur', j.id)}
               onDoubleClick={e => beginEdit(e, j)}
-              onContextMenu={e => delJoueur(e, j.id)}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); delJoueur(j.id) }}
             >
-              <circle cx={1} cy={1} r={15} fill="rgba(0,0,0,0.45)" />
-              <circle r={15} fill={isN ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'} stroke={c} strokeWidth={2} />
-              <text textAnchor="middle" y={4} fill={c} fontSize={initiales.length > 2 ? 9 : 12} fontWeight="bold" fontFamily="sans-serif">{initiales}</text>
+              {selectionne && <circle r={RAYON_JOUEUR + 4} fill="none" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="3 2" />}
+              <circle cx={1} cy={1} r={RAYON_JOUEUR} fill="rgba(0,0,0,0.45)" />
+              <circle r={RAYON_JOUEUR} fill={isN ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'} stroke={c} strokeWidth={2} />
+              <text textAnchor="middle" y={3} fill={c} fontSize={initiales.length > 2 ? 8 : 10} fontWeight="bold" fontFamily="sans-serif">{initiales}</text>
               {j.nom && (
-                <text textAnchor="middle" y={28} fill={c} fontSize={9} fontWeight="700" fontFamily="sans-serif" style={{ paintOrder: 'stroke' }} stroke="#080808" strokeWidth={3}>{j.nom}</text>
+                <text textAnchor="middle" y={RAYON_JOUEUR + 10} fill={c} fontSize={8} fontWeight="700" fontFamily="sans-serif" style={{ paintOrder: 'stroke' }} stroke="#080808" strokeWidth={3}>{j.nom}</text>
               )}
             </g>
           )
