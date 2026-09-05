@@ -30,7 +30,7 @@ body {
    parent doit s'élargir en conséquence, sinon le contenu déborde hors du
    cadre capturé par html2canvas. */
 #fiche-print:has(.bef-doc), .fiche-render:has(.bef-doc) {
-  width: 1400px;
+  width: 1500px;
   padding: 0;
 }
 .fiche-header { margin-bottom: 14px; }
@@ -48,35 +48,44 @@ body {
 
 /* ── Fiche séance officielle BEF (gabarit fédéral) ──────────────────────────
    Reproduction du modèle réel (tableau Excel/PDF fédéral) : en-tête jaune +
-   bleu, puis un bloc par procédé (colonnes Organisation/Terrain/Comportements
-   attendus/Descriptif/Critères), bilan en pied de bloc. Paysage (large) plutôt
-   que le format portrait du reste de l'app. */
-.bef-doc { width: 1400px; font-family: Arial, sans-serif; color: #000; background: #fff; font-size: 12px; }
+   bleu répété sur chaque page, puis 2 procédés par page (colonnes
+   Organisation/Terrain/Comportements attendus/Descriptif/Critères), bilan en
+   pied de bloc. Paysage (large), une .bef-page par page réelle du PDF — cf.
+   genererPdfFiche/genererEtPartagerFicheApercu qui capturent chaque .bef-page
+   séparément pour ne jamais rétrécir le contenu en le forçant sur une seule
+   page. Couleurs alignées sur les tons pastel Excel du document fédéral. */
+.bef-doc { width: 1500px; font-family: Arial, sans-serif; color: #000; background: #fff; font-size: 13px; }
+/* Le séparateur visuel entre pages vit sur le conteneur (padding), jamais en
+   bordure de .bef-page lui-même : chaque .bef-page est capturée seule par
+   html2canvas (cf. genererPdfDepuisElement) et une bordure sur l'élément
+   capturé apparaîtrait comme un artefact dans le PDF exporté. */
+.bef-page { padding: 24px 24px 0; background: #fff; }
+.bef-page:last-child { padding-bottom: 24px; }
 .bef-header-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr 1fr 1fr; border: 1px solid #000; border-bottom: none; background: #ffff99; }
-.bef-header-row2 { display: grid; grid-template-columns: 1fr 1fr 2fr; border: 1px solid #000; margin-bottom: 10px; background: #add8f7; }
-.bef-header-cell { border-right: 1px solid #000; padding: 4px 6px; }
+.bef-header-row2 { display: grid; grid-template-columns: 1fr 1fr 2fr; border: 1px solid #000; margin-bottom: 16px; background: #bdd7ee; }
+.bef-header-cell { border-right: 1px solid #000; padding: 6px 8px; }
 .bef-header-cell:last-child { border-right: none; }
-.bef-header-cell b { display: block; font-size: 10px; }
-.bef-procede { display: grid; grid-template-columns: 92px 190px 1.1fr 1.3fr 1fr; border: 1px solid #000; margin-bottom: 10px; }
+.bef-header-cell b { display: block; font-size: 11px; }
+.bef-procede { display: grid; grid-template-columns: 130px 260px 1.1fr 1.3fr 1fr; border: 1px solid #000; margin-bottom: 16px; }
 .bef-col { border-right: 1px solid #000; }
 .bef-col:last-child { border-right: none; display: flex; flex-direction: column; }
 .bef-mini-row { display: grid; grid-template-columns: 1fr; border-bottom: 1px solid #000; }
-.bef-mini-label { background: #ccccff; font-size: 9px; font-weight: bold; padding: 1px 3px; }
-.bef-mini-value { padding: 1px 3px; min-height: 12px; font-size: 10px; }
-.bef-head-yellow { background: #ffff99; font-weight: bold; font-size: 10px; padding: 2px 4px; border-bottom: 1px solid #000; text-align: center; }
-.bef-head-blue { background: #add8f7; font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
-.bef-head-purple { background: #ccccff; font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
-.bef-head-plain { font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
-.bef-value-block { padding: 4px 5px; font-size: 10px; white-space: pre-wrap; min-height: 24px; flex: 1; }
+.bef-mini-label { background: #ccc0da; font-size: 11px; font-weight: bold; padding: 3px 6px; }
+.bef-mini-value { padding: 3px 6px; min-height: 18px; font-size: 12px; }
+.bef-head-yellow { background: #ffff99; font-weight: bold; font-size: 11px; padding: 4px 6px; border-bottom: 1px solid #000; text-align: center; }
+.bef-head-blue { background: #bdd7ee; font-weight: bold; font-size: 11px; padding: 5px 7px; border-bottom: 1px solid #000; }
+.bef-head-purple { background: #ccc0da; font-weight: bold; font-size: 11px; padding: 5px 7px; border-bottom: 1px solid #000; }
+.bef-head-plain { font-weight: bold; font-size: 11px; padding: 5px 7px; border-bottom: 1px solid #000; }
+.bef-value-block { padding: 7px 8px; font-size: 12px; white-space: pre-wrap; min-height: 36px; flex: 1; }
 .bef-sub-label { font-weight: bold; }
-.bef-surface-box { padding: 4px 5px; font-size: 10px; white-space: pre-wrap; min-height: 30px; }
-.bef-pitch-box { padding: 4px; display: flex; align-items: center; justify-content: center; }
+.bef-surface-box { padding: 7px 8px; font-size: 12px; white-space: pre-wrap; min-height: 44px; }
+.bef-pitch-box { padding: 6px; display: flex; align-items: center; justify-content: center; }
 .bef-bilan-row { grid-column: 1 / -1; display: flex; border-top: 1px solid #000; }
-.bef-bilan-label { background: #000; color: #fff; font-weight: bold; font-size: 10px; writing-mode: vertical-rl; text-orientation: mixed; padding: 4px 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.bef-bilan-col { flex: 1; border-right: 1px solid #000; padding: 4px 6px; }
+.bef-bilan-label { background: #000; color: #fff; font-weight: bold; font-size: 11px; writing-mode: vertical-rl; text-orientation: mixed; padding: 6px 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bef-bilan-col { flex: 1; border-right: 1px solid #000; padding: 7px 9px; min-height: 50px; }
 .bef-bilan-col:last-child { border-right: none; }
-.bef-bilan-col b { display: block; font-size: 10px; margin-bottom: 3px; }
-.bef-bilan-col span { font-size: 10px; white-space: pre-wrap; }
+.bef-bilan-col b { display: block; font-size: 11px; margin-bottom: 4px; }
+.bef-bilan-col span { font-size: 12px; white-space: pre-wrap; }
 
 .sous-onglets::-webkit-scrollbar,
 .filtres-scroll::-webkit-scrollbar {

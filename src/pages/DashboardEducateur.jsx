@@ -693,67 +693,81 @@ function FicheBEFContenu({ fiche, categorieLabel, nomEducateur }) {
     ['Durée', 'duree'], ['Tps de travail', 'tps_travail'], ['Tps de récup', 'tps_recup'],
     ['Nbr de séries', 'nb_series'], ['Nbr de répét', 'nb_repet'], ['Rpe', 'rpe'],
   ]
+  // Pagination réelle du gabarit officiel : 2 procédés par page (avec l'en-tête
+  // répété sur chaque page, cf. document fédéral page 1/page 2 identiques) —
+  // chaque .bef-page est capturée séparément par le pipeline PDF (cf.
+  // genererPdfFiche/genererEtPartagerFicheApercu) pour ne jamais écraser/
+  // rétrécir le contenu en forçant tout sur une seule page.
+  const pages = []
+  const procedes = fiche.procedes || []
+  for (let i = 0; i < procedes.length; i += 2) pages.push(procedes.slice(i, i + 2))
+  if (pages.length === 0) pages.push([])
+
   return (
     <div className="bef-doc">
-      <div className="bef-header-row">
-        <div className="bef-header-cell"><b>NOM Prénom :</b>{nomEducateur || '—'}</div>
-        <div className="bef-header-cell"><b>Catégorie :</b>{categorieLabel || '—'}</div>
-        <div className="bef-header-cell"><b>Effectif :</b>{fiche.nb_joueurs || '—'}</div>
-        <div className="bef-header-cell"><b>Heure de début :</b>{fiche.heure_debut || '—'}</div>
-        <div className="bef-header-cell"><b>Durée :</b>{fiche.duree_totale || '—'}</div>
-        <div className="bef-header-cell"><b>Date :</b>{fiche.date || '—'}</div>
-        <div className="bef-header-cell"><b>Séance N° :</b>{fiche.numero_seance || '—'}</div>
-      </div>
-      <div className="bef-header-row2">
-        <div className="bef-header-cell"><b>Phase de jeu :</b>{fiche.phase_jeu || '—'}</div>
-        <div className="bef-header-cell"><b>Principe de jeu :</b>{fiche.principe_jeu || '—'}</div>
-        <div className="bef-header-cell"><b>Thème :</b>{fiche.theme || '—'}</div>
-      </div>
+      {pages.map((procedesPage, pageIndex) => (
+        <div className="bef-page" key={pageIndex}>
+          <div className="bef-header-row">
+            <div className="bef-header-cell"><b>NOM Prénom :</b>{nomEducateur || '—'}</div>
+            <div className="bef-header-cell"><b>Catégorie :</b>{categorieLabel || '—'}</div>
+            <div className="bef-header-cell"><b>Effectif :</b>{fiche.nb_joueurs || '—'}</div>
+            <div className="bef-header-cell"><b>Heure de début :</b>{fiche.heure_debut || '—'}</div>
+            <div className="bef-header-cell"><b>Durée :</b>{fiche.duree_totale || '—'}</div>
+            <div className="bef-header-cell"><b>Date :</b>{fiche.date || '—'}</div>
+            <div className="bef-header-cell"><b>Séance N° :</b>{fiche.numero_seance || '—'}</div>
+          </div>
+          <div className="bef-header-row2">
+            <div className="bef-header-cell"><b>Phase de jeu :</b>{fiche.phase_jeu || '—'}</div>
+            <div className="bef-header-cell"><b>Principe de jeu :</b>{fiche.principe_jeu || '—'}</div>
+            <div className="bef-header-cell"><b>Thème :</b>{fiche.theme || '—'}</div>
+          </div>
 
-      {(fiche.procedes || []).map((p, i) => (
-        <div className="bef-procede" key={i}>
-          <div className="bef-col">
-            {MINI_ORGA.map(([label, key]) => (
-              <div className="bef-mini-row" key={key}>
-                <div className="bef-mini-label">{label} :</div>
-                <div className="bef-mini-value">{p[key]}</div>
+          {procedesPage.map((p) => (
+            <div className="bef-procede" key={p.numero}>
+              <div className="bef-col">
+                {MINI_ORGA.map(([label, key]) => (
+                  <div className="bef-mini-row" key={key}>
+                    <div className="bef-mini-label">{label} :</div>
+                    <div className="bef-mini-value">{p[key]}</div>
+                  </div>
+                ))}
+                <div className="bef-head-yellow">Procédé</div>
+                <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.titre}</div>
+                <div className="bef-head-yellow">Pédagogie</div>
+                <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.pedagogie}</div>
+                <div className="bef-head-plain">Surface</div>
+                <div className="bef-surface-box">{p.surface}</div>
               </div>
-            ))}
-            <div className="bef-head-yellow">Procédé</div>
-            <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.titre}</div>
-            <div className="bef-head-yellow">Pédagogie</div>
-            <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.pedagogie}</div>
-            <div className="bef-head-plain">Surface</div>
-            <div className="bef-surface-box">{p.surface}</div>
-          </div>
-          <div className="bef-col bef-pitch-box">
-            {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '220px', objectFit: 'contain' }} /> : getTerrainComponent(p.numero, fiche.sport)}
-          </div>
-          <div className="bef-col">
-            <div className="bef-head-blue">Comportements attendus</div>
-            <div className="bef-value-block">{p.comportements_attendus}</div>
-          </div>
-          <div className="bef-col">
-            <div className="bef-head-blue">Descriptif (but, consignes de départ, déroulé du procédé)</div>
-            <div className="bef-value-block">
-              {SOUS_BLOCS_DESCRIPTIF.map(([label, key]) => p[key] && (
-                <div key={key} style={{ marginBottom: '4px' }}><span className="bef-sub-label">{label} : </span>{p[key]}</div>
-              ))}
+              <div className="bef-col bef-pitch-box">
+                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '220px', objectFit: 'contain' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+              </div>
+              <div className="bef-col">
+                <div className="bef-head-blue">Comportements attendus</div>
+                <div className="bef-value-block">{p.comportements_attendus}</div>
+              </div>
+              <div className="bef-col">
+                <div className="bef-head-blue">Descriptif (but, consignes de départ, déroulé du procédé)</div>
+                <div className="bef-value-block">
+                  {SOUS_BLOCS_DESCRIPTIF.map(([label, key]) => p[key] && (
+                    <div key={key} style={{ marginBottom: '4px' }}><span className="bef-sub-label">{label} : </span>{p[key]}</div>
+                  ))}
+                </div>
+              </div>
+              <div className="bef-col">
+                <div className="bef-head-blue">Critères de réalisation</div>
+                <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_realisation}</div>
+                <div className="bef-head-purple">Critères de réussite (2 max)</div>
+                <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_reussite}</div>
+                <div className="bef-head-purple">Dominantes-Impacts Athlétiques</div>
+                <div className="bef-value-block">{p.dominantes_impacts}</div>
+              </div>
+              <div className="bef-bilan-row">
+                <div className="bef-bilan-label">BILAN</div>
+                <div className="bef-bilan-col"><b>Sur ma posture, le niveau d'engagement (adhésion) des joueurs, "l'efficacité" de la séance :</b><span>{p.bilan_posture}</span></div>
+                <div className="bef-bilan-col"><b>Remédiations, modifications à apporter sur l'aménagement et/ou les consignes :</b><span>{p.bilan_remediations}</span></div>
+              </div>
             </div>
-          </div>
-          <div className="bef-col">
-            <div className="bef-head-blue">Critères de réalisation</div>
-            <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_realisation}</div>
-            <div className="bef-head-purple">Critères de réussite (2 max)</div>
-            <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_reussite}</div>
-            <div className="bef-head-purple">Dominantes-Impacts Athlétiques</div>
-            <div className="bef-value-block">{p.dominantes_impacts}</div>
-          </div>
-          <div className="bef-bilan-row">
-            <div className="bef-bilan-label">BILAN</div>
-            <div className="bef-bilan-col"><b>Sur ma posture, le niveau d'engagement (adhésion) des joueurs, "l'efficacité" de la séance :</b><span>{p.bilan_posture}</span></div>
-            <div className="bef-bilan-col"><b>Remédiations, modifications à apporter sur l'aménagement et/ou les consignes :</b><span>{p.bilan_remediations}</span></div>
-          </div>
+          ))}
         </div>
       ))}
     </div>
@@ -2431,6 +2445,47 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   // Capture #fiche-print (déjà stylé pour l'impression, cf. index.css) en PDF via html2canvas + jsPDF
+  // Capture un conteneur imprimable en PDF. S'il contient des .bef-page (gabarit
+  // officiel BEF, cf. FicheBEFContenu — 2 procédés par page, en-tête répété),
+  // chaque page est capturée séparément et posée sur SA PROPRE page PDF, pour ne
+  // jamais rétrécir le contenu en écrasant tout sur une seule capture mécanique
+  // (ce qui arrivait avant : 4 procédés compressés sur une unique image géante).
+  // Sans .bef-page (rendu générique FicheContenu), on retombe sur l'ancien
+  // comportement : une seule capture, découpée mécaniquement par hauteur de page.
+  const genererPdfDepuisElement = async (el, orientation) => {
+    const html2canvas = (await import('html2canvas')).default
+    const { jsPDF } = await import('jspdf')
+    const pdf = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+
+    const capturerEtAjouter = async (target, premierePage) => {
+      const canvas = await html2canvas(target, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const imgData = canvas.toDataURL('image/png')
+      let heightLeft = imgHeight
+      let position = 0
+      if (!premierePage) pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+    }
+
+    const pageEls = el.querySelectorAll('.bef-page')
+    if (pageEls.length > 0) {
+      for (let i = 0; i < pageEls.length; i++) await capturerEtAjouter(pageEls[i], i === 0)
+    } else {
+      await capturerEtAjouter(el, true)
+    }
+    return pdf.output('blob')
+  }
+
   const genererPdfFiche = async () => {
     const el = document.getElementById('fiche-print')
     if (!el) return null
@@ -2442,28 +2497,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     el.style.left = '-9999px'
     el.style.top = '0'
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      const { jsPDF } = await import('jspdf')
       // Paysage pour le gabarit officiel BEF (large, cf. FicheBEFContenu/.bef-doc),
       // portrait pour le rendu générique (FicheContenu, plus étroit).
-      const pdf = new jsPDF({ orientation: fiche.mode_diplome === 'BEF' ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pageWidth
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const imgData = canvas.toDataURL('image/png')
-      let heightLeft = imgHeight
-      let position = 0
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-      while (heightLeft > 0) {
-        position -= pageHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-      return pdf.output('blob')
+      return await genererPdfDepuisElement(el, fiche.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
     } finally {
       el.style.display = prevDisplay
       el.style.position = prevPosition
@@ -2499,26 +2535,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try {
       const el = document.querySelector('.fiche-render')
       if (!el) throw new Error('Rendu de la fiche introuvable')
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      const { jsPDF } = await import('jspdf')
-      const pdf = new jsPDF({ orientation: ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pageWidth
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const imgData = canvas.toDataURL('image/png')
-      let heightLeft = imgHeight
-      let position = 0
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-      while (heightLeft > 0) {
-        position -= pageHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-      const blob = pdf.output('blob')
+      const blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
       const path = `fiches/${userId}/${Date.now()}.pdf`
       const { error: uploadError } = await supabase.storage.from('documents').upload(path, blob, { contentType: 'application/pdf', upsert: true })
       if (uploadError) throw uploadError
