@@ -551,6 +551,17 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     patchComposition({ remplacants: (ficheCourante.remplacants || []).filter((_, i) => i !== idx) })
   }
 
+  // Un seul capitaine possible : le nommer sur un slot retire automatiquement
+  // le brassard du précédent. Cliquer sur le capitaine actuel le retire.
+  const toggleCapitaineCompo = (slotIndex) => {
+    const titulaires = (ficheCourante.titulaires || []).map((j, i) => {
+      if (!j) return j
+      if (i === slotIndex) return { ...j, capitaine: !j.capitaine }
+      return j.capitaine ? { ...j, capitaine: false } : j
+    })
+    patchComposition({ titulaires })
+  }
+
   // ─── Styles ────────────────────────────────────────────────────────────
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '20px' }
   const label = { display: 'block', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }
@@ -1082,6 +1093,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           onRetirerTitulaire={retirerTitulaireCompo}
           onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}
           onRetirerRemplacant={retirerRemplacantCompo}
+          onToggleCapitaine={toggleCapitaineCompo}
         />
       </div>
 

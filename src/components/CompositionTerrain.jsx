@@ -42,10 +42,18 @@ const nomAffiche = (joueur, affichageNom) => {
   return (val || joueur.nom || joueur.prenom || '')?.toUpperCase()
 }
 
+// Le badge rond sur la photo reste (repère visuel rapide), mais le numéro est
+// aussi rappelé ici en toutes lettres à côté du nom, à la demande — pas
+// évident au premier coup d'œil qu'un petit badge superposé porte un numéro.
+const nomAvecNumero = (joueur, affichageNom) => {
+  const nom = nomAffiche(joueur, affichageNom)
+  return joueur?.numero != null ? `${joueur.numero} · ${nom}` : nom
+}
+
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
   onChangerFormation, onAssignerTitulaire, onRetirerTitulaire,
-  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom,
+  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, onToggleCapitaine,
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
 
@@ -157,13 +165,39 @@ export default function CompositionTerrain({
                           ✕
                         </button>
                       )}
+                      {joueur && (modeEdit ? (
+                        <button onClick={e => { e.stopPropagation(); onToggleCapitaine(slotIndex) }}
+                          title={joueur.capitaine ? 'Retirer le brassard' : 'Nommer capitaine'}
+                          style={{
+                            position: 'absolute', top: '-4px', left: '-4px',
+                            width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)', borderRadius: '50%',
+                            background: joueur.capitaine ? '#facc15' : 'rgba(0,0,0,0.6)',
+                            border: joueur.capitaine ? '2px solid #0a0a0a' : '1.5px dashed rgba(250,204,21,0.55)',
+                            color: joueur.capitaine ? '#000' : '#facc15',
+                            fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900, lineHeight: 1, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                          }}>
+                          C
+                        </button>
+                      ) : joueur.capitaine ? (
+                        <div style={{
+                          position: 'absolute', top: '-4px', left: '-4px',
+                          background: '#facc15', color: '#000', borderRadius: '50%',
+                          width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900,
+                          border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                        }}>
+                          C
+                        </div>
+                      ) : null)}
                     </div>
                     <div style={{
                       background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(7px, 1.1cqw, 10px)', fontWeight: 800,
                       padding: '3px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.6px',
                       whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
-                      {nomAffiche(joueur, affichageNom)}
+                      {nomAvecNumero(joueur, affichageNom)}
                     </div>
                   </div>
                 )
@@ -192,7 +226,7 @@ export default function CompositionTerrain({
                   </button>
                 )}
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche(j, affichageNom)}</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAvecNumero(j, affichageNom)}</span>
             </div>
           ))}
           {modeEdit && remplacants.length < MAX_REMPLACANTS && (
