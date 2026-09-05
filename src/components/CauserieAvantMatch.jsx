@@ -525,8 +525,13 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     if (!compoModal) return
     const avecAvatar = { ...joueur, avatar_url: joueur.avatar_url || avatarsParJoueurId[joueur.joueur_id] || null }
     if (compoModal.type === 'titulaire') {
-      const titulaires = [...(ficheCourante.titulaires || [])]
+      let titulaires = [...(ficheCourante.titulaires || [])]
       titulaires[compoModal.slotIndex] = avecAvatar
+      // Un seul capitaine possible : le cocher sur ce slot retire le brassard
+      // de tout autre titulaire qui l'aurait déjà.
+      if (avecAvatar.capitaine) {
+        titulaires = titulaires.map((j, i) => (i !== compoModal.slotIndex && j?.capitaine) ? { ...j, capitaine: false } : j)
+      }
       patchComposition({ titulaires })
     } else {
       const remplacants = [...(ficheCourante.remplacants || []), avecAvatar]
@@ -549,17 +554,6 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
   const retirerRemplacantCompo = (idx) => {
     patchComposition({ remplacants: (ficheCourante.remplacants || []).filter((_, i) => i !== idx) })
-  }
-
-  // Un seul capitaine possible : le nommer sur un slot retire automatiquement
-  // le brassard du précédent. Cliquer sur le capitaine actuel le retire.
-  const toggleCapitaineCompo = (slotIndex) => {
-    const titulaires = (ficheCourante.titulaires || []).map((j, i) => {
-      if (!j) return j
-      if (i === slotIndex) return { ...j, capitaine: !j.capitaine }
-      return j.capitaine ? { ...j, capitaine: false } : j
-    })
-    patchComposition({ titulaires })
   }
 
   // ─── Styles ────────────────────────────────────────────────────────────
@@ -1093,7 +1087,6 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           onRetirerTitulaire={retirerTitulaireCompo}
           onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}
           onRetirerRemplacant={retirerRemplacantCompo}
-          onToggleCapitaine={toggleCapitaineCompo}
         />
       </div>
 
@@ -1102,6 +1095,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           joueursDispo={joueurs.filter(j => j.joueur_id)}
           dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? f.titulaires?.[compoModal.slotIndex]?.joueur_id : undefined)}
           multiSelect={compoModal.type === 'remplacant'}
+          capitaineActuel={compoModal.type === 'titulaire' ? !!f.titulaires?.[compoModal.slotIndex]?.capitaine : false}
           onConfirmer={confirmerSelectionCompo}
           onConfirmerMultiple={confirmerSelectionMultipleCompo}
           onRetirer={compoModal.type === 'titulaire' && f.titulaires?.[compoModal.slotIndex] ? () => { retirerTitulaireCompo(compoModal.slotIndex); setCompoModal(null) } : null}

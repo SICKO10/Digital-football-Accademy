@@ -53,7 +53,7 @@ const nomAvecNumero = (joueur, affichageNom) => {
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
   onChangerFormation, onAssignerTitulaire, onRetirerTitulaire,
-  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, onToggleCapitaine,
+  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom,
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
 
@@ -171,21 +171,7 @@ export default function CompositionTerrain({
                           ✕
                         </button>
                       )}
-                      {joueur && (modeEdit ? (
-                        <button onClick={e => { e.stopPropagation(); onToggleCapitaine(slotIndex) }}
-                          title={joueur.capitaine ? 'Retirer le brassard' : 'Nommer capitaine'}
-                          style={{
-                            position: 'absolute', top: '-4px', left: '-4px',
-                            width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)', borderRadius: '50%',
-                            background: joueur.capitaine ? '#facc15' : 'rgba(0,0,0,0.75)',
-                            border: joueur.capitaine ? '2px solid #0a0a0a' : '1.5px dashed rgba(250,204,21,0.7)',
-                            color: joueur.capitaine ? '#000' : '#facc15',
-                            fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900, lineHeight: 1, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                          }}>
-                          C
-                        </button>
-                      ) : joueur.capitaine ? (
+                      {joueur?.capitaine && (
                         <div style={{
                           position: 'absolute', top: '-4px', left: '-4px',
                           background: '#facc15', color: '#000', borderRadius: '50%',
@@ -196,7 +182,7 @@ export default function CompositionTerrain({
                         }}>
                           C
                         </div>
-                      ) : null)}
+                      )}
                     </div>
                     <div style={{
                       background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(7px, 1.1cqw, 10px)', fontWeight: 800,
@@ -253,10 +239,11 @@ export default function CompositionTerrain({
 // choix unique) : coche plusieurs joueurs d'un coup, numéro repris tel quel
 // depuis numero_maillot (pas d'édition ligne par ligne dans ce mode, pour
 // rester rapide) ; onConfirmerMultiple reçoit la liste entière en un appel.
-export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, onConfirmerMultiple, onRetirer, onFermer, multiSelect = false }) {
+export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, onConfirmerMultiple, onRetirer, onFermer, multiSelect = false, capitaineActuel = false }) {
   const [choisi, setChoisi] = useState(null)
   const [numero, setNumero] = useState('')
   const [choisisMultiple, setChoisisMultiple] = useState([])
+  const [capitaine, setCapitaine] = useState(capitaineActuel)
 
   const choisir = (j) => {
     setChoisi(j)
@@ -316,6 +303,10 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
                 style={{ flex: 1, background: '#0a0a0a', border: '1px solid #3a3a3a', color: '#4ade80', borderRadius: '10px', padding: '10px', fontSize: '26px', fontWeight: 900, textAlign: 'center' }} />
               <button onClick={() => setNumero(n => String(Math.min(99, (parseInt(n, 10) || 0) + 1)))} style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>+</button>
             </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={capitaine} onChange={e => setCapitaine(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#facc15' }} />
+              <span style={{ color: '#facc15', fontSize: '13px', fontWeight: 700 }}>Capitaine</span>
+            </label>
           </div>
         )}
 
@@ -330,7 +321,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
               Ajouter {choisisMultiple.length > 0 ? `(${choisisMultiple.length})` : ''}
             </button>
           ) : (
-            <button disabled={!choisi} onClick={() => onConfirmer({ joueur_id: choisi.joueur_id, prenom: choisi.prenom, nom: choisi.nom, avatar_url: choisi.avatar_url || null, numero: parseInt(numero, 10) || null })}
+            <button disabled={!choisi} onClick={() => onConfirmer({ joueur_id: choisi.joueur_id, prenom: choisi.prenom, nom: choisi.nom, avatar_url: choisi.avatar_url || null, numero: parseInt(numero, 10) || null, capitaine })}
               style={{ flex: 2, background: choisi ? '#4ade80' : '#1a1a1a', border: 'none', color: choisi ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisi ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
               Confirmer
             </button>
