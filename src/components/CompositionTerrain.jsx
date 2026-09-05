@@ -136,17 +136,23 @@ export default function CompositionTerrain({
                 const joueur = titulaires[slotIndex] || null
                 return (
                   <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px, 0.6cqw, 4px)', minWidth: '44px' }}>
-                    <div
-                      onClick={() => modeEdit && onAssignerTitulaire(slotIndex)}
-                      style={{
-                        width: TAILLE_TITULAIRE, height: TAILLE_TITULAIRE, borderRadius: '50%', position: 'relative',
-                        border: `3px solid ${joueur ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}`,
-                        background: 'rgba(0,0,0,0.55)', overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: modeEdit ? 'pointer' : 'default',
-                        boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
-                      }}>
-                      <AvatarJoueur joueur={joueur} fontSize="clamp(11px, 1.8cqw, 18px)" />
+                    {/* Ancre de la taille exacte du cercle (pas de la colonne, plus
+                        large) : les badges/boutons superposés se positionnent par
+                        rapport à elle, sans jamais être coupés par l'overflow:hidden
+                        du cercle (nécessaire, lui, pour rogner la photo). */}
+                    <div style={{ width: TAILLE_TITULAIRE, height: TAILLE_TITULAIRE, position: 'relative' }}>
+                      <div
+                        onClick={() => modeEdit && onAssignerTitulaire(slotIndex)}
+                        style={{
+                          width: '100%', height: '100%', borderRadius: '50%', position: 'relative',
+                          border: `3px solid ${joueur ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}`,
+                          background: 'rgba(0,0,0,0.55)', overflow: 'hidden',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: modeEdit ? 'pointer' : 'default',
+                          boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
+                        }}>
+                        <AvatarJoueur joueur={joueur} fontSize="clamp(11px, 1.8cqw, 18px)" />
+                      </div>
                       {joueur?.numero != null && (
                         <div style={{
                           position: 'absolute', top: '-4px', right: '-4px',
@@ -171,8 +177,8 @@ export default function CompositionTerrain({
                           style={{
                             position: 'absolute', top: '-4px', left: '-4px',
                             width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)', borderRadius: '50%',
-                            background: joueur.capitaine ? '#facc15' : 'rgba(0,0,0,0.6)',
-                            border: joueur.capitaine ? '2px solid #0a0a0a' : '1.5px dashed rgba(250,204,21,0.55)',
+                            background: joueur.capitaine ? '#facc15' : 'rgba(0,0,0,0.75)',
+                            border: joueur.capitaine ? '2px solid #0a0a0a' : '1.5px dashed rgba(250,204,21,0.7)',
                             color: joueur.capitaine ? '#000' : '#facc15',
                             fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900, lineHeight: 1, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
