@@ -26,6 +26,13 @@ body {
 #fiche-print {
   display: none;
 }
+/* Gabarit BEF (.bef-doc) plus large que le rendu générique — le conteneur
+   parent doit s'élargir en conséquence, sinon le contenu déborde hors du
+   cadre capturé par html2canvas. */
+#fiche-print:has(.bef-doc), .fiche-render:has(.bef-doc) {
+  width: 1400px;
+  padding: 0;
+}
 .fiche-header { margin-bottom: 14px; }
 .fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
 .fiche-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
@@ -38,6 +45,38 @@ body {
 .procede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
 .procede-field label { font-weight: bold; display: block; margin-bottom: 2px; }
 .procede-field .valeur { border-bottom: 1px solid #999; min-height: 18px; }
+
+/* ── Fiche séance officielle BEF (gabarit fédéral) ──────────────────────────
+   Reproduction du modèle réel (tableau Excel/PDF fédéral) : en-tête jaune +
+   bleu, puis un bloc par procédé (colonnes Organisation/Terrain/Comportements
+   attendus/Descriptif/Critères), bilan en pied de bloc. Paysage (large) plutôt
+   que le format portrait du reste de l'app. */
+.bef-doc { width: 1400px; font-family: Arial, sans-serif; color: #000; background: #fff; font-size: 12px; }
+.bef-header-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr 1fr 1fr; border: 1px solid #000; border-bottom: none; background: #ffff99; }
+.bef-header-row2 { display: grid; grid-template-columns: 1fr 1fr 2fr; border: 1px solid #000; margin-bottom: 10px; background: #add8f7; }
+.bef-header-cell { border-right: 1px solid #000; padding: 4px 6px; }
+.bef-header-cell:last-child { border-right: none; }
+.bef-header-cell b { display: block; font-size: 10px; }
+.bef-procede { display: grid; grid-template-columns: 92px 190px 1.1fr 1.3fr 1fr; border: 1px solid #000; margin-bottom: 10px; }
+.bef-col { border-right: 1px solid #000; }
+.bef-col:last-child { border-right: none; display: flex; flex-direction: column; }
+.bef-mini-row { display: grid; grid-template-columns: 1fr; border-bottom: 1px solid #000; }
+.bef-mini-label { background: #ccccff; font-size: 9px; font-weight: bold; padding: 1px 3px; }
+.bef-mini-value { padding: 1px 3px; min-height: 12px; font-size: 10px; }
+.bef-head-yellow { background: #ffff99; font-weight: bold; font-size: 10px; padding: 2px 4px; border-bottom: 1px solid #000; text-align: center; }
+.bef-head-blue { background: #add8f7; font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
+.bef-head-purple { background: #ccccff; font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
+.bef-head-plain { font-weight: bold; font-size: 10px; padding: 3px 5px; border-bottom: 1px solid #000; }
+.bef-value-block { padding: 4px 5px; font-size: 10px; white-space: pre-wrap; min-height: 24px; flex: 1; }
+.bef-sub-label { font-weight: bold; }
+.bef-surface-box { padding: 4px 5px; font-size: 10px; white-space: pre-wrap; min-height: 30px; }
+.bef-pitch-box { padding: 4px; display: flex; align-items: center; justify-content: center; }
+.bef-bilan-row { grid-column: 1 / -1; display: flex; border-top: 1px solid #000; }
+.bef-bilan-label { background: #000; color: #fff; font-weight: bold; font-size: 10px; writing-mode: vertical-rl; text-orientation: mixed; padding: 4px 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bef-bilan-col { flex: 1; border-right: 1px solid #000; padding: 4px 6px; }
+.bef-bilan-col:last-child { border-right: none; }
+.bef-bilan-col b { display: block; font-size: 10px; margin-bottom: 3px; }
+.bef-bilan-col span { font-size: 10px; white-space: pre-wrap; }
 
 .sous-onglets::-webkit-scrollbar,
 .filtres-scroll::-webkit-scrollbar {

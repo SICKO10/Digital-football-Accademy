@@ -679,10 +679,93 @@ function FicheContenu({ fiche, categorieLabel }) {
   )
 }
 
-function FicheSeancePrint({ fiche, categorieLabel }) {
+// Reproduction du gabarit officiel BEF (fiche fédérale, cf. document fourni par
+// l'utilisateur) — un bloc par procédé (colonnes Organisation/Terrain/
+// Comportements attendus/Descriptif/Critères + bilan), au lieu du rendu
+// générique de FicheContenu. N'est utilisé que si fiche.mode_diplome === 'BEF'
+// (BMF/DEF/libre gardent le rendu générique, structure trop différente pour
+// être forcée dans ce gabarit précis).
+function FicheBEFContenu({ fiche, categorieLabel, nomEducateur }) {
+  const SOUS_BLOCS_DESCRIPTIF = [
+    ['BUT', 'but_bef'], ['CONSIGNES', 'consignes_bef'], ['SYSTÈMES DE JEU (et postes)', 'systemes_jeu'], ['VARIANTES', 'variantes_bef'],
+  ]
+  const MINI_ORGA = [
+    ['Durée', 'duree'], ['Tps de travail', 'tps_travail'], ['Tps de récup', 'tps_recup'],
+    ['Nbr de séries', 'nb_series'], ['Nbr de répét', 'nb_repet'], ['Rpe', 'rpe'],
+  ]
+  return (
+    <div className="bef-doc">
+      <div className="bef-header-row">
+        <div className="bef-header-cell"><b>NOM Prénom :</b>{nomEducateur || '—'}</div>
+        <div className="bef-header-cell"><b>Catégorie :</b>{categorieLabel || '—'}</div>
+        <div className="bef-header-cell"><b>Effectif :</b>{fiche.nb_joueurs || '—'}</div>
+        <div className="bef-header-cell"><b>Heure de début :</b>{fiche.heure_debut || '—'}</div>
+        <div className="bef-header-cell"><b>Durée :</b>{fiche.duree_totale || '—'}</div>
+        <div className="bef-header-cell"><b>Date :</b>{fiche.date || '—'}</div>
+        <div className="bef-header-cell"><b>Séance N° :</b>{fiche.numero_seance || '—'}</div>
+      </div>
+      <div className="bef-header-row2">
+        <div className="bef-header-cell"><b>Phase de jeu :</b>{fiche.phase_jeu || '—'}</div>
+        <div className="bef-header-cell"><b>Principe de jeu :</b>{fiche.principe_jeu || '—'}</div>
+        <div className="bef-header-cell"><b>Thème :</b>{fiche.theme || '—'}</div>
+      </div>
+
+      {(fiche.procedes || []).map((p, i) => (
+        <div className="bef-procede" key={i}>
+          <div className="bef-col">
+            {MINI_ORGA.map(([label, key]) => (
+              <div className="bef-mini-row" key={key}>
+                <div className="bef-mini-label">{label} :</div>
+                <div className="bef-mini-value">{p[key]}</div>
+              </div>
+            ))}
+            <div className="bef-head-yellow">Procédé</div>
+            <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.titre}</div>
+            <div className="bef-head-yellow">Pédagogie</div>
+            <div className="bef-value-block" style={{ flex: 'none', minHeight: '16px' }}>{p.pedagogie}</div>
+            <div className="bef-head-plain">Surface</div>
+            <div className="bef-surface-box">{p.surface}</div>
+          </div>
+          <div className="bef-col bef-pitch-box">
+            {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '220px', objectFit: 'contain' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+          </div>
+          <div className="bef-col">
+            <div className="bef-head-blue">Comportements attendus</div>
+            <div className="bef-value-block">{p.comportements_attendus}</div>
+          </div>
+          <div className="bef-col">
+            <div className="bef-head-blue">Descriptif (but, consignes de départ, déroulé du procédé)</div>
+            <div className="bef-value-block">
+              {SOUS_BLOCS_DESCRIPTIF.map(([label, key]) => p[key] && (
+                <div key={key} style={{ marginBottom: '4px' }}><span className="bef-sub-label">{label} : </span>{p[key]}</div>
+              ))}
+            </div>
+          </div>
+          <div className="bef-col">
+            <div className="bef-head-blue">Critères de réalisation</div>
+            <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_realisation}</div>
+            <div className="bef-head-purple">Critères de réussite (2 max)</div>
+            <div className="bef-value-block" style={{ flex: 'none', minHeight: '40px' }}>{p.criteres_reussite}</div>
+            <div className="bef-head-purple">Dominantes-Impacts Athlétiques</div>
+            <div className="bef-value-block">{p.dominantes_impacts}</div>
+          </div>
+          <div className="bef-bilan-row">
+            <div className="bef-bilan-label">BILAN</div>
+            <div className="bef-bilan-col"><b>Sur ma posture, le niveau d'engagement (adhésion) des joueurs, "l'efficacité" de la séance :</b><span>{p.bilan_posture}</span></div>
+            <div className="bef-bilan-col"><b>Remédiations, modifications à apporter sur l'aménagement et/ou les consignes :</b><span>{p.bilan_remediations}</span></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
   return createPortal(
     <div id="fiche-print">
-      <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />
+      {fiche.mode_diplome === 'BEF'
+        ? <FicheBEFContenu fiche={fiche} categorieLabel={categorieLabel} nomEducateur={nomEducateur} />
+        : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />}
     </div>,
     document.body
   )
@@ -1851,10 +1934,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // `fiche` (et donc de fiche_seance à la sauvegarde) plutôt que des states
     // séparés : ce composant centralise déjà toute la fiche dans un seul objet.
     mode_diplome: null, phase_jeu: '', principe_jeu: '',
+    // Séance N° / Heure de début : en-tête de la fiche officielle BEF (cf.
+    // template fédéral) — nom_prenom vient du profil éducateur, pas resaisi ici.
+    numero_seance: '', heure_debut: '',
     constats: '', justification_pedagogique: '', auto_evaluation: '',
     analyse_equipe: '', bilan_projection: '',
     procedes: Array(4).fill(null).map((_, i) => ({
-      numero: i + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: ''
+      numero: i + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '',
+      // Champs du gabarit officiel BEF (cf. template fédéral "Fiche séance") —
+      // remplacent l'affichage générique (but/organisation/consignes/variables)
+      // à l'impression quand mode_diplome === 'BEF'. tps_travail/tps_recup/
+      // nb_series/nb_repet/rpe/pedagogie/surface forment la colonne
+      // "Organisation" du gabarit ; but_bef/consignes_bef/systemes_jeu/
+      // variantes_bef forment la colonne "Descriptif".
+      tps_travail: '', tps_recup: '', nb_series: '', nb_repet: '', rpe: '',
+      pedagogie: '', surface: '',
+      comportements_attendus: '',
+      but_bef: '', consignes_bef: '', systemes_jeu: '', variantes_bef: '',
+      criteres_realisation: '', criteres_reussite: '', dominantes_impacts: '',
+      bilan_posture: '', bilan_remediations: '',
     }))
   }
   const [fiche, setFiche] = useState(ficheVide)
@@ -2109,7 +2207,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const ajouterProcedeFiche = () => {
     setFiche(f => ({
       ...f,
-      procedes: [...f.procedes, { numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }],
+      procedes: [...f.procedes, {
+        numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '',
+        tps_travail: '', tps_recup: '', nb_series: '', nb_repet: '', rpe: '', pedagogie: '', surface: '',
+        comportements_attendus: '', but_bef: '', consignes_bef: '', systemes_jeu: '', variantes_bef: '',
+        criteres_realisation: '', criteres_reussite: '', dominantes_impacts: '', bilan_posture: '', bilan_remediations: '',
+      }],
     }))
   }
 
@@ -2132,6 +2235,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       nb_joueurs: fs.nb_joueurs || '', duree_totale: fs.duree_totale || '', objectif_general: fs.objectif_general || '',
       sport: fs.sport || 'football',
       mode_diplome: fs.mode_diplome || null, phase_jeu: fs.phase_jeu || '', principe_jeu: fs.principe_jeu || '',
+      numero_seance: fs.numero_seance || '', heure_debut: fs.heure_debut || '',
       constats: fs.constats || '', justification_pedagogique: fs.justification_pedagogique || '', auto_evaluation: fs.auto_evaluation || '',
       analyse_equipe: fs.analyse_equipe || '', bilan_projection: fs.bilan_projection || '',
       procedes: (fs.procedes && fs.procedes.length ? fs.procedes : [{ numero: 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }])
@@ -2341,7 +2445,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
       const { jsPDF } = await import('jspdf')
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      // Paysage pour le gabarit officiel BEF (large, cf. FicheBEFContenu/.bef-doc),
+      // portrait pour le rendu générique (FicheContenu, plus étroit).
+      const pdf = new jsPDF({ orientation: fiche.mode_diplome === 'BEF' ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' })
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
       const imgWidth = pageWidth
@@ -2396,7 +2502,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
       const { jsPDF } = await import('jspdf')
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      const pdf = new jsPDF({ orientation: ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' })
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
       const imgWidth = pageWidth
@@ -8065,6 +8171,19 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                     <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
                       <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
 
+                      {fiche.mode_diplome === 'BEF' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>
+                            <label style={labelStyle}>Séance N°</label>
+                            <input type="text" placeholder="Ex: 1" value={fiche.numero_seance || ''} onChange={e => setFiche(f => ({ ...f, numero_seance: e.target.value }))} style={inputStyle} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Heure de début</label>
+                            <input type="time" value={fiche.heure_debut || ''} onChange={e => setFiche(f => ({ ...f, heure_debut: e.target.value }))} style={inputStyle} />
+                          </div>
+                        </div>
+                      )}
+
                       <label style={labelStyle}>Phase de jeu *</label>
                       <select value={fiche.phase_jeu || ''} onChange={e => setFiche(f => ({ ...f, phase_jeu: e.target.value }))} style={inputStyle}>
                         <option value="">— Choisir —</option>
@@ -8173,34 +8292,81 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                         <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
                       )}
                     </div>
-                    <textarea
-                      placeholder={t('seance_but', lang)}
-                      value={p.but}
-                      onChange={e => updateProcede(i, 'but', e.target.value)}
-                      rows={2}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                    />
-                    <textarea
-                      placeholder={t('seance_organisation', lang)}
-                      value={p.organisation}
-                      onChange={e => updateProcede(i, 'organisation', e.target.value)}
-                      rows={2}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                    />
-                    <textarea
-                      placeholder={t('seance_consignes', lang)}
-                      value={p.consignes}
-                      onChange={e => updateProcede(i, 'consignes', e.target.value)}
-                      rows={2}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                    />
-                    <textarea
-                      placeholder={t('seance_variables', lang)}
-                      value={p.variables}
-                      onChange={e => updateProcede(i, 'variables', e.target.value)}
-                      rows={2}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                    />
+                    {fiche.mode_diplome === 'BEF' ? (() => {
+                      const befInput = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
+                      const befLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', marginTop: '10px', display: 'block' }
+                      return (
+                        <>
+                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '4px 0 0' }}>Gabarit officiel BEF — Organisation</p>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                            {[['Tps de travail', 'tps_travail'], ['Tps de récup', 'tps_recup'], ['Nbr de séries', 'nb_series'], ['Nbr de répét', 'nb_repet'], ['Rpe', 'rpe']].map(([label, key]) => (
+                              <input key={key} placeholder={label} value={p[key]} onChange={e => updateProcede(i, key, e.target.value)} style={befInput} />
+                            ))}
+                          </div>
+                          <label style={befLabel}>Pédagogie</label>
+                          <textarea value={p.pedagogie} onChange={e => updateProcede(i, 'pedagogie', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Surface (zone de terrain, aménagements)</label>
+                          <textarea value={p.surface} onChange={e => updateProcede(i, 'surface', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Comportements attendus (individuels et collectifs)</label>
+                          <textarea value={p.comportements_attendus} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={3} style={befInput} />
+
+                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Descriptif</p>
+                          <label style={befLabel}>But</label>
+                          <textarea value={p.but_bef} onChange={e => updateProcede(i, 'but_bef', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Consignes (départ, déroulé)</label>
+                          <textarea value={p.consignes_bef} onChange={e => updateProcede(i, 'consignes_bef', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Systèmes de jeu (et postes)</label>
+                          <textarea value={p.systemes_jeu} onChange={e => updateProcede(i, 'systemes_jeu', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Variantes</label>
+                          <textarea value={p.variantes_bef} onChange={e => updateProcede(i, 'variantes_bef', e.target.value)} rows={2} style={befInput} />
+
+                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Critères</p>
+                          <label style={befLabel}>Critères de réalisation (comment faire)</label>
+                          <textarea value={p.criteres_realisation} onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Critères de réussite (2 max)</label>
+                          <textarea value={p.criteres_reussite} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Dominantes-Impacts Athlétiques</label>
+                          <textarea value={p.dominantes_impacts} onChange={e => updateProcede(i, 'dominantes_impacts', e.target.value)} rows={2} style={befInput} />
+
+                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Bilan</p>
+                          <label style={befLabel}>Posture, engagement des joueurs, efficacité de la séance</label>
+                          <textarea value={p.bilan_posture} onChange={e => updateProcede(i, 'bilan_posture', e.target.value)} rows={2} style={befInput} />
+                          <label style={befLabel}>Remédiations (aménagement et/ou consignes)</label>
+                          <textarea value={p.bilan_remediations} onChange={e => updateProcede(i, 'bilan_remediations', e.target.value)} rows={2} style={befInput} />
+                        </>
+                      )
+                    })() : (
+                      <>
+                        <textarea
+                          placeholder={t('seance_but', lang)}
+                          value={p.but}
+                          onChange={e => updateProcede(i, 'but', e.target.value)}
+                          rows={2}
+                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                        />
+                        <textarea
+                          placeholder={t('seance_organisation', lang)}
+                          value={p.organisation}
+                          onChange={e => updateProcede(i, 'organisation', e.target.value)}
+                          rows={2}
+                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                        />
+                        <textarea
+                          placeholder={t('seance_consignes', lang)}
+                          value={p.consignes}
+                          onChange={e => updateProcede(i, 'consignes', e.target.value)}
+                          rows={2}
+                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                        />
+                        <textarea
+                          placeholder={t('seance_variables', lang)}
+                          value={p.variables}
+                          onChange={e => updateProcede(i, 'variables', e.target.value)}
+                          rows={2}
+                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -9681,7 +9847,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       </div>
     )}
 
-    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} />
+    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
 
     {ficheApercu && (() => {
       // Le modal .fiche-render est une feuille blanche (texte noir, cf. index.css)
@@ -9822,6 +9988,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   + {t('seance_ajouter_procede', lang)}
                 </button>
               </>
+            ) : ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? (
+              <FicheBEFContenu
+                fiche={ficheApercu.fiche_seance || {}}
+                categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
+                nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()}
+              />
             ) : (
               <FicheContenu
                 fiche={ficheApercu.fiche_seance || {}}
