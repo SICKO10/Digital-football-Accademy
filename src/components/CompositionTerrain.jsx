@@ -11,6 +11,7 @@ export const FORMATIONS = {
   '3-4-3':   { lignes: [{ n: 1 }, { n: 3 }, { n: 4 }, { n: 3 }] },
   '5-3-2':   { lignes: [{ n: 1 }, { n: 5 }, { n: 3 }, { n: 2 }] },
   '4-2-3-1': { lignes: [{ n: 1 }, { n: 4 }, { n: 2 }, { n: 3 }, { n: 1 }] },
+  '4-1-4-1': { lignes: [{ n: 1 }, { n: 4 }, { n: 1 }, { n: 4 }, { n: 1 }] },
 }
 
 const MAX_REMPLACANTS = 7
