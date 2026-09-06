@@ -4777,8 +4777,12 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 équipe déclarée du tout, mesEquipes vide : les nouveaux joueurs
                 n'auraient nulle part où s'auto-rattacher), ou ouverte
                 volontairement ensuite via "Ajouter une équipe" pour gérer une
-                équipe supplémentaire (cf. declarerMaCategorie, switcher). */}
-            {clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && (mesEquipes.length === 0 || ajouterEquipeOuvert) && (
+                équipe supplémentaire (cf. declarerMaCategorie, switcher).
+                !permissions : réservé au compte éducateur lui-même — un
+                dirigeant délégué (permissions défini) ne doit jamais se voir
+                imposer cette déclaration, qui ne le concerne pas et n'a pas de
+                bouton "Annuler" tant qu'aucune équipe n'existe. */}
+            {!permissions && clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && (mesEquipes.length === 0 || ajouterEquipeOuvert) && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
                 <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
                   <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '17px' }}>Quelle catégorie et équipe gères-tu ?</p>
