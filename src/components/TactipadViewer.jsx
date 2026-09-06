@@ -15,14 +15,15 @@ const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 export default function TactipadViewer({ schema, width = 640 }) {
   const terrain = schema?.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
   const sequencesRaw = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
-  // Remet à l'échelle si le schéma a été enregistré à une autre largeur que
-  // celle d'affichage ici, et clampe dans tous les cas (y compris schémas
-  // enregistrés avant l'ajout de terrain.w/h, où fromW est undefined) — cf.
-  // rescaleElements dans Tactipad.jsx.
-  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, width))
+  const height = Math.round(width * 10 / 16)
+  // Remet à l'échelle si le schéma a été enregistré à une autre largeur/hauteur
+  // que celle d'affichage ici (fromH réel via terrain.h, pas un ratio 16:10
+  // supposé — l'éditeur utilise aussi un ratio 0.56 sur mobile/tablette), et
+  // clampe dans tous les cas (y compris schémas enregistrés avant l'ajout de
+  // terrain.w/h, où fromW est undefined) — cf. rescaleElements dans Tactipad.jsx.
+  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, width, schema?.terrain?.h, height))
   const hasAnimation = sequences.length > 1
 
-  const height = Math.round(width * 10 / 16)
   const svgString = terrainSvgString({ ...terrain, w: width, h: height })
   const terrainImg = useSvgImage(svgString)
 

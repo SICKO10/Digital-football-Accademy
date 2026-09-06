@@ -188,19 +188,31 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
 //   possible (impossible de deviner l'échelle d'origine), mais le clamp
 //   défensif ci-dessous s'applique quand même — un élément près du bord
 //   est ramené dans le canvas plutôt que de rester hors champ.
-export function rescaleElements(elements, fromW, toW, margin = 22) {
-  const s = (fromW && toW && fromW !== toW) ? toW / fromW : 1
-  const toH = toW ? Math.round(toW * 10 / 16) : null
+// fromH/toH : hauteur réelle du Stage au moment de l'enregistrement / de
+// l'affichage actuel — indispensables depuis que l'éditeur utilise un ratio
+// hauteur/largeur différent sur mobile-tablette (0.56, cf. RATIO_H) qu'ailleurs
+// (0.625) : un schéma sauvegardé sur mobile puis rouvert sur desktop (ou
+// l'inverse) a une largeur ET une hauteur qui n'évoluent plus au même facteur,
+// contrairement à ce qu'un simple ratio 16:10 supposé des deux côtés laisserait
+// croire — c'était la cause du "mauvais format" des schémas déjà enregistrés.
+// Repli sur ce ratio 16:10 uniquement si fromH/toH est inconnu (schéma
+// enregistré avant l'ajout de terrain.h, ou appelant qui n'a pas encore sa
+// propre hauteur à ce stade).
+export function rescaleElements(elements, fromW, toW, fromH, toH, margin = 22) {
+  const sx = (fromW && toW && fromW !== toW) ? toW / fromW : 1
+  const fromH2 = fromH || (fromW ? fromW * 10 / 16 : null)
+  const toH2 = toH || (toW ? Math.round(toW * 10 / 16) : null)
+  const sy = (fromH2 && toH2 && fromH2 !== toH2) ? toH2 / fromH2 : sx
   return (elements || []).map(e => {
     const scaled = { ...e }
-    if (typeof scaled.x === 'number') scaled.x *= s
-    if (typeof scaled.y === 'number') scaled.y *= s
-    if (typeof scaled.width === 'number') scaled.width *= s
-    if (typeof scaled.height === 'number') scaled.height *= s
-    if (typeof scaled.radius === 'number') scaled.radius *= s
-    if (Array.isArray(scaled.points)) scaled.points = scaled.points.map(p => p * s)
+    if (typeof scaled.x === 'number') scaled.x *= sx
+    if (typeof scaled.y === 'number') scaled.y *= sy
+    if (typeof scaled.width === 'number') scaled.width *= sx
+    if (typeof scaled.height === 'number') scaled.height *= sy
+    if (typeof scaled.radius === 'number') scaled.radius *= (sx + sy) / 2
+    if (Array.isArray(scaled.points)) scaled.points = scaled.points.map((p, i) => p * (i % 2 === 0 ? sx : sy))
     if (toW && typeof scaled.x === 'number') scaled.x = Math.max(margin, Math.min(toW - margin, scaled.x))
-    if (toH && typeof scaled.y === 'number') scaled.y = Math.max(margin, Math.min(toH - margin, scaled.y))
+    if (toH2 && typeof scaled.y === 'number') scaled.y = Math.max(margin, Math.min(toH2 - margin, scaled.y))
     return scaled
   })
 }
@@ -391,6 +403,29 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // au premier rendu si cette estimation était trop large/étroite.
   const [width, setWidth] = useState(() => Math.min(window.innerWidth - 32, 1000))
 
+  // Sizing entièrement séparé desktop / mobile-tablette (même seuil que le
+  // reste de l'app, cf. isMobile des Dashboard*.jsx) : sur ordinateur le
+  // terrain peut être franchement plus grand (pas de barre d'action à
+  // atteindre au doigt, pas de panel joueurs qui mord dessus de la même
+  // façon) ; les contraintes de hauteur/largeur ci-dessous ne concernent
+  // que le mobile/tablette.
+  // Remonté ici (au-dessus de seqsDepuisSchema) : height doit être connu dès
+  // l'hydratation d'un initialSchema éventuel, sinon rescaleElements retombe
+  // sur le ratio 16:10 par défaut au lieu du ratio réellement actif ici.
+  const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024)
+  useEffect(() => {
+    const onResize = () => setMobileOuTablette(window.innerWidth < 1024)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => { window.removeEventListener('resize', onResize); window.removeEventListener('orientationchange', onResize) }
+  }, [])
+  // Ratio hauteur/largeur du terrain — 0.625 (10/16, proportions pitch
+  // classiques) sur ordinateur ; assoupli à 0.56 sur mobile/tablette
+  // (largeur un peu plus grande, hauteur un peu plus réduite, demandé après
+  // retour visuel sur petit écran).
+  const RATIO_H = mobileOuTablette ? 0.56 : 0.625
+  const height = Math.round(width * RATIO_H)
+
   // Hydrate l'éditeur depuis un schéma structuré déjà existant (édition d'un
   // schéma de procédé de séance/bibliothèque) — sans ça, rouvrir "Modifier le
   // schéma" repartait toujours d'un plateau vide : seul un PNG plat était
@@ -401,7 +436,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const seqsDepuisSchema = (schema) => {
     if (!schema) return null
     const seqsRaw = schema.sequences?.length ? schema.sequences : [schema.elements || []]
-    return seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width))
+    return seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width, schema.terrain?.h, height))
   }
 
   const [sport, setSport] = useState(() => initialSchema?.terrain?.sport || 'football')
@@ -502,27 +537,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // première mesure n'est pas encore arrivée ; useLayoutEffect (avant peinture)
   // pour que la correction soit invisible plutôt qu'un flash de mauvaise taille.
   const canvasRef = useRef(null)
-  // width est déclaré plus haut (avant sequences/elements, pour hydrater un
-  // initialSchema éventuel dès l'état initial) — inchangé ici sinon.
-  // Sizing entièrement séparé desktop / mobile-tablette (même seuil que le
-  // reste de l'app, cf. isMobile des Dashboard*.jsx) : sur ordinateur le
-  // terrain peut être franchement plus grand (pas de barre d'action à
-  // atteindre au doigt, pas de panel joueurs qui mord dessus de la même
-  // façon) ; les contraintes de hauteur/largeur ci-dessous ne concernent
-  // que le mobile/tablette.
-  const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024)
-  useEffect(() => {
-    const onResize = () => setMobileOuTablette(window.innerWidth < 1024)
-    window.addEventListener('resize', onResize)
-    window.addEventListener('orientationchange', onResize)
-    return () => { window.removeEventListener('resize', onResize); window.removeEventListener('orientationchange', onResize) }
-  }, [])
-  // Ratio hauteur/largeur du terrain — 0.625 (10/16, proportions pitch
-  // classiques) sur ordinateur ; assoupli à 0.56 sur mobile/tablette
-  // (largeur un peu plus grande, hauteur un peu plus réduite, demandé après
-  // retour visuel sur petit écran).
-  const RATIO_H = mobileOuTablette ? 0.56 : 0.625
-  const height = Math.round(width * RATIO_H)
+  // width/mobileOuTablette/RATIO_H/height sont déclarés plus haut (avant
+  // sequences/elements, pour hydrater un initialSchema éventuel dès l'état
+  // initial) — inchangés ici sinon.
 
   useLayoutEffect(() => {
     const el = canvasRef.current
@@ -1224,7 +1241,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     // mais pas ici en édition : réouvrir un schéma desktop sur tablette plaçait
     // les joueurs à leurs anciennes coordonnées pixel, désormais hors échelle.
     const seqsRaw = schema.sequences && schema.sequences.length ? schema.sequences : [schema.elements || []]
-    const seqs = seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width))
+    const seqs = seqsRaw.map(seq => rescaleElements(seq, schema.terrain?.w, width, schema.terrain?.h, height))
     setSequences(seqs)
     setEtapeActive(0)
     setElements(seqs[0] || [])
