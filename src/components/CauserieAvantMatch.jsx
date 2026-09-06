@@ -143,9 +143,12 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   }
 
   const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
-  // Juste après l'intro (2e slide) si une composition a été renseignée —
-  // absente si rien n'a encore été assigné, comme les autres slides
-  // conditionnelles de cette présentation.
+  // Juste après l'intro (2e slide) si un classement a été renseigné, puis la
+  // composition juste après (3e) — absentes si rien n'a été renseigné/assigné,
+  // comme les autres slides conditionnelles de cette présentation.
+  if (f.notre_classement || f.adversaire_classement) {
+    slides.push({ titre: 'ADVERSAIRE', accent: '#f87171', type: 'adversaire' })
+  }
   if ((f.titulaires || []).some(Boolean)) {
     slides.push({ titre: 'COMPOSITION', accent: '#4ade80', type: 'composition' })
   }
@@ -172,9 +175,6 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   ajouterListe('TIREURS', '#facc15', '🎯', f.tireurs)
   ajouterListe('CPA DÉFENSIFS', '#f87171', '🛡️', f.cpa_defensifs)
   ajouterSchema('SCHÉMA CPA DÉFENSIF', '#f87171', '🔴', f.schema_cpa_defensif)
-  if (f.notre_classement || f.adversaire_classement) {
-    slides.push({ titre: 'ADVERSAIRE', accent: '#f87171', type: 'adversaire' })
-  }
   ajouterListe('NOS CLÉS DU MATCH', '#fbbf24', '🔑', f.cles_du_match)
   ajouterListe('PREMIÈRES MINUTES', '#60a5fa', '⏱️', f.premieres_minutes)
   if (f.message_coach) slides.push({ titre: 'MESSAGE DU COACH', accent: '#a78bfa', type: 'message' })
