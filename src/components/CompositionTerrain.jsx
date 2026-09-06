@@ -244,6 +244,14 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
   const [numero, setNumero] = useState('')
   const [choisisMultiple, setChoisisMultiple] = useState([])
   const [capitaine, setCapitaine] = useState(capitaineActuel)
+  const [recherche, setRecherche] = useState('')
+
+  const fermer = () => { setRecherche(''); onFermer() }
+
+  const joueursFiltres = joueursDispo.filter(j => {
+    const nom = `${j.prenom} ${j.nom}`.toLowerCase()
+    return nom.includes(recherche.toLowerCase())
+  })
 
   const choisir = (j) => {
     setChoisi(j)
@@ -263,12 +271,41 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
   }
 
   return (
-    <div onClick={onFermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+    <div onClick={fermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '75vh', overflowY: 'auto', fontFamily: 'Inter, sans-serif' }}>
         <h3 style={{ color: '#fff', margin: '0 0 16px' }}>{multiSelect ? 'Choisir un ou plusieurs joueurs' : 'Choisir un joueur'}</h3>
 
+        <div style={{ marginBottom: '12px' }}>
+          <input
+            type="text"
+            placeholder="Rechercher un joueur..."
+            value={recherche}
+            onChange={e => setRecherche(e.target.value)}
+            autoFocus
+            style={{
+              width: '100%',
+              background: '#1a1a1a',
+              border: '1px solid #2a2a2a',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              color: '#fff',
+              fontSize: '14px',
+              outline: 'none',
+              boxSizing: 'border-box',
+              fontFamily: 'Inter, sans-serif',
+            }}
+            onFocus={e => e.target.style.borderColor = '#4ade80'}
+            onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+          />
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-          {joueursDispo.map(j => {
+          {joueursFiltres.length === 0 && (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#555', fontSize: '13px' }}>
+              Aucun joueur trouvé
+            </div>
+          )}
+          {joueursFiltres.map(j => {
             const estChoisiMultiple = choisisMultiple.some(x => x.joueur_id === j.joueur_id)
             const indisponible = dejaUtilises.has(j.joueur_id) && (multiSelect ? !estChoisiMultiple : choisi?.joueur_id !== j.joueur_id)
             const actif = multiSelect ? estChoisiMultiple : choisi?.joueur_id === j.joueur_id
@@ -311,7 +348,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
         )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onFermer} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
+          <button onClick={fermer} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
           {!multiSelect && onRetirer && (
             <button onClick={onRetirer} style={{ flex: 1, background: 'none', border: '1px solid #ef444444', color: '#ef4444', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Retirer</button>
           )}
