@@ -52,7 +52,7 @@ const nomAvecNumero = (joueur, affichageNom) => {
 
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
-  onChangerFormation, onAssignerTitulaire, onRetirerTitulaire,
+  onChangerFormation, onAssignerTitulaire,
   onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom,
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
@@ -155,21 +155,15 @@ export default function CompositionTerrain({
                       </div>
                       {joueur?.numero != null && (
                         <div style={{
-                          position: 'absolute', top: '-4px', right: '-4px',
+                          position: 'absolute', top: '-6px', right: '-6px',
                           background: '#4ade80', color: '#000', borderRadius: '50%',
-                          width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)',
+                          width: 'clamp(20px, 3.2cqw, 28px)', height: 'clamp(20px, 3.2cqw, 28px)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900,
+                          fontSize: 'clamp(10px, 1.6cqw, 14px)', fontWeight: 900,
                           border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
                         }}>
                           {joueur.numero}
                         </div>
-                      )}
-                      {modeEdit && joueur && (
-                        <button onClick={e => { e.stopPropagation(); onRetirerTitulaire(slotIndex) }}
-                          style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '9px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                          ✕
-                        </button>
                       )}
                       {joueur?.capitaine && (
                         <div style={{
