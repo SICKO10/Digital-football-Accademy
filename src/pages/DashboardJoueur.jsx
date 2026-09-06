@@ -106,6 +106,11 @@ const IconBadge = () => (
     <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
   </svg>
 )
+const IconClipboard = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/>
+  </svg>
+)
 const IconShirt = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M16 3l5 4-3 3-2-2v12a1 1 0 01-1 1H9a1 1 0 01-1-1V8l-2 2-3-3 5-4a4 4 0 008 0z"/>
@@ -3435,6 +3440,28 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   return (
                     <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: `1px dashed ${colors.border.default}`, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
                       🔑 Rejoins ton équipe avec le code fourni par ton éducateur
+                    </button>
+                  )
+                })()}
+
+                {/* RACCOURCI FICHE D'ÉVALUATION — même prérequis que le bouton
+                    "Voir ma fiche" de l'onglet Mon équipe (affiliation acceptée),
+                    identique starter/pro : evaluations_joueur n'a aucune notion
+                    de plan, seulement l'affiliation (cf. policies RLS). */}
+                {(() => {
+                  const aff = mesAffiliations.find(a => a.statut === 'accepte')
+                  if (!aff) return null
+                  return (
+                    <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: aff.equipe_joueur_id, educateurId: aff.educateur_id })}
+                      style={{ width: '100%', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.blue + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, flexShrink: 0 }}>
+                        <IconClipboard />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Fiche d'évaluation</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>Points forts, objectifs, ressenti de ton éducateur</p>
+                      </div>
+                      <span style={{ color: colors.accent.blue, fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Voir →</span>
                     </button>
                   )
                 })()}
