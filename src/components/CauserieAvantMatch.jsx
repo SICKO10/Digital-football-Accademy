@@ -695,8 +695,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
                 </div>
                 {f.notre_classement && f.adversaire_classement && (
                   <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <p style={{ margin: 0, color: '#4ade80', fontWeight: 800, fontSize: '18px' }}>
-                      {f.notre_classement}<span style={{ color: colors.text.ghost, fontSize: '12px' }}> vs </span>{f.adversaire_classement}
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '18px' }}>
+                      <span style={{ color: '#4ade80' }}>{f.notre_classement}</span><span style={{ color: colors.text.ghost, fontSize: '12px' }}> vs </span><span style={{ color: '#f87171' }}>{f.adversaire_classement}</span>
                     </p>
                     <p style={{ margin: 0, color: colors.text.dim, fontSize: '10px' }}>Classement</p>
                   </div>
