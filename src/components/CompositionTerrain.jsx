@@ -53,7 +53,7 @@ const nomAvecNumero = (joueur, affichageNom) => {
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
   onChangerFormation, onAssignerTitulaire,
-  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom,
+  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, maxLargeur = '760px',
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
 
@@ -74,7 +74,7 @@ export default function CompositionTerrain({
   const lignesAffichees = lignesIndexees
 
   return (
-    <div style={{ width: '100%', maxWidth: '760px', margin: '0 auto', containerType: 'inline-size' }}>
+    <div style={{ width: '100%', maxWidth: maxLargeur, margin: '0 auto', containerType: 'inline-size' }}>
       {modeEdit && (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
           {Object.keys(FORMATIONS).map(f => (

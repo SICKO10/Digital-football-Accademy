@@ -253,13 +253,13 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         )}
 
         {slide.type === 'composition' && (
-          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.55, '760px') }}>
-            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} />
+          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.55, '980px') }}>
+            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} maxLargeur="980px" />
           </div>
         )}
 
         {slide.type === 'board' && (
-          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.53, '780px') }}>
+          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.53, '1000px') }}>
             <TacticalBoard data={slide.board} onChange={() => {}} readOnly />
           </div>
         )}
