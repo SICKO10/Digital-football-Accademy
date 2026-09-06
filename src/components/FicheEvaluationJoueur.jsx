@@ -67,6 +67,26 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
   const peutEditer = readOnly ? false : role === 'educateur' ? true : (existeDeja && form.autorise_prefill_joueur && !form.verrouillee_joueur)
   const champ = (key) => (val) => setForm(f => ({ ...f, [key]: val }))
 
+  // Upsert avec un réessai automatique — signalé en usage réel : un premier
+  // clic sur "Enregistrer" échoue parfois ("Échec de l'enregistrement"), le
+  // second fonctionne aussitôt après, sans changement entre les deux — signe
+  // d'un échec transitoire (pas une vraie interdiction RLS, qui échouerait
+  // pareil à chaque tentative). Le réessai masque ces ratés ponctuels ; la
+  // vraie erreur est loguée en console pour diagnostiquer si ça persiste
+  // au-delà de 2 tentatives (ce qui indiquerait cette fois un vrai problème
+  // de policy/données, pas une histoire de réseau).
+  const upsertEvaluation = async (payload) => {
+    let derniereErreur = null
+    for (let tentative = 1; tentative <= 2; tentative++) {
+      const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
+      if (!error) return { data, error: null }
+      derniereErreur = error
+      console.error(`[FicheEvaluationJoueur] upsert échoué (tentative ${tentative}/2) :`, error)
+      if (tentative === 1) await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    return { data: null, error: derniereErreur }
+  }
+
   // Bascule immédiate (indépendante du bouton "Enregistrer") — l'éducateur
   // doit pouvoir autoriser le pré-remplissage avant même d'avoir écrit quoi
   // que ce soit, et la visibilité peut changer à tout moment sans re-verrouiller.
@@ -81,13 +101,9 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
     delete reste.id
     delete reste.created_at
     const payload = { ...reste, equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, [flagKey]: valeur, updated_at: new Date().toISOString() }
-    try {
-      const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
-      if (error) throw error
-      setRows(prev => ({ ...prev, [periodeActive]: data }))
-    } catch (e) {
-      setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie.")
-    }
+    const { data, error } = await upsertEvaluation(payload)
+    if (error) { setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie."); return }
+    setRows(prev => ({ ...prev, [periodeActive]: data }))
   }
 
   const sauvegarder = async () => {
@@ -96,15 +112,10 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
     const { id, created_at, ...reste } = form
     const payload = { ...reste, equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, updated_at: new Date().toISOString() }
     if (role === 'educateur') payload.verrouillee_joueur = true
-    try {
-      const { data, error } = await supabase.from('evaluations_joueur').upsert(payload, { onConflict: 'equipe_joueur_id,educateur_id,saison,periode' }).select().single()
-      if (error) throw error
-      setRows(prev => ({ ...prev, [periodeActive]: data }))
-    } catch (e) {
-      setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie.")
-    } finally {
-      setSaving(false)
-    }
+    const { data, error } = await upsertEvaluation(payload)
+    if (error) setErreur("Échec de l'enregistrement — vérifie ta connexion et réessaie.")
+    else setRows(prev => ({ ...prev, [periodeActive]: data }))
+    setSaving(false)
   }
 
   const estFinSaison = periodeActive === 'fin_saison'
