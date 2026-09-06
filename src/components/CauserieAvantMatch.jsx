@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
 import TacticalBoard from './TacticalBoard'
@@ -184,6 +184,49 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   const idx = Math.min(slideIdx, total - 1)
   const slide = slides[idx]
 
+  // Export PDF (une page par slide) — pour pouvoir présenter la causerie sans
+  // connexion (vestiaire sans wifi/4G) : chaque slide est affichée tour à
+  // tour, capturée via html2canvas, puis posée sur sa propre page PDF. Le
+  // thème courant (sombre/claire, cf. pal) décide du fond noir ou blanc du
+  // PDF — pas de sélecteur séparé, on réutilise le bouton de thème déjà là.
+  const contenuRef = useRef(null)
+  const [exportEnCours, setExportEnCours] = useState(false)
+  const telechargerPresentation = async () => {
+    if (exportEnCours) return
+    setExportEnCours(true)
+    const depart = idx
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const { jsPDF } = await import('jspdf')
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      for (let i = 0; i < total; i++) {
+        setSlideIdx(i)
+        // Laisse React peindre la nouvelle slide, et les images/canvas
+        // asynchrones (terrain Tactipad, Stage Konva) finir de charger, avant
+        // la capture — sinon la première capture (ou une slide "mouvement")
+        // choppe parfois le rendu encore vide.
+        await new Promise(r => setTimeout(r, 350))
+        const el = contenuRef.current
+        if (!el) continue
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: pal.fond, useCORS: true })
+        const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height)
+        const w = canvas.width * ratio
+        const h = canvas.height * ratio
+        if (i > 0) pdf.addPage()
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', (pageWidth - w) / 2, (pageHeight - h) / 2, w, h)
+      }
+      pdf.save(`causerie-${(f.adversaire || 'match').trim().replace(/\s+/g, '-')}.pdf`)
+    } catch (err) {
+      console.error('telechargerPresentation error:', err)
+      alert("Erreur lors de la génération du PDF : " + err.message)
+    } finally {
+      setSlideIdx(depart)
+      setExportEnCours(false)
+    }
+  }
+
   // Téléphone en paysage : très large mais peu haut (souvent <500px de
   // hauteur) — le padding et les marges pensés pour un écran de PC/tablette
   // (large ET haut) laissent alors trop peu de place au contenu, qui se
@@ -225,6 +268,10 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px', flexShrink: 0 }}>
         <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
         <div style={{ display: 'flex', gap: isLandscapeCourt ? '6px' : '10px' }}>
+          <button onClick={telechargerPresentation} disabled={exportEnCours} title="Télécharger en PDF (pour présenter sans connexion)"
+            style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: exportEnCours ? 'default' : 'pointer', opacity: exportEnCours ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
+            {exportEnCours ? '⏳ Génération…' : '⬇ Télécharger'}
+          </button>
           <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {theme === 'sombre' ? 'Claire' : 'Sombre'}
           </button>
@@ -232,7 +279,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isLandscapeCourt ? '6px 24px' : '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div ref={contenuRef} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isLandscapeCourt ? '6px 24px' : '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: pal.fond }}>
         <p style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 32px', color: slide.accent, fontSize: isLandscapeCourt ? '13px' : '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
 
         {slide.type === 'intro' && (
