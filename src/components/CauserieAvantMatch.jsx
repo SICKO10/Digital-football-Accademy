@@ -37,10 +37,12 @@ const formVide = () => ({
   cles_du_match: [''],
   premieres_minutes: [''],
   message_coach: '',
-  schema_cpa_offensif: { etapes: [{ joueurs: [], ballon: null }] },
-  schema_cpa_defensif: { etapes: [{ joueurs: [], ballon: null }] },
+  schemas_cpa_offensif: [{ nom: '', etapes: [{ joueurs: [], ballon: null }] }],
+  schemas_cpa_defensif: [{ nom: '', etapes: [{ joueurs: [], ballon: null }] }],
   tactipad_ids: [],
 })
+
+const schemaVide = () => ({ nom: '', etapes: [{ joueurs: [], ballon: null }] })
 
 // Liste de points éditable (animation avec/sans ballon, CPA, tireurs) — au
 // niveau module plutôt que défini dans le rendu du composant parent : un
@@ -85,6 +87,19 @@ const parseListe = (val) => {
   return []
 }
 
+// Migration d'affichage : une fiche créée avant l'ajout du tableau
+// schemas_cpa_offensif/defensif n'a qu'un schéma unique (ancienne colonne
+// schema_cpa_offensif/defensif, un seul objet {etapes:[...]}) — converti ici
+// en tableau à un élément, pour que le reste du composant n'ait jamais à
+// connaître les deux formats. Non persisté tant que la fiche n'est pas
+// resauvegardée (l'ancienne colonne reste intacte en base, aucune perte).
+function migrerSchemasCpa(tableau, ancienUnique) {
+  const liste = parseListe(tableau)
+  if (liste.length > 0) return liste
+  if (boardEstRempli(ancienUnique)) return [{ nom: '', etapes: ancienUnique.etapes }]
+  return [schemaVide()]
+}
+
 // Normalise les champs liste d'une fiche brute renvoyée par Supabase —
 // appliqué une seule fois à la source (charger/sauvegarder) pour que tout
 // le reste du composant (editer, contenuFiche...) puisse faire confiance
@@ -100,6 +115,8 @@ function normaliserFiche(f) {
     transitions: parseListe(f.transitions),
     cles_du_match: parseListe(f.cles_du_match),
     premieres_minutes: parseListe(f.premieres_minutes),
+    schemas_cpa_offensif: migrerSchemasCpa(f.schemas_cpa_offensif, f.schema_cpa_offensif),
+    schemas_cpa_defensif: migrerSchemasCpa(f.schemas_cpa_defensif, f.schema_cpa_defensif),
   }
 }
 
@@ -158,8 +175,15 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   }
   // boardEstRempli() est déjà défini plus haut dans ce fichier (format
   // multi-étapes {etapes:[{joueurs,ballon}]}, pas {joueurs,ball,arrows}).
-  const ajouterSchema = (titre, accent, icone, board) => {
-    if (boardEstRempli(board)) slides.push({ titre, accent, icone, type: 'board', board })
+  // Une slide par schéma non vide du tableau (plusieurs corners/coups francs
+  // différents peuvent coexister) — le nom donné au schéma sert de titre de
+  // slide s'il y en a un, sinon un numéro le distingue des autres du même type.
+  const ajouterSchemas = (titreDefaut, accent, icone, boards) => {
+    (boards || []).forEach((board, i) => {
+      if (!boardEstRempli(board)) return
+      const titre = board.nom?.trim() ? board.nom.trim().toUpperCase() : (boards.length > 1 ? `${titreDefaut} ${i + 1}` : titreDefaut)
+      slides.push({ titre, accent, icone, type: 'board', board })
+    })
   }
   ajouterListe('AVEC LE BALLON', '#818cf8', '⚽', f.animation_avec_ballon)
   ajouterListe('SANS LE BALLON', '#f97316', '🛡️', f.animation_sans_ballon)
@@ -171,10 +195,10 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
     if (tp) slides.push({ titre: tp.nom || 'MOUVEMENT TACTIQUE', accent: '#38bdf8', icone: '🎯', type: 'mouvement', schema: tp.schema })
   })
   ajouterListe('CPA OFFENSIFS', '#4ade80', '⚽', f.cpa_offensifs)
-  ajouterSchema('SCHÉMA CPA OFFENSIF', '#4ade80', '🟢', f.schema_cpa_offensif)
+  ajouterSchemas('SCHÉMA CPA OFFENSIF', '#4ade80', '🟢', f.schemas_cpa_offensif)
   ajouterListe('TIREURS', '#facc15', '🎯', f.tireurs)
   ajouterListe('CPA DÉFENSIFS', '#f87171', '🛡️', f.cpa_defensifs)
-  ajouterSchema('SCHÉMA CPA DÉFENSIF', '#f87171', '🔴', f.schema_cpa_defensif)
+  ajouterSchemas('SCHÉMA CPA DÉFENSIF', '#f87171', '🔴', f.schemas_cpa_defensif)
   ajouterListe('NOS CLÉS DU MATCH', '#fbbf24', '🔑', f.cles_du_match)
   ajouterListe('PREMIÈRES MINUTES', '#60a5fa', '⏱️', f.premieres_minutes)
   if (f.message_coach) slides.push({ titre: 'MESSAGE DU COACH', accent: '#a78bfa', type: 'message' })
@@ -433,6 +457,15 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     return { ...p, [champ]: arr.length ? arr : [''] }
   })
 
+  // Plusieurs schémas CPA par type (offensif/défensif) — champ vaut
+  // 'schemas_cpa_offensif' ou 'schemas_cpa_defensif'.
+  const ajouterSchemaCpa = (champ) => setForm(p => ({ ...p, [champ]: [...p[champ], schemaVide()] }))
+  const supprimerSchemaCpa = (champ, i) => setForm(p => {
+    const arr = p[champ].filter((_, idx) => idx !== i)
+    return { ...p, [champ]: arr.length ? arr : [schemaVide()] }
+  })
+  const majSchemaCpa = (champ, i, board) => setForm(p => ({ ...p, [champ]: p[champ].map((b, idx) => idx === i ? board : b) }))
+
   const sauvegarder = async () => {
     if (!form.adversaire.trim()) { alert("Renseigne le nom de l'adversaire.") ; return }
     setSaving(true)
@@ -468,8 +501,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       cles_du_match: form.cles_du_match.filter(Boolean),
       premieres_minutes: form.premieres_minutes.filter(Boolean),
       message_coach: form.message_coach.trim() || null,
-      schema_cpa_offensif: form.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
-      schema_cpa_defensif: form.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
+      schemas_cpa_offensif: form.schemas_cpa_offensif?.length ? form.schemas_cpa_offensif : [schemaVide()],
+      schemas_cpa_defensif: form.schemas_cpa_defensif?.length ? form.schemas_cpa_defensif : [schemaVide()],
       tactipad_ids: form.tactipad_ids || [],
     }
     const res = ficheCourante?.id
@@ -516,8 +549,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       cles_du_match: f.cles_du_match?.length ? f.cles_du_match : [''],
       premieres_minutes: f.premieres_minutes?.length ? f.premieres_minutes : [''],
       message_coach: f.message_coach || '',
-      schema_cpa_offensif: f.schema_cpa_offensif || { etapes: [{ joueurs: [], ballon: null }] },
-      schema_cpa_defensif: f.schema_cpa_defensif || { etapes: [{ joueurs: [], ballon: null }] },
+      schemas_cpa_offensif: f.schemas_cpa_offensif?.length ? f.schemas_cpa_offensif : [schemaVide()],
+      schemas_cpa_defensif: f.schemas_cpa_defensif?.length ? f.schemas_cpa_defensif : [schemaVide()],
       tactipad_ids: f.tactipad_ids || [],
     })
     setVue('form')
@@ -812,10 +845,22 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_offensifs} onChange={(i, v) => setLigne('cpa_offensifs', i, v)} onAjouter={() => ajouterLigne('cpa_offensifs')} onSupprimer={i => supprimerLigne('cpa_offensifs', i)} inputStyle={inp} placeholder="Ex: Corner entrant côté droit, n°9 au 1er poteau…" />
             </div>
-            <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px' }}>
-              <p style={{ margin: '0 0 10px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Offensif</p>
-              <TacticalBoard data={form.schema_cpa_offensif} onChange={val => set('schema_cpa_offensif', val)} userId={userId} typeSchema="offensif" />
-            </div>
+            <p style={{ margin: '0 0 10px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schémas CPA offensifs</p>
+            {form.schemas_cpa_offensif.map((board, i) => (
+              <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <input value={board.nom || ''} onChange={e => majSchemaCpa('schemas_cpa_offensif', i, { ...board, nom: e.target.value })}
+                    placeholder={`Nom du schéma ${i + 1} (ex: Corner droit)`} style={{ ...inp, flex: 1 }} />
+                  {form.schemas_cpa_offensif.length > 1 && (
+                    <button onClick={() => supprimerSchemaCpa('schemas_cpa_offensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
+                  )}
+                </div>
+                <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_offensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="offensif" />
+              </div>
+            ))}
+            <button onClick={() => ajouterSchemaCpa('schemas_cpa_offensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+              + Nouveau schéma offensif
+            </button>
           </div>
 
           <div style={{ marginBottom: '24px' }}>
@@ -823,10 +868,22 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_defensifs} onChange={(i, v) => setLigne('cpa_defensifs', i, v)} onAjouter={() => ajouterLigne('cpa_defensifs')} onSupprimer={i => supprimerLigne('cpa_defensifs', i)} inputStyle={inp} placeholder="Ex: Zone sur corner, le n°5 sur le 2ème poteau…" />
             </div>
-            <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px' }}>
-              <p style={{ margin: '0 0 10px', color: '#f87171', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Défensif</p>
-              <TacticalBoard data={form.schema_cpa_defensif} onChange={val => set('schema_cpa_defensif', val)} userId={userId} typeSchema="defensif" />
-            </div>
+            <p style={{ margin: '0 0 10px', color: '#f87171', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schémas CPA défensifs</p>
+            {form.schemas_cpa_defensif.map((board, i) => (
+              <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <input value={board.nom || ''} onChange={e => majSchemaCpa('schemas_cpa_defensif', i, { ...board, nom: e.target.value })}
+                    placeholder={`Nom du schéma ${i + 1} (ex: Zone sur corner)`} style={{ ...inp, flex: 1 }} />
+                  {form.schemas_cpa_defensif.length > 1 && (
+                    <button onClick={() => supprimerSchemaCpa('schemas_cpa_defensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
+                  )}
+                </div>
+                <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_defensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="defensif" />
+              </div>
+            ))}
+            <button onClick={() => ajouterSchemaCpa('schemas_cpa_defensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+              + Nouveau schéma défensif
+            </button>
           </div>
 
           <div>
@@ -985,12 +1042,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
               ))}
             </div>
           )}
-          {boardEstRempli(f.schema_cpa_offensif) && (
-            <div style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma offensif</p>
-              <TacticalBoard data={f.schema_cpa_offensif} onChange={() => {}} readOnly />
+          {(f.schemas_cpa_offensif || []).filter(boardEstRempli).map((board, i) => (
+            <div key={i} style={{ marginBottom: '14px' }}>
+              <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{board.nom?.trim() || `Schéma offensif ${i + 1}`}</p>
+              <TacticalBoard data={board} onChange={() => {}} readOnly />
             </div>
-          )}
+          ))}
           {(f.cpa_defensifs || []).filter(Boolean).length > 0 && (
             <div style={{ marginBottom: '14px' }}>
               <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Défensifs</p>
@@ -1002,12 +1059,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
               ))}
             </div>
           )}
-          {boardEstRempli(f.schema_cpa_defensif) && (
-            <div style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schéma défensif</p>
-              <TacticalBoard data={f.schema_cpa_defensif} onChange={() => {}} readOnly />
+          {(f.schemas_cpa_defensif || []).filter(boardEstRempli).map((board, i) => (
+            <div key={i} style={{ marginBottom: '14px' }}>
+              <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{board.nom?.trim() || `Schéma défensif ${i + 1}`}</p>
+              <TacticalBoard data={board} onChange={() => {}} readOnly />
             </div>
-          )}
+          ))}
           {(f.tireurs || []).filter(Boolean).length > 0 && (
             <div>
               <p style={{ margin: '0 0 6px', color: '#fbbf24', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tireurs</p>
