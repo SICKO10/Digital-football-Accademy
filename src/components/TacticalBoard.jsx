@@ -3,23 +3,15 @@ import { useColors } from '../lib/theme'
 import { supabase } from '../supabase'
 
 const W = 520
-// H doublé (340 → 680) pour afficher le terrain COMPLET (les 2 moitiés) au
-// lieu d'une seule moitié — nécessaire pour des schémas tactiques qui ne se
-// limitent pas à une zone but (cf. FIELD_BOTTOM ci-dessous, gardé en valeur
-// figée pour que les schémas déjà enregistrés ne bougent pas visuellement).
-const H = 680
+const H = 340
 const GRID_SIZE = 40 // espacement du quadrillage repère, en unités SVG
 
 // Géométrie du terrain — dérivée de FIELD_BOTTOM (vraie limite de jeu, pas H)
 // pour que la grande/petite surface ne dépasse jamais la ligne de but : avant
 // ce correctif, leur hauteur était calculée depuis H directement, ce qui les
 // faisait déborder de 10 unités sous la ligne de touche du bas.
-// FIELD_BOTTOM reste figé à l'ancienne valeur (H valait 340 avant le
-// doublement) plutôt que recalculé depuis le nouveau H : la moitié basse
-// existante (et les positions déjà enregistrées dedans) ne bouge pas d'un
-// pixel, seule une moitié haute symétrique est ajoutée au-dessus.
 const FIELD_MARGIN = 10
-const FIELD_BOTTOM = 340 - FIELD_MARGIN
+const FIELD_BOTTOM = H - FIELD_MARGIN
 const BOX_W = 280 // grande surface élargie (était 250) : plus d'espace pour placer les joueurs
 const BOX_H = 116 // idem (était 108)
 const BOX_X = (W - BOX_W) / 2
@@ -33,15 +25,6 @@ const GOAL_X = (W - GOAL_W) / 2
 const PENALTY_R = 92
 const PENALTY_Y = FIELD_BOTTOM - 77
 const PENALTY_ARC_DX = Math.sqrt(Math.max(0, PENALTY_R ** 2 - (PENALTY_Y - BOX_Y) ** 2))
-
-// Moitié haute — miroir exact de la moitié basse ci-dessus par rapport au
-// nouveau bord supérieur (y=0), avec le même FIELD_MARGIN.
-const TOP_BOX_Y = FIELD_MARGIN
-const TOP_SIX_Y = FIELD_MARGIN
-const TOP_GOAL_Y = 0
-const TOP_PENALTY_Y = FIELD_MARGIN + 77
-
-const CENTER_R = 45 // rayon du rond central
 
 const RAYON_JOUEUR = 11 // était 15 — jetons plus petits, moins de chevauchement
 
@@ -103,10 +86,11 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
   // Zones colorées (rect/cercle/flèche) — dessinées au clic-glisser plutôt
   // qu'au clic simple (mode !== 'select' : mousedown sur le SVG mémorise le
   // point de départ, mousemove affiche un aperçu, mouseup fige la zone dans
-  // l'étape courante). zoneColor/zoneOpacity s'appliquent à la PROCHAINE zone
-  // dessinée, pas rétroactivement aux zones déjà posées.
+  // l'étape courante). zoneColor s'applique à la PROCHAINE zone dessinée, pas
+  // rétroactivement aux zones déjà posées. Opacité fixe à 30% (pas de curseur
+  // — un réglage suffit, ce n'est pas un besoin exprimé).
   const [zoneColor, setZoneColor] = useState('#4ade80')
-  const [zoneOpacity, setZoneOpacity] = useState(30) // %
+  const ZONE_OPACITY = 30 // %
   const [drawStart, setDrawStart] = useState(null) // { x, y } point de départ du tracé en cours
   const [drawPreview, setDrawPreview] = useState(null) // zone temporaire affichée pendant le drag
   const nextZoneId = useRef(maxZoneId(etapes) + 1)
@@ -287,7 +271,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
       const w = Math.abs(drawPreview.x2 - drawPreview.x1)
       const h = Math.abs(drawPreview.y2 - drawPreview.y1)
       if (w > 4 || h > 4) {
-        const base = { id: nextZoneId.current++, color: zoneColor, opacity: Number(zoneOpacity) }
+        const base = { id: nextZoneId.current++, color: zoneColor, opacity: ZONE_OPACITY }
         const nouvelleZone = drawPreview.shape === 'rect'
           ? { ...base, type: 'rect', x: x1, y: y1, w, h }
           : drawPreview.shape === 'circle'
@@ -442,8 +426,6 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
               <input type="color" value={zoneColor} onChange={e => setZoneColor(e.target.value)}
                 style={{ width: 26, height: 26, borderRadius: '6px', border: `1px solid ${colors.border.subtle}`, background: 'transparent', cursor: 'pointer', padding: '2px' }}
                 title="Couleur de la zone" />
-              <input type="range" min={10} max={80} value={zoneOpacity} onChange={e => setZoneOpacity(e.target.value)}
-                style={{ width: 50 }} title={`Opacité (${zoneOpacity}%)`} />
             </div>
 
             <div style={{ width: 1, height: 28, background: colors.border.subtle }} />
@@ -544,28 +526,14 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
           <rect key={i} x={i * 74} y={0} width={74} height={H} fill={i % 2 === 0 ? '#1d3d1d' : '#1a3a1a'} />
         ))}
 
-        {/* Lignes — terrain complet (les 2 moitiés) : la moitié basse garde
-            exactement sa géométrie d'origine (FIELD_BOTTOM figé, cf. plus
-            haut) pour ne pas décaler les schémas déjà enregistrés ; la
-            moitié haute est son miroir exact par rapport à la ligne médiane. */}
+        {/* Lignes */}
         <rect x={10} y={10} width={W - 20} height={H - 20} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} rx={3} />
-        <line x1={0} y1={H / 2} x2={W} y2={H / 2} stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
-        <circle cx={W / 2} cy={H / 2} r={CENTER_R} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
-        <circle cx={W / 2} cy={H / 2} r={2} fill="#fff" fillOpacity={0.5} />
-
-        {/* Moitié basse */}
+        <text x={W / 2} y={23} textAnchor="middle" fill="#ffffff1a" fontSize={9} fontFamily="sans-serif">— CÔTÉ ADVERSE —</text>
         <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
         <rect x={SIX_X} y={SIX_Y} width={SIX_W} height={SIX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1} strokeOpacity={0.3} />
         <rect x={GOAL_X} y={FIELD_BOTTOM} width={GOAL_W} height={FIELD_MARGIN} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
         <circle cx={W / 2} cy={PENALTY_Y} r={3} fill="#fff" fillOpacity={0.5} />
         <path d={`M ${W / 2 - PENALTY_ARC_DX} ${BOX_Y} A ${PENALTY_R} ${PENALTY_R} 0 0 0 ${W / 2 + PENALTY_ARC_DX} ${BOX_Y}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
-
-        {/* Moitié haute (miroir) */}
-        <rect x={BOX_X} y={TOP_BOX_Y} width={BOX_W} height={BOX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.4} />
-        <rect x={SIX_X} y={TOP_SIX_Y} width={SIX_W} height={SIX_H} fill="rgba(255,255,255,0.02)" stroke="#fff" strokeWidth={1} strokeOpacity={0.3} />
-        <rect x={GOAL_X} y={TOP_GOAL_Y} width={GOAL_W} height={FIELD_MARGIN} fill="#fff" fillOpacity={0.08} stroke="#fff" strokeWidth={2} strokeOpacity={0.65} />
-        <circle cx={W / 2} cy={TOP_PENALTY_Y} r={3} fill="#fff" fillOpacity={0.5} />
-        <path d={`M ${W / 2 - PENALTY_ARC_DX} ${TOP_BOX_Y + BOX_H} A ${PENALTY_R} ${PENALTY_R} 0 0 1 ${W / 2 + PENALTY_ARC_DX} ${TOP_BOX_Y + BOX_H}`} fill="none" stroke="#fff" strokeWidth={1.5} strokeOpacity={0.38} strokeDasharray="5 4" />
 
         {/* Quadrillage repère */}
         {showGrid && (
