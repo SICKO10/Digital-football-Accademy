@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useColors } from '../lib/theme'
+import { supabase } from '../supabase'
 
 const W = 520
 const H = 340
@@ -42,7 +43,7 @@ const maxId = (etapes) => {
 // "Animer" rejoue ensuite les étapes dans l'ordre en faisant réellement
 // bouger les jetons d'une position à l'autre (transition CSS sur leur
 // position), plutôt que de simples flèches statiques.
-export default function TacticalBoard({ data, onChange, readOnly = false }) {
+export default function TacticalBoard({ data, onChange, readOnly = false, userId, typeSchema }) {
   const colors = useColors()
   const svgRef = useRef(null)
   const d = data && Array.isArray(data.etapes) && data.etapes.length ? data : EMPTY_DATA
@@ -70,6 +71,54 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
   const [playIdx, setPlayIdx] = useState(null) // étape affichée pendant la lecture, null = édition
   const playTimer = useRef(null)
   const nextId = useRef(maxId(etapes) + 1)
+
+  // Bibliothèque personnelle de schémas CPA (table schemas_cpa) — n'a de sens
+  // qu'en édition (readOnly=false) et si l'appelant fournit userId/typeSchema
+  // ('offensif'|'defensif') ; sans ça les boutons Enregistrer/Charger restent
+  // cachés (cf. les deux slides en lecture seule de la causerie, qui ne
+  // passent ni l'un ni l'autre).
+  const bibliothequeActive = !readOnly && userId && typeSchema
+  const [bibliotheque, setBibliotheque] = useState([])
+  const [bibliothequeChargee, setBibliothequeChargee] = useState(false)
+  const [showCharger, setShowCharger] = useState(false)
+  const [enregistrement, setEnregistrement] = useState(false)
+
+  const chargerBibliotheque = useCallback(async () => {
+    if (!bibliothequeActive) return
+    const { data: rows, error } = await supabase.from('schemas_cpa').select('id, nom, data, created_at')
+      .eq('educateur_id', userId).eq('type', typeSchema).order('created_at', { ascending: false })
+    if (error) { console.error('chargerBibliotheque (TacticalBoard) error:', error); return }
+    setBibliotheque(rows || [])
+    setBibliothequeChargee(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bibliothequeActive, userId, typeSchema])
+
+  useEffect(() => { chargerBibliotheque() }, [chargerBibliotheque])
+
+  const enregistrerDansBibliotheque = async () => {
+    if (!bibliothequeActive) return
+    const nom = prompt('Nom de ce schéma :')
+    if (!nom || !nom.trim()) return
+    setEnregistrement(true)
+    const { error } = await supabase.from('schemas_cpa').insert({ educateur_id: userId, type: typeSchema, nom: nom.trim(), data: d })
+    setEnregistrement(false)
+    if (error) { alert('Erreur lors de la sauvegarde : ' + error.message); return }
+    chargerBibliotheque()
+  }
+
+  const chargerDepuisBibliotheque = (s) => {
+    onChange(s.data)
+    setEtapeIdx(0)
+    setSelection(null)
+    setShowCharger(false)
+  }
+
+  const supprimerDeBibliotheque = async (e, id) => {
+    e.stopPropagation()
+    if (!confirm('Supprimer ce schéma enregistré ?')) return
+    await supabase.from('schemas_cpa').delete().eq('id', id)
+    setBibliotheque(prev => prev.filter(s => s.id !== id))
+  }
 
   const displayIdx = playIdx !== null ? playIdx : idx
   const displayEtape = etapes[displayIdx] || emptyEtape()
@@ -293,9 +342,37 @@ export default function TacticalBoard({ data, onChange, readOnly = false }) {
             )}
             {(joueurs.length || ballon) ? (
               <button onClick={() => majEtape({ joueurs: [], ballon: null })}
-                style={{ ...tb(false), marginLeft: 'auto', color: colors.text.dim }}>↺ Vider l'étape</button>
+                style={{ ...tb(false), marginLeft: bibliothequeActive ? '0' : 'auto', color: colors.text.dim }}>↺ Vider l'étape</button>
             ) : null}
+            {bibliothequeActive && (
+              <>
+                <div style={{ width: 1, height: 16, background: colors.border.subtle, margin: '0 2px' }} />
+                <button onClick={enregistrerDansBibliotheque} disabled={enregistrement} style={{ ...tb(false, '#facc15'), marginLeft: (joueurs.length || ballon) ? '0' : 'auto' }}>💾 Enregistrer</button>
+                <button onClick={() => setShowCharger(v => !v)} style={tb(showCharger, '#facc15')}>📂 Charger</button>
+              </>
+            )}
           </div>
+
+          {bibliothequeActive && showCharger && (
+            <div style={{ background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '6px', marginBottom: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+              {!bibliothequeChargee ? (
+                <p style={{ color: colors.text.dim, fontSize: '11px', margin: '4px 6px' }}>Chargement…</p>
+              ) : bibliotheque.length === 0 ? (
+                <p style={{ color: colors.text.dim, fontSize: '11px', margin: '4px 6px', fontStyle: 'italic' }}>Aucun schéma enregistré pour l'instant.</p>
+              ) : (
+                bibliotheque.map(s => (
+                  <div key={s.id} onClick={() => chargerDepuisBibliotheque(s)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = colors.background.sunken}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <span style={{ flex: 1, color: colors.text.primary, fontSize: '12px', fontWeight: 600 }}>{s.nom}</span>
+                    <button onClick={e => supprimerDeBibliotheque(e, s.id)} title="Supprimer" style={{ background: 'none', border: 'none', color: colors.text.ghost, fontSize: '12px', cursor: 'pointer', padding: '2px 4px' }}>✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
           <p style={{ color: colors.text.ghost, fontSize: '10px', margin: '0 0 6px' }}>
             {mode === 'select' && 'Glisse les joueurs/ballon · Double-clic → renommer · Clic droit ou bouton "Supprimer" → supprimer'}
             {mode === 'add_nous' && 'Clique sur le terrain pour placer un joueur (notre équipe)'}

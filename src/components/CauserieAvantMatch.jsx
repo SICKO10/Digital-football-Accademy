@@ -767,7 +767,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             </div>
             <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px' }}>
               <p style={{ margin: '0 0 10px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Offensif</p>
-              <TacticalBoard data={form.schema_cpa_offensif} onChange={val => set('schema_cpa_offensif', val)} />
+              <TacticalBoard data={form.schema_cpa_offensif} onChange={val => set('schema_cpa_offensif', val)} userId={userId} typeSchema="offensif" />
             </div>
           </div>
 
@@ -778,7 +778,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             </div>
             <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px' }}>
               <p style={{ margin: '0 0 10px', color: '#f87171', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schéma CPA Défensif</p>
-              <TacticalBoard data={form.schema_cpa_defensif} onChange={val => set('schema_cpa_defensif', val)} />
+              <TacticalBoard data={form.schema_cpa_defensif} onChange={val => set('schema_cpa_defensif', val)} userId={userId} typeSchema="defensif" />
             </div>
           </div>
 
