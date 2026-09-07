@@ -855,6 +855,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
                     <button onClick={() => supprimerSchemaCpa('schemas_cpa_offensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
                   )}
                 </div>
+                <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  🟢 {form.schemas_cpa_offensif.length > 1 ? `CPA offensif ${i + 1}` : 'CPA offensif'}
+                </p>
                 <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_offensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="offensif" />
               </div>
             ))}
@@ -878,6 +881,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
                     <button onClick={() => supprimerSchemaCpa('schemas_cpa_defensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
                   )}
                 </div>
+                <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  🔴 {form.schemas_cpa_defensif.length > 1 ? `CPA défensif ${i + 1}` : 'CPA défensif'}
+                </p>
                 <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_defensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="defensif" />
               </div>
             ))}
