@@ -852,14 +852,9 @@ export const T = {
   club_recettes:             { fr: 'Recettes',                  en: 'Income',                 pt: 'Receitas',              es: 'Ingresos',               it: 'Entrate',               de: 'Einnahmen'            },
   club_depenses:             { fr: 'Dépenses',                  en: 'Expenses',               pt: 'Despesas',              es: 'Gastos',                 it: 'Spese',                 de: 'Ausgaben'             },
   club_solde:                { fr: 'Solde',                     en: 'Balance',                pt: 'Saldo',                 es: 'Saldo',                  it: 'Saldo',                 de: 'Saldo'                },
-  club_recu:                 { fr: 'reçu',                      en: 'received',               pt: 'recebido',              es: 'recibido',               it: 'ricevuto',              de: 'erhalten'             },
-  club_depense_mot:          { fr: 'dépensé',                   en: 'spent',                  pt: 'gasto',                 es: 'gastado',                it: 'speso',                 de: 'ausgegeben'           },
-  club_benefice:             { fr: 'bénéfice',                  en: 'profit',                 pt: 'lucro',                 es: 'beneficio',              it: 'profitto',              de: 'Gewinn'               },
-  club_deficit:              { fr: 'déficit',                   en: 'deficit',                pt: 'défice',                es: 'déficit',                it: 'deficit',               de: 'Defizit'              },
-  club_aucune_entree:        { fr: 'Aucune entrée.',            en: 'No entry.',              pt: 'Sem entradas.',         es: 'Sin entradas.',          it: 'Nessuna voce.',         de: 'Kein Eintrag.'        },
-  club_autres_suffix:        { fr: 'autres',                    en: 'others',                 pt: 'outras',                es: 'otras',                  it: 'altre',                 de: 'weitere'              },
-  club_global:               { fr: 'Global',                    en: 'Overall',                pt: 'Global',                es: 'Global',                 it: 'Globale',               de: 'Gesamt'               },
   club_aucune_entree_periode: { fr: 'Aucune entrée pour cette période.', en: 'No entry for this period.', pt: 'Sem entradas para este período.', es: 'Sin entradas para este período.', it: 'Nessuna voce per questo periodo.', de: 'Kein Eintrag für diesen Zeitraum.' },
+  club_repartition:          { fr: 'Répartition',               en: 'Breakdown',              pt: 'Repartição',            es: 'Reparto',                it: 'Ripartizione',          de: 'Aufteilung'           },
+  club_aucune_donnee:        { fr: 'Aucune donnée',              en: 'No data',                pt: 'Sem dados',             es: 'Sin datos',              it: 'Nessun dato',           de: 'Keine Daten'          },
 
   // ── Dashboard club — Staff ────────────────────────────────────────────────────
   club_ajouter_membre_staff: { fr: 'Ajouter un membre du staff', en: 'Add a staff member',    pt: 'Adicionar um membro da equipa técnica', es: 'Agregar un miembro del equipo directivo', it: 'Aggiungi un membro dello staff', de: 'Teammitglied hinzufügen' },

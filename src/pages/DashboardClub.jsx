@@ -334,54 +334,6 @@ const COULEURS_BUDGET = [
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
-function DonutChart({ segments, total, label, couleurCentrale = colors.text.primary, lang = 'fr' }) {
-  const colors2 = useColors()
-  const R = 70
-  const STROKE = 18
-  const C = 2 * Math.PI * R
-
-  if (total === 0) return (
-    <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg width="180" height="180" viewBox="0 0 180 180">
-        <circle cx="90" cy="90" r={R} fill="none" stroke={colors2.background.raised} strokeWidth={STROKE} />
-        <text x="90" y="86" textAnchor="middle" fill={colors2.text.faint} fontSize="11" fontFamily="Inter, sans-serif">Aucune</text>
-        <text x="90" y="102" textAnchor="middle" fill={colors2.text.faint} fontSize="11" fontFamily="Inter, sans-serif">entrée</text>
-      </svg>
-    </div>
-  )
-
-  const segmentsAvecOffset = segments.reduce((acc, seg) => {
-    const cumulPrecedent = acc.length ? acc[acc.length - 1].cumul : 0
-    acc.push({ ...seg, offset: -cumulPrecedent * C / 100, cumul: cumulPrecedent + seg.pct })
-    return acc
-  }, [])
-
-  return (
-    <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
-      <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="90" cy="90" r={R} fill="none" stroke={colors2.background.raised} strokeWidth={STROKE} />
-        {segmentsAvecOffset.map((seg, i) => {
-          const dash = (seg.pct / 100) * C
-          return (
-            <circle key={i} cx="90" cy="90" r={R} fill="none"
-              stroke={seg.color} strokeWidth={STROKE}
-              strokeDasharray={`${dash} ${C - dash}`}
-              strokeDashoffset={seg.offset}
-              strokeLinecap="butt"
-            />
-          )
-        })}
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: couleurCentrale, fontFamily: 'Inter, sans-serif' }}>
-          {total.toLocaleString(localeOf(lang), { maximumFractionDigits: 0 })} €
-        </span>
-        <span style={{ fontSize: 10, color: colors2.text.faint, fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{label}</span>
-      </div>
-    </div>
-  )
-}
-
 // Panneau d'alertes de l'accueil club, remplace "Nouveaux joueurs" (peu
 // actionnable — juste un historique). Adapté au vrai schéma de chaque table
 // plutôt qu'aux noms suggérés (grep fait avant d'écrire les requêtes) :
@@ -988,7 +940,7 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
 }
 
 // Carte d'un membre de l'organigramme + ses subordonnés, en arbre récursif. Composant
-// à part (comme StatCard/DonutChart/AccueilClub/PermissionsModal ci-dessus) plutôt que
+// à part (comme StatCard/AccueilClub/PermissionsModal ci-dessus) plutôt que
 // défini à l'intérieur de DashboardClub : une fonction composant redéfinie à chaque
 // rendu du parent changerait d'identité et forcerait React à démonter/remonter tout
 // le sous-arbre à chaque frappe dans la barre de recherche.
@@ -1134,6 +1086,7 @@ export default function DashboardClub() {
   const [orgImportMode, setOrgImportMode] = useState(null) // null | 'excel' | 'scan'
   const [orgSearchQuery, setOrgSearchQuery] = useState('')
   const [orgExpandedNodes, setOrgExpandedNodes] = useState(new Set())
+  const [orgFiltreDepart, setOrgFiltreDepart] = useState(null)
   const [orgScanFile, setOrgScanFile] = useState(null)
   const [orgScanLoading, setOrgScanLoading] = useState(false)
   const [orgScanStatus, setOrgScanStatus] = useState(null)
@@ -4428,7 +4381,7 @@ Règles :
             .map(([cat, montant], i) => ({ cat, montant, pct: totalRecettes > 0 ? (montant / totalRecettes) * 100 : 0, color: COULEURS_BUDGET[i % COULEURS_BUDGET.length] }))
 
           return (
-            <div style={{ maxWidth: '1100px' }}>
+            <div style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 {t('club_budget_titre', lang)}</h2>
@@ -4442,195 +4395,144 @@ Règles :
                 )}
               </div>
 
-              {budgetFormOuvert && canEditSection('budget') && (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, marginBottom: 20 }}>
-                  <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                    {['depense', 'recette'].map(bt => (
-                      <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
-                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised, color: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green : colors.accent.red) : colors.text.faint }}>
-                        {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('equipe_categorie', lang)}</label>
-                      <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
-                        <option value="">{t('club_choisir_pts', lang)}</option>
-                        {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
-                          <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_montant', lang)}</label>
-                      <input type="number" min="0" step="0.01" placeholder="0,00" value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('club_libelle', lang)}</label>
-                      <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, color: colors.text.faint, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('ent_date', lang)}</label>
-                      <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
-                        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                  </div>
-                  <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
-                    style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
-                  <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
-                    style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
-                    {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
-                  </button>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 4, width: 'fit-content' }}>
                 {[['mois', t('club_ce_mois', lang)], ['saison', t('club_cette_saison', lang)], ['tout', t('club_tout', lang)]].map(([val, label]) => (
                   <button key={val} onClick={() => setBudgetPeriode(val)}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${budgetPeriode === val ? couleurPrincipale + '40' : colors.background.raised}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetPeriode === val ? couleurPrincipale + '20' : colors.background.surface, color: budgetPeriode === val ? couleurPrincipale : colors.text.faint }}>
+                    style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: budgetPeriode === val ? couleurPrincipale : 'transparent', color: budgetPeriode === val ? colors.black : colors.text.faint, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     {label}
                   </button>
                 ))}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
                 {[
                   { label: t('club_recettes', lang), icone: '↑', val: totalRecettes, color: colors.accent.green, bg: '#4ade8010', sign: '+' },
                   { label: t('club_depenses', lang), icone: '↓', val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
-                  { label: t('club_solde', lang), icone: '⚖️', val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
+                  { label: t('club_solde', lang), icone: '⚖', val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
                 ].map(({ label, icone, val, color, bg, sign }) => (
-                  <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 16, padding: '16px 18px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 16, padding: '18px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <span style={{ fontSize: 14, color }}>{icone}</span>
-                      <p style={{ margin: 0, fontSize: 11, color: colors.text.dim, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: colors.text.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</p>
                     </div>
-                    <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>
+                    <p style={{ margin: 0, fontSize: 28, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>
                       {sign}{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 20, marginBottom: 20 }}>
-                {/* Donut Recettes */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: 0.5 }}>↑ {t('club_recettes', lang)}</p>
-                  {totalRecettes === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180 }}>
-                      <div style={{ width: 100, height: 100, borderRadius: '50%', border: `3px dashed ${colors.border.strong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                        <span style={{ fontSize: 26, color: colors.border.strong }}>↑</span>
-                      </div>
-                      <p style={{ color: colors.text.faint, fontSize: 13, textAlign: 'center', margin: 0 }}>{t('club_aucune_entree', lang)}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20, alignItems: 'start' }}>
+
+                {/* Colonne gauche — historique */}
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.text.faint }}>{t('jcoach_historique', lang)}</span>
+                    <span style={{ color: colors.text.faint, fontSize: 12 }}>{entriesFiltrees.length}</span>
+                  </div>
+                  {entriesFiltrees.length === 0 ? (
+                    <div style={{ padding: 48, textAlign: 'center' }}>
+                      <p style={{ color: colors.text.faint, fontWeight: 600, margin: 0, fontSize: 13 }}>{t('club_aucune_entree_periode', lang)}</p>
                     </div>
-                  ) : (
-                    <DonutChart segments={categoriesRecetteArr} total={totalRecettes} label={t('club_recu', lang)} lang={lang} />
+                  ) : entriesFiltrees.map(e => {
+                    const cats = e.type === 'depense' ? CATEGORIES_DEPENSE : CATEGORIES_RECETTE
+                    const meta = cats.find(c => c.label === e.categorie)
+                    const categoriesArr = e.type === 'depense' ? categoriesDepenseArr : categoriesRecetteArr
+                    const segCat = categoriesArr.find(c => c.cat === e.categorie)
+                    const couleur = segCat?.color || colors.text.faint
+                    return (
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: `1px solid ${colors.background.base}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.green : colors.accent.red}` }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                          {meta?.emoji || (e.type === 'recette' ? '↑' : '↓')}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{e.libelle}</div>
+                          <div style={{ marginTop: 2, fontSize: 11, color: colors.text.faint }}>
+                            <span style={{ color: couleur }}>{e.categorie}</span>
+                            {' · '}{new Date(e.date).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {e.note ? ` · ${e.note}` : ''}
+                          </div>
+                        </div>
+                        <span style={{ fontWeight: 800, color: e.type === 'recette' ? colors.accent.green : colors.accent.red, fontSize: 15, flexShrink: 0 }}>
+                          {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
+                        </span>
+                        {canEditSection('budget') && (
+                          <button onClick={() => supprimerEntreeBudget(e.id)}
+                            style={{ background: 'transparent', border: 'none', color: colors.border.default, cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
+                            onMouseEnter={ev => ev.target.style.color = colors.accent.red}
+                            onMouseLeave={ev => ev.target.style.color = colors.border.default}
+                            title={t('btn_supprimer', lang)}>✕</button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Colonne droite — formulaire + répartition */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                  {budgetFormOuvert && canEditSection('budget') && (
+                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20 }}>
+                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
+
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 12, background: colors.background.base, borderRadius: 10, padding: 3 }}>
+                        {['depense', 'recette'].map(bt => (
+                          <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
+                            style={{ flex: 1, padding: 8, borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green : colors.accent.red) : 'transparent', color: budgetForm.type === bt ? (bt === 'recette' ? colors.black : '#fff') : colors.text.faint }}>
+                            {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
+                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
+                          <option value="">{t('club_choisir_pts', lang)}</option>
+                          {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
+                            <option key={c.label} value={c.label}>{c.emoji} {c.label}</option>
+                          ))}
+                        </select>
+                        <input type="number" min="0" step="0.01" placeholder={t('club_montant', lang)} value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
+                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
+                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
+                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
+                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                        <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
+                          style={{ padding: 11, borderRadius: 10, border: 'none', background: budgetForm.type === 'recette' ? colors.accent.green : colors.accent.red, color: budgetForm.type === 'recette' ? colors.black : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
+                          {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
+                        </button>
+                      </div>
+                    </div>
                   )}
-                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {categoriesRecetteArr.slice(0, 4).map((seg, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
-                          {seg.cat}
-                        </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: colors.text.primary }}>{Math.round(seg.pct)}%</span>
-                      </div>
-                    ))}
-                    {categoriesRecetteArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: colors.border.strong }}>+{categoriesRecetteArr.length - 4} {t('club_autres_suffix', lang)}</p>}
-                  </div>
-                </div>
 
-                {/* Donut Dépenses */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.accent.red, textTransform: 'uppercase', letterSpacing: 0.5 }}>↓ {t('club_depenses', lang)}</p>
-                  <DonutChart segments={categoriesDepenseArr} total={totalDepenses} label={t('club_depense_mot', lang)} lang={lang} />
-                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {categoriesDepenseArr.length === 0 && (
-                      <p style={{ margin: 0, fontSize: 11, color: colors.border.strong }}>{t('club_aucune_entree', lang)}</p>
+                  {/* Répartition */}
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20 }}>
+                    <p style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: '0 0 14px' }}>{t('club_repartition', lang)}</p>
+                    {totalRecettes + totalDepenses === 0 ? (
+                      <p style={{ color: colors.border.strong, fontSize: 12, textAlign: 'center', padding: '20px 0', margin: 0 }}>{t('club_aucune_donnee', lang)}</p>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ color: colors.accent.green, fontSize: 12 }}>{t('club_recettes', lang)}</span>
+                          <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: 12 }}>{Math.round(totalRecettes / (totalRecettes + totalDepenses) * 100)}%</span>
+                        </div>
+                        <div style={{ background: colors.background.base, borderRadius: 999, height: 8, marginBottom: 12, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${totalRecettes / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.green, borderRadius: 999 }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ color: colors.accent.red, fontSize: 12 }}>{t('club_depenses', lang)}</span>
+                          <span style={{ color: colors.accent.red, fontWeight: 700, fontSize: 12 }}>{Math.round(totalDepenses / (totalRecettes + totalDepenses) * 100)}%</span>
+                        </div>
+                        <div style={{ background: colors.background.base, borderRadius: 999, height: 8, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${totalDepenses / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.red, borderRadius: 999 }} />
+                        </div>
+                      </>
                     )}
-                    {categoriesDepenseArr.slice(0, 4).map((seg, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, flexShrink: 0, display: 'inline-block' }} />
-                          {seg.cat}
-                        </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: colors.text.primary }}>{Math.round(seg.pct)}%</span>
-                      </div>
-                    ))}
-                    {categoriesDepenseArr.length > 4 && <p style={{ margin: 0, fontSize: 10, color: colors.border.strong }}>+{categoriesDepenseArr.length - 4} {t('club_autres_suffix', lang)}</p>}
                   </div>
                 </div>
-
-                {/* Donut Global */}
-                <div style={{ flex: isMobile ? 'none' : 1, width: '100%', boxSizing: 'border-box', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 18, padding: isMobile ? '20px 16px' : 24 }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>⚖️ {t('club_global', lang)}</p>
-                  <DonutChart
-                    segments={totalRecettes + totalDepenses > 0 ? [
-                      { pct: (totalRecettes / (totalRecettes + totalDepenses)) * 100, color: colors.accent.green },
-                      { pct: (totalDepenses / (totalRecettes + totalDepenses)) * 100, color: colors.accent.red },
-                    ] : []}
-                    total={Math.abs(solde)}
-                    label={solde >= 0 ? t('club_benefice', lang) : t('club_deficit', lang)}
-                    couleurCentrale={solde >= 0 ? colors.accent.green : colors.accent.red}
-                    lang={lang}
-                  />
-                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {[{ label: t('club_recettes', lang), color: colors.accent.green, val: totalRecettes }, { label: t('club_depenses', lang), color: colors.accent.red, val: totalDepenses }].map(({ label, color, val }) => (
-                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.text.secondary }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                          {label}
-                        </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color }}>{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>{t('jcoach_historique', lang)}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {entriesFiltrees.length === 0 && (
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: '28px 20px', textAlign: 'center', color: colors.border.strong, fontSize: 13 }}>
-                    {t('club_aucune_entree_periode', lang)}
-                  </div>
-                )}
-                {entriesFiltrees.map(e => {
-                  const cats = e.type === 'depense' ? CATEGORIES_DEPENSE : CATEGORIES_RECETTE
-                  const meta = cats.find(c => c.label === e.categorie)
-                  const categoriesArr = e.type === 'depense' ? categoriesDepenseArr : categoriesRecetteArr
-                  const segCat = categoriesArr.find(c => c.cat === e.categorie)
-                  const couleur = segCat?.color || colors.text.faint
-                  return (
-                    <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.green : colors.accent.red}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle }}>
-                        {meta?.emoji || (e.type === 'recette' ? '↑' : '↓')}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{e.libelle}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: 11, color: colors.text.faint }}>
-                          <span style={{ color: couleur }}>{e.categorie}</span>
-                          {' · '}{new Date(e.date).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
-                          {e.note ? ` · ${e.note}` : ''}
-                        </p>
-                      </div>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: 15, flexShrink: 0, color: e.type === 'recette' ? colors.accent.green : colors.accent.red }}>
-                        {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
-                      </p>
-                      {canEditSection('budget') && (
-                        <button onClick={() => supprimerEntreeBudget(e.id)}
-                          style={{ background: 'transparent', border: 'none', color: colors.border.default, cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s' }}
-                          onMouseEnter={ev => ev.target.style.color = colors.accent.red}
-                          onMouseLeave={ev => ev.target.style.color = colors.border.default}
-                          title={t('btn_supprimer', lang)}>✕</button>
-                      )}
-                    </div>
-                  )
-                })}
               </div>
             </div>
           )
@@ -5189,40 +5091,53 @@ Règles :
 
         {/* ── ORGANIGRAMME V2 : arbre hiérarchique + import Excel/scan IA ── */}
         {activeTab === 'organigramme' && canViewSection('organigramme') && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+
+            {/* ── HEADER ACTIONS ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '18px', fontWeight: 700 }}>🏛️ Organigramme</h2>
                 <p style={{ margin: '4px 0 0', color: colors.text.dim, fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''}</p>
               </div>
-              {canEditSection('organigramme') && (
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
-                  <button
-                    onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
-                    style={{ background: colors.accent.amber + '15', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    📊 Importer Excel
-                  </button>
-                  <button
-                    onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
-                    style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    📷 Scanner un document
-                  </button>
-                  {organigramme.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {canEditSection('organigramme') && (
+                  <>
+                    <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
+                    <button
+                      onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
+                      style={{ background: colors.accent.amber + '15', border: '1px solid #fbbf24', borderRadius: '8px', color: colors.accent.amber, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      📊 Importer Excel
+                    </button>
+                    <button
+                      onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
+                      style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      📷 Scanner un document
+                    </button>
+                  </>
+                )}
+                {organigramme.length > 0 && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="🔍 Rechercher un membre..."
+                      value={orgSearchQuery}
+                      onChange={e => setOrgSearchQuery(e.target.value)}
+                      style={{ padding: '9px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.sunken, color: colors.text.primary, fontSize: '13px', width: '220px', outline: 'none' }}
+                    />
                     <button
                       onClick={() => {
                         const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
                         setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
                       }}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, padding: '9px 14px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
-                      {orgExpandedNodes.size > 0 ? '↑ Tout réduire' : '↓ Tout développer'}
+                      ↕ {orgExpandedNodes.size > 0 ? 'Réduire' : 'Développer'}
                     </button>
-                  )}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
 
             {orgImportMode === 'excel' && (
