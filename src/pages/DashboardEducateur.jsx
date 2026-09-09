@@ -44,7 +44,7 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 // "Générer une séance avec l'IA" pas encore assez fiable pour être proposée à
 // tous les éducateurs — visible seulement pour ce compte le temps de l'affiner
 // en conditions réelles, à retirer de cette liste (ou vider) une fois prête.
-const SEANCE_IA_BETA_EMAILS = ['deabreu.amorim@gmail.com']
+const SEANCE_IA_BETA_EMAILS = ['clubtest@gmail.com']
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
