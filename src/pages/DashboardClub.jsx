@@ -24,6 +24,7 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
+import TachesClub from '../components/club/TachesClub'
 import ProjetSportif from '../components/club/ProjetSportif'
 import NotificationBanner from '../components/NotificationBanner'
 
@@ -249,6 +250,7 @@ const PERMISSION_SECTIONS = [
   { id: 'staff', label: 'Staff' },
   { id: 'inventaire', label: 'Inventaire' },
   { id: 'newsletter', label: 'Newsletter' },
+  { id: 'taches', label: 'Tâches & Responsabilités' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -268,6 +270,7 @@ const PERMISSION_DEFAULTS = {
   staff: [],
   inventaire: [],
   newsletter: [],
+  taches: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -1385,7 +1388,7 @@ export default function DashboardClub() {
     if (!monRole) return
     const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'classements', 'recrutement', 'educateurs'] : []
     if (canViewSection('terrains')) idsSportif.push('terrains')
-    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'staff'].filter(canViewSection)
+    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
@@ -3325,6 +3328,7 @@ Règles :
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
     { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
+    { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
   ].filter(item => canViewSection(item.id))
 
   const sportifVisible = NAV_SPORTIF.length > 0
@@ -6570,6 +6574,15 @@ Règles :
             auteurNom={monRole === 'president' ? (club?.club || 'Le club') : `${moi?.prenom || ''} ${moi?.nom || ''}`.trim()}
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('newsletter')}
+          />
+        )}
+
+        {activeTab === 'taches' && canViewSection('taches') && (
+          <TachesClub
+            clubId={clubId}
+            educateursAffilies={educateursAffilies}
+            couleurPrincipale={couleurPrincipale}
+            readOnly={!canEditSection('taches')}
           />
         )}
 
