@@ -115,7 +115,7 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
       titre: `${catLabel(m) ? catLabel(m) + ' · ' : ''}${m.domicile ? 'vs' : '@'} ${m.adversaire || 'Match'}`,
       sousTitre: `${m.domicile ? 'Domicile' : 'Extérieur'}${m.lieu ? ' · ' + m.lieu : ''}`, pole: poleDe(m),
     }))
-    evenements.forEach(e => tous.push({
+    evenements.filter(e => e.sur_planning !== false).forEach(e => tous.push({
       id: `e_${e.id}`, type: 'evenement', date: e.date, heure: e.heure?.slice(0, 5) || null,
       titre: e.titre, sousTitre: e.lieu || '', description: e.description, pole: null,
     }))

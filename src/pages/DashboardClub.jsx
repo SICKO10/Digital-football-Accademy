@@ -597,7 +597,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           d'entraînement, qui restent une vue éducateur. */}
       <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m.educateur_id) }))} evenements={evenementsClub} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m.educateur_id) }))} evenements={evenementsClub.filter(e => e.sur_planning !== false)} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}
@@ -1282,7 +1282,7 @@ export default function DashboardClub() {
   const [evenementsClub, setEvenementsClub] = useState([])
   const [showEvenementForm, setShowEvenementForm] = useState(false)
   const [editingEvenementId, setEditingEvenementId] = useState(null)
-  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false })
+  const [evenementForm, setEvenementForm] = useState({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false, recurrent: false, frequence: 'hebdomadaire', sur_planning: true })
   // Saisie libre prénom/nom du responsable/participant en cours, par mission —
   // { [missionId]: { prenom, nom } } — remplace la liste de badges
   // tousParticipants (50+ personnes) pour le responsable et les participants
@@ -2011,13 +2011,13 @@ export default function DashboardClub() {
 
   const ouvrirNouvelEvenement = () => {
     setEditingEvenementId(null)
-    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false })
+    setEvenementForm({ titre: '', date: '', heure: '', lieu: '', type: 'autre', description: '', participants: [], ressources_materielles: [], missions: [], referents: [], visible_educateurs: true, visible_joueurs: false, recurrent: false, frequence: 'hebdomadaire', sur_planning: true })
     setShowEvenementForm(true)
   }
 
   const ouvrirEditionEvenement = (ev) => {
     setEditingEvenementId(ev.id)
-    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [], referents: ev.referents || [], visible_educateurs: ev.visible_educateurs ?? true, visible_joueurs: ev.visible_joueurs ?? false })
+    setEvenementForm({ titre: ev.titre || '', date: ev.date || '', heure: ev.heure || '', lieu: ev.lieu || '', type: ev.type || 'autre', description: ev.description || '', participants: ev.participants || [], ressources_materielles: ev.ressources_materielles || [], missions: ev.missions || [], referents: ev.referents || [], visible_educateurs: ev.visible_educateurs ?? true, visible_joueurs: ev.visible_joueurs ?? false, recurrent: ev.recurrent ?? false, frequence: ev.frequence || 'hebdomadaire', sur_planning: ev.sur_planning ?? true })
     setShowEvenementForm(true)
   }
 
@@ -2116,6 +2116,9 @@ export default function DashboardClub() {
       missions: evenementForm.missions,
       visible_educateurs: evenementForm.visible_educateurs,
       visible_joueurs: evenementForm.visible_joueurs,
+      recurrent: evenementForm.recurrent,
+      frequence: evenementForm.recurrent ? evenementForm.frequence : null,
+      sur_planning: evenementForm.sur_planning,
     }
     // Optimistic : formulaire fermé tout de suite, réouvert avec la saisie
     // intacte en cas d'erreur.
@@ -4873,6 +4876,30 @@ Règles :
                         </div>
                       </div>
 
+                      {/* ── Récurrence — badge informatif, ne génère pas d'occurrences futures ── */}
+                      <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px', marginBottom: '14px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: evenementForm.recurrent ? '12px' : 0 }}>
+                          <input type="checkbox" checked={evenementForm.recurrent}
+                            onChange={e => setEvenementForm(f => ({ ...f, recurrent: e.target.checked }))}
+                            style={{ accentColor: colors.accent.purpleLight, width: 16, height: 16 }} />
+                          <span style={{ color: colors.accent.purpleLight, fontWeight: 600, fontSize: '13px' }}>🔁 Événement récurrent</span>
+                        </label>
+                        {evenementForm.recurrent && (
+                          <select style={{ ...st.input, marginTop: 0 }} value={evenementForm.frequence} onChange={e => setEvenementForm(f => ({ ...f, frequence: e.target.value }))}>
+                            <option value="hebdomadaire">Chaque semaine</option>
+                            <option value="mensuel">Chaque mois</option>
+                            <option value="annuel">Chaque année</option>
+                          </select>
+                        )}
+                      </div>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '14px' }}>
+                        <input type="checkbox" checked={evenementForm.sur_planning}
+                          onChange={e => setEvenementForm(f => ({ ...f, sur_planning: e.target.checked }))}
+                          style={{ accentColor: colors.accent.green, width: 16, height: 16 }} />
+                        <span style={{ color: colors.accent.green, fontWeight: 600, fontSize: '13px' }}>📅 Afficher sur le planning du club</span>
+                      </label>
+
                       <div>
                         <label style={st.label}>Visibilité</label>
                         <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
@@ -4923,6 +4950,9 @@ Règles :
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                     <span style={{ background: colors.accent.purple + alpha.soft, border: '1px solid #a855f750', color: colors.accent.purple, fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px' }}>{info.emoji} {info.label}</span>
+                                    {ev.recurrent && (
+                                      <span style={{ background: colors.accent.purpleLight + alpha.subtle, border: `1px solid ${colors.accent.purpleLight}40`, color: colors.accent.purpleLight, fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px' }}>🔁 Récurrent</span>
+                                    )}
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ev.titre}</p>
                                   </div>
                                   <p style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>
