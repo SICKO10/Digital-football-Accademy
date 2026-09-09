@@ -6227,6 +6227,26 @@ Règles :
           </div>
           )
         })()}
+
+        {activeTab === 'newsletter' && canViewSection('newsletter') && (
+          <Newsletter
+            clubId={clubId}
+            clubNom={club?.club}
+            auteurId={moi?.id}
+            auteurNom={monRole === 'president' ? (club?.club || 'Le club') : `${moi?.prenom || ''} ${moi?.nom || ''}`.trim()}
+            couleurPrincipale={couleurPrincipale}
+            readOnly={!canEditSection('newsletter')}
+          />
+        )}
+
+        {activeTab === 'taches' && canViewSection('taches') && (
+          <TachesClub
+            clubId={clubId}
+            educateursAffilies={educateursAffilies}
+            couleurPrincipale={couleurPrincipale}
+            readOnly={!canEditSection('taches')}
+          />
+        )}
       </div>
           </div>
         </div>
@@ -6565,26 +6585,6 @@ Règles :
           </div>
         </div>
       )}
-
-        {activeTab === 'newsletter' && canViewSection('newsletter') && (
-          <Newsletter
-            clubId={clubId}
-            clubNom={club?.club}
-            auteurId={moi?.id}
-            auteurNom={monRole === 'president' ? (club?.club || 'Le club') : `${moi?.prenom || ''} ${moi?.nom || ''}`.trim()}
-            couleurPrincipale={couleurPrincipale}
-            readOnly={!canEditSection('newsletter')}
-          />
-        )}
-
-        {activeTab === 'taches' && canViewSection('taches') && (
-          <TachesClub
-            clubId={clubId}
-            educateursAffilies={educateursAffilies}
-            couleurPrincipale={couleurPrincipale}
-            readOnly={!canEditSection('taches')}
-          />
-        )}
 
       {/* Modale préparation équipement + notification */}
       {modalePreparation && (
