@@ -40,11 +40,9 @@ const CLUB_FAQ = [
 // 16x16, viewBox 0 0 24 24, stroke=currentColor, strokeWidth=2, round caps/joins) ──
 const IcoHome      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoTrophy    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
 const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
-const IcoGear      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
 const IcoCarteBadge = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><line x1="14" y1="10" x2="19" y2="10"/><line x1="14" y1="14" x2="19" y2="14"/></svg>
 const IcoBallon    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7l3.5 2.5-1.3 4.1h-4.4L8.5 9.5z"/><path d="M12 2v5M8.5 9.5L4 8M15.5 9.5L20 8M9.8 13.6l-2.3 4.6M14.2 13.6l2.3 4.6"/></svg>
 const IcoHorloge   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1089,7 +1087,10 @@ export default function DashboardClub() {
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [activeTab, setActiveTab] = useState('accueil')
-  const [activeCategorie, setActiveCategorie] = useState('accueil')
+  // Le getter n'est plus lu directement (sidebar affiche tous les groupes en
+  // permanence) — seul le setter reste, transmis aux enfants (AccueilClub,
+  // AlertesClub) pour leurs callbacks de navigation existants.
+  const [, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
   const [autreRole, setAutreRole] = useState(null) // 'educateur' | 'joueur' | null — double accès staff + autre plan
   const [saisonActuelle] = useState(() => {
@@ -1346,10 +1347,7 @@ export default function DashboardClub() {
 
   const st = {
     page: { background: colors.background.base, minHeight: '100vh', color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
-    navbar: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.faint}`, padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px' },
-    logo: { color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? '0.85rem' : '1.1rem', letterSpacing: '1px', flexShrink: 0 },
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
-    tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' },
     tab: (active) => ({
       padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
       ...(active ? { background: couleurPrincipale, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
@@ -1377,28 +1375,19 @@ export default function DashboardClub() {
     return () => document.removeEventListener('click', fermerSiClicDehors)
   }, [openEduMenu])
 
-  // Corrige la catégorie/onglet actifs si le rôle (ou les permissions configurées par
-  // le président) ne permet(tent) plus de voir la sélection courante — au chargement
-  // initial, mais aussi si le président modifie la matrice pendant que ce membre est
-  // connecté (rolePermissions en dépendance).
+  // Corrige l'onglet actif si le rôle (ou les permissions configurées par le
+  // président) ne permet(tent) plus de voir la sélection courante — au chargement
+  // initial, mais aussi si le président modifie la matrice pendant que ce membre
+  // est connecté (rolePermissions en dépendance). Liste construite localement
+  // (pas de référence aux tableaux NAV_* du rendu, déclarés plus bas dans le
+  // composant) pour rester sûre même sur un render qui retourne tôt (loading).
   useEffect(() => {
     if (!monRole) return
-    const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-    const administratifSections = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter']
-    const administratifVisible = monRole === 'president' || administratifSections.some(canViewSection) || canViewSection('staff')
-    if (activeCategorie === 'sportif' && !sportifVisible && administratifVisible) {
-      setActiveCategorie('administratif')
-      setActiveTab(administratifSections.find(canViewSection) || 'sponsors')
-    } else if (activeCategorie === 'administratif' && !administratifVisible && sportifVisible) {
-      setActiveCategorie('sportif')
-      setActiveTab(canViewSection('sportif') ? 'categories' : 'terrains')
-    } else if (activeCategorie === 'sportif' && sportifVisible) {
-      const sportifOnglets = ['categories', 'classements', 'recrutement', 'educateurs'].filter(() => canViewSection('sportif')).concat(canViewSection('terrains') ? ['terrains'] : [])
-      if (!sportifOnglets.includes(activeTab)) setActiveTab(sportifOnglets[0])
-    } else if (activeCategorie === 'administratif' && administratifVisible) {
-      const adminOnglets = administratifSections.filter(canViewSection).concat(canViewSection('staff') ? ['staff'] : [])
-      if (!adminOnglets.includes(activeTab)) setActiveTab(adminOnglets[0])
-    }
+    const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'classements', 'recrutement', 'educateurs'] : []
+    if (canViewSection('terrains')) idsSportif.push('terrains')
+    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'staff'].filter(canViewSection)
+    const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
+    if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
 
   useEffect(() => {
@@ -3298,8 +3287,6 @@ Règles :
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 
-  const iconLabel = (Icon, texte) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icon /> {texte}</span>
-
   // Initiales du club pour l'avatar par défaut (même logique que getClubInitials
   // dans DashboardRecruteur.jsx, dupliquée localement — usage ponctuel ici).
   const clubInitiales = (() => {
@@ -3310,42 +3297,76 @@ Règles :
     return mots.length >= 2 ? (mots[0][0] + mots[1][0]).toUpperCase() : mots[0].slice(0, 2).toUpperCase()
   })()
 
-  const sportifVisible = canViewSection('sportif') || canViewSection('terrains')
-  const administratifVisible = monRole === 'president' || ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'newsletter'].some(canViewSection) || canViewSection('staff')
-
-  const categoriesVisibles = [
-    { id: 'accueil', label: iconLabel(IcoHome, t('club_accueil', lang)), defaultTab: 'accueil', visible: true },
-    { id: 'sportif', label: iconLabel(IcoGear, t('club_sportif', lang)), defaultTab: canViewSection('sportif') ? 'categories' : 'terrains',
-      visible: sportifVisible },
-    { id: 'administratif', label: iconLabel(IcoBuilding, t('club_administratif', lang)), defaultTab: 'sponsors',
-      visible: administratifVisible },
-  ].filter(c => c.visible)
-
-  // Sous-onglets de la catégorie active (niveau 2) — calculés une fois, réutilisés par
-  // l'affichage desktop (st.tabs) et le drawer mobile. Filtrés par la matrice de
-  // permissions (role_permissions) : 'categories'/'classements'/'recrutement'/'educateurs'
-  // partagent le droit 'sportif', 'terrains' est indépendant (cf. PERMISSION_SECTIONS).
-  const sousOnglets = activeCategorie === 'sportif' ? [
+  // Navigation — sidebar gauche, 3 groupes plats (Vue générale / Sportif /
+  // Administratif). Un seul point de vérité par groupe pour l'affichage ET les
+  // permissions (canViewSection), à la place de l'ancien système à 2 niveaux
+  // (activeCategorie + sous-onglets recalculés séparément à 2 endroits).
+  const NAV_GENERAL = [
+    { id: 'accueil', label: t('club_accueil', lang), Icon: IcoHome },
+  ]
+  const NAV_SPORTIF = [
     ...(canViewSection('sportif') ? [
-      { id: 'categories', label: iconLabel(IcoClipboard, t('club_tab_categories', lang)) },
-      { id: 'planning', label: iconLabel(IcoCalendar, 'Planning') },
-      { id: 'projet_sportif', label: iconLabel(IcoStar, 'Projet Sportif') },
-      { id: 'classements', label: iconLabel(IcoTrophy, t('club_tab_classements', lang)) },
-      { id: 'recrutement', label: iconLabel(IcoSearch, t('club_tab_recrutement', lang)) },
-      { id: 'educateurs', label: iconLabel(IcoUsers, `${t('club_tab_educateurs', lang)}${educateursEnAttente.length ? ` (${educateursEnAttente.length})` : ''}`) },
+      { id: 'categories', label: t('club_tab_categories', lang), Icon: IcoClipboard },
+      { id: 'planning', label: 'Planning', Icon: IcoCalendar },
+      { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
+      { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
+      { id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch },
+      { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
     ] : []),
-    ...(canViewSection('terrains') ? [{ id: 'terrains', label: iconLabel(IcoTerrain, 'Planning des terrains') }] : []),
-  ] : activeCategorie === 'administratif' ? [
-    ...(canViewSection('sponsors') ? [{ id: 'sponsors', label: iconLabel(IcoLink, t('club_tab_sponsors', lang)) }] : []),
-    ...(canViewSection('deplacements') ? [{ id: 'deplacements', label: iconLabel(IcoBus, t('nav_deplacements', lang)) }] : []),
-    ...(canViewSection('profil') ? [{ id: 'profil', label: iconLabel(IcoStar, t('club_tab_profil', lang)) }] : []),
-    ...(canViewSection('budget') ? [{ id: 'budget', label: iconLabel(IcoWallet, t('club_tab_budget', lang)) }] : []),
-    ...(canViewSection('evenements') ? [{ id: 'evenements', label: iconLabel(IcoCalendar, 'Événements & Projets') }] : []),
-    ...(canViewSection('organigramme') ? [{ id: 'organigramme', label: iconLabel(IcoCarteBadge, t('club_tab_organigramme', lang)) }] : []),
-    ...(canViewSection('staff') ? [{ id: 'staff', label: iconLabel(IcoUsers, t('club_tab_staff', lang)) }] : []),
-    ...(canViewSection('inventaire') ? [{ id: 'inventaire', label: iconLabel(IcoBox, 'Inventaire') }] : []),
-    ...(canViewSection('newsletter') ? [{ id: 'newsletter', label: iconLabel(IcoMegaphone, 'Newsletter') }] : []),
-  ] : []
+    ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
+  ]
+  const NAV_ADMINISTRATIF = [
+    { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
+    { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
+    { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
+    { id: 'budget', label: t('club_tab_budget', lang), Icon: IcoWallet },
+    { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
+    { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
+    { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
+    { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
+    { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
+  ].filter(item => canViewSection(item.id))
+
+  const sportifVisible = NAV_SPORTIF.length > 0
+  const administratifVisible = NAV_ADMINISTRATIF.length > 0
+
+  const TITRES_SECTION = Object.fromEntries([...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF].map(item => [item.id, item.label]))
+
+  const renderNavItem = (item) => {
+    const actif = activeTab === item.id
+    const { Icon } = item
+    return (
+      <button key={item.id}
+        onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}
+        onMouseEnter={e => { if (!actif) e.currentTarget.style.background = colors.background.raised }}
+        onMouseLeave={e => { if (!actif) e.currentTarget.style.background = 'transparent' }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+          padding: '8px 16px', background: actif ? couleurPrincipale + alpha.subtle : 'transparent',
+          border: 'none', borderLeft: `2px solid ${actif ? couleurPrincipale : 'transparent'}`,
+          color: actif ? couleurPrincipale : colors.text.secondary, cursor: 'pointer',
+          fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: actif ? 700 : 500,
+          textAlign: 'left', transition: 'color 0.15s ease, background 0.15s ease',
+        }}>
+        <span style={{ display: 'flex', opacity: actif ? 1 : 0.7, flexShrink: 0 }}><Icon /></span>
+        <span style={{ flex: 1 }}>{item.label}</span>
+        {item.badge > 0 && (
+          <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', minWidth: '18px', textAlign: 'center' }}>
+            {item.badge}
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  const renderNavSection = (id, label, items) => items.length > 0 && (
+    <div key={id} id={id}>
+      <p style={{ fontSize: '10px', color: colors.text.ghost, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 16px 5px', margin: 0 }}>
+        {label}
+      </p>
+      {items.map(renderNavItem)}
+    </div>
+  )
 
   const clubOnboardingSteps = [
     { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de l'espace club en 2 minutes.", targetId: null, position: "center" },
@@ -3355,200 +3376,142 @@ Règles :
     { id: 5, title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
   ]
 
+  // Contrôles utilitaires du header (langue/vue educateur-joueur/thème/personnaliser/
+  // déconnexion) — un seul bloc JSX réutilisé desktop (header sticky) + mobile
+  // (pied de la sidebar/drawer), pour ne pas dupliquer cette logique deux fois.
+  const renderControlesUtilitaires = () => (
+    <>
+      <div style={{ display: 'flex', gap: '4px' }}>
+        {LANGS.map(l => (
+          <button key={l.code} onClick={() => setLang(l.code)}
+            style={{ background: lang === l.code ? couleurPrincipale + '20' : 'transparent', border: `1px solid ${lang === l.code ? couleurPrincipale : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
+            {l.flag}
+          </button>
+        ))}
+      </div>
+      {autreRole === 'educateur' && (
+        <button onClick={() => navigate('/educateur')}
+          style={{ padding: '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
+          🎓 {t('club_vue_educateur', lang)}
+        </button>
+      )}
+      {autreRole === 'joueur' && (
+        <button onClick={() => navigate('/dashboard-joueur')}
+          style={{ padding: '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
+          ⚽ {t('club_vue_joueur', lang)}
+        </button>
+      )}
+      {monRole === 'president' && (
+        <button onClick={() => setShowThemeEditor(v => !v)}
+          style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.secondary, padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          {showThemeEditor ? 'Fermer' : 'Personnaliser'}
+        </button>
+      )}
+    </>
+  )
+
   return (
     <div style={st.page}>
       <OnboardingGuide key={onboardingKey} userId={clubId} steps={clubOnboardingSteps} accentColor={couleurPrincipale} />
       <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} accentColor={couleurPrincipale} estAccueil={activeTab === 'accueil'} masque={showEvenementForm || showProjetForm} />
-      <nav style={st.navbar}>
-        <span style={st.logo}>⬡ DIGITAL FOOTBALL — Club</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '1rem', flexShrink: 0 }}>
-          {!isMobile && <span style={{ fontSize: '13px', color: colors.text.dim }}>{club?.club || club?.prenom}</span>}
-          {!isMobile && (
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {LANGS.map(l => (
-                <button key={l.code} onClick={() => setLang(l.code)}
-                  style={{ background: lang === l.code ? couleurPrincipale + '20' : 'transparent', border: `1px solid ${lang === l.code ? couleurPrincipale : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
-                  {l.flag}
-                </button>
-              ))}
-            </div>
-          )}
-          {autreRole === 'educateur' && (
-            <button onClick={() => navigate('/educateur')}
-              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
-              {isMobile ? '🎓' : `🎓 ${t('club_vue_educateur', lang)}`}
-            </button>
-          )}
-          {autreRole === 'joueur' && (
-            <button onClick={() => navigate('/dashboard-joueur')}
-              style={{ padding: isMobile ? '6px 10px' : '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: isMobile ? '11px' : '13px', fontWeight: 700 }}>
-              {isMobile ? '⚽' : `⚽ ${t('club_vue_joueur', lang)}`}
-            </button>
-          )}
-          <ThemeToggleButton />
-          <button style={{ ...st.btnSecondary, fontSize: isMobile ? '11px' : '13px', padding: isMobile ? '6px 10px' : '8px 14px' }} onClick={handleLogout}>
-            {t('btn_deconnexion', lang)}
-          </button>
-        </div>
-      </nav>
 
       <NotificationBanner userId={clubId} cibles={['tous', 'clubs']} />
 
-      <div style={st.content}>
-        {/* ── Hero banner — couleurs/photo de fond/slogan personnalisables (Personnaliser) ── */}
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px', marginBottom: '1.5rem' }}>
-          {club?.image_fond_url && (
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${club.image_fond_url})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.35)' }} />
-          )}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: club?.image_fond_url
-              ? `linear-gradient(135deg, ${couleurPrincipale}33 0%, ${couleurSecondaire}22 100%)`
-              : `linear-gradient(135deg, ${couleurPrincipale}22 0%, ${colors.background.raised} 70%)`,
-          }} />
-          <div style={{ position: 'relative', padding: isMobile ? '16px' : '20px 24px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+        {/* ── SIDEBAR — fixe en desktop, drawer coulissant en mobile ── */}
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 90 }} />
+        )}
+        <div style={{
+          width: '240px', background: colors.background.surface, borderRight: `1px solid ${colors.border.faint}`,
+          display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: '100vh',
+          ...(isMobile ? {
+            position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px', height: '100%', zIndex: 100,
+            transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
+          } : {
+            position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+          }),
+        }}>
+          <div style={{ padding: '18px 16px', borderBottom: `1px solid ${colors.border.faint}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {club?.image_hero_url
-                ? <img src={club.image_hero_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '18px', objectFit: 'cover', border: `2px solid ${couleurPrincipale}66`, boxShadow: `0 0 20px ${couleurPrincipale}33` }} />
+                ? <img src={club.image_hero_url} alt="" style={{ width: '44px', height: '44px', borderRadius: '10px', objectFit: 'cover', border: `2px solid ${couleurPrincipale}66` }} />
                 : club?.avatar_url
-                  ? <img src={club.avatar_url} alt="" style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
-                  : <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 800, color: couleurPrincipale }}>
+                  ? <img src={club.avatar_url} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
+                  : <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 800, color: couleurPrincipale }}>
                       {clubInitiales}
                     </div>
               }
-              {!club?.image_hero_url && (
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: '28px', height: '28px', background: couleurPrincipale, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarClubUploading ? 'wait' : 'pointer', border: `2px solid ${colors.background.base}`, fontSize: '13px' }}>
-                  {avatarClubUploading ? '…' : '✎'}
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarClubUpload} disabled={avatarClubUploading} />
-                </label>
-              )}
             </div>
-            <div style={{ flex: 1, minWidth: '200px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: colors.text.primary }}>{club?.club || t('club_mon_club', lang)}</h1>
-                {monRole === 'president' && (
-                  <button onClick={() => setShowThemeEditor(v => !v)}
-                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.secondary, padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {showThemeEditor ? 'Fermer' : 'Personnaliser'}
-                  </button>
-                )}
-              </div>
-              {club?.slogan && <p style={{ margin: '4px 0 0', color: couleurPrincipale, fontSize: '13px', fontStyle: 'italic', fontWeight: 500 }}>« {club.slogan} »</p>}
-              <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>{categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {club?.club || t('club_mon_club', lang)}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}
+              </p>
             </div>
           </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '8px' }}>
+            {renderNavSection('cat-accueil', t('club_accueil', lang), NAV_GENERAL)}
+            {renderNavSection('cat-sportif', t('club_sportif', lang), NAV_SPORTIF)}
+            {renderNavSection('cat-administratif', t('club_administratif', lang), NAV_ADMINISTRATIF)}
+          </div>
+
+          {isMobile && (
+            <div style={{ padding: '14px 16px', borderTop: `1px solid ${colors.border.faint}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+              {renderControlesUtilitaires()}
+              <button style={{ ...st.btnSecondary, fontSize: '13px', padding: '6px 14px' }} onClick={handleLogout}>
+                {t('btn_deconnexion', lang)}
+              </button>
+            </div>
+          )}
         </div>
 
-        {showThemeEditor && monRole === 'president' && (
-          <ThemeEditor
-            club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
-            sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
-            savingTheme={savingTheme} themeUploading={themeUploading}
-            isMobile={isMobile} onClose={() => setShowThemeEditor(false)}
-          />
-        )}
-
-        {!isMobile ? (
-          <>
-            {/* Niveau 1 — SPORTIF / ADMINISTRATIF (filtré par rôle) */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingBottom: '2px' }}>
-              {categoriesVisibles.map(cat => (
-                <button
-                  key={cat.id}
-                  id={`cat-${cat.id}`}
-                  onClick={() => { setActiveCategorie(cat.id); setActiveTab(cat.defaultTab) }}
-                  style={{
-                    padding: '12px 28px', borderRadius: '10px',
-                    fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '1px',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                    ...(activeCategorie === cat.id
-                      ? { background: couleurPrincipale, color: colors.black, border: 'none' }
-                      : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
-                  }}
-                >
-                  {cat.label}
+        {/* ── COLONNE PRINCIPALE ── */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            background: colors.background.surface, borderBottom: `1px solid ${colors.border.faint}`,
+            padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 1.5rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px',
+            position: 'sticky', top: 0, zIndex: 30,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+              {isMobile && (
+                <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: '20px', cursor: 'pointer', padding: '4px 4px 4px 0', flexShrink: 0 }}>
+                  ☰
                 </button>
-              ))}
-            </div>
-
-            {/* Niveau 2 — sous-onglets (pas de sous-onglets sur l'accueil) */}
-            {activeCategorie !== 'accueil' && (
-              <div style={st.tabs}>
-                {sousOnglets.map(tab => (
-                  <button key={tab.id} style={st.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {/* Mobile : bouton hamburger + fil d'ariane (catégorie › sous-onglet actifs) */}
-            <button onClick={() => setSidebarOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', marginBottom: '1.5rem', color: colors.text.primary, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              <span style={{ fontSize: '18px', lineHeight: 1 }}>☰</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, flex: 1, textAlign: 'left' }}>
-                {categoriesVisibles.find(c => c.id === activeCategorie)?.label}
-                {activeCategorie !== 'accueil' && sousOnglets.find(t => t.id === activeTab) && (
-                  <span style={{ color: colors.text.faint, fontWeight: 400 }}> › {sousOnglets.find(t => t.id === activeTab)?.label}</span>
-                )}
-              </span>
-            </button>
-
-            {/* Overlay + drawer */}
-            {sidebarOpen && (
-              <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 90 }} />
-            )}
-            <div style={{
-              position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-85%', width: '85%', maxWidth: '320px', height: '100%',
-              background: colors.background.sunken, borderRight: `1px solid ${colors.border.subtle}`, zIndex: 100, transition: 'left 0.25s ease',
-              overflowY: 'auto', padding: '1.25rem 1rem', paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '14px', color: colors.accent.green }}>⬡ Menu</span>
-                <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.25rem' }}>
-                {categoriesVisibles.map(cat => (
-                  <button key={cat.id}
-                    id={`cat-${cat.id}`}
-                    onClick={() => {
-                      setActiveCategorie(cat.id)
-                      setActiveTab(cat.defaultTab)
-                      if (cat.id === 'accueil') setSidebarOpen(false)
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                      background: activeCategorie === cat.id ? couleurPrincipale + '15' : 'transparent',
-                      color: activeCategorie === cat.id ? couleurPrincipale : colors.text.secondary,
-                      fontWeight: 800, fontSize: '13px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
-                    }}>
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
-              {activeCategorie !== 'accueil' && sousOnglets.length > 0 && (
-                <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {sousOnglets.map(tab => (
-                    <button key={tab.id}
-                      onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
-                      style={{
-                        display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: '10px', border: 'none',
-                        background: activeTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent',
-                        color: activeTab === tab.id ? colors.accent.blue : colors.text.muted,
-                        fontWeight: activeTab === tab.id ? 700 : 400, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                      }}>
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
               )}
+              <span style={{ fontWeight: 800, fontSize: isMobile ? '14px' : '15px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {TITRES_SECTION[activeTab]}
+              </span>
             </div>
-          </>
-        )}
+            {!isMobile ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                {renderControlesUtilitaires()}
+                <ThemeToggleButton />
+                <button style={{ ...st.btnSecondary, fontSize: '13px', padding: '8px 14px' }} onClick={handleLogout}>
+                  {t('btn_deconnexion', lang)}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <ThemeToggleButton />
+              </div>
+            )}
+          </div>
+
+          <div style={st.content}>
+            {showThemeEditor && monRole === 'president' && (
+              <ThemeEditor
+                club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
+                sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
+                savingTheme={savingTheme} themeUploading={themeUploading}
+                isMobile={isMobile} onClose={() => setShowThemeEditor(false)}
+              />
+            )}
 
         {/* ── ACCUEIL ── */}
         {activeTab === 'accueil' && (
@@ -6261,6 +6224,8 @@ Règles :
           )
         })()}
       </div>
+          </div>
+        </div>
 
       {/* Modale modification d'un lot de matériel distribué — une ligne par
           article (materiel_distribution n'a pas de colonne articles en JSON),
