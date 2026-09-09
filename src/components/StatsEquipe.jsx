@@ -216,130 +216,139 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
         </div>
       )}
 
+      {!masquerVND && total > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+          {[
+            { label: 'Victoires', val: v, color: colors.accent.green },
+            { label: 'Nuls', val: n, color: colors.accent.amber },
+            { label: 'Défaites', val: d, color: colors.accent.red },
+          ].map(s => (
+            <div key={s.label} style={card}>
+              <p style={{ margin: 0, color: s.color, fontSize: '26px', fontWeight: 800 }}>{s.val}</p>
+              <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{s.label}</p>
+              <p style={{ margin: 0, color: s.color, fontSize: '12px', fontWeight: 600 }}>{pct(s.val, total)}%</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {total === 0 ? (
-        <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '20px' }}>Aucun match joué avec ces filtres.</p>
+        <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '20px', width: '100%', boxSizing: 'border-box' }}>Aucun match joué avec ces filtres.</p>
       ) : (
-        <>
-          {forme.length > 0 && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <span style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', flexShrink: 0 }}>Forme récente</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {forme.map((m, i) => {
-                  const c = m.resultat === 'victoire' ? colors.accent.green : m.resultat === 'nul' ? colors.accent.amber : colors.accent.red
-                  return (
-                    <div key={i} title={`vs ${m.adversaire} · ${m.bp}-${m.bc}`}
-                      style={{ width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700,
-                        background: m.resultat === 'victoire' ? colors.accent.green + alpha.subtle : m.resultat === 'nul' ? colors.accent.amber + alpha.subtle : colors.accent.red + alpha.subtle,
-                        color: c, border: `1px solid ${c}22` }}>
-                      {m.resultat === 'victoire' ? 'V' : m.resultat === 'nul' ? 'N' : 'D'}
-                    </div>
-                  )
-                })}
-              </div>
-              {serie && <span style={{ color: colors.text.secondary, fontSize: '13px' }}>— {serie}</span>}
-            </div>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%' }}>
 
-          {!masquerVND && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
-              {[
-                { label: 'Victoires', val: v, color: colors.accent.green },
-                { label: 'Nuls', val: n, color: colors.accent.amber },
-                { label: 'Défaites', val: d, color: colors.accent.red },
-              ].map(s => (
-                <div key={s.label} style={card}>
-                  <p style={{ margin: 0, color: s.color, fontSize: '26px', fontWeight: 800 }}>{s.val}</p>
-                  <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{s.label}</p>
-                  <p style={{ margin: 0, color: s.color, fontSize: '12px', fontWeight: 600 }}>{pct(s.val, total)}%</p>
+          {/* Colonne gauche — forme récente, buts marqués, charts "marqués" */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {forme.length > 0 && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ color: colors.text.faint, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', flexShrink: 0 }}>Forme récente</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {forme.map((m, i) => {
+                    const c = m.resultat === 'victoire' ? colors.accent.green : m.resultat === 'nul' ? colors.accent.amber : colors.accent.red
+                    return (
+                      <div key={i} title={`vs ${m.adversaire} · ${m.bp}-${m.bc}`}
+                        style={{ width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700,
+                          background: m.resultat === 'victoire' ? colors.accent.green + alpha.subtle : m.resultat === 'nul' ? colors.accent.amber + alpha.subtle : colors.accent.red + alpha.subtle,
+                          color: c, border: `1px solid ${c}22` }}>
+                        {m.resultat === 'victoire' ? 'V' : m.resultat === 'nul' ? 'N' : 'D'}
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
+                {serie && <span style={{ color: colors.text.secondary, fontSize: '13px' }}>— {serie}</span>}
+              </div>
+            )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
             <div style={card}>
               <p style={{ margin: 0, color: colors.accent.green, fontSize: '22px', fontWeight: 800 }}>{butsP}</p>
               <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>Buts marqués</p>
               <p style={{ margin: 0, color: colors.text.dim, fontSize: '11px' }}>{(butsP / total).toFixed(1)}/match</p>
             </div>
             <div style={card}>
-              <p style={{ margin: 0, color: colors.accent.red, fontSize: '22px', fontWeight: 800 }}>{butsE}</p>
-              <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>Buts encaissés</p>
-              <p style={{ margin: 0, color: colors.text.dim, fontSize: '11px' }}>{(butsE / total).toFixed(1)}/match</p>
-            </div>
-            <div style={card}>
               <p style={{ margin: 0, color: colors.accent.purpleLight, fontSize: '22px', fontWeight: 800 }}>{cleanSheets}</p>
               <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>Clean sheets</p>
               <p style={{ margin: 0, color: colors.text.dim, fontSize: '11px' }}>{pct(cleanSheets, total)}%</p>
             </div>
-          </div>
 
-          {filtreLieu === 'all' && (dom.length > 0 || ext.length > 0) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {[
-                { label: 'Domicile', liste: dom, color: colors.accent.green },
-                { label: 'Extérieur', liste: ext, color: colors.accent.blue },
-              ].map(({ label, liste, color }) => {
-                const pctV = pctVictoire(liste)
-                return (
-                  <div key={label} style={{ ...card, textAlign: 'left' }}>
-                    <p style={{ margin: '0 0 8px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{label}</p>
-                    <p style={{ margin: '0 0 8px', color: colors.text.faint, fontSize: '12px' }}>{liste.length} match{liste.length > 1 ? 's' : ''}</p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <span style={{ color: colors.accent.green, fontSize: '12px' }}>V {liste.filter(m => m.resultat === 'victoire').length}</span>
-                      <span style={{ color: colors.accent.amber, fontSize: '12px' }}>N {liste.filter(m => m.resultat === 'nul').length}</span>
-                      <span style={{ color: colors.accent.red, fontSize: '12px' }}>D {liste.filter(m => m.resultat === 'defaite').length}</span>
-                    </div>
-                    {pctV !== null && <p style={{ margin: '8px 0 0', color, fontSize: '15px', fontWeight: 700 }}>{pctV}% victoires</p>}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {butsAvecMinute.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+            {butsAvecMinute.length > 0 && (
               <div style={{ ...card, textAlign: 'left' }}>
                 <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par quart d'heure</p>
                 <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q.marques }))} color={colors.accent.green} colors={colors} />
               </div>
-              <div style={{ ...card, textAlign: 'left' }}>
-                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par quart d'heure</p>
-                <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q.encaisses }))} color={colors.accent.red} colors={colors} />
-              </div>
-            </div>
-          )}
-
-          {natureGraphique.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+            )}
+            {natureGraphique.length > 0 && (
               <div style={{ ...card, textAlign: 'left' }}>
                 <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par nature</p>
                 <BarresHorizontales data={natureGraphique.filter(n => n.marques > 0).map(n => ({ label: n.label, valeur: n.marques }))} color={colors.accent.green} colors={colors} />
               </div>
-              <div style={{ ...card, textAlign: 'left' }}>
-                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par nature</p>
-                <BarresHorizontales data={natureGraphique.filter(n => n.encaisses > 0).map(n => ({ label: n.label, valeur: n.encaisses }))} color={colors.accent.red} colors={colors} />
-              </div>
-            </div>
-          )}
-
-          {coteGraphique.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginTop: '10px' }}>
+            )}
+            {coteGraphique.length > 0 && (
               <div style={{ ...card, textAlign: 'left' }}>
                 <p style={{ margin: '0 0 14px', color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>Buts marqués par côté</p>
                 <BarresHorizontales data={coteGraphique.filter(c => c.marques > 0).map(c => ({ label: c.label, valeur: c.marques }))} color={colors.accent.green} colors={colors} />
               </div>
+            )}
+          </div>
+
+          {/* Colonne droite — filtres déjà affichés au-dessus (visibles même à
+              0 résultat, pour pouvoir revenir en arrière), domicile/extérieur,
+              charts "encaissés" */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {filtreLieu === 'all' && (dom.length > 0 || ext.length > 0) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {[
+                  { label: 'Domicile', liste: dom, color: colors.accent.green },
+                  { label: 'Extérieur', liste: ext, color: colors.accent.blue },
+                ].map(({ label, liste, color }) => {
+                  const pctV = pctVictoire(liste)
+                  return (
+                    <div key={label} style={{ ...card, textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 8px', color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{label}</p>
+                      <p style={{ margin: '0 0 8px', color: colors.text.faint, fontSize: '12px' }}>{liste.length} match{liste.length > 1 ? 's' : ''}</p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <span style={{ color: colors.accent.green, fontSize: '12px' }}>V {liste.filter(m => m.resultat === 'victoire').length}</span>
+                        <span style={{ color: colors.accent.amber, fontSize: '12px' }}>N {liste.filter(m => m.resultat === 'nul').length}</span>
+                        <span style={{ color: colors.accent.red, fontSize: '12px' }}>D {liste.filter(m => m.resultat === 'defaite').length}</span>
+                      </div>
+                      {pctV !== null && <p style={{ margin: '8px 0 0', color, fontSize: '15px', fontWeight: 700 }}>{pctV}% victoires</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div style={card}>
+              <p style={{ margin: 0, color: colors.accent.red, fontSize: '22px', fontWeight: 800 }}>{butsE}</p>
+              <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>Buts encaissés</p>
+              <p style={{ margin: 0, color: colors.text.dim, fontSize: '11px' }}>{(butsE / total).toFixed(1)}/match</p>
+            </div>
+
+            {butsAvecMinute.length > 0 && (
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par quart d'heure</p>
+                <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q.encaisses }))} color={colors.accent.red} colors={colors} />
+              </div>
+            )}
+            {natureGraphique.length > 0 && (
+              <div style={{ ...card, textAlign: 'left' }}>
+                <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par nature</p>
+                <BarresHorizontales data={natureGraphique.filter(n => n.encaisses > 0).map(n => ({ label: n.label, valeur: n.encaisses }))} color={colors.accent.red} colors={colors} />
+              </div>
+            )}
+            {coteGraphique.length > 0 && (
               <div style={{ ...card, textAlign: 'left' }}>
                 <p style={{ margin: '0 0 14px', color: colors.accent.red, fontWeight: 700, fontSize: '13px' }}>Buts encaissés par côté</p>
                 <BarresHorizontales data={coteGraphique.filter(c => c.encaisses > 0).map(c => ({ label: c.label, valeur: c.encaisses }))} color={colors.accent.red} colors={colors} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+      )}
 
-          <p style={{ margin: '14px 0 0', color: colors.text.ghost, fontSize: '11px', textAlign: 'center' }}>
-            {total} match{total > 1 ? 's' : ''} joué{total > 1 ? 's' : ''}{filtreCompetition !== 'all' ? ` · ${filtreCompetition}` : ''}{filtreLieu !== 'all' ? ` · ${filtreLieu === 'domicile' ? 'domicile' : 'extérieur'}` : ''}
-          </p>
-        </>
+      {total > 0 && (
+        <p style={{ margin: '14px 0 0', color: colors.text.ghost, fontSize: '11px', textAlign: 'center' }}>
+          {total} match{total > 1 ? 's' : ''} joué{total > 1 ? 's' : ''}{filtreCompetition !== 'all' ? ` · ${filtreCompetition}` : ''}{filtreLieu !== 'all' ? ` · ${filtreLieu === 'domicile' ? 'domicile' : 'extérieur'}` : ''}
+        </p>
       )}
     </div>
   )
