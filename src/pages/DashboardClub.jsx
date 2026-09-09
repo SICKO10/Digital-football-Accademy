@@ -292,7 +292,7 @@ const MOIS_LABEL = (dateStr) => {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-const STAT_CARD_COLORS = { green: colors.accent.green, orange: '#f59e0b', red: colors.accent.red }
+const STAT_CARD_COLORS = { green: colors.accent.green, orange: '#f59e0b', red: colors.accent.red, blue: colors.accent.blue }
 function StatCard({ label, valeur, couleur }) {
   const colors = useColors()
   const color = STAT_CARD_COLORS[couleur] || colors.text.primary
@@ -4057,13 +4057,13 @@ Règles :
                   <div style={{ marginBottom: '2rem' }}>
                     {nbMatchsJoues > 0 && (
                       <div style={{ marginBottom: '1.5rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '10px' }}>
                           <StatCard label={t('jp_matchs_joues', lang)} valeur={nbMatchsJoues} />
                           <StatCard label={t('club_taux_victoire', lang)} valeur={`${tauxV}%`} couleur="green" />
                           <StatCard label={t('club_taux_nul', lang)} valeur={`${tauxN}%`} couleur="orange" />
                           <StatCard label={t('club_taux_defaite', lang)} valeur={`${tauxD}%`} couleur="red" />
+                          <StatCard label={t('jp_clean_sheets', lang)} valeur={`${tauxCS}%`} couleur="blue" />
                         </div>
-                        <StatCard label={t('jp_clean_sheets', lang)} valeur={`${tauxCS}%`} />
                       </div>
                     )}
                     {nbMatchsJoues > 0 && (
