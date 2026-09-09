@@ -5184,81 +5184,140 @@ Règles :
               </div>
             )}
 
+            {/* ── FILTRES DÉPARTEMENTS ── */}
             {organigramme.length > 0 && (
-              <input
-                type="text"
-                placeholder="🔍 Rechercher un membre, un rôle, un département…"
-                value={orgSearchQuery}
-                onChange={e => setOrgSearchQuery(e.target.value)}
-                style={{ width: '100%', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }}
-              />
-            )}
-
-            {organigramme.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[...new Set(organigramme.map(m => m.departement || 'Autre'))].map(dept => {
                   const c = getDeptColor(dept, colors)
+                  const actif = orgFiltreDepart === dept
                   return (
-                    <span key={dept} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: `1px solid ${c.border}`, color: c.text, background: c.bg }}>
-                      ● {dept}
-                    </span>
+                    <button key={dept} onClick={() => setOrgFiltreDepart(actif ? null : dept)}
+                      style={{ fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '20px', border: `1px solid ${actif ? c.border : colors.border.default}`, color: actif ? c.text : colors.text.faint, background: actif ? c.bg : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.dot, display: 'inline-block', flexShrink: 0 }} />
+                      {dept}
+                    </button>
                   )
                 })}
               </div>
             )}
 
-            {organigramme.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.text.dim }}>
-                <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🏛️</p>
-                <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: colors.text.dim }}>Aucun membre dans l'organigramme</p>
-                <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
-                  {construireArbreOrganigramme(organigramme).map((root, i) => (
-                    <OrgNode
-                      key={root.id || i} node={root} depth={0}
-                      expandedNodes={orgExpandedNodes} onToggle={toggleOrgNode} searchQuery={orgSearchQuery}
-                      canEdit={canEditSection('organigramme')} onEdit={ouvrirModalOrganigramme} onDelete={supprimerMembreOrganigramme}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* ── CONTENU — 2 colonnes ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', alignItems: 'start' }}>
 
-            {/* ── Éducateurs ── */}
-            <div style={{ marginTop: '32px' }}>
-              {(() => {
-                const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
-                return (
-                  <>
-                    <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>Éducateurs ({educateursAcceptes.length})</h3>
-                    <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 16px' }}>Éducateurs affiliés au club — clique pour voir leurs coordonnées et la catégorie gérée.</p>
-                    {educateursAcceptes.length === 0 ? (
-                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun éducateur affilié pour l'instant.</p>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                        {educateursAcceptes.map(e => (
-                          <div key={e.id}
-                            onClick={() => setEducateurOrgDetail(e)}
-                            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
-                            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: colors.accent.blue + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '8px', overflow: 'hidden' }}>
-                              {e.educateur?.avatar_url
-                                ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
-                            </div>
-                            <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0 }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
-                            <p style={{ color: colors.accent.blue, fontSize: '11px', margin: '2px 0 0' }}>
-                              {categories.find(c => c.educateur_id === e.educateur_id)?.nom || 'Éducateur'}
-                            </p>
+              {/* Colonne gauche — arbre hiérarchique */}
+              <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '24px' }}>
+                <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 20px' }}>Hiérarchie du club</p>
+                {organigramme.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: colors.text.dim }}>
+                    <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🏛️</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: colors.text.dim }}>Aucun membre dans l'organigramme</p>
+                    <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
+                      {construireArbreOrganigramme(orgFiltreDepart ? organigramme.filter(m => (m.departement || 'Autre') === orgFiltreDepart) : organigramme).map((root, i) => (
+                        <OrgNode
+                          key={root.id || i} node={root} depth={0}
+                          expandedNodes={orgExpandedNodes} onToggle={toggleOrgNode} searchQuery={orgSearchQuery}
+                          canEdit={canEditSection('organigramme')} onEdit={ouvrirModalOrganigramme} onDelete={supprimerMembreOrganigramme}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Colonne droite — stats + éducateurs + parents */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(() => {
+                  const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
+                  const membresDirection = organigramme.filter(m => (m.departement || 'Autre') === 'Direction').length
+                  const q = parentsSearchQuery.trim().toLowerCase()
+                  const parentsFiltres = !q ? parentsClub : parentsClub.filter(p => [
+                    p.prenom, p.nom, p.profession, p.joueur?.prenom, p.joueur?.nom, p.joueur?.categorie, p.joueur?.niveau_equipe,
+                  ].some(v => v?.toLowerCase().includes(q)))
+
+                  return (
+                    <>
+                      {/* Stats rapides */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        {[
+                          { label: 'Membres direction', value: membresDirection, color: colors.accent.blue },
+                          { label: 'Éducateurs', value: educateursAcceptes.length, color: colors.accent.green },
+                          { label: 'Parents', value: parentsClub.length, color: colors.accent.amber },
+                        ].map(s => (
+                          <div key={s.label} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '22px', fontWeight: 900, color: s.color }}>{s.value}</div>
+                            <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px', lineHeight: 1.3 }}>{s.label}</div>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </>
-                )
-              })()}
+
+                      {/* Éducateurs */}
+                      <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', overflow: 'hidden' }}>
+                        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${colors.border.faint}` }}>
+                          <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>👨‍🏫 Éducateurs ({educateursAcceptes.length})</span>
+                        </div>
+                        {educateursAcceptes.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun éducateur affilié pour l'instant.</p>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: colors.border.faint }}>
+                            {educateursAcceptes.map(e => (
+                              <div key={e.id} onClick={() => setEducateurOrgDetail(e)}
+                                style={{ background: colors.background.sunken, padding: '14px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: colors.accent.blue + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '12px', flexShrink: 0, overflow: 'hidden' }}>
+                                  {e.educateur?.avatar_url
+                                    ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.educateur?.prenom} {e.educateur?.nom}</div>
+                                  <div style={{ color: colors.accent.blue, fontSize: '11px', fontWeight: 600 }}>
+                                    {categories.find(c => c.educateur_id === e.educateur_id)?.nom || 'Éducateur'}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Parents — liste compacte scrollable */}
+                      <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', overflow: 'hidden' }}>
+                        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${colors.border.faint}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>👨‍👩‍👧 Parents ({parentsClub.length})</span>
+                          {parentsClub.length > 0 && (
+                            <input placeholder="Rechercher..." value={parentsSearchQuery} onChange={e => setParentsSearchQuery(e.target.value)}
+                              style={{ padding: '5px 10px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontSize: '12px', width: '130px', outline: 'none' }} />
+                          )}
+                        </div>
+                        {parentsClub.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent enregistré pour l'instant.</p>
+                        ) : parentsFiltres.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent ne correspond à cette recherche.</p>
+                        ) : (
+                          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                            {parentsFiltres.map(p => (
+                              <div key={p.id} onClick={() => setParentDetail(p)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 18px', borderBottom: `1px solid ${colors.border.faint}`, cursor: 'pointer' }}>
+                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: colors.accent.green + '15', color: colors.accent.green, fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {p.prenom?.[0]}{p.nom?.[0]}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.prenom} {p.nom}</div>
+                                  {p.profession && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{p.profession}</div>}
+                                </div>
+                                {p.joueur && <span style={{ color: colors.accent.green, fontSize: '11px', flexShrink: 0 }}>{p.joueur.prenom} {p.joueur.nom}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
             </div>
 
             {/* ── Modale détail éducateur (organigramme) ── */}
@@ -5290,52 +5349,6 @@ Règles :
                 </div>
               )
             })()}
-
-            {/* ── Parents ── */}
-            <div style={{ marginTop: '32px' }}>
-              <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>👨‍👩‍👦 Parents ({parentsClub.length})</h3>
-              <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 16px' }}>Coordonnées des parents ayant complété leur profil, tous joueurs du club confondus.</p>
-              {parentsClub.length > 0 && (
-                <input
-                  type="text"
-                  placeholder="🔍 Rechercher un parent, un joueur, une catégorie, une profession…"
-                  value={parentsSearchQuery}
-                  onChange={e => setParentsSearchQuery(e.target.value)}
-                  style={{ width: '100%', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box', outline: 'none' }}
-                />
-              )}
-              {(() => {
-                const q = parentsSearchQuery.trim().toLowerCase()
-                const parentsFiltres = !q ? parentsClub : parentsClub.filter(p => [
-                  p.prenom, p.nom, p.profession, p.joueur?.prenom, p.joueur?.nom, p.joueur?.categorie, p.joueur?.niveau_equipe,
-                ].some(v => v?.toLowerCase().includes(q)))
-                if (parentsClub.length === 0) {
-                  return <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent enregistré pour l'instant.</p>
-                }
-                if (parentsFiltres.length === 0) {
-                  return <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun parent ne correspond à cette recherche.</p>
-                }
-                return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                  {parentsFiltres.map(p => (
-                    <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: colors.accent.green + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '15px', marginBottom: '10px' }}>
-                        {p.prenom?.[0]}{p.nom?.[0]}
-                      </div>
-                      <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0 }}>{p.prenom} {p.nom}</p>
-                      {p.profession && <p style={{ color: colors.text.faint, fontSize: '11px', margin: '2px 0 0' }}>{p.profession}</p>}
-                      <p style={{ color: colors.text.faint, fontSize: '11px', margin: '6px 0 0', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '6px' }}>
-                        Parent de {p.joueur?.prenom} {p.joueur?.nom} · {p.joueur?.categorie || p.joueur?.niveau_equipe || '—'}
-                      </p>
-                      <button onClick={() => setParentDetail(p)} style={{ width: '100%', marginTop: '10px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '7px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        Voir les infos
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                )
-              })()}
-            </div>
 
             {/* ── Joueurs par catégorie ── */}
             <div style={{ marginTop: '32px' }}>
