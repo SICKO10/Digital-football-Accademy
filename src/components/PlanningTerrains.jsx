@@ -4,6 +4,7 @@ import { normaliserHeure, normaliserCle, trouverFeuilleAvecDonnees } from '../li
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { labelCategorie } from '../lib/categories'
 import { makeUseSt } from '../lib/theme'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
@@ -145,6 +146,7 @@ const useSt = makeUseSt(stSombre, stClaire)
 
 export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, equipeActiveId, accentColor = '#4ade80', readOnly = false }) {
   const st = useSt()
+  const isMobile = useWindowWidth() < 768
   const estDirigeant = mode === 'dirigeant' && !readOnly
   const [vue, setVue] = useState('planning') // 'configuration' | 'planning'
 
@@ -1083,7 +1085,7 @@ Règles :
                   </div>
 
                   {alertOuvert && (
-                    <div style={{ borderTop: '1px solid #f59e0b20', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px', background: '#f59e0b10' }}>
+                    <div style={{ borderTop: '1px solid #f59e0b20', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '1px', background: '#f59e0b10' }}>
                       {matchsSansTerrainTous.map(m => {
                         const cat = categories.find(c => c.id === m.club_categorie_id) || categories.find(c => c.educateur_id === m.educateur_id)
                         const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
@@ -1114,7 +1116,7 @@ Règles :
               {loadingPlanning ? (
                 <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', width: '100%' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(7, 1fr)', gap: isMobile ? '12px' : '8px', width: '100%' }}>
                   {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
                     const matchsJour = matchsDuJour(j.dateStr)

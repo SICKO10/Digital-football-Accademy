@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
+import { useWindowWidth } from '../../hooks/useWindowWidth'
 import ProjetKanban from './ProjetKanban'
 
 const STATUTS_PROJET_COULEUR = { en_attente: '#f59e0b', en_cours: '#3b82f6', termine: '#4ade80' }
@@ -30,6 +31,7 @@ const actionsDeEtape = (e) => (e.etape_missions || []).flatMap(actionsDeMission)
 // recharge, sans colonne dédiée en base.
 export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition, onProjetMisAJour }) {
   const colors = useColors()
+  const isMobile = useWindowWidth() < 768
   const [notes, setNotes] = useState(projet.notes || '')
   const [ongletActif, setOngletActif] = useState('kanban')
   const [etapesOuvertes, setEtapesOuvertes] = useState({})
@@ -369,7 +371,7 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
                           {missionOuverte && (
                             <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                               {/* Référent + dates */}
-                              <div style={{ display: 'grid', gridTemplateColumns: canEdit ? '1fr 1fr 1fr' : '1fr', gap: '8px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: (!canEdit || isMobile) ? '1fr' : '1fr 1fr 1fr', gap: '8px' }}>
                                 <div>
                                   <p style={miniLabel}>Référent</p>
                                   {canEdit ? (
@@ -419,7 +421,7 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
                               </div>
 
                               {/* Ressources */}
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '8px' }}>
                                 <div>
                                   <p style={miniLabel}>Ress. humaine</p>
                                   {canEdit ? <input placeholder="Ex: 2 bénévoles" value={valeurMission(mission, 'ressource_humaine')} onChange={e => changerChampMission(mission.id, 'ressource_humaine', e.target.value)} onBlur={() => sauvegarderChampMission(mission, 'ressource_humaine')} style={{ ...inputSm, width: '100%' }} /> : <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary }}>{mission.ressource_humaine || '—'}</p>}

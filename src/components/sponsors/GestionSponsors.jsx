@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { makeUseSt } from '../../lib/theme'
+import { useWindowWidth } from '../../hooks/useWindowWidth'
 
 const COULEURS_NIVEAU = [
   { val: '#22c55e', label: 'Vert' },
@@ -218,6 +219,7 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
 function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor = '#4ade80' }) {
   const st = useSt()
+  const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
     entreprise: sponsor?.entreprise || '',
     contact_nom: sponsor?.contact_nom || '',
@@ -275,7 +277,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
               {ROLES_SPONSOR.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
             </select>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={st.label}>Contact — nom</label>
               <input style={st.input} value={form.contact_nom} onChange={e => champ('contact_nom', e.target.value)} />
@@ -306,7 +308,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
             <label style={st.label}>Montant du contrat (€)</label>
             <input style={st.input} type="number" min="0" step="0.01" value={form.montant_contrat} onChange={e => champ('montant_contrat', e.target.value)} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={st.label}>Date de signature</label>
               <input style={st.input} type="date" value={form.date_signature} onChange={e => champ('date_signature', e.target.value)} />
@@ -487,6 +489,7 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 // ── Composant principal ──────────────────────────────────────────────────────
 export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
   const st = useSt()
+  const isMobile = useWindowWidth() < 768
   const [vue, setVue] = useState('dashboard')
   const [saisonActive, setSaisonActive] = useState(saison)
   const [niveaux, setNiveaux] = useState([])
@@ -693,7 +696,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
       {vue === 'dashboard' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
             <div style={st.card}>
               <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Sponsors actifs</p>
               <p style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: accentColor }}>{sponsors.length}</p>
@@ -733,7 +736,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '20px', alignItems: 'start' }}>
 
             {/* Colonne gauche — niveaux + derniers sponsors */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
