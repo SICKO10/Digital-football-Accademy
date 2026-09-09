@@ -5255,7 +5255,7 @@ Règles :
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                         {[
                           { label: 'Membres direction', value: membresDirection, color: colors.accent.blue },
-                          { label: 'Éducateurs', value: educateursAcceptes.length, color: colors.accent.green },
+                          { label: 'Éducateurs', value: educateursAcceptes.length, color: colors.accent.blue },
                           { label: 'Parents', value: parentsClub.length, color: colors.accent.amber },
                         ].map(s => (
                           <div key={s.label} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
@@ -5273,7 +5273,7 @@ Règles :
                         {educateursAcceptes.length === 0 ? (
                           <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun éducateur affilié pour l'instant.</p>
                         ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: colors.border.faint }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1px', background: colors.border.faint }}>
                             {educateursAcceptes.map(e => (
                               <div key={e.id} onClick={() => setEducateurOrgDetail(e)}
                                 style={{ background: colors.background.sunken, padding: '14px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
@@ -6023,7 +6023,7 @@ Règles :
                   {canEditSection('inventaire') && <button onClick={() => setModalCatalogue(true)} style={st.btnSecondary}>⚙️ Gérer le catalogue</button>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '20px', alignItems: 'start', marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '20px', alignItems: 'start' }}>
 
                   {/* Colonne gauche — stock par catégorie, +/− */}
                   <div style={{ ...st.card, padding: 0, overflow: 'hidden' }}>
@@ -6060,7 +6060,8 @@ Règles :
                     })}
                   </div>
 
-                  {/* Colonne droite — distribuer du matériel */}
+                  {/* Colonne droite — distribuer du matériel + historique */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {canEditSection('inventaire') && (
                     <div style={st.card}>
                       <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📦 Distribuer du matériel</p>
@@ -6135,13 +6136,13 @@ Règles :
                       </button>
                     </div>
                   )}
-                </div>
 
-                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Matériel distribué ({lots.length})</p>
-                {lots.length === 0 ? (
-                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={st.card}>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📋 Historique ({lots.length})</p>
+                    {lots.length === 0 ? (
+                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {saisonsTriees.map(saison => {
                       const lotsSaison = lotsParSaison[saison]
                       const isOpen = saisonOuverte === undefined ? saison === saisonsTriees[0] : saisonOuverte === saison
@@ -6203,6 +6204,10 @@ Règles :
                     })}
                   </div>
                 )}
+                  </div>
+
+                  </div>
+                </div>
               </div>
               )
             })()}
