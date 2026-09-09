@@ -4030,8 +4030,13 @@ Règles :
               {/* ── Résultats & classement officiel ── */}
               {(() => {
                 const matchsCat = clubMatchs[categorieActive] || []
-                const derniersMatchs = matchsCat.slice(0, 5)
+                // matchsCat est trié par date décroissante (query .order('date',
+                // {ascending:false})), mais contient aussi les matchs à venir sans
+                // score — "Derniers résultats" doit se baser sur matchsAvecScore
+                // (déjà dans le bon ordre) pour ne montrer que des matchs réellement
+                // joués, pas les prochains matchs programmés.
                 const matchsAvecScore = matchsCat.filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_eux !== '' && m.score_eux !== null)
+                const derniersMatchs = matchsAvecScore.slice(0, 5)
                 const nbMatchsJoues = matchsAvecScore.length
                 let victoires = 0, nuls = 0, defaites = 0, cleanSheets = 0
                 matchsAvecScore.forEach(m => {
