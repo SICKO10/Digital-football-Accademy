@@ -5979,6 +5979,17 @@ Règles :
               })
               const saisonsTriees = Object.keys(lotsParSaison).sort((a, b) => b.localeCompare(a))
 
+              // Icône décorative par catégorie — catégories en texte libre (créées par
+              // le club dans "Gérer le catalogue"), simple correspondance par mot-clé.
+              const ICONE_CATEGORIE_MATERIEL = (cat) => {
+                const c = (cat || '').toLowerCase()
+                if (c.includes('ballon')) return '⚽'
+                if (c.includes('but') || c.includes('cage')) return '🥅'
+                if (c.includes('chasuble')) return '🦺'
+                if (c.includes('transport') || c.includes('sac')) return '🎒'
+                return '📦'
+              }
+
               // Stock du club groupé par catégorie de matériel (Ballons, Cônes...)
               // — plus lisible qu'une colonne "Catégorie" répétée à chaque ligne.
               const stockGroupes = []
@@ -5989,105 +6000,107 @@ Règles :
                 stockParGroupe[cle].push(item)
               })
 
+              const totalUnitesStock = materielStock.reduce((s, x) => s + (x.quantite_totale || 0), 0)
+
               return (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Stock du club</p>
-                  {canEditSection('inventaire') && <button onClick={() => setModalCatalogue(true)} style={st.btnSecondary}>Gérer le catalogue</button>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: '14px' }}>Stock du club</p>
+                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '12px' }}>{materielCatalogue.length} article{materielCatalogue.length > 1 ? 's' : ''} · {totalUnitesStock} unité{totalUnitesStock > 1 ? 's' : ''} en stock</p>
+                  </div>
+                  {canEditSection('inventaire') && <button onClick={() => setModalCatalogue(true)} style={st.btnSecondary}>⚙️ Gérer le catalogue</button>}
                 </div>
-                <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: `1px solid ${colors.border.default}` }}>
-                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Matériel</th>
-                        <th style={{ textAlign: 'left', padding: '8px', color: colors.text.dim }}>Quantité</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockGroupes.map(cat => (
-                        <Fragment key={cat}>
-                          <tr>
-                            <td colSpan={2} style={{ padding: 0 }}>
-                              <div style={{ color: '#888', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', padding: '10px 0 4px', borderBottom: '1px solid #1a1a1a', textTransform: 'uppercase' }}>{cat}</div>
-                            </td>
-                          </tr>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '20px', alignItems: 'start', marginBottom: '2rem' }}>
+
+                  {/* Colonne gauche — stock par catégorie, +/− */}
+                  <div style={{ ...st.card, padding: 0, overflow: 'hidden' }}>
+                    {stockGroupes.length === 0 ? (
+                      <p style={{ padding: '20px', color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', margin: 0 }}>Aucun article au catalogue.</p>
+                    ) : stockGroupes.map(cat => {
+                      const totalCat = stockParGroupe[cat].reduce((s, item) => s + (materielStock.find(st2 => st2.catalogue_id === item.id)?.quantite_totale || 0), 0)
+                      return (
+                        <div key={cat}>
+                          <div style={{ padding: '8px 18px', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ color: colors.text.faint, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase' }}>{ICONE_CATEGORIE_MATERIEL(cat)} {cat}</span>
+                            <span style={{ color: colors.text.ghost, fontSize: '11px' }}>{totalCat} unité{totalCat > 1 ? 's' : ''}</span>
+                          </div>
                           {stockParGroupe[cat].map(item => {
                             const s = materielStock.find(st2 => st2.catalogue_id === item.id)
                             const qte = s?.quantite_totale || 0
                             return (
-                              <tr key={item.id} style={{ borderBottom: `1px solid ${colors.border.default}40` }}>
-                                <td style={{ padding: '8px' }}>{item.nom}</td>
-                                <td style={{ padding: '8px' }}>
-                                  {canEditSection('inventaire') ? (
-                                    <input type="number" min="0" defaultValue={qte} onBlur={e => mettreAJourStockMateriel(item.id, Math.max(0, Number(e.target.value) || 0))} style={{ ...st.input, width: '80px', padding: '4px 8px' }} />
-                                  ) : (
-                                    <span style={{ color: qte > 0 ? '#4ade80' : '#444', fontWeight: qte > 0 ? 700 : 400 }}>{qte}</span>
-                                  )}
-                                </td>
-                              </tr>
+                              <div key={item.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 18px', borderBottom: `1px solid ${colors.border.faint}`, gap: '12px' }}>
+                                <span style={{ color: qte > 0 ? colors.text.secondary : colors.text.ghost, flex: 1, fontSize: '13px' }}>{item.nom}</span>
+                                {canEditSection('inventaire') ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <button onClick={() => mettreAJourStockMateriel(item.id, Math.max(0, qte - 1))} style={{ width: 26, height: 26, borderRadius: '6px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, cursor: 'pointer', fontSize: '14px' }}>−</button>
+                                    <span style={{ width: 36, textAlign: 'center', fontWeight: 700, color: qte > 0 ? colors.accent.green : colors.text.ghost, fontSize: '15px' }}>{qte}</span>
+                                    <button onClick={() => mettreAJourStockMateriel(item.id, qte + 1)} style={{ width: 26, height: 26, borderRadius: '6px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, cursor: 'pointer', fontSize: '14px' }}>+</button>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontWeight: 700, color: qte > 0 ? colors.accent.green : colors.text.ghost, fontSize: '15px' }}>{qte}</span>
+                                )}
+                              </div>
                             )
                           })}
-                        </Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                        </div>
+                      )
+                    })}
+                  </div>
 
-                {canEditSection('inventaire') && (
-                  <>
-                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Distribuer du matériel</p>
-                    <div style={{ ...st.card, marginBottom: '2rem' }}>
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
+                  {/* Colonne droite — distribuer du matériel */}
+                  {canEditSection('inventaire') && (
+                    <div style={st.card}>
+                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📦 Distribuer du matériel</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
                         <div>
                           <label style={st.label}>Éducateur</label>
-                          <select value={distributionForm.educateur_id} onChange={e => setDistributionForm(f => ({ ...f, educateur_id: e.target.value }))} style={{ ...st.input, width: 'auto' }}>
+                          <select value={distributionForm.educateur_id} onChange={e => setDistributionForm(f => ({ ...f, educateur_id: e.target.value }))} style={st.input}>
                             <option value="">Choisir...</option>
                             {educateursAffilies.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
                           </select>
                         </div>
                         <div>
                           <label style={st.label}>Équipe</label>
-                          <input value={distributionForm.equipe_nom} onChange={e => setDistributionForm(f => ({ ...f, equipe_nom: e.target.value }))} placeholder="Ex : U15 A" style={{ ...st.input, width: '120px' }} />
+                          <input value={distributionForm.equipe_nom} onChange={e => setDistributionForm(f => ({ ...f, equipe_nom: e.target.value }))} placeholder="Ex : U15 A" style={st.input} />
                         </div>
                         <div>
                           <label style={st.label}>Saison</label>
-                          <input value={distributionForm.saison} onChange={e => setDistributionForm(f => ({ ...f, saison: e.target.value }))} placeholder="2025-2026" style={{ ...st.input, width: '110px' }} />
+                          <input value={distributionForm.saison} onChange={e => setDistributionForm(f => ({ ...f, saison: e.target.value }))} placeholder="2025-2026" style={st.input} />
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '14px' }}>
-                        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '200px' }}>
-                          <label style={st.label}>Article</label>
-                          <input
-                            placeholder="Rechercher un article..."
-                            value={rechercheArticle}
-                            onChange={e => { setRechercheArticle(e.target.value); setShowSuggestionsArticle(true); setArticleAjoutForm(f => ({ ...f, catalogue_id: '' })) }}
-                            onFocus={() => setShowSuggestionsArticle(true)}
-                            onBlur={() => setTimeout(() => setShowSuggestionsArticle(false), 150)}
-                            style={{ ...st.input, border: articleAjoutForm.catalogue_id ? `1px solid ${colors.accent.green}` : st.input.border }}
-                          />
-                          {showSuggestionsArticle && rechercheArticle.length >= 1 && (() => {
-                            const suggestions = materielCatalogue.filter(c => c.nom.toLowerCase().includes(rechercheArticle.toLowerCase()) || c.categorie.toLowerCase().includes(rechercheArticle.toLowerCase())).slice(0, 10)
-                            if (suggestions.length === 0) return null
-                            return (
-                              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', zIndex: 100, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
-                                {suggestions.map(item => (
-                                  <div key={item.id}
-                                    onMouseDown={() => { setArticleAjoutForm(f => ({ ...f, catalogue_id: item.id })); setRechercheArticle(item.nom); setShowSuggestionsArticle(false) }}
-                                    style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.default}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{item.nom}</span>
-                                    <span style={{ color: colors.text.faint, fontSize: '11px' }}>{item.categorie} · {item.unite}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )
-                          })()}
-                        </div>
-                        <div>
-                          <label style={st.label}>Quantité</label>
-                          <input type="number" min="1" value={articleAjoutForm.quantite} onChange={e => setArticleAjoutForm(f => ({ ...f, quantite: e.target.value }))} style={{ ...st.input, width: '70px' }} />
-                        </div>
-                        <button onClick={ajouterAuPanierMateriel} style={st.btnSecondary}>Ajouter au panier</button>
+                      <div style={{ position: 'relative', marginBottom: '10px' }}>
+                        <label style={st.label}>Article</label>
+                        <input
+                          placeholder="Rechercher un article..."
+                          value={rechercheArticle}
+                          onChange={e => { setRechercheArticle(e.target.value); setShowSuggestionsArticle(true); setArticleAjoutForm(f => ({ ...f, catalogue_id: '' })) }}
+                          onFocus={() => setShowSuggestionsArticle(true)}
+                          onBlur={() => setTimeout(() => setShowSuggestionsArticle(false), 150)}
+                          style={{ ...st.input, border: articleAjoutForm.catalogue_id ? `1px solid ${colors.accent.green}` : st.input.border }}
+                        />
+                        {showSuggestionsArticle && rechercheArticle.length >= 1 && (() => {
+                          const suggestions = materielCatalogue.filter(c => c.nom.toLowerCase().includes(rechercheArticle.toLowerCase()) || c.categorie.toLowerCase().includes(rechercheArticle.toLowerCase())).slice(0, 10)
+                          if (suggestions.length === 0) return null
+                          return (
+                            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', zIndex: 100, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
+                              {suggestions.map(item => (
+                                <div key={item.id}
+                                  onMouseDown={() => { setArticleAjoutForm(f => ({ ...f, catalogue_id: item.id })); setRechercheArticle(item.nom); setShowSuggestionsArticle(false) }}
+                                  style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.default}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{item.nom}</span>
+                                  <span style={{ color: colors.text.faint, fontSize: '11px' }}>{item.categorie} · {item.unite}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                        <input type="number" min="1" value={articleAjoutForm.quantite} onChange={e => setArticleAjoutForm(f => ({ ...f, quantite: e.target.value }))} style={{ ...st.input, width: '70px', flexShrink: 0 }} />
+                        <button onClick={ajouterAuPanierMateriel} style={{ ...st.btnSecondary, flex: 1 }}>+ Ajouter au panier</button>
                       </div>
 
                       {panierMateriel.length > 0 && (
@@ -6106,12 +6119,12 @@ Règles :
                       )}
 
                       <button onClick={distribuerMateriel} disabled={!distributionForm.educateur_id || !distributionForm.saison.trim() || panierMateriel.length === 0}
-                        style={{ ...st.btnSolid, opacity: (!distributionForm.educateur_id || !distributionForm.saison.trim() || panierMateriel.length === 0) ? 0.5 : 1 }}>
+                        style={{ ...st.btnSolid, width: '100%', opacity: (!distributionForm.educateur_id || !distributionForm.saison.trim() || panierMateriel.length === 0) ? 0.5 : 1 }}>
                         Distribuer{panierMateriel.length > 0 ? ` (${panierMateriel.length})` : ''}
                       </button>
                     </div>
-                  </>
-                )}
+                  )}
+                </div>
 
                 <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Matériel distribué ({lots.length})</p>
                 {lots.length === 0 ? (
