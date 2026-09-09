@@ -3495,7 +3495,7 @@ Règles :
         {activeTab === 'categories' && canViewSection('sportif') && (
           <>
             {canEditSection('sportif') && (
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px', width: '100%' }}>
               <button
                 onClick={autoAssignerJoueurs} disabled={autoAssignLoading}
                 style={{ padding: '10px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
@@ -3557,14 +3557,14 @@ Règles :
                 {t('club_aucune_categorie', lang)}
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', width: '100%' }}>
                 {CATEGORIES_STANDARD.map(nom => {
                   const cats = categories.filter(c => c.nom === nom)
                   if (!cats.length) return null
                   const color = getCategoryColor(nom)
                   const prochaineEquipe = EQUIPES.find(e => !cats.some(c => c.equipe === e))
                   return (
-                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}`, width: '100%' }}>
+                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}`, width: '100%', boxSizing: 'border-box' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                         <p style={{ margin: 0, fontWeight: 800, color, fontSize: '15px' }}>{labelCategorie(nom)}</p>
                         <span style={{ color: colors.text.faint, fontSize: '12px' }}>{cats.length} {t('club_equipe_label', lang)}{cats.length > 1 ? 's' : ''}</span>
