@@ -120,7 +120,7 @@ export default function Newsletter({ clubId, clubNom, auteurNom, auteurId, coule
   const cibleLabel = (val) => CIBLES.find(c => c.val === val)?.label || val
 
   return (
-    <div style={{ maxWidth: '800px' }}>
+    <div style={{ maxWidth: '1100px' }}>
       <div style={{ marginBottom: '28px' }}>
         <div style={{ color: accent, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '6px' }}>Communication</div>
         <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0 }}>Newsletter</h1>

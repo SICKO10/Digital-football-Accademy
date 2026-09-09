@@ -102,7 +102,7 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
   const statutInfo = (val) => STATUTS.find(s => s.val === val) || STATUTS[0]
 
   return (
-    <div style={{ maxWidth: '900px' }}>
+    <div style={{ maxWidth: '1100px' }}>
       <div style={{ marginBottom: '24px' }}>
         <div style={{ color: accent, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '6px' }}>Organisation</div>
         <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0 }}>Tâches & Responsabilités</h1>
