@@ -5614,7 +5614,7 @@ Règles :
           // 'président', qui donnerait un accès total non restreint.
           const rolesAssignables = monRole === 'president' ? ROLES_STAFF : ROLES_STAFF.filter(r => r.val !== 'president')
           return (
-          <div style={{ maxWidth: '700px' }}>
+          <div style={{ width: '100%' }}>
             {monRole === 'president' && (
               <div style={{ background: `linear-gradient(135deg, #a78bfa15 0%, ${colors.background.surface} 100%)`, border: '1px solid #a78bfa20', borderRadius: '14px', padding: '20px 24px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
