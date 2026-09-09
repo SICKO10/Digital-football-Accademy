@@ -97,16 +97,6 @@ const getAlerts = (sponsors) => {
 }
 
 // ── Petits composants de présentation ────────────────────────────────────────
-function KpiCard({ label, valeur, couleur = '#4ade80' }) {
-  const st = useSt()
-  return (
-    <div style={{ ...st.card, textAlign: 'center' }}>
-      <p style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: couleur }}>{valeur}</p>
-      <p style={{ margin: '4px 0 0', fontSize: '11px', color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-    </div>
-  )
-}
-
 function StatutBadge({ statut }) {
   return (
     <span style={{ background: statut.color + '20', border: `1px solid ${statut.color}50`, color: statut.color, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
@@ -622,6 +612,29 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     await loadData()
   }
 
+  const exporterRapport = () => {
+    const header = ['Entreprise', 'Niveau', 'Contrat (€)', 'Reçu (€)', 'Reste (€)', 'Statut']
+    const rows = sponsors.map(s => {
+      const recu = getMontantRecu(s)
+      const total = Number(s.montant_contrat) || 0
+      return [s.entreprise, s.niveaux_partenariat?.nom || '', total, recu, Math.max(0, total - recu), getStatutPaiement(s).label]
+    })
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `sponsors_${saisonActive}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const relancerSponsors = () => {
+    const impayes = sponsors.filter(s => getStatutPaiement(s).label !== 'Payé' && s.contact_email)
+    if (impayes.length === 0) { alert('Aucun sponsor à relancer.'); return }
+    window.location.href = `mailto:?bcc=${impayes.map(s => s.contact_email).join(',')}&subject=${encodeURIComponent('Rappel de paiement — partenariat')}`
+  }
+
   if (tableMissing) {
     return (
       <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '16px 20px', color: '#f59e0b', fontSize: '13px' }}>
@@ -654,6 +667,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const alerts = getAlerts(sponsors)
   const budgetTotal = sponsors.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
   const encaisse = sponsors.reduce((s, sp) => s + getMontantRecu(sp), 0)
+  const restant = Math.max(0, budgetTotal - encaisse)
 
   return (
     <div>
@@ -667,18 +681,41 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
           ))}
         </div>
-        <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
-          {SAISONS.map(s => <option key={s}>{s}</option>)}
-        </select>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
+            {SAISONS.map(s => <option key={s}>{s}</option>)}
+          </select>
+          {!readOnly && (
+            <button onClick={() => setModalSponsor('new')} style={st.btnSolid(accentColor)}>+ Ajouter un sponsor</button>
+          )}
+        </div>
       </div>
 
       {vue === 'dashboard' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
-            <KpiCard label="Sponsors actifs" valeur={sponsors.length} couleur={accentColor} />
-            <KpiCard label="Budget total" valeur={`${budgetTotal.toLocaleString('fr-FR')} €`} couleur={st.text} />
-            <KpiCard label="Encaissé" valeur={`${encaisse.toLocaleString('fr-FR')} €`} couleur="#22c55e" />
-            <KpiCard label="Restant à recevoir" valeur={`${Math.max(0, budgetTotal - encaisse).toLocaleString('fr-FR')} €`} couleur="#f59e0b" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
+            <div style={st.card}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Sponsors actifs</p>
+              <p style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: accentColor }}>{sponsors.length}</p>
+            </div>
+            <div style={st.card}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Budget total</p>
+              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: st.text }}>{budgetTotal.toLocaleString('fr-FR')} €</p>
+            </div>
+            <div style={{ ...st.card, border: '1px solid #22c55e40' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Encaissé</p>
+              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#22c55e' }}>{encaisse.toLocaleString('fr-FR')} €</p>
+              <div style={{ marginTop: '10px', background: st.bgRaised, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, encaisse / budgetTotal * 100) : 0}%`, background: '#22c55e', borderRadius: '999px' }} />
+              </div>
+            </div>
+            <div style={{ ...st.card, border: '1px solid #f59e0b40' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Restant à recevoir</p>
+              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#f59e0b' }}>{restant.toLocaleString('fr-FR')} €</p>
+              <div style={{ marginTop: '10px', background: st.bgRaised, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, restant / budgetTotal * 100) : 0}%`, background: '#f59e0b', borderRadius: '999px' }} />
+              </div>
+            </div>
           </div>
 
           {alerts.length > 0 && (
@@ -696,38 +733,97 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             </div>
           )}
 
-          {niveaux.length > 0 && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 10px' }}>Répartition par niveau</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-                {niveaux.map(n => {
-                  const sponsorsNiveau = sponsors.filter(s => s.niveau_id === n.id)
-                  const montant = sponsorsNiveau.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
-                  return (
-                    <div key={n.id} style={{ ...st.card, borderLeft: `4px solid ${n.couleur}` }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{n.nom}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''} · {montant.toLocaleString('fr-FR')} €</p>
-                    </div>
-                  )
-                })}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
+
+            {/* Colonne gauche — niveaux + derniers sponsors */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              {niveaux.length > 0 && (
+                <div style={st.card}>
+                  <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>Répartition par niveau</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {niveaux.map(n => {
+                      const sponsorsNiveau = sponsors.filter(s => s.niveau_id === n.id)
+                      const montant = sponsorsNiveau.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
+                      const encaisseNiveau = sponsorsNiveau.reduce((s, sp) => s + getMontantRecu(sp), 0)
+                      return (
+                        <div key={n.id} style={{ padding: '14px 16px', borderRadius: '12px', background: st.bgRaised, borderLeft: `3px solid ${n.couleur}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ color: n.couleur, fontWeight: 800, fontSize: '13px' }}>{n.nom}</span>
+                            <span style={{ color: st.text, fontWeight: 700 }}>{montant.toLocaleString('fr-FR')} €</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ color: st.textFaint, fontSize: '12px' }}>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''}</span>
+                            <span style={{ color: '#22c55e', fontSize: '12px' }}>{encaisseNiveau.toLocaleString('fr-FR')} € encaissé</span>
+                          </div>
+                          <div style={{ background: st.border, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: montant > 0 ? `${Math.min(100, encaisseNiveau / montant * 100)}%` : '0%', background: n.couleur, borderRadius: '999px' }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div style={st.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>Derniers sponsors</p>
+                  <button onClick={() => setVue('sponsors')} style={{ color: accentColor, background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>Voir tous →</button>
+                </div>
+                {sponsors.length === 0 ? (
+                  <p style={{ color: st.textGhost, fontSize: '13px', margin: 0 }}>Aucun sponsor pour l'instant.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[...sponsors].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map(s => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', background: st.bgRaised }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{s.entreprise}</p>
+                          {s.niveaux_partenariat?.nom && <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>{s.niveaux_partenariat.nom}</p>}
+                        </div>
+                        <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>{getMontantRecu(s).toLocaleString('fr-FR')} €</span>
+                        <StatutBadge statut={getStatutPaiement(s)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 10px' }}>Derniers sponsors</p>
-            {sponsors.length === 0 ? (
-              <p style={{ color: st.textGhost, fontSize: '13px' }}>Aucun sponsor pour l'instant.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[...sponsors].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map(s => (
-                  <div key={s.id} style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{s.entreprise}</p>
-                    <StatutBadge statut={getStatutPaiement(s)} />
-                  </div>
-                ))}
+            {/* Colonne droite — objectif + actions rapides */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              <div style={st.card}>
+                <p style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 14px' }}>Objectif saison</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: st.textDim, fontSize: '13px' }}>{encaisse.toLocaleString('fr-FR')} € / {budgetTotal.toLocaleString('fr-FR')} €</span>
+                  <span style={{ color: '#22c55e', fontWeight: 700 }}>{budgetTotal > 0 ? Math.round(encaisse / budgetTotal * 100) : 0}%</span>
+                </div>
+                <div style={{ background: st.bgRaised, borderRadius: '999px', height: '10px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, encaisse / budgetTotal * 100) : 0}%`, background: 'linear-gradient(90deg, #22c55e, #38bdf8)', borderRadius: '999px', transition: 'width 0.8s ease' }} />
+                </div>
+                <p style={{ color: st.textFaint, fontSize: '12px', marginTop: '10px', marginBottom: 0 }}>{restant.toLocaleString('fr-FR')} € restant à encaisser</p>
               </div>
-            )}
+
+              <div style={st.card}>
+                <p style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 14px' }}>Actions rapides</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    !readOnly && { label: 'Ajouter un sponsor', action: () => setModalSponsor('new') },
+                    !readOnly && { label: 'Gérer les niveaux', action: () => setVue('niveaux') },
+                    { label: 'Relancer les sponsors', action: relancerSponsors },
+                    { label: 'Exporter le rapport', action: exporterRapport },
+                  ].filter(Boolean).map(a => (
+                    <button key={a.label} onClick={a.action}
+                      style={{ padding: '10px 14px', borderRadius: '10px', border: `1px solid ${st.border}`, background: 'transparent', color: st.textDim, fontSize: '13px', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = st.bgRaised; e.currentTarget.style.color = st.text }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = st.textDim }}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
