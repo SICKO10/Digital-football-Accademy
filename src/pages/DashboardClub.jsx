@@ -3324,11 +3324,11 @@ Règles :
     { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
     { id: 'budget', label: t('club_tab_budget', lang), Icon: IcoWallet },
     { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
+    { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
     { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
     { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
-    { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
   ].filter(item => canViewSection(item.id))
 
   const sportifVisible = NAV_SPORTIF.length > 0
