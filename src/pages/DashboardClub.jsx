@@ -3619,6 +3619,11 @@ Règles :
         {/* ── ÉDUCATEURS ── */}
         {activeTab === 'educateurs' && canViewSection('sportif') && (
           <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', alignItems: 'start', width: '100%' }}>
+
+              {/* ── Colonne gauche — quota + séances reçues ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
             {/* Quota d'équipes — club.palier/quota_equipes restent null tant
                 que le support n'a pas activé un palier pour ce club (cf.
                 supabase_profiles_quota_equipes.sql) : pas de widget affiché
@@ -3630,7 +3635,7 @@ Règles :
               const parEducateur = {}
               categories.forEach(c => { if (c.educateur_id) parEducateur[c.educateur_id] = (parEducateur[c.educateur_id] || 0) + 1 })
               return (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '20px 24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: 0 }}>Quota d'équipes</h3>
@@ -3645,10 +3650,10 @@ Règles :
                     </div>
                   </div>
 
-                  <div style={{ background: colors.background.raised, borderRadius: '8px', height: '8px', marginBottom: '20px', overflow: 'hidden' }}>
+                  <div style={{ background: colors.background.raised, borderRadius: '999px', height: '8px', marginBottom: '16px', overflow: 'hidden' }}>
                     <div style={{
                       background: utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green,
-                      borderRadius: '8px', height: '8px',
+                      borderRadius: '999px', height: '8px',
                       width: `${Math.min((utilise / club.quota_equipes) * 100, 100)}%`,
                       transition: 'width 0.5s',
                     }} />
@@ -3705,18 +3710,21 @@ Règles :
                   )}
 
                   {educateursAcceptes.length > 0 && (
-                    <div style={{ marginTop: '16px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
-                      <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Répartition</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ marginTop: '4px', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '14px' }}>
+                      <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Répartition</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
                         {educateursAcceptes.map(e => {
                           const nbEquipes = parEducateur[e.educateur_id] || 0
+                          const avatarC = couleurAvatarPersonne(e.educateur?.prenom, e.educateur?.nom)
                           return (
-                            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: couleurPrincipale, flexShrink: 0 }}>
-                                {e.educateur?.prenom?.[0]}
+                            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.raised, borderRadius: '10px' }}>
+                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: avatarC.bg, color: avatarC.text, fontWeight: 800, fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
                               </div>
-                              <span style={{ flex: 1, color: colors.text.secondary, fontSize: '14px' }}>{e.educateur?.prenom} {e.educateur?.nom}</span>
-                              <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.educateur?.prenom} {e.educateur?.nom}</div>
+                              </div>
+                              <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</span>
                             </div>
                           )
                         })}
@@ -3727,25 +3735,95 @@ Règles :
               )
             })()}
 
-            {/* Code club */}
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px 24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-              <div>
-                <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', margin: '0 0 4px' }}>🔑 {t('club_ton_code', lang)}</p>
-                <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('club_partage_code_desc', lang)}</p>
+            {/* Séances reçues pour évaluation — regroupées par saison, repliables */}
+            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: `1px solid ${colors.border.faint}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>📋 {t('club_seances_recues_titre', lang)}</span>
+                <span style={{ padding: '2px 8px', borderRadius: '999px', background: colors.background.raised, color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{seancesRecues.length}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: '22px', fontWeight: 800, color: couleurPrincipale, letterSpacing: '4px', background: couleurPrincipale + alpha.faint, border: `1px solid ${couleurPrincipale}30`, borderRadius: '10px', padding: '10px 20px' }}>
+              {seancesRecues.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', padding: '14px 20px', margin: 0 }}>{t('club_aucune_seance_uploadee', lang)}</p>
+              ) : (() => {
+                const parSaison = seancesRecues.reduce((acc, s) => {
+                  const k = s.saison || 'Non définie'
+                  if (!acc[k]) acc[k] = []
+                  acc[k].push(s)
+                  return acc
+                }, {})
+                const saisonsTriees = Object.keys(parSaison).sort().reverse()
+
+                return saisonsTriees.map(saison => {
+                  const ouverte = saisonsOuvertes[saison] !== false
+                  return (
+                    <div key={saison}>
+                      <div
+                        onClick={() => toggleSaison(saison)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', background: colors.background.raised, cursor: 'pointer' }}>
+                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px' }}>SAISON {saison}</span>
+                        <span style={{ color: colors.text.disabled, fontSize: '11px' }}>
+                          {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)} {ouverte ? '▲' : '▼'}
+                        </span>
+                      </div>
+
+                      {ouverte && parSaison[saison].map(s => {
+                        const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                        const avatarC = couleurAvatarPersonne(s.educateur?.prenom, s.educateur?.nom)
+                        return (
+                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 20px', borderBottom: `1px solid ${colors.border.faint}` }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarC.bg, color: avatarC.text, fontWeight: 800, fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {s.educateur?.prenom?.[0]}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ color: colors.text.secondary, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{s.theme || t('seance_fallback', lang)}</span>
+                              <span style={{ color: colors.text.faint, fontSize: '11px' }}>{s.educateur?.prenom} {s.educateur?.nom} · {s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</span>
+                            </div>
+                            {s.statut === 'analyse' && eval_ && (
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', background: couleurPrincipale + alpha.faint, color: couleurPrincipale, fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>✅ {Math.round(eval_.note_totale)}/100</span>
+                            )}
+                            {s.statut === 'transfere_coach' && (
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>🎙️ {t('club_chez_coach', lang)}</span>
+                            )}
+                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', borderRadius: '7px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '11px', textDecoration: 'none' }}>{t('btn_voir', lang)}</a>
+                              {s.statut === 'a_analyser' && (
+                                <>
+                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={{ padding: '4px 10px', borderRadius: '7px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>📋 {t('club_analyser', lang)}</button>
+                                  <button onClick={() => transfererAuCoach(s.id)} style={{ padding: '4px 8px', borderRadius: '7px', border: `1px solid ${colors.accent.blue}30`, background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '11px', cursor: 'pointer' }}>🎙️</button>
+                                </>
+                              )}
+                              <button onClick={() => supprimerSeance(s.id)} style={{ width: 24, height: 24, borderRadius: '6px', border: 'none', background: 'transparent', color: colors.text.disabled, cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+
+              </div>
+
+              {/* ── Colonne droite — code club + invitations ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {/* Code club */}
+            <div style={{ background: `linear-gradient(135deg, ${colors.accent.amber}10, ${colors.background.sunken})`, border: `1px solid ${colors.accent.amber}20`, borderRadius: '16px', padding: '20px' }}>
+              <p style={{ color: colors.accent.amber, fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>🔑 {t('club_ton_code', lang)}</p>
+              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 14px' }}>{t('club_partage_code_desc', lang)}</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ flex: 1, padding: '12px 16px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.accent.amber}30`, fontFamily: 'monospace', fontSize: '20px', fontWeight: 900, color: colors.accent.amber, textAlign: 'center', letterSpacing: '4px' }}>
                   {codeClub}
-                </span>
-                <button onClick={copierCode} style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+                </div>
+                <button onClick={copierCode} style={{ padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.accent.amber}30`, background: 'transparent', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                   📋 {t('club_copier', lang)}
                 </button>
               </div>
             </div>
 
-            {/* Recherche & invitation */}
-            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '14px' }}>🔍 {t('club_inviter_educateur_titre', lang)}</p>
+            {/* Inviter un éducateur — recherche + ajout manuel */}
+            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '20px' }}>
+              <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>🔍 {t('club_inviter_educateur_titre', lang)}</p>
               <input
                 style={st.input}
                 placeholder={t('club_rechercher_educateur_placeholder', lang)}
@@ -3773,21 +3851,22 @@ Règles :
                   })}
                 </div>
               )}
-            </div>
 
-            {/* Ajout manuel + invitation email — pour un éducateur sans compte existant */}
-            <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>✉️ Ajouter un éducateur manuellement</p>
-              <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.dim }}>S'il n'a pas encore de compte, il reçoit une invitation par email pour en créer un.</p>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                <input style={{ ...st.input, flex: '1 1 140px' }} placeholder="Prénom" value={ajoutEducateurForm.prenom} onChange={e => setAjoutEducateurForm(f => ({ ...f, prenom: e.target.value }))} />
-                <input style={{ ...st.input, flex: '1 1 140px' }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
-                <input style={{ ...st.input, flex: '2 1 220px' }} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
+              <div style={{ height: 1, background: colors.border.faint, margin: '16px 0' }} />
+
+              <p style={{ color: colors.text.secondary, fontWeight: 600, fontSize: '13px', margin: '0 0 4px' }}>✉️ Ajouter manuellement</p>
+              <p style={{ color: colors.text.faint, fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>S'il n'a pas encore de compte, il reçoit une invitation par email pour en créer un.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input style={{ ...st.input, flex: 1 }} placeholder="Prénom" value={ajoutEducateurForm.prenom} onChange={e => setAjoutEducateurForm(f => ({ ...f, prenom: e.target.value }))} />
+                  <input style={{ ...st.input, flex: 1 }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
+                </div>
+                <input style={st.input} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
+                <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()}
+                  style={{ padding: '10px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
+                  {invitingEducateur ? '...' : `✉️ ${t('btn_envoyer', lang) || 'Envoyer l\'invitation'}`}
+                </button>
               </div>
-              <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()}
-                style={{ ...st.btnSolid, opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
-                {invitingEducateur ? '...' : '✉️ Envoyer l\'invitation'}
-              </button>
               {inviteEducateurMessage && (
                 <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.green : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
               )}
@@ -3805,6 +3884,9 @@ Règles :
                   ))}
                 </div>
               )}
+            </div>
+
+              </div>
             </div>
 
             {/* En attente */}
@@ -3912,77 +3994,6 @@ Règles :
               </div>
             )}
 
-            {/* ── Séances reçues pour évaluation ── */}
-            <div style={{ marginTop: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '18px' }}>📋</span>
-                <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_seances_recues_titre', lang)}</h3>
-                <span style={{ padding: '3px 10px', borderRadius: '20px', background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, fontSize: '12px', fontWeight: 600 }}>{seancesRecues.length}</span>
-              </div>
-              {seancesRecues.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucune_seance_uploadee', lang)}</p>
-              ) : (() => {
-                const parSaison = seancesRecues.reduce((acc, s) => {
-                  const k = s.saison || 'Non définie'
-                  if (!acc[k]) acc[k] = []
-                  acc[k].push(s)
-                  return acc
-                }, {})
-                const saisonsTriees = Object.keys(parSaison).sort().reverse()
-
-                return saisonsTriees.map(saison => {
-                  const ouverte = saisonsOuvertes[saison] !== false
-                  return (
-                    <div key={saison} style={{ marginBottom: '12px' }}>
-                      <button
-                        onClick={() => toggleSaison(saison)}
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 16px', marginBottom: '10px', background: colors.background.surface,
-                          border: `1px solid ${colors.border.subtle}`, borderRadius: '10px',
-                          cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
-                        }}>
-                        <span style={{ color: couleurPrincipale, fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>
-                          📅 {t('profil_saison', lang)} {saison}
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: colors.text.faint, fontSize: '12px' }}>
-                            {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
-                          </span>
-                          <span style={{ color: colors.text.faint }}>{ouverte ? '▼' : '▶'}</span>
-                        </span>
-                      </button>
-
-                      {ouverte && parSaison[saison].map(s => {
-                        const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                        return (
-                          <div key={s.id} style={{ ...st.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '6px', marginLeft: '16px' }}>
-                            <div>
-                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.educateur?.prenom} {s.educateur?.nom} — {s.theme || t('seance_fallback', lang)}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
-                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ ...st.btnSecondary, textDecoration: 'none' }}>🎬 {t('btn_voir', lang)}</a>
-                              {s.statut === 'a_analyser' && (
-                                <>
-                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={st.btnSolid}>📋 {t('club_analyser', lang)}</button>
-                                  <button onClick={() => transfererAuCoach(s.id)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '9px 14px', borderRadius: '8px', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, cursor: 'pointer' }}>{isMobile ? `🎙️ ${t('club_coach_mobile', lang)}` : `🎙️ ${t('club_transferer_coach', lang)}`}</button>
-                                </>
-                              )}
-                              {s.statut === 'transfere_coach' && <span style={{ background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>🎙️ {t('club_chez_coach', lang)}</span>}
-                              {s.statut === 'analyse' && eval_ && (
-                                <span style={{ background: couleurPrincipale + '15', color: couleurPrincipale, fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>✅ {Math.round(eval_.note_totale)}/100</span>
-                              )}
-                              <button onClick={() => supprimerSeance(s.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer' }}>✕</button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })
-              })()}
-            </div>
           </>
         )}
 
