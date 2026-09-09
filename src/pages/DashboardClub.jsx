@@ -1303,7 +1303,7 @@ export default function DashboardClub() {
 
   const st = {
     page: { background: colors.background.base, minHeight: '100vh', color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
-    content: { padding: isMobile ? '1rem' : '1.5rem 2rem', maxWidth: '1600px', margin: '0 auto' },
+    content: { padding: isMobile ? '1rem' : '1.5rem 2rem', width: '100%', boxSizing: 'border-box' },
     tab: (active) => ({
       padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
       ...(active ? { background: couleurPrincipale, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
