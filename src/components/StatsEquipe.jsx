@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { alpha } from '../tokens'
 import { useColors } from '../lib/theme'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 
 const NATURES_BUT = [
   { value: 'cpa', label: 'CPA' },
@@ -84,6 +85,7 @@ function BarresHorizontales({ data, color, colors }) {
 // côté DashboardJoueur.jsx/DashboardClub.jsx qui réutilisent aussi ce composant.
 export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquipe = null }) {
   const colors = useColors()
+  const isMobile = useWindowWidth() < 768
   const [filtreCompetition, setFiltreCompetition] = useState('all')
   const [filtreLieu, setFiltreLieu] = useState('all')
 
@@ -175,7 +177,7 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
 
   const pct = (n, t) => t > 0 ? Math.round(n / t * 100) : 0
 
-  const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '16px', textAlign: 'center' }
+  const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: isMobile ? '10px 8px' : '16px', textAlign: 'center' }
   const chip = (active, c) => ({ padding: '6px 14px', borderRadius: '16px', border: `1px solid ${active ? c : colors.border.default}`, cursor: 'pointer', fontSize: '12px', background: active ? c + alpha.subtle : 'transparent', color: active ? c : colors.text.faint, fontWeight: active ? 700 : 400, fontFamily: 'Inter, sans-serif' })
 
   if (matchs.length === 0) {
@@ -235,7 +237,7 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
       {total === 0 ? (
         <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '20px', width: '100%', boxSizing: 'border-box' }}>Aucun match joué avec ces filtres.</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '14px' : '20px', width: '100%' }}>
 
           {/* Colonne gauche — forme récente, buts marqués, charts "marqués" */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -295,7 +297,7 @@ export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquip
               charts "encaissés" */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {filtreLieu === 'all' && (dom.length > 0 || ext.length > 0) && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
                 {[
                   { label: 'Domicile', liste: dom, color: colors.accent.green },
                   { label: 'Extérieur', liste: ext, color: colors.accent.blue },

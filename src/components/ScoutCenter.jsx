@@ -760,7 +760,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 {valJustif === 'feuilles' && (
                   <div style={{ marginBottom: "1.25rem" }}>
                     <p style={{ margin: "0 0 10px", fontSize: "12px", color: colors.text.faint }}>Upload tes 5 feuilles de match (photo ou PDF)</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px" }}>
                       {valFeuilles.map((url, i) => (
                         <label key={i} style={{ cursor: "pointer", gridColumn: i === 4 ? "1 / -1" : "auto" }}>
                           <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: "10px", padding: "14px 10px", textAlign: "center", background: url ? "#f9731608" : colors.background.raised, borderColor: url ? "#f9731660" : colors.border.default, transition: "all 0.2s", minHeight: "80px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
@@ -925,15 +925,15 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 </div>
               ))}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
               <button onClick={() => navigate("/jogabonito")}
-                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
+                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: isMobile ? "1.25rem" : "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
                 <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>🎬</p>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Jogabonito</p>
                 <p style={{ fontSize: "13px", color: colors.text.faint, margin: 0 }}>Reels courts des joueurs</p>
               </button>
               <button onClick={() => navigate("/feed")}
-                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
+                style={{ background: colors.background.surface, border: "1px solid #f9731640", borderRadius: "12px", padding: isMobile ? "1.25rem" : "2rem", cursor: "pointer", textAlign: "center", color: colors.text.primary }}>
                 <p style={{ fontSize: "2.5rem", margin: "0 0 8px" }}>📋</p>
                 <p style={{ fontWeight: 700, fontSize: "16px", margin: "0 0 4px" }}>Feed Scout</p>
                 <p style={{ fontSize: "13px", color: colors.text.faint, margin: 0 }}>Clips + stats des joueurs Pro</p>
@@ -1244,7 +1244,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
         {/* ── MESSAGES ── */}
         {activeTab === "messages" && (
-          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "16px", minHeight: "500px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr", gap: "16px", minHeight: "500px" }}>
             {/* Sidebar conversations */}
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "12px", overflow: "hidden" }}>
               <div style={{ padding: "1rem", borderBottom: `1px solid ${colors.border.default}` }}>
@@ -1362,7 +1362,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
             {/* Formulaire */}
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
                 <div>
                   <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Prénom</label>
                   <input value={profilEdit.prenom} onChange={e => setProfilEdit(p => ({ ...p, prenom: e.target.value }))} style={st.searchInput} />
@@ -1381,7 +1381,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
                 </select>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
                 <div>
                   <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Club / Agence</label>
                   <input value={profilEdit.club} onChange={e => setProfilEdit(p => ({ ...p, club: e.target.value }))} placeholder="Ex : AS Monaco, SL Benfica..." style={st.searchInput} />
