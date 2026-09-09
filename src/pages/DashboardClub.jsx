@@ -6023,7 +6023,7 @@ Règles :
                   {canEditSection('inventaire') && <button onClick={() => setModalCatalogue(true)} style={st.btnSecondary}>⚙️ Gérer le catalogue</button>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '20px', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '20px', alignItems: 'start', marginBottom: '2rem' }}>
 
                   {/* Colonne gauche — stock par catégorie, +/− */}
                   <div style={{ ...st.card, padding: 0, overflow: 'hidden' }}>
@@ -6060,8 +6060,7 @@ Règles :
                     })}
                   </div>
 
-                  {/* Colonne droite — distribuer du matériel + historique */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Colonne droite — distribuer du matériel */}
                   {canEditSection('inventaire') && (
                     <div style={st.card}>
                       <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📦 Distribuer du matériel</p>
@@ -6136,13 +6135,13 @@ Règles :
                       </button>
                     </div>
                   )}
+                </div>
 
-                  <div style={st.card}>
-                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>📋 Historique ({lots.length})</p>
-                    {lots.length === 0 ? (
-                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Matériel distribué ({lots.length})</p>
+                {lots.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune distribution pour l'instant.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {saisonsTriees.map(saison => {
                       const lotsSaison = lotsParSaison[saison]
                       const isOpen = saisonOuverte === undefined ? saison === saisonsTriees[0] : saisonOuverte === saison
@@ -6204,10 +6203,6 @@ Règles :
                     })}
                   </div>
                 )}
-                  </div>
-
-                  </div>
-                </div>
               </div>
               )
             })()}
