@@ -4392,7 +4392,7 @@ Règles :
             .map(([cat, montant], i) => ({ cat, montant, pct: totalRecettes > 0 ? (montant / totalRecettes) * 100 : 0, color: COULEURS_BUDGET[i % COULEURS_BUDGET.length] }))
 
           return (
-            <div style={{ width: '100%' }}>
+            <div style={{ maxWidth: '1100px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>💰 {t('club_budget_titre', lang)}</h2>
