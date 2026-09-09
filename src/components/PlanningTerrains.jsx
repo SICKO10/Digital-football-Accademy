@@ -163,6 +163,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
   const [heuresClub, setHeuresClub] = useState({ ouverture: '08:00', fermeture: '22:00' })
   const [reclamingId, setReclamingId] = useState(null)
   const [semaineOffset, setSemaineOffset] = useState(0) // 0 = semaine courante, -1 = précédente, +1 = suivante
+  const [alertOuvert, setAlertOuvert] = useState(false)
   const [exceptions, setExceptions] = useState([]) // planning_terrains_exceptions de la semaine affichée
   const [matchsSemaine, setMatchsSemaine] = useState([]) // matchs_equipe de toutes les catégories du club, semaine affichée — utilisé pour la grille (badges/conflits) de la semaine visible uniquement
   const [matchsSansTerrainTous, setMatchsSansTerrainTous] = useState([]) // TOUS les matchs à domicile sans terrain_id, sans limite à la semaine affichée : l'alerte "Terrain à planifier" du dashboard club peut pointer vers un match d'une semaine future, qui doit rester assignable même si le planning affiche "cette semaine" par défaut à l'arrivée
@@ -802,8 +803,10 @@ Règles :
     )
   }
 
+  const navBtnStyle = { width: 32, height: 32, borderRadius: '8px', border: `1px solid ${st.border}`, background: 'transparent', color: st.textDim, cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }
+
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Planning des terrains</h1>
       <p style={{ color: st.textFaint, fontSize: '13px', marginBottom: '1.5rem' }}>
         {estDirigeant ? "Configure tes terrains et organise l'occupation hebdomadaire." : "Planning de la semaine — libère un créneau si tu n'en as pas besoin."}
@@ -883,31 +886,33 @@ Règles :
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                {terrains.map(t => (
-                  <button key={t.id} onClick={() => setTerrainActif(t.id)}
-                    style={{ background: terrainActif === t.id ? accentColor + '15' : 'transparent', border: `1px solid ${terrainActif === t.id ? accentColor + '40' : st.border}`, color: terrainActif === t.id ? accentColor : st.textDim, padding: '7px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {t.nom}{!t.actif ? ' (inactif)' : ''}
-                  </button>
-                ))}
-              </div>
-
-              {estDirigeant && (
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                  <button onClick={() => setFormCreneau(creneauVide(terrainActif))}
-                    style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    + Nouveau créneau
-                  </button>
-                  <button onClick={telechargerTemplate}
-                    style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    📥 Télécharger le template
-                  </button>
-                  <button onClick={() => setShowImport(v => !v)}
-                    style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : st.borderStrong}`, color: showImport ? accentColor : st.textDim, padding: '8px 18px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {showImport ? '✕ Fermer' : '📊 Importer Excel / CSV'}
-                  </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {terrains.map(t => (
+                    <button key={t.id} onClick={() => setTerrainActif(t.id)}
+                      style={{ background: terrainActif === t.id ? accentColor + '15' : 'transparent', border: `1px solid ${terrainActif === t.id ? accentColor + '40' : st.border}`, color: terrainActif === t.id ? accentColor : st.textDim, padding: '7px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {t.nom}{!t.actif ? ' (inactif)' : ''}
+                    </button>
+                  ))}
                 </div>
-              )}
+
+                {estDirigeant && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button onClick={() => setFormCreneau(creneauVide(terrainActif))}
+                      style={{ background: accentColor, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      + Nouveau créneau
+                    </button>
+                    <button onClick={telechargerTemplate}
+                      style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '9px 16px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Template
+                    </button>
+                    <button onClick={() => setShowImport(v => !v)}
+                      style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : st.borderStrong}`, color: showImport ? accentColor : st.textDim, padding: '9px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {showImport ? '✕ Fermer' : 'Importer'}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {estDirigeant && showImport && (
                 <div style={{ ...st.card, marginBottom: '1.5rem' }}>
@@ -1050,61 +1055,66 @@ Règles :
               {/* ── Navigation semaine — les libérations/remplacements affichés sont
                   ceux de la semaine visible uniquement (exceptions datées). ── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                <button onClick={() => setSemaineOffset(o => o - 1)}
-                  style={{ background: st.card.background, border: `1px solid ${st.border}`, borderRadius: '8px', color: st.text, padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ‹
-                </button>
-                <span style={{ color: st.textDim, fontWeight: 600, fontSize: '13px' }}>
+                <button onClick={() => setSemaineOffset(o => o - 1)} style={navBtnStyle}>‹</button>
+                <span style={{ color: st.text, fontWeight: 700, fontSize: '14px', minWidth: '150px', textAlign: 'center' }}>
                   {(() => {
                     const dates = getDatesSemaine(semaineOffset)
                     return `${dates[0].labelCourt} – ${dates[6].labelCourt}`
                   })()}
-                  {semaineOffset === 0 && <span style={{ color: accentColor, marginLeft: '8px', fontSize: '11px', fontWeight: 700 }}>Cette semaine</span>}
                 </span>
-                <button onClick={() => setSemaineOffset(o => o + 1)}
-                  style={{ background: st.card.background, border: `1px solid ${st.border}`, borderRadius: '8px', color: st.text, padding: '5px 12px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ›
+                <button onClick={() => setSemaineOffset(o => o + 1)} style={navBtnStyle}>›</button>
+                <button onClick={() => setSemaineOffset(0)}
+                  style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: accentColor + '15', color: accentColor, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Cette semaine
                 </button>
-                {semaineOffset !== 0 && (
-                  <button onClick={() => setSemaineOffset(0)}
-                    style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
-                    revenir à cette semaine
-                  </button>
-                )}
               </div>
 
               {estDirigeant && matchsSansTerrainTous.length > 0 && (
-                <div style={{ background: st.alertBg, border: '1px solid #facc1540', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#facc15' }}>⚠️ Matchs sans terrain assigné (toutes semaines à venir)</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {matchsSansTerrainTous.map(m => {
-                      const cat = categories.find(c => c.id === m.club_categorie_id) || categories.find(c => c.educateur_id === m.educateur_id)
-                      const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
-                      const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
-                      return (
-                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px' }}>
-                          <span style={{ color: st.textDim }}>
-                            {nomEquipe || 'Équipe'} · {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'} · {new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.heure ? ` ${m.heure.slice(0, 5)}` : ''}
-                          </span>
-                          <select
-                            disabled={assigningMatchId === m.id}
-                            value=""
-                            onChange={e => assignerTerrainMatch(m, e.target.value)}
-                            style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: st.bgRaised, color: accentColor, fontWeight: 600, fontSize: '12px', cursor: 'pointer', outline: 'none', fontFamily: 'Inter, sans-serif' }}>
-                            <option value="" disabled>+ Affecter un terrain</option>
-                            {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
-                          </select>
-                        </div>
-                      )
-                    })}
+                <div style={{ background: st.alertBg, border: '1px solid #f59e0b30', borderRadius: '14px', marginBottom: '14px', overflow: 'hidden' }}>
+                  <div onClick={() => setAlertOuvert(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '16px' }}>⚠️</span>
+                      <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: '13px' }}>
+                        {matchsSansTerrainTous.length} match{matchsSansTerrainTous.length > 1 ? 's' : ''} sans terrain assigné
+                      </span>
+                    </div>
+                    <span style={{ color: '#f59e0b', fontSize: '12px' }}>{alertOuvert ? '▲ Réduire' : '▼ Voir'}</span>
                   </div>
+
+                  {alertOuvert && (
+                    <div style={{ borderTop: '1px solid #f59e0b20', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px', background: '#f59e0b10' }}>
+                      {matchsSansTerrainTous.map(m => {
+                        const cat = categories.find(c => c.id === m.club_categorie_id) || categories.find(c => c.educateur_id === m.educateur_id)
+                        const edu = educateurs.find(e => e.educateur_id === m.educateur_id)
+                        const nomEquipe = cat ? `${cat.nom} ${cat.equipe || ''}`.trim() : (edu ? `${edu.educateur?.prenom || ''} ${edu.educateur?.nom || ''}`.trim() : 'Équipe')
+                        return (
+                          <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: st.alertBg, gap: '10px' }}>
+                            <span style={{ fontSize: '12px' }}>
+                              <span style={{ color: st.textDim, fontWeight: 600 }}>{nomEquipe || 'Équipe'}</span>
+                              <span style={{ color: st.textFaint }}> · {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}</span>
+                              <span style={{ color: st.textGhost }}> · {new Date(`${m.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}{m.heure ? ` ${m.heure.slice(0, 5)}` : ''}</span>
+                            </span>
+                            <select
+                              disabled={assigningMatchId === m.id}
+                              value=""
+                              onChange={e => assignerTerrainMatch(m, e.target.value)}
+                              style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #f59e0b40', background: st.bgRaised, color: '#f59e0b', fontWeight: 600, fontSize: '11px', cursor: 'pointer', outline: 'none', fontFamily: 'Inter, sans-serif' }}>
+                              <option value="" disabled>+ Affecter un terrain</option>
+                              {terrains.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
+                            </select>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
               {loadingPlanning ? (
                 <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', width: '100%' }}>
                   {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
                     const matchsJour = matchsDuJour(j.dateStr)

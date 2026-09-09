@@ -3557,14 +3557,14 @@ Règles :
                 {t('club_aucune_categorie', lang)}
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 300px))', gap: '12px', justifyContent: 'start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
                 {CATEGORIES_STANDARD.map(nom => {
                   const cats = categories.filter(c => c.nom === nom)
                   if (!cats.length) return null
                   const color = getCategoryColor(nom)
                   const prochaineEquipe = EQUIPES.find(e => !cats.some(c => c.equipe === e))
                   return (
-                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}` }}>
+                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}`, width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                         <p style={{ margin: 0, fontWeight: 800, color, fontSize: '15px' }}>{labelCategorie(nom)}</p>
                         <span style={{ color: colors.text.faint, fontSize: '12px' }}>{cats.length} {t('club_equipe_label', lang)}{cats.length > 1 ? 's' : ''}</span>
