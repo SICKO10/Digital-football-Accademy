@@ -791,9 +791,9 @@ function VuePhases({ plan, phases, competitions, pole, categorie, onEditPhase, o
   )
 }
 
-const COLONNES_SEMAINES = ['Phase', 'Mois', 'Sem.', 'Thème OFF', 'Sous-principe OFF', 'Thème DEF', 'Sous-principe DEF', 'Objectif OFF', 'Objectif DEF', 'S1', 'S2', 'Compétition', 'Remarques']
+const COLONNES_SEMAINES = ['Phase', 'Mois', 'Sem.', 'Thème OFF', 'Sous-principe OFF', 'Thème DEF', 'Sous-principe DEF', 'Objectif OFF', 'Objectif DEF', 'S1', 'S2', 'Compétition', 'Remarques', 'Séances']
 
-function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, onGenererSemaines, readOnly }) {
+function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, onGenererSemaines, readOnly, seancesParSemaine, onAjouterSeance, onVoirSeances }) {
   const colors = useColors()
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -837,6 +837,27 @@ function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, 
                 <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border.subtle}`, textAlign: 'center' }}><ChargeBadge charge={sem.charge_s2} /></td>
                 <td style={{ padding: '7px 8px', color: '#f59e0b', borderBottom: `1px solid ${colors.border.subtle}`, fontSize: 10 }}>{sem.competition}</td>
                 <td style={{ padding: '7px 8px', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, fontSize: 10 }}>{sem.remarques}</td>
+                <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border.subtle}`, whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                  {(() => {
+                    const nb = (seancesParSemaine[sem.id] || []).length
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {nb > 0 && (
+                          <button onClick={() => onVoirSeances(sem)}
+                            style={{ background: pole.couleur + '22', color: pole.couleur, border: 'none', borderRadius: 4, padding: '2px 7px', fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>
+                            {nb}/5
+                          </button>
+                        )}
+                        {!readOnly && nb < 5 && (
+                          <button onClick={() => onAjouterSeance(sem)}
+                            style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: 4, width: 18, height: 18, lineHeight: '16px', fontSize: 12, fontWeight: 800, cursor: 'pointer', padding: 0 }}>
+                            +
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </td>
               </tr>
             )
           })}
@@ -877,12 +898,28 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
   const [competitions, setCompetitions] = useState([])
   const [phaseActive, setPhaseActive] = useState(null)
   const [semaineActive, setSemaineActive] = useState(null)
+  // Séances réelles (entrainements) accrochées à chaque semaine du plan — max 5
+  // par semaine (limite UI, pas de contrainte DB). { [semaine_id]: [entrainement,...] }
+  const [seancesParSemaine, setSeancesParSemaine] = useState({})
+  const [modalListeSeances, setModalListeSeances] = useState(null) // semaine dont on liste les séances accrochées
+  const [modalAjoutSeance, setModalAjoutSeance] = useState(null) // semaine à laquelle on veut accrocher une séance
+  const [candidatsSeances, setCandidatsSeances] = useState([])
+  const [seanceOuverte, setSeanceOuverte] = useState(null) // détail d'une séance cliquée
   const [scanMode, setScanMode] = useState(null) // null | 'scan' | 'revue'
   const [scanExtrait, setScanExtrait] = useState(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportConfig, setExportConfig] = useState({ couleurPrimaire: couleurPrimaire || '#1a3a6e', couleurSecondaire: couleurSecondaire || '#4ade80', logoUrl: logoUrl || null })
   const [exportLoading, setExportLoading] = useState(false)
   const pdfRef = useRef(null)
+
+  const chargerSeancesLiees = async (semainesActuelles) => {
+    const ids = semainesActuelles.map(s => s.id)
+    if (ids.length === 0) { setSeancesParSemaine({}); return }
+    const { data } = await supabase.from('entrainements').select('*').in('plan_semaine_id', ids).order('date')
+    const parSemaine = {}
+    ;(data || []).forEach(e => { (parSemaine[e.plan_semaine_id] ||= []).push(e) })
+    setSeancesParSemaine(parSemaine)
+  }
 
   const chargerPlan = async () => {
     const { data: p } = await supabase.from('plan_annuel').select('*').eq('club_id', clubId).eq('categorie', categorie).eq('saison', saisonActuelle()).maybeSingle()
@@ -896,11 +933,39 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
       setPhases(ph || [])
       setSemaines(sem || [])
       setCompetitions(comp || [])
+      chargerSeancesLiees(sem || [])
     } else {
       setPhases([]); setSemaines([]); setCompetitions([])
+      setSeancesParSemaine({})
     }
   }
   useEffect(() => { setPlan(undefined); chargerPlan() }, [categorie, clubId])
+
+  // Séances déjà planifiées par l'éducateur pour cette catégorie (toutes équipes
+  // du même nom confondues, ex U15 A + U15 B) et pas encore accrochées à une
+  // semaine — proposées comme choix dans "+ Ajouter une séance".
+  const ouvrirAjoutSeance = async (semaine) => {
+    setModalAjoutSeance(semaine)
+    const { data: cats } = await supabase.from('club_categories').select('id').eq('club_id', clubId).eq('nom', categorie)
+    const catIds = (cats || []).map(c => c.id)
+    if (catIds.length === 0) { setCandidatsSeances([]); return }
+    const { data } = await supabase.from('entrainements').select('*').in('club_categorie_id', catIds).is('plan_semaine_id', null).order('date')
+    setCandidatsSeances(data || [])
+  }
+
+  const attacherSeance = async (entrainement) => {
+    if (!modalAjoutSeance) return
+    if ((seancesParSemaine[modalAjoutSeance.id]?.length || 0) >= 5) return
+    await supabase.from('entrainements').update({ plan_semaine_id: modalAjoutSeance.id }).eq('id', entrainement.id)
+    setModalAjoutSeance(null)
+    chargerSeancesLiees(semaines)
+  }
+
+  const detacherSeance = async (entrainement) => {
+    await supabase.from('entrainements').update({ plan_semaine_id: null }).eq('id', entrainement.id)
+    setSeanceOuverte(null)
+    chargerSeancesLiees(semaines)
+  }
 
   const supprimerPhase = async (id) => {
     await supabase.from('plan_phases').delete().eq('id', id)
@@ -1038,7 +1103,8 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
       )}
       {!scanMode && vue === 'semaines' && (
         <VueSemaines semaines={semaines} phases={phases} pole={pole} readOnly={readOnly}
-          onEditSemaine={setSemaineActive} onAjouterSemaine={() => setSemaineActive({ _new: true, numero_semaine: semaines.length + 1 })} onGenererSemaines={genererSemaines} />
+          onEditSemaine={setSemaineActive} onAjouterSemaine={() => setSemaineActive({ _new: true, numero_semaine: semaines.length + 1 })} onGenererSemaines={genererSemaines}
+          seancesParSemaine={seancesParSemaine} onAjouterSeance={ouvrirAjoutSeance} onVoirSeances={setModalListeSeances} />
       )}
 
       {/* Template caché utilisé pour la capture html2canvas — toujours monté
@@ -1107,6 +1173,89 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
       {semaineActive && (
         <ModalSemaine semaine={semaineActive} planId={plan.id} phases={phases} pole={pole} onDelete={supprimerSemaine}
           onSave={() => { setSemaineActive(null); chargerPlan() }} onClose={() => setSemaineActive(null)} />
+      )}
+
+      {/* ── Liste des séances accrochées à une semaine ── */}
+      {modalListeSeances && (
+        <div onClick={() => setModalListeSeances(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 440, maxHeight: '80vh', overflowY: 'auto' }}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>Séances — Semaine {modalListeSeances.numero_semaine}</h3>
+            <p style={{ color: colors.text.faint, fontSize: 12, margin: '0 0 16px' }}>{(seancesParSemaine[modalListeSeances.id] || []).length}/5 séance(s) accrochée(s)</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(seancesParSemaine[modalListeSeances.id] || []).map(e => (
+                <div key={e.id} onClick={() => { setSeanceOuverte(e); setModalListeSeances(null) }}
+                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>
+                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{e.description || 'Séance'}</div>
+                  <div style={{ color: colors.text.faint, fontSize: 11, marginTop: 2 }}>{e.date ? dateFr(e.date) : ''}{e.heure ? ` · ${e.heure}` : ''}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setModalListeSeances(null)} style={{ marginTop: 16, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12, cursor: 'pointer', width: '100%' }}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Choix d'une séance existante à accrocher à une semaine ── */}
+      {modalAjoutSeance && (
+        <div onClick={() => setModalAjoutSeance(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 440, maxHeight: '80vh', overflowY: 'auto' }}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>Accrocher une séance — Semaine {modalAjoutSeance.numero_semaine}</h3>
+            <p style={{ color: colors.text.faint, fontSize: 12, margin: '0 0 16px' }}>Séances déjà planifiées par l'éducateur, pas encore rattachées à une semaine.</p>
+            {candidatsSeances.length === 0 ? (
+              <p style={{ color: colors.text.disabled, fontSize: 13, fontStyle: 'italic', margin: 0 }}>Aucune séance disponible pour l'instant.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {candidatsSeances.map(e => (
+                  <div key={e.id} onClick={() => attacherSeance(e)}
+                    style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>
+                    <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{e.description || 'Séance'}</div>
+                    <div style={{ color: colors.text.faint, fontSize: 11, marginTop: 2 }}>{e.date ? dateFr(e.date) : ''}{e.heure ? ` · ${e.heure}` : ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setModalAjoutSeance(null)} style={{ marginTop: 16, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12, cursor: 'pointer', width: '100%' }}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Détail d'une séance ── */}
+      {seanceOuverte && (
+        <div onClick={() => setSeanceOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420 }}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>{seanceOuverte.description || 'Séance'}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+              {[
+                { label: 'Date', val: seanceOuverte.date ? dateFr(seanceOuverte.date) : null },
+                { label: 'Heure', val: seanceOuverte.heure },
+                { label: 'Lieu', val: seanceOuverte.lieu },
+                { label: 'Thème', val: seanceOuverte.description },
+              ].map(({ label, val }) => val && (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                  <span style={{ color: colors.text.faint, fontSize: 12 }}>{label}</span>
+                  <span style={{ color: colors.text.secondary, fontSize: 13, fontWeight: 600 }}>{val}</span>
+                </div>
+              ))}
+              {!seanceOuverte.fiche_id && (
+                <p style={{ color: colors.text.ghost, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucune fiche d'exercices jointe pour l'instant.</p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {!readOnly && (
+                <button onClick={() => detacherSeance(seanceOuverte)} style={{ flex: 1, background: 'transparent', border: '1px solid #ef444444', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                  Détacher de la semaine
+                </button>
+              )}
+              <button onClick={() => setSeanceOuverte(null)} style={{ flex: 1, background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 8, padding: '10px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
