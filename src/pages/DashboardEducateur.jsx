@@ -4366,9 +4366,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
-      { key: 'entrainements', label: t('nav_entrainements', lang), icon: <IcoRun />, subKeys: ['mes_seances', 'entrainements', 'bibliotheque'] },
+      { key: 'entrainements', label: 'Création entraînement', icon: <IcoRun />, subKeys: ['mes_seances', 'entrainements'] },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
+      { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
     ] },
     { titre: 'THÈME PROJET', items: [
       { key: 'projet_sportif', label: 'Projet Sportif', icon: <IcoStar /> },
@@ -6969,9 +6970,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
           )
         })()}
 
-        {['entrainements', 'mes_seances', 'bibliotheque'].includes(activeSection) && (
+        {['entrainements', 'mes_seances'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'mes_seances', label: t('nav_seances', lang) }, { key: 'entrainements', label: t('nav_planning', lang) }, { key: 'bibliotheque', label: t('nav_bibliotheque', lang) }].filter(it => canView(it.key))}
+            items={[{ key: 'mes_seances', label: t('nav_seances', lang) }, { key: 'entrainements', label: t('nav_planning', lang) }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -8942,6 +8943,21 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <button onClick={() => setModalImportFicheEntrainement(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '18px', cursor: 'pointer' }}>✕</button>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <button
+                  onClick={() => {
+                    const cible = entrainements.find(x => x.id === modalImportFicheEntrainement)
+                    setFiche({ ...ficheVide, date: cible?.date || '' })
+                    setSport('football')
+                    setFicheFichierUrl(null)
+                    setFicheExtraite(false)
+                    setModeSeance('rediger')
+                    setActiveSection('mes_seances')
+                    setModalImportFicheEntrainement(null)
+                  }}
+                  style={{ padding: '12px 14px', marginBottom: '6px', background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}40`, borderRadius: '10px', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {t('ent_rediger_nouvelle_fiche_jour', lang)}
+                </button>
+                <p style={{ margin: '4px 0 2px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('ent_ou_choisir_fiche', lang)}</p>
                 {mesSeancesOuvertes.length === 0 ? (
                   <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
                 ) : mesSeancesOuvertes.map(s => (
