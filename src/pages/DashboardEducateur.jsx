@@ -290,6 +290,21 @@ const IcoBiblioVide = ({ size = 56, color = colors.border.strong }) => (
   </svg>
 )
 
+// ── Annonces réseau (onglet Annonces d'Explorer) ─────────────────────────────
+const REGIONS_FRANCE = [
+  'Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Bretagne', 'Centre-Val de Loire',
+  'Corse', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandie',
+  'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', "Provence-Alpes-Côte d'Azur",
+  'Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte',
+]
+const TYPES_ANNONCE = [
+  { key: 'recherche_educateur', label: '🔍 Recherche éducateur', color: '#4ade80' },
+  { key: 'recherche_club', label: '🏟️ Recherche club', color: '#60a5fa' },
+  { key: 'tournoi', label: '🏆 Tournoi', color: '#f59e0b' },
+  { key: 'detection', label: '⚡ Détection', color: '#a78bfa' },
+  { key: 'autre', label: '📢 Autre', color: '#6b7280' },
+]
+
 // ── Grille d'évaluation éducateur ────────────────────────────────────────────
 export const CRITERES_EDU = [
   { key: 'leadership', label: '👥 Leadership & Management', color: '#f59e0b', criteres: [
@@ -1475,7 +1490,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [avatarUploadingEdu, setAvatarUploadingEdu] = useState(false)
 
   // ── Explorer (réseau éducateurs/clubs + messagerie) ──
-  const [explorerOnglet, setExplorerOnglet] = useState('educateurs') // 'educateurs' | 'clubs' | 'messages'
+  const [explorerOnglet, setExplorerOnglet] = useState('educateurs') // 'educateurs' | 'clubs' | 'messages' | 'annonces'
   const [explorerRecherche, setExplorerRecherche] = useState('')
   const [explorerRegion, setExplorerRegion] = useState('')
   const [educateursExplorer, setEducateursExplorer] = useState([])
@@ -1487,6 +1502,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [nouveauMessageExplorer, setNouveauMessageExplorer] = useState('')
   const [envoyingMessageExplorer, setEnvoyingMessageExplorer] = useState(false)
   const [showAddParcours, setShowAddParcours] = useState(false)
+  // ── Annonces réseau (onglet d'Explorer) ──
+  const [annonces, setAnnonces] = useState([])
+  const [annoncesLoading, setAnnoncesLoading] = useState(false)
+  const [filtreTypeAnnonce, setFiltreTypeAnnonce] = useState('tous')
+  const [filtreRegionAnnonce, setFiltreRegionAnnonce] = useState(null)
+  const [showNouvelleAnnonce, setShowNouvelleAnnonce] = useState(false)
+  const [nouvelleAnnonce, setNouvelleAnnonce] = useState({ type_annonce: 'recherche_educateur', titre: '', description: '', regions: [], date_evenement: '', contact: '' })
+  const [savingAnnonce, setSavingAnnonce] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
   // Recrutement
@@ -1531,6 +1554,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (activeSection !== 'explorer') return
     if (educateursExplorer.length === 0 && clubsExplorer.length === 0) chargerExplorer()
     chargerMessagesExplorer()
+    if (annonces.length === 0) chargerAnnonces()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection])
 
@@ -4474,6 +4498,41 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     setNouveauMessageExplorer('')
     await chargerMessagesExplorer()
     setEnvoyingMessageExplorer(false)
+  }
+
+  const chargerAnnonces = async () => {
+    setAnnoncesLoading(true)
+    const { data } = await supabase.from('annonces_reseau').select('*').eq('actif', true).order('created_at', { ascending: false })
+    setAnnonces(data || [])
+    setAnnoncesLoading(false)
+  }
+
+  const publierAnnonce = async () => {
+    if (!nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0) return
+    setSavingAnnonce(true)
+    await supabase.from('annonces_reseau').insert({
+      auteur_id: userId,
+      auteur_type: 'educateur',
+      auteur_nom: `${profilEdu?.prenom || profil?.prenom || ''} ${profilEdu?.nom || profil?.nom || ''}`.trim() || 'Un éducateur',
+      auteur_photo: profilEdu?.avatar_url || profil?.avatar_url || null,
+      auteur_region: profil?.region || null,
+      type_annonce: nouvelleAnnonce.type_annonce,
+      titre: nouvelleAnnonce.titre.trim(),
+      description: nouvelleAnnonce.description.trim() || null,
+      regions: nouvelleAnnonce.regions,
+      date_evenement: nouvelleAnnonce.date_evenement || null,
+      contact: nouvelleAnnonce.contact.trim() || null,
+    })
+    setSavingAnnonce(false)
+    setShowNouvelleAnnonce(false)
+    setNouvelleAnnonce({ type_annonce: 'recherche_educateur', titre: '', description: '', regions: [], date_evenement: '', contact: '' })
+    chargerAnnonces()
+  }
+
+  const supprimerAnnonce = async (id) => {
+    if (!confirm('Supprimer cette annonce ?')) return
+    await supabase.from('annonces_reseau').delete().eq('id', id).eq('auteur_id', userId)
+    setAnnonces(prev => prev.filter(a => a.id !== id))
   }
 
   // Matériel confié par le club (materiel_distribution.educateur_id = cet éducateur) —
@@ -9026,6 +9085,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   { id: 'educateurs', label: `Éducateurs (${educateursExplorer.length})` },
                   { id: 'clubs', label: `Clubs (${clubsExplorer.length})` },
                   { id: 'messages', label: `Messages (${conversations.length})` },
+                  { id: 'annonces', label: `Annonces (${annonces.length})` },
                   { id: 'dirigeants', label: t('nav_dirigeants', lang) },
                 ].filter(o => o.id !== 'dirigeants' || canView('dirigeants')).map(o => (
                   <button key={o.id} onClick={() => setExplorerOnglet(o.id)}
@@ -9035,7 +9095,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 ))}
               </div>
 
-              {!['messages', 'dirigeants'].includes(explorerOnglet) && (
+              {!['messages', 'dirigeants', 'annonces'].includes(explorerOnglet) && (
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <input value={explorerRecherche} onChange={e => setExplorerRecherche(e.target.value)}
                     placeholder="Rechercher un nom, un club..."
@@ -9162,7 +9222,77 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   ))}
                   </div>
                 </div>
-              ) : explorerOnglet === 'messages' ? (
+              ) : explorerOnglet === 'annonces' ? (() => {
+                const annoncesFiltrees = annonces.filter(a => {
+                  if (filtreTypeAnnonce !== 'tous' && a.type_annonce !== filtreTypeAnnonce) return false
+                  if (filtreRegionAnnonce && !(a.regions || []).includes(filtreRegionAnnonce)) return false
+                  return true
+                })
+                return (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button onClick={() => setFiltreTypeAnnonce('tous')} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === 'tous' ? colors.accent.blue : colors.background.raised, color: filtreTypeAnnonce === 'tous' ? colors.black : colors.text.faint }}>Toutes</button>
+                        {TYPES_ANNONCE.map(ty => (
+                          <button key={ty.key} onClick={() => setFiltreTypeAnnonce(ty.key)} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === ty.key ? ty.color : colors.background.raised, color: filtreTypeAnnonce === ty.key ? colors.black : colors.text.faint }}>{ty.label}</button>
+                        ))}
+                      </div>
+                      <button onClick={() => setShowNouvelleAnnonce(true)} style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                        📢 Publier une annonce
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+                      <button onClick={() => setFiltreRegionAnnonce(null)} style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: !filtreRegionAnnonce ? colors.accent.blue + alpha.soft : colors.background.raised, color: !filtreRegionAnnonce ? colors.accent.blue : colors.text.faint }}>🇫🇷 Toute la France</button>
+                      {REGIONS_FRANCE.map(r => (
+                        <button key={r} onClick={() => setFiltreRegionAnnonce(r === filtreRegionAnnonce ? null : r)} style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: filtreRegionAnnonce === r ? colors.accent.blue + alpha.soft : colors.background.raised, color: filtreRegionAnnonce === r ? colors.accent.blue : colors.text.faint }}>{r}</button>
+                      ))}
+                    </div>
+
+                    {annoncesLoading ? (
+                      <p style={{ color: colors.text.faint, fontSize: 13 }}>Chargement...</p>
+                    ) : annoncesFiltrees.length === 0 ? (
+                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune annonce pour l'instant.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {annoncesFiltrees.map(a => {
+                          const ty = TYPES_ANNONCE.find(x => x.key === a.type_annonce) || TYPES_ANNONCE[4]
+                          const isOwner = a.auteur_id === userId
+                          return (
+                            <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${ty.color}`, borderRadius: 12, padding: 18 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+                                <div>
+                                  <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: 15 }}>{a.titre}</div>
+                                  <div style={{ color: colors.text.faint, fontSize: 12, marginTop: 2 }}>
+                                    {a.auteur_nom}{a.auteur_region ? ` · 📍 ${a.auteur_region}` : ''} · {new Date(a.created_at).toLocaleDateString('fr-FR')}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                  <span style={{ background: ty.color + '22', color: ty.color, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{ty.label}</span>
+                                  {isOwner && (
+                                    <button onClick={() => supprimerAnnonce(a.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: 18 }}>×</button>
+                                  )}
+                                </div>
+                              </div>
+                              {a.description && <p style={{ color: colors.text.secondary, fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>{a.description}</p>}
+                              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                                {a.date_evenement && <span style={{ color: colors.text.faint, fontSize: 12 }}>📅 {new Date(a.date_evenement).toLocaleDateString('fr-FR')}</span>}
+                                {(a.regions || []).slice(0, 3).map(r => (
+                                  <span key={r} style={{ background: colors.background.raised, color: colors.text.faint, fontSize: 11, padding: '2px 8px', borderRadius: 4 }}>📍 {r}</span>
+                                ))}
+                                {(a.regions || []).length > 3 && <span style={{ color: colors.text.faint, fontSize: 11 }}>+{a.regions.length - 3} régions</span>}
+                                {a.contact && (
+                                  <a href={a.contact.includes('@') ? `mailto:${a.contact}` : `tel:${a.contact}`} style={{ color: colors.accent.blue, fontSize: 12, fontWeight: 700, textDecoration: 'none', marginLeft: 'auto' }}>✉️ Contacter</a>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })() : explorerOnglet === 'messages' ? (
                 conversations.length === 0 ? (
                   <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune conversation pour l'instant — écris à un éducateur ou un club depuis les onglets ci-dessus.</p>
                 ) : (
@@ -9265,6 +9395,72 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <button onClick={envoyerMessageExplorer} disabled={envoyingMessageExplorer || !nouveauMessageExplorer.trim()}
                         style={{ ...st.btnSolid, opacity: (envoyingMessageExplorer || !nouveauMessageExplorer.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <IcoSend />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showNouvelleAnnonce && (
+                <div onClick={() => setShowNouvelleAnnonce(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 28, width: '100%', maxWidth: 580, maxHeight: '85vh', overflowY: 'auto' }}>
+                    <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: 18 }}>📢 Publier une annonce</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div>
+                        <label style={st.label}>Type d'annonce</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {TYPES_ANNONCE.map(ty => (
+                            <button key={ty.key} onClick={() => setNouvelleAnnonce(f => ({ ...f, type_annonce: ty.key }))} style={{ padding: '6px 12px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.type_annonce === ty.key ? ty.color : colors.background.raised, color: nouvelleAnnonce.type_annonce === ty.key ? colors.black : colors.text.faint }}>{ty.label}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={st.label}>Titre *</label>
+                        <input value={nouvelleAnnonce.titre} onChange={e => setNouvelleAnnonce(f => ({ ...f, titre: e.target.value }))}
+                          placeholder="Ex : Tournoi U15 recherche équipes" style={st.input} />
+                      </div>
+
+                      <div>
+                        <label style={st.label}>Description</label>
+                        <textarea value={nouvelleAnnonce.description} onChange={e => setNouvelleAnnonce(f => ({ ...f, description: e.target.value }))}
+                          rows={3} placeholder="Détails de ton annonce..." style={{ ...st.input, resize: 'vertical' }} />
+                      </div>
+
+                      <div>
+                        <label style={st.label}>Régions de diffusion * <span style={{ color: colors.text.disabled, fontWeight: 400, textTransform: 'none' }}>(clique où diffuser)</span></label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          <button onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.length === REGIONS_FRANCE.length ? [] : [...REGIONS_FRANCE] }))}
+                            style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.black : colors.text.faint }}>
+                            🇫🇷 Toute la France
+                          </button>
+                          {REGIONS_FRANCE.map(r => (
+                            <button key={r} onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.includes(r) ? f.regions.filter(x => x !== r) : [...f.regions, r] }))}
+                              style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.includes(r) ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.includes(r) ? colors.black : colors.text.faint }}>
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <label style={st.label}>Date (si événement)</label>
+                          <input type="date" value={nouvelleAnnonce.date_evenement} onChange={e => setNouvelleAnnonce(f => ({ ...f, date_evenement: e.target.value }))} style={st.input} />
+                        </div>
+                        <div>
+                          <label style={st.label}>Contact (email ou tél.)</label>
+                          <input value={nouvelleAnnonce.contact} onChange={e => setNouvelleAnnonce(f => ({ ...f, contact: e.target.value }))} style={st.input} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setShowNouvelleAnnonce(false)} style={st.btn(colors.text.dim)}>Annuler</button>
+                      <button onClick={publierAnnonce} disabled={savingAnnonce || !nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0}
+                        style={{ ...st.btnSolid, opacity: (savingAnnonce || !nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0) ? 0.5 : 1 }}>
+                        {savingAnnonce ? 'Publication...' : 'Publier'}
                       </button>
                     </div>
                   </div>
