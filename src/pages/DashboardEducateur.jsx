@@ -7741,28 +7741,26 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   <p>{t('recrut_aucun_trouve', lang)}</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {filtered.map(j => (
                     <div key={j.id} onClick={async () => { setRecrutSelectedJoueur(j); const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }); setRecrutParcours(data || []) }}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer', transition: 'border-color 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
                       onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                        <Avatar person={j} size={44} bg={colors.accent.green + alpha.subtle} border="1px solid #4ade8030" textColor={colors.accent.green} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
+                      <Avatar person={j} size={40} bg={colors.accent.green + alpha.subtle} border="1px solid #4ade8030" textColor={colors.accent.green} />
+                      <div style={{ flex: 1, minWidth: '160px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                          {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
+                          {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
+                          {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
                         </div>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
                       </div>
-                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                        {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
-                        {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '6px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px' }}>
+                      <div style={{ display: 'flex', gap: '18px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
                         {[{ label: t('recrut_matchs', lang), val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('recrut_passes', lang), val: j.passes_decisives || 0 }].map(s => (
                           <div key={s.label} style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '17px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
                             <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase' }}>{s.label}</div>
                           </div>
                         ))}
@@ -9191,42 +9189,41 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               ) : listeFiltree.length === 0 ? (
                 <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun résultat.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {listeFiltree.map(p => {
                     const recrutements = explorerOnglet === 'clubs' ? (recrutementsParClubExplorer[p.id] || []) : []
                     const nomAffiche = explorerOnglet === 'clubs' ? (p.club || `${p.prenom || ''} ${p.nom || ''}`.trim()) : `${p.prenom || ''} ${p.nom || ''}`.trim()
                     return (
-                      <div key={p.id} onClick={() => ouvrirChatExplorer(p)} style={{ ...st.card, cursor: 'pointer' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                          <Avatar person={{ ...p, nom: nomAffiche }} size={48} border={`2px solid ${colors.accent.blue}30`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
-                              {explorerOnglet === 'clubs' && p.verified && <span title="Profil vérifié" style={{ fontSize: '12px' }}>✅</span>}
-                            </div>
-                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                      <div key={p.id} onClick={() => ouvrirChatExplorer(p)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer' }}>
+                        <Avatar person={{ ...p, nom: nomAffiche }} size={40} border={`2px solid ${colors.accent.blue}30`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                        <div style={{ flex: 1, minWidth: '180px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
+                            {explorerOnglet === 'clubs' && p.verified && <span title="Profil vérifié" style={{ fontSize: '12px' }}>✅</span>}
+                            <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
                               {explorerOnglet === 'educateurs' ? [p.niveau_equipe, p.region].filter(Boolean).join(' · ') : p.region}
-                            </p>
+                            </span>
                           </div>
+                          {(p.description || p.bio) && (
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
+                          )}
+                          {recrutements.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                              {recrutements.map((r, i) => (
+                                <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
+                                  Recrute · {labelCategorie(r.categorie)} · {r.poste}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {(p.description || p.bio) && (
-                          <p style={{ margin: '0 0 8px', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
-                        )}
-                        {recrutements.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                            {recrutements.map((r, i) => (
-                              <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
-                                Recrute · {labelCategorie(r.categorie)} · {r.poste}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
                           <button onClick={e => { e.stopPropagation(); navigate(`/clubs/${p.id}`) }}
-                            style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                             Voir le profil public
                           </button>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600 }}><IcoSend /> Message</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}><IcoSend /> Message</span>
                         </div>
                       </div>
                     )
