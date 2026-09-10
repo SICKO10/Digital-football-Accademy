@@ -1449,7 +1449,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingCloture, setSavingCloture] = useState(false)
   const [savingHeureSeance, setSavingHeureSeance] = useState(false)
   const [showPlanificateur, setShowPlanificateur] = useState(false)
-  const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', heure: '', theme: '' })
+  const [planSaison, setPlanSaison] = useState({ joursActifs: [], dateDebut: '', dateFin: '', heuresParJour: {}, theme: '' })
   const [generatingPlan, setGeneratingPlan] = useState(false)
   const [planProgress, setPlanProgress] = useState({ done: 0, total: 0 })
 
@@ -4045,24 +4045,25 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
   const genererSaison = async () => {
     if (!planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) return
     setGeneratingPlan(true)
-    // Construire la liste de toutes les dates correspondantes
+    // Construire la liste de toutes les dates correspondantes, avec l'heure propre
+    // à chaque jour de semaine (ex : mardi/jeudi 20h, vendredi 19h)
     const dates = []
     const cur = new Date(planSaison.dateDebut)
     const end = new Date(planSaison.dateFin)
     while (cur <= end) {
       if (planSaison.joursActifs.includes(cur.getDay())) {
-        dates.push(cur.toISOString().split('T')[0])
+        dates.push({ date: cur.toISOString().split('T')[0], heure: planSaison.heuresParJour[cur.getDay()] || null })
       }
       cur.setDate(cur.getDate() + 1)
     }
     // Ne créer que les dates qui n'existent pas déjà
     const existingDates = new Set(entrainements.map(e => e.date?.substring(0, 10)))
-    const newDates = dates.filter(d => !existingDates.has(d))
+    const newDates = dates.filter(d => !existingDates.has(d.date))
     setPlanProgress({ done: 0, total: newDates.length })
     for (let i = 0; i < newDates.length; i++) {
       const { data } = await supabase.from('entrainements').insert({
-        date: newDates[i],
-        heure: planSaison.heure || null,
+        date: newDates[i].date,
+        heure: newDates[i].heure,
         description: planSaison.theme || '',
         educateur_id: userId,
         club_categorie_id: equipeActive?.id || null
@@ -4073,16 +4074,20 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
     await chargerEntrainements(userId, equipeActive?.id)
     setGeneratingPlan(false)
     setShowPlanificateur(false)
-    setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', heure: '', theme: '' })
+    setPlanSaison({ joursActifs: [], dateDebut: '', dateFin: '', heuresParJour: {}, theme: '' })
   }
 
   const toggleJourPlan = (jour) => {
-    setPlanSaison(prev => ({
-      ...prev,
-      joursActifs: prev.joursActifs.includes(jour)
-        ? prev.joursActifs.filter(j => j !== jour)
-        : [...prev.joursActifs, jour]
-    }))
+    setPlanSaison(prev => {
+      const actif = prev.joursActifs.includes(jour)
+      const heuresParJour = { ...prev.heuresParJour }
+      if (actif) delete heuresParJour[jour]
+      return {
+        ...prev,
+        joursActifs: actif ? prev.joursActifs.filter(j => j !== jour) : [...prev.joursActifs, jour],
+        heuresParJour,
+      }
+    })
   }
 
   // Statuts disponibles (cycle au clic)
@@ -7268,25 +7273,31 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: colors.accent.blue }}>📅 {t('ent_planifier_saison', lang)}</p>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('ent_choisis_jours', lang)}</p>
 
-                {/* Jours de la semaine */}
+                {/* Jours de la semaine — chacun avec sa propre heure (ex: mar/jeu 20h, ven 19h) */}
                 <label style={st.label}>{t('ent_jours_entrainement', lang)}</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
                   {[['Lun',1],['Mar',2],['Mer',3],['Jeu',4],['Ven',5],['Sam',6],['Dim',0]].map(([label, num]) => {
                     const actif = planSaison.joursActifs.includes(num)
                     return (
-                      <button key={num} onClick={() => toggleJourPlan(num)}
-                        style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.soft : colors.background.raised, color: actif ? colors.accent.blue : colors.text.dim, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
-                        {label}
-                      </button>
+                      <div key={num} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button onClick={() => toggleJourPlan(num)}
+                          style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.soft : colors.background.raised, color: actif ? colors.accent.blue : colors.text.dim, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
+                          {label}
+                        </button>
+                        {actif && (
+                          <input type="time" value={planSaison.heuresParJour[num] || ''}
+                            onChange={e => setPlanSaison(p => ({ ...p, heuresParJour: { ...p.heuresParJour, [num]: e.target.value } }))}
+                            style={{ ...st.input, width: '110px', padding: '6px 8px' }} />
+                        )}
+                      </div>
                     )
                   })}
                 </div>
 
-                {/* Dates + heure + thème */}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
+                {/* Dates + thème */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
                   <div><label style={st.label}>{t('ent_debut_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} /></div>
                   <div><label style={st.label}>{t('ent_fin_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} /></div>
-                  <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={planSaison.heure} onChange={e => setPlanSaison(p => ({ ...p, heure: e.target.value }))} /></div>
                   <div><label style={st.label}>{t('ent_theme_defaut', lang)}</label><input style={st.input} placeholder="Ex: Entraînement, Préparation physique..." value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} /></div>
                 </div>
 
