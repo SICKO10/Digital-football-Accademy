@@ -39,6 +39,22 @@ const CONTACT_ROLES = [
 ]
 const CONTACT_ROLE_LABEL = (role) => CONTACT_ROLES.find(r => r.val === role)?.label || null
 
+// ── CRM prospects (pipeline commercial, avant signature) ─────────────────────
+const STATUTS_PROSPECT = [
+  { val: 'nouveau', label: 'Nouveau', couleur: '#6b7280' },
+  { val: 'contacte', label: 'Contacté', couleur: '#60a5fa' },
+  { val: 'proposition', label: 'Proposition envoyée', couleur: '#a78bfa' },
+  { val: 'negociation', label: 'Négociation', couleur: '#f59e0b' },
+  { val: 'gagne', label: 'Gagné', couleur: '#22c55e' },
+  { val: 'perdu', label: 'Perdu', couleur: '#ef4444' },
+]
+const TYPES_ECHANGE = [
+  { val: 'note', label: '📝 Note' },
+  { val: 'appel', label: '📞 Appel' },
+  { val: 'email', label: '✉️ Email' },
+  { val: 'rdv', label: '🤝 RDV' },
+]
+
 const stSombre = {
   card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
@@ -486,6 +502,219 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
   )
 }
 
+// Fiche prospect complète : édition des infos + statut/pipeline + historique
+// des échanges + conversion en sponsor signé une fois gagné. Un seul modal
+// plutôt qu'un modal liste + un modal détail séparés, pour rester simple.
+function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjouterEchange, onConvertir, saving, accentColor = '#4ade80' }) {
+  const st = useSt()
+  const isMobile = useWindowWidth() < 768
+  const [form, setForm] = useState(() => ({
+    nom_entreprise: prospect?.nom_entreprise || '',
+    secteur: prospect?.secteur || '',
+    adresse: prospect?.adresse || '',
+    ville: prospect?.ville || '',
+    contact_nom: prospect?.contact_nom || '',
+    contact_fonction: prospect?.contact_fonction || '',
+    contact_email: prospect?.contact_email || '',
+    contact_telephone: prospect?.contact_telephone || '',
+    recommande_par: prospect?.recommande_par || '',
+    interets: prospect?.interets || '',
+    equipe_interessee: prospect?.equipe_interessee || '',
+    budget_estime: prospect?.budget_estime != null ? String(prospect.budget_estime) : '',
+    montant_potentiel: prospect?.montant_potentiel != null ? String(prospect.montant_potentiel) : '',
+    probabilite: prospect?.probabilite ?? 20,
+    statut: prospect?.statut || 'nouveau',
+    responsable: prospect?.responsable || '',
+    prochaine_action: prospect?.prochaine_action || '',
+    date_relance: prospect?.date_relance || '',
+    offre_proposee: prospect?.offre_proposee || '',
+    motif_refus: prospect?.motif_refus || '',
+    relance_saison_suivante: prospect?.relance_saison_suivante || false,
+  }))
+  const [nouvelEchange, setNouvelEchange] = useState('')
+  const [typeEchange, setTypeEchange] = useState('note')
+
+  const champ = (key, value) => setForm(f => ({ ...f, [key]: value }))
+  const valide = form.nom_entreprise.trim().length > 0
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{prospect ? 'Modifier le prospect' : 'Nouveau prospect'}</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Entreprise *</label>
+              <input style={st.input} value={form.nom_entreprise} onChange={e => champ('nom_entreprise', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Secteur</label>
+              <input style={st.input} value={form.secteur} onChange={e => champ('secteur', e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Adresse</label>
+              <input style={st.input} value={form.adresse} onChange={e => champ('adresse', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Ville / zone</label>
+              <input style={st.input} value={form.ville} onChange={e => champ('ville', e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: st.border, margin: '4px 0' }} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Contact — nom</label>
+              <input style={st.input} value={form.contact_nom} onChange={e => champ('contact_nom', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Contact — fonction</label>
+              <input style={st.input} value={form.contact_fonction} onChange={e => champ('contact_fonction', e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Contact — email</label>
+              <input style={st.input} type="email" value={form.contact_email} onChange={e => champ('contact_email', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Contact — téléphone</label>
+              <input style={st.input} value={form.contact_telephone} onChange={e => champ('contact_telephone', e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label style={st.label}>Recommandé par</label>
+            <input style={st.input} value={form.recommande_par} onChange={e => champ('recommande_par', e.target.value)} />
+          </div>
+
+          <div style={{ height: 1, background: st.border, margin: '4px 0' }} />
+
+          <div>
+            <label style={st.label}>Statut</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {STATUTS_PROSPECT.map(s => (
+                <button key={s.val} onClick={() => champ('statut', s.val)} style={{ padding: '6px 12px', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', background: form.statut === s.val ? s.couleur : st.bgRaised, color: form.statut === s.val ? '#000' : st.textFaint }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {form.statut === 'perdu' && (
+            <div>
+              <label style={st.label}>Motif du refus</label>
+              <input style={st.input} value={form.motif_refus} onChange={e => champ('motif_refus', e.target.value)} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: st.textDim, marginTop: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.relance_saison_suivante} onChange={e => champ('relance_saison_suivante', e.target.checked)} />
+                À relancer la saison prochaine
+              </label>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Budget estimé (€)</label>
+              <input style={st.input} type="number" min="0" step="0.01" value={form.budget_estime} onChange={e => champ('budget_estime', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Montant potentiel (€)</label>
+              <input style={st.input} type="number" min="0" step="0.01" value={form.montant_potentiel} onChange={e => champ('montant_potentiel', e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label style={st.label}>Probabilité de signature — {form.probabilite}%</label>
+            <input type="range" min="0" max="100" step="10" value={form.probabilite} onChange={e => champ('probabilite', Number(e.target.value))} style={{ width: '100%' }} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Équipe / projet intéressant</label>
+              <input style={st.input} value={form.equipe_interessee} onChange={e => champ('equipe_interessee', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Responsable commercial</label>
+              <input style={st.input} value={form.responsable} onChange={e => champ('responsable', e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label style={st.label}>Intérêts identifiés</label>
+            <input style={st.input} value={form.interets} onChange={e => champ('interets', e.target.value)} />
+          </div>
+          <div>
+            <label style={st.label}>Offre proposée</label>
+            <input style={st.input} value={form.offre_proposee} onChange={e => champ('offre_proposee', e.target.value)} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={st.label}>Prochaine action</label>
+              <input style={st.input} value={form.prochaine_action} onChange={e => champ('prochaine_action', e.target.value)} />
+            </div>
+            <div>
+              <label style={st.label}>Date de relance</label>
+              <input style={st.input} type="date" value={form.date_relance} onChange={e => champ('date_relance', e.target.value)} />
+            </div>
+          </div>
+
+          {prospect && (
+            <>
+              <div style={{ height: 1, background: st.border, margin: '4px 0' }} />
+              <div>
+                <label style={st.label}>Historique des échanges</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px', maxHeight: '160px', overflowY: 'auto' }}>
+                  {(echanges || []).length === 0 ? (
+                    <p style={{ color: st.textGhost, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucun échange enregistré.</p>
+                  ) : echanges.map(e => (
+                    <div key={e.id} style={{ background: st.bgRaised, borderRadius: '8px', padding: '8px 10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: st.textFaint, marginBottom: '2px' }}>
+                        <span>{TYPES_ECHANGE.find(t => t.val === e.type)?.label || e.type}</span>
+                        <span>{new Date(e.created_at).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      <div style={{ fontSize: '13px', color: st.textDim }}>{e.contenu}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <select style={{ ...st.input, width: 'auto' }} value={typeEchange} onChange={e => setTypeEchange(e.target.value)}>
+                    {TYPES_ECHANGE.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+                  </select>
+                  <input style={{ ...st.input, flex: 1 }} placeholder="Ajouter une note..." value={nouvelEchange}
+                    onChange={e => setNouvelEchange(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && nouvelEchange.trim()) { onAjouterEchange(prospect.id, typeEchange, nouvelEchange.trim()); setNouvelEchange('') } }} />
+                  <button onClick={() => { if (nouvelEchange.trim()) { onAjouterEchange(prospect.id, typeEchange, nouvelEchange.trim()); setNouvelEchange('') } }} style={st.btnSecondary}>Ajouter</button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {prospect && form.statut === 'gagne' && !prospect.sponsor_id && (
+          <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '10px', padding: '12px 14px', marginTop: '16px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', color: accentColor, fontWeight: 700 }}>🎉 Prospect gagné !</p>
+            <button onClick={() => onConvertir(prospect)} style={st.btnSolid(accentColor)}>Créer la fiche sponsor signé</button>
+          </div>
+        )}
+        {prospect?.sponsor_id && (
+          <p style={{ color: '#22c55e', fontSize: '12px', fontWeight: 700, marginTop: '16px' }}>✅ Converti en sponsor signé</p>
+        )}
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <button onClick={() => onSave(form)} disabled={!valide || saving} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
+            {saving ? 'Enregistrement...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
+          </button>
+          {prospect && <button onClick={() => onDelete(prospect.id)} style={{ ...st.btnSecondary, color: '#ef4444' }}>Supprimer</button>}
+          <button onClick={onClose} style={st.btnSecondary}>Annuler</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Composant principal ──────────────────────────────────────────────────────
 export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
   const st = useSt()
@@ -501,6 +730,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const [modalPaiement, setModalPaiement] = useState(null) // null | sponsor
   const [saving, setSaving] = useState(false)
   const [triSponsors, setTriSponsors] = useState('defaut')
+  // ── CRM prospects (pipeline, indépendant de la saison) ──
+  const [prospects, setProspects] = useState([])
+  const [modalProspect, setModalProspect] = useState(null) // null | 'new' | prospect
+  const [echangesProspect, setEchangesProspect] = useState([])
 
   const loadData = async () => {
     setLoading(true)
@@ -519,7 +752,94 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     setLoading(false)
   }
 
+  const loadProspects = async () => {
+    const { data } = await supabase.from('prospects_sponsors').select('*').eq('club_id', clubId).order('created_at', { ascending: false })
+    setProspects(data || [])
+  }
+
   useEffect(() => { if (clubId) loadData() }, [clubId, saisonActive])
+  useEffect(() => { if (clubId) loadProspects() }, [clubId])
+
+  // ── CRUD prospects ──
+  const sauvegarderProspect = async (form) => {
+    setSaving(true)
+    const estEdition = modalProspect && modalProspect !== 'new'
+    const payload = {
+      club_id: clubId,
+      nom_entreprise: form.nom_entreprise.trim(),
+      secteur: form.secteur || null,
+      adresse: form.adresse || null,
+      ville: form.ville || null,
+      contact_nom: form.contact_nom || null,
+      contact_fonction: form.contact_fonction || null,
+      contact_email: form.contact_email || null,
+      contact_telephone: form.contact_telephone || null,
+      recommande_par: form.recommande_par || null,
+      interets: form.interets || null,
+      equipe_interessee: form.equipe_interessee || null,
+      budget_estime: form.budget_estime ? Number(form.budget_estime) : null,
+      montant_potentiel: form.montant_potentiel ? Number(form.montant_potentiel) : null,
+      probabilite: form.probabilite,
+      statut: form.statut,
+      responsable: form.responsable || null,
+      prochaine_action: form.prochaine_action || null,
+      date_relance: form.date_relance || null,
+      offre_proposee: form.offre_proposee || null,
+      motif_refus: form.motif_refus || null,
+      relance_saison_suivante: form.relance_saison_suivante,
+      updated_at: new Date().toISOString(),
+    }
+    const { data, error } = estEdition
+      ? await supabase.from('prospects_sponsors').update(payload).eq('id', modalProspect.id).select().single()
+      : await supabase.from('prospects_sponsors').insert(payload).select().single()
+    setSaving(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setModalProspect(null)
+    if (data) setProspects(prev => estEdition ? prev.map(p => (p.id === data.id ? data : p)) : [data, ...prev])
+  }
+
+  const supprimerProspect = async (id) => {
+    if (!confirm('Supprimer ce prospect ?')) return
+    await supabase.from('prospects_sponsors').delete().eq('id', id)
+    setProspects(prev => prev.filter(p => p.id !== id))
+    setModalProspect(null)
+  }
+
+  const ouvrirProspect = async (prospect) => {
+    setModalProspect(prospect)
+    const { data } = await supabase.from('prospects_echanges').select('*').eq('prospect_id', prospect.id).order('created_at', { ascending: false })
+    setEchangesProspect(data || [])
+  }
+
+  const ajouterEchangeProspect = async (prospectId, type, contenu) => {
+    const { data } = await supabase.from('prospects_echanges').insert({ prospect_id: prospectId, type, contenu }).select().single()
+    if (data) setEchangesProspect(prev => [data, ...prev])
+  }
+
+  // Convertit un prospect gagné en ligne réelle de la table sponsors (celle
+  // gérée par l'onglet "Sponsors" pour le suivi post-signature) — le prospect
+  // reste dans le pipeline (statut "gagne") mais pointe désormais vers sa
+  // fiche sponsor via sponsor_id, pour ne pas le proposer deux fois.
+  const convertirEnSponsor = async (prospect) => {
+    const { data, error } = await supabase.from('sponsors').insert({
+      club_id: clubId,
+      saison: saisonActive,
+      entreprise: prospect.nom_entreprise,
+      contact_nom: prospect.contact_nom || null,
+      contact_role: prospect.contact_fonction || null,
+      contact_email: prospect.contact_email || null,
+      contact_telephone: prospect.contact_telephone || null,
+      montant_contrat: prospect.montant_potentiel || 0,
+      notes: prospect.interets || null,
+      paiements: [],
+    }).select().single()
+    if (error) { alert('Erreur : ' + error.message); return }
+    await supabase.from('prospects_sponsors').update({ sponsor_id: data.id }).eq('id', prospect.id)
+    setSponsors(prev => [...prev, data])
+    setProspects(prev => prev.map(p => (p.id === prospect.id ? { ...p, sponsor_id: data.id } : p)))
+    setModalProspect(null)
+    setVue('sponsors')
+  }
 
   // ── CRUD sponsors ──
   const sauvegarderSponsor = async (form) => {
@@ -678,6 +998,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         <div style={st.tabs}>
           {[
             { id: 'dashboard', label: 'Tableau de bord' },
+            { id: 'prospects', label: `Prospects${prospects.length ? ` (${prospects.length})` : ''}` },
             { id: 'sponsors', label: 'Sponsors' },
             { id: 'niveaux', label: 'Niveaux' },
           ].map(t => (
@@ -685,11 +1006,17 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           ))}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
-            {SAISONS.map(s => <option key={s}>{s}</option>)}
-          </select>
-          {!readOnly && (
-            <button onClick={() => setModalSponsor('new')} style={st.btnSolid(accentColor)}>+ Ajouter un sponsor</button>
+          {vue === 'prospects' ? (
+            !readOnly && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
+          ) : (
+            <>
+              <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
+                {SAISONS.map(s => <option key={s}>{s}</option>)}
+              </select>
+              {!readOnly && (
+                <button onClick={() => setModalSponsor('new')} style={st.btnSolid(accentColor)}>+ Ajouter un sponsor</button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -831,6 +1158,52 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         </div>
       )}
 
+      {vue === 'prospects' && (
+        <div>
+          {prospects.length === 0 ? (
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
+              Aucun prospect pour l'instant. Clique sur "+ Nouveau prospect" pour démarrer ton pipeline commercial.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+              {STATUTS_PROSPECT.map(statutInfo => {
+                const prospectsColonne = prospects.filter(p => p.statut === statutInfo.val)
+                const totalColonne = prospectsColonne.reduce((s, p) => s + (Number(p.montant_potentiel) || 0), 0)
+                return (
+                  <div key={statutInfo.val} style={{ flex: '0 0 260px', width: '260px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', marginBottom: '8px' }}>
+                      <span style={{ color: statutInfo.couleur, fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{statutInfo.label}</span>
+                      <span style={{ color: st.textFaint, fontSize: '11px' }}>{prospectsColonne.length}</span>
+                    </div>
+                    {totalColonne > 0 && (
+                      <p style={{ margin: '0 0 8px', padding: '0 10px', color: st.textFaint, fontSize: '11px' }}>{totalColonne.toLocaleString('fr-FR')} € potentiel</p>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {prospectsColonne.map(p => (
+                        <div key={p.id} onClick={() => ouvrirProspect(p)}
+                          style={{ ...st.card, padding: '12px 14px', cursor: 'pointer', borderTop: `3px solid ${statutInfo.couleur}` }}>
+                          <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '13px' }}>{p.nom_entreprise}</p>
+                          {p.secteur && <p style={{ margin: '0 0 6px', color: st.textFaint, fontSize: '11px' }}>{p.secteur}</p>}
+                          {p.montant_potentiel != null && (
+                            <p style={{ margin: '0 0 4px', color: accentColor, fontSize: '13px', fontWeight: 700 }}>{Number(p.montant_potentiel).toLocaleString('fr-FR')} €</p>
+                          )}
+                          <p style={{ margin: 0, color: st.textFaint, fontSize: '11px' }}>{p.probabilite}% de probabilité</p>
+                          {p.prochaine_action && (
+                            <p style={{ margin: '6px 0 0', color: st.textDim, fontSize: '11px', borderTop: `1px solid ${st.border}`, paddingTop: '6px' }}>
+                              → {p.prochaine_action}{p.date_relance ? ` (${new Date(p.date_relance).toLocaleDateString('fr-FR')})` : ''}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {vue === 'sponsors' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1.25rem' }}>
@@ -920,6 +1293,19 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           onClose={() => setModalPaiement(null)}
           onSave={ajouterPaiement}
           saving={saving}
+        />
+      )}
+      {modalProspect && (
+        <ModalProspect
+          prospect={modalProspect === 'new' ? null : modalProspect}
+          echanges={echangesProspect}
+          onClose={() => setModalProspect(null)}
+          onSave={sauvegarderProspect}
+          onDelete={supprimerProspect}
+          onAjouterEchange={ajouterEchangeProspect}
+          onConvertir={convertirEnSponsor}
+          saving={saving}
+          accentColor={accentColor}
         />
       )}
     </div>
