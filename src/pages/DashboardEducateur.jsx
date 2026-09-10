@@ -21,6 +21,7 @@ import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget
 import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
 import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
 import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
+import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
@@ -4364,8 +4365,9 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
     ] },
-    { titre: 'PROJET SPORTIF', items: [
+    { titre: 'THÈME PROJET', items: [
       { key: 'projet_sportif', label: 'Projet Sportif', icon: <IcoStar /> },
+      { key: 'projet_club_cff4', label: 'Projet Club — CFF4', icon: <IcoBuilding /> },
     ] },
     { titre: t('section_suivi_reseau', lang), items: [
       { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
@@ -8970,6 +8972,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
         {activeSection === 'projet_sportif' && (
           <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id} />
+        )}
+
+        {activeSection === 'projet_club_cff4' && (
+          <ProjetClubCFF4 userId={userId} clubId={clubAffiliation?.club_id} />
         )}
 
         {activeSection === 'explorer' && (() => {
