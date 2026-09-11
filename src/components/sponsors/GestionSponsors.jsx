@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../supabase'
 import { makeUseSt } from '../../lib/theme'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
 import CatalogueOffres from './CatalogueOffres'
 import ValorisationClub from './ValorisationClub'
+import DossierCommercialTemplate from './DossierCommercialTemplate'
 
 const COULEURS_NIVEAU = [
   { val: '#22c55e', label: 'Vert' },
@@ -510,7 +511,7 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 // Fiche prospect complète : édition des infos + statut/pipeline + historique
 // des échanges + conversion en sponsor signé une fois gagné. Un seul modal
 // plutôt qu'un modal liste + un modal détail séparés, pour rester simple.
-function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjouterEchange, onConvertir, saving, accentColor = '#4ade80' }) {
+function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjouterEchange, onConvertir, onGenererDossier, saving, accentColor = '#4ade80' }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
@@ -698,6 +699,12 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
           )}
         </div>
 
+        {prospect && (
+          <button onClick={() => onGenererDossier(prospect)} style={{ ...st.btnSecondary, marginTop: '16px', width: '100%' }}>
+            📄 Générer un dossier commercial personnalisé
+          </button>
+        )}
+
         {prospect && form.statut === 'gagne' && !prospect.sponsor_id && (
           <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '10px', padding: '12px 14px', marginTop: '16px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '13px', color: accentColor, fontWeight: 700 }}>🎉 Prospect gagné !</p>
@@ -739,6 +746,15 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const [prospects, setProspects] = useState([])
   const [modalProspect, setModalProspect] = useState(null) // null | 'new' | prospect
   const [echangesProspect, setEchangesProspect] = useState([])
+  // ── Dossier commercial (PDF personnalisé) ──
+  const [modalDossier, setModalDossier] = useState(null) // null | prospect
+  const [clubInfoDossier, setClubInfoDossier] = useState(null)
+  const [valorisationDossier, setValorisationDossier] = useState(null)
+  const [offresDossier, setOffresDossier] = useState([])
+  const [offresSelectionnees, setOffresSelectionnees] = useState([])
+  const [logoProspectDossier, setLogoProspectDossier] = useState(null)
+  const [dossierLoading, setDossierLoading] = useState(false)
+  const pdfDossierRef = useRef(null)
 
   const loadData = async () => {
     setLoading(true)
@@ -819,6 +835,64 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const ajouterEchangeProspect = async (prospectId, type, contenu) => {
     const { data } = await supabase.from('prospects_echanges').insert({ prospect_id: prospectId, type, contenu }).select().single()
     if (data) setEchangesProspect(prev => [data, ...prev])
+  }
+
+  // Dossier commercial personnalisé — charge la valorisation du club et son
+  // catalogue d'offres actives, pour laisser le club choisir lesquelles
+  // recommander à ce prospect précis avant de générer le PDF.
+  const ouvrirDossier = async (prospect) => {
+    setModalDossier(prospect)
+    setOffresSelectionnees([])
+    setLogoProspectDossier(null)
+    const [{ data: club }, { data: valo }, { data: off }] = await Promise.all([
+      supabase.from('profiles').select('club, avatar_url, couleur_principale, couleur_secondaire').eq('id', clubId).maybeSingle(),
+      supabase.from('club_valorisation').select('*').eq('club_id', clubId).maybeSingle(),
+      supabase.from('offres_sponsoring').select('*').eq('club_id', clubId).eq('actif', true).order('prix', { ascending: false }),
+    ])
+    setClubInfoDossier(club || null)
+    setValorisationDossier(valo || null)
+    setOffresDossier(off || [])
+  }
+
+  const handleLogoProspect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => setLogoProspectDossier(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  const genererDossierPDF = async () => {
+    if (!pdfDossierRef.current || !modalDossier) return
+    setDossierLoading(true)
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(pdfDossierRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 1200 })
+      const { jsPDF } = await import('jspdf')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const imgData = canvas.toDataURL('image/png')
+      let heightLeft = imgHeight
+      let position = 0
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      pdf.save(`dossier-commercial-${modalDossier.nom_entreprise.replace(/\s+/g, '-')}.pdf`)
+      setModalDossier(null)
+    } catch (e) {
+      console.error('Erreur génération dossier commercial:', e)
+      alert('Erreur lors de la génération du PDF.')
+    } finally {
+      setDossierLoading(false)
+    }
   }
 
   // Convertit un prospect gagné en ligne réelle de la table sponsors (celle
@@ -1435,9 +1509,76 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           onDelete={supprimerProspect}
           onAjouterEchange={ajouterEchangeProspect}
           onConvertir={convertirEnSponsor}
+          onGenererDossier={ouvrirDossier}
           saving={saving}
           accentColor={accentColor}
         />
+      )}
+
+      {modalDossier && (
+        <div onClick={() => setModalDossier(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📄 Dossier commercial — {modalDossier.nom_entreprise}</p>
+              <button onClick={() => setModalDossier(null)} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={st.label}>Logo du prospect (optionnel)</label>
+                <input type="file" accept="image/*" onChange={handleLogoProspect} style={st.input} />
+              </div>
+
+              <div>
+                <label style={st.label}>Offres à recommander</label>
+                {offresDossier.length === 0 ? (
+                  <p style={{ color: st.textGhost, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>
+                    Aucune offre active dans ton catalogue — ajoutes-en depuis l'onglet "Offres" pour les proposer ici.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {offresDossier.map(o => (
+                      <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: st.textDim, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={offresSelectionnees.includes(o.id)}
+                          onChange={() => setOffresSelectionnees(prev => prev.includes(o.id) ? prev.filter(id => id !== o.id) : [...prev, o.id])} />
+                        {o.nom} — {Number(o.prix).toLocaleString('fr-FR')} €
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {!valorisationDossier && (
+                <p style={{ color: '#f59e0b', fontSize: '12px', margin: 0 }}>
+                  ⚠️ Aucune donnée de valorisation renseignée — complète l'onglet "Valorisation" pour un dossier plus convaincant.
+                </p>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={genererDossierPDF} disabled={dossierLoading} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: dossierLoading ? 0.6 : 1 }}>
+                {dossierLoading ? 'Génération...' : 'Générer le PDF'}
+              </button>
+              <button onClick={() => setModalDossier(null)} style={st.btnSecondary}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template caché utilisé pour la capture html2canvas du dossier commercial */}
+      {modalDossier && (
+        <div style={{ position: 'absolute', left: -9999, top: 0 }}>
+          <DossierCommercialTemplate
+            ref={pdfDossierRef}
+            club={clubInfoDossier}
+            valorisation={valorisationDossier}
+            offres={offresDossier.filter(o => offresSelectionnees.includes(o.id))}
+            prospect={modalDossier}
+            logoProspect={logoProspectDossier}
+            couleurPrimaire={clubInfoDossier?.couleur_principale || accentColor}
+            couleurSecondaire={clubInfoDossier?.couleur_secondaire}
+          />
+        </div>
       )}
     </div>
   )
