@@ -136,18 +136,21 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     const chargerDonnees = async () => {
       if (!userId) return;
       setProfilEdit({ prenom: profil?.prenom || '', nom: profil?.nom || '', club: profil?.club || '', region: profil?.region || '', type_recruteur: profil?.type_recruteur || '', description: profil?.description || '', recherche_profil: profil?.recherche_profil || '' });
-      const { data: joueursData } = await supabase.from("profiles").select("*").eq("plan", "joueur_pro").eq("abonnement_actif", true);
-      const { data: coachData } = await supabase.from("profiles").select("*").eq("plan", "coach");
+      // Les 5 chargements sont indépendants (aucun ne dépend du résultat d'un
+      // autre) — lancés en parallèle plutôt qu'en série.
+      const [{ data: joueursData }, { data: coachData }, { data: certifData }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("plan", "joueur_pro").eq("abonnement_actif", true),
+        supabase.from("profiles").select("*").eq("plan", "coach"),
+        supabase.from("certifications").select("joueur_id, niveau, saison, statut").eq("statut", "validé"),
+        chargerConversations(userId),
+        chargerFavoris(userId),
+      ]);
       setJoueurs(joueursData || []);
       setFiltered(joueursData || []);
       setCoaches(coachData || []);
-      // Charger les certifications validées
-      const { data: certifData } = await supabase.from("certifications").select("joueur_id, niveau, saison, statut").eq("statut", "validé");
       const certifMap = {};
       (certifData || []).forEach(c => { certifMap[c.joueur_id] = c; });
       setCertifications(certifMap);
-      await chargerConversations(userId);
-      await chargerFavoris(userId);
       setLoading(false);
     };
     chargerDonnees();
@@ -494,9 +497,13 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     setSelectedJoueur(j)
     setJoueurParcours([])
     setValidationsClub([])
-    const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false })
+    // parcours et validations sont indépendants (chargerValidations gère son
+    // propre state) — lancés en parallèle plutôt qu'en séquence.
+    const [{ data }] = await Promise.all([
+      supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }),
+      userId ? chargerValidations(j.id) : Promise.resolve(),
+    ])
     setJoueurParcours(data || [])
-    if (userId) await chargerValidations(j.id)
   }
 
   if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#f97316" }}>Chargement...</div></div>;

@@ -64,21 +64,24 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
   }, [isActive])
 
   const chargerInteractions = async () => {
-    const { data: lk } = await supabase.from('likes').select('id, user_id').eq('clip_id', reel.joueur_id)
+    // Les 4 requêtes sont indépendantes — lancées en parallèle plutôt qu'en
+    // série (montée à chaque reel affiché dans le flux, impact multiplié par
+    // le nombre de cartes).
+    const [{ data: lk }, favRes, { data: rp }, { data: cm }] = await Promise.all([
+      supabase.from('likes').select('id, user_id').eq('clip_id', reel.joueur_id),
+      user ? supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id) : Promise.resolve({ data: null }),
+      supabase.from('reposts').select('id, user_id').eq('joueur_id', reel.joueur_id),
+      supabase.from('comments')
+        .select('*, author:profiles!comments_user_id_fkey(prenom, nom, avatar_url)')
+        .eq('joueur_id', reel.joueur_id)
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ])
     setLikeCount(lk?.length || 0)
     if (user) setLiked(lk?.some(l => l.user_id === user.id) || false)
-    if (user) {
-      const { data: fav } = await supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id)
-      setFavori(fav?.length > 0 || false)
-    }
-    const { data: rp } = await supabase.from('reposts').select('id, user_id').eq('joueur_id', reel.joueur_id)
+    if (user) setFavori(favRes.data?.length > 0 || false)
     setRepostCount(rp?.length || 0)
     if (user) setReposted(rp?.some(r => r.user_id === user.id) || false)
-    const { data: cm } = await supabase.from('comments')
-      .select('*, author:profiles!comments_user_id_fkey(prenom, nom, avatar_url)')
-      .eq('joueur_id', reel.joueur_id)
-      .order('created_at', { ascending: false })
-      .limit(20)
     setComments(cm || [])
   }
 

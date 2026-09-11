@@ -199,41 +199,42 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
     const equipeJoueurIdMap = {}
     afData.forEach(a => { equipeJoueurIdMap[a.joueur_id] = a.equipe_joueur_id })
 
-    const { data: joueursData } = joueurIds.length > 0
-      ? await supabase
-          .from('profiles')
-          .select('id, prenom, nom, avatar_url, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets')
-          .in('id', joueurIds)
-      : { data: [] }
-
-    // Historiques de la saison — restreints aux joueurs de l'équipe active
-    // (historique_saisons n'a pas de club_categorie_id propre).
-    const { data: histData, error: histError } = joueurIds.length > 0
-      ? await supabase
-          .from('historique_saisons')
-          .select('*')
-          .eq('educateur_id', educateurId)
-          .eq('saison', saison)
-          .in('joueur_id', joueurIds)
-      : { data: [], error: null }
-
-    if (histError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
-
     // Présence réelle aux entraînements (pas la prépa physique, moins pertinente dans
     // un historique de saison — même calcul que chargerStatsJoueur côté joueur).
     const equipeJoueurIds = Object.values(equipeJoueurIdMap).filter(Boolean)
+
+    // Les 4 requêtes ci-dessous ne dépendent que de joueurIds/equipeJoueurIds
+    // (déjà connus via afData, résolu plus haut) — aucune ne lit le résultat
+    // d'une autre, lancées en parallèle plutôt qu'en série.
+    const [
+      { data: joueursData },
+      { data: histData, error: histError },
+      presencesRes,
+      { data: notesData },
+    ] = await Promise.all([
+      joueurIds.length > 0
+        ? supabase.from('profiles').select('id, prenom, nom, avatar_url, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets').in('id', joueurIds)
+        : Promise.resolve({ data: [] }),
+      // Historiques de la saison — restreints aux joueurs de l'équipe active
+      // (historique_saisons n'a pas de club_categorie_id propre).
+      joueurIds.length > 0
+        ? supabase.from('historique_saisons').select('*').eq('educateur_id', educateurId).eq('saison', saison).in('joueur_id', joueurIds)
+        : Promise.resolve({ data: [], error: null }),
+      equipeJoueurIds.length > 0
+        ? supabase.from('presences_entrainement').select('joueur_id, statut').eq('educateur_id', educateurId).in('joueur_id', equipeJoueurIds)
+        : Promise.resolve({ data: [] }),
+      // Évaluations reçues (notes_educateur, tous joueurs confondus, toutes
+      // saisons) — moyenne générale affichée en en-tête de cet historique.
+      supabase.from('notes_educateur').select('note').eq('educateur_id', educateurId).eq('auteur_type', 'joueur'),
+    ])
+
+    if (histError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
+
     let presenceMap = {}
-
     if (equipeJoueurIds.length > 0) {
-      const { data: presencesData } = await supabase
-        .from('presences_entrainement')
-        .select('joueur_id, statut')
-        .eq('educateur_id', educateurId)
-        .in('joueur_id', equipeJoueurIds)
-
-      ;(joueursData || []).forEach(j => {
+      (joueursData || []).forEach(j => {
         const equipeJoueurId = equipeJoueurIdMap[j.id]
-        const pr = (presencesData || []).filter(p => p.joueur_id === equipeJoueurId)
+        const pr = (presencesRes.data || []).filter(p => p.joueur_id === equipeJoueurId)
         presenceMap[j.id] = {
           realisees: pr.filter(p => p.statut === 'present').length,
           total: pr.length,
@@ -241,13 +242,6 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
       })
     }
 
-    // Évaluations reçues (notes_educateur, tous joueurs confondus, toutes
-    // saisons) — moyenne générale affichée en en-tête de cet historique.
-    const { data: notesData } = await supabase
-      .from('notes_educateur')
-      .select('note')
-      .eq('educateur_id', educateurId)
-      .eq('auteur_type', 'joueur')
     setNotesEdu(notesData || [])
 
     setJoueurs(joueursData || [])

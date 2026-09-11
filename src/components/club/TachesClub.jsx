@@ -9,8 +9,8 @@ const STATUTS = [
   { val: 'terminee', label: 'Terminée', color: 'green' },
 ]
 
-const emptyResponsabilite = { domaine: '', emoji: '📋', tache: '', responsable_id: '' }
-const emptyTache = { titre: '', emoji: '✅', responsable_id: '', echeance: '' }
+const emptyResponsabilite = { domaine: '', emoji: '📋', tache: '', responsable_id: '', responsable_nom_libre: '' }
+const emptyTache = { titre: '', emoji: '✅', responsable_id: '', responsable_nom_libre: '', echeance: '' }
 
 const GUIDE = [
   { icon: '🔁', title: 'Responsabilités récurrentes', desc: 'Pour les tâches permanentes : gestion des licences, communication, matériel...' },
@@ -34,6 +34,8 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
   const [formTache, setFormTache] = useState(emptyTache)
   const [ajoutResp, setAjoutResp] = useState(false)
   const [ajoutTache, setAjoutTache] = useState(false)
+  const [respModeManuel, setRespModeManuel] = useState(false)
+  const [tacheModeManuel, setTacheModeManuel] = useState(false)
 
   const educateursAcceptes = (educateursAffilies || []).filter(e => e.statut === 'accepte')
 
@@ -58,17 +60,22 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
 
   const ajouterResponsabilite = async () => {
     if (!formResp.tache.trim()) return
+    const responsableId = respModeManuel ? null : (formResp.responsable_id || null)
+    const responsableNom = respModeManuel
+      ? (formResp.responsable_nom_libre.trim() || null)
+      : (formResp.responsable_id ? nomResponsable(formResp.responsable_id) : null)
     const { data, error } = await supabase.from('responsabilites_club').insert({
       club_id: clubId,
       domaine: formResp.domaine.trim() || null,
       emoji: formResp.emoji || '📋',
       tache: formResp.tache.trim(),
-      responsable_id: formResp.responsable_id || null,
-      responsable_nom: formResp.responsable_id ? nomResponsable(formResp.responsable_id) : null,
+      responsable_id: responsableId,
+      responsable_nom: responsableNom,
     }).select().single()
     if (error) return
     setResponsabilites(prev => [data, ...prev])
     setFormResp(emptyResponsabilite)
+    setRespModeManuel(false)
     setAjoutResp(false)
   }
 
@@ -80,17 +87,22 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
 
   const ajouterTache = async () => {
     if (!formTache.titre.trim()) return
+    const responsableId = tacheModeManuel ? null : (formTache.responsable_id || null)
+    const responsableNom = tacheModeManuel
+      ? (formTache.responsable_nom_libre.trim() || null)
+      : (formTache.responsable_id ? nomResponsable(formTache.responsable_id) : null)
     const { data, error } = await supabase.from('taches_club').insert({
       club_id: clubId,
       titre: formTache.titre.trim(),
       emoji: formTache.emoji || '✅',
-      responsable_id: formTache.responsable_id || null,
-      responsable_nom: formTache.responsable_id ? nomResponsable(formTache.responsable_id) : null,
+      responsable_id: responsableId,
+      responsable_nom: responsableNom,
       echeance: formTache.echeance || null,
     }).select().single()
     if (error) return
     setTaches(prev => [...prev, data].sort((a, b) => (a.echeance || '9999') < (b.echeance || '9999') ? -1 : 1))
     setFormTache(emptyTache)
+    setTacheModeManuel(false)
     setAjoutTache(false)
   }
 
@@ -179,13 +191,29 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
               <input value={formResp.tache} onChange={e => setFormResp(f => ({ ...f, tache: e.target.value }))}
                 placeholder="Responsabilité (ex : Gérer les réservations de terrain)"
                 style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }} />
-              <select value={formResp.responsable_id} onChange={e => setFormResp(f => ({ ...f, responsable_id: e.target.value }))}
-                style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }}>
-                <option value="">Responsable (optionnel)</option>
-                {educateursAcceptes.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
-              </select>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[{ val: false, label: 'Membre du club' }, { val: true, label: 'Autre personne' }].map(m => (
+                  <button key={String(m.val)} type="button" onClick={() => setRespModeManuel(m.val)}
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                      background: respModeManuel === m.val ? accent + alpha.subtle : colors.background.surface,
+                      color: respModeManuel === m.val ? accent : colors.text.faint }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {respModeManuel ? (
+                <input value={formResp.responsable_nom_libre} onChange={e => setFormResp(f => ({ ...f, responsable_nom_libre: e.target.value }))}
+                  placeholder="Nom et prénom (non inscrit sur la plateforme)"
+                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }} />
+              ) : (
+                <select value={formResp.responsable_id} onChange={e => setFormResp(f => ({ ...f, responsable_id: e.target.value }))}
+                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }}>
+                  <option value="">Responsable (optionnel)</option>
+                  {educateursAcceptes.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
+                </select>
+              )}
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setAjoutResp(false); setFormResp(emptyResponsabilite) }}
+                <button onClick={() => { setAjoutResp(false); setFormResp(emptyResponsabilite); setRespModeManuel(false) }}
                   style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', padding: '10px 16px' }}>
                   Annuler
                 </button>
@@ -202,17 +230,33 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
               <input value={formTache.titre} onChange={e => setFormTache(f => ({ ...f, titre: e.target.value }))}
                 placeholder="Titre de la tâche"
                 style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }} />
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[{ val: false, label: 'Membre du club' }, { val: true, label: 'Autre personne' }].map(m => (
+                  <button key={String(m.val)} type="button" onClick={() => setTacheModeManuel(m.val)}
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                      background: tacheModeManuel === m.val ? accent + alpha.subtle : colors.background.surface,
+                      color: tacheModeManuel === m.val ? accent : colors.text.faint }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <select value={formTache.responsable_id} onChange={e => setFormTache(f => ({ ...f, responsable_id: e.target.value }))}
-                  style={{ flex: '1 1 180px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }}>
-                  <option value="">Responsable (optionnel)</option>
-                  {educateursAcceptes.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
-                </select>
+                {tacheModeManuel ? (
+                  <input value={formTache.responsable_nom_libre} onChange={e => setFormTache(f => ({ ...f, responsable_nom_libre: e.target.value }))}
+                    placeholder="Nom et prénom (non inscrit sur la plateforme)"
+                    style={{ flex: '1 1 180px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }} />
+                ) : (
+                  <select value={formTache.responsable_id} onChange={e => setFormTache(f => ({ ...f, responsable_id: e.target.value }))}
+                    style={{ flex: '1 1 180px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }}>
+                    <option value="">Responsable (optionnel)</option>
+                    {educateursAcceptes.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
+                  </select>
+                )}
                 <input type="date" value={formTache.echeance} onChange={e => setFormTache(f => ({ ...f, echeance: e.target.value }))}
                   style={{ flex: '0 0 150px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px' }} />
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setAjoutTache(false); setFormTache(emptyTache) }}
+                <button onClick={() => { setAjoutTache(false); setFormTache(emptyTache); setTacheModeManuel(false) }}
                   style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', padding: '10px 16px' }}>
                   Annuler
                 </button>

@@ -332,19 +332,23 @@ function Feed() {
   const chargerInteractions = async (u, joueurs) => {
     const ids = joueurs.map(j => j.id)
     if (ids.length === 0) return
-    const { data: likesData } = await supabase.from('likes').select('clip_id').in('clip_id', ids)
+    // Les 4 requêtes ne dépendent que de `ids`/`u.id`, jamais du résultat
+    // d'une autre — lancées en parallèle plutôt qu'en série.
+    const [{ data: likesData }, { data: commentsData }, myLikesRes, myFavorisRes] = await Promise.all([
+      supabase.from('likes').select('clip_id').in('clip_id', ids),
+      supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan, avatar_url)').in('joueur_id', ids).order('created_at', { ascending: true }),
+      u ? supabase.from('likes').select('clip_id').eq('user_id', u.id).in('clip_id', ids) : Promise.resolve({ data: null }),
+      u ? supabase.from('video_favoris').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids) : Promise.resolve({ data: null }),
+    ])
     const lc = {}
     likesData?.forEach(l => { lc[l.clip_id] = (lc[l.clip_id] || 0) + 1 })
     setLikeCounts(lc)
-    const { data: commentsData } = await supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan, avatar_url)').in('joueur_id', ids).order('created_at', { ascending: true })
     const cc = {}; const ac = {}
     commentsData?.forEach(c => { cc[c.joueur_id] = (cc[c.joueur_id] || 0) + 1; if (!ac[c.joueur_id]) ac[c.joueur_id] = []; ac[c.joueur_id].push(c) })
     setCommentCounts(cc); setAllComments(ac)
     if (u) {
-      const { data: myLikes } = await supabase.from('likes').select('clip_id').eq('user_id', u.id).in('clip_id', ids)
-      setLikedIds(myLikes?.map(l => l.clip_id) || [])
-      const { data: myFavoris } = await supabase.from('video_favoris').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids)
-      setFavoriIds(myFavoris?.map(f => f.joueur_id) || [])
+      setLikedIds(myLikesRes.data?.map(l => l.clip_id) || [])
+      setFavoriIds(myFavorisRes.data?.map(f => f.joueur_id) || [])
     }
   }
 

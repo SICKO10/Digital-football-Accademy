@@ -307,14 +307,16 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
     setLoading(true)
     // Les tests physiques sont saisis par l'éducateur, indépendamment de tout
     // programme (colonne tests_physiques.programme_id supprimée) — chargés à
-    // part, pour rester visibles même sans programme actif.
-    const { data: testsData } = await supabase.from('tests_physiques').select('*').eq('joueur_id', joueurId).order('date_test', { ascending: false })
+    // part, pour rester visibles même sans programme actif. Un joueur ne doit
+    // voir que les programmes de ses éducateurs affiliés (table `affiliations`,
+    // statut 'accepte') — pas le programme actif le plus récent tous
+    // éducateurs confondus. Les deux requêtes sont indépendantes, lancées en
+    // parallèle plutôt qu'en série.
+    const [{ data: testsData }, { data: afData, error: afError }] = await Promise.all([
+      supabase.from('tests_physiques').select('*').eq('joueur_id', joueurId).order('date_test', { ascending: false }),
+      supabase.from('affiliations').select('educateur_id').eq('joueur_id', joueurId).eq('statut', 'accepte'),
+    ])
     setTests(testsData || [])
-
-    // Un joueur ne doit voir que les programmes de ses éducateurs affiliés (table
-    // `affiliations`, statut 'accepte') — pas le programme actif le plus récent
-    // tous éducateurs confondus.
-    const { data: afData, error: afError } = await supabase.from('affiliations').select('educateur_id').eq('joueur_id', joueurId).eq('statut', 'accepte')
     if (afError?.code === '42P01') { setError('tables_missing'); setLoading(false); return }
     const educateurIds = [...new Set((afData || []).map(a => a.educateur_id))]
     if (educateurIds.length === 0) { setProgramme(null); setLoading(false); return }

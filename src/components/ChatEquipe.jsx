@@ -179,23 +179,21 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
     if (!msgs) { setLoading(false); return }
     setMessages(msgs)
 
+    // profils et sondages ne dépendent que de msgs (déjà résolu), pas l'un de
+    // l'autre — lancés en parallèle plutôt qu'en série.
     const ids = [...new Set(msgs.map(m => m.auteur_id).filter(Boolean))]
+    const msgSondages = msgs.filter(m => m.type === 'sondage')
+    const [{ data: profils }, { data: s }] = await Promise.all([
+      ids.length > 0 ? supabase.from('profiles').select('id, prenom, nom').in('id', ids) : Promise.resolve({ data: null }),
+      msgSondages.length > 0 ? supabase.from('sondages').select('*').in('message_id', msgSondages.map(m => m.id)) : Promise.resolve({ data: null }),
+    ])
     if (ids.length > 0) {
-      const { data: profils } = await supabase
-        .from('profiles')
-        .select('id, prenom, nom')
-        .in('id', ids)
       const map = {}
       profils?.forEach(p => { map[p.id] = p })
       setAuteurs(map)
     }
 
-    const msgSondages = msgs.filter(m => m.type === 'sondage')
     if (msgSondages.length > 0) {
-      const { data: s } = await supabase
-        .from('sondages')
-        .select('*')
-        .in('message_id', msgSondages.map(m => m.id))
       const sMap = {}
       s?.forEach(sd => { sMap[sd.message_id] = sd })
       setSondages(sMap)

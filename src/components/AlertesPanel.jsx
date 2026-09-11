@@ -11,6 +11,8 @@ const IcoShirt2       = () => <svg width="18" height="18" viewBox="0 0 24 24" fi
 const IcoBus2         = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 const IcoCalendarEvt  = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoBell         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+const IcoClipboard    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-3"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+const IcoRepeat       = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
 
 // Panneau d'alertes de l'accueil éducateur, remplace l'ancien "Dernières
 // réponses aux sondages" (peu actionnable — juste un historique). Regroupe des
@@ -32,7 +34,10 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
   const [commandesPretes, setCommandesPretes] = useState([])
   const [deplacementsRisque, setDeplacementsRisque] = useState([])
   const [evenements, setEvenements] = useState([])
+  const [mesTaches, setMesTaches] = useState([])
+  const [mesResponsabilites, setMesResponsabilites] = useState([])
   const [evenementOuvert, setEvenementOuvert] = useState(null)
+  const [tacheOuverte, setTacheOuverte] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       const idsRoster = new Set(joueurs.map(j => j.joueur_id).filter(Boolean))
       const aujourdhui = new Date().toISOString().slice(0, 10)
 
-      const [{ data: commandes }, { data: deps }, { data: vehicules }, { data: evts }] = await Promise.all([
+      const [{ data: commandes }, { data: deps }, { data: vehicules }, { data: evts }, { data: taches }, { data: resps }] = await Promise.all([
         clubId
           ? supabase.from('equipement_commandes').select('id, destinataire_id, destinataire_nom, statut').eq('club_id', clubId).eq('statut', 'pret')
           : Promise.resolve({ data: [] }),
@@ -51,6 +56,17 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
           : Promise.resolve({ data: [] }),
         clubId
           ? supabase.from('evenements_club').select('id, titre, description, date, heure, lieu').eq('club_id', clubId).eq('visible_educateurs', true).gte('date', aujourdhui).order('date').limit(3)
+          : Promise.resolve({ data: [] }),
+        // Tâches ponctuelles et responsabilités récurrentes du club assignées
+        // à cet éducateur (cf. TachesClub.jsx, dashboard club) — seulement
+        // quand le responsable est un membre réel de la plateforme
+        // (responsable_id renseigné) ; les responsables saisis en texte libre
+        // n'ont personne à notifier ici.
+        clubId
+          ? supabase.from('taches_club').select('id, titre, emoji, echeance, statut').eq('club_id', clubId).eq('responsable_id', educateurId).neq('statut', 'terminee').order('echeance', { ascending: true, nullsFirst: false })
+          : Promise.resolve({ data: [] }),
+        clubId
+          ? supabase.from('responsabilites_club').select('id, domaine, emoji, tache').eq('club_id', clubId).eq('responsable_id', educateurId)
           : Promise.resolve({ data: [] }),
       ])
 
@@ -73,6 +89,8 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       )
 
       setEvenements(evts || [])
+      setMesTaches(taches || [])
+      setMesResponsabilites(resps || [])
       setLoading(false)
     }
     charger()
@@ -113,6 +131,23 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       titre: e.titre,
       sousTitre: new Date(`${e.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
       onClick: () => setEvenementOuvert(e),
+    })),
+    ...mesTaches.map(t => {
+      const enRetard = t.echeance && t.echeance < new Date().toISOString().slice(0, 10)
+      return {
+        id: `tache_${t.id}`, Icon: IcoClipboard, couleur: enRetard ? colors.accent.red : colors.accent.blue,
+        titre: `${t.emoji || '✅'} ${t.titre}`,
+        sousTitre: t.echeance
+          ? `${enRetard ? 'En retard — ' : 'Échéance '}${new Date(`${t.echeance}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+          : 'Tâche qui vous a été confiée',
+        onClick: () => setTacheOuverte({ type: 'tache', ...t }),
+      }
+    }),
+    ...mesResponsabilites.map(r => ({
+      id: `responsabilite_${r.id}`, Icon: IcoRepeat, couleur: colors.accent.blue,
+      titre: `${r.emoji || '📋'} ${r.tache}`,
+      sousTitre: r.domaine || 'Responsabilité qui vous a été confiée',
+      onClick: () => setTacheOuverte({ type: 'responsabilite', ...r }),
     })),
   ]
 
@@ -157,6 +192,30 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
               {evenementOuvert.lieu ? ` · ${evenementOuvert.lieu}` : ''}
             </p>
             {evenementOuvert.description && <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{evenementOuvert.description}</p>}
+          </div>
+        </div>
+      )}
+
+      {tacheOuverte && (
+        <div onClick={() => setTacheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>
+                {tacheOuverte.emoji || (tacheOuverte.type === 'tache' ? '✅' : '📋')} {tacheOuverte.type === 'tache' ? tacheOuverte.titre : tacheOuverte.tache}
+              </p>
+              <button onClick={() => setTacheOuverte(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ color: colors.accent.blue, fontSize: '13px', margin: '0 0 4px' }}>
+              {tacheOuverte.type === 'tache' ? 'Tâche confiée par le club' : 'Responsabilité confiée par le club'}
+            </p>
+            {tacheOuverte.type === 'tache' && tacheOuverte.echeance && (
+              <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>
+                Échéance : {new Date(`${tacheOuverte.echeance}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            )}
+            {tacheOuverte.type === 'responsabilite' && tacheOuverte.domaine && (
+              <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>Domaine : {tacheOuverte.domaine}</p>
+            )}
           </div>
         </div>
       )}

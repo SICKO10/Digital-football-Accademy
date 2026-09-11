@@ -15,11 +15,13 @@ export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentC
   useEffect(() => {
     if (!clubId) { setLoading(false); return }
     const charger = async () => {
-      const { data } = await supabase.from('annonces_club').select('id, titre, auteur_nom, created_at')
-        .eq('club_id', clubId).in('cible', ['tous', 'educateurs'])
-        .order('created_at', { ascending: false }).limit(3)
+      const [{ data }, { data: lues }] = await Promise.all([
+        supabase.from('annonces_club').select('id, titre, auteur_nom, created_at')
+          .eq('club_id', clubId).in('cible', ['tous', 'educateurs'])
+          .order('created_at', { ascending: false }).limit(3),
+        supabase.from('annonces_lues').select('annonce_id').eq('user_id', userId),
+      ])
       setAnnonces(data || [])
-      const { data: lues } = await supabase.from('annonces_lues').select('annonce_id').eq('user_id', userId)
       setLuesIds(new Set((lues || []).map(l => l.annonce_id)))
       setLoading(false)
     }

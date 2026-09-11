@@ -49,13 +49,15 @@ export default function NotificationBanner({ userId, cibles }) {
   useEffect(() => {
     if (!userId) return
     const charger = async () => {
-      const { data } = await supabase.from('notifications_plateforme')
-        .select('*')
-        .eq('actif', true)
-        .in('cible', cibles)
-        .order('created_at', { ascending: false })
-        .limit(3)
-      const { data: lues } = await supabase.from('notifications_lues').select('notification_id').eq('user_id', userId)
+      const [{ data }, { data: lues }] = await Promise.all([
+        supabase.from('notifications_plateforme')
+          .select('*')
+          .eq('actif', true)
+          .in('cible', cibles)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase.from('notifications_lues').select('notification_id').eq('user_id', userId),
+      ])
       const luesIds = new Set((lues || []).map(l => l.notification_id))
       setNotifs((data || []).filter(n => !luesIds.has(n.id)))
     }
