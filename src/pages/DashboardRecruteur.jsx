@@ -525,9 +525,13 @@ export default function DashboardRecruteur() {
     setSelectedJoueur(j)
     setJoueurParcours([])
     setValidationsClub([])
-    const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false })
+    // parcours et validations sont indépendants (chargerValidations gère son
+    // propre state) — lancés en parallèle plutôt qu'en séquence.
+    const [{ data }] = await Promise.all([
+      supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }),
+      recruteurId ? chargerValidations(j.id) : Promise.resolve(),
+    ])
     setJoueurParcours(data || [])
-    if (recruteurId) await chargerValidations(j.id)
   }
 
   if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: colors.accent.orange }}>Chargement...</div></div>;

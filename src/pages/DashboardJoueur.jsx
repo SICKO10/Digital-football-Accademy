@@ -1120,23 +1120,26 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!equipeJoueurId || statsJoueur[affiliationId]) return
     setStatsLoading(prev => ({ ...prev, [affiliationId]: true }))
 
-    // 1. Mes présences (sans join)
-    const { data: presencesMoi } = await supabase
-      .from('presences_entrainement')
-      .select('statut, point_seance, entrainement_id')
-      .eq('joueur_id', equipeJoueurId)
-
-    // 1bis. Toutes les séances de l'équipe (jusqu'à aujourd'hui) + mes réponses
-    // au sondage de présence — même repli que chargerTauxPresence (widget
-    // Accueil) : si le coach n'a pas encore pointé une séance dans
-    // presences_entrainement, on retombe sur la réponse du joueur au sondage
-    // (disponibilites), pour que le taux de présence de "Mon Équipe" reste
-    // cohérent avec celui de l'Accueil au lieu de ne compter que les séances
-    // pointées manuellement (souvent très partiel).
-    const { data: mesEntrainements } = await supabase
-      .from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0])
-    const { data: mesDispos } = await supabase
-      .from('disponibilites').select('seance_id, statut').eq('joueur_id', userId)
+    // 1. Mes présences (sans join) + 1bis. toutes les séances de l'équipe
+    // (jusqu'à aujourd'hui) + mes réponses au sondage de présence — même repli
+    // que chargerTauxPresence (widget Accueil) : si le coach n'a pas encore
+    // pointé une séance dans presences_entrainement, on retombe sur la réponse
+    // du joueur au sondage (disponibilites), pour que le taux de présence de
+    // "Mon Équipe" reste cohérent avec celui de l'Accueil au lieu de ne
+    // compter que les séances pointées manuellement (souvent très partiel).
+    // + 3. toutes les séances (sans limite de date, pour les classements) —
+    // les 4 requêtes sont indépendantes entre elles, lancées en parallèle.
+    const [
+      { data: presencesMoi },
+      { data: mesEntrainements },
+      { data: mesDispos },
+      { data: tousEntrainements },
+    ] = await Promise.all([
+      supabase.from('presences_entrainement').select('statut, point_seance, entrainement_id').eq('joueur_id', equipeJoueurId),
+      supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0]),
+      supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
+      supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId),
+    ])
 
     const presenceMap = {}
     presencesMoi?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
@@ -1151,36 +1154,40 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const dateMap = {}
     mesEntrainements?.forEach(e => { dateMap[e.id] = e.date })
 
-    // 3. Tous les entraînements de l'éducateur pour classements présence — date
-    // incluse pour pouvoir scoper les classements de points par saison/mois.
-    const { data: tousEntrainements } = await supabase
-      .from('entrainements').select('id, date').eq('educateur_id', educateurId)
+    // 3. Présences sur tous les entraînements de l'éducateur (classements) et
+    // 4. stats match : ces deux blocs ne dépendent l'un de l'autre — tousEntIds
+    // (dérivé de tousEntrainements, chargé au 1er Promise.all ci-dessus) est
+    // déjà connu, donc les deux tournent en parallèle plutôt qu'en séquence.
     const tousEntIds = tousEntrainements?.map(e => e.id) || []
-    const { data: toutesPresences } = tousEntIds.length
-      ? await supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', tousEntIds)
-      : { data: [] }
     const dateMapTous = {}
     tousEntrainements?.forEach(e => { dateMapTous[e.id] = e.date })
 
-    // 4. Stats match
     const [
-      { data: matchsMoi },
-      { data: tousMatchs },
-      { data: evaluations },
-      { data: profilEdu },
-      { data: prochainMatchs },
-      { data: effectif },
-      { data: matchsEquipe },
-      { data: notationsMoi },
+      { data: toutesPresences },
+      [
+        { data: matchsMoi },
+        { data: tousMatchs },
+        { data: evaluations },
+        { data: profilEdu },
+        { data: prochainMatchs },
+        { data: effectif },
+        { data: matchsEquipe },
+        { data: notationsMoi },
+      ],
     ] = await Promise.all([
-      supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
-      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
-      supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
-      supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
-      supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
-      supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
-      supabase.from('matchs_equipe').select('id, date, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId),
-      supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
+      tousEntIds.length
+        ? supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', tousEntIds)
+        : Promise.resolve({ data: [] }),
+      Promise.all([
+        supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
+        supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
+        supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
+        supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
+        supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
+        supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId),
+        supabase.from('matchs_equipe').select('id, date, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId),
+        supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
+      ]),
     ])
 
     // --- Stats personnelles ---

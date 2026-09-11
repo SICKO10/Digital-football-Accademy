@@ -1736,7 +1736,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerMatchs = async (uid, catId) => {
     let q = supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid).order('date', { ascending: false })
     if (catId) q = q.eq('club_categorie_id', catId)
-    const { data } = await q
+    // chargerMatchIdsAvecRapport ne dépend que de uid, indépendant de la
+    // requête ci-dessus — lancé en parallèle plutôt qu'après. chargerMatchs
+    // est la fonction de chargement la plus fréquemment déclenchée par un
+    // clic dans ce dashboard (changement d'équipe, ajout/édition/suppression/
+    // notation d'un match).
+    const [{ data }] = await Promise.all([q, chargerMatchIdsAvecRapport(uid)])
     setMatchs(data || [])
 
     // Dispos auto-déclarées par les joueurs pour ces matchs (mêmes disponibilites
@@ -1751,7 +1756,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     } else {
       setDispoJoueursMatch({})
     }
-    await chargerMatchIdsAvecRapport(uid)
     return data || []
   }
 
@@ -1903,9 +1907,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // non-lus dans la sidebar reflète l'état réel.
   const chargerAnnoncesClub = async () => {
     if (!clubAffiliation?.club_id) return
-    const { data } = await supabase.from('annonces_club').select('*').eq('club_id', clubAffiliation.club_id).in('cible', ['tous', 'educateurs']).order('created_at', { ascending: false })
+    const [{ data }, { data: lues }] = await Promise.all([
+      supabase.from('annonces_club').select('*').eq('club_id', clubAffiliation.club_id).in('cible', ['tous', 'educateurs']).order('created_at', { ascending: false }),
+      supabase.from('annonces_lues').select('annonce_id').eq('user_id', userId),
+    ])
     setAnnoncesClub(data || [])
-    const { data: lues } = await supabase.from('annonces_lues').select('annonce_id').eq('user_id', userId)
     setAnnoncesLuesIds(new Set((lues || []).map(l => l.annonce_id)))
   }
   useEffect(() => { if (clubAffiliation?.club_id && clubAffiliation.statut === 'accepte') chargerAnnoncesClub() }, [clubAffiliation])
@@ -2044,14 +2050,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // rôles), pas sur profil_educateur (profil étendu spécifique éducateur)
     // — déjà lu par DashboardClub.jsx/ClubPublic.jsx pour l'affichage public,
     // simplement jamais éditable côté éducateur jusqu'ici.
-    const { data: profilBase } = await supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle()
-    const { data: pe } = await supabase.from('profil_educateur').select('*').eq('user_id', uid).single()
-    if (pe) { setProfilEdu({ ...pe, avatar_url: profilBase?.avatar_url }); setProfilEduEdit({ ...pe, avatar_url: profilBase?.avatar_url }); setLienGroupe(pe.lien_groupe || '') }
-    else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '', avatar_url: profilBase?.avatar_url }) }
-    const { data: pa } = await supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre')
-    setParcoursEdu(pa || [])
-    const { data: ne } = await supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid)
-    setNotesEdu(ne || [])
+    // Les 5 requêtes ne filtrent que sur `uid` (ou une constante), aucune ne
+    // dépend du résultat d'une autre — lancées en parallèle plutôt qu'en
+    // série (c'est l'une des 9 branches du Promise.all de init(), donc sa
+    // propre lenteur interne pouvait à elle seule dicter la durée du
+    // chargement initial du dashboard).
     // joueur (via equipe_joueur_id) ne résout que si la demande a déjà été
     // liée à une fiche du roster — c'est justement ce que l'éducateur choisit
     // au moment d'accepter (setAffiliationEnCours), donc toujours null pour
@@ -2060,7 +2063,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // equipe_joueurs n'a pas de colonne avatar_url (photo disponible seulement
     // via joueur_profil, la relation profiles) — ne pas la demander sur
     // l'embed equipe_joueur_id, PostgREST erreurait sur une colonne inexistante.
-    const { data: af } = await supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false })
+    const [
+      { data: profilBase },
+      { data: pe },
+      { data: pa },
+      { data: ne },
+      { data: af },
+    ] = await Promise.all([
+      supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle(),
+      supabase.from('profil_educateur').select('*').eq('user_id', uid).single(),
+      supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre'),
+      supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid),
+      supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false }),
+    ])
+    if (pe) { setProfilEdu({ ...pe, avatar_url: profilBase?.avatar_url }); setProfilEduEdit({ ...pe, avatar_url: profilBase?.avatar_url }); setLienGroupe(pe.lien_groupe || '') }
+    else { setProfilEduEdit({ prenom: '', nom: '', diplome: '', categorie: '', club: '', niveau_championnat: '', avatar_url: profilBase?.avatar_url }) }
+    setParcoursEdu(pa || [])
+    setNotesEdu(ne || [])
     setAffiliations(af || [])
   }
 
