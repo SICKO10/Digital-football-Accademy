@@ -9361,10 +9361,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
-                          <button onClick={e => { e.stopPropagation(); navigate(`/clubs/${p.id}`) }}
+                          <a href={`/clubs/${p.id}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
                             style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                             Voir le profil public
-                          </button>
+                          </a>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}><IcoSend /> Message</span>
                         </div>
                       </div>

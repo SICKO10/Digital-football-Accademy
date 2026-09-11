@@ -84,79 +84,73 @@ export default function ClubPublic() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      // auth.getUser() et le profil visité ne dépendent pas l'un de l'autre
+      // (le 2e n'utilise que l'id d'URL) — lancés en parallèle, comme tout le
+      // reste ci-dessous, au lieu d'une douzaine d'allers-retours en série qui
+      // rendaient cette page lente à charger.
+      const [{ data: { user } }, { data: edu }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+      ])
       if (!user) { navigate('/login'); return }
       setUserId(user.id)
-
-      // Profil éducateur
-      const { data: edu } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
       setEducateur(edu)
 
       // Profil club (plan === 'club') : équipes + recrutement + mes
       // candidatures déjà envoyées, en plus (pas à la place) des requêtes
       // éducateur ci-dessous, qui restent des no-op inoffensifs pour un id de club.
-      if (edu?.plan === 'club') {
-        const [{ data: cats }, { data: rec }, { data: cand }] = await Promise.all([
-          supabase.from('club_categories').select('id, nom, equipe, educateur_id, couleur').eq('club_id', id).order('nom'),
-          supabase.from('club_recrutements').select('*').eq('club_id', id).eq('actif', true),
-          supabase.from('candidatures').select('recrutement_id, statut').eq('joueur_id', user.id),
-        ])
+      const estClub = edu?.plan === 'club'
+      const noop = Promise.resolve({ data: null })
+
+      const [
+        { data: cats }, { data: rec }, { data: cand }, { data: postsData }, { data: likesData }, { data: affilie },
+        { data: jData }, { data: mData }, { data: profilExtData }, { data: parcoursData }, { data: vData }, { data: avisData }, { data: avisListe },
+      ] = await Promise.all([
+        estClub ? supabase.from('club_categories').select('id, nom, equipe, educateur_id, couleur').eq('club_id', id).order('nom') : noop,
+        estClub ? supabase.from('club_recrutements').select('*').eq('club_id', id).eq('actif', true) : noop,
+        estClub ? supabase.from('candidatures').select('recrutement_id, statut').eq('joueur_id', user.id) : noop,
+        estClub ? supabase.from('club_posts').select('*, auteur:auteur_id(prenom, nom, avatar_url)').eq('club_id', id).order('created_at', { ascending: false }).limit(20) : noop,
+        estClub ? supabase.from('club_posts_likes').select('post_id').eq('user_id', user.id) : noop,
+        // Admin du feed : le club lui-même (pas de requête nécessaire), ou un
+        // éducateur affilié accepté (club_educateurs) — pas de colonne
+        // owner_id/tableau educateurs sur profiles, la relation club↔éducateur
+        // passe par cette table.
+        (estClub && user.id !== id) ? supabase.from('club_educateurs').select('id').eq('club_id', id).eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle() : noop,
+        // Joueurs de l'équipe
+        supabase.from('equipe_joueurs').select('*').eq('educateur_id', id).order('categorie'),
+        // Matchs
+        supabase.from('matchs_equipe').select('*').eq('educateur_id', id).order('date', { ascending: false }),
+        // Lien classement officiel + diplôme + niveau championnat (saisis par l'éducateur dans son profil)
+        supabase.from('profil_educateur').select('ligue_url, diplome, diplome_verifie, niveau_championnat').eq('user_id', id).maybeSingle(),
+        // Parcours de l'éducateur (saisons/clubs précédents)
+        supabase.from('parcours_educateur').select('*').eq('user_id', id).order('ordre'),
+        // Mes validations pour ce club
+        supabase.from('validations_joueur_club').select('*').eq('joueur_id', user.id).eq('educateur_id', id),
+        // Mon avis existant sur cet éducateur
+        supabase.from('avis').select('*').eq('auteur_id', user.id).eq('cible_id', id).single(),
+        // Tous les avis reçus (témoignages), avec le nom de l'auteur — même
+        // pattern que DashboardClub.jsx (auteur:auteur_id(prenom, nom, plan))
+        supabase.from('avis').select('*, auteur:auteur_id(prenom, nom, plan)').eq('cible_id', id).order('created_at', { ascending: false }),
+      ])
+
+      if (estClub) {
         setCategoriesClub(cats || [])
         setRecrutements(rec || [])
         const mapCand = {}
         cand?.forEach(c => { mapCand[c.recrutement_id] = c.statut })
         setMesCandidatures(mapCand)
-
-        // Feed du club + mes likes
-        const { data: postsData } = await supabase
-          .from('club_posts')
-          .select('*, auteur:auteur_id(prenom, nom, avatar_url)')
-          .eq('club_id', id)
-          .order('created_at', { ascending: false })
-          .limit(20)
         setPosts(postsData || [])
-        const { data: likesData } = await supabase.from('club_posts_likes').select('post_id').eq('user_id', user.id)
         setLikedPosts(new Set((likesData || []).map(l => l.post_id)))
-
-        // Admin du feed : le club lui-même, ou un éducateur affilié accepté
-        // (club_educateurs) — pas de colonne owner_id/tableau educateurs sur
-        // profiles, la relation club↔éducateur passe par cette table.
-        if (user.id === id) {
-          setIsClubAdmin(true)
-        } else {
-          const { data: affilie } = await supabase.from('club_educateurs').select('id').eq('club_id', id).eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle()
-          setIsClubAdmin(!!affilie)
-        }
+        setIsClubAdmin(user.id === id ? true : !!affilie)
       }
 
-      // Joueurs de l'équipe
-      const { data: jData } = await supabase.from('equipe_joueurs').select('*').eq('educateur_id', id).order('categorie')
       setJoueurs(jData || [])
-
-      // Matchs
-      const { data: mData } = await supabase.from('matchs_equipe').select('*').eq('educateur_id', id).order('date', { ascending: false })
       setMatchs(mData || [])
-
-      // Lien classement officiel + diplôme + niveau championnat (saisis par l'éducateur dans son profil)
-      const { data: profilExtData } = await supabase.from('profil_educateur').select('ligue_url, diplome, diplome_verifie, niveau_championnat').eq('user_id', id).maybeSingle()
       setLigueUrl(profilExtData?.ligue_url || null)
       setProfilExt(profilExtData)
-
-      // Parcours de l'éducateur (saisons/clubs précédents)
-      const { data: parcoursData } = await supabase.from('parcours_educateur').select('*').eq('user_id', id).order('ordre')
       setParcoursEdu(parcoursData || [])
-
-      // Mes validations pour ce club
-      const { data: vData } = await supabase.from('validations_joueur_club').select('*').eq('joueur_id', user.id).eq('educateur_id', id)
       setValidations(vData || [])
-
-      // Mon avis existant sur cet éducateur
-      const { data: avisData } = await supabase.from('avis').select('*').eq('auteur_id', user.id).eq('cible_id', id).single()
       if (avisData) { setMonAvis(avisData); setNoteVal(avisData.note); setCommentaireVal(avisData.commentaire || '') }
-
-      // Tous les avis reçus (témoignages), avec le nom de l'auteur — même
-      // pattern que DashboardClub.jsx (auteur:auteur_id(prenom, nom, plan))
-      const { data: avisListe } = await supabase.from('avis').select('*, auteur:auteur_id(prenom, nom, plan)').eq('cible_id', id).order('created_at', { ascending: false })
       setTousAvis(avisListe || [])
 
       setLoading(false)
