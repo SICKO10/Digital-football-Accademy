@@ -26,6 +26,7 @@ import ResetPassword from './pages/ResetPassword'
 import AcceptInvite from './pages/AcceptInvite'
 import CGU from './pages/CGU'
 import ClubPublic from './pages/ClubPublic'
+import PartenairePublic from './pages/PartenairePublic'
 import TactipadPublic from './pages/TactipadPublic'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider } from './lib/ThemeProvider'
@@ -93,6 +94,7 @@ function App() {
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/cgu" element={<CGU />} />
         <Route path="/clubs/:id" element={<ClubPublic />} />
+        <Route path="/partenaire/:token" element={<PartenairePublic />} />
         <Route path="/tactipad/:slug" element={<TactipadPublic />} />
       </Routes>
       <InstallAppBanner />

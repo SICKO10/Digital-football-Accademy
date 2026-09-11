@@ -121,6 +121,7 @@ const getAlerts = (sponsors) => {
     }
     const engagementsEnRetard = (s.contreparties_suivi || []).filter(it => it.statut !== 'fait' && it.echeance && new Date(it.echeance) < today)
     if (engagementsEnRetard.length > 0) alerts.push({ type: 'contrepartie_retard', sponsor: s, nb: engagementsEnRetard.length })
+    if (s.demande_renouvellement) alerts.push({ type: 'demande_renouvellement', sponsor: s })
   })
   return alerts
 }
@@ -134,7 +135,7 @@ function StatutBadge({ statut }) {
   )
 }
 
-function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleStatutContrepartie, onEcheanceContrepartie, onUploadPreuve, onRenouveler, readOnly = false }) {
+function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleStatutContrepartie, onEcheanceContrepartie, onUploadPreuve, onRenouveler, onCopierLien, readOnly = false }) {
   const st = useSt()
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
@@ -168,12 +169,18 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
         </div>
         {!readOnly && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => onCopierLien(sponsor)} style={st.btn('#a78bfa')}>🔗 Lien partenaire</button>
             <button onClick={() => onAjouterPaiement(sponsor)} style={st.btn('#60a5fa')}>+ Paiement</button>
             <button onClick={() => onEdit(sponsor)} style={st.btnSecondary}>Modifier</button>
             <button onClick={() => onDelete(sponsor)} style={st.btn('#ef4444')}>Supprimer</button>
           </div>
         )}
       </div>
+      {sponsor.demande_renouvellement && (
+        <div style={{ background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: '8px', padding: '8px 12px', marginBottom: '10px', color: '#f59e0b', fontSize: '12px', fontWeight: 700 }}>
+          ↻ Le partenaire a demandé un renouvellement
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px' }}>
         <div>
@@ -264,7 +271,7 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
 }
 
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
-function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor = '#4ade80' }) {
+function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, onSupprimerDocument, saving, accentColor = '#4ade80' }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
@@ -359,6 +366,24 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
             <label style={st.label}>Notes</label>
             <textarea style={{ ...st.input, resize: 'vertical', fontFamily: 'inherit' }} rows={3} value={form.notes} onChange={e => champ('notes', e.target.value)} />
           </div>
+
+          {sponsor && (
+            <div>
+              <label style={st.label}>Documents (contrat, facture...) — visibles par le partenaire</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+                {(sponsor.documents || []).map((d, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: st.bgRaised, borderRadius: '8px', padding: '6px 10px' }}>
+                    <a href={d.url} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: '12px', textDecoration: 'none' }}>📄 {d.label}</a>
+                    <button onClick={() => onSupprimerDocument(sponsor, i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>×</button>
+                  </div>
+                ))}
+              </div>
+              <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                + Ajouter un document
+                <input type="file" style={{ display: 'none' }} onChange={e => e.target.files[0] && onAjouterDocument(sponsor, e.target.files[0])} />
+              </label>
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -1000,6 +1025,41 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     await loadData()
   }
 
+  // Contrat/facture visibles ensuite dans le portail partenaire (sponsor.documents).
+  // Bucket "documents" déjà utilisé ailleurs dans l'app, policies ouvertes aux
+  // utilisateurs connectés.
+  const ajouterDocumentSponsor = async (sponsor, file) => {
+    const label = prompt('Nom du document (ex : Contrat 2026-2027, Facture n°42)', file.name)
+    if (!label) return
+    const path = `sponsors/${sponsor.id}/${Date.now()}_${file.name}`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+    if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
+    const nouveaux = [...(sponsor.documents || []), { label, url: urlData.publicUrl }]
+    const { error } = await supabase.from('sponsors').update({ documents: nouveaux }).eq('id', sponsor.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, documents: nouveaux } : s)))
+    setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, documents: nouveaux } : prev)
+  }
+
+  const supprimerDocumentSponsor = async (sponsor, index) => {
+    const nouveaux = (sponsor.documents || []).filter((_, i) => i !== index)
+    const { error } = await supabase.from('sponsors').update({ documents: nouveaux }).eq('id', sponsor.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, documents: nouveaux } : s)))
+    setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, documents: nouveaux } : prev)
+  }
+
+  const copierLienPartenaire = async (sponsor) => {
+    const lien = `${window.location.origin}/partenaire/${sponsor.acces_token}`
+    try {
+      await navigator.clipboard.writeText(lien)
+      alert('Lien copié ! Il donne accès en lecture seule à son contrat, ses contreparties et ses documents — à envoyer directement au partenaire.')
+    } catch {
+      prompt('Copie ce lien à envoyer au partenaire :', lien)
+    }
+  }
+
   const ajouterPaiement = async (paiement) => {
     if (!modalPaiement) return
     setSaving(true)
@@ -1190,6 +1250,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                     {a.type === 'retard' && `Paiement en retard — ${a.sponsor.entreprise}`}
                     {a.type === 'anniversaire' && `🎂 Anniversaire du partenariat avec ${a.sponsor.entreprise} cette semaine`}
                     {a.type === 'contrepartie_retard' && `${a.nb} contrepartie${a.nb > 1 ? 's' : ''} en retard — ${a.sponsor.entreprise}`}
+                    {a.type === 'demande_renouvellement' && `↻ ${a.sponsor.entreprise} a demandé un renouvellement`}
                   </p>
                 ))}
               </div>
@@ -1371,6 +1432,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                   onEcheanceContrepartie={(sp, item, val) => majContrepartieSuivi(sp, item.id, { echeance: val || null })}
                   onUploadPreuve={uploaderPreuveContrepartie}
                   onRenouveler={proposerRenouvellement}
+                  onCopierLien={copierLienPartenaire}
                   readOnly={readOnly}
                 />
               ))}
@@ -1478,6 +1540,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           niveaux={niveaux}
           onClose={() => setModalSponsor(null)}
           onSave={sauvegarderSponsor}
+          onAjouterDocument={ajouterDocumentSponsor}
+          onSupprimerDocument={supprimerDocumentSponsor}
           saving={saving}
           accentColor={accentColor}
         />
