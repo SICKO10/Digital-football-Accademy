@@ -824,9 +824,13 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
   )
 }
 
-function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
+
+  // Initiale de secours si le club n'a pas encore d'avatar_url — même logique
+  // que clubInitiales (DashboardClub.jsx), dupliquée localement pour ce seul usage.
+  const clubInitiale = (club?.club || '?').trim()[0]?.toUpperCase() || '?'
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
   // principal) — il ne peut utiliser que ses props ou des helpers locaux, pas les
@@ -960,8 +964,15 @@ function AccueilEducateur({ clubId, userId, equipeActiveId, equipeUnique, joueur
 
   return (
     <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
-      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Vue d'ensemble de ton équipe</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+        {club && (
+          club.avatar_url
+            ? <img src={club.avatar_url} alt={club.club || ''} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${colors.border.subtle}`, flexShrink: 0 }} />
+            : <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: colors.accent.green + '20', color: colors.accent.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>{clubInitiale}</div>
+        )}
+        <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
+      </div>
+      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{club?.club ? `${club.club} · ` : ''}Vue d'ensemble de ton équipe</p>
 
       {/* ── Planning de la semaine — dynamique, généré depuis entrainements + matchs ── */}
       <div style={{ background: colors.background.surface, border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
@@ -4810,6 +4821,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             )}
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
+              club={clubAffiliation?.club}
               userId={userId}
               equipeActiveId={equipeActive?.id}
               equipeUnique={mesEquipes.length <= 1}

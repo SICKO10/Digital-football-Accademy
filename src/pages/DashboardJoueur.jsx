@@ -502,6 +502,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [compositionActive, setCompositionActive] = useState(null) // composition (causerie) publiée la plus pertinente, cf. chargerCompositionActive
   // Inventaire club (Équipement) — tailles déclarées par le joueur + statut de préparation
   const [clubIdInventaire, setClubIdInventaire] = useState(null)
+  const [clubAffilieInfo, setClubAffilieInfo] = useState(null) // { club, avatar_url } — logo/nom du club affilié, pour l'en-tête d'accueil
   const [annoncesClub, setAnnoncesClub] = useState([])
   const [annoncesLuesIds, setAnnoncesLuesIds] = useState(new Set())
   const [champsEquipement, setChampsEquipement] = useState([])
@@ -926,10 +927,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // il n'y a pas de club_id direct sur affiliations/equipe_joueurs.
   const chargerInventaireJoueur = async (uid, affiliations) => {
     const a = (affiliations || []).find(af => af.statut === 'accepte')
-    if (!a) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
+    if (!a) { setClubIdInventaire(null); setClubAffilieInfo(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
-    if (!ce?.club_id) { setClubIdInventaire(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
+    if (!ce?.club_id) { setClubIdInventaire(null); setClubAffilieInfo(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     setClubIdInventaire(ce.club_id)
+    supabase.from('profiles').select('club, avatar_url').eq('id', ce.club_id).maybeSingle().then(({ data }) => setClubAffilieInfo(data || null))
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
@@ -3168,6 +3170,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                 </label>
+                {/* Logo du club affilié — badge en bas à gauche de l'avatar joueur */}
+                {clubAffilieInfo && (
+                  clubAffilieInfo.avatar_url
+                    ? <img src={clubAffilieInfo.avatar_url} alt={clubAffilieInfo.club || ''} title={clubAffilieInfo.club || ''} style={{ position: 'absolute', bottom: 0, left: 0, width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover', border: `2.5px solid ${colors.background.surface}` }} />
+                    : <div title={clubAffilieInfo.club || ''} style={{ position: 'absolute', bottom: 0, left: 0, width: '26px', height: '26px', borderRadius: '50%', background: colors.background.raised, border: `2.5px solid ${colors.background.surface}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: colors.text.secondary }}>
+                        {(clubAffilieInfo.club || '?').trim()[0]?.toUpperCase() || '?'}
+                      </div>
+                )}
               </div>
               <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
