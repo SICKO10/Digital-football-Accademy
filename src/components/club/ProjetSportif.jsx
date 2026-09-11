@@ -293,7 +293,7 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
                 ))}
               </div>
             )}
-            <PlanificationAnnuelle categorie={categorieActive} clubId={clubId} pole={pole} readOnly={readOnly}
+            <PlanificationAnnuelle categorie={categorieActive} clubId={clubId} pole={pole} readOnly={readOnly} peutGererSeances={false}
               logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} />
           </div>
         )

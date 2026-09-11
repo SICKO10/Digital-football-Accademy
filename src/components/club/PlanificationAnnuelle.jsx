@@ -793,7 +793,7 @@ function VuePhases({ plan, phases, competitions, pole, categorie, onEditPhase, o
 
 const COLONNES_SEMAINES = ['Phase', 'Mois', 'Sem.', 'Thème OFF', 'Sous-principe OFF', 'Thème DEF', 'Sous-principe DEF', 'Objectif OFF', 'Objectif DEF', 'S1', 'S2', 'Compétition', 'Remarques', 'Séances']
 
-function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, onGenererSemaines, readOnly, seancesParSemaine, onAjouterSeance, onVoirSeances }) {
+function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, onGenererSemaines, readOnly, peutGererSeances, seancesParSemaine, onAjouterSeance, onVoirSeances }) {
   const colors = useColors()
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -848,7 +848,7 @@ function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, 
                             {nb}/5
                           </button>
                         )}
-                        {!readOnly && nb < 5 && (
+                        {peutGererSeances && nb < 5 && (
                           <button onClick={() => onAjouterSeance(sem)}
                             style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: 4, width: 18, height: 18, lineHeight: '16px', fontSize: 12, fontWeight: 800, cursor: 'pointer', padding: 0 }}>
                             +
@@ -889,7 +889,11 @@ function VueSemaines({ semaines, phases, pole, onEditSemaine, onAjouterSemaine, 
   )
 }
 
-export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnly, logoUrl, couleurPrimaire, couleurSecondaire }) {
+// peutGererSeances est indépendant de readOnly : accrocher une séance réelle
+// à une semaine du plan est le rôle de l'éducateur (qui crée ces séances),
+// pas du club (qui gère les phases/thèmes/objectifs) — cf. demande explicite
+// d'inverser ce droit entre les deux vues.
+export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnly, peutGererSeances = !readOnly, logoUrl, couleurPrimaire, couleurSecondaire }) {
   const colors = useColors()
   const [vue, setVue] = useState('phases')
   const [plan, setPlan] = useState(undefined) // undefined = chargement, null = aucun plan
@@ -1102,7 +1106,7 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
           onEditPhase={setPhaseActive} onAjouterPhase={() => setPhaseActive({ _new: true, ordre: phases.length })} onImporterDocument={() => setScanMode('scan')} />
       )}
       {!scanMode && vue === 'semaines' && (
-        <VueSemaines semaines={semaines} phases={phases} pole={pole} readOnly={readOnly}
+        <VueSemaines semaines={semaines} phases={phases} pole={pole} readOnly={readOnly} peutGererSeances={peutGererSeances}
           onEditSemaine={setSemaineActive} onAjouterSemaine={() => setSemaineActive({ _new: true, numero_semaine: semaines.length + 1 })} onGenererSemaines={genererSemaines}
           seancesParSemaine={seancesParSemaine} onAjouterSeance={ouvrirAjoutSeance} onVoirSeances={setModalListeSeances} />
       )}
@@ -1245,7 +1249,7 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
               )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {!readOnly && (
+              {peutGererSeances && (
                 <button onClick={() => detacherSeance(seanceOuverte)} style={{ flex: 1, background: 'transparent', border: '1px solid #ef444444', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                   Détacher de la semaine
                 </button>

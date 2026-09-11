@@ -14,6 +14,9 @@ const ONGLETS = [
 // l'éducateur — réutilise les mêmes composants que le dashboard club
 // (PlanificationAnnuelle, SectionPrincipes, SectionRegles), simplement avec
 // readOnly=true (masque déjà tous les boutons d'édition dans ces 3 composants).
+// Exception : accrocher une séance réelle à une semaine du plan reste
+// possible pour l'éducateur (peutGererSeances) — c'est lui qui crée ces
+// séances, le club ne fait qu'écrire les thèmes/objectifs de la semaine.
 export default function ProjetSportifEducateur({ categorie, clubId }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('planification')
@@ -31,7 +34,7 @@ export default function ProjetSportifEducateur({ categorie, clubId }) {
       <div style={{ marginBottom: 24 }}>
         <div style={{ color: pole.couleur, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>{pole.label}</div>
         <h1 style={{ color: colors.text.primary, fontSize: 24, fontWeight: 900, margin: '0 0 4px' }}>Projet Sportif</h1>
-        <p style={{ color: colors.text.faint, fontSize: 13, margin: 0 }}>Catégorie {categorie} · Lecture seule</p>
+        <p style={{ color: colors.text.faint, fontSize: 13, margin: 0 }}>Catégorie {categorie} · Lecture seule (sauf ajout de tes séances aux semaines)</p>
       </div>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: 24, overflowX: 'auto' }}>
@@ -48,7 +51,7 @@ export default function ProjetSportifEducateur({ categorie, clubId }) {
         ))}
       </div>
 
-      {onglet === 'planification' && <PlanificationAnnuelle categorie={categorie} clubId={clubId} pole={pole} readOnly />}
+      {onglet === 'planification' && <PlanificationAnnuelle categorie={categorie} clubId={clubId} pole={pole} readOnly peutGererSeances />}
       {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly />}
       {onglet === 'regles' && <SectionRegles pole={pole} clubId={clubId} readOnly />}
     </div>
