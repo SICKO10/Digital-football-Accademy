@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { makeUseSt } from '../../lib/theme'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
+import CatalogueOffres from './CatalogueOffres'
+import ValorisationClub from './ValorisationClub'
 
 const COULEURS_NIVEAU = [
   { val: '#22c55e', label: 'Vert' },
@@ -103,12 +105,21 @@ const getAlerts = (sponsors) => {
   const alerts = []
   const today = new Date()
   const in30days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const in7days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   sponsors.forEach(s => {
     if (s.date_fin) {
       const fin = new Date(s.date_fin)
       if (fin > today && fin < in30days) alerts.push({ type: 'expiration', sponsor: s })
     }
     if (getStatutPaiement(s).label === 'En retard') alerts.push({ type: 'retard', sponsor: s })
+    // Anniversaire du partenariat — même jour/mois que la signature, dans les 7 prochains jours.
+    if (s.date_signature) {
+      const sign = new Date(s.date_signature)
+      const anniversaire = new Date(today.getFullYear(), sign.getMonth(), sign.getDate())
+      if (anniversaire >= today && anniversaire <= in7days) alerts.push({ type: 'anniversaire', sponsor: s })
+    }
+    const engagementsEnRetard = (s.contreparties_suivi || []).filter(it => it.statut !== 'fait' && it.echeance && new Date(it.echeance) < today)
+    if (engagementsEnRetard.length > 0) alerts.push({ type: 'contrepartie_retard', sponsor: s, nb: engagementsEnRetard.length })
   })
   return alerts
 }
@@ -122,15 +133,15 @@ function StatutBadge({ statut }) {
   )
 }
 
-function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleContrepartie, readOnly = false }) {
+function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleStatutContrepartie, onEcheanceContrepartie, onUploadPreuve, onRenouveler, readOnly = false }) {
   const st = useSt()
   const niveau = sponsor.niveaux_partenariat
   const recu = getMontantRecu(sponsor)
   const total = Number(sponsor.montant_contrat) || 0
   const pct = total > 0 ? Math.min(100, Math.round((recu / total) * 100)) : 0
   const statut = getStatutPaiement(sponsor)
-  const contrepartiesLivrees = sponsor.contreparties_livrees || []
-  const contrepartiesNiveau = niveau?.contreparties || []
+  const engagements = sponsor.contreparties_suivi || []
+  const finProche = sponsor.date_fin && new Date(sponsor.date_fin) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
   return (
     <div style={st.card}>
@@ -183,20 +194,39 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleCon
       </div>
 
       {sponsor.date_fin && (
-        <p style={{ margin: '0 0 10px', fontSize: '12px', color: st.textFaint }}>Fin de contrat : {new Date(sponsor.date_fin).toLocaleDateString('fr-FR')}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, fontSize: '12px', color: st.textFaint }}>Fin de contrat : {new Date(sponsor.date_fin).toLocaleDateString('fr-FR')}</p>
+          {finProche && !readOnly && (
+            <button onClick={() => onRenouveler(sponsor)} style={st.btn('#f59e0b')}>↻ Proposer un renouvellement</button>
+          )}
+        </div>
       )}
 
-      {contrepartiesNiveau.length > 0 && (
+      {engagements.length > 0 && (
         <div>
           <p style={st.label}>Contreparties</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {contrepartiesNiveau.map((c, i) => {
-              const livree = contrepartiesLivrees.includes(c)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {engagements.map(item => {
+              const enRetard = item.statut !== 'fait' && item.echeance && new Date(item.echeance) < new Date()
               return (
-                <button key={i} onClick={() => !readOnly && onToggleContrepartie(sponsor, c)} disabled={readOnly}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: livree ? '#22c55e' : st.textFaint, cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left' }}>
-                  <span>{livree ? '✓' : '○'}</span> {c}
-                </button>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <button onClick={() => !readOnly && onToggleStatutContrepartie(sponsor, item)} disabled={readOnly}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: item.statut === 'fait' ? '#22c55e' : enRetard ? '#ef4444' : st.textFaint, cursor: readOnly ? 'default' : 'pointer', fontSize: '13px', padding: '2px 0', textAlign: 'left', flex: 1, minWidth: '160px' }}>
+                    <span>{item.statut === 'fait' ? '✓' : '○'}</span> {item.label}
+                  </button>
+                  {!readOnly && (
+                    <input type="date" value={item.echeance || ''} onChange={e => onEcheanceContrepartie(sponsor, item, e.target.value)}
+                      style={{ ...st.input, width: '130px', padding: '4px 8px', fontSize: '11px' }} />
+                  )}
+                  {item.preuve_url ? (
+                    <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#60a5fa' }}>📷 Voir la preuve</a>
+                  ) : !readOnly && (
+                    <label style={{ fontSize: '11px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                      📷 Ajouter une preuve
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onUploadPreuve(sponsor, item, e.target.files[0])} />
+                    </label>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -248,11 +278,9 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
     date_signature: sponsor?.date_signature || '',
     date_fin: sponsor?.date_fin || '',
     notes: sponsor?.notes || '',
-    contreparties_livrees: sponsor?.contreparties_livrees || [],
   }))
 
   const champ = (key, value) => setForm(f => ({ ...f, [key]: value }))
-  const niveauActif = niveaux.find(n => n.id === form.niveau_id)
 
   const changerNiveau = (niveauId) => {
     const niveau = niveaux.find(n => n.id === niveauId)
@@ -260,15 +288,6 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
       ...f,
       niveau_id: niveauId,
       montant_contrat: (!f.montant_contrat && niveau) ? String(niveau.montant_annuel || '') : f.montant_contrat,
-    }))
-  }
-
-  const toggleContrepartie = (c) => {
-    setForm(f => ({
-      ...f,
-      contreparties_livrees: f.contreparties_livrees.includes(c)
-        ? f.contreparties_livrees.filter(x => x !== c)
-        : [...f.contreparties_livrees, c],
     }))
   }
 
@@ -334,20 +353,6 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, saving, accentColor =
               <input style={st.input} type="date" value={form.date_fin} onChange={e => champ('date_fin', e.target.value)} />
             </div>
           </div>
-
-          {niveauActif?.contreparties?.length > 0 && (
-            <div>
-              <label style={st.label}>Contreparties livrées</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {niveauActif.contreparties.map((c, i) => (
-                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: st.textDim, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.contreparties_livrees.includes(c)} onChange={() => toggleContrepartie(c)} />
-                    {c}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div>
             <label style={st.label}>Notes</label>
@@ -858,8 +863,16 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       montant_contrat: Number(form.montant_contrat) || 0,
       date_signature: form.date_signature || null,
       date_fin: form.date_fin || null,
-      contreparties_livrees: form.contreparties_livrees,
       notes: form.notes || null,
+    }
+    // Nouveau sponsor rattaché à un niveau : pré-remplit contreparties_suivi
+    // (tableau structuré avec échéance/statut/preuve) depuis les contreparties
+    // du niveau, pour ne pas resaisir la liste à la main.
+    if (!estEdition && form.niveau_id) {
+      const niveau = niveaux.find(n => n.id === form.niveau_id)
+      payload.contreparties_suivi = (niveau?.contreparties || []).map(label => ({
+        id: crypto.randomUUID(), label, echeance: null, statut: 'a_faire', preuve_url: null,
+      }))
     }
     // ModalSponsor garde son propre état de formulaire local (initialisé depuis
     // le sponsor passé en prop) — fermer la modale avant confirmation de
@@ -880,6 +893,32 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     }
   }
 
+  // Duplique un sponsor en fin de contrat vers la saison suivante — pas de
+  // signature auto (le club renégocie), juste une proposition pré-remplie
+  // pour éviter de ressaisir contact/niveau/contreparties à chaque saison.
+  const proposerRenouvellement = async (sponsor) => {
+    const idxSaison = SAISONS.indexOf(sponsor.saison)
+    const saisonSuivante = idxSaison > 0 ? SAISONS[idxSaison - 1] : SAISONS[0]
+    if (!confirm(`Créer une proposition de renouvellement de "${sponsor.entreprise}" pour la saison ${saisonSuivante} ?`)) return
+    const { data, error } = await supabase.from('sponsors').insert({
+      club_id: clubId,
+      saison: saisonSuivante,
+      entreprise: sponsor.entreprise,
+      contact_nom: sponsor.contact_nom,
+      contact_role: sponsor.contact_role,
+      role: sponsor.role,
+      contact_email: sponsor.contact_email,
+      contact_telephone: sponsor.contact_telephone,
+      niveau_id: sponsor.niveau_id,
+      montant_contrat: sponsor.montant_contrat,
+      notes: `Renouvellement proposé depuis ${sponsor.saison}.`,
+      paiements: [],
+    }).select('*, niveaux_partenariat(nom, couleur, contreparties)').single()
+    if (error) { alert('Erreur : ' + error.message); return }
+    alert(`Proposition créée pour la saison ${saisonSuivante} — passe sur cette saison pour la retrouver et la compléter.`)
+    if (saisonSuivante === saisonActive) setSponsors(prev => [...prev, data])
+  }
+
   const supprimerSponsor = async (sponsor) => {
     if (!confirm(`Supprimer le sponsor "${sponsor.entreprise}" ?`)) return
     const { error } = await supabase.from('sponsors').delete().eq('id', sponsor.id)
@@ -898,17 +937,33 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     setSponsors(prev => prev.map(s => (s.id === modalPaiement.id ? { ...s, paiements: nouveauxPaiements } : s)))
   }
 
-  const toggleContrepartie = async (sponsor, contrepartie) => {
-    const actuelles = sponsor.contreparties_livrees || []
-    const nouvelles = actuelles.includes(contrepartie)
-      ? actuelles.filter(c => c !== contrepartie)
-      : [...actuelles, contrepartie]
-    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, contreparties_livrees: nouvelles } : s)))
-    const { error } = await supabase.from('sponsors').update({ contreparties_livrees: nouvelles }).eq('id', sponsor.id)
+  // Met à jour un seul élément du tableau contreparties_suivi (statut,
+  // échéance ou preuve) sans toucher aux autres — optimiste puis persisté.
+  const majContrepartieSuivi = async (sponsor, itemId, patch) => {
+    const actuelles = sponsor.contreparties_suivi || []
+    const nouvelles = actuelles.map(it => (it.id === itemId ? { ...it, ...patch } : it))
+    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, contreparties_suivi: nouvelles } : s)))
+    const { error } = await supabase.from('sponsors').update({ contreparties_suivi: nouvelles }).eq('id', sponsor.id)
     if (error) {
       alert('Erreur : ' + error.message)
-      setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, contreparties_livrees: actuelles } : s)))
+      setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, contreparties_suivi: actuelles } : s)))
     }
+  }
+
+  const toggleStatutContrepartie = (sponsor, item) => {
+    majContrepartieSuivi(sponsor, item.id, { statut: item.statut === 'fait' ? 'a_faire' : 'fait' })
+  }
+
+  // Photo du panneau/maillot installé ou capture d'une publication — même
+  // bucket "proofs" que le suivi de préparation physique (déjà en place,
+  // policies ouvertes aux utilisateurs connectés).
+  const uploaderPreuveContrepartie = async (sponsor, item, file) => {
+    const ext = file.name.split('.').pop()
+    const path = `sponsors/${sponsor.id}/${item.id}_${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('proofs').upload(path, file, { upsert: true })
+    if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
+    const { data: urlData } = supabase.storage.from('proofs').getPublicUrl(path)
+    majContrepartieSuivi(sponsor, item.id, { preuve_url: urlData.publicUrl })
   }
 
   // ── CRUD niveaux ──
@@ -1000,7 +1055,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             { id: 'dashboard', label: 'Tableau de bord' },
             { id: 'prospects', label: `Prospects${prospects.length ? ` (${prospects.length})` : ''}` },
             { id: 'sponsors', label: 'Sponsors' },
+            { id: 'contreparties', label: 'Contreparties' },
             { id: 'niveaux', label: 'Niveaux' },
+            { id: 'offres', label: 'Offres' },
+            { id: 'valorisation', label: 'Valorisation' },
           ].map(t => (
             <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
           ))}
@@ -1008,12 +1066,12 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {vue === 'prospects' ? (
             !readOnly && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
-          ) : (
+          ) : ['offres', 'valorisation'].includes(vue) ? null : (
             <>
               <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
                 {SAISONS.map(s => <option key={s}>{s}</option>)}
               </select>
-              {!readOnly && (
+              {!readOnly && vue !== 'contreparties' && (
                 <button onClick={() => setModalSponsor('new')} style={st.btnSolid(accentColor)}>+ Ajouter un sponsor</button>
               )}
             </>
@@ -1054,9 +1112,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {alerts.map((a, i) => (
                   <p key={i} style={{ margin: 0, fontSize: '13px', color: st.textDim }}>
-                    {a.type === 'expiration'
-                      ? `Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`
-                      : `Paiement en retard — ${a.sponsor.entreprise}`}
+                    {a.type === 'expiration' && `Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`}
+                    {a.type === 'retard' && `Paiement en retard — ${a.sponsor.entreprise}`}
+                    {a.type === 'anniversaire' && `🎂 Anniversaire du partenariat avec ${a.sponsor.entreprise} cette semaine`}
+                    {a.type === 'contrepartie_retard' && `${a.nb} contrepartie${a.nb > 1 ? 's' : ''} en retard — ${a.sponsor.entreprise}`}
                   </p>
                 ))}
               </div>
@@ -1234,7 +1293,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                   onEdit={setModalSponsor}
                   onDelete={supprimerSponsor}
                   onAjouterPaiement={setModalPaiement}
-                  onToggleContrepartie={toggleContrepartie}
+                  onToggleStatutContrepartie={toggleStatutContrepartie}
+                  onEcheanceContrepartie={(sp, item, val) => majContrepartieSuivi(sp, item.id, { echeance: val || null })}
+                  onUploadPreuve={uploaderPreuveContrepartie}
+                  onRenouveler={proposerRenouvellement}
                   readOnly={readOnly}
                 />
               ))}
@@ -1242,6 +1304,67 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           )}
         </div>
       )}
+
+      {vue === 'contreparties' && (() => {
+        const lignes = sponsors.flatMap(s => (s.contreparties_suivi || []).map(item => ({ sponsor: s, item })))
+          .sort((a, b) => {
+            if (!a.item.echeance) return 1
+            if (!b.item.echeance) return -1
+            return a.item.echeance.localeCompare(b.item.echeance)
+          })
+        return lignes.length === 0 ? (
+          <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
+            Aucune contrepartie à suivre pour la saison {saisonActive} — elles apparaissent ici dès qu'un sponsor est rattaché à un niveau avec des contreparties définies.
+          </div>
+        ) : (
+          <div style={{ ...st.card, padding: 0, overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: st.bgRaised }}>
+                    {['Partenaire', 'Engagement du club', 'Échéance', 'Statut', ''].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '10px 14px', color: st.textFaint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lignes.map(({ sponsor, item }) => {
+                    const enRetard = item.statut !== 'fait' && item.echeance && new Date(item.echeance) < new Date()
+                    return (
+                      <tr key={item.id} style={{ borderTop: `1px solid ${st.border}` }}>
+                        <td style={{ padding: '10px 14px', fontWeight: 700 }}>{sponsor.entreprise}</td>
+                        <td style={{ padding: '10px 14px', color: st.textDim }}>{item.label}</td>
+                        <td style={{ padding: '10px 14px' }}>
+                          {!readOnly ? (
+                            <input type="date" value={item.echeance || ''} onChange={e => majContrepartieSuivi(sponsor, item.id, { echeance: e.target.value || null })}
+                              style={{ ...st.input, width: '140px', padding: '5px 8px' }} />
+                          ) : item.echeance ? new Date(item.echeance).toLocaleDateString('fr-FR') : '—'}
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <button onClick={() => !readOnly && toggleStatutContrepartie(sponsor, item)} disabled={readOnly}
+                            style={{ background: item.statut === 'fait' ? '#22c55e20' : enRetard ? '#ef444420' : st.bgRaised, border: 'none', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: item.statut === 'fait' ? '#22c55e' : enRetard ? '#ef4444' : st.textFaint, cursor: readOnly ? 'default' : 'pointer' }}>
+                            {item.statut === 'fait' ? 'Fait' : enRetard ? 'En retard' : 'À faire'}
+                          </button>
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          {item.preuve_url ? (
+                            <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#60a5fa' }}>📷 Preuve</a>
+                          ) : !readOnly && (
+                            <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                              📷 Ajouter
+                              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && uploaderPreuveContrepartie(sponsor, item, e.target.files[0])} />
+                            </label>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      })()}
 
       {vue === 'niveaux' && (
         <div>
@@ -1265,6 +1388,14 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             </div>
           )}
         </div>
+      )}
+
+      {vue === 'offres' && (
+        <CatalogueOffres clubId={clubId} readOnly={readOnly} accentColor={accentColor} />
+      )}
+
+      {vue === 'valorisation' && (
+        <ValorisationClub clubId={clubId} readOnly={readOnly} accentColor={accentColor} />
       )}
 
       {modalSponsor && !readOnly && (
