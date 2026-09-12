@@ -766,7 +766,7 @@ export const T = {
   club_tab_sponsors:         { fr: 'Sponsors',                  en: 'Sponsors',               pt: 'Patrocinadores',        es: 'Patrocinadores',         it: 'Sponsor',               de: 'Sponsoren'            },
   club_tab_profil:           { fr: 'Profil club',               en: 'Club profile',           pt: 'Perfil do clube',       es: 'Perfil del club',        it: 'Profilo club',          de: 'Vereinsprofil'        },
   club_tab_budget:           { fr: 'Budget',                    en: 'Budget',                 pt: 'Orçamento',             es: 'Presupuesto',            it: 'Budget',                de: 'Budget'               },
-  club_tab_staff:            { fr: 'Staff',                     en: 'Staff',                  pt: 'Equipa técnica',        es: 'Equipo directivo',       it: 'Staff',                 de: 'Team'                 },
+  club_tab_staff:            { fr: 'Staff Permission',          en: 'Staff Permission',       pt: 'Permissões da equipa',  es: 'Permisos del equipo',    it: 'Permessi staff',        de: 'Team-Berechtigungen'  },
   club_tab_organigramme:     { fr: 'Organigramme',              en: 'Directory',              pt: 'Organograma',           es: 'Organigrama',            it: 'Organigramma',          de: 'Organigramm'          },
 
   // ── Dashboard club — Catégories & Équipes ────────────────────────────────────
