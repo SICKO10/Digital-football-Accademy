@@ -151,3 +151,14 @@ input[type="date"] {
   body > *:not(#fiche-print) { display: none; }
   #fiche-print { display: block; }
 }
+
+/* Légende présence (LegendePresence, SondageSemaine.jsx) — labels toujours
+   visibles sur mobile/tablette (pas de survol possible), repliés sur
+   desktop où l'initiale colorée suffit, révélés au survol de chaque item. */
+@media (min-width: 768px) {
+  .legende-label { display: none; }
+  .legende-presence-item:hover .legende-label { display: inline; }
+}
+@media (max-width: 767px) {
+  .legende-label { display: inline; }
+}

@@ -40,6 +40,24 @@ const OPTIONS_SONDAGE = [
   { val: 'convoque', label: 'Convoqué', color: colors.accent.blue },
 ]
 
+// Légende des lettres P/A/B/M/C (cf. EvenementJoueur, boutons compacts sans
+// texte) — labels toujours visibles sur mobile (pas de survol possible),
+// repliés au survol sur desktop via la classe légende-label (index.css) pour
+// rester discrète à côté d'un tableau déjà dense.
+function LegendePresence() {
+  const colors = useColors()
+  return (
+    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', padding: '6px 10px', background: colors.background.sunken, borderRadius: '8px', border: `1px solid ${colors.border.faint}`, width: 'fit-content', marginBottom: '10px' }}>
+      {OPTIONS_SONDAGE.map(opt => (
+        <div key={opt.val} title={opt.label} className="legende-presence-item" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ color: opt.color, fontWeight: 800, fontSize: '13px', minWidth: '14px', textAlign: 'center' }}>{opt.label[0]}</span>
+          <span className="legende-label" style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 500 }}>{opt.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Calendrier hebdomadaire du sondage de présence — même visuel que
 // PlanningSemaineWidget (nav ‹ ›, grille 7 jours, seuls les jours avec
 // événement affichent quelque chose), mais chaque entraînement/match y
@@ -273,6 +291,7 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
   return (
     <div style={card}>
       {header}
+      <LegendePresence />
       <div ref={grilleRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '4px', minWidth: 0 }}>
         {jours.map((d, i) => {
           const dStr = dateStr(d)
