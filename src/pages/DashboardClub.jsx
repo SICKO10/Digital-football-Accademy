@@ -3279,17 +3279,17 @@ Règles :
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
   ]
   const NAV_ADMINISTRATIF = [
-    { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
-    { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
+    { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
     { id: 'budget', label: t('club_tab_budget', lang), Icon: IcoWallet },
     { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
+    { id: 'projet_club_cff4', label: 'Projet Club — CFF4', Icon: IcoBuilding },
     { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
-    { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
-    { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
     { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
-    { id: 'projet_club_cff4', label: 'Projet Club — CFF4', Icon: IcoBuilding },
+    { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
+    { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
+    { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
   ].filter(item => canViewSection(item.id))
 
   const sportifVisible = NAV_SPORTIF.length > 0

@@ -651,7 +651,7 @@ export const T = {
   stats_tab_classement:     { fr: 'Classement',     en: 'Rankings',       pt: 'Classificação',  es: 'Clasificación',  it: 'Classifica',     de: 'Rangliste'      },
   stats_tab_graphiques:     { fr: 'Graphiques',     en: 'Charts',         pt: 'Gráficos',       es: 'Gráficos',       it: 'Grafici',        de: 'Diagramme'      },
   stats_tab_presences:      { fr: 'Présences',      en: 'Attendance',     pt: 'Presenças',      es: 'Presencias',     it: 'Presenze',       de: 'Anwesenheit'    },
-  stats_tab_mois:           { fr: 'Mois',           en: 'Month',          pt: 'Mês',            es: 'Mes',            it: 'Mese',           de: 'Monat'          },
+  stats_tab_mois:           { fr: 'Pts Séance',     en: 'Session Pts',    pt: 'Pts Sessão',     es: 'Pts Sesión',     it: 'Pts Seduta',     de: 'Einheit-Pkt.'   },
 
   // ── Stats joueurs — filtres classement ───────────────────────────────────────
   stats_filtre_buteurs:     { fr: '⚽ Buteurs',     en: '⚽ Scorers',     pt: '⚽ Goleadores',  es: '⚽ Goleadores',  it: '⚽ Goleador',    de: '⚽ Torschützen' },
@@ -765,7 +765,7 @@ export const T = {
   club_tab_recrutement:      { fr: 'Recrutement',               en: 'Recruitment',            pt: 'Recrutamento',          es: 'Reclutamiento',          it: 'Reclutamento',          de: 'Rekrutierung'         },
   club_tab_educateurs:       { fr: 'Éducateurs',                en: 'Coaches',                pt: 'Educadores',            es: 'Entrenadores',           it: 'Educatori',             de: 'Trainer'              },
   club_tab_sponsors:         { fr: 'Sponsors',                  en: 'Sponsors',               pt: 'Patrocinadores',        es: 'Patrocinadores',         it: 'Sponsor',               de: 'Sponsoren'            },
-  club_tab_profil:           { fr: 'Profil club',               en: 'Club profile',           pt: 'Perfil do clube',       es: 'Perfil del club',        it: 'Profilo club',          de: 'Vereinsprofil'        },
+  club_tab_profil:           { fr: 'Profil',                    en: 'Profile',                pt: 'Perfil',                es: 'Perfil',                 it: 'Profilo',               de: 'Profil'               },
   club_tab_budget:           { fr: 'Budget',                    en: 'Budget',                 pt: 'Orçamento',             es: 'Presupuesto',            it: 'Budget',                de: 'Budget'               },
   club_tab_staff:            { fr: 'Staff Permission',          en: 'Staff Permission',       pt: 'Permissões da equipa',  es: 'Permisos del equipo',    it: 'Permessi staff',        de: 'Team-Berechtigungen'  },
   club_tab_organigramme:     { fr: 'Organigramme',              en: 'Directory',              pt: 'Organograma',           es: 'Organigrama',            it: 'Organigramma',          de: 'Organigramm'          },
