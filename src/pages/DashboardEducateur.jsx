@@ -7995,6 +7995,8 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${nbCols}, 1fr)`, gap: '10px', marginBottom: '24px' }}>
                   {boutonsSeance.map(btn => {
                     const actif = btn.id !== 'ia' && modeSeance === btn.id
+                    const [motLabel, ...resteMots] = btn.label.split(' ')
+                    const sousLabel = resteMots.join(' ')
                     return (
                       <button key={btn.id} onClick={btn.onClick}
                         style={{
@@ -8005,7 +8007,10 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                           cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Inter, sans-serif',
                         }}>
                         <span style={{ fontSize: '22px' }}>{btn.icon}</span>
-                        <div style={{ textAlign: 'center', color: actif ? btn.color : colors.text.dim, fontWeight: 700, fontSize: '12px', lineHeight: 1.2 }}>{btn.label}</div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ color: actif ? btn.color : colors.text.dim, fontWeight: 700, fontSize: '12px', lineHeight: 1.2 }}>{motLabel}</div>
+                          {sousLabel && <div style={{ color: colors.text.faint, fontSize: '11px', lineHeight: 1.2 }}>{sousLabel}</div>}
+                        </div>
                         {actif && <div style={{ width: '20px', height: '2px', borderRadius: '2px', background: btn.color }} />}
                       </button>
                     )
