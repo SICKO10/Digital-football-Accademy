@@ -15,6 +15,7 @@ import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
+import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
@@ -130,6 +131,11 @@ const IconUsers = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+const IconTactic = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
   </svg>
 )
 const IconTrophy = () => (
@@ -1919,6 +1925,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
       { id: 'equipe',        label: t('jnav_equipe', lang),         icon: <IconUsers />, section: labelSection },
       { id: 'competition',   label: t('jnav_competition', lang),    icon: <IconTrophy /> },
+      { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
@@ -2169,6 +2176,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           )}
           {onglet === 'prep_physique' && <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />}
           {onglet === 'competition' && renduCompetition()}
+          {onglet === 'preparation_tactique' && (
+            <PreparationTactiqueJoueur
+              educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
+              accentColor={colors.accent.blue}
+            />
+          )}
           {onglet === 'stats' && (
             <div style={{ maxWidth: '640px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>{t('aff_mes_stats', lang)}</h2>

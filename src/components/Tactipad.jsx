@@ -1270,6 +1270,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     await chargerSchemas()
   }
 
+  // Partage interne (distinct de partagerSchema/partage_slug, qui est un lien
+  // public anonyme) : rend le schéma visible dans le dashboard des joueurs
+  // affiliés à cet éducateur (cf. supabase_tactipads_visible_joueurs.sql).
+  const toggleVisibleJoueurs = async (s) => {
+    const { error } = await supabase.from('tactipads').update({ visible_joueurs: !s.visible_joueurs }).eq('id', s.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    await chargerSchemas()
+  }
+
   const iconeZigzag = (
     <svg width="16" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <polyline points="1,12 5,4 9,12 13,4 17,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1939,10 +1948,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                           {dossier && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dossier.couleur, flexShrink: 0 }} />}
                           {s.nom || 'Sans titre'}
                         </p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}{s.visible_joueurs ? ' · 👥 visible aux joueurs' : ''}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
+                        <button onClick={() => toggleVisibleJoueurs(s)} style={{ background: s.visible_joueurs ? '#4ade8020' : '#4ade8015', border: `1px solid ${s.visible_joueurs ? '#4ade80' : '#4ade8040'}`, color: '#4ade80', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                          {s.visible_joueurs ? '👥 Visible aux joueurs' : '👥 Rendre visible aux joueurs'}
+                        </button>
                         <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
                         <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
                       </div>
