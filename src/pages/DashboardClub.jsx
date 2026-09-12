@@ -1041,7 +1041,7 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [moi, setMoi] = useState(null) // { id, prenom, nom } — le compte réellement connecté (club OU staff délégué), distinct de clubId (portée des données)
   const [loading, setLoading] = useState(true)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
@@ -1321,7 +1321,7 @@ export default function DashboardClub() {
 
   useEffect(() => { init() }, [])
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
+    const onResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
