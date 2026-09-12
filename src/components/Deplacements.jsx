@@ -67,7 +67,14 @@ const grouperParSemaine = (deplacements) => {
   return groupes
 }
 
-export default function Deplacements({ clubId, equipeActiveId, equipeUnique = true, accentColor = '#4ade80', readOnly = false }) {
+// retourEditable distingue la saisie km/carburant au retour (que l'éducateur
+// doit pouvoir faire lui-même, seul présent au retour du minibus) du reste des
+// actions d'administration des déplacements (répartition auto, ajout de
+// véhicule/déplacement, assignation manuelle, modification, suppression),
+// réservées au club — cf. readOnly. Par défaut lié à !readOnly pour ne rien
+// changer au comportement existant (DashboardClub) ; DashboardEducateur passe
+// readOnly + retourEditable explicitement pour dissocier les deux.
+export default function Deplacements({ clubId, equipeActiveId, equipeUnique = true, accentColor = '#4ade80', readOnly = false, retourEditable = !readOnly }) {
   const st = useSt()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1084,36 +1091,42 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                         </div>
                         <div>
                           <p style={st.label}>Km après (retour)</p>
-                          <input type="number" value={editRetour.km_apres} placeholder="—" disabled={readOnly}
+                          <input type="number" value={editRetour.km_apres} placeholder="—" disabled={!retourEditable}
                             onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
                             style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
                         </div>
                         <div>
                           <p style={st.label}>Gasoil après (retour)</p>
-                          <input type="text" value={editRetour.gasoil_apres} placeholder="ex: 2/4" disabled={readOnly}
+                          <input type="text" value={editRetour.gasoil_apres} placeholder="ex: 2/4" disabled={!retourEditable}
                             onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
                             style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
                         </div>
                       </div>
 
-                      {!readOnly && (
+                      {(retourEditable || !readOnly) && (
                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                          <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-                            style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
-                          </button>
-                          <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
-                            style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
-                          </button>
-                          <button onClick={() => ouvrirEditionDeplacement(d)}
-                            style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            Modifier
-                          </button>
-                          <button onClick={() => supprimerDeplacement(d)}
-                            style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            Supprimer
-                          </button>
+                          {retourEditable && (
+                            <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
+                              style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
+                            </button>
+                          )}
+                          {!readOnly && (
+                            <>
+                              <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
+                                style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
+                              </button>
+                              <button onClick={() => ouvrirEditionDeplacement(d)}
+                                style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                Modifier
+                              </button>
+                              <button onClick={() => supprimerDeplacement(d)}
+                                style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                Supprimer
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
 

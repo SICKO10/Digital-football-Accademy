@@ -6896,7 +6896,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} />
+            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} readOnly retourEditable />
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
