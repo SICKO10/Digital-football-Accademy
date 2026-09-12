@@ -794,18 +794,22 @@ function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
 function SousOngletsBar({ items, activeSection, setActiveSection }) {
   const colors = useColors()
   return (
-    <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: 20, overflowX: 'auto' }}>
-      {items.map(it => (
-        <button key={it.key} onClick={() => setActiveSection(it.key)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '10px 18px',
-            fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
-            color: activeSection === it.key ? colors.accent.blue : colors.text.faint,
-            borderBottom: activeSection === it.key ? `2px solid ${colors.accent.blue}` : '2px solid transparent',
-          }}>
-          {it.label}
-        </button>
-      ))}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 28, background: colors.background.sunken, padding: 6, borderRadius: 12, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
+      {items.map(it => {
+        const actif = activeSection === it.key
+        return (
+          <button key={it.key} onClick={() => setActiveSection(it.key)}
+            style={{
+              flex: 1, padding: '12px 16px', border: 'none', borderRadius: 8, cursor: 'pointer',
+              fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+              background: actif ? colors.accent.green : 'transparent',
+              color: actif ? colors.black : colors.text.faint,
+              boxShadow: actif ? `0 2px 8px ${colors.accent.green}4d` : 'none',
+            }}>
+            {it.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
