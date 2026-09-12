@@ -8007,12 +8007,14 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               >
                 📷 {t('seance_scanner', lang)}
               </button>
-              <button
-                onClick={() => setModeSeance('club')}
-                style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                🏟️ {t('seance_eval_club', lang)}
-              </button>
+              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
+                <button
+                  onClick={() => setModeSeance('club')}
+                  style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                >
+                  🏟️ {t('seance_eval_club', lang)}
+                </button>
+              )}
             </div>
 
             {modalGenerationIA && (
