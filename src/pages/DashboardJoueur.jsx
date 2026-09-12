@@ -3231,7 +3231,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       {m.competition}
                     </div>
                   )}
-                  <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: colors.text.primary, marginBottom: 4 }}>📋 Tu es convoqué !</div>
+                  <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: colors.text.primary, marginBottom: 4 }}>Tu es convoqué !</div>
                   <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? 20 : 26, marginBottom: 8 }}>
                     {m?.domicile ? 'vs' : '@'} {m?.adversaire}
                   </div>
@@ -3247,7 +3247,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       {convocationActive.timeline.map((step, i) => (
                         <div key={i} style={{ display: 'flex', gap: isMobile ? 12 : 16, alignItems: 'center', padding: isMobile ? '6px 0' : '8px 0', borderBottom: i < convocationActive.timeline.length - 1 ? `1px solid ${colors.border.subtle}` : 'none' }}>
                           <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: isMobile ? 13 : 15, minWidth: 50 }}>{step.heure}</span>
-                          <span style={{ fontSize: isMobile ? 14 : 18 }}>{step.icone || '📌'}</span>
                           <span style={{ color: colors.text.secondary, fontSize: isMobile ? 13 : 15 }}>{step.label}</span>
                         </div>
                       ))}
@@ -3263,20 +3262,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <div style={{ display: 'flex', gap: isMobile ? 10 : 12, marginBottom: 16 }}>
                     <button onClick={() => repondreConvocation('present')}
                       style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : colors.background.raised, color: repConvoc === 'present' ? colors.black : colors.text.primary, border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      ✅ Présent
+                      Présent
                     </button>
                     <button onClick={() => repondreConvocation('absent')}
                       style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : colors.background.raised, color: colors.text.primary, border: 'none', borderRadius: 10, padding: isMobile ? '10px 20px' : '14px 20px', fontWeight: 700, fontSize: isMobile ? 13 : 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      ❌ Absent
+                      Absent
                     </button>
                   </div>
 
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     {convocationActive.type_terrain && (
-                      <div style={{ background: colors.background.raised, borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>🌿 {convocationActive.type_terrain}</div>
+                      <div style={{ background: colors.background.raised, borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>{convocationActive.type_terrain}</div>
                     )}
                     {convocationActive.arbitre_nom && (
-                      <div style={{ background: colors.background.raised, borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>🏳️ Arbitre : {convocationActive.arbitre_nom}</div>
+                      <div style={{ background: colors.background.raised, borderRadius: 8, padding: '6px 12px', fontSize: 12, color: colors.text.dim }}>Arbitre : {convocationActive.arbitre_nom}</div>
                     )}
                   </div>
                 </div>

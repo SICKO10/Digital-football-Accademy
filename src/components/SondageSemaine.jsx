@@ -33,11 +33,11 @@ const grilleDuMois = (offset) => {
 }
 
 const OPTIONS_SONDAGE = [
-  { val: 'present', label: 'Présent', emoji: '✅', color: colors.accent.green },
-  { val: 'absent', label: 'Absent', emoji: '❌', color: colors.accent.red },
-  { val: 'blesse', label: 'Blessé', emoji: '🤕', color: colors.accent.orange },
-  { val: 'malade', label: 'Malade', emoji: '😷', color: colors.accent.purple },
-  { val: 'convoque', label: 'Convoqué', emoji: '🏆', color: colors.accent.blue },
+  { val: 'present', label: 'Présent', color: colors.accent.green },
+  { val: 'absent', label: 'Absent', color: colors.accent.red },
+  { val: 'blesse', label: 'Blessé', color: colors.accent.orange },
+  { val: 'malade', label: 'Malade', color: colors.accent.purple },
+  { val: 'convoque', label: 'Convoqué', color: colors.accent.blue },
 ]
 
 // Calendrier hebdomadaire du sondage de présence — même visuel que
@@ -189,7 +189,7 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
   const header = (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors2.text.primary }}>📅 {mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
+        <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors2.text.primary }}>{mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
         {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors2.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
@@ -323,8 +323,8 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
             const actif = statut === opt.val
             return (
               <button key={opt.val} title={opt.label} disabled={saving} onClick={() => onChoisir(opt.val)}
-                style={{ width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, fontSize: '13px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {opt.emoji}
+                style={{ width: '24px', height: '24px', padding: 0, borderRadius: '50%', background: actif ? `${opt.color}25` : 'transparent', border: `1px solid ${actif ? opt.color : colors.border.default}`, color: opt.color, fontSize: '11px', fontWeight: 800, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {opt.label[0]}
               </button>
             )
           })}
@@ -334,7 +334,7 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
   )
 }
 
-const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', emoji: '⏳', color: colors.text.faint }
+const SANS_REPONSE = { val: 'sans_reponse', label: 'Sans réponse', color: colors.text.faint }
 
 // Carte détaillée par événement (entraînement/match) : compteurs par statut,
 // taux de réponse avec barre de progression, clic → détail des joueurs
@@ -441,7 +441,7 @@ function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accen
             if (js.length === 0) return null
             return (
               <div key={opt.val} style={{ marginBottom: '12px' }}>
-                <p style={{ margin: '0 0 6px', color: opt.color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{opt.emoji} {opt.label} ({js.length})</p>
+                <p style={{ margin: '0 0 6px', color: opt.color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{opt.label} ({js.length})</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {js.map(j => (
                     <div key={j.id} style={{ background: `${opt.color}18`, border: `1px solid ${opt.color}33`, borderRadius: '8px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
