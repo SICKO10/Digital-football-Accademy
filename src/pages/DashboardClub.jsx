@@ -26,6 +26,7 @@ import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
 import TachesClub from '../components/club/TachesClub'
 import ProjetSportif from '../components/club/ProjetSportif'
+import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import NotificationBanner from '../components/NotificationBanner'
 
 const CLUB_FAQ = [
@@ -56,6 +57,7 @@ const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
+const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 
 const EQUIPES = ['A', 'B']
 
@@ -251,6 +253,7 @@ const PERMISSION_SECTIONS = [
   { id: 'inventaire', label: 'Inventaire' },
   { id: 'newsletter', label: 'Newsletter' },
   { id: 'taches', label: 'Tâches & Responsabilités' },
+  { id: 'projet_club_cff4', label: 'Projet Club — CFF4' },
 ]
 
 // Comportement avant toute configuration explicite par le président (aucune ligne
@@ -271,6 +274,7 @@ const PERMISSION_DEFAULTS = {
   inventaire: [],
   newsletter: [],
   taches: [],
+  projet_club_cff4: [],
 }
 
 const TYPES_EVENEMENT = [
@@ -1341,7 +1345,7 @@ export default function DashboardClub() {
     if (!monRole) return
     const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'classements', 'recrutement', 'educateurs'] : []
     if (canViewSection('terrains')) idsSportif.push('terrains')
-    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'staff'].filter(canViewSection)
+    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
@@ -3285,6 +3289,7 @@ Règles :
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
     { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
+    { id: 'projet_club_cff4', label: 'Projet Club — CFF4', Icon: IcoBuilding },
   ].filter(item => canViewSection(item.id))
 
   const sportifVisible = NAV_SPORTIF.length > 0
@@ -6238,6 +6243,10 @@ Règles :
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('taches')}
           />
+        )}
+
+        {activeTab === 'projet_club_cff4' && canViewSection('projet_club_cff4') && (
+          <ProjetClubCFF4 userId={moi?.id} clubId={clubId} />
         )}
       </div>
           </div>
