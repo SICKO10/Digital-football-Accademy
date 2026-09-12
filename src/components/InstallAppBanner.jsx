@@ -18,6 +18,16 @@ const IcoDots = () => (
   </svg>
 )
 
+// Icône réelle du bouton "Sur l'écran d'accueil" dans le menu de partage iOS
+// (carré arrondi avec un +) — distincte de IcoHomePlus (utilisée côté Android
+// uniquement), pour rester fidèle à l'icône que le joueur voit vraiment sur iOS.
+const IcoAddSquare = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <path d="M12 8v8M8 12h8" />
+  </svg>
+)
+
 const IcoHomePlus = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 11l9-7 9 7" />
@@ -44,7 +54,8 @@ const IcoPhone = () => (
 const ETAPES = {
   ios: [
     { Icon: IcoShare, texte: 'Appuie sur le bouton Partager, dans la barre de Safari' },
-    { Icon: IcoHomePlus, texte: 'Fais défiler et choisis « Sur l’écran d’accueil »' },
+    { Icon: IcoDots, texte: 'Appuie sur « Plus » ou les trois petits points, selon ton appareil' },
+    { Icon: IcoAddSquare, texte: 'Fais défiler et choisis « Sur l’écran d’accueil »' },
     { Icon: IcoCheck, texte: 'Appuie sur « Ajouter » en haut à droite' },
   ],
   android: [
