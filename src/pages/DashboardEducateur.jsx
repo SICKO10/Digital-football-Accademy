@@ -5,6 +5,7 @@ import { supabase, signOutSafe } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
+import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 import AnalyseVideo from '../components/AnalyseVideo'
 import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../components/RapportMatch'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
@@ -229,21 +230,6 @@ const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
     <line x1="12" y1="14" x2="14" y2="14"/>
   </svg>
 )
-// Dossiers "Mes séances" — palette rotative + emoji déduit du nom de catégorie
-// tactique, à la place de l'icône SVG grise uniforme d'avant.
-const FOLDER_COLORS = ['#4ade8015', '#60a5fa15', '#f9731615', '#a78bfa15', '#f472b615', '#34d39915']
-const FOLDER_BORDERS = ['#4ade8040', '#60a5fa40', '#f9731640', '#a78bfa40', '#f472b640', '#34d39940']
-const getFolderEmoji = (nom) => {
-  const n = (nom || '').toLowerCase()
-  if (n.includes('progress') || n.includes('techni')) return '📈'
-  if (n.includes('but') || n.includes('finish') || n.includes('finir')) return '⚽'
-  if (n.includes('défens') || n.includes('protég')) return '🛡️'
-  if (n.includes('conserv') || n.includes('posses')) return '🔄'
-  if (n.includes('déséquilib') || n.includes('attaqu')) return '⚡'
-  if (n.includes('physi') || n.includes('prép')) return '💪'
-  if (n.includes('échauff')) return '🔥'
-  return '📁'
-}
 const IcoTypeTous = ({ size = 16, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1960,8 +1946,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Onglet "Mes séances" (séances ouvertes, hors flux club)
   const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
-  const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
+  const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', video_url: '', fichier_url: '', commentaire_perso: '' })
   const [dossiersOuverts, setDossiersOuverts] = useState({})
+  // Filtres "Mes séances" — actifs, on bascule des dossiers cliquables à une
+  // liste plate filtrée (cf. rendu activeSection === 'mes_seances').
+  const [filtrePhase, setFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif'
+  const [filtreTheme, setFiltreTheme] = useState('')
+  const [filtreCategorieAge, setFiltreCategorieAge] = useState('')
+  const [filtreTypeSeance, setFiltreTypeSeance] = useState('tous') // 'tous' | 'collectif' | 'individuel'
+  const [filtreAnime, setFiltreAnime] = useState(false)
   const [modeSeance, setModeSeance] = useState('enregistrer')
   const [confirmSuppr, setConfirmSuppr] = useState(null) // id de la séance à confirmer
 
@@ -1985,7 +1978,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return new Set([`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`])
   })
   const ficheVide = {
-    theme: '', date: '', categorie_tactique: '', nb_joueurs: '', duree_totale: '', objectif_general: '',
+    theme: '', date: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', nb_joueurs: '', duree_totale: '', objectif_general: '',
     // Mode diplôme (BMF/BEF/DEF) — optionnel, null = fiche libre. Fait partie de
     // `fiche` (et donc de fiche_seance à la sauvegarde) plutôt que des states
     // séparés : ce composant centralise déjà toute la fiche dans un seul objet.
@@ -2194,20 +2187,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setUploadingSeance(false)
   }
 
-  const CATEGORIES_TACTIQUES = [
-    { value: 'proteger_axe_but', label: 'Protéger l\'axe du but', groupe: '🛡️ Défense / Transition' },
-    { value: 'reformuler_bloc_equipe', label: 'Reformuler le bloc équipe', groupe: '🛡️ Défense / Transition' },
-    { value: 'conserver', label: 'Conserver', groupe: '🔄 Conserver / Progresser' },
-    { value: 'progresser', label: 'Progresser', groupe: '🔄 Conserver / Progresser' },
-    { value: 'desequilibrer', label: 'Déséquilibrer', groupe: '⚡ Déséquilibrer / Finir' },
-    { value: 'finir', label: 'Finir', groupe: '⚡ Déséquilibrer / Finir' },
-  ]
-  const CATEGORIES_TACTIQUES_GROUPEES = CATEGORIES_TACTIQUES.reduce((acc, cat) => {
-    if (!acc[cat.groupe]) acc[cat.groupe] = []
-    acc[cat.groupe].push(cat)
-    return acc
-  }, {})
-
   // Après l'enregistrement d'une fiche (Rédiger ou Enregistrer), lie
   // automatiquement l'entraînement du calendrier qui tombe à la même date —
   // sans ça, une fiche rédigée/uploadée avec une date ne s'attache à rien tant
@@ -2244,6 +2223,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       theme: uploadSeanceOuverteForm.theme || null,
       date_seance: uploadSeanceOuverteForm.date_seance || null,
       categorie_tactique: uploadSeanceOuverteForm.categorie_tactique || null,
+      categorie_age: uploadSeanceOuverteForm.categorie_age || null,
+      type_seance: uploadSeanceOuverteForm.type_seance || 'collectif',
       video_url: uploadSeanceOuverteForm.video_url || null,
       fichier_url: uploadSeanceOuverteForm.fichier_url || null,
       commentaire_perso: uploadSeanceOuverteForm.commentaire_perso || null,
@@ -2258,7 +2239,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       return
     }
     await lierFicheAEntrainementCorrespondant(inserted.id, uploadSeanceOuverteForm.date_seance)
-    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', video_url: '', fichier_url: '', commentaire_perso: '' })
+    setUploadSeanceOuverteForm({ theme: '', date_seance: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', video_url: '', fichier_url: '', commentaire_perso: '' })
     await chargerMesSeancesOuvertes(userId)
   }
 
@@ -2301,6 +2282,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const fs = ficheApercu?.fiche_seance || {}
     setFicheApercuEdit({
       theme: fs.theme || '', date: fs.date || '', categorie_tactique: ficheApercu?.categorie_tactique || '',
+      categorie_age: ficheApercu?.categorie_age || '', type_seance: ficheApercu?.type_seance || 'collectif',
       nb_joueurs: fs.nb_joueurs || '', duree_totale: fs.duree_totale || '', objectif_general: fs.objectif_general || '',
       sport: fs.sport || 'football',
       mode_diplome: fs.mode_diplome || null, phase_jeu: fs.phase_jeu || '', principe_jeu: fs.principe_jeu || '',
@@ -2346,6 +2328,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       theme: ficheApercuEdit.theme || null,
       date_seance: ficheApercuEdit.date || null,
       categorie_tactique: ficheApercuEdit.categorie_tactique || null,
+      categorie_age: ficheApercuEdit.categorie_age || null,
+      type_seance: ficheApercuEdit.type_seance || 'collectif',
       fiche_seance: ficheApercuEdit,
     }
     const { error } = await supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id)
@@ -2614,6 +2598,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       theme: fiche.theme || null,
       date_seance: fiche.date || null,
       categorie_tactique: fiche.categorie_tactique || null,
+      categorie_age: fiche.categorie_age || null,
+      type_seance: fiche.type_seance || 'collectif',
       saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
       fiche_seance: { ...fiche, sport },
       fichier_url: ficheFichierUrl || null,
@@ -8139,14 +8125,35 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
-                  {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
-                    <optgroup label={groupe} key={groupe}>
-                      {cats.map(cat => (
-                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
+                    <optgroup label={groupe.label} key={phase}>
+                      {groupe.themes.map(th => (
+                        <option key={th.value} value={th.value}>{th.label}</option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
+                <select
+                  value={uploadSeanceOuverteForm.categorie_age}
+                  onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_age: e.target.value }))}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                >
+                  <option value="">Catégorie d'âge (optionnel)</option>
+                  <optgroup label="Masculin">
+                    {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                  </optgroup>
+                  <optgroup label="Féminin">
+                    {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                  </optgroup>
+                </select>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['collectif', 'individuel'].map(ty => (
+                    <button key={ty} type="button" onClick={() => setUploadSeanceOuverteForm(prev => ({ ...prev, type_seance: ty }))}
+                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue : colors.border.faint}`, background: uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue + alpha.subtle : colors.background.base, color: uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {ty === 'collectif' ? 'Collectif' : 'Individuel'}
+                    </button>
+                  ))}
+                </div>
                 <input
                   placeholder={t('seance_placeholder_video', lang)}
                   value={uploadSeanceOuverteForm.video_url}
@@ -8223,14 +8230,35 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                   style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
-                  {Object.entries(CATEGORIES_TACTIQUES_GROUPEES).map(([groupe, cats]) => (
-                    <optgroup label={groupe} key={groupe}>
-                      {cats.map(cat => (
-                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
+                    <optgroup label={groupe.label} key={phase}>
+                      {groupe.themes.map(th => (
+                        <option key={th.value} value={th.value}>{th.label}</option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
+                <select
+                  value={fiche.categorie_age}
+                  onChange={e => setFiche(f => ({ ...f, categorie_age: e.target.value }))}
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                >
+                  <option value="">Catégorie d'âge (optionnel)</option>
+                  <optgroup label="Masculin">
+                    {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                  </optgroup>
+                  <optgroup label="Féminin">
+                    {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                  </optgroup>
+                </select>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['collectif', 'individuel'].map(ty => (
+                    <button key={ty} type="button" onClick={() => setFiche(f => ({ ...f, type_seance: ty }))}
+                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${fiche.type_seance === ty ? colors.accent.blue : colors.border.faint}`, background: fiche.type_seance === ty ? colors.accent.blue + alpha.subtle : colors.background.base, color: fiche.type_seance === ty ? colors.accent.blue : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {ty === 'collectif' ? 'Collectif' : 'Individuel'}
+                    </button>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
@@ -8569,120 +8597,242 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('seance_aucune_envoyee', lang)}</p>
             ) : (
               (() => {
-                const seancesParCategorie = mesSeancesOuvertes.reduce((acc, s) => {
-                  const cat = CATEGORIES_TACTIQUES.find(c => c.value === s.categorie_tactique)?.label || s.categorie_tactique || t('seance_sans_categorie', lang)
-                  if (!acc[cat]) acc[cat] = []
-                  acc[cat].push(s)
-                  return acc
-                }, {})
+                const pastille = (actif, couleur) => ({
+                  padding: '6px 14px', border: `1px solid ${actif ? couleur : colors.border.default}`, borderRadius: '20px', cursor: 'pointer',
+                  fontWeight: actif ? 700 : 500, fontSize: '12px', fontFamily: 'Inter, sans-serif',
+                  background: actif ? couleur + alpha.subtle : 'transparent', color: actif ? couleur : colors.text.faint,
+                })
+
+                const themesDeLaPhase = filtrePhase !== 'tous' ? THEMES_SEANCE[filtrePhase].themes : []
+                const filtresActifs = filtrePhase !== 'tous' || !!filtreTheme || !!filtreCategorieAge || filtreTypeSeance !== 'tous' || filtreAnime
+
+                const seancesFiltrees = mesSeancesOuvertes.filter(s => {
+                  const info = themeSeanceInfo(s.categorie_tactique)
+                  if (filtrePhase !== 'tous' && info?.phase !== filtrePhase) return false
+                  if (filtreTheme && s.categorie_tactique !== filtreTheme) return false
+                  if (filtreCategorieAge && s.categorie_age !== filtreCategorieAge) return false
+                  if (filtreTypeSeance !== 'tous' && (s.type_seance || 'collectif') !== filtreTypeSeance) return false
+                  if (filtreAnime && !s.video_url) return false
+                  return true
+                })
+
+                const renderCarteSeance = (s) => {
+                  const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
+                  const infoTheme = themeSeanceInfo(s.categorie_tactique)
+                  return (
+                    <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
+                          {infoTheme && (
+                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', marginRight: '8px', background: infoTheme.color + alpha.subtle, color: infoTheme.color }}>
+                              {infoTheme.label}
+                            </span>
+                          )}
+                          {s.theme || t('seance_sans_theme', lang)}
+                          {s.fiche_seance?.mode_diplome && (
+                            <span style={{
+                              fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
+                              background: s.fiche_seance.mode_diplome === 'BMF' ? 'rgba(74,222,128,0.15)' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
+                              color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange,
+                              border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange}`,
+                            }}>
+                              {s.fiche_seance.mode_diplome}
+                            </span>
+                          )}
+                        </p>
+                        {(s.categorie_age || s.type_seance === 'individuel') && (
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                            {s.categorie_age && (
+                              <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: colors.background.raised, color: colors.text.secondary, border: `1px solid ${colors.border.default}` }}>
+                                {labelCategorie(s.categorie_age)}
+                              </span>
+                            )}
+                            {s.type_seance === 'individuel' && (
+                              <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: colors.background.raised, color: colors.text.secondary, border: `1px solid ${colors.border.default}` }}>
+                                Individuel
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {s.date_seance && (
+                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.dim }}>
+                            {new Date(s.date_seance).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                        {s.commentaire_perso && (
+                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <button onClick={() => setFicheApercu(s)}
+                          style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          📋 {t('seance_voir', lang)}
+                        </button>
+                        {eval_ ? (
+                          <>
+                            <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                              ✅ {Math.round(eval_.note_totale)}/100
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ background: '#ffffff08', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
+                            📁 {t('seance_archivee', lang)}
+                          </span>
+                        )}
+                        {s.video_url && (
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
+                        )}
+                        {s.fichier_url && (
+                          <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
+                        )}
+                        <button onClick={(ev) => { ev.stopPropagation(); s.fichier_url ? partagerFiche(s.fichier_url, s.theme) : setFicheApercu(s) }}
+                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          Partager
+                        </button>
+                        {confirmSuppr === s.id ? (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
+                            <button onClick={() => supprimerDemande(s.id)}
+                              style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                              {t('etat_oui', lang)}
+                            </button>
+                            <button onClick={() => setConfirmSuppr(null)}
+                              style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                              {t('etat_non', lang)}
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmSuppr(s.id)}
+                            style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                            🗑
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <>
-                    {/* Grille de cartes dossiers */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-                      {Object.entries(seancesParCategorie).map(([categorie, items], index) => {
-                        const ouvert = !!dossiersOuverts[categorie]
-                        return (
-                          <div key={categorie}
-                            onClick={() => setDossiersOuverts(prev => ({ ...prev, [categorie]: !prev[categorie] }))}
-                            style={{ background: FOLDER_COLORS[index % 6], border: `1px solid ${ouvert ? colors.accent.blue : FOLDER_BORDERS[index % 6]}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent.blue }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = ouvert ? colors.accent.blue : FOLDER_BORDERS[index % 6] }}
-                          >
-                            <span style={{ fontSize: '28px', lineHeight: 1 }}>{getFolderEmoji(categorie)}</span>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{categorie}</p>
-                            <span style={{ background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
-                          </div>
-                        )
-                      })}
+                    {/* Barre de filtres */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Phase</span>
+                        {['tous', 'offensif', 'defensif'].map(p => (
+                          <button key={p} onClick={() => { setFiltrePhase(p); setFiltreTheme('') }}
+                            style={pastille(filtrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
+                            {p === 'tous' ? 'Toutes' : THEMES_SEANCE[p].label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {filtrePhase !== 'tous' && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Thème</span>
+                          <button onClick={() => setFiltreTheme('')} style={pastille(!filtreTheme, colors.accent.green)}>Tous</button>
+                          {themesDeLaPhase.map(th => (
+                            <button key={th.value} onClick={() => setFiltreTheme(th.value === filtreTheme ? '' : th.value)}
+                              style={pastille(filtreTheme === th.value, THEMES_SEANCE[filtrePhase].color)}>
+                              {th.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Filtres</span>
+
+                        <select value={filtreCategorieAge} onChange={e => setFiltreCategorieAge(e.target.value)}
+                          style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.primary, fontSize: '12px', cursor: 'pointer' }}>
+                          <option value="">Toutes catégories</option>
+                          <optgroup label="Masculin">
+                            {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                          </optgroup>
+                          <optgroup label="Féminin">
+                            {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                          </optgroup>
+                        </select>
+
+                        {['tous', 'collectif', 'individuel'].map(ty => (
+                          <button key={ty} onClick={() => setFiltreTypeSeance(ty)} style={pastille(filtreTypeSeance === ty, colors.accent.green)}>
+                            {ty === 'tous' ? 'Collectif + Individuel' : ty === 'collectif' ? 'Collectif' : 'Individuel'}
+                          </button>
+                        ))}
+
+                        <button onClick={() => setFiltreAnime(!filtreAnime)} style={pastille(filtreAnime, colors.accent.purpleLight)}>
+                          Séances animées
+                        </button>
+
+                        {filtresActifs && (
+                          <button onClick={() => { setFiltrePhase('tous'); setFiltreTheme(''); setFiltreCategorieAge(''); setFiltreTypeSeance('tous'); setFiltreAnime(false) }}
+                            style={pastille(false, colors.accent.red)}>
+                            Réinitialiser
+                          </button>
+                        )}
+                      </div>
+
+                      {filtresActifs && (
+                        <div style={{ color: colors.text.faint, fontSize: '12px' }}>
+                          {seancesFiltrees.length} séance{seancesFiltrees.length > 1 ? 's' : ''} trouvée{seancesFiltrees.length > 1 ? 's' : ''} sur {mesSeancesOuvertes.length}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Séances des dossiers ouverts, affichées en dessous */}
-                    {Object.entries(seancesParCategorie).filter(([categorie]) => dossiersOuverts[categorie]).map(([categorie, items]) => {
+                    {filtresActifs ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {seancesFiltrees.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucune séance ne correspond à ces filtres.</p>
+                        ) : seancesFiltrees.map(renderCarteSeance)}
+                      </div>
+                    ) : (() => {
+                      const DOSSIERS_PHASE = [
+                        { key: 'offensif', label: THEMES_SEANCE.offensif.label, color: THEMES_SEANCE.offensif.color },
+                        { key: 'defensif', label: THEMES_SEANCE.defensif.label, color: THEMES_SEANCE.defensif.color },
+                        { key: 'aucune', label: t('seance_sans_categorie', lang), color: colors.text.faint },
+                      ]
+                      const seancesParPhase = mesSeancesOuvertes.reduce((acc, s) => {
+                        const phase = themeSeanceInfo(s.categorie_tactique)?.phase || 'aucune'
+                        if (!acc[phase]) acc[phase] = []
+                        acc[phase].push(s)
+                        return acc
+                      }, {})
+                      const dossiersVisibles = DOSSIERS_PHASE.filter(d => seancesParPhase[d.key]?.length > 0)
                       return (
-                      <div key={categorie} style={{ marginBottom: '20px' }}>
-                        <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
-                          📁 {categorie} ({items.length})
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {items.map(s => {
-                            const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                            return (
-                              <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                                <div>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
-                                    {s.theme || t('seance_sans_theme', lang)}
-                                    {s.fiche_seance?.mode_diplome && (
-                                      <span style={{
-                                        fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
-                                        background: s.fiche_seance.mode_diplome === 'BMF' ? 'rgba(74,222,128,0.15)' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
-                                        color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange,
-                                        border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange}`,
-                                      }}>
-                                        {s.fiche_seance.mode_diplome}
-                                      </span>
-                                    )}
-                                  </p>
-                                  {s.date_seance && (
-                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.dim }}>
-                                      {new Date(s.date_seance).toLocaleDateString('fr-FR')}
-                                    </p>
-                                  )}
-                                  {s.commentaire_perso && (
-                                    <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
-                                  )}
+                        <>
+                          {/* Grille de cartes dossiers, groupées par phase */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                            {dossiersVisibles.map(d => {
+                              const items = seancesParPhase[d.key]
+                              const ouvert = !!dossiersOuverts[d.key]
+                              return (
+                                <div key={d.key}
+                                  onClick={() => setDossiersOuverts(prev => ({ ...prev, [d.key]: !prev[d.key] }))}
+                                  style={{ background: d.color + alpha.faint, border: `1px solid ${ouvert ? d.color : d.color + alpha.medium}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
+                                >
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: colors.text.primary }}>{d.label}</p>
+                                  <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <button onClick={() => setFicheApercu(s)}
-                                    style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    📋 {t('seance_voir', lang)}
-                                  </button>
-                                  {eval_ ? (
-                                    <>
-                                      <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: '1px solid #4ade8040', fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                                        ✅ {Math.round(eval_.note_totale)}/100
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span style={{ background: '#ffffff08', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                                      📁 {t('seance_archivee', lang)}
-                                    </span>
-                                  )}
-                                  {s.video_url && (
-                                    <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
-                                  )}
-                                  {s.fichier_url && (
-                                    <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
-                                  )}
-                                  <button onClick={(ev) => { ev.stopPropagation(); s.fichier_url ? partagerFiche(s.fichier_url, s.theme) : setFicheApercu(s) }}
-                                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                    Partager
-                                  </button>
-                                  {confirmSuppr === s.id ? (
-                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                      <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
-                                      <button onClick={() => supprimerDemande(s.id)}
-                                        style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                                        {t('etat_oui', lang)}
-                                      </button>
-                                      <button onClick={() => setConfirmSuppr(null)}
-                                        style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                                        {t('etat_non', lang)}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button onClick={() => setConfirmSuppr(s.id)}
-                                      style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                                      🗑
-                                    </button>
-                                  )}
+                              )
+                            })}
+                          </div>
+
+                          {/* Séances des dossiers ouverts, affichées en dessous */}
+                          {dossiersVisibles.filter(d => dossiersOuverts[d.key]).map(d => {
+                            const items = seancesParPhase[d.key]
+                            return (
+                              <div key={d.key} style={{ marginBottom: '20px' }}>
+                                <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
+                                  📁 {d.label} ({items.length})
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                  {items.map(renderCarteSeance)}
                                 </div>
                               </div>
                             )
                           })}
-                        </div>
-                      </div>
+                        </>
                       )
-                    })}
+                    })()}
                   </>
                 )
               })()
@@ -10125,7 +10275,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
       </div>
     )}
 
-    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
+    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
 
     {ficheApercu && (() => {
       // Le modal .fiche-render est une feuille blanche (texte noir, cf. index.css)
@@ -10200,7 +10350,26 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       <label>Catégorie</label>
                       <select value={ficheApercuEdit.categorie_tactique} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_tactique: e.target.value }))} style={champEditStyle}>
                         <option value="">—</option>
-                        {CATEGORIES_TACTIQUES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        {TOUS_THEMES_SEANCE.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="fiche-champ">
+                      <label>Catégorie d'âge</label>
+                      <select value={ficheApercuEdit.categorie_age} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_age: e.target.value }))} style={champEditStyle}>
+                        <option value="">—</option>
+                        <optgroup label="Masculin">
+                          {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                        </optgroup>
+                        <optgroup label="Féminin">
+                          {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div className="fiche-champ">
+                      <label>Type</label>
+                      <select value={ficheApercuEdit.type_seance} onChange={e => setFicheApercuEdit(f => ({ ...f, type_seance: e.target.value }))} style={champEditStyle}>
+                        <option value="collectif">Collectif</option>
+                        <option value="individuel">Individuel</option>
                       </select>
                     </div>
                     <div className="fiche-champ">
@@ -10269,13 +10438,13 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             ) : ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? (
               <FicheBEFContenu
                 fiche={ficheApercu.fiche_seance || {}}
-                categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
+                categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
                 nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()}
               />
             ) : (
               <FicheContenu
                 fiche={ficheApercu.fiche_seance || {}}
-                categorieLabel={CATEGORIES_TACTIQUES.find(c => c.value === ficheApercu.categorie_tactique)?.label}
+                categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
               />
             )}
           </div>
