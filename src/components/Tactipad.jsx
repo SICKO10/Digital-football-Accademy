@@ -1275,7 +1275,17 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // affiliés à cet éducateur (cf. supabase_tactipads_visible_joueurs.sql).
   const toggleVisibleJoueurs = async (s) => {
     const { error } = await supabase.from('tactipads').update({ visible_joueurs: !s.visible_joueurs }).eq('id', s.id)
-    if (error) { alert('Erreur : ' + error.message); return }
+    if (error) {
+      // 42703 = colonne inexistante : la migration supabase_tactipads_visible_joueurs.sql
+      // n'a pas encore été exécutée sur cette base (fichier présent dans le repo, mais les
+      // migrations SQL de ce projet ne s'appliquent pas automatiquement).
+      if (error.code === '42703') {
+        alert('Fonctionnalité pas encore activée sur cette base — exécute la migration supabase_tactipads_visible_joueurs.sql dans Supabase.')
+      } else {
+        alert('Erreur : ' + error.message)
+      }
+      return
+    }
     await chargerSchemas()
   }
 

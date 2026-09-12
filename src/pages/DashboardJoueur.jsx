@@ -2962,6 +2962,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
     { id: 'annonces', label: 'Actualités du club', icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
     { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
+    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
@@ -4613,6 +4614,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── COMPÉTITION (lecture seule) ── */}
         {onglet === 'competition' && renduCompetition()}
+
+        {/* ── PRÉPARATION TACTIQUE ── */}
+        {onglet === 'preparation_tactique' && (
+          <PreparationTactiqueJoueur
+            educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
+            accentColor={colors.accent.blue}
+          />
+        )}
 
         {/* ── MON ÉQUIPE ── */}
         {onglet === 'equipe' && (
